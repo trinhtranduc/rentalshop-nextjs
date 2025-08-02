@@ -1,0 +1,222 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(CLIENT)
+  phone     String?
+  avatar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  shopOwner    ShopOwner?
+  admin        Admin?
+  rentals      Rental[]
+  payments     Payment[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model ShopOwner {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  shopName    String
+  address     String
+  description String?
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shops   Shop[]
+  rentals Rental[]
+
+  @@map("shop_owners")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  level     AdminLevel @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admins")
+}
+
+model Shop {
+  id          String   @id @default(cuid())
+  shopOwnerId String
+  name        String
+  address     String
+  description String?
+  phone       String
+  email       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  shopOwner ShopOwner @relation(fields: [shopOwnerId], references: [id], onDelete: Cascade)
+  products  Product[]
+  rentals   Rental[]
+
+  @@map("shops")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  shopId      String
+  categoryId  String
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  deposit     Decimal  @db.Decimal(10, 2) @default(0)
+  images      String[] // JSON array of image URLs
+  isAvailable Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  shop     Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+  rentals  Rental[]
+
+  @@map("products")
+}
+
+model Rental {
+  id          String      @id @default(cuid())
+  userId      String
+  shopId      String
+  productId   String
+  shopOwnerId String?
+  startDate   DateTime
+  endDate     DateTime
+  totalPrice  Decimal     @db.Decimal(10, 2)
+  deposit     Decimal     @db.Decimal(10, 2)
+  status      RentalStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id])
+  shop       Shop        @relation(fields: [shopId], references: [id])
+  product    Product     @relation(fields: [productId], references: [id])
+  shopOwner  ShopOwner?  @relation(fields: [shopOwnerId], references: [id])
+  payments   Payment[]
+
+  @@map("rentals")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  rentalId  String
+  userId    String
+  amount    Decimal       @db.Decimal(10, 2)
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDING)
+  reference String?       // External payment reference
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  rental Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean            @default(false)
+  createdAt DateTime           @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Enums
+enum UserRole {
+  CLIENT
+  SHOP_OWNER
+  ADMIN
+}
+
+enum AdminLevel {
+  STAFF
+  MANAGER
+  SUPER_ADMIN
+}
+
+enum RentalStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+  DIGITAL_WALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+} 
