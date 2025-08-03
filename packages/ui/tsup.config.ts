@@ -1,20 +1,11 @@
-import { defineConfig } from 'tsup';
+import { createBaseConfig } from '../../tsup.config.base';
 
-export default defineConfig({
-  entry: ['src/index.tsx'],
-  format: ['esm', 'cjs'],
-  dts: false, // Disable DTS temporarily
-  external: [
-    'react',
-    'react-dom',
-    '@radix-ui/*',
-    'lucide-react',
-    'class-variance-authority',
-    'clsx',
-    'tailwind-merge',
-    'tailwindcss-animate'
-  ],
-  esbuildOptions(options) {
-    options.jsx = 'automatic';
-  },
-}); 
+export default createBaseConfig('src/index.tsx', [
+  'react',
+  'react-dom',
+  'lucide-react',
+  '@radix-ui/react-slot',
+  'class-variance-authority',
+  'clsx',
+  'tailwind-merge'
+]); 

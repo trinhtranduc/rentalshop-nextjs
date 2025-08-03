@@ -1,11 +1,3 @@
-import { defineConfig } from 'tsup';
+import { createBaseConfig } from '../../tsup.config.base';
 
-export default defineConfig({
-  entry: ['src/index.ts'],
-  format: ['esm', 'cjs'],
-  dts: false, // Disable DTS temporarily
-  external: [
-    'zod',
-    'date-fns'
-  ],
-}); 
+export default createBaseConfig('src/index.ts'); 

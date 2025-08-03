@@ -1,1240 +1,454 @@
 # Cursor Rules for Rental Shop Next.js Monorepo
 
-## Project Overview
-This is a Next.js-based rental shop management system with TypeScript, Tailwind CSS, and shadcn/ui. The project uses a monorepo structure with Turborepo and follows modern React patterns and specific coding standards.
+## 🎯 DRY Principles & Best Practices
 
-## Technology Stack
-- **Frontend**: Next.js 14+ with TypeScript
-- **Build Tool**: Turborepo (Monorepo)
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Package Manager**: Yarn (preferred over npm)
-- **Database**: Prisma ORM with PostgreSQL
-- **Authentication**: NextAuth.js + JWT
-- **Form Handling**: React Hook Form + Zod validation
-- **UI Components**: shadcn/ui + Radix UI
-- **Icons**: Lucide Icons (lucide-react)
-- **API Documentation**: Swagger UI
-- **State Management**: React Context + Zustand (if needed)
+### **ALWAYS FOLLOW DRY (Don't Repeat Yourself)**
 
-## Design System - Colors & Typography
+#### **1. Configuration Management**
+- ✅ Use shared base configurations (`tsconfig.base.json`, `tsup.config.base.ts`)
+- ✅ Extend base configs in packages, don't duplicate settings
+- ✅ Keep package-specific configs minimal (3-5 lines max)
+- ❌ Never duplicate TypeScript or build configurations
 
-### Brand Colors (Matching Swift Define.swift)
-```css
-/* Primary Brand Colors */
---brand-primary: #0F9347;      /* APP_TONE_COLOR - Main brand green */
---brand-secondary: #2B3349;    /* APP_TONE_NAV_COLOR - Dark blue */
+#### **2. Component Development**
+- ✅ Create reusable components in `packages/ui/src/components/`
+- ✅ Use shared components across all apps (`@rentalshop/ui`)
+- ✅ Follow consistent component structure with proper TypeScript types
+- ❌ Don't create duplicate components in individual apps
 
-/* Action Colors */
---action-primary: #008AE8;     /* APP_BUTTON_BG_COLOR - Blue buttons */
---action-success: #10B981;     /* Success green */
---action-danger: #EF4444;      /* Danger red */
---action-warning: #f19920;     /* APP_ORANGE_COLOR - Warning orange */
+#### **3. Utility Functions**
+- ✅ Centralize common functions in `packages/utils/src/`
+- ✅ Use shared utilities everywhere (`@rentalshop/utils`)
+- ✅ Create domain-specific utilities in appropriate packages
+- ❌ Don't duplicate utility functions across packages
 
-/* Text Colors */
---text-primary: #323334;       /* APP_TEXT_COLOR - Main text */
---text-secondary: #6B7280;     /* Secondary text */
---text-tertiary: #999999;      /* APP_GRAY_COLOR - Tertiary text */
---text-inverted: #FFFFFF;      /* White text */
+#### **4. Type Definitions**
+- ✅ Define types once in `packages/database/src/types.ts`
+- ✅ Import types from shared packages (`@rentalshop/database`)
+- ✅ Use consistent naming conventions (PascalCase for interfaces)
+- ❌ Don't redefine types in multiple places
 
-/* Background Colors */
---background-primary: #F5F5F5; /* APP_BG_COLOR - Main background */
---background-secondary: #E7F0F5; /* APP_TONE_LINE_BG_COLOR - Secondary background */
---background-tertiary: #F9FAFB; /* Tertiary background */
---background-card: #FFFFFF;    /* Card background */
+### **Configuration Best Practices**
 
-/* Navigation Colors */
---nav-background: #2B3349;     /* APP_TONE_NAV_COLOR - Navigation background */
---nav-tint: #FFFFFF;           /* Navigation tint */
-
-/* Border Colors */
---border-color: #E5EAED;       /* APP_BORDER_COLOR - Border color */
-
-/* Status Colors */
---status-active: #0F9347;      /* Active status */
---status-inactive: #999999;    /* Inactive status */
---status-pending: #f19920;     /* Pending status */
-```
-
-### Typography System (Matching Swift Fonts)
-```css
-/* Font Families - Inter Font Family */
---font-family-regular: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
---font-family-light: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
---font-family-medium: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
---font-family-bold: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
---font-family-extra-bold: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-/* Font Weights */
---font-weight-light: 300;      /* Inter-Thin equivalent */
---font-weight-regular: 400;    /* Inter-Regular */
---font-weight-medium: 500;     /* Inter-Medium */
---font-weight-bold: 700;       /* Inter-Bold */
---font-weight-extra-bold: 800; /* Inter-Extra-Bold */
-
-/* Font Sizes */
---font-size-xs: 0.75rem;       /* 12px - captionSmall */
---font-size-sm: 0.875rem;      /* 14px - bodySmall, captionLarge */
---font-size-base: 1rem;        /* 16px - bodyLarge, titleSmall */
---font-size-lg: 1.125rem;      /* 18px - titleMedium */
---font-size-xl: 1.25rem;       /* 20px - titleLarge */
---font-size-2xl: 1.5rem;       /* 24px */
---font-size-3xl: 1.875rem;     /* 30px */
-```
-
-### Tailwind CSS Custom Configuration
-```javascript
-// tailwind.config.js extensions
-module.exports = {
-  theme: {
-    extend: {
-      colors: {
-        // Brand Colors
-        'brand': {
-          primary: '#0F9347',    // APP_TONE_COLOR
-          secondary: '#2B3349',  // APP_TONE_NAV_COLOR
-        },
-        // Action Colors
-        'action': {
-          primary: '#008AE8',    // APP_BUTTON_BG_COLOR
-          success: '#10B981',
-          danger: '#EF4444',
-          warning: '#f19920',    // APP_ORANGE_COLOR
-        },
-        // Text Colors
-        'text': {
-          primary: '#323334',    // APP_TEXT_COLOR
-          secondary: '#6B7280',
-          tertiary: '#999999',   // APP_GRAY_COLOR
-          inverted: '#FFFFFF',
-        },
-        // Background Colors
-        'bg': {
-          primary: '#F5F5F5',    // APP_BG_COLOR
-          secondary: '#E7F0F5',  // APP_TONE_LINE_BG_COLOR
-          tertiary: '#F9FAFB',
-          card: '#FFFFFF',
-        },
-        // Navigation Colors
-        'nav': {
-          background: '#2B3349', // APP_TONE_NAV_COLOR
-          tint: '#FFFFFF',
-        },
-        // Border Colors
-        'border': {
-          DEFAULT: '#E5EAED',    // APP_BORDER_COLOR
-        },
-        // Status Colors
-        'status': {
-          active: '#0F9347',
-          inactive: '#999999',
-          pending: '#f19920',
-        },
-      },
-      fontFamily: {
-        'inter': ['Inter', 'sans-serif'],
-        'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-      },
-      fontWeight: {
-        'light': '300',      // Inter-Thin
-        'normal': '400',     // Inter-Regular
-        'medium': '500',     // Inter-Medium
-        'bold': '700',       // Inter-Bold
-        'extrabold': '800',  // Inter-Extra-Bold
-      },
-    },
+#### **TypeScript Configuration**
+```typescript
+// ✅ GOOD: Package tsconfig.json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
+  "include": ["src/**/*"]
+}
+
+// ❌ BAD: Duplicating full config
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "esnext",
+    // ... 20+ lines of duplicated config
+  }
 }
 ```
 
-## UI/UX Design Principles
-
-### Core Design Values
-When creating UI components, always prioritize:
-- **Clean**: Minimal, uncluttered design with proper spacing and hierarchy
-- **Modern**: Contemporary design patterns, smooth animations, and current trends
-- **Easy to Use**: Intuitive navigation, clear feedback, and accessible interactions
-
-### Design Guidelines
-
-#### Clean Design
-- Use consistent spacing with Tailwind's spacing scale (4px, 8px, 12px, 16px, 24px, 32px)
-- Implement proper visual hierarchy with typography scales
-- Use subtle shadows and borders for depth without clutter
-- Maintain adequate white space around elements
-- Group related elements logically
-- Use muted colors for secondary information
-
-#### Modern Design
-- Implement smooth transitions and micro-interactions
-- Use modern color palettes with proper contrast ratios
-- Apply rounded corners consistently (8px, 12px, 16px)
-- Use modern typography with proper line heights
-- Implement responsive design patterns
-- Use modern icon sets (Lucide Icons)
-- Apply glassmorphism or subtle gradients when appropriate
-
-#### Easy to Use
-- Provide clear visual feedback for all interactions
-- Use intuitive icons and labels
-- Implement progressive disclosure for complex features
-- Ensure keyboard navigation works properly
-- Provide loading states and error messages
-- Use consistent interaction patterns across the app
-- Implement proper focus management
-
-### Component Design Patterns
-
-#### Cards and Containers
-```jsx
-// Clean, modern card design with shadcn/ui components
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@rentalshop/ui';
-
-<Card className="shadow-lg hover:shadow-xl transition-shadow duration-200">
-  <CardHeader>
-    <div className="flex items-center justify-between">
-      <div>
-        <CardTitle className="text-lg font-bold text-text-primary">Card Title</CardTitle>
-        <CardDescription className="text-text-secondary">Card description</CardDescription>
-      </div>
-      <button className="text-text-tertiary hover:text-text-secondary transition-colors">
-        <MoreHorizontal className="w-5 h-5" />
-      </button>
-    </div>
-  </CardHeader>
-  <CardContent className="space-y-3">
-    {/* Content */}
-  </CardContent>
-  <CardFooter className="flex justify-between">
-    <Button variant="outline" size="sm">Cancel</Button>
-    <Button size="sm">Save</Button>
-  </CardFooter>
-</Card>
-```
-
-#### Buttons
-```jsx
-import { Button } from '@rentalshop/ui';
-
-// Primary button with brand colors
-<Button className="inline-flex items-center">
-  <Plus className="w-4 h-4 mr-2" />
-  Add Item
-</Button>
-
-// Secondary button
-<Button variant="outline">
-  Cancel
-</Button>
-
-// Success button
-<Button variant="success">
-  <CheckCircle className="w-4 h-4 mr-2" />
-  Save
-</Button>
-
-// Warning button
-<Button variant="warning">
-  <AlertTriangle className="w-4 h-4 mr-2" />
-  Warning Action
-</Button>
-
-// Destructive button
-<Button variant="destructive">
-  <Trash2 className="w-4 h-4 mr-2" />
-  Delete
-</Button>
-
-// Ghost button
-<Button variant="ghost">
-  <Settings className="w-4 h-4 mr-2" />
-  Settings
-</Button>
-
-// Link button
-<Button variant="link">
-  Learn More
-</Button>
-```
-
-#### Form Inputs
-```jsx
-import { Input } from '@rentalshop/ui';
-
-// Modern form input with brand colors
-<div className="space-y-2">
-  <label className="block text-sm font-medium text-text-primary">
-    Label
-  </label>
-  <Input
-    type="text"
-    placeholder="Enter value..."
-    className="w-full"
-  />
-</div>
-
-// Input with icon
-<div className="space-y-2">
-  <label className="block text-sm font-medium text-text-primary">
-    Email
-  </label>
-  <div className="relative">
-    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-    <Input
-      type="email"
-      placeholder="Enter your email"
-      className="pl-10"
-    />
-  </div>
-</div>
-
-// Input with validation
-<div className="space-y-2">
-  <label className="block text-sm font-medium text-text-primary">
-    Password
-  </label>
-  <div className="relative">
-    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-    <Input
-      type={showPassword ? 'text' : 'password'}
-      placeholder="Enter your password"
-      className="pl-10 pr-10"
-    />
-    <button
-      type="button"
-      onClick={() => setShowPassword(!showPassword)}
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
-    >
-      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-    </button>
-  </div>
-  {errors.password && (
-    <p className="text-sm text-action-danger">{errors.password.message}</p>
-  )}
-</div>
-```
-
-#### Search Components
-```jsx
-import { Input, Button } from '@rentalshop/ui';
-
-// Modern search with quick actions
-<div className="relative">
-  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-    <Search className="w-4 h-4 text-text-tertiary" />
-  </div>
-  <Input
-    type="text"
-    placeholder="Search..."
-    className="pl-10 pr-12"
-  />
-  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-      <Plus className="w-4 h-4" />
-    </Button>
-  </div>
-</div>
-
-// Search with filters
-<div className="space-y-4">
-  <div className="relative">
-    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-    <Input
-      type="text"
-      placeholder="Search products..."
-      className="pl-10"
-    />
-  </div>
-  <div className="flex gap-2">
-    <Button variant="outline" size="sm">All</Button>
-    <Button variant="outline" size="sm">Electronics</Button>
-    <Button variant="outline" size="sm">Tools</Button>
-    <Button variant="outline" size="sm">Sports</Button>
-  </div>
-</div>
-```
-
-### Layout Patterns
-
-#### Page Layout
-```jsx
-// Clean page structure with brand colors
-<div className="min-h-screen bg-bg-primary">
-  {/* Header */}
-  <header className="bg-bg-card shadow-sm border-b border-border">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between h-16">
-        {/* Header content */}
-      </div>
-    </div>
-  </header>
-
-  {/* Main content */}
-  <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div className="space-y-6">
-      {/* Page content */}
-    </div>
-  </main>
-</div>
-```
-
-#### Navigation
-```jsx
-import { Button } from '@rentalshop/ui';
-import { Home, Store, Users, Settings, LogOut, User } from 'lucide-react';
-
-// Top Navigation Bar
-<nav className="bg-nav-background text-nav-tint shadow-sm">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="flex items-center justify-between h-16">
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center">
-            <Store className="w-5 h-5 text-white" />
-          </div>
-        </div>
-        <div className="hidden md:block ml-10">
-          <div className="flex items-baseline space-x-4">
-            <a href="#" className="text-nav-tint hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium flex items-center">
-              <Home className="w-4 h-4 mr-2" />
-              Dashboard
-            </a>
-            <a href="#" className="text-nav-tint hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium flex items-center">
-              <Store className="w-4 h-4 mr-2" />
-              Products
-            </a>
-            <a href="#" className="text-nav-tint hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium flex items-center">
-              <Users className="w-4 h-4 mr-2" />
-              Customers
-            </a>
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="sm" className="text-nav-tint hover:text-gray-300">
-          <Settings className="w-4 h-4 mr-2" />
-          Settings
-        </Button>
-        <Button variant="ghost" size="sm" className="text-nav-tint hover:text-gray-300">
-          <User className="w-4 h-4 mr-2" />
-          Profile
-        </Button>
-        <Button variant="ghost" size="sm" className="text-nav-tint hover:text-gray-300">
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
-      </div>
-    </div>
-  </div>
-</nav>
-
-// Sidebar Navigation
-<div className="flex h-screen bg-bg-primary">
-  <div className="w-64 bg-nav-background text-nav-tint">
-    <div className="p-4">
-      <div className="flex items-center mb-8">
-        <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
-          <Store className="w-5 h-5 text-white" />
-        </div>
-        <h1 className="text-lg font-bold">Rental Shop</h1>
-      </div>
-      <nav className="space-y-2">
-        <a href="#" className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-secondary transition-colors">
-          <Home className="w-4 h-4 mr-3" />
-          Dashboard
-        </a>
-        <a href="#" className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-secondary transition-colors">
-          <Store className="w-4 h-4 mr-3" />
-          Products
-        </a>
-        <a href="#" className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-secondary transition-colors">
-          <Users className="w-4 h-4 mr-3" />
-          Customers
-        </a>
-        <a href="#" className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-secondary transition-colors">
-          <Settings className="w-4 h-4 mr-3" />
-          Settings
-        </a>
-      </nav>
-    </div>
-  </div>
-  <div className="flex-1 overflow-auto">
-    {/* Main content */}
-  </div>
-</div>
-```
-
-### Interactive Elements
-
-#### Loading States
-```jsx
-import { Button } from '@rentalshop/ui';
-
-// Clean loading spinner with brand colors
-<div className="flex items-center justify-center p-8">
-  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
-  <span className="ml-3 text-text-secondary">Loading...</span>
-</div>
-
-// Button with loading state
-<Button disabled>
-  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-  Loading...
-</Button>
-
-// Skeleton loading
-<div className="animate-pulse space-y-3">
-  <div className="h-4 bg-bg-secondary rounded w-3/4"></div>
-  <div className="h-4 bg-bg-secondary rounded w-1/2"></div>
-  <div className="h-4 bg-bg-secondary rounded w-5/6"></div>
-</div>
-
-// Card skeleton
-<Card>
-  <CardHeader>
-    <div className="animate-pulse">
-      <div className="h-6 bg-bg-secondary rounded w-1/3 mb-2"></div>
-      <div className="h-4 bg-bg-secondary rounded w-2/3"></div>
-    </div>
-  </CardHeader>
-  <CardContent>
-    <div className="animate-pulse space-y-3">
-      <div className="h-4 bg-bg-secondary rounded"></div>
-      <div className="h-4 bg-bg-secondary rounded w-5/6"></div>
-    </div>
-  </CardContent>
-</Card>
-```
-
-#### Notifications
-```jsx
-import { Card, CardContent } from '@rentalshop/ui';
-
-// Success notification with brand colors
-<Card className="border-green-200 bg-green-50">
-  <CardContent className="p-4">
-    <div className="flex items-center">
-      <CheckCircle className="w-5 h-5 text-action-success mr-3" />
-      <span className="text-green-800 font-medium">Success message</span>
-    </div>
-  </CardContent>
-</Card>
-
-// Error notification
-<Card className="border-red-200 bg-red-50">
-  <CardContent className="p-4">
-    <div className="flex items-center">
-      <AlertCircle className="w-5 h-5 text-action-danger mr-3" />
-      <span className="text-red-800 font-medium">Error message</span>
-    </div>
-  </CardContent>
-</Card>
-
-// Warning notification
-<Card className="border-orange-200 bg-orange-50">
-  <CardContent className="p-4">
-    <div className="flex items-center">
-      <AlertTriangle className="w-5 h-5 text-action-warning mr-3" />
-      <span className="text-orange-800 font-medium">Warning message</span>
-    </div>
-  </CardContent>
-</Card>
-
-// Info notification
-<Card className="border-blue-200 bg-blue-50">
-  <CardContent className="p-4">
-    <div className="flex items-center">
-      <Info className="w-5 h-5 text-action-primary mr-3" />
-      <span className="text-blue-800 font-medium">Information message</span>
-    </div>
-  </CardContent>
-</Card>
-
-// Dismissible notification
-<Card className="border-green-200 bg-green-50">
-  <CardContent className="p-4">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <CheckCircle className="w-5 h-5 text-action-success mr-3" />
-        <span className="text-green-800 font-medium">Success message</span>
-      </div>
-      <button className="text-green-600 hover:text-green-800">
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  </CardContent>
-</Card>
-```
-
-### Typography Guidelines
-
-#### Headings
-```jsx
-// Use Inter font family with appropriate weights
-<h1 className="text-3xl font-extrabold text-text-primary font-inter">Main Heading</h1>
-<h2 className="text-2xl font-bold text-text-primary font-inter">Section Heading</h2>
-<h3 className="text-xl font-bold text-text-primary font-inter">Subsection Heading</h3>
-<h4 className="text-lg font-bold text-text-primary font-inter">Card Heading</h4>
-```
-
-#### Body Text
-```jsx
-// Body text with proper hierarchy
-<p className="text-base font-normal text-text-primary font-inter">Regular body text</p>
-<p className="text-sm font-medium text-text-secondary font-inter">Medium weight text</p>
-<p className="text-xs font-normal text-text-tertiary font-inter">Small caption text</p>
-```
-
-### Accessibility Guidelines
-- Use semantic HTML elements
-- Provide proper ARIA labels
-- Ensure keyboard navigation
-- Maintain color contrast ratios (WCAG AA compliant)
-- Use focus indicators
-- Provide alternative text for images
-
-### Responsive Design
-- Mobile-first approach
-- Use Tailwind's responsive prefixes
-- Test on multiple screen sizes
-- Ensure touch targets are at least 44px
-- Optimize for different input methods
-
-#### Responsive Layout Patterns
+#### **Build Configuration**
 ```typescript
-import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
+// ✅ GOOD: Package tsup.config.ts
+import { createBaseConfig } from '../../tsup.config.base';
+export default createBaseConfig('src/index.ts', ['external-deps']);
 
-// Responsive Grid Layout
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-  <Card>
-    <CardHeader>
-      <CardTitle>Card 1</CardTitle>
-    </CardHeader>
-    <CardContent>
-      Content
-    </CardContent>
-  </Card>
-  {/* More cards */}
-</div>
-
-// Responsive Navigation
-<nav className="bg-nav-background text-nav-tint">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="flex items-center justify-between h-16">
-      {/* Logo */}
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <Store className="w-8 h-8 text-white" />
-        </div>
-        {/* Desktop Navigation */}
-        <div className="hidden md:block ml-10">
-          <div className="flex items-baseline space-x-4">
-            <a href="#" className="text-nav-tint hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium">
-              Dashboard
-            </a>
-            <a href="#" className="text-nav-tint hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium">
-              Products
-            </a>
-          </div>
-        </div>
-      </div>
-      {/* Mobile menu button */}
-      <div className="md:hidden">
-        <Button variant="ghost" size="sm">
-          <Menu className="w-6 h-6" />
-        </Button>
-      </div>
-    </div>
-  </div>
-</nav>
-
-// Responsive Form
-<div className="max-w-md mx-auto sm:max-w-lg lg:max-w-xl">
-  <Card>
-    <CardHeader>
-      <CardTitle>Form Title</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <form className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">First Name</label>
-            <Input placeholder="First name" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Last Name</label>
-            <Input placeholder="Last name" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Email</label>
-          <Input type="email" placeholder="Email" />
-        </div>
-        <Button type="submit" className="w-full sm:w-auto">
-          Submit
-        </Button>
-      </form>
-    </CardContent>
-  </Card>
-</div>
+// ❌ BAD: Duplicating full config
+export default defineConfig({
+  entry: ['src/index.ts'],
+  format: ['esm', 'cjs'],
+  dts: true,
+  // ... 15+ lines of duplicated config
+});
 ```
 
-#### Accessibility Patterns
+### **Code Organization Rules**
+
+#### **File Structure**
+```
+packages/
+├── ui/src/components/     # ✅ Shared UI components
+├── auth/src/              # ✅ Authentication logic
+├── database/src/          # ✅ Database utilities
+└── utils/src/             # ✅ Common utilities
+
+apps/
+├── client/app/            # ✅ Client-specific pages
+├── admin/app/             # ✅ Admin-specific pages
+└── api/app/api/           # ✅ API endpoints
+```
+
+#### **Import Patterns**
 ```typescript
+// ✅ GOOD: Import from shared packages
+import { Button, Card } from '@rentalshop/ui';
+import { loginUser } from '@rentalshop/auth';
+import { prisma } from '@rentalshop/database';
+import { formatDate } from '@rentalshop/utils';
+
+// ❌ BAD: Import from individual apps
+import { Button } from '../../../components/Button';
+```
+
+### **Component Development Rules**
+
+#### **Component Structure**
+```typescript
+// ✅ GOOD: Consistent component structure
+// packages/ui/src/components/button.tsx
+import React from 'react';
+import { cn } from '../lib/cn';
+import { buttonVariants } from './button.variants';
+import type { ButtonProps } from './button.types';
+
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, ...props }, ref) => {
+    return (
+      <button
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Button.displayName = 'Button';
+```
+
+#### **Component Usage**
+```typescript
+// ✅ GOOD: Use shared components
+// apps/client/app/login/page.tsx
 import { Button, Input, Card } from '@rentalshop/ui';
 
-// Accessible Form
-<form className="space-y-4" onSubmit={handleSubmit}>
-  <div className="space-y-2">
-    <label htmlFor="email" className="text-sm font-medium">
-      Email Address
-    </label>
-    <Input
-      id="email"
-      type="email"
-      placeholder="Enter your email"
-      aria-describedby="email-error"
-      aria-invalid={!!errors.email}
-    />
-    {errors.email && (
-      <p id="email-error" className="text-sm text-action-danger" role="alert">
-        {errors.email.message}
-      </p>
-    )}
-  </div>
-  
-  <Button type="submit" aria-describedby="submit-status">
-    Submit
-  </Button>
-  <div id="submit-status" className="sr-only" aria-live="polite">
-    Form submission status
-  </div>
-</form>
-
-// Accessible Button with Loading State
-<Button 
-  disabled={isLoading}
-  aria-describedby="loading-status"
-  onClick={handleClick}
->
-  {isLoading ? 'Loading...' : 'Save Changes'}
-</Button>
-<div id="loading-status" className="sr-only" aria-live="polite">
-  {isLoading ? 'Loading, please wait' : 'Ready'}
-</div>
-
-// Accessible Card with Proper Heading Structure
-<Card>
-  <CardHeader>
-    <CardTitle asChild>
-      <h2>Product Information</h2>
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    <div role="region" aria-labelledby="product-details">
-      <h3 id="product-details" className="sr-only">Product Details</h3>
-      {/* Content */}
-    </div>
-  </CardContent>
-</Card>
-```
-
-## Coding Standards
-
-### React Components
-- Use functional components with hooks
-- Prefer `useCallback` and `useMemo` for performance optimization
-- Use TypeScript interfaces for props and state
-- Follow the naming convention: `PascalCase` for components
-- Place components in appropriate directories under `src/components/` or `src/pages/`
-
-### Monorepo Structure
-```
-rentalshop-next-js/
-├── apps/
-│   ├── client/          # Client website for shop owners (port 3000)
-│   ├── admin/           # Admin panel for system administrators (port 3001)
-│   └── api/             # API for mobile apps (port 3002)
-├── packages/
-│   ├── ui/              # Shared UI components (shadcn/ui)
-│   ├── database/        # Prisma schema and database utilities
-│   ├── auth/            # Shared authentication logic
-│   └── utils/           # Shared utilities and helpers
-├── prisma/
-│   └── schema.prisma    # Database schema
-├── docs/
-│   └── swagger/         # Swagger UI documentation
-└── package.json         # Root package.json for monorepo
-```
-
-### App Structure (for each app)
-```
-apps/[app-name]/
-├── app/                 # Next.js 13+ app directory
-│   ├── (auth)/          # Authentication routes
-│   ├── (dashboard)/     # Dashboard routes
-│   ├── api/             # API routes
-│   ├── globals.css      # Global styles
-│   ├── layout.tsx       # Root layout
-│   └── page.tsx         # Home page
-├── components/          # App-specific components
-├── lib/                 # App-specific utilities
-├── hooks/               # Custom hooks
-└── types/               # TypeScript types
-```
-
-### API Integration
-- Use Next.js API routes in `app/api/` directory
-- Follow RESTful patterns: GET, POST, PUT, DELETE
-- Use Prisma for database operations
-- Handle errors gracefully with try-catch blocks
-- Use proper loading states for async operations
-- Implement proper validation with Zod schemas
-
-### State Management
-- Use React Context for global state when needed
-- Use local state (useState) for component-specific state
-- Use Zustand for complex state management if required
-- Use React Query/TanStack Query for server state
-- Follow modern React patterns with hooks
-
-### Styling Guidelines
-- Use Tailwind CSS classes for styling
-- Use shadcn/ui components as base components
-- Follow responsive design principles
-- Use consistent spacing and color schemes
-- Prefer utility classes over custom CSS
-- Use Lucide Icons for icons: `<IconName className="w-4 h-4" />`
-- Use CSS variables for brand colors
-
-### Icon Usage (Lucide Icons)
-- Install: `yarn add lucide-react`
-- Import icons: `import { IconName } from 'lucide-react'`
-- Use consistent sizing: `w-4 h-4` (16px), `w-5 h-5` (20px), `w-6 h-6` (24px)
-- Apply colors via Tailwind classes: `text-text-tertiary`, `text-action-primary`
-- Common icons: `Plus`, `Search`, `MoreHorizontal`, `CheckCircle`, `AlertCircle`, `Edit`, `Trash2`, `User`, `Settings`
-- Browse all icons at: https://lucide.dev/icons/
-
-### Form Handling
-- Use React Hook Form for form management
-- Use Zod for validation schemas
-- Follow the pattern:
-
-```typescript
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
-import { loginSchema, type LoginInput } from '@rentalshop/utils';
-
-const LoginForm = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
-  const onSubmit = async (data: LoginInput) => {
-    try {
-      // Handle form submission
-      console.log(data);
-    } catch (error) {
-      console.error('Form error:', error);
-    }
-  };
-
+export default function LoginPage() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Login</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              {...register('email')}
-            />
-            {errors.email && (
-              <p className="text-sm text-action-danger">{errors.email.message}</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Password</label>
-            <Input
-              type="password"
-              placeholder="Enter your password"
-              {...register('password')}
-            />
-            {errors.password && (
-              <p className="text-sm text-action-danger">{errors.password.message}</p>
-            )}
-          </div>
-          
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </form>
-      </CardContent>
+      <Input type="email" placeholder="Email" />
+      <Button variant="primary">Login</Button>
     </Card>
   );
-};
-```
-
-### Internationalization
-- Use Next.js built-in i18n or next-intl for internationalization
-- Wrap all user-facing text with translation functions
-- Maintain translation files in `locales/` directory
-- Default language is Vietnamese (vi)
-
-### Performance Optimization
-- Use `React.memo()` for expensive components
-- Implement proper dependency arrays in hooks
-- Use debouncing for search inputs (300-500ms)
-- Optimize re-renders with `useCallback` and `useMemo`
-
-### Error Handling
-- Use try-catch blocks for async operations
-- Display user-friendly error messages
-- Log errors to console for debugging
-- Use toast notifications for user feedback
-
-### Code Quality
-- Use meaningful variable and function names
-- Add JSDoc comments for complex functions
-- Keep functions small and focused
-- Use TypeScript for type safety
-- Follow ESLint and Prettier configurations
-
-## Specific Patterns
-
-### Search Components
-- Use AsyncSelect from react-select for searchable dropdowns
-- Implement debounced search (300ms delay)
-- Show loading states during API calls
-- Handle "no results" scenarios gracefully
-- Allow quick creation of new items when not found
-
-### Modal Components
-- Use Reactstrap Modal or custom modal implementations
-- Implement proper focus management
-- Handle escape key and backdrop clicks
-- Use z-index for proper layering
-
-### Table Components
-- Use the custom `TableContainer` component
-- Implement pagination for large datasets
-- Add sorting and filtering capabilities
-- Use proper loading states
-
-### API Helpers
-- Follow the pattern in `src/helpers/` directory
-- Use consistent parameter handling
-- Handle both string and object parameters
-- Return promises for async operations
-
-## Common Patterns
-
-### Component Template
-```typescript
-'use client'
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, MoreHorizontal, CheckCircle, AlertCircle, Edit, Trash2 } from 'lucide-react';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, CardFooter } from '@rentalshop/ui';
-
-interface ComponentProps {
-  prop1: string;
-  prop2: number;
 }
 
-const ComponentName: React.FC<ComponentProps> = ({ prop1, prop2 }) => {
-  const [state, setState] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const handleAction = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Implementation
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [dependencies]);
-
-  useEffect(() => {
-    // Side effects
-  }, [dependencies]);
-
+// ❌ BAD: Create app-specific components
+export default function LoginPage() {
   return (
-    <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Component Title</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Content */}
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline">Cancel</Button>
-          <Button onClick={handleAction} disabled={isLoading}>
-            {isLoading ? 'Loading...' : 'Save'}
-          </Button>
-        </CardFooter>
-      </Card>
+    <div className="card">
+      <input type="email" />
+      <button className="btn-primary">Login</button>
     </div>
   );
-};
-
-export default ComponentName;
+}
 ```
 
-### Common Component Patterns
+### **API Development Rules**
 
-#### Data Table Pattern
+#### **API Route Structure**
 ```typescript
-import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
-import { Search, Plus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+// ✅ GOOD: Consistent API structure
+// apps/api/app/api/auth/login/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { loginUser } from '@rentalshop/auth';
+import { validateLoginInput } from '@rentalshop/utils';
 
-const DataTable = () => {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Products</CardTitle>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-            <Input placeholder="Search products..." className="pl-10" />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Table content */}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-```
-
-#### Modal Pattern
-```typescript
-import { useState } from 'react';
-import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter } from '@rentalshop/ui';
-import { X } from 'lucide-react';
-
-const Modal = ({ isOpen, onClose, children }: { isOpen: boolean; onClose: () => void; children: React.ReactNode }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>Modal Title</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="w-4 h-4" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {children}
-        </CardContent>
-        <CardFooter className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button>Save</Button>
-        </CardFooter>
-      </Card>
-    </div>
-  );
-};
-```
-
-#### List Item Pattern
-```typescript
-import { Card, CardContent } from '@rentalshop/ui';
-import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
-
-const ListItem = ({ item }: { item: any }) => {
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <h3 className="font-medium text-text-primary">{item.name}</h3>
-            <p className="text-sm text-text-secondary">{item.description}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm">
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Trash2 className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-```
-
-### API Call Pattern
-```typescript
-const fetchData = async (params: FetchParams): Promise<Data> => {
+export async function POST(request: NextRequest) {
   try {
-    const response = await fetch(`/api/endpoint?${new URLSearchParams(params)}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch data');
-    }
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    throw error;
-  }
-};
-```
-
-### Database Pattern
-```typescript
-// Prisma query pattern
-const getData = async (id: string) => {
-  try {
-    const data = await prisma.model.findUnique({
-      where: { id },
-      include: { relation: true }
-    });
-    return data;
-  } catch (error) {
-    console.error('Database error:', error);
-    throw error;
-  }
-};
-
-// API route pattern
-export async function GET(request: Request) {
-  try {
-    const data = await getData();
-    return NextResponse.json(data);
+    const body = await request.json();
+    const validatedData = validateLoginInput(body);
+    const result = await loginUser(validatedData);
+    
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: error.message },
+      { status: 400 }
     );
   }
 }
 ```
 
-## Best Practices
+#### **Database Operations**
+```typescript
+// ✅ GOOD: Use shared database client
+// packages/auth/src/auth.ts
+import { prisma } from '@rentalshop/database';
 
-### Performance
-- Avoid unnecessary re-renders
-- Use proper key props for lists
-- Implement virtual scrolling for large lists
-- Optimize bundle size with code splitting
+export const loginUser = async (credentials: LoginCredentials) => {
+  const user = await prisma.user.findUnique({
+    where: { email: credentials.email }
+  });
+  // ... rest of logic
+};
 
-### Security
-- Validate all user inputs
-- Sanitize data before rendering
-- Use proper authentication headers
-- Handle sensitive data appropriately
+// ❌ BAD: Create separate database connections
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+```
 
-### Accessibility
-- Use semantic HTML elements
-- Add proper ARIA labels
-- Ensure keyboard navigation
-- Maintain color contrast ratios
+### **Type Safety Rules**
 
-### Testing
-- Write unit tests for utility functions
-- Test component behavior
-- Mock API calls in tests
-- Test error scenarios
+#### **Type Definitions**
+```typescript
+// ✅ GOOD: Centralized types
+// packages/database/src/types.ts
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+}
 
-## Debugging Guidelines
-- Use console.log for debugging (remove in production)
-- Check browser developer tools
-- Verify API responses
-- Test on different screen sizes
-- Check for memory leaks
+// ✅ GOOD: Import everywhere
+import type { User } from '@rentalshop/database';
 
-## Deployment Considerations
-- Optimize images and assets
-- Minify CSS and JavaScript
-- Use environment variables for configuration
-- Implement proper error boundaries
-- Add loading states for better UX
+// ❌ BAD: Redefine types
+interface User {
+  id: string;
+  email: string;
+  // ... duplicated definition
+}
+```
 
-## Common Issues and Solutions
+#### **Validation Schemas**
+```typescript
+// ✅ GOOD: Shared validation
+// packages/utils/src/validation.ts
+import { z } from 'zod';
 
-### Re-rendering Issues
-- Check dependency arrays in hooks
-- Use React.memo for expensive components
-- Avoid creating objects/arrays in render
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
 
-### API Issues
-- Verify endpoint URLs
-- Check request/response formats
-- Handle network errors gracefully
-- Implement retry logic for failed requests
+// ✅ GOOD: Use everywhere
+import { loginSchema } from '@rentalshop/utils';
 
-### Styling Issues
-- Use Tailwind's responsive prefixes
-- Check z-index values
-- Verify CSS specificity
-- Test on different browsers
+// ❌ BAD: Duplicate schemas
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+```
 
-## File Naming Conventions
-- Components: `PascalCase.jsx`
-- Utilities: `camelCase.js`
-- Constants: `UPPER_SNAKE_CASE.js`
-- Styles: `kebab-case.css` or `camelCase.module.css`
+### **Performance Rules**
 
-## Import Order
-1. React and related libraries
-2. Third-party libraries
-3. Internal components
-4. Utilities and helpers
-5. Styles
+#### **Bundle Optimization**
+```typescript
+// ✅ GOOD: External dependencies
+// packages/ui/tsup.config.ts
+export default createBaseConfig('src/index.tsx', [
+  'react',
+  'react-dom',
+  'lucide-react'
+]);
 
-## Comments and Documentation
-- Use JSDoc for function documentation
-- Add inline comments for complex logic
-- Document API endpoints and parameters
-- Keep README files updated
+// ✅ GOOD: Tree shaking
+// packages/ui/src/index.tsx
+export { Button } from './components/button';
+export { Card } from './components/card';
+// Only export what's needed
 
-## Git Commit Messages
-- Use conventional commit format
-- Be descriptive and concise
-- Reference issue numbers when applicable
-- Use present tense ("Add feature" not "Added feature")
+// ❌ BAD: Bundle everything
+export * from './components';
+```
 
-## Code Review Checklist
-- [ ] Follows coding standards
-- [ ] Includes proper error handling
-- [ ] Has appropriate loading states
-- [ ] Is responsive and accessible
+#### **Import Optimization**
+```typescript
+// ✅ GOOD: Specific imports
+import { Button } from '@rentalshop/ui';
+
+// ❌ BAD: Import everything
+import * as UI from '@rentalshop/ui';
+```
+
+### **Error Handling Rules**
+
+#### **Consistent Error Handling**
+```typescript
+// ✅ GOOD: Shared error class
+// packages/utils/src/errors.ts
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number = 500,
+    public code?: string
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
+}
+
+// ✅ GOOD: Use everywhere
+import { AppError } from '@rentalshop/utils';
+throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+
+// ❌ BAD: Inconsistent error handling
+throw new Error('User not found');
+return { error: 'User not found' };
+```
+
+### **Documentation Rules**
+
+#### **Code Documentation**
+```typescript
+// ✅ GOOD: JSDoc comments
+/**
+ * Authenticates a user with email and password
+ * @param credentials - User login credentials
+ * @returns Promise with user data and JWT token
+ * @throws {AppError} When credentials are invalid
+ */
+export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  // Implementation
+};
+
+// ❌ BAD: No documentation
+export const loginUser = async (credentials) => {
+  // Implementation
+};
+```
+
+### **Security Rules**
+
+#### **Input Validation**
+```typescript
+// ✅ GOOD: Validate all inputs
+import { loginSchema } from '@rentalshop/utils';
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const validatedData = loginSchema.parse(body);
+  // ... rest of logic
+}
+
+// ❌ BAD: No validation
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  // Use body directly without validation
+}
+```
+
+#### **Environment Variables**
+```bash
+# ✅ GOOD: Use consistent naming
+DATABASE_URL="postgresql://..."
+JWT_SECRET="your-secret"
+NEXTAUTH_SECRET="your-secret"
+
+# ❌ BAD: Inconsistent naming
+DB_URL="postgresql://..."
+SECRET_KEY="your-secret"
+AUTH_SECRET="your-secret"
+```
+
+### **Testing Rules**
+
+#### **Test Structure**
+```typescript
+// ✅ GOOD: Consistent test structure
+// packages/utils/src/__tests__/date.test.ts
+import { formatDate } from '../date';
+
+describe('formatDate', () => {
+  it('should format date correctly', () => {
+    const date = new Date('2024-01-01');
+    expect(formatDate(date)).toBe('01/01/2024');
+  });
+});
+
+// ❌ BAD: Inconsistent test structure
+test('formatDate works', () => {
+  // Test without proper structure
+});
+```
+
+### **Git Workflow Rules**
+
+#### **Commit Messages**
+```bash
+# ✅ GOOD: Conventional commits
+feat(ui): add new product card component
+fix(api): resolve authentication bug
+docs(readme): update installation instructions
+
+# ❌ BAD: Inconsistent commits
+added new component
+fixed bug
+updated docs
+```
+
+### **Maintenance Rules**
+
+#### **Dependency Management**
+```json
+// ✅ GOOD: Use workspace dependencies
+{
+  "dependencies": {
+    "@rentalshop/ui": "workspace:*",
+    "@rentalshop/auth": "workspace:*",
+    "@rentalshop/database": "workspace:*",
+    "@rentalshop/utils": "workspace:*"
+  }
+}
+
+// ❌ BAD: Use version numbers
+{
+  "dependencies": {
+    "@rentalshop/ui": "1.0.0",
+    "@rentalshop/auth": "1.0.0"
+  }
+}
+```
+
+### **Code Quality Rules**
+
+#### **Linting and Formatting**
+- ✅ Always run `yarn lint` before committing
+- ✅ Use Prettier for consistent formatting
+- ✅ Follow TypeScript strict mode
+- ❌ Don't disable linting rules without justification
+
+#### **Type Safety**
+- ✅ Use strict TypeScript configuration
+- ✅ Define proper types for all functions
+- ✅ Use type guards for runtime validation
+- ❌ Don't use `any` type without justification
+
+### **Review Checklist**
+
+Before submitting any code, ensure:
+
+- [ ] No duplicated configurations
+- [ ] Uses shared components and utilities
+- [ ] Follows consistent naming conventions
 - [ ] Includes proper TypeScript types
-- [ ] Has meaningful variable names
-- [ ] Includes necessary comments
-- [ ] Follows performance best practices
-- [ ] Follows clean, modern, easy-to-use design principles 
-- [ ] Uses brand colors and typography consistently
-- [ ] Support language default is Vietnamese
-- [ ] Should seperate into small class/ function to easy to tracking
+- [ ] Has appropriate error handling
+- [ ] Includes tests for new functionality
+- [ ] Updates documentation if needed
+- [ ] Follows security best practices
+- [ ] Optimized for performance
+- [ ] Follows DRY principles
+
+### **Remember**
+
+**ALWAYS prioritize:**
+1. **DRY (Don't Repeat Yourself)** - Never duplicate code or configurations
+2. **Shared Resources** - Use packages for reusable code
+3. **Consistency** - Follow established patterns
+4. **Type Safety** - Use TypeScript effectively
+5. **Performance** - Optimize bundles and imports
+6. **Security** - Validate inputs and handle errors properly
+
+**NEVER:**
+- Duplicate configurations across packages
+- Create app-specific versions of shared components
+- Redefine types that already exist
+- Skip input validation
+- Use `any` type without justification
+- Commit without running linting and tests

@@ -1,13 +1,7 @@
-import { defineConfig } from 'tsup';
+import { createBaseConfig } from '../../tsup.config.base';
 
-export default defineConfig({
-  entry: ['src/index.ts'],
-  format: ['esm', 'cjs'],
-  dts: false, // Disable DTS temporarily
-  external: [
-    '@rentalshop/database',
-    'bcryptjs',
-    'jsonwebtoken',
-    'next-auth'
-  ],
-}); 
+export default createBaseConfig('src/index.ts', [
+  'bcryptjs',
+  'jsonwebtoken', 
+  'next-auth'
+]); 

@@ -37,8 +37,8 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
       email: user.email,
       name: user.name,
       role: user.role,
-      phone: user.phone,
-      avatar: user.avatar,
+      phone: user.phone || undefined,
+      avatar: user.avatar || undefined,
     },
     token,
   };
@@ -77,8 +77,8 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
       email: user.email,
       name: user.name,
       role: user.role,
-      phone: user.phone,
-      avatar: user.avatar,
+      phone: user.phone || undefined,
+      avatar: user.avatar || undefined,
     },
     token,
   };
