@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Brand Colors */
+  --brand-primary: #0F9347;
+  --brand-secondary: #2B3349;
+  
+  /* Action Colors */
+  --action-primary: #008AE8;
+  --action-success: #10B981;
+  --action-danger: #EF4444;
+  --action-warning: #f19920;
+  
+  /* Text Colors */
+  --text-primary: #323334;
+  --text-secondary: #6B7280;
+  --text-tertiary: #999999;
+  --text-inverted: #FFFFFF;
+  
+  /* Background Colors */
+  --background-primary: #F5F5F5;
+  --background-secondary: #E7F0F5;
+  --background-tertiary: #F9FAFB;
+  --background-card: #FFFFFF;
+  
+  /* Navigation Colors */
+  --nav-background: #2B3349;
+  --nav-tint: #FFFFFF;
+  
+  /* Border Colors */
+  --border-color: #E5EAED;
+  
+  /* Status Colors */
+  --status-active: #0F9347;
+  --status-inactive: #999999;
+  --status-pending: #f19920;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  color: var(--text-primary);
+  background: var(--background-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Custom utility classes */
+.bg-brand-primary { background-color: var(--brand-primary); }
+.bg-brand-secondary { background-color: var(--brand-secondary); }
+.bg-action-primary { background-color: var(--action-primary); }
+.bg-action-success { background-color: var(--action-success); }
+.bg-action-danger { background-color: var(--action-danger); }
+.bg-action-warning { background-color: var(--action-warning); }
+
+.text-brand-primary { color: var(--brand-primary); }
+.text-brand-secondary { color: var(--brand-secondary); }
+.text-action-primary { color: var(--action-primary); }
+.text-action-success { color: var(--action-success); }
+.text-action-danger { color: var(--action-danger); }
+.text-action-warning { color: var(--action-warning); }
+
+.bg-bg-primary { background-color: var(--background-primary); }
+.bg-bg-secondary { background-color: var(--background-secondary); }
+.bg-bg-tertiary { background-color: var(--background-tertiary); }
+.bg-bg-card { background-color: var(--background-card); }
+
+.text-text-primary { color: var(--text-primary); }
+.text-text-secondary { color: var(--text-secondary); }
+.text-text-tertiary { color: var(--text-tertiary); }
+.text-text-inverted { color: var(--text-inverted); }
+
+.bg-nav-background { background-color: var(--nav-background); }
+.text-nav-tint { color: var(--nav-tint); }
+
+.border-border { border-color: var(--border-color); } 
