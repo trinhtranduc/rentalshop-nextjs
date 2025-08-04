@@ -102,6 +102,46 @@ Once started, your applications will be available at:
 
 After seeding the database, you can use these test accounts:
 
+### **🌐 Application Access**
+
+| Application | URL | Purpose |
+|-------------|-----|---------|
+| **Client App** | http://localhost:3000 | Customer-facing rental interface |
+| **Admin App** | http://localhost:3001 | Super admin dashboard |
+| **API Server** | http://localhost:3002 | Backend API & Documentation |
+
+### **👥 User Accounts**
+
+#### **Super Admin** (Full System Access)
+- **Email**: `admin@rentalshop.com`
+- **Password**: `admin123`
+- **Role**: `ADMIN` (Super Admin)
+- **Access**: All applications, full system control
+
+#### **Merchant** (Business Owner)
+- **Email**: `merchant@rentalshop.com`
+- **Password**: `merchant123`
+- **Role**: `MERCHANT`
+- **Access**: Business management, outlet creation
+
+#### **Outlet Manager** (Outlet Management)
+- **Email**: `manager@rentalshop.com`
+- **Password**: `manager123`
+- **Role**: `OUTLET_STAFF` (Manager)
+- **Access**: Specific outlet management
+
+#### **Outlet Staff** (Daily Operations)
+- **Email**: `staff@rentalshop.com`
+- **Password**: `staff123`
+- **Role**: `OUTLET_STAFF` (Staff)
+- **Access**: Daily operations, customer service
+
+#### **Client** (Customer)
+- **Email**: `client@rentalshop.com`
+- **Password**: `client123`
+- **Role**: `CLIENT`
+- **Access**: Product browsing, rentals, account management
+
 ## 📊 Database Management
 
 ### View Database Contents
@@ -130,21 +170,6 @@ yarn db:push
 yarn db:seed
 ```
 
-### **Client App (http://localhost:3000)**
-- **Email**: `client@rentalshop.com`
-- **Password**: `client123`
-- **Role**: Customer
-
-### **Admin App (http://localhost:3001)**
-- **Email**: `admin@rentalshop.com`
-- **Password**: `admin123`
-- **Role**: Super Admin
-
-### **Additional Test Accounts**
-- **Merchant**: `merchant@rentalshop.com` / `merchant123`
-- **Outlet Manager**: `manager@rentalshop.com` / `manager123`
-- **Outlet Staff**: `staff@rentalshop.com` / `staff123`
-
 ## 📁 Project Structure
 
 ```
@@ -168,10 +193,11 @@ rentalshop-nextjs/
 │   ├── database/        # Database client and utilities
 │   └── utils/           # Common utilities
 ├── prisma/
-│   ├── schema.prisma    # Production schema (PostgreSQL)
-│   └── schema.local.prisma # Local schema (SQLite)
+│   ├── schema.prisma    # Database schema (SQLite for local, PostgreSQL for production)
+│   └── migrations/      # Database migrations
 └── scripts/
-    └── setup-env.sh     # Environment setup script
+    ├── setup-database.sh # Database setup script
+    └── view-database.js  # Database viewer script
 ```
 
 ## 🛠️ Available Commands
@@ -210,17 +236,14 @@ cd packages/utils && yarn build
 
 ```bash
 # Local environment (SQLite)
-yarn db:local:generate  # Generate Prisma client
-yarn db:local:push      # Push schema to database
-yarn db:local:seed      # Seed with sample data
-
-# Development/Production (PostgreSQL)
-yarn db:dev:generate    # Generate Prisma client
-yarn db:dev:push        # Push schema to database
-yarn db:dev:seed        # Seed with sample data
+yarn db:generate        # Generate Prisma client
+yarn db:push           # Push schema to database
+yarn db:seed           # Seed with sample data
 
 # Database management
-yarn db:studio          # Open Prisma Studio
+yarn db:studio         # Open Prisma Studio
+yarn db:view           # View database summary
+yarn db:reset          # Reset and reseed database
 ```
 
 ### Utility Commands
@@ -255,10 +278,13 @@ yarn install
 #### 3. Database Connection Issues
 ```bash
 # Reset local database
-rm -f dev.db
-yarn db:local:generate
-yarn db:local:push
-yarn db:local:seed
+rm -f prisma/dev.db
+yarn db:generate
+yarn db:push
+yarn db:seed
+
+# Or use the setup script
+./scripts/setup-database.sh
 ```
 
 #### 4. Build Errors
@@ -434,8 +460,21 @@ For support and questions:
 - Utils Package: Common utilities
 
 ✅ **Database seeded with sample data**
-- Test accounts available for all user types
-- Sample data for testing functionality
+- **5 Users**: Admin, Merchant, Manager, Staff, Client
+- **8 Categories**: Electronics, Tools, Party Supplies, etc.
+- **1 Merchant**: Sample Rental Company
+- **1 Outlet**: Main Outlet
+- **1 Admin**: Super Admin
+- **2 Staff**: Manager + Staff
+
+✅ **Authentication working**
+- JWT-based authentication
+- Role-based access control
+- Test accounts ready for all user types
+
+✅ **API Documentation available**
+- SwaggerUI: http://localhost:3002/docs
+- OpenAPI spec: http://localhost:3002/api/docs
 
 ## 🚀 Next Steps
 
