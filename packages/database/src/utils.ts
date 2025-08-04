@@ -287,9 +287,8 @@ export const findPasswordResetToken = async (token: string) => {
 };
 
 export const invalidatePasswordResetToken = async (token: string) => {
-  return prisma.passwordResetToken.update({
+  return prisma.passwordResetToken.delete({
     where: { token },
-    data: { used: true },
   });
 };
 
@@ -325,9 +324,8 @@ export const findEmailVerificationToken = async (token: string) => {
 };
 
 export const invalidateEmailVerificationToken = async (token: string) => {
-  return prisma.emailVerificationToken.update({
+  return prisma.emailVerificationToken.delete({
     where: { token },
-    data: { used: true },
   });
 };
 
@@ -360,16 +358,14 @@ export const findSession = async (token: string) => {
 };
 
 export const invalidateSession = async (token: string) => {
-  return prisma.session.update({
+  return prisma.session.delete({
     where: { token },
-    data: { isActive: false },
   });
 };
 
 export const invalidateAllUserSessions = async (userId: string) => {
-  return prisma.session.updateMany({
+  return prisma.session.deleteMany({
     where: { userId },
-    data: { isActive: false },
   });
 };
 
