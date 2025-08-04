@@ -2,14 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProductGrid, Product } from '@rentalshop/ui';
-import { Input } from '@rentalshop/ui';
-import { productsApi } from '../../lib/api/client';
-import { useAuth } from '../../lib/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { Input, Button } from '@rentalshop/ui';
 
-export default function ClientDashboard() {
-  const router = useRouter();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+interface ProductsResponse {
+  success: boolean;
+  data: {
+    products: Product[];
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+  error?: string;
+}
+
+export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,28 +26,24 @@ export default function ClientDashboard() {
   // Fetch products
   const fetchProducts = async (filters?: { search?: string; categoryId?: string }) => {
     try {
-      console.log('Fetching products with filters:', filters);
       setLoading(true);
       setError(null);
 
-      const response = await productsApi.getProducts({
-        search: filters?.search,
-        categoryId: filters?.categoryId,
-      });
+      const params = new URLSearchParams();
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.categoryId) params.append('categoryId', filters.categoryId);
 
-      console.log('Products API response:', response);
+      const response = await fetch(`/api/products?${params.toString()}`);
+      const data: ProductsResponse = await response.json();
 
-      if (response.success) {
-        setProducts(response.data.products);
+      if (data.success) {
+        setProducts(data.data.products);
         
         // Extract unique categories for filter
-        const uniqueCategories = Array.from(new Set(response.data.products.map(p => p.category.name)));
+        const uniqueCategories = Array.from(new Set(data.data.products.map(p => p.category.name)));
         setCategories(uniqueCategories);
-        
-        console.log('Products loaded successfully:', response.data.products.length);
       } else {
-        setError(response.error || 'Failed to load products');
-        console.error('Products API error:', response.error);
+        setError(data.error || 'Failed to load products');
       }
     } catch (err) {
       setError('Failed to load products. Please try again.');
@@ -70,41 +72,45 @@ export default function ClientDashboard() {
     window.location.href = `/dashboard/products/${productId}`;
   };
 
-  const handleRentProduct = (productId: string) => {
-    // Navigate to rental page
-    window.location.href = `/dashboard/rent/${productId}`;
+  const handleEditProduct = (productId: string) => {
+    // Navigate to edit product page
+    window.location.href = `/dashboard/products/${productId}/edit`;
   };
 
-  // Check authentication and load products on mount
-  useEffect(() => {
-    console.log('Dashboard mounted, checking authentication...');
-    console.log('Auth loading:', authLoading);
-    console.log('Is authenticated:', isAuthenticated);
-    console.log('User:', user);
-    
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        console.log('❌ User not authenticated, redirecting to login...');
-        router.push('/login');
-        return;
-      }
-      
-      console.log('✅ User is authenticated, fetching products...');
-      fetchProducts();
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      return;
     }
-  }, [authLoading, isAuthenticated, user, router]);
 
-  // Show loading state while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove product from state
+        setProducts(products.filter(p => p.id !== productId));
+        alert('Product deleted successfully');
+      } else {
+        alert(data.error || 'Failed to delete product');
+      }
+    } catch (err) {
+      alert('Failed to delete product. Please try again.');
+      console.error('Error deleting product:', err);
+    }
+  };
+
+  const handleAddProduct = () => {
+    // Navigate to add product page
+    window.location.href = '/dashboard/products/new';
+  };
+
+  // Load products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,17 +119,18 @@ export default function ClientDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Available Products</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Product Management</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Browse and rent from our wide selection of products
+                Manage all products in the rental system
               </p>
             </div>
-            <div className="mt-4 sm:mt-0">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-500">
-                  {products.length} products available
-                </span>
-              </div>
+            <div className="mt-4 sm:mt-0 flex items-center space-x-4">
+              <span className="text-sm text-gray-500">
+                {products.length} products total
+              </span>
+              <Button onClick={handleAddProduct} className="bg-blue-600 hover:bg-blue-700">
+                Add Product
+              </Button>
             </div>
           </div>
         </div>
@@ -180,9 +187,10 @@ export default function ClientDashboard() {
           products={products}
           loading={loading}
           error={error || undefined}
-          variant="client"
+          variant="admin"
           onView={handleViewProduct}
-          onRent={handleRentProduct}
+          onEdit={handleEditProduct}
+          onDelete={handleDeleteProduct}
         />
       </div>
     </div>

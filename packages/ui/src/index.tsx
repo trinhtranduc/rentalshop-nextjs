@@ -13,6 +13,11 @@ export { Navigation } from './components/shared/navigation';
 export { Sidebar } from './components/shared/sidebar';
 export { Layout } from './components/shared/layout';
 
+// Product Components
+export { ProductCard } from './components/products/ProductCard';
+export { ProductGrid } from './components/products/ProductGrid';
+export type { Product } from './components/products/ProductGrid';
+
 // Utility Functions
 export { cn } from './lib/cn';
 export { buttonVariants } from './components/button'; 

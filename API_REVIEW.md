@@ -1,325 +1,372 @@
-# 🚀 API Review & Environment Setup
+# Rental Shop API Documentation
 
-## 📋 Current API Structure
+## Product CRUD API
 
-### **✅ Existing API Endpoints**
+### Overview
+The Product API provides comprehensive CRUD operations for managing rental products. Each product has stock management, rental pricing, and availability tracking.
 
-#### **Authentication (`/api/auth/`)**
-- `POST /api/auth/login` - User authentication
-- `POST /api/auth/register` - User registration  
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/forget-password` - Password reset request
-- `POST /api/auth/reset-password` - Password reset
-
-#### **Health Check (`/api/health/`)**
-- `GET /api/health/database` - Database connectivity check
-
-#### **Documentation (`/api/docs/`)**
-- `GET /api/docs` - OpenAPI 3.0 specification
-- `GET /docs` - SwaggerUI interface
-
-#### **Planned Endpoints**
-- `GET /api/users` - User management
-- `GET /api/products` - Product management
-- `GET /api/orders` - Order management
-- `GET /api/customers` - Customer management
-- `GET /api/shops` - Shop management
-- `GET /api/payments` - Payment processing
-- `GET /api/notifications` - Notification system
-
-## 🌍 Environment Configuration
-
-### **1. Local Development Environment**
-
-#### **Ports & URLs**
-```bash
-# Local Development
-CLIENT_URL_LOCAL="http://localhost:3000"    # Client App
-ADMIN_URL_LOCAL="http://localhost:3001"     # Admin App  
-API_URL_LOCAL="http://localhost:3002"       # API Server
-MOBILE_URL_LOCAL="http://localhost:3003"    # Mobile App (Future)
+### Base URL
+```
+/api/products
 ```
 
-#### **Database**
-```bash
-DATABASE_URL_LOCAL="file:./dev.db"          # SQLite for easy setup
-```
-
-#### **Features**
-```bash
-ENABLE_EMAIL_VERIFICATION_LOCAL="false"     # No email verification needed
-ENABLE_ANALYTICS_LOCAL="false"              # No analytics in local
-LOG_LEVEL_LOCAL="debug"                     # Detailed logging
-```
-
-### **2. Development Environment**
-
-#### **Ports & URLs**
-```bash
-# Development Environment
-CLIENT_URL_DEV="https://dev.rentalshop.com"
-ADMIN_URL_DEV="https://admin.dev.rentalshop.com"
-API_URL_DEV="https://api.dev.rentalshop.com"
-MOBILE_URL_DEV="https://mobile.dev.rentalshop.com"
-```
-
-#### **Database**
-```bash
-DATABASE_URL_DEV="postgresql://username:password@localhost:5432/rentalshop_dev"
-```
-
-#### **Features**
-```bash
-ENABLE_EMAIL_VERIFICATION_DEV="true"        # Email verification enabled
-ENABLE_ANALYTICS_DEV="true"                 # Analytics enabled
-LOG_LEVEL_DEV="info"                        # Info level logging
-```
-
-### **3. Production Environment**
-
-#### **Ports & URLs**
-```bash
-# Production Environment
-CLIENT_URL_PROD="https://rentalshop.com"
-ADMIN_URL_PROD="https://admin.rentalshop.com"
-API_URL_PROD="https://api.rentalshop.com"
-MOBILE_URL_PROD="https://mobile.rentalshop.com"
-```
-
-#### **Database**
-```bash
-DATABASE_URL_PROD="postgresql://username:password@your-prod-host:5432/rentalshop_prod"
-```
-
-#### **Features**
-```bash
-ENABLE_EMAIL_VERIFICATION_PROD="true"       # Email verification required
-ENABLE_ANALYTICS_PROD="true"                # Full analytics
-LOG_LEVEL_PROD="warn"                       # Warning level logging
-RATE_LIMIT_MAX_PROD="100"                   # Strict rate limiting
-```
-
-## 📱 Mobile API Requirements
-
-### **Mobile-Specific Endpoints**
-
-#### **Authentication**
+### Product Model
 ```typescript
-// Mobile Authentication
-POST /api/mobile/auth/login
-POST /api/mobile/auth/register
-POST /api/mobile/auth/refresh-token
-POST /api/mobile/auth/logout
+interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  stock: number;           // Total available stock
+  renting: number;         // Currently being rented
+  available: number;       // Available for rent (stock - renting)
+  rentPrice: number;       // Daily rental price
+  salePrice?: number;      // Optional sale price
+  deposit: number;         // Security deposit
+  images: string[];        // Array of image URLs
+  categoryId: string;
+  outletId: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 ```
 
-#### **Push Notifications**
-```typescript
-// Push Notification Management
-POST /api/mobile/notifications/register-device
-DELETE /api/mobile/notifications/unregister-device
-GET /api/mobile/notifications/history
-POST /api/mobile/notifications/send-test
-```
+## API Endpoints
 
-#### **Offline Support**
-```typescript
-// Offline Data Sync
-GET /api/mobile/sync/check
-POST /api/mobile/sync/upload
-GET /api/mobile/sync/download
-```
+### 1. Get All Products
+**GET** `/api/products`
 
-#### **Mobile-Specific Features**
-```typescript
-// Location Services
-GET /api/mobile/location/nearby-shops
-POST /api/mobile/location/update-user-location
+**Query Parameters:**
+- `search` (string): Search by product name or description
+- `outletId` (string): Filter by outlet
+- `categoryId` (string): Filter by category
+- `isAvailable` (boolean): Filter by availability
+- `minPrice` (number): Minimum rent price
+- `maxPrice` (number): Maximum rent price
+- `page` (number): Page number (default: 1)
+- `limit` (number): Items per page (default: 10)
+- `sortBy` (string): Sort field (name, rentPrice, createdAt, stock)
+- `sortOrder` (string): Sort direction (asc, desc)
 
-// Camera/File Upload
-POST /api/mobile/upload/photo
-POST /api/mobile/upload/document
-
-// Payment Integration
-POST /api/mobile/payments/process
-GET /api/mobile/payments/history
-```
-
-## 🔧 Environment-Specific Configurations
-
-### **Local Development**
-```typescript
-// apps/api/lib/config/local.ts
-export const localConfig = {
-  database: {
-    url: process.env.DATABASE_URL_LOCAL,
-    type: 'sqlite'
-  },
-  auth: {
-    jwtSecret: process.env.JWT_SECRET_LOCAL,
-    expiresIn: '7d'
-  },
-  cors: {
-    origins: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002']
-  },
-  features: {
-    emailVerification: false,
-    analytics: false,
-    rateLimiting: false
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "products": [
+      {
+        "id": "clx123",
+        "name": "iPhone 15 Pro",
+        "description": "Latest iPhone for rent",
+        "stock": 10,
+        "renting": 2,
+        "available": 8,
+        "rentPrice": 25.00,
+        "salePrice": 999.00,
+        "deposit": 200.00,
+        "images": ["https://example.com/iphone1.jpg"],
+        "category": { "name": "Electronics" },
+        "outlet": { "name": "Downtown Rental Center" }
+      }
+    ],
+    "total": 13,
+    "page": 1,
+    "totalPages": 2
   }
-};
+}
 ```
 
-### **Development Environment**
-```typescript
-// apps/api/lib/config/development.ts
-export const developmentConfig = {
-  database: {
-    url: process.env.DATABASE_URL_DEV,
-    type: 'postgresql'
-  },
-  auth: {
-    jwtSecret: process.env.JWT_SECRET_DEV,
-    expiresIn: '7d'
-  },
-  cors: {
-    origins: ['https://dev.rentalshop.com', 'https://admin.dev.rentalshop.com']
-  },
-  features: {
-    emailVerification: true,
-    analytics: true,
-    rateLimiting: true
+### 2. Get Product by ID
+**GET** `/api/products/{id}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx123",
+    "name": "iPhone 15 Pro",
+    "description": "Latest iPhone for rent",
+    "stock": 10,
+    "renting": 2,
+    "available": 8,
+    "rentPrice": 25.00,
+    "salePrice": 999.00,
+    "deposit": 200.00,
+    "images": ["https://example.com/iphone1.jpg"],
+    "category": { "name": "Electronics" },
+    "outlet": { "name": "Downtown Rental Center" }
   }
-};
+}
 ```
 
-### **Production Environment**
-```typescript
-// apps/api/lib/config/production.ts
-export const productionConfig = {
-  database: {
-    url: process.env.DATABASE_URL_PROD,
-    type: 'postgresql'
+### 3. Create Product
+**POST** `/api/products`
+
+**Request Body:**
+```json
+{
+  "name": "New Product",
+  "description": "Product description",
+  "stock": 5,
+  "rentPrice": 20.00,
+  "salePrice": 200.00,
+  "deposit": 50.00,
+  "categoryId": "cat123",
+  "outletId": "outlet123",
+  "images": ["https://example.com/image1.jpg"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx124",
+    "name": "New Product",
+    "stock": 5,
+    "renting": 0,
+    "available": 5,
+    "rentPrice": 20.00,
+    "salePrice": 200.00,
+    "deposit": 50.00,
+    "images": ["https://example.com/image1.jpg"],
+    "category": { "name": "Electronics" },
+    "outlet": { "name": "Downtown Rental Center" }
   },
-  auth: {
-    jwtSecret: process.env.JWT_SECRET_PROD,
-    expiresIn: '1d'
+  "message": "Product created successfully"
+}
+```
+
+### 4. Update Product
+**PUT** `/api/products/{id}`
+
+**Request Body:**
+```json
+{
+  "name": "Updated Product Name",
+  "stock": 8,
+  "rentPrice": 25.00
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx123",
+    "name": "Updated Product Name",
+    "stock": 8,
+    "renting": 2,
+    "available": 6,
+    "rentPrice": 25.00
   },
-  cors: {
-    origins: ['https://rentalshop.com', 'https://admin.rentalshop.com']
+  "message": "Product updated successfully"
+}
+```
+
+### 5. Delete Product
+**DELETE** `/api/products/{id}`
+
+**Query Parameters:**
+- `hard` (boolean): Set to `true` for permanent deletion (default: soft delete)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx123",
+    "isActive": false
   },
-  features: {
-    emailVerification: true,
-    analytics: true,
-    rateLimiting: true
+  "message": "Product deleted successfully"
+}
+```
+
+### 6. Update Product Stock
+**PATCH** `/api/products/{id}`
+
+**Request Body:**
+```json
+{
+  "quantity": 5
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx123",
+    "stock": 15,
+    "available": 13
+  },
+  "message": "Product stock updated successfully"
+}
+```
+
+### 7. Check Product Availability
+**GET** `/api/products/{id}/availability`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "productId": "clx123",
+    "isAvailable": true
   }
-};
+}
 ```
 
-## 🚀 Implementation Plan
+## Mobile API
 
-### **Phase 1: Environment Setup**
-1. ✅ Create environment-specific config files
-2. ✅ Set up database configurations
-3. ✅ Configure CORS for each environment
-4. ✅ Set up authentication secrets
+### Mobile Products Endpoint
+**GET** `/api/mobile/products`
 
-### **Phase 2: API Endpoints**
-1. ✅ Authentication endpoints (COMPLETED)
-2. 🔄 User management endpoints
-3. 🔄 Product management endpoints
-4. 🔄 Order management endpoints
-5. 🔄 Payment processing endpoints
+Optimized for mobile apps with smaller batch sizes and simplified data structure.
 
-### **Phase 3: Mobile API**
-1. 🔄 Mobile-specific authentication
-2. 🔄 Push notification system
-3. 🔄 Offline sync capabilities
-4. 🔄 Location services
-5. 🔄 Mobile file upload
-
-### **Phase 4: Environment Testing**
-1. 🔄 Local environment testing
-2. 🔄 Development environment testing
-3. 🔄 Production environment testing
-4. 🔄 Mobile API testing
-
-## 🔐 Security Considerations
-
-### **Environment-Specific Security**
-```typescript
-// Local: Relaxed security for development
-CORS_ORIGIN_LOCAL="http://localhost:3000,http://localhost:3001,http://localhost:3002"
-RATE_LIMIT_MAX_LOCAL="1000"
-
-// Development: Moderate security
-CORS_ORIGIN_DEV="https://dev.rentalshop.com,https://admin.dev.rentalshop.com"
-RATE_LIMIT_MAX_DEV="500"
-
-// Production: Strict security
-CORS_ORIGIN_PROD="https://rentalshop.com,https://admin.rentalshop.com"
-RATE_LIMIT_MAX_PROD="100"
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "products": [
+      {
+        "id": "clx123",
+        "name": "iPhone 15 Pro",
+        "description": "Latest iPhone for rent",
+        "price": 25.00,
+        "deposit": 200.00,
+        "images": ["https://example.com/iphone1.jpg"],
+        "isAvailable": true,
+        "category": { "name": "Electronics" },
+        "outlet": {
+          "name": "Downtown Rental Center",
+          "address": "123 Main Street"
+        }
+      }
+    ],
+    "total": 13,
+    "page": 1,
+    "totalPages": 2,
+    "hasMore": true
+  }
+}
 ```
 
-### **API Security Features**
-- ✅ JWT-based authentication
-- ✅ Input validation with Zod
-- ✅ CORS configuration
-- 🔄 Rate limiting
-- 🔄 API key authentication for mobile
-- 🔄 Request/response encryption
+## Error Responses
 
-## 📊 Monitoring & Analytics
-
-### **Environment-Specific Monitoring**
-```typescript
-// Local: Console logging
-LOG_LEVEL_LOCAL="debug"
-LOG_FORMAT_LOCAL="pretty"
-
-// Development: Structured logging
-LOG_LEVEL_DEV="info"
-LOG_FORMAT_DEV="json"
-
-// Production: Minimal logging
-LOG_LEVEL_PROD="warn"
-LOG_FORMAT_PROD="json"
+### Validation Error
+```json
+{
+  "success": false,
+  "error": "Validation error",
+  "details": "Name is required"
+}
 ```
 
-### **API Analytics**
-- Request/response times
-- Error rates
-- User activity
-- API usage patterns
-- Performance metrics
+### Not Found Error
+```json
+{
+  "success": false,
+  "error": "Product not found"
+}
+```
 
-## 🎯 Next Steps
+### Server Error
+```json
+{
+  "success": false,
+  "error": "Internal server error",
+  "details": "Database connection failed"
+}
+```
 
-1. **Complete Environment Setup**
-   - Create environment-specific config files
-   - Set up database connections
-   - Configure authentication
+## Frontend Integration
 
-2. **Implement Missing Endpoints**
-   - User management
-   - Product management
-   - Order management
-   - Payment processing
+### Client App Dashboard
+- **URL**: `/dashboard`
+- **Features**: Product browsing, search, filtering, rental actions
+- **Components**: `ProductGrid`, `ProductCard` with client variant
 
-3. **Mobile API Development**
-   - Mobile authentication
-   - Push notifications
-   - Offline sync
-   - Location services
+### Admin App Dashboard
+- **URL**: `/dashboard`
+- **Features**: Product management, CRUD operations, bulk actions
+- **Components**: `ProductGrid`, `ProductCard` with admin variant
 
-4. **Testing & Documentation**
-   - Environment testing
-   - API documentation
-   - Mobile SDK development
+### Mobile App
+- **API**: `/api/mobile/products`
+- **Features**: Optimized for mobile, infinite scroll, simplified UI
+- **Components**: `ProductGrid`, `ProductCard` with mobile variant
 
-## 📝 Notes
+## Database Schema
 
-- All environments use the same API structure
-- Mobile API has additional endpoints for mobile-specific features
-- Environment-specific configurations ensure proper security and performance
-- SwaggerUI documentation is available for all environments
-- Rate limiting and security features scale with environment requirements 
+### Product Table
+```sql
+CREATE TABLE products (
+  id TEXT PRIMARY KEY,
+  outletId TEXT NOT NULL,
+  categoryId TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  stock INTEGER DEFAULT 0,
+  renting INTEGER DEFAULT 0,
+  available INTEGER DEFAULT 0,
+  rentPrice REAL NOT NULL,
+  salePrice REAL,
+  deposit REAL DEFAULT 0,
+  images TEXT NOT NULL,
+  isActive BOOLEAN DEFAULT true,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME NOT NULL,
+  FOREIGN KEY (outletId) REFERENCES outlets(id),
+  FOREIGN KEY (categoryId) REFERENCES categories(id)
+);
+```
+
+## Seed Data
+
+The database includes comprehensive seed data with:
+- **6 Categories**: Electronics, Tools, Party Equipment, Sports Equipment, Furniture, Vehicles
+- **3 Outlets**: Downtown Rental Center, Westside Equipment, Party Palace
+- **13 Products**: Various items across all categories with realistic pricing
+- **Sample Users**: Client, Admin, Merchant accounts
+
+### Sample Products
+1. iPhone 15 Pro - $25/day
+2. MacBook Pro 16" - $50/day
+3. DJ Equipment Set - $150/day
+4. Power Drill Set - $15/day
+5. Wedding Tent - $200/day
+6. Mountain Bike - $30/day
+7. Office Furniture Set - $40/day
+
+## Best Practices
+
+### DRY Principles
+- ✅ Shared database operations in `@rentalshop/database`
+- ✅ Reusable UI components in `@rentalshop/ui`
+- ✅ Centralized validation in `@rentalshop/utils`
+- ✅ Consistent error handling across all endpoints
+
+### Performance
+- ✅ Pagination for large datasets
+- ✅ Optimized queries with proper indexing
+- ✅ Mobile-specific endpoints with smaller payloads
+- ✅ Image optimization and lazy loading
+
+### Security
+- ✅ Input validation with Zod schemas
+- ✅ SQL injection prevention with Prisma
+- ✅ Proper error handling without data leakage
+- ✅ Authentication and authorization (to be implemented)
+
+### Type Safety
+- ✅ Full TypeScript coverage
+- ✅ Shared type definitions
+- ✅ Runtime validation
+- ✅ Compile-time error checking 
