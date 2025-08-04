@@ -164,12 +164,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const openPrivacyPolicy = () => {
     const urlString = "https://rentalshop.org/privacy-policy/";
-    window.open(urlString, "_blank");
+    if (typeof window !== 'undefined') {
+      window.open(urlString, "_blank");
+    }
   };
 
   const openTermsOfService = () => {
     const urlString = "https://rentalshop.org/terms-of-service";
-    window.open(urlString, "_blank");
+    if (typeof window !== 'undefined') {
+      window.open(urlString, "_blank");
+    }
   };
 
   return (

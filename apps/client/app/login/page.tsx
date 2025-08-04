@@ -14,18 +14,35 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
       
-      // TODO: Replace with your actual login API call
-      console.log('Login data:', data);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await response.json();
       
-      // Handle success
-      console.log('Login successful!');
+      if (!response.ok) {
+        throw new Error(result.message || 'Login failed');
+      }
+      
+      // Store token in localStorage or secure storage
+      if (result.data?.token) {
+        localStorage.setItem('authToken', result.data.token);
+        localStorage.setItem('user', JSON.stringify(result.data.user));
+      }
+      
+      console.log('Login successful:', result);
       router.push('/dashboard');
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Login failed:', error);
-      setError('Invalid email or password');
+      setError(error.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

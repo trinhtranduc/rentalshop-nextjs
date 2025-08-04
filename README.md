@@ -1,178 +1,42 @@
-# Rental Shop Next.js Monorepo
+# 🏪 Rental Shop Next.js Monorepo
 
-A modern rental shop management system built with Next.js, TypeScript, and Tailwind CSS using a monorepo structure.
+A comprehensive rental shop management system built with Next.js, featuring a multi-tenant architecture with Super Admin → Merchant → Outlet → Staff hierarchy.
 
-## 🏗️ Project Structure
+## 🏗️ Architecture
 
 ```
-rentalshop-nextjs/
-├── apps/
-│   ├── client/                    # Client website for shop owners (port 3000)
-│   │   ├── app/
-│   │   │   ├── (auth)/
-│   │   │   │   ├── login/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   └── register/
-│   │   │   │       └── page.tsx
-│   │   │   ├── (dashboard)/
-│   │   │   │   ├── dashboard/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── products/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── customers/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── orders/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── settings/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   └── profile/
-│   │   │   │       └── page.tsx
-│   │   │   ├── api/
-│   │   │   ├── globals.css
-│   │   │   ├── layout.tsx
-│   │   │   └── page.tsx
-│   │   ├── components/
-│   │   │   ├── layout/
-│   │   │   ├── auth/
-│   │   │   ├── dashboard/
-│   │   │   ├── products/
-│   │   │   ├── customers/
-│   │   │   ├── orders/
-│   │   │   ├── settings/
-│   │   │   └── shared/
-│   │   ├── lib/
-│   │   │   ├── auth/
-│   │   │   ├── api/
-│   │   │   └── utils/
-│   │   ├── hooks/
-│   │   ├── types/
-│   │   ├── next.config.js
-│   │   ├── tailwind.config.js
-│   │   └── package.json
-│   ├── admin/                     # Admin panel for system administrators (port 3001)
-│   │   ├── app/
-│   │   │   ├── (auth)/
-│   │   │   │   └── login/
-│   │   │   │       └── page.tsx
-│   │   │   ├── (dashboard)/
-│   │   │   │   ├── dashboard/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── users/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── shops/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── products/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── orders/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── settings/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   └── profile/
-│   │   │   │       └── page.tsx
-│   │   │   ├── globals.css
-│   │   │   ├── layout.tsx
-│   │   │   └── page.tsx
-│   │   ├── components/
-│   │   │   ├── layout/
-│   │   │   ├── auth/
-│   │   │   ├── dashboard/
-│   │   │   ├── users/
-│   │   │   ├── shops/
-│   │   │   ├── products/
-│   │   │   ├── orders/
-│   │   │   ├── settings/
-│   │   │   └── shared/
-│   │   ├── lib/
-│   │   │   ├── auth/
-│   │   │   ├── api/
-│   │   │   └── utils/
-│   │   ├── hooks/
-│   │   ├── types/
-│   │   └── package.json
-│   └── api/                       # API for mobile apps (port 3002)
-│       ├── app/
-│       │   ├── api/
-│       │   │   ├── auth/
-│       │   │   │   ├── login/
-│       │   │   │   │   └── route.ts
-│       │   │   │   └── register/
-│       │   │   │       └── route.ts
-│       │   │   ├── users/
-│       │   │   ├── products/
-│       │   │   ├── orders/
-│       │   │   └── docs/
-│       │   │       └── page.tsx
-│       │   ├── globals.css
-│       │   ├── layout.tsx
-│       │   └── page.tsx
-│       ├── components/
-│       ├── lib/
-│       └── package.json
-├── packages/
-│   ├── ui/                        # Shared UI components (shadcn/ui)
-│   │   ├── src/
-│   │   │   ├── components/
-│   │   │   │   ├── button.tsx
-│   │   │   │   ├── card.tsx
-│   │   │   │   ├── input.tsx
-│   │   │   │   └── shared/
-│   │   │   │       ├── navigation.tsx
-│   │   │   │       ├── sidebar.tsx
-│   │   │   │       └── layout.tsx
-│   │   │   ├── lib/
-│   │   │   │   ├── cn.ts
-│   │   │   │   └── utils.ts
-│   │   │   └── index.tsx
-│   │   ├── tsconfig.json
-│   │   ├── tsup.config.ts
-│   │   └── package.json
-│   ├── database/                  # Prisma schema and database utilities
-│   │   ├── src/
-│   │   │   ├── client.ts
-│   │   │   ├── types.ts
-│   │   │   └── index.ts
-│   │   ├── tsconfig.json
-│   │   ├── tsup.config.ts
-│   │   └── package.json
-│   ├── auth/                      # Shared authentication logic
-│   │   ├── src/
-│   │   │   ├── auth.ts
-│   │   │   ├── jwt.ts
-│   │   │   ├── password.ts
-│   │   │   ├── types.ts
-│   │   │   └── index.ts
-│   │   ├── tsconfig.json
-│   │   ├── tsup.config.ts
-│   │   └── package.json
-│   └── utils/                     # Shared utilities and helpers
-│       ├── src/
-│       │   ├── common.ts
-│       │   ├── date.ts
-│       │   ├── validation.ts
-│       │   └── index.ts
-│       ├── tsconfig.json
-│       ├── tsup.config.ts
-│       └── package.json
-├── prisma/
-│   └── schema.prisma              # Database schema
-├── docs/
-│   └── swagger/                   # Swagger UI documentation
-├── tsconfig.base.json             # Shared TypeScript configuration
-├── tsup.config.base.ts            # Shared build configuration
-├── package.json                   # Root package.json for monorepo
-├── turbo.json                     # Turborepo configuration
-├── .gitignore
-└── README.md
+Super Admin (System Admin)
+├── Manages entire system
+├── Can create/manage merchants
+└── Has full access to all data
+
+Merchants (Business Owners)
+├── Each merchant has 1 owner account
+├── Can have multiple outlets
+├── Manages their business operations
+└── Can create outlet managers and staff
+
+Outlets (Physical Locations)
+├── Each outlet belongs to 1 merchant
+├── Has outlet manager and staff
+├── Contains products for rental
+└── Handles local operations
+
+Outlet Staff
+├── Outlet Manager: Manages specific outlet
+└── Outlet Staff: Handles daily operations
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Node.js 18+ 
-- Yarn 1.22+
-- PostgreSQL 14+
 
-### Installation
+- **Node.js** 18.0.0 or higher
+- **Yarn** package manager
+- **Git**
+
+### Step 1: Clone and Setup
+
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -180,658 +44,369 @@ cd rentalshop-nextjs
 
 # Install dependencies
 yarn install
+```
 
-# Set up environment variables
-cp env.example .env
+### Step 2: Environment Configuration
 
-# Set up database
+```bash
+# Copy environment template
+cp env.example .env.local
+
+# Edit environment variables (optional for local development)
+# The default local environment uses SQLite and doesn't require external services
+```
+
+### Step 3: Database Setup (Local Development)
+
+```bash
+# One-command database setup (recommended)
+./scripts/setup-database.sh
+
+# Or manually:
+# Generate Prisma client
+yarn db:generate
+
+# Push schema to SQLite database
 yarn db:push
 
-# Start development servers
-yarn dev
+# Seed with sample data
+yarn db:seed
 ```
 
-### Available Scripts
+### Step 4: Start Development Server
+
 ```bash
-# Development
-yarn dev                    # Start all apps in development mode
-yarn workspace @rentalshop/client dev    # Start client app only
-yarn workspace @rentalshop/admin dev     # Start admin app only
-yarn workspace @rentalshop/api dev       # Start API app only
+# Start all applications (recommended)
+yarn dev:all
 
-# Build
-yarn build                  # Build all packages and apps
-yarn workspace @rentalshop/ui build      # Build UI package only
+# Or start individual apps:
+# Client app only
+cd apps/client && yarn dev
 
-# Database
-yarn db:generate           # Generate Prisma client
-yarn db:push               # Push schema to database
-yarn db:migrate            # Run migrations
-yarn db:studio             # Open Prisma Studio
+# Admin app only  
+cd apps/admin && yarn dev
 
-# Linting and Formatting
-yarn lint                  # Lint all packages
-yarn format                # Format code with Prettier
-
-# Documentation
-yarn swagger               # Generate API documentation
+# API app only
+cd apps/api && yarn dev
 ```
 
-## 🛠️ Technology Stack
+## 🌐 Application URLs
 
-### Frontend
-- **Next.js 14+** - React framework with App Router
-- **TypeScript** - Type-safe JavaScript
-- **Tailwind CSS** - Utility-first CSS framework
-- **shadcn/ui** - Re-usable UI components
-- **Lucide React** - Icon library
+Once started, your applications will be available at:
 
-### Backend
-- **Next.js API Routes** - Server-side API endpoints
-- **Prisma ORM** - Database toolkit
-- **PostgreSQL** - Primary database
-- **NextAuth.js** - Authentication solution
+- **Client App (Shop Owner Portal)**: http://localhost:3000
+- **Admin App (Admin Panel)**: http://localhost:3001
+- **API Server**: http://localhost:3002
 
-### Development Tools
-- **Turborepo** - Monorepo build system
-- **Yarn Workspaces** - Package management
-- **ESLint** - Code linting
-- **Prettier** - Code formatting
-- **tsup** - TypeScript bundler
+## 🔐 Default Login Accounts
 
-### Testing & Documentation
-- **Swagger UI** - API documentation
-- **Jest** - Testing framework
-- **React Testing Library** - Component testing
+After seeding the database, you can use these test accounts:
 
-## 🎯 DRY Principles & Best Practices
+## 📊 Database Management
 
-### **DRY (Don't Repeat Yourself) Implementation**
+### View Database Contents
 
-#### **1. Shared Configuration Files**
-```typescript
-// ✅ GOOD: Use shared base configurations
-// tsconfig.base.json - Shared TypeScript config
-// tsup.config.base.ts - Shared build config
-
-// packages/*/tsconfig.json - Extend base config
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src"
-  }
-}
-
-// packages/*/tsup.config.ts - Use base config
-import { createBaseConfig } from '../../tsup.config.base';
-export default createBaseConfig('src/index.ts', ['external-deps']);
-```
-
-#### **2. Shared UI Components**
-```typescript
-// ✅ GOOD: Create reusable components in packages/ui
-// packages/ui/src/components/button.tsx
-export const Button = ({ variant, size, children, ...props }) => {
-  return (
-    <button className={cn(buttonVariants({ variant, size }))} {...props}>
-      {children}
-    </button>
-  );
-};
-
-// ✅ GOOD: Use across all apps
-// apps/client/app/login/page.tsx
-import { Button } from '@rentalshop/ui';
-```
-
-#### **3. Shared Utilities**
-```typescript
-// ✅ GOOD: Centralize common functions
-// packages/utils/src/date.ts
-export const formatDate = (date: Date): string => {
-  return new Intl.DateTimeFormat('vi-VN').format(date);
-};
-
-// ✅ GOOD: Use everywhere
-import { formatDate } from '@rentalshop/utils';
-```
-
-#### **4. Shared Types**
-```typescript
-// ✅ GOOD: Define types once, use everywhere
-// packages/database/src/types.ts
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-}
-
-// ✅ GOOD: Import in all packages
-import type { User } from '@rentalshop/database';
-```
-
-### **Configuration Best Practices**
-
-#### **1. Monorepo Structure**
 ```bash
-# ✅ GOOD: Consistent package structure
-packages/
-├── ui/           # UI components
-├── auth/         # Authentication
-├── database/     # Database utilities
-└── utils/        # Common utilities
+# Open Prisma Studio (visual interface)
+yarn db:studio
 
-# ✅ GOOD: Consistent app structure
-apps/
-├── client/       # Customer-facing app
-├── admin/        # Admin panel
-└── api/          # API server
+# Or use the command line viewer
+yarn db:view
 ```
 
-#### **2. Build Configuration**
-```typescript
-// ✅ GOOD: Shared build config
-// tsup.config.base.ts
-export const createBaseConfig = (entry: string, external: string[] = []) => 
-  defineConfig({
-    entry: [entry],
-    format: ['esm', 'cjs'],
-    dts: true,
-    external: ['@rentalshop/*', ...external],
-    clean: true,
-    sourcemap: true,
-  });
+### Database Commands
 
-// ✅ GOOD: Package-specific config
-// packages/auth/tsup.config.ts
-export default createBaseConfig('src/index.ts', [
-  'bcryptjs',
-  'jsonwebtoken'
-]);
-```
-
-#### **3. TypeScript Configuration**
-```json
-// ✅ GOOD: Base TypeScript config
-// tsconfig.base.json
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "declaration": true,
-    "sourceMap": true
-  }
-}
-
-// ✅ GOOD: Package extends base
-// packages/*/tsconfig.json
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src"
-  }
-}
-```
-
-### **Code Organization Best Practices**
-
-#### **1. Component Structure**
-```typescript
-// ✅ GOOD: Consistent component structure
-// packages/ui/src/components/button.tsx
-import React from 'react';
-import { cn } from '../lib/cn';
-import { buttonVariants } from './button.variants';
-import type { ButtonProps } from './button.types';
-
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
-    return (
-      <button
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-
-Button.displayName = 'Button';
-```
-
-#### **2. API Route Structure**
-```typescript
-// ✅ GOOD: Consistent API structure
-// apps/api/app/api/auth/login/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { loginUser } from '@rentalshop/auth';
-import { validateLoginInput } from '@rentalshop/utils';
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const validatedData = validateLoginInput(body);
-    const result = await loginUser(validatedData);
-    
-    return NextResponse.json(result);
-  } catch (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 400 }
-    );
-  }
-}
-```
-
-#### **3. Database Operations**
-```typescript
-// ✅ GOOD: Centralized database operations
-// packages/database/src/client.ts
-import { PrismaClient } from '@prisma/client';
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
-
-// ✅ GOOD: Use everywhere
-import { prisma } from '@rentalshop/database';
-```
-
-### **Development Best Practices**
-
-#### **1. Environment Variables**
 ```bash
-# ✅ GOOD: Use consistent naming
-DATABASE_URL="postgresql://..."
-JWT_SECRET="your-secret"
-NEXTAUTH_SECRET="your-secret"
-NEXTAUTH_URL="http://localhost:3000"
+# Reset and reseed database
+yarn db:reset
 
-# ✅ GOOD: Separate by environment
-.env.local          # Local development
-.env.production     # Production
-.env.example        # Template
+# Generate Prisma client
+yarn db:generate
+
+# Push schema changes
+yarn db:push
+
+# Seed database
+yarn db:seed
 ```
 
-#### **2. Package Dependencies**
-```json
-// ✅ GOOD: Use workspace dependencies
-{
-  "dependencies": {
-    "@rentalshop/ui": "workspace:*",
-    "@rentalshop/auth": "workspace:*",
-    "@rentalshop/database": "workspace:*",
-    "@rentalshop/utils": "workspace:*"
-  }
-}
+### **Client App (http://localhost:3000)**
+- **Email**: `client@rentalshop.com`
+- **Password**: `client123`
+- **Role**: Customer
+
+### **Admin App (http://localhost:3001)**
+- **Email**: `admin@rentalshop.com`
+- **Password**: `admin123`
+- **Role**: Super Admin
+
+### **Additional Test Accounts**
+- **Merchant**: `merchant@rentalshop.com` / `merchant123`
+- **Outlet Manager**: `manager@rentalshop.com` / `manager123`
+- **Outlet Staff**: `staff@rentalshop.com` / `staff123`
+
+## 📁 Project Structure
+
+```
+rentalshop-nextjs/
+├── apps/
+│   ├── client/          # Customer-facing app (Port 3000)
+│   │   ├── app/         # Next.js 14 App Router
+│   │   ├── components/  # Client-specific components
+│   │   └── lib/         # Client utilities
+│   ├── admin/           # Admin dashboard (Port 3001)
+│   │   ├── app/         # Next.js 14 App Router
+│   │   ├── components/  # Admin-specific components
+│   │   └── lib/         # Admin utilities
+│   └── api/             # API server (Port 3002)
+│       ├── app/         # Next.js 14 App Router
+│       ├── lib/         # API utilities
+│       └── middleware/  # API middleware
+├── packages/
+│   ├── ui/              # Shared UI components
+│   ├── auth/            # Authentication utilities
+│   ├── database/        # Database client and utilities
+│   └── utils/           # Common utilities
+├── prisma/
+│   ├── schema.prisma    # Production schema (PostgreSQL)
+│   └── schema.local.prisma # Local schema (SQLite)
+└── scripts/
+    └── setup-env.sh     # Environment setup script
 ```
 
-#### **3. Scripts Organization**
-```json
-// ✅ GOOD: Consistent script naming
-{
-  "scripts": {
-    "dev": "next dev",
-    "build": "tsup",
-    "lint": "eslint src/**/*.ts*",
-    "clean": "rm -rf dist node_modules"
-  }
-}
-```
+## 🛠️ Available Commands
 
-### **Performance Best Practices**
+### Development Commands
 
-#### **1. Bundle Optimization**
-```typescript
-// ✅ GOOD: External dependencies
-// tsup.config.ts
-export default defineConfig({
-  external: ['react', 'react-dom', '@rentalshop/*'],
-  // Prevents bundling of large dependencies
-});
-
-// ✅ GOOD: Tree shaking
-// packages/ui/src/index.tsx
-export { Button } from './components/button';
-export { Card } from './components/card';
-// Only exports what's needed
-```
-
-#### **2. Type Safety**
-```typescript
-// ✅ GOOD: Strict TypeScript
-// tsconfig.base.json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "exactOptionalPropertyTypes": true
-  }
-}
-```
-
-#### **3. Error Handling**
-```typescript
-// ✅ GOOD: Consistent error handling
-// packages/utils/src/errors.ts
-export class AppError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 500,
-    public code?: string
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
-
-// ✅ GOOD: Use everywhere
-throw new AppError('User not found', 404, 'USER_NOT_FOUND');
-```
-
-### **Testing Best Practices**
-
-#### **1. Test Structure**
-```typescript
-// ✅ GOOD: Consistent test structure
-// packages/utils/src/__tests__/date.test.ts
-import { formatDate } from '../date';
-
-describe('formatDate', () => {
-  it('should format date correctly', () => {
-    const date = new Date('2024-01-01');
-    expect(formatDate(date)).toBe('01/01/2024');
-  });
-});
-```
-
-#### **2. Component Testing**
-```typescript
-// ✅ GOOD: Test shared components
-// packages/ui/src/components/__tests__/button.test.tsx
-import { render, screen } from '@testing-library/react';
-import { Button } from '../button';
-
-describe('Button', () => {
-  it('should render correctly', () => {
-    render(<Button>Click me</Button>);
-    expect(screen.getByRole('button')).toBeInTheDocument();
-  });
-});
-```
-
-### **Documentation Best Practices**
-
-#### **1. README Structure**
-```markdown
-# ✅ GOOD: Comprehensive README
-## 🏗️ Project Structure
-## 🚀 Quick Start
-## 🛠️ Technology Stack
-## 🎯 DRY Principles & Best Practices
-## 📚 API Documentation
-## 🚨 Troubleshooting
-## 🤝 Contributing
-```
-
-#### **2. Code Documentation**
-```typescript
-// ✅ GOOD: JSDoc comments
-/**
- * Authenticates a user with email and password
- * @param credentials - User login credentials
- * @returns Promise with user data and JWT token
- * @throws {AppError} When credentials are invalid
- */
-export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  // Implementation
-};
-```
-
-### **Security Best Practices**
-
-#### **1. Environment Variables**
 ```bash
-# ✅ GOOD: Never commit secrets
-.env.example          # Template with placeholder values
-.env.local           # Local secrets (gitignored)
+# Start all applications
+yarn dev:all
+
+# Start with specific environment
+yarn dev:local        # Local environment (SQLite)
+yarn dev:development  # Development environment (PostgreSQL)
+yarn dev:production   # Production environment (PostgreSQL)
+
+# Start individual apps
+cd apps/client && yarn dev    # Client app only
+cd apps/admin && yarn dev     # Admin app only
+cd apps/api && yarn dev       # API app only
 ```
 
-#### **2. Input Validation**
-```typescript
-// ✅ GOOD: Validate all inputs
-import { z } from 'zod';
+### Build Commands
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-});
-
-export const validateLoginInput = (data: unknown) => {
-  return loginSchema.parse(data);
-};
-```
-
-#### **3. Authentication**
-```typescript
-// ✅ GOOD: Centralized auth logic
-// packages/auth/src/auth.ts
-export const loginUser = async (credentials: LoginCredentials) => {
-  // Validate input
-  // Hash password
-  // Generate JWT
-  // Return user data
-};
-```
-
-### **Maintenance Best Practices**
-
-#### **1. Dependency Management**
 ```bash
-# ✅ GOOD: Regular updates
-yarn upgrade-interactive --latest
+# Build all packages and apps
+yarn build
 
-# ✅ GOOD: Check for vulnerabilities
-yarn audit
+# Build individual packages
+cd packages/ui && yarn build
+cd packages/auth && yarn build
+cd packages/database && yarn build
+cd packages/utils && yarn build
 ```
 
-#### **2. Code Quality**
+### Database Commands
+
 ```bash
-# ✅ GOOD: Automated checks
-yarn lint          # ESLint
-yarn format        # Prettier
-yarn type-check    # TypeScript
+# Local environment (SQLite)
+yarn db:local:generate  # Generate Prisma client
+yarn db:local:push      # Push schema to database
+yarn db:local:seed      # Seed with sample data
+
+# Development/Production (PostgreSQL)
+yarn db:dev:generate    # Generate Prisma client
+yarn db:dev:push        # Push schema to database
+yarn db:dev:seed        # Seed with sample data
+
+# Database management
+yarn db:studio          # Open Prisma Studio
 ```
 
-#### **3. Git Workflow**
+### Utility Commands
+
 ```bash
-# ✅ GOOD: Conventional commits
-feat(ui): add new product card component
-fix(api): resolve authentication bug
-docs(readme): update installation instructions
+yarn lint               # Run ESLint
+yarn format             # Format code with Prettier
+yarn clean              # Clean build artifacts
 ```
 
-## 📚 API Documentation
-
-### Authentication Endpoints
-
-#### POST /api/auth/login
-Authenticate a user with email and password.
-
-**Request Body:**
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-**Response:**
-```json
-{
-  "user": {
-    "id": "user-id",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "role": "CLIENT"
-  },
-  "token": "jwt-token"
-}
-```
-
-#### POST /api/auth/register
-Register a new user.
-
-**Request Body:**
-```json
-{
-  "email": "newuser@example.com",
-  "password": "password123",
-  "name": "Jane Doe",
-  "phone": "+1234567890"
-}
-```
-
-### Product Endpoints
-
-#### GET /api/products
-Get all products with pagination.
-
-**Query Parameters:**
-- `page` (number): Page number (default: 1)
-- `limit` (number): Items per page (default: 10)
-- `search` (string): Search term
-- `category` (string): Filter by category
-
-#### POST /api/products
-Create a new product.
-
-**Request Body:**
-```json
-{
-  "name": "Product Name",
-  "description": "Product description",
-  "price": 99.99,
-  "categoryId": "category-id",
-  "images": ["image-url-1", "image-url-2"]
-}
-```
-
-### Order Endpoints
-
-#### GET /api/orders
-Get all orders for the authenticated user.
-
-#### POST /api/orders
-Create a new rental order.
-
-**Request Body:**
-```json
-{
-  "productId": "product-id",
-  "startDate": "2024-01-01",
-  "endDate": "2024-01-07",
-  "quantity": 1
-}
-```
-
-## 🚨 Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-#### Build Errors
+#### 1. Port Already in Use
 ```bash
-# Clear all caches and reinstall
+# If you get "EADDRINUSE" error, kill existing processes
+lsof -ti:3000 | xargs kill -9  # Kill process on port 3000
+lsof -ti:3001 | xargs kill -9  # Kill process on port 3001
+lsof -ti:3002 | xargs kill -9  # Kill process on port 3002
+```
+
+#### 2. Dependencies Not Found
+```bash
+# Clean install dependencies
 rm -rf node_modules
-rm -rf .next
-rm -rf dist
+rm -rf apps/*/node_modules
+rm -rf packages/*/node_modules
 yarn install
+```
+
+#### 3. Database Connection Issues
+```bash
+# Reset local database
+rm -f dev.db
+yarn db:local:generate
+yarn db:local:push
+yarn db:local:seed
+```
+
+#### 4. Build Errors
+```bash
+# Clean and rebuild
+yarn clean
 yarn build
 ```
 
-#### Database Connection Issues
-```bash
-# Check database connection
-yarn db:studio
+### MetaMask Integration
 
-# Reset database (WARNING: This will delete all data)
-yarn db:push --force-reset
+If you see MetaMask connection errors:
+
+1. **Install MetaMask Extension**:
+   - Go to [metamask.io](https://metamask.io)
+   - Install the browser extension
+   - Create or import a wallet
+
+2. **Configure MetaMask**:
+   - Add test networks if needed
+   - Ensure MetaMask is unlocked
+   - Grant permission to the website
+
+3. **Alternative**: The MetaMask integration is optional for basic functionality
+
+## 🔐 Authentication & Authorization
+
+### User Roles
+
+1. **CLIENT**: Customers who rent items
+2. **MERCHANT**: Business owners with multiple outlets
+3. **OUTLET_STAFF**: Outlet managers and staff
+4. **ADMIN**: System administrators
+
+### Admin Levels
+
+1. **STAFF**: Basic admin access
+2. **MANAGER**: Enhanced admin access
+3. **SUPER_ADMIN**: Full system access
+
+## 📱 Applications Overview
+
+### Client App (`http://localhost:3000`)
+- **Purpose**: Customer-facing rental interface
+- **Features**:
+  - Product browsing and rental
+  - User account management
+  - Payment processing
+  - Order tracking
+- **Target Users**: End customers
+
+### Admin App (`http://localhost:3001`)
+- **Purpose**: Super admin dashboard
+- **Features**:
+  - Merchant management
+  - System-wide analytics
+  - User management
+  - System settings
+- **Target Users**: System administrators
+
+### API App (`http://localhost:3002`)
+- **Purpose**: Backend API server
+- **Features**:
+  - RESTful API endpoints
+  - Authentication services
+  - Database operations
+  - File upload handling
+- **Target Users**: Frontend applications
+
+## 🗄️ Database Configuration
+
+### Local Development (SQLite)
+- **Database File**: `./dev.db`
+- **No external dependencies required**
+- **Perfect for development and testing**
+
+### Production (PostgreSQL)
+- **Requires PostgreSQL database**
+- **Configure connection string in environment variables**
+- **Supports advanced features and scalability**
+
+## 🔄 Environment Types
+
+### Local Environment (`NODE_ENV=local`)
+- ✅ Uses SQLite database
+- ✅ Console email logging
+- ✅ Local file storage
+- ✅ Debug logging
+- ✅ No email verification required
+- ✅ **Recommended for development**
+
+### Development Environment (`NODE_ENV=development`)
+- Uses PostgreSQL database
+- Resend email service
+- Cloudinary file storage
+- Info logging
+- Email verification enabled
+
+### Production Environment (`NODE_ENV=production`)
+- Uses PostgreSQL database
+- Resend email service
+- Cloudinary file storage
+- Warn logging
+- Email verification enabled
+- Rate limiting enabled
+
+## 🧪 Testing
+
+```bash
+# Run tests
+yarn test
+
+# Run tests with coverage
+yarn test:coverage
+
+# Run tests in watch mode
+yarn test:watch
 ```
 
-#### Port Conflicts
-```bash
-# Check what's running on ports
-lsof -i :3000
-lsof -i :3001
-lsof -i :3002
+## 📊 Health Checks
 
-# Kill processes if needed
-kill -9 [PID]
+### API Health Check
+```bash
+curl http://localhost:3002/api/health
 ```
 
-#### TypeScript Errors
+### Database Health Check
 ```bash
-# Regenerate types
-yarn db:generate
-yarn workspace @rentalshop/ui build
+curl http://localhost:3002/api/health/database
 ```
 
-### Performance Tips
-- Use `yarn dev` for development (runs all apps)
-- Use individual workspace commands for faster builds
-- Use `yarn build` to test production builds
-- Use `yarn lint` to catch issues early
+## 🔒 Security Features
 
-## 🤝 Contributing
+- JWT-based authentication
+- Role-based access control
+- Password hashing with bcrypt
+- Rate limiting
+- CORS configuration
+- Input validation with Zod
+- SQL injection prevention (Prisma)
 
-### Development Setup
+## 📝 Contributing
+
 1. Fork the repository
-2. Clone your fork: `git clone <your-fork-url>`
-3. Install dependencies: `yarn install`
-4. Set up environment: `cp env.example .env`
-5. Set up database: `yarn db:push`
-6. Start development: `yarn dev`
-
-### Code Standards
-- Follow TypeScript best practices
-- Use ESLint and Prettier
-- Write meaningful commit messages
-- Test your changes across all apps
-- Update documentation when needed
-- **Always follow DRY principles**
-- **Use shared configurations and components**
-- **Maintain consistent code structure**
-
-### Pull Request Process
-1. Create a feature branch from `main`
-2. Make your changes following the guidelines
-3. Test across all applications
-4. Update documentation if needed
-5. Submit a pull request with clear description
-6. Ensure all CI checks pass
-
-### Commit Message Format
-```
-type(scope): description
-
-feat(ui): add new product card component
-fix(api): resolve authentication bug
-docs(readme): update installation instructions
-```
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## 📄 License
 
@@ -839,4 +414,33 @@ This project is licensed under the MIT License.
 
 ## 🆘 Support
 
-For support, email support@rentalshop.com or create an issue in the repository. 
+For support and questions:
+
+1. Check this documentation
+2. Search existing issues
+3. Create a new issue with detailed information
+
+## 🎯 Current Status
+
+✅ **All applications running successfully**
+- Client App: http://localhost:3000
+- Admin App: http://localhost:3001
+- API App: http://localhost:3002
+
+✅ **All packages building successfully**
+- UI Package: Shared components
+- Auth Package: Authentication utilities
+- Database Package: Database client
+- Utils Package: Common utilities
+
+✅ **Database seeded with sample data**
+- Test accounts available for all user types
+- Sample data for testing functionality
+
+## 🚀 Next Steps
+
+1. **Explore the applications** using the provided test accounts
+2. **Customize the environment** by editing `.env.local`
+3. **Add your own data** through the admin interface
+4. **Extend functionality** by modifying the packages
+5. **Deploy to production** when ready 

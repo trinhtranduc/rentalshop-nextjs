@@ -7,7 +7,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
   const user = await prisma.user.findUnique({
     where: { email: credentials.email },
     include: {
-      shopOwner: true,
+      merchant: true,
       admin: true,
     },
   });
