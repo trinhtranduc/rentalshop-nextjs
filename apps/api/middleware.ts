@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@rentalshop/auth';
+import { verifyTokenSimple } from './lib/jwt-edge';
 
 // Protected routes that require authentication
 const protectedRoutes = [
@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
   
   try {
     // Verify JWT token
-    const decoded = verifyToken(token);
+    const decoded = verifyTokenSimple(token);
     
     // Add user info to request headers
     const requestHeaders = new Headers(request.headers);
@@ -80,4 +80,5 @@ export const config = {
   matcher: [
     '/api/:path*',
   ],
+  runtime: 'nodejs',
 }; 

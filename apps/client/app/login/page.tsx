@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoginForm } from '@rentalshop/ui';
+import { loginUser } from '../../lib/auth/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,39 +12,31 @@ export default function LoginPage() {
 
   const handleLogin = async (data: any) => {
     try {
+      console.log('🔐 Login attempt started with:', { email: data.email });
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
-      });
+      console.log('📞 Calling loginUser function...');
+      const result = await loginUser(data.email, data.password);
+      console.log('📥 Login result received:', result);
       
-      const result = await response.json();
-      
-      if (!response.ok) {
+      if (result.success) {
+        console.log('✅ Login successful:', result);
+        console.log('🔄 Redirecting to dashboard...');
+        // Small delay to ensure token is stored
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
+      } else {
+        console.log('❌ Login failed:', result.message);
         throw new Error(result.message || 'Login failed');
       }
       
-      // Store token in localStorage or secure storage
-      if (result.data?.token) {
-        localStorage.setItem('authToken', result.data.token);
-        localStorage.setItem('user', JSON.stringify(result.data.user));
-      }
-      
-      console.log('Login successful:', result);
-      router.push('/dashboard');
-      
     } catch (error: any) {
-      console.error('Login failed:', error);
+      console.error('💥 Login error caught:', error);
       setError(error.message || 'Login failed. Please try again.');
     } finally {
+      console.log('🏁 Login attempt finished');
       setLoading(false);
     }
   };

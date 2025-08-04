@@ -18,11 +18,16 @@ export const registerSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().optional(),
-  price: z.number().positive('Price must be positive'),
+  stock: z.number().int().min(0, 'Stock must be non-negative'),
+  rentPrice: z.number().positive('Rent price must be positive'),
+  salePrice: z.number().positive('Sale price must be positive').optional(),
   deposit: z.number().min(0, 'Deposit must be non-negative'),
   categoryId: z.string().min(1, 'Category is required'),
+  outletId: z.string().min(1, 'Outlet is required'),
   images: z.array(z.string().url()).optional(),
 });
+
+export const productUpdateSchema = productSchema.partial().omit({ outletId: true });
 
 // Rental validation schemas
 export const rentalSchema = z.object({
@@ -38,4 +43,5 @@ export const rentalSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
+export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
 export type RentalInput = z.infer<typeof rentalSchema>; 
