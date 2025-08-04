@@ -15,18 +15,28 @@ export default function ForgetPasswordPage() {
       setLoading(true);
       setError(null);
       
-      // TODO: Replace with your actual password reset API call
-      console.log('Reset password data:', data);
+      const response = await fetch('/api/auth/forget-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+        }),
+      });
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await response.json();
       
-      // Handle success
-      console.log('Password reset email sent!');
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to send reset email');
+      }
+      
+      console.log('Password reset email sent:', result);
       setSuccess(true);
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Password reset failed:', error);
-      setError('Failed to send reset email. Please try again.');
+      setError(error.message || 'Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
