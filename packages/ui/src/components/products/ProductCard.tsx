@@ -1,7 +1,5 @@
 import React from 'react';
-import { Card } from '../card';
-import { Button } from '../button';
-import { cn } from '../../lib/cn';
+import { Card, Button, cn } from '@rentalshop/ui';
 
 export interface ProductCardProps {
   id: string;

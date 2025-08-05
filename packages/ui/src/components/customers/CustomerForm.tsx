@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '../card';
-import { Button } from '../button';
-import { Input } from '../input';
-import { cn } from '../../lib/cn';
+import { Card, Button, Input, cn } from '@rentalshop/ui';
 
 interface CustomerFormData {
   firstName: string;

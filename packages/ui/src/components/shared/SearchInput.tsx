@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import { cn } from '../../lib/cn';
-import { useThrottledSearch } from '../../hooks/useThrottledSearch';
+import { cn, useThrottledSearch } from '@rentalshop/ui';
 
 export interface SearchInputProps {
   placeholder?: string;

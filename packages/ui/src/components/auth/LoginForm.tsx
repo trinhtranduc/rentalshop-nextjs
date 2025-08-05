@@ -4,9 +4,7 @@ import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { Button } from "../button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../card";
-import { Input } from "../input";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input } from "@rentalshop/ui";
 
 // Types for the login form
 interface LoginFormData {

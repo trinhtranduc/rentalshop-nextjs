@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Menu, X, Home, Store, Users, Settings, User, LogOut } from 'lucide-react'
-import { Button } from '../button'
+import { Button } from '@rentalshop/ui'
 
 interface NavigationProps {
   variant?: 'client' | 'admin'

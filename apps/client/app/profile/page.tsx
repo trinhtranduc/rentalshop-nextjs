@@ -75,21 +75,21 @@ export default function ProfilePage() {
   return (
     <DashboardWrapper>
       <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Hồ sơ cá nhân</h1>
-        <p className="text-gray-600">Quản lý thông tin tài khoản của bạn</p>
-      </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Personal Profile</h1>
+          <p className="text-gray-600">Manage your account information</p>
+        </div>
 
       <div className="max-w-2xl">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Thông tin cá nhân</CardTitle>
+              <CardTitle>Personal Information</CardTitle>
               <Button
                 variant={isEditing ? "outline" : "default"}
                 onClick={() => setIsEditing(!isEditing)}
               >
-                {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+                {isEditing ? 'Cancel' : 'Edit'}
               </Button>
             </div>
           </CardHeader>
@@ -116,17 +116,17 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Họ và tên
+                    Full Name
                   </label>
                   {isEditing ? (
                     <Input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Nhập họ và tên"
+                      placeholder="Enter full name"
                     />
                   ) : (
-                    <p className="text-gray-900">{user?.name || 'Chưa cập nhật'}</p>
+                    <p className="text-gray-900">{user?.name || 'Not updated'}</p>
                   )}
                 </div>
 
@@ -139,32 +139,32 @@ export default function ProfilePage() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="Nhập email"
+                      placeholder="Enter email"
                     />
                   ) : (
-                    <p className="text-gray-900">{user?.email || 'Chưa cập nhật'}</p>
+                    <p className="text-gray-900">{user?.email || 'Not updated'}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Số điện thoại
+                    Phone Number
                   </label>
                   {isEditing ? (
                     <Input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="Nhập số điện thoại"
+                      placeholder="Enter phone number"
                     />
                   ) : (
-                    <p className="text-gray-900">{user?.phone || 'Chưa cập nhật'}</p>
+                    <p className="text-gray-900">{user?.phone || 'Not updated'}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Vai trò
+                    Role
                   </label>
                   <p className="text-gray-900">
                     {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}
@@ -179,10 +179,10 @@ export default function ProfilePage() {
                     variant="outline"
                     onClick={() => setIsEditing(false)}
                   >
-                    Hủy
+                    Cancel
                   </Button>
                   <Button onClick={handleSave}>
-                    Lưu thay đổi
+                    Save Changes
                   </Button>
                 </div>
               )}
@@ -193,32 +193,33 @@ export default function ProfilePage() {
         {/* Security Section */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Bảo mật</CardTitle>
+            <CardTitle>Security</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
-                  <h4 className="font-medium text-gray-900">Đổi mật khẩu</h4>
-                  <p className="text-sm text-gray-500">Cập nhật mật khẩu tài khoản</p>
+                  <h4 className="font-medium text-gray-900">Change Password</h4>
+                  <p className="text-sm text-gray-500">Update your account password</p>
                 </div>
                 <Button variant="outline" size="sm">
-                  Thay đổi
+                  Change
                 </Button>
               </div>
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
-                  <h4 className="font-medium text-gray-900">Xác thực hai yếu tố</h4>
-                  <p className="text-sm text-gray-500">Bảo vệ tài khoản bằng 2FA</p>
+                  <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
+                  <p className="text-sm text-gray-500">Protect your account with 2FA</p>
                 </div>
                 <Button variant="outline" size="sm">
-                  Thiết lập
+                  Setup
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </DashboardWrapper>
   );

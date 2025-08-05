@@ -1,6 +1,5 @@
 import React from 'react';
-import { Card } from '../card';
-import { cn } from '../../lib/cn';
+import { Card, cn } from '@rentalshop/ui';
 
 interface CustomerCardProps {
   customer: {

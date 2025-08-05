@@ -2,9 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { cn } from '../../lib/cn';
-import { Button } from '../button';
-import { Card } from '../card';
+import { cn } from '@rentalshop/ui';
+import { Button, Card } from '@rentalshop/ui';
 
 export interface SidebarProps {
   user?: any;
@@ -23,7 +22,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   {
-    label: 'Tổng quan',
+    label: 'Dashboard',
     href: '/dashboard',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,7 +32,7 @@ const menuItems: MenuItem[] = [
     ),
   },
   {
-    label: 'Khách hàng',
+    label: 'Customers',
     href: '/customers',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +41,7 @@ const menuItems: MenuItem[] = [
     ),
   },
   {
-    label: 'Sản phẩm',
+    label: 'Products',
     href: '/products',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +50,7 @@ const menuItems: MenuItem[] = [
     ),
   },
   {
-    label: 'Đơn hàng',
+    label: 'Orders',
     href: '/orders',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,7 +60,7 @@ const menuItems: MenuItem[] = [
     badge: '3',
   },
   {
-    label: 'Cửa hàng',
+    label: 'Shops',
     href: '/shops',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,7 +69,7 @@ const menuItems: MenuItem[] = [
     ),
   },
   {
-    label: 'Người dùng',
+    label: 'Users',
     href: '/users',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +78,7 @@ const menuItems: MenuItem[] = [
     ),
   },
   {
-    label: 'Cài đặt',
+    label: 'Settings',
     href: '/settings',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +205,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      <span>Hồ sơ</span>
+                      <span>Profile</span>
                     </div>
                   </Link>
                   
@@ -219,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    Đăng xuất
+                    Logout
                   </Button>
                 </div>
               </Card>
