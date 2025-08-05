@@ -16,7 +16,7 @@ import type {
 } from '@prisma/client';
 
 // Customer Types
-export interface Customer {
+export interface CustomerWithMerchant {
   id: string;
   firstName: string;
   lastName: string;

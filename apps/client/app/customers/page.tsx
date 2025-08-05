@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input } from '@rentalshop/ui';
 import { CustomerCard } from '@rentalshop/ui';
+import DashboardWrapper from '../../components/DashboardWrapper';
 
 interface Customer {
   id: string;
@@ -117,7 +118,8 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <DashboardWrapper>
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Customers</h1>
         <p className="text-gray-600">Manage your customer database</p>
@@ -219,6 +221,7 @@ export default function CustomersPage() {
           )}
         </>
       )}
-    </div>
+      </div>
+    </DashboardWrapper>
   );
 } 

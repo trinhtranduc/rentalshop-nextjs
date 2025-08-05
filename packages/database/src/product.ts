@@ -153,9 +153,10 @@ export const getProducts = async (
     where.rentPrice = { ...where.rentPrice, lte: filters.maxPrice };
   }
   if (filters.search) {
+    const searchTerm = filters.search.toLowerCase();
     where.OR = [
-      { name: { contains: filters.search, mode: 'insensitive' } },
-      { description: { contains: filters.search, mode: 'insensitive' } },
+      { name: { contains: searchTerm } },
+      { description: { contains: searchTerm } },
     ];
   }
 
@@ -323,18 +324,16 @@ export const searchProducts = async (filter: ProductSearchFilter): Promise<Produ
 
   // Search by name or barcode
   if (query && query.trim()) {
-    const searchQuery = query.trim();
+    const searchQuery = query.trim().toLowerCase();
     whereClause.OR = [
       {
         name: {
           contains: searchQuery,
-          mode: 'insensitive', // Case-insensitive search
         },
       },
       {
         barcode: {
           contains: searchQuery,
-          mode: 'insensitive',
         },
       },
     ];

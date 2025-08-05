@@ -1,190 +1,220 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ProductGrid, Product } from '@rentalshop/ui';
-import { Input } from '@rentalshop/ui';
-import { productsApi } from '../../lib/api/client';
-import { useAuth } from '../../lib/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
+import { getStoredUser } from '../../lib/auth/auth';
+import DashboardWrapper from '../../components/DashboardWrapper';
 
-export default function ClientDashboard() {
-  const router = useRouter();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
+interface DashboardStats {
+  totalCustomers: number;
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
+}
+
+export default function DashboardPage() {
+  const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalCustomers: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
 
-  // Fetch products
-  const fetchProducts = async (filters?: { search?: string; categoryId?: string }) => {
+  useEffect(() => {
+    const currentUser = getStoredUser();
+    setUser(currentUser);
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
     try {
-      console.log('Fetching products with filters:', filters);
       setLoading(true);
-      setError(null);
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
 
-      const response = await productsApi.getProducts({
-        search: filters?.search,
-        categoryId: filters?.categoryId,
+      // Fetch dashboard statistics
+      const response = await fetch('http://localhost:3002/api/analytics/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
-      console.log('Products API response:', response);
-
-      if (response.success) {
-        setProducts(response.data.products);
-        
-        // Extract unique categories for filter
-        const uniqueCategories = Array.from(new Set(response.data.products.map(p => p.category.name)));
-        setCategories(uniqueCategories);
-        
-        console.log('Products loaded successfully:', response.data.products.length);
-      } else {
-        setError(response.error || 'Failed to load products');
-        console.error('Products API error:', response.error);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setStats(data.data);
+        }
       }
-    } catch (err) {
-      setError('Failed to load products. Please try again.');
-      console.error('Error fetching products:', err);
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle search
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    fetchProducts({ search: value, categoryId: selectedCategory });
-  };
-
-  // Handle category filter
-  const handleCategoryFilter = (category: string) => {
-    const categoryId = category === selectedCategory ? '' : category;
-    setSelectedCategory(categoryId);
-    fetchProducts({ search: searchTerm, categoryId });
-  };
-
-  // Handle product actions
-  const handleViewProduct = (productId: string) => {
-    // Navigate to product detail page
-    window.location.href = `/dashboard/products/${productId}`;
-  };
-
-  const handleRentProduct = (productId: string) => {
-    // Navigate to rental page
-    window.location.href = `/dashboard/rent/${productId}`;
-  };
-
-  // Check authentication and load products on mount
-  useEffect(() => {
-    console.log('Dashboard mounted, checking authentication...');
-    console.log('Auth loading:', authLoading);
-    console.log('Is authenticated:', isAuthenticated);
-    console.log('User:', user);
-    
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        console.log('❌ User not authenticated, redirecting to login...');
-        router.push('/login');
-        return;
-      }
-      
-      console.log('✅ User is authenticated, fetching products...');
-      fetchProducts();
-    }
-  }, [authLoading, isAuthenticated, user, router]);
-
-  // Show loading state while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+  const StatCard = ({ title, value, icon, color }: {
+    title: string;
+    value: string | number;
+    icon: React.ReactNode;
+    color: string;
+  }) => (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
+          </div>
+          <div className={`p-3 rounded-full ${color}`}>
+            {icon}
+          </div>
         </div>
-      </div>
-    );
-  }
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Available Products</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Browse and rent from our wide selection of products
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-500">
-                  {products.length} products available
-                </span>
-              </div>
-            </div>
-          </div>
+    <DashboardWrapper>
+      <div className="container mx-auto px-4 py-8">
+        {/* Welcome Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Chào mừng trở lại, {user?.name || 'User'}! 👋
+          </h1>
+          <p className="text-gray-600">
+            Đây là tổng quan về hoạt động kinh doanh của bạn
+          </p>
         </div>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-              <button
-                onClick={() => handleCategoryFilter('')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  selectedCategory === ''
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                All Categories
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryFilter(category)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === category
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Products Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ProductGrid
-          products={products}
-          loading={loading}
-          error={error || undefined}
-          variant="client"
-          onView={handleViewProduct}
-          onRent={handleRentProduct}
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="Tổng khách hàng"
+          value={loading ? '...' : stats.totalCustomers}
+          icon={
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          }
+          color="bg-blue-500"
+        />
+        
+        <StatCard
+          title="Tổng sản phẩm"
+          value={loading ? '...' : stats.totalProducts}
+          icon={
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          }
+          color="bg-green-500"
+        />
+        
+        <StatCard
+          title="Tổng đơn hàng"
+          value={loading ? '...' : stats.totalOrders}
+          icon={
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          }
+          color="bg-purple-500"
+        />
+        
+        <StatCard
+          title="Doanh thu"
+          value={loading ? '...' : `$${stats.totalRevenue.toLocaleString()}`}
+          icon={
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+          }
+          color="bg-yellow-500"
         />
       </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Thao tác nhanh</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <a
+                href="/customers"
+                className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-5 h-5 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Thêm khách hàng mới</span>
+              </a>
+              
+              <a
+                href="/products"
+                className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Thêm sản phẩm mới</span>
+              </a>
+              
+              <a
+                href="/orders"
+                className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-5 h-5 text-purple-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Tạo đơn hàng mới</span>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Hoạt động gần đây</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Đơn hàng mới #1234</p>
+                  <p className="text-xs text-gray-500">2 phút trước</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Khách hàng mới đăng ký</p>
+                  <p className="text-xs text-gray-500">15 phút trước</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Sản phẩm được cập nhật</p>
+                  <p className="text-xs text-gray-500">1 giờ trước</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
+    </DashboardWrapper>
   );
 } 

@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ProductGrid, Product } from '@rentalshop/ui';
-import { Input, Button } from '@rentalshop/ui';
+import { ProductGrid, Product, SearchInput, Button } from '@rentalshop/ui';
 
 interface ProductsResponse {
   success: boolean;
@@ -142,11 +141,11 @@ export default function AdminDashboard() {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
-              <Input
-                type="text"
+              <SearchInput
                 placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
+                onSearch={handleSearch}
+                delay={500}
+                minLength={2}
                 className="w-full"
               />
             </div>

@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { searchCustomers } from '@rentalshop/database';
 import type { CustomerSearchFilter } from '@rentalshop/database';
+import { searchRateLimiter } from '../../../../lib/middleware/rateLimit';
 
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResult = searchRateLimiter(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
   try {
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
