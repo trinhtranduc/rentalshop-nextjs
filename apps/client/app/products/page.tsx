@@ -79,8 +79,8 @@ export default function ProductsPage() {
     <DashboardWrapper>
       <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sản phẩm</h1>
-        <p className="text-gray-600">Quản lý danh mục sản phẩm của bạn</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Products</h1>
+        <p className="text-gray-600">Manage your product catalog</p>
       </div>
 
       {/* Search and Filters */}
@@ -88,25 +88,25 @@ export default function ProductsPage() {
         <div className="flex flex-col md:flex-row gap-4 items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tìm kiếm sản phẩm
+              Search Products
             </label>
             <div className="flex gap-2">
               <Input
                 type="text"
-                placeholder="Tìm kiếm theo tên, mô tả..."
+                placeholder="Search by name, description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="flex-1"
               />
               <Button onClick={handleSearch}>
-                Tìm kiếm
+                Search
               </Button>
             </div>
           </div>
           
           <Button variant="outline" onClick={() => setSearchTerm('')}>
-            Xóa bộ lọc
+            Clear Filter
           </Button>
         </div>
       </Card>
@@ -115,7 +115,7 @@ export default function ProductsPage() {
       {loading ? (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Đang tải sản phẩm...</p>
+          <p className="mt-2 text-gray-600">Loading products...</p>
         </div>
       ) : products.length === 0 ? (
         <Card className="text-center py-12">
@@ -123,8 +123,8 @@ export default function ProductsPage() {
             <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
-            <h3 className="text-lg font-medium mb-2">Không tìm thấy sản phẩm</h3>
-            <p>Hãy thử điều chỉnh tiêu chí tìm kiếm hoặc thêm sản phẩm mới.</p>
+            <h3 className="text-lg font-medium mb-2">No products found</h3>
+            <p>Try adjusting your search criteria or add new products.</p>
           </div>
         </Card>
       ) : (
@@ -139,11 +139,11 @@ export default function ProductsPage() {
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
               >
-                Trước
+                Previous
               </Button>
               
               <span className="text-sm text-gray-600">
-                Trang {currentPage} của {totalPages}
+                Page {currentPage} of {totalPages}
               </span>
               
               <Button
@@ -151,7 +151,7 @@ export default function ProductsPage() {
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
               >
-                Sau
+                Next
               </Button>
             </div>
           )}

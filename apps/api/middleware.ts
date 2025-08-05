@@ -7,15 +7,16 @@ const protectedRoutes = [
   '/api/orders',
   '/api/payments',
   '/api/shops',
+  '/api/products',
+  '/api/customers',
+  '/api/notifications',
 ];
 
-// Public product search routes (for testing)
-const publicProductRoutes = [
-  '/api/products/search',
-  '/api/products/barcode',
-  '/api/products/outlet',
-  '/api/products/merchant',
-  '/api/products/docs',
+// Public routes that don't require authentication
+const publicRoutes = [
+  '/api/auth',
+  '/api/health',
+  '/api/docs',
 ];
 
 // Admin-only routes
@@ -27,8 +28,14 @@ const adminRoutes = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Skip middleware for auth routes
-  if (pathname.startsWith('/api/auth/')) {
+  // Allow OPTIONS requests to pass through for CORS preflight
+  if (request.method === 'OPTIONS') {
+    return NextResponse.next();
+  }
+  
+  // Skip middleware for public routes
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  if (isPublicRoute) {
     return NextResponse.next();
   }
   

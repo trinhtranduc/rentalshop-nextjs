@@ -13,20 +13,20 @@ export function Navigation({ variant = 'client', currentPage }: NavigationProps)
   const [isOpen, setIsOpen] = useState(false)
 
   const clientNavItems = [
-    { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
-    { href: '/products', label: 'Sản phẩm', icon: Store },
-    { href: '/customers', label: 'Khách hàng', icon: Users },
-    { href: '/orders', label: 'Đơn hàng', icon: Store },
-    { href: '/settings', label: 'Cài đặt', icon: Settings },
+    { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/products', label: 'Products', icon: Store },
+    { href: '/customers', label: 'Customers', icon: Users },
+    { href: '/orders', label: 'Orders', icon: Store },
+    { href: '/settings', label: 'Settings', icon: Settings },
   ]
 
   const adminNavItems = [
-    { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
-    { href: '/users', label: 'Người dùng', icon: Users },
-    { href: '/shops', label: 'Cửa hàng', icon: Store },
-    { href: '/products', label: 'Sản phẩm', icon: Store },
-    { href: '/orders', label: 'Đơn hàng', icon: Store },
-    { href: '/settings', label: 'Cài đặt', icon: Settings },
+    { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/users', label: 'Users', icon: Users },
+    { href: '/shops', label: 'Shops', icon: Store },
+    { href: '/products', label: 'Products', icon: Store },
+    { href: '/orders', label: 'Orders', icon: Store },
+    { href: '/settings', label: 'Settings', icon: Settings },
   ]
 
   const navItems = variant === 'admin' ? adminNavItems : clientNavItems
@@ -66,11 +66,11 @@ export function Navigation({ variant = 'client', currentPage }: NavigationProps)
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="sm" className="text-nav-tint hover:text-gray-300">
               <User className="w-4 h-4 mr-2" />
-              Hồ sơ
+              Profile
             </Button>
             <Button variant="ghost" size="sm" className="text-nav-tint hover:text-gray-300">
               <LogOut className="w-4 h-4 mr-2" />
-              Đăng xuất
+              Logout
             </Button>
             <div className="md:hidden">
               <Button
