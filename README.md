@@ -459,13 +459,15 @@ For support and questions:
 - Database Package: Database client
 - Utils Package: Common utilities
 
-✅ **Database seeded with sample data**
-- **5 Users**: Admin, Merchant, Manager, Staff, Client
-- **8 Categories**: Electronics, Tools, Party Supplies, etc.
+✅ **Database seeded with comprehensive sample data**
+- **11 Users**: Admin, Merchant, Manager, Staff, Client accounts
+- **6 Categories**: Electronics, Tools, Party Equipment, Sports Equipment, Furniture, Vehicles
 - **1 Merchant**: Sample Rental Company
-- **1 Outlet**: Main Outlet
-- **1 Admin**: Super Admin
-- **2 Staff**: Manager + Staff
+- **3 Outlets**: Downtown Rental Center, Westside Equipment, Party Palace
+- **2 Admin Records**: Super Admin accounts
+- **15 Customers**: Sample customer profiles with complete information
+- **13 Products**: Various rental items across all categories
+- **6 Sample Orders**: Including RENT, SALE, ACTIVE, PENDING, COMPLETED, and OVERDUE orders
 
 ✅ **Authentication working**
 - JWT-based authentication

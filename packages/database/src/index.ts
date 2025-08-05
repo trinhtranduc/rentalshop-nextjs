@@ -28,22 +28,22 @@ export {
   getProducts,
 } from './product';
 
-// Order management - temporarily disabled due to Prisma client issues
-// export {
-//   generateOrderNumber,
-//   createOrder,
-//   getOrderById,
-//   getOrderByNumber,
-//   updateOrder,
-//   searchOrders,
-//   getOrderStats,
-//   createPayment,
-//   getOrderPayments,
-//   addOrderHistory,
-//   getOverdueRentals,
-//   cancelOrder,
-//   deleteOrder,
-// } from './order';
+// Order management
+export {
+  generateOrderNumber,
+  createOrder,
+  getOrderById,
+  getOrderByNumber,
+  updateOrder,
+  searchOrders,
+  getOrderStats,
+  createPayment,
+  getOrderPayments,
+  addOrderHistory,
+  getOverdueRentals,
+  cancelOrder,
+  deleteOrder,
+} from './order';
 
 // Database utilities
 export {

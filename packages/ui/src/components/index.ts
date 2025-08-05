@@ -35,6 +35,7 @@ export { CustomerForm } from './customers/CustomerForm';
 // ============================================================================
 export { ProductCard } from './products/ProductCard';
 export { ProductGrid } from './products/ProductGrid';
+export type { Product } from './products/ProductGrid';
 
 // ============================================================================
 // ORDER COMPONENTS

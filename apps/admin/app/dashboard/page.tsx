@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ProductGrid, Product, SearchInput, Button } from '@rentalshop/ui';
+import { ProductGrid, SearchInput, Button } from '@rentalshop/ui';
+import type { ProductSearchResult } from '@rentalshop/database';
+import type { Product } from '@rentalshop/ui';
 
 interface ProductsResponse {
   success: boolean;
   data: {
-    products: Product[];
+    products: ProductSearchResult[];
     total: number;
     page: number;
     totalPages: number;
@@ -36,7 +38,26 @@ export default function AdminDashboard() {
       const data: ProductsResponse = await response.json();
 
       if (data.success) {
-        setProducts(data.data.products);
+        // Transform ProductSearchResult to Product for UI compatibility
+        const transformedProducts: Product[] = data.data.products.map(product => ({
+          id: product.id,
+          name: product.name,
+          description: product.description || undefined,
+          stock: product.stock,
+          renting: product.renting,
+          available: product.available,
+          rentPrice: product.rentPrice,
+          salePrice: product.salePrice || undefined,
+          deposit: product.deposit,
+          images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
+          category: {
+            name: product.category.name,
+          },
+          outlet: {
+            name: product.outlet.name,
+          },
+        }));
+        setProducts(transformedProducts);
         
         // Extract unique categories for filter
         const uniqueCategories = Array.from(new Set(data.data.products.map(p => p.category.name)));

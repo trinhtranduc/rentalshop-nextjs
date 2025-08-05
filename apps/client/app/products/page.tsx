@@ -4,20 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Input } from '@rentalshop/ui';
 import { ProductCard, ProductGrid } from '@rentalshop/ui';
 import DashboardWrapper from '../../components/DashboardWrapper';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  isAvailable: boolean;
-  imageUrl?: string;
-  merchant: {
-    id: string;
-    companyName: string;
-  };
-}
+import type { ProductSearchResult } from '@rentalshop/database';
+import type { Product } from '@rentalshop/ui';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -60,7 +48,26 @@ export default function ProductsPage() {
       const data = await response.json();
       
       if (data.success) {
-        setProducts(data.data.products);
+        // Transform ProductSearchResult to Product for UI compatibility
+        const transformedProducts: Product[] = data.data.products.map((product: ProductSearchResult) => ({
+          id: product.id,
+          name: product.name,
+          description: product.description || '',
+          stock: product.stock,
+          renting: product.renting,
+          available: product.available,
+          rentPrice: product.rentPrice,
+          salePrice: product.salePrice || undefined,
+          deposit: product.deposit,
+          images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
+          category: {
+            name: product.category.name,
+          },
+          outlet: {
+            name: product.outlet.name,
+          },
+        }));
+        setProducts(transformedProducts);
         setTotalPages(data.data.totalPages);
       }
     } catch (error) {

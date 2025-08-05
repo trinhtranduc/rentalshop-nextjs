@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@rentalshop/auth';
 import { loginSchema } from '@rentalshop/utils';
-import { config } from '../../../../../lib/config';
+import { config } from '@rentalshop/utils';
 
 /**
  * @swagger

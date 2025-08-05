@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../../lib/jwt-edge';
+import { verifyTokenSimple } from '@rentalshop/auth';
 import { 
   createOrder, 
   searchOrders, 
@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const decoded = await verifyToken(token);
-    if (!decoded) {
+    const user = await verifyTokenSimple(token);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const decoded = await verifyToken(token);
-    if (!decoded) {
+    const user = await verifyTokenSimple(token);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Create the order
-    const order = await createOrder(orderInput, decoded.userId);
+    const order = await createOrder(orderInput, user.id);
 
     return NextResponse.json({
       success: true,
