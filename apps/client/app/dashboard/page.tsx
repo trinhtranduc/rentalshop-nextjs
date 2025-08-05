@@ -86,17 +86,17 @@ export default function DashboardPage() {
         {/* Welcome Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Chào mừng trở lại, {user?.name || 'User'}! 👋
+            Welcome back, {user?.name || 'User'}! 👋
           </h1>
           <p className="text-gray-600">
-            Đây là tổng quan về hoạt động kinh doanh của bạn
+            Here's an overview of your business activity
           </p>
         </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
-          title="Tổng khách hàng"
+          title="Total Customers"
           value={loading ? '...' : stats.totalCustomers}
           icon={
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +107,7 @@ export default function DashboardPage() {
         />
         
         <StatCard
-          title="Tổng sản phẩm"
+          title="Total Products"
           value={loading ? '...' : stats.totalProducts}
           icon={
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +118,7 @@ export default function DashboardPage() {
         />
         
         <StatCard
-          title="Tổng đơn hàng"
+          title="Total Orders"
           value={loading ? '...' : stats.totalOrders}
           icon={
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,7 +129,7 @@ export default function DashboardPage() {
         />
         
         <StatCard
-          title="Doanh thu"
+          title="Revenue"
           value={loading ? '...' : `$${stats.totalRevenue.toLocaleString()}`}
           icon={
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,7 +144,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Thao tác nhanh</CardTitle>
+            <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -155,7 +155,7 @@ export default function DashboardPage() {
                 <svg className="w-5 h-5 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                <span>Thêm khách hàng mới</span>
+                <span>Add New Customer</span>
               </a>
               
               <a
@@ -165,7 +165,7 @@ export default function DashboardPage() {
                 <svg className="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                <span>Thêm sản phẩm mới</span>
+                <span>Add New Product</span>
               </a>
               
               <a
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                 <svg className="w-5 h-5 text-purple-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                <span>Tạo đơn hàng mới</span>
+                <span>Create New Order</span>
               </a>
             </div>
           </CardContent>
@@ -183,31 +183,31 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Hoạt động gần đây</CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Đơn hàng mới #1234</p>
-                  <p className="text-xs text-gray-500">2 phút trước</p>
+                  <p className="text-sm font-medium text-gray-900">New Order #1234</p>
+                  <p className="text-xs text-gray-500">2 minutes ago</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Khách hàng mới đăng ký</p>
-                  <p className="text-xs text-gray-500">15 phút trước</p>
+                  <p className="text-sm font-medium text-gray-900">New customer registered</p>
+                  <p className="text-xs text-gray-500">15 minutes ago</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Sản phẩm được cập nhật</p>
-                  <p className="text-xs text-gray-500">1 giờ trước</p>
+                  <p className="text-sm font-medium text-gray-900">Product updated</p>
+                  <p className="text-xs text-gray-500">1 hour ago</p>
                 </div>
               </div>
             </div>
