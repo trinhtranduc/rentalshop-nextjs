@@ -36,15 +36,15 @@ export const searchCustomers = async (filters: CustomerSearchFilter): Promise<Cu
   }
 
   if (city) {
-    where.city = { contains: city, mode: 'insensitive' };
+    where.city = { contains: city.toLowerCase() };
   }
 
   if (state) {
-    where.state = { contains: state, mode: 'insensitive' };
+    where.state = { contains: state.toLowerCase() };
   }
 
   if (country) {
-    where.country = { contains: country, mode: 'insensitive' };
+    where.country = { contains: country.toLowerCase() };
   }
 
   if (idType) {
@@ -53,12 +53,13 @@ export const searchCustomers = async (filters: CustomerSearchFilter): Promise<Cu
 
   // Search query for name, email, phone, or idNumber
   if (q) {
+    const searchQuery = q.toLowerCase();
     where.OR = [
-      { firstName: { contains: q, mode: 'insensitive' } },
-      { lastName: { contains: q, mode: 'insensitive' } },
-      { email: { contains: q, mode: 'insensitive' } },
-      { phone: { contains: q, mode: 'insensitive' } },
-      { idNumber: { contains: q, mode: 'insensitive' } }
+      { firstName: { contains: searchQuery } },
+      { lastName: { contains: searchQuery } },
+      { email: { contains: searchQuery } },
+      { phone: { contains: searchQuery } },
+      { idNumber: { contains: searchQuery } }
     ];
   }
 
@@ -209,15 +210,15 @@ export const getCustomers = async (
   }
 
   if (filters.city) {
-    where.city = { contains: filters.city, mode: 'insensitive' };
+    where.city = { contains: filters.city.toLowerCase() };
   }
 
   if (filters.state) {
-    where.state = { contains: filters.state, mode: 'insensitive' };
+    where.state = { contains: filters.state.toLowerCase() };
   }
 
   if (filters.country) {
-    where.country = { contains: filters.country, mode: 'insensitive' };
+    where.country = { contains: filters.country.toLowerCase() };
   }
 
   if (filters.idType) {
@@ -225,12 +226,13 @@ export const getCustomers = async (
   }
 
   if (filters.search) {
+    const searchQuery = filters.search.toLowerCase();
     where.OR = [
-      { firstName: { contains: filters.search, mode: 'insensitive' } },
-      { lastName: { contains: filters.search, mode: 'insensitive' } },
-      { email: { contains: filters.search, mode: 'insensitive' } },
-      { phone: { contains: filters.search, mode: 'insensitive' } },
-      { idNumber: { contains: filters.search, mode: 'insensitive' } }
+      { firstName: { contains: searchQuery } },
+      { lastName: { contains: searchQuery } },
+      { email: { contains: searchQuery } },
+      { phone: { contains: searchQuery } },
+      { idNumber: { contains: searchQuery } }
     ];
   }
 

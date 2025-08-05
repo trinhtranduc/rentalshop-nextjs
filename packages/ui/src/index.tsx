@@ -12,6 +12,7 @@ export { default as ForgetPasswordForm } from './components/auth/ForgetPasswordF
 export { Navigation } from './components/shared/navigation';
 export { Sidebar } from './components/shared/sidebar';
 export { Layout } from './components/shared/layout';
+export { SearchInput } from './components/shared/SearchInput';
 
 // Product Components
 export { ProductCard } from './components/products/ProductCard';
@@ -21,6 +22,9 @@ export type { Product } from './components/products/ProductGrid';
 // Customer components
 export { CustomerCard } from './components/customers/CustomerCard';
 export { CustomerForm } from './components/customers/CustomerForm';
+
+// Hooks
+export { useThrottledSearch } from './hooks/useThrottledSearch';
 
 // Utility Functions
 export { cn } from './lib/cn';

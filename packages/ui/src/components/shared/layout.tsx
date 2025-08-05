@@ -18,10 +18,11 @@ export function Layout({ variant = 'client', currentPage, children }: LayoutProp
     <div className="min-h-screen bg-bg-primary">
       {/* Sidebar */}
       <Sidebar
-        variant={variant}
-        currentPage={currentPage}
+        user={null}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        onLogout={() => {}}
+        currentPath={currentPage || ''}
       />
       
       {/* Main content */}

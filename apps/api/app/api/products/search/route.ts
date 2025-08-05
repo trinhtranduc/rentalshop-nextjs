@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchProducts } from '@rentalshop/database';
+import { searchRateLimiter } from '../../../../lib/middleware/rateLimit';
 
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResult = searchRateLimiter(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
   try {
     const { searchParams } = new URL(request.url);
     
