@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../../../lib/jwt-edge';
+import { verifyTokenSimple } from '@rentalshop/auth';
 import { getOrderStats, getOverdueRentals } from '@rentalshop/database';
 
 // GET /api/orders/stats - Get order statistics
@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const decoded = await verifyToken(token);
-    if (!decoded) {
+    const user = await verifyTokenSimple(token);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }

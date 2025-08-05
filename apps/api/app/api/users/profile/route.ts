@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user profile
-    const userProfile = await findUserById(user.userId);
+    const userProfile = await findUserById(user.id);
     if (!userProfile) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update user profile
-    const updatedUser = await updateUser(user.userId, updateData);
+    const updatedUser = await updateUser(user.id, updateData);
 
     return NextResponse.json({
       success: true,

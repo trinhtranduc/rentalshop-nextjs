@@ -645,6 +645,269 @@ export async function seed() {
     );
     console.log(`✅ Created ${createdCustomers.length} customers`);
 
+    // Create sample orders
+    console.log('Creating sample orders...');
+    const sampleOrders = [
+      // Active rental orders
+      {
+        orderType: 'RENT' as const,
+        status: 'ACTIVE' as const,
+        customerId: createdCustomers[0].id,
+        outletId: createdOutlets[0].id,
+        userId: createdUsers.find(u => u.role === 'OUTLET_STAFF')?.id || createdUsers[0].id,
+        pickupPlanAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        returnPlanAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+        pickedUpAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        subtotal: 75.00,
+        totalAmount: 75.00,
+        depositAmount: 150.00,
+        customerName: `${createdCustomers[0].firstName} ${createdCustomers[0].lastName}`,
+        customerPhone: createdCustomers[0].phone,
+        customerEmail: createdCustomers[0].email,
+        notes: 'Wedding equipment rental',
+        orderItems: [
+          {
+            productId: createdProducts.find(p => p.name.includes('Tables and Chairs'))?.id!,
+            quantity: 1,
+            unitPrice: 75.00,
+            totalPrice: 75.00,
+            deposit: 150.00,
+            startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+            endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+            daysRented: 7,
+          }
+        ]
+      },
+      {
+        orderType: 'RENT' as const,
+        status: 'ACTIVE' as const,
+        customerId: createdCustomers[1].id,
+        outletId: createdOutlets[1].id,
+        userId: createdUsers.find(u => u.role === 'OUTLET_STAFF')?.id || createdUsers[0].id,
+        pickupPlanAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        returnPlanAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+        pickedUpAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        subtotal: 30.00,
+        totalAmount: 30.00,
+        depositAmount: 100.00,
+        customerName: `${createdCustomers[1].firstName} ${createdCustomers[1].lastName}`,
+        customerPhone: createdCustomers[1].phone,
+        customerEmail: createdCustomers[1].email,
+        notes: 'Mountain bike rental for weekend',
+        orderItems: [
+          {
+            productId: createdProducts.find(p => p.name.includes('Mountain Bike'))?.id!,
+            quantity: 1,
+            unitPrice: 30.00,
+            totalPrice: 30.00,
+            deposit: 100.00,
+            startDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+            endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+            daysRented: 4,
+          }
+        ]
+      },
+      // Pending orders
+      {
+        orderType: 'RENT' as const,
+        status: 'PENDING' as const,
+        customerId: createdCustomers[2].id,
+        outletId: createdOutlets[0].id,
+        userId: createdUsers.find(u => u.role === 'OUTLET_STAFF')?.id || createdUsers[0].id,
+        pickupPlanAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // Tomorrow
+        returnPlanAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        subtotal: 50.00,
+        totalAmount: 50.00,
+        depositAmount: 200.00,
+        customerName: `${createdCustomers[2].firstName} ${createdCustomers[2].lastName}`,
+        customerPhone: createdCustomers[2].phone,
+        customerEmail: createdCustomers[2].email,
+        notes: 'MacBook rental for business meeting',
+        orderItems: [
+          {
+            productId: createdProducts.find(p => p.name.includes('MacBook'))?.id!,
+            quantity: 1,
+            unitPrice: 50.00,
+            totalPrice: 50.00,
+            deposit: 200.00,
+            startDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            daysRented: 6,
+          }
+        ]
+      },
+      // Completed orders
+      {
+        orderType: 'RENT' as const,
+        status: 'COMPLETED' as const,
+        customerId: createdCustomers[3].id,
+        outletId: createdOutlets[2].id,
+        userId: createdUsers.find(u => u.role === 'OUTLET_STAFF')?.id || createdUsers[0].id,
+        pickupPlanAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+        returnPlanAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        pickedUpAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+        returnedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        subtotal: 150.00,
+        totalAmount: 150.00,
+        depositAmount: 300.00,
+        customerName: `${createdCustomers[3].firstName} ${createdCustomers[3].lastName}`,
+        customerPhone: createdCustomers[3].phone,
+        customerEmail: createdCustomers[3].email,
+        notes: 'DJ equipment for birthday party',
+        orderItems: [
+          {
+            productId: createdProducts.find(p => p.name.includes('DJ Equipment'))?.id!,
+            quantity: 1,
+            unitPrice: 150.00,
+            totalPrice: 150.00,
+            deposit: 300.00,
+            startDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+            endDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+            daysRented: 7,
+          }
+        ]
+      },
+      // Sale order
+      {
+        orderType: 'SALE' as const,
+        status: 'COMPLETED' as const,
+        customerId: createdCustomers[4].id,
+        outletId: createdOutlets[1].id,
+        userId: createdUsers.find(u => u.role === 'OUTLET_STAFF')?.id || createdUsers[0].id,
+        subtotal: 199.00,
+        totalAmount: 199.00,
+        depositAmount: 0,
+        customerName: `${createdCustomers[4].firstName} ${createdCustomers[4].lastName}`,
+        customerPhone: createdCustomers[4].phone,
+        customerEmail: createdCustomers[4].email,
+        notes: 'Circular saw purchase',
+        orderItems: [
+          {
+            productId: createdProducts.find(p => p.name.includes('Circular Saw'))?.id!,
+            quantity: 1,
+            unitPrice: 199.00,
+            totalPrice: 199.00,
+            deposit: 0,
+          }
+        ]
+      },
+      // Overdue rental
+      {
+        orderType: 'RENT' as const,
+        status: 'OVERDUE' as const,
+        customerId: createdCustomers[5].id,
+        outletId: createdOutlets[0].id,
+        userId: createdUsers.find(u => u.role === 'OUTLET_STAFF')?.id || createdUsers[0].id,
+        pickupPlanAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
+        returnPlanAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago (overdue)
+        pickedUpAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
+        subtotal: 100.00,
+        totalAmount: 100.00,
+        depositAmount: 200.00,
+        customerName: `${createdCustomers[5].firstName} ${createdCustomers[5].lastName}`,
+        customerPhone: createdCustomers[5].phone,
+        customerEmail: createdCustomers[5].email,
+        notes: 'Sound system rental - overdue return',
+        orderItems: [
+          {
+            productId: createdProducts.find(p => p.name.includes('Sound System'))?.id!,
+            quantity: 1,
+            unitPrice: 100.00,
+            totalPrice: 100.00,
+            deposit: 200.00,
+            startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+            endDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+            daysRented: 10,
+          }
+        ]
+      }
+    ];
+
+    const createdOrders = await Promise.all(
+      sampleOrders.map(async (orderData) => {
+        // Create order directly using Prisma
+        const order = await prisma.order.create({
+          data: {
+            orderNumber: `ORD-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substr(2, 4)}`,
+            orderType: orderData.orderType,
+            userId: orderData.userId,
+            customerId: orderData.customerId,
+            outletId: orderData.outletId,
+            status: orderData.status,
+            pickupPlanAt: orderData.pickupPlanAt,
+            returnPlanAt: orderData.returnPlanAt,
+            pickedUpAt: orderData.pickedUpAt,
+            returnedAt: orderData.returnedAt,
+            subtotal: orderData.subtotal,
+            totalAmount: orderData.totalAmount,
+            depositAmount: orderData.depositAmount,
+            notes: orderData.notes,
+            customerName: orderData.customerName,
+            customerPhone: orderData.customerPhone,
+            customerEmail: orderData.customerEmail,
+          },
+        });
+
+        // Create order items
+        const orderItems = await Promise.all(
+          orderData.orderItems.map((item) => {
+            const orderItemData: any = {
+              orderId: order.id,
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+              deposit: item.deposit || 0,
+            };
+
+            // Add optional properties if they exist
+            if ('notes' in item && item.notes) {
+              orderItemData.notes = item.notes;
+            }
+            if ('startDate' in item && item.startDate) {
+              orderItemData.startDate = item.startDate;
+            }
+            if ('endDate' in item && item.endDate) {
+              orderItemData.endDate = item.endDate;
+            }
+            if ('daysRented' in item && item.daysRented) {
+              orderItemData.daysRented = item.daysRented;
+            }
+
+            return prisma.orderItem.create({
+              data: orderItemData,
+            });
+          })
+        );
+
+        // Create order history entry
+        await prisma.orderHistory.create({
+          data: {
+            orderId: order.id,
+            action: 'CREATED',
+            notes: 'Order created during seeding',
+            userId: orderData.userId,
+          },
+        });
+
+        // Update product stock if it's a rental
+        if (orderData.orderType === 'RENT') {
+          for (const item of orderData.orderItems) {
+            await prisma.product.update({
+              where: { id: item.productId },
+              data: {
+                renting: { increment: item.quantity },
+                available: { decrement: item.quantity },
+              },
+            });
+          }
+        }
+
+        return { order, orderItems };
+      })
+    );
+    console.log(`✅ Created ${createdOrders.length} sample orders`);
+
     console.log('🎉 Database seeding completed successfully!');
     console.log('\n📊 Summary:');
     console.log(`- Categories: ${createdCategories.length}`);
@@ -653,6 +916,7 @@ export async function seed() {
     console.log(`- Users: ${createdUsers.length}`);
     console.log(`- Admin Records: ${createdAdmins.length}`);
     console.log(`- Customers: ${createdCustomers.length}`);
+    console.log(`- Orders: ${createdOrders.length}`);
 
   } catch (error) {
     console.error('❌ Error seeding database:', error);

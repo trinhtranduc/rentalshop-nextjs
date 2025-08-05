@@ -369,6 +369,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
       customer: order.customer,
       customerName: order.customerName,
       customerPhone: order.customerPhone,
+      customerEmail: order.customerEmail,
       outlet: order.outlet,
       user: order.user,
     })),
@@ -436,7 +437,7 @@ export async function getOrderStats(outletId?: string): Promise<OrderStats> {
 }
 
 // Create payment
-export async function createPayment(input: PaymentInput, userId: string): Promise<Payment> {
+export async function createPayment(input: PaymentInput, userId: string) {
   return await prisma.payment.create({
     data: {
       orderId: input.orderId,
@@ -451,7 +452,7 @@ export async function createPayment(input: PaymentInput, userId: string): Promis
 }
 
 // Get payments for an order
-export async function getOrderPayments(orderId: string): Promise<Payment[]> {
+export async function getOrderPayments(orderId: string) {
   return await prisma.payment.findMany({
     where: { orderId },
     orderBy: { createdAt: 'desc' },
@@ -459,7 +460,7 @@ export async function getOrderPayments(orderId: string): Promise<Payment[]> {
 }
 
 // Add order history entry
-export async function addOrderHistory(input: OrderHistoryInput): Promise<OrderHistory> {
+export async function addOrderHistory(input: OrderHistoryInput) {
   return await prisma.orderHistory.create({
     data: input,
   });
@@ -519,6 +520,7 @@ export async function getOverdueRentals(outletId?: string): Promise<OrderSearchR
     customer: order.customer,
     customerName: order.customerName,
     customerPhone: order.customerPhone,
+    customerEmail: order.customerEmail,
     outlet: order.outlet,
     user: order.user,
   }));

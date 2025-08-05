@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../../../lib/jwt-edge';
+import { verifyTokenSimple } from '@rentalshop/auth';
 import { 
   getOrderById, 
   updateOrder, 
@@ -22,8 +22,8 @@ export async function GET(
       );
     }
 
-    const decoded = await verifyToken(token);
-    if (!decoded) {
+    const user = await verifyTokenSimple(token);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -69,8 +69,8 @@ export async function PUT(
       );
     }
 
-    const decoded = await verifyToken(token);
-    if (!decoded) {
+    const user = await verifyTokenSimple(token);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -100,7 +100,7 @@ export async function PUT(
     if (body.damageNotes !== undefined) updateInput.damageNotes = body.damageNotes;
 
     // Update the order
-    const updatedOrder = await updateOrder(orderId, updateInput, decoded.userId);
+    const updatedOrder = await updateOrder(orderId, updateInput, user.id);
 
     return NextResponse.json({
       success: true,
@@ -131,8 +131,8 @@ export async function DELETE(
       );
     }
 
-    const decoded = await verifyToken(token);
-    if (!decoded) {
+    const user = await verifyTokenSimple(token);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -144,7 +144,7 @@ export async function DELETE(
     const reason = body.reason || 'Order cancelled by user';
 
     // Cancel the order
-    const cancelledOrder = await cancelOrder(orderId, decoded.userId, reason);
+    const cancelledOrder = await cancelOrder(orderId, user.id, reason);
 
     return NextResponse.json({
       success: true,
