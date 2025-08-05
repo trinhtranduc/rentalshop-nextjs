@@ -130,6 +130,7 @@ model Product {
   categoryId  String
   name        String
   description String?
+  barcode     String?  @unique // Product barcode for scanning
   stock       Int      @default(0) // Total available stock
   renting     Int      @default(0) // Currently being rented
   available   Int      @default(0) // Available for rent (stock - renting)
