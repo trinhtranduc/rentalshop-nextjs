@@ -1,0 +1,46 @@
+{
+  "name": "rentalshop-nextjs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev:all": "turbo run dev",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:generate": "cd packages/database && yarn db:generate",
+    "db:push": "cd packages/database && yarn db:push",
+    "db:migrate": "cd packages/database && yarn db:migrate",
+    "db:studio": "cd packages/database && yarn db:studio",
+    "db:seed": "cd packages/database && yarn db:seed",
+    "db:reset": "cd packages/database && yarn db:reset",
+    "db:view": "node scripts/view-database.js",
+    "dev:local": "NODE_ENV=local turbo run dev",
+    "dev:development": "NODE_ENV=development turbo run dev",
+    "dev:production": "NODE_ENV=production turbo run dev",
+    "build:local": "NODE_ENV=local turbo run build",
+    "build:development": "NODE_ENV=development turbo run build",
+    "build:production": "NODE_ENV=production turbo run build",
+    "start:local": "NODE_ENV=local turbo run start",
+    "start:development": "NODE_ENV=development turbo run start",
+    "start:production": "NODE_ENV=production turbo run start"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "prettier": "^3.0.0",
+    "prisma": "5.22.0",
+    "turbo": "^1.10.0",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "yarn@1.22.22",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0"
+  }
+}
