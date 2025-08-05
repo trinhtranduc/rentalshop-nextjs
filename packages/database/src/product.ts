@@ -22,6 +22,54 @@ export interface ProductListOptions {
   sortOrder?: 'asc' | 'desc';
 }
 
+export interface ProductSearchFilter {
+  query?: string; // Search term for name or barcode
+  outletId?: string;
+  merchantId?: string;
+  categoryId?: string;
+  isActive?: boolean;
+  inStock?: boolean; // Only products with available stock > 0
+  limit?: number;
+  offset?: number;
+}
+
+export interface ProductSearchResult {
+  id: string;
+  name: string;
+  description: string | null;
+  barcode: string | null;
+  stock: number;
+  renting: number;
+  available: number;
+  rentPrice: number;
+  salePrice: number | null;
+  deposit: number;
+  images: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  outlet: {
+    id: string;
+    name: string;
+    merchant: {
+      id: string;
+      companyName: string;
+    };
+  };
+  category: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface ProductSearchResponse {
+  products: ProductSearchResult[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
+
 /**
  * Create a new product
  * @param data - Product data
@@ -253,4 +301,309 @@ export const checkProductAvailability = async (id: string): Promise<boolean> => 
   });
 
   return product ? product.stock > 0 && product.isActive : false;
+}; 
+
+/**
+ * Search products by name or barcode with various filters
+ */
+export const searchProducts = async (filter: ProductSearchFilter): Promise<ProductSearchResponse> => {
+  const {
+    query,
+    outletId,
+    merchantId,
+    categoryId,
+    isActive,
+    inStock,
+    limit = 20,
+    offset = 0,
+  } = filter;
+
+  // Build where clause
+  const whereClause: any = {};
+
+  // Search by name or barcode
+  if (query && query.trim()) {
+    const searchQuery = query.trim();
+    whereClause.OR = [
+      {
+        name: {
+          contains: searchQuery,
+          mode: 'insensitive', // Case-insensitive search
+        },
+      },
+      {
+        barcode: {
+          contains: searchQuery,
+          mode: 'insensitive',
+        },
+      },
+    ];
+  }
+
+  // Filter by outlet
+  if (outletId) {
+    whereClause.outletId = outletId;
+  }
+
+  // Filter by merchant
+  if (merchantId) {
+    whereClause.outlet = {
+      merchantId,
+    };
+  }
+
+  // Filter by category
+  if (categoryId) {
+    whereClause.categoryId = categoryId;
+  }
+
+  // Filter by active status
+  if (isActive !== undefined) {
+    whereClause.isActive = isActive;
+  }
+
+  // Filter by stock availability
+  if (inStock) {
+    whereClause.available = {
+      gt: 0,
+    };
+  }
+
+  // Get total count for pagination
+  const total = await prisma.product.count({
+    where: whereClause,
+  });
+
+  // Get products with pagination
+  const products = await prisma.product.findMany({
+    where: whereClause,
+    include: {
+      outlet: {
+        include: {
+          merchant: {
+            select: {
+              id: true,
+              companyName: true,
+            },
+          },
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: [
+      {
+        name: 'asc',
+      },
+      {
+        createdAt: 'desc',
+      },
+    ],
+    take: limit,
+    skip: offset,
+  });
+
+  return {
+    products,
+    total,
+    limit,
+    offset,
+    hasMore: offset + limit < total,
+  };
+};
+
+/**
+ * Search products by exact barcode match
+ */
+export const searchProductByBarcode = async (barcode: string): Promise<ProductSearchResult | null> => {
+  const product = await prisma.product.findFirst({
+    where: {
+      barcode: {
+        equals: barcode,
+      },
+      isActive: true,
+    },
+    include: {
+      outlet: {
+        include: {
+          merchant: {
+            select: {
+              id: true,
+              companyName: true,
+            },
+          },
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  return product;
+};
+
+/**
+ * Get products by outlet with optional filters
+ */
+export const getProductsByOutlet = async (
+  outletId: string,
+  options: {
+    categoryId?: string;
+    isActive?: boolean;
+    inStock?: boolean;
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<ProductSearchResponse> => {
+  const { categoryId, isActive, inStock, limit = 20, offset = 0 } = options;
+
+  const whereClause: any = {
+    outletId,
+  };
+
+  if (categoryId) {
+    whereClause.categoryId = categoryId;
+  }
+
+  if (isActive !== undefined) {
+    whereClause.isActive = isActive;
+  }
+
+  if (inStock) {
+    whereClause.available = {
+      gt: 0,
+    };
+  }
+
+  const total = await prisma.product.count({
+    where: whereClause,
+  });
+
+  const products = await prisma.product.findMany({
+    where: whereClause,
+    include: {
+      outlet: {
+        include: {
+          merchant: {
+            select: {
+              id: true,
+              companyName: true,
+            },
+          },
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: [
+      {
+        name: 'asc',
+      },
+      {
+        createdAt: 'desc',
+      },
+    ],
+    take: limit,
+    skip: offset,
+  });
+
+  return {
+    products,
+    total,
+    limit,
+    offset,
+    hasMore: offset + limit < total,
+  };
+};
+
+/**
+ * Get products by merchant with optional filters
+ */
+export const getProductsByMerchant = async (
+  merchantId: string,
+  options: {
+    categoryId?: string;
+    isActive?: boolean;
+    inStock?: boolean;
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<ProductSearchResponse> => {
+  const { categoryId, isActive, inStock, limit = 20, offset = 0 } = options;
+
+  const whereClause: any = {
+    outlet: {
+      merchantId,
+    },
+  };
+
+  if (categoryId) {
+    whereClause.categoryId = categoryId;
+  }
+
+  if (isActive !== undefined) {
+    whereClause.isActive = isActive;
+  }
+
+  if (inStock) {
+    whereClause.available = {
+      gt: 0,
+    };
+  }
+
+  const total = await prisma.product.count({
+    where: whereClause,
+  });
+
+  const products = await prisma.product.findMany({
+    where: whereClause,
+    include: {
+      outlet: {
+        include: {
+          merchant: {
+            select: {
+              id: true,
+              companyName: true,
+            },
+          },
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: [
+      {
+        name: 'asc',
+      },
+      {
+        createdAt: 'desc',
+      },
+    ],
+    take: limit,
+    skip: offset,
+  });
+
+  return {
+    products,
+    total,
+    limit,
+    offset,
+    hasMore: offset + limit < total,
+  };
 }; 

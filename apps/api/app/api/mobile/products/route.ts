@@ -42,10 +42,10 @@ export async function GET(request: NextRequest) {
       id: product.id,
       name: product.name,
       description: product.description,
-      price: product.price || 0,
+      price: product.rentPrice || 0,
       deposit: product.deposit,
       images: product.images,
-      isAvailable: product.isAvailable,
+      isAvailable: product.available > 0 && product.isActive,
       category: {
         name: product.category.name,
       },

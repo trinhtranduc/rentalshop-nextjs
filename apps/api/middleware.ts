@@ -4,10 +4,18 @@ import { verifyTokenSimple } from './lib/jwt-edge';
 // Protected routes that require authentication
 const protectedRoutes = [
   '/api/users',
-  '/api/products',
   '/api/orders',
   '/api/payments',
   '/api/shops',
+];
+
+// Public product search routes (for testing)
+const publicProductRoutes = [
+  '/api/products/search',
+  '/api/products/barcode',
+  '/api/products/outlet',
+  '/api/products/merchant',
+  '/api/products/docs',
 ];
 
 // Admin-only routes

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     // Filter parameters
     if (searchParams.get('outletId')) filters.outletId = searchParams.get('outletId')!;
     if (searchParams.get('categoryId')) filters.categoryId = searchParams.get('categoryId')!;
-    if (searchParams.get('isAvailable')) filters.isAvailable = searchParams.get('isAvailable') === 'true';
+    if (searchParams.get('isActive')) filters.isActive = searchParams.get('isActive') === 'true';
     if (searchParams.get('search')) filters.search = searchParams.get('search')!;
     if (searchParams.get('minPrice')) filters.minPrice = parseFloat(searchParams.get('minPrice')!);
     if (searchParams.get('maxPrice')) filters.maxPrice = parseFloat(searchParams.get('maxPrice')!);
