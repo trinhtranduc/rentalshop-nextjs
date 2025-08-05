@@ -52,8 +52,9 @@ model Merchant {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlets Outlet[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outlets   Outlet[]
+  customers Customer[]
 
   @@map("merchants")
 }
@@ -150,10 +151,39 @@ model Product {
   @@map("products")
 }
 
+// Customer Management
+model Customer {
+  id          String   @id @default(cuid())
+  merchantId  String
+  firstName   String
+  lastName    String
+  email       String
+  phone       String
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  country     String?
+  dateOfBirth DateTime?
+  idNumber    String?
+  idType      String?  // passport, drivers_license, national_id, other
+  isActive    Boolean  @default(true)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  rentals  Rental[]
+
+  @@map("customers")
+}
+
 // Rental Management
 model Rental {
   id          String   @id @default(cuid())
   userId      String
+  customerId  String?  // Optional - can be rented by user or customer
   outletId    String
   productId   String
   startDate   DateTime
@@ -166,9 +196,10 @@ model Rental {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlet  Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  outlet   Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
   payments Payment[]
 
   @@map("rentals")
