@@ -48,7 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   variant = 'client',
   className,
 }) => {
-  const mainImage = images?.[0] || '/placeholder-product.jpg';
+  const mainImage = images?.[0] || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBDMTE2LjU2OSA3MCAxMzAgODMuNDMxIDMwIDEwMEMxMzAgMTE2LjU2OSAxMTYuNTY5IDEzMCAxMDAgMTMwQzgzLjQzMSAxMzAgNzAgMTE2LjU2OSA3MCAxMEM3MCA4My40MzEgODMuNDMxIDcwIDEwMCA3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHBhdGggZD0iTTEwMCAxMTVDMTA4LjI4NCAxMTUgMTE1IDEwOC4yODQgMTE1IDEwMEMxMTUgOTEuNzE2IDEwOC4yODQgODUgMTAwIDg1QzkxLjcxNiA4NSA4NSA5MS43MTYgODUgMTAwQzg1IDEwOC4yODQgOTEuNzE2IDExNSAxMDAgMTE1WiIgZmlsbD0iI0E5Q0JCRiIvPgo8L3N2Zz4K';
   const isAvailable = available > 0;
 
   return (
@@ -60,7 +60,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           alt={name}
           className="h-full w-full object-cover transition-transform hover:scale-105"
           onError={(e) => {
-            e.currentTarget.src = '/placeholder-product.jpg';
+            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBDMTE2LjU2OSA3MCAxMzAgODMuNDMxIDMwIDEwMEMxMzAgMTE2LjU2OSAxMTYuNTY5IDEzMCAxMDAgMTMwQzgzLjQzMSAxMzAgNzAgMTE2LjU2OSA3MCAxMEM3MCA4My40MzEgODMuNDMxIDcwIDEwMCA3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHBhdGggZD0iTTEwMCAxMTVDMTA4LjI4NCAxMTUgMTE1IDEwOC4yODQgMTE1IDEwMEMxMTUgOTEuNzE2IDEwOC4yODQgODUgMTAwIDg1QzkxLjcxNiA4NSA4NSA5MS43MTYgODUgMTAwQzg1IDEwOC4yODQgOTEuNzE2IDExNSAxMDAgMTE1WiIgZmlsbD0iI0E5Q0JCRiIvPgo8L3N2Zz4K';
           }}
         />
         {!isAvailable && (

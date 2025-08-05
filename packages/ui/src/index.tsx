@@ -18,6 +18,10 @@ export { ProductCard } from './components/products/ProductCard';
 export { ProductGrid } from './components/products/ProductGrid';
 export type { Product } from './components/products/ProductGrid';
 
+// Customer components
+export { CustomerCard } from './components/customers/CustomerCard';
+export { CustomerForm } from './components/customers/CustomerForm';
+
 // Utility Functions
 export { cn } from './lib/cn';
 export { buttonVariants } from './components/button'; 

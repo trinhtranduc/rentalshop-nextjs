@@ -1,307 +1,404 @@
-import React from 'react';
+import Link from 'next/link';
 
-export default function ProductSearchDocsPage() {
+export default function ProductDocsPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Product Search API Documentation</h1>
-      
-      <div className="space-y-8">
-        {/* Overview */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Overview</h2>
-          <p className="text-gray-600 mb-4">
-            The Product Search API provides comprehensive product search functionality including search by name, 
-            barcode, outlet, and merchant with various filtering options.
-          </p>
-        </section>
-
-        {/* General Search */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">General Product Search</h2>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">GET /api/products/search</h3>
-            <p className="text-gray-600 mb-4">Search products by name with various filters.</p>
-            
-            <h4 className="font-medium mb-2">Query Parameters:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><code>q</code> - Search query for product name (optional)</li>
-              <li><code>outletId</code> - Filter by specific outlet (optional)</li>
-              <li><code>merchantId</code> - Filter by specific merchant (optional)</li>
-              <li><code>categoryId</code> - Filter by specific category (optional)</li>
-              <li><code>isActive</code> - Filter by active status (true/false, optional)</li>
-              <li><code>inStock</code> - Only products with available stock (true/false, optional)</li>
-              <li><code>limit</code> - Number of results per page (1-100, default: 20)</li>
-              <li><code>offset</code> - Number of results to skip (default: 0)</li>
-            </ul>
-            
-            <h4 className="font-medium mb-2 mt-4">Example:</h4>
-            <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto">
-{`GET /api/products/search?q=laptop&outletId=outlet123&inStock=true&limit=10
-
-Response:
-{
-  "success": true,
-  "data": {
-    "products": [
-      {
-        "id": "product123",
-        "name": "MacBook Pro 13-inch",
-        "description": "Apple MacBook Pro with M2 chip",
-        "barcode": "1234567890123",
-        "stock": 5,
-        "renting": 2,
-        "available": 3,
-        "rentPrice": 50.00,
-        "salePrice": 1200.00,
-        "deposit": 200.00,
-        "images": "[\"image1.jpg\", \"image2.jpg\"]",
-        "isActive": true,
-        "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z",
-        "outlet": {
-          "id": "outlet123",
-          "name": "Downtown Branch",
-          "merchant": {
-            "id": "merchant123",
-            "companyName": "ABC Rentals"
-          }
-        },
-        "category": {
-          "id": "category123",
-          "name": "Electronics"
-        }
-      }
-    ],
-    "total": 25,
-    "limit": 10,
-    "offset": 0,
-    "hasMore": true
-  }
-}`}
-            </pre>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Product API Documentation</h1>
+              <p className="mt-2 text-gray-600">
+                Complete documentation for all product-related endpoints
+              </p>
+            </div>
+            <Link 
+              href="/api/products/swagger"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              🚀 Interactive Swagger UI
+            </Link>
           </div>
-        </section>
+        </div>
+      </div>
 
-        {/* Barcode Search */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Barcode Search</h2>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">GET /api/products/barcode/[barcode]</h3>
-            <p className="text-gray-600 mb-4">Search for a product by exact barcode match.</p>
-            
-            <h4 className="font-medium mb-2">Path Parameters:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><code>barcode</code> - Product barcode (required)</li>
-            </ul>
-            
-            <h4 className="font-medium mb-2 mt-4">Example:</h4>
-            <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto">
-{`GET /api/products/barcode/1234567890123
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Quick Links */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow p-6 sticky top-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Navigation</h2>
+              <nav className="space-y-2">
+                <a href="#overview" className="block text-blue-600 hover:text-blue-800">Overview</a>
+                <a href="#authentication" className="block text-blue-600 hover:text-blue-800">Authentication</a>
+                <a href="#endpoints" className="block text-blue-600 hover:text-blue-800">Endpoints</a>
+                <a href="#models" className="block text-blue-600 hover:text-blue-800">Data Models</a>
+                <a href="#examples" className="block text-blue-600 hover:text-blue-800">Examples</a>
+              </nav>
+              
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">API Base URL</h3>
+                <code className="block bg-gray-100 px-3 py-2 rounded text-sm">
+                  http://localhost:3002/api
+                </code>
+              </div>
+            </div>
+          </div>
 
-Response:
-{
-  "success": true,
-  "data": {
-    "id": "product123",
-    "name": "MacBook Pro 13-inch",
-    "description": "Apple MacBook Pro with M2 chip",
-    "barcode": "1234567890123",
-    "stock": 5,
-    "renting": 2,
-    "available": 3,
-    "rentPrice": 50.00,
-    "salePrice": 1200.00,
-    "deposit": 200.00,
-    "images": "[\"image1.jpg\", \"image2.jpg\"]",
-    "isActive": true,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
-    "outlet": {
-      "id": "outlet123",
-      "name": "Downtown Branch",
-      "merchant": {
-        "id": "merchant123",
-        "companyName": "ABC Rentals"
-      }
-    },
-    "category": {
-      "id": "category123",
-      "name": "Electronics"
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Overview */}
+            <section id="overview" className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
+              <p className="text-gray-600 mb-4">
+                The Product API provides comprehensive endpoints for managing products in the rental shop system. 
+                All endpoints require authentication and support various filtering, searching, and pagination options.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-900 mb-2">🔍 Search & Filter</h3>
+                  <p className="text-blue-700 text-sm">
+                    Advanced search by name, barcode, category, outlet, and more
+                  </p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-green-900 mb-2">📊 CRUD Operations</h3>
+                  <p className="text-green-700 text-sm">
+                    Create, read, update, and delete products with validation
+                  </p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-purple-900 mb-2">🏪 Multi-Outlet</h3>
+                  <p className="text-purple-700 text-sm">
+                    Support for multiple outlets and merchant management
+                  </p>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-orange-900 mb-2">📱 Mobile Optimized</h3>
+                  <p className="text-orange-700 text-sm">
+                    Specialized endpoints for mobile applications
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Authentication */}
+            <section id="authentication" className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication</h2>
+              <p className="text-gray-600 mb-4">
+                All Product API endpoints require authentication using JWT Bearer tokens.
+              </p>
+              
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-2">Authorization Header</h3>
+                <code className="text-sm">
+                  Authorization: Bearer &lt;your-jwt-token&gt;
+                </code>
+              </div>
+              
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h3 className="font-semibold text-yellow-800 mb-2">⚠️ Important</h3>
+                <p className="text-yellow-700 text-sm">
+                  Make sure to include the Bearer token in all requests. Without proper authentication, 
+                  you'll receive a 401 Unauthorized response.
+                </p>
+              </div>
+            </section>
+
+            {/* Endpoints */}
+            <section id="endpoints" className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">API Endpoints</h2>
+              
+              <div className="space-y-6">
+                {/* GET /api/products */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">GET</span>
+                    <code className="text-sm font-mono">/api/products</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Get products with filtering and pagination
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Query params: outletId, categoryId, isActive, search, minPrice, maxPrice, page, limit, sortBy, sortOrder
+                  </div>
+                </div>
+
+                {/* POST /api/products */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">POST</span>
+                    <code className="text-sm font-mono">/api/products</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Create a new product
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Required: name, stock, rentPrice, deposit, categoryId, outletId
+                  </div>
+                </div>
+
+                {/* GET /api/products/search */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">GET</span>
+                    <code className="text-sm font-mono">/api/products/search</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Search products by name or barcode
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Query params: q, outletId, merchantId, categoryId, isActive, inStock, limit, offset
+                  </div>
+                </div>
+
+                {/* GET /api/products/barcode/{barcode} */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">GET</span>
+                    <code className="text-sm font-mono">/api/products/barcode/{'{barcode}'}</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Find product by exact barcode
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Path param: barcode (string)
+                  </div>
+                </div>
+
+                {/* GET /api/products/outlet/{outletId} */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">GET</span>
+                    <code className="text-sm font-mono">/api/products/outlet/{'{outletId}'}</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Get products by outlet
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Path param: outletId (string)
+                  </div>
+                </div>
+
+                {/* GET /api/products/merchant/{merchantId} */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">GET</span>
+                    <code className="text-sm font-mono">/api/products/merchant/{'{merchantId}'}</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Get products by merchant
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Path param: merchantId (string)
+                  </div>
+                </div>
+
+                {/* GET /api/products/{id} */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">GET</span>
+                    <code className="text-sm font-mono">/api/products/{'{id}'}</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Get product by ID
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Path param: id (string)
+                  </div>
+                </div>
+
+                {/* PUT /api/products/{id} */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded">PUT</span>
+                    <code className="text-sm font-mono">/api/products/{'{id}'}</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Update product
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Path param: id (string) | Body: ProductUpdateInput
+                  </div>
+                </div>
+
+                {/* DELETE /api/products/{id} */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded">DELETE</span>
+                    <code className="text-sm font-mono">/api/products/{'{id}'}</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Delete product (soft delete)
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Path param: id (string)
+                  </div>
+                </div>
+
+                {/* GET /api/products/{id}/availability */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">GET</span>
+                    <code className="text-sm font-mono">/api/products/{'{id}'}/availability</code>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Check product availability
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    Path param: id (string)
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Data Models */}
+            <section id="models" className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Data Models</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Product</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg text-sm">
+                    <pre className="whitespace-pre-wrap">
+{`{
+  id: string
+  name: string
+  description: string | null
+  barcode: string | null
+  stock: number
+  renting: number
+  available: number
+  rentPrice: number
+  salePrice: number | null
+  deposit: number
+  images: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  outlet: {
+    id: string
+    name: string
+    merchant: {
+      id: string
+      companyName: string
     }
   }
-}`}
-            </pre>
-          </div>
-        </section>
-
-        {/* Products by Outlet */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Products by Outlet</h2>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">GET /api/products/outlet/[outletId]</h3>
-            <p className="text-gray-600 mb-4">Get all products from a specific outlet with optional filters.</p>
-            
-            <h4 className="font-medium mb-2">Path Parameters:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><code>outletId</code> - Outlet ID (required)</li>
-            </ul>
-            
-            <h4 className="font-medium mb-2">Query Parameters:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><code>categoryId</code> - Filter by specific category (optional)</li>
-              <li><code>isActive</code> - Filter by active status (true/false, optional)</li>
-              <li><code>inStock</code> - Only products with available stock (true/false, optional)</li>
-              <li><code>limit</code> - Number of results per page (1-100, default: 20)</li>
-              <li><code>offset</code> - Number of results to skip (default: 0)</li>
-            </ul>
-            
-            <h4 className="font-medium mb-2 mt-4">Example:</h4>
-            <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto">
-{`GET /api/products/outlet/outlet123?categoryId=category123&inStock=true&limit=15
-
-Response:
-{
-  "success": true,
-  "data": {
-    "products": [...],
-    "total": 45,
-    "limit": 15,
-    "offset": 0,
-    "hasMore": true
+  category: {
+    id: string
+    name: string
   }
 }`}
-            </pre>
-          </div>
-        </section>
+                    </pre>
+                  </div>
+                </div>
 
-        {/* Products by Merchant */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Products by Merchant</h2>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">GET /api/products/merchant/[merchantId]</h3>
-            <p className="text-gray-600 mb-4">Get all products from a specific merchant with optional filters.</p>
-            
-            <h4 className="font-medium mb-2">Path Parameters:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><code>merchantId</code> - Merchant ID (required)</li>
-            </ul>
-            
-            <h4 className="font-medium mb-2">Query Parameters:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><code>categoryId</code> - Filter by specific category (optional)</li>
-              <li><code>isActive</code> - Filter by active status (true/false, optional)</li>
-              <li><code>inStock</code> - Only products with available stock (true/false, optional)</li>
-              <li><code>limit</code> - Number of results per page (1-100, default: 20)</li>
-              <li><code>offset</code> - Number of results to skip (default: 0)</li>
-            </ul>
-            
-            <h4 className="font-medium mb-2 mt-4">Example:</h4>
-            <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto">
-{`GET /api/products/merchant/merchant123?categoryId=category123&isActive=true&limit=20
-
-Response:
-{
-  "success": true,
-  "data": {
-    "products": [...],
-    "total": 120,
-    "limit": 20,
-    "offset": 0,
-    "hasMore": true
-  }
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">ProductInput (Create)</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg text-sm">
+                    <pre className="whitespace-pre-wrap">
+{`{
+  name: string (required)
+  description?: string
+  barcode?: string
+  stock: number (required, min: 0)
+  rentPrice: number (required, min: 0)
+  salePrice?: number (min: 0)
+  deposit: number (required, min: 0)
+  categoryId: string (required)
+  outletId: string (required)
+  images?: string[]
 }`}
-            </pre>
-          </div>
-        </section>
+                    </pre>
+                  </div>
+                </div>
 
-        {/* Usage Examples */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Usage Examples</h2>
-          
-          <div className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Search for laptops</h4>
-              <code className="text-sm">GET /api/products/search?q=laptop&inStock=true</code>
-            </div>
-            
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Find product by barcode</h4>
-              <code className="text-sm">GET /api/products/barcode/1234567890123</code>
-            </div>
-            
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Get all active products from an outlet</h4>
-              <code className="text-sm">GET /api/products/outlet/outlet123?isActive=true</code>
-            </div>
-            
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Get electronics from a merchant</h4>
-              <code className="text-sm">GET /api/products/merchant/merchant123?categoryId=electronics&inStock=true</code>
-            </div>
-            
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Search with pagination</h4>
-              <code className="text-sm">GET /api/products/search?q=phone&limit=10&offset=20</code>
-            </div>
-          </div>
-        </section>
-
-        {/* Error Handling */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Error Handling</h2>
-          <div className="bg-red-50 p-4 rounded-lg">
-            <h4 className="font-medium mb-2">Common Error Responses:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><strong>400 Bad Request:</strong> Invalid parameters or missing required fields</li>
-              <li><strong>404 Not Found:</strong> Product not found (for barcode search)</li>
-              <li><strong>500 Internal Server Error:</strong> Database or server error</li>
-            </ul>
-            
-            <h4 className="font-medium mb-2 mt-4">Example Error Responses:</h4>
-            <pre className="bg-gray-800 text-red-400 p-3 rounded text-sm">
-{`// Invalid limit
-{
-  "error": "Limit must be between 1 and 100"
-}
-
-// Product not found
-{
-  "error": "Product not found"
-}
-
-// Missing barcode
-{
-  "error": "Barcode is required"
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">ProductUpdateInput (Update)</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg text-sm">
+                    <pre className="whitespace-pre-wrap">
+{`{
+  name?: string (min: 1)
+  description?: string
+  barcode?: string
+  stock?: number (min: 0)
+  rentPrice?: number (min: 0)
+  salePrice?: number (min: 0)
+  deposit?: number (min: 0)
+  categoryId?: string
+  outletId?: string
+  images?: string[]
+  isActive?: boolean
 }`}
-            </pre>
-          </div>
-        </section>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </section>
 
-        {/* Response Format */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Response Format</h2>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h4 className="font-medium mb-2">Product Object Structure:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li><code>id</code> - Unique product identifier</li>
-              <li><code>name</code> - Product name</li>
-              <li><code>description</code> - Product description (nullable)</li>
-              <li><code>barcode</code> - Product barcode (nullable)</li>
-              <li><code>stock</code> - Total available stock</li>
-              <li><code>renting</code> - Currently being rented</li>
-              <li><code>available</code> - Available for rent (stock - renting)</li>
-              <li><code>rentPrice</code> - Daily rental price</li>
-              <li><code>salePrice</code> - Sale price (nullable)</li>
-              <li><code>deposit</code> - Security deposit amount</li>
-              <li><code>images</code> - JSON string of image URLs</li>
-              <li><code>isActive</code> - Product active status</li>
-              <li><code>createdAt</code> - Creation timestamp</li>
-              <li><code>updatedAt</code> - Last update timestamp</li>
-              <li><code>outlet</code> - Associated outlet information</li>
-              <li><code>category</code> - Product category information</li>
-            </ul>
+            {/* Examples */}
+            <section id="examples" className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Examples</h2>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Search Products</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg">
+                    <code className="text-sm">
+                      GET /api/products/search?q=laptop&outletId=123&limit=10
+                    </code>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Create Product</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg">
+                    <code className="text-sm">
+                      POST /api/products<br/>
+                      {`{
+  "name": "MacBook Pro 16",
+  "description": "Latest MacBook Pro for rent",
+  "stock": 5,
+  "rentPrice": 50.00,
+  "deposit": 500.00,
+  "categoryId": "cat_123",
+  "outletId": "outlet_456"
+}`}
+                    </code>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Find by Barcode</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg">
+                    <code className="text-sm">
+                      GET /api/products/barcode/1234567890123
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Interactive Documentation */}
+            <section className="bg-blue-50 rounded-lg p-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-blue-900 mb-4">
+                  🚀 Try It Out!
+                </h2>
+                <p className="text-blue-700 mb-6">
+                  Use our interactive Swagger UI to test all endpoints with real requests and responses.
+                </p>
+                <Link 
+                  href="/api/products/swagger"
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Open Interactive Documentation
+                </Link>
+              </div>
+            </section>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
