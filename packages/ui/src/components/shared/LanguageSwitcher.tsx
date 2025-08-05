@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Button } from '../button';
+import { Button } from '@rentalshop/ui';
 import { Globe } from 'lucide-react';
 
 interface LanguageSwitcherProps {

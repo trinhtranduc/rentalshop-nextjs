@@ -28,13 +28,17 @@ model User {
   merchant    Merchant?
   admin       Admin?
   outletStaff OutletStaff?
-  rentals     Rental[]
+  orders      Order[]
   payments    Payment[]
   notifications Notification[]
   passwordResetTokens PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   sessions    Session[]
 
+  // Optimized indexes for high-volume system
+  @@index([email]) // Fast user lookups
+  @@index([role, isActive]) // Staff queries
+  @@index([createdAt(sort: Desc)]) // User registration analytics
   @@map("users")
 }
 
@@ -56,6 +60,9 @@ model Merchant {
   outlets   Outlet[]
   customers Customer[]
 
+  // Optimized indexes
+  @@index([isVerified, isActive]) // Merchant verification queries
+  @@index([companyName]) // Company name search
   @@map("merchants")
 }
 
@@ -75,8 +82,12 @@ model Outlet {
   merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   outletStaff OutletStaff[]
   products    Product[]
-  rentals     Rental[]
+  orders      Order[]
 
+  // Optimized indexes for high-volume operations
+  @@index([merchantId, isActive]) // Merchant outlet queries
+  @@index([name]) // Outlet name search
+  @@index([phone]) // Phone number lookups
   @@map("outlets")
 }
 
@@ -93,6 +104,9 @@ model OutletStaff {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
 
+  // Optimized indexes
+  @@index([outletId, isActive]) // Staff queries by outlet
+  @@index([role, isActive]) // Role-based queries
   @@map("outlet_staff")
 }
 
@@ -106,6 +120,8 @@ model Admin {
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Optimized indexes
+  @@index([level]) // Admin level queries
   @@map("admins")
 }
 
@@ -122,6 +138,9 @@ model Category {
   // Relations
   products Product[]
 
+  // Optimized indexes
+  @@index([isActive]) // Active category queries
+  @@index([name]) // Category name search
   @@map("categories")
 }
 
@@ -146,8 +165,14 @@ model Product {
   // Relations
   outlet   Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id])
-  rentals  Rental[]
+  orderItems OrderItem[]
 
+  // High-performance indexes for inventory management
+  @@index([outletId, isActive, available(sort: Desc)]) // Available inventory queries (composite)
+  @@index([categoryId, isActive, available(sort: Desc)]) // Category inventory queries (composite)
+  @@index([barcode]) // Barcode scanning
+  @@index([name]) // Product name search
+  @@index([rentPrice]) // Price-based queries
   @@map("products")
 }
 
@@ -174,57 +199,175 @@ model Customer {
 
   // Relations
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  rentals  Rental[]
+  orders   Order[]
 
+  // High-performance indexes for customer management
+  @@index([merchantId, isActive]) // Merchant customer queries
+  @@index([merchantId, firstName, lastName]) // Customer name search
+  @@index([phone]) // Phone number lookups
+  @@index([email]) // Email lookups
+  @@index([idNumber, idType]) // ID document queries
+  @@index([city, state, country]) // Location-based queries
+  @@index([createdAt(sort: Desc)]) // Customer registration analytics
   @@map("customers")
 }
 
-// Rental Management
-model Rental {
-  id          String   @id @default(cuid())
-  userId      String
-  customerId  String?  // Optional - can be rented by user or customer
-  outletId    String
-  productId   String
-  startDate   DateTime
-  endDate     DateTime
-  totalPrice  Float    // Total rental cost
-  deposit     Float    // Security deposit amount
-  status      String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED, OVERDUE
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+// Comprehensive Order Management System - OPTIMIZED FOR HIGH VOLUME
+model Order {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique // Auto-generated order number (e.g., ORD-2024-001)
+  orderType     String   // RENT, SALE, RENT_TO_OWN
+  userId        String   // Staff who created the order
+  customerId    String?  // Customer (optional for walk-in customers)
+  outletId      String
+  status        String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED, OVERDUE, DAMAGED
+  
+  // Rental-specific fields
+  pickupPlanAt  DateTime? // Planned pickup date/time
+  returnPlanAt  DateTime? // Planned return date/time
+  pickedUpAt    DateTime? // Actual pickup date/time
+  returnedAt    DateTime? // Actual return date/time
+  
+  // Financial information
+  subtotal      Float    // Subtotal before tax and fees
+  taxAmount     Float    @default(0) // Tax amount
+  discountAmount Float   @default(0) // Discount amount
+  totalAmount   Float    // Final total amount
+  depositAmount Float    @default(0) // Security deposit
+  damageFee     Float    @default(0) // Damage fee if any
+  
+  // Additional information
+  notes         String?  // General notes
+  pickupNotes   String?  // Notes during pickup
+  returnNotes   String?  // Notes during return
+  damageNotes   String?  // Damage assessment notes
+  
+  // Customer information (for walk-in customers)
+  customerName  String?  // For non-registered customers
+  customerPhone String?  // For non-registered customers
+  customerEmail String?  // For non-registered customers
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
   // Relations
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  outlet   Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  product  Product  @relation(fields: [productId], references: [id])
-  payments Payment[]
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer    Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  outlet      Outlet      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  payments    Payment[]
+  orderHistory OrderHistory[]
 
-  @@map("rentals")
+  // HIGH-PERFORMANCE INDEXES FOR MASSIVE ORDER VOLUMES
+  // Primary lookup indexes
+  @@index([orderNumber]) // Fast order number lookups (most common)
+  @@index([outletId, status, createdAt(sort: Desc)]) // Staff dashboard queries (composite)
+  @@index([customerId, createdAt(sort: Desc)]) // Customer order history
+  
+  // Rental-specific indexes
+  @@index([status, returnPlanAt]) // Overdue rental queries (composite)
+  @@index([pickupPlanAt, returnPlanAt]) // Scheduling queries (composite)
+  @@index([status, orderType, createdAt(sort: Desc)]) // Order type analytics (composite)
+  
+  // Financial and analytics indexes
+  @@index([outletId, totalAmount, createdAt(sort: Desc)]) // Financial analytics (composite)
+  @@index([createdAt(sort: Desc)]) // Recent orders
+  @@index([userId, createdAt(sort: Desc)]) // Staff order history
+  
+  // Search indexes
+  @@index([customerName, customerPhone]) // Walk-in customer search
+  @@index([status, outletId, orderType]) // Multi-dimensional queries (composite)
+  
+  @@map("orders")
 }
 
-// Payment Management
+// Order Items - OPTIMIZED FOR HIGH VOLUME
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int      @default(1)
+  unitPrice   Float    // Price per unit at time of order
+  totalPrice  Float    // Total price for this item
+  deposit     Float    @default(0) // Deposit for this item
+  notes       String?  // Item-specific notes
+  
+  // Rental-specific fields
+  startDate   DateTime? // Rental start date
+  endDate     DateTime? // Rental end date
+  daysRented  Int?      // Number of days rented
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  // HIGH-PERFORMANCE INDEXES FOR ORDER ITEMS
+  @@index([orderId]) // Order item queries (most common)
+  @@index([productId, createdAt(sort: Desc)]) // Product usage analytics (composite)
+  @@index([startDate, endDate]) // Rental period queries (composite)
+  @@index([orderId, productId]) // Order-product relationship (composite)
+  
+  @@map("order_items")
+}
+
+// Order History - OPTIMIZED FOR AUDIT TRAILS
+model OrderHistory {
+  id        String   @id @default(cuid())
+  orderId   String
+  action    String   // CREATED, STATUS_CHANGED, UPDATED, CANCELLED, etc.
+  field     String?  // Which field was changed
+  oldValue  String?  // Previous value
+  newValue  String?  // New value
+  notes     String?  // Additional notes
+  userId    String?  // User who made the change
+  createdAt DateTime @default(now())
+  
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // HIGH-PERFORMANCE INDEXES FOR AUDIT TRAILS
+  @@index([orderId, createdAt(sort: Desc)]) // Order audit trail (most common)
+  @@index([action, createdAt(sort: Desc)]) // Action-based analytics (composite)
+  @@index([userId, createdAt(sort: Desc)]) // User activity tracking (composite)
+  @@index([orderId, action, createdAt(sort: Desc)]) // Order action history (composite)
+  
+  @@map("order_history")
+}
+
+// Payment Management - OPTIMIZED FOR FINANCIAL TRACKING
 model Payment {
   id        String   @id @default(cuid())
-  rentalId  String
+  orderId   String
   userId    String
   amount    Float
   method    String   // CASH, BANK_TRANSFER, CREDIT_CARD, DIGITAL_WALLET
+  type      String   // DEPOSIT, RENTAL_FEE, DAMAGE_FEE, REFUND
   status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
   reference String?  // External payment reference
+  notes     String?  // Payment notes
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  rental Rental  @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // HIGH-PERFORMANCE INDEXES FOR PAYMENT TRACKING
+  @@index([orderId, status, createdAt(sort: Desc)]) // Order payment tracking (composite)
+  @@index([orderId, type, createdAt(sort: Desc)]) // Payment type analytics (composite)
+  @@index([status, method, createdAt(sort: Desc)]) // Payment method analytics (composite)
+  @@index([userId, createdAt(sort: Desc)]) // User payment history (composite)
+  @@index([reference]) // External payment lookups
+  @@index([amount, createdAt(sort: Desc)]) // Financial analytics (composite)
+  
   @@map("payments")
 }
 
-// Notification System
+// Notification System - OPTIMIZED FOR REAL-TIME UPDATES
 model Notification {
   id        String   @id @default(cuid())
   userId    String
@@ -237,10 +380,15 @@ model Notification {
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // HIGH-PERFORMANCE INDEXES FOR NOTIFICATIONS
+  @@index([userId, isRead, createdAt(sort: Desc)]) // User notification queries (composite)
+  @@index([type, createdAt(sort: Desc)]) // Notification type analytics (composite)
+  @@index([userId, createdAt(sort: Desc)]) // Recent notifications (composite)
+  
   @@map("notifications")
 }
 
-// Authentication & Security
+// Authentication & Security - OPTIMIZED FOR SESSION MANAGEMENT
 model PasswordResetToken {
   id        String   @id @default(cuid())
   userId    String
@@ -251,6 +399,10 @@ model PasswordResetToken {
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // HIGH-PERFORMANCE INDEXES FOR TOKEN MANAGEMENT
+  @@index([token]) // Token lookups (most common)
+  @@index([expiresAt, createdAt]) // Expired token cleanup (composite)
+  
   @@map("password_reset_tokens")
 }
 
@@ -264,6 +416,10 @@ model EmailVerificationToken {
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // HIGH-PERFORMANCE INDEXES FOR TOKEN MANAGEMENT
+  @@index([token]) // Token lookups (most common)
+  @@index([expiresAt, createdAt]) // Expired token cleanup (composite)
+  
   @@map("email_verification_tokens")
 }
 
@@ -277,5 +433,10 @@ model Session {
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // HIGH-PERFORMANCE INDEXES FOR SESSION MANAGEMENT
+  @@index([token]) // Session token lookups (most common)
+  @@index([expiresAt, createdAt]) // Expired session cleanup (composite)
+  @@index([userId, expiresAt]) // User session management (composite)
+  
   @@map("sessions")
 } 

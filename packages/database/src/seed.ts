@@ -38,6 +38,321 @@ const outlets = [
   },
 ];
 
+const users = [
+  // Admin users
+  {
+    email: 'admin@rentalshop.com',
+    password: '$2b$10$example.hash',
+    name: 'Admin User',
+    role: 'ADMIN',
+    phone: '+1234567890',
+  },
+  {
+    email: 'superadmin@rentalshop.com',
+    password: '$2b$10$example.hash',
+    name: 'Super Admin',
+    role: 'ADMIN',
+    phone: '+1234567891',
+  },
+  
+  // Merchant users
+  {
+    email: 'merchant@rentalshop.com',
+    password: '$2b$10$example.hash',
+    name: 'John Merchant',
+    role: 'MERCHANT',
+    phone: '+1234567892',
+  },
+  {
+    email: 'merchant2@rentalshop.com',
+    password: '$2b$10$example.hash',
+    name: 'Sarah Business',
+    role: 'MERCHANT',
+    phone: '+1234567893',
+  },
+  
+  // Staff users
+  {
+    email: 'staff1@rentalshop.com',
+    password: '$2b$10$example.hash',
+    name: 'Mike Staff',
+    role: 'OUTLET_STAFF',
+    phone: '+1234567894',
+  },
+  {
+    email: 'staff2@rentalshop.com',
+    password: '$2b$10$example.hash',
+    name: 'Lisa Assistant',
+    role: 'OUTLET_STAFF',
+    phone: '+1234567895',
+  },
+  
+  // Client users
+  {
+    email: 'client@example.com',
+    password: '$2b$10$example.hash',
+    name: 'John Client',
+    role: 'CLIENT',
+    phone: '+1234567896',
+  },
+  {
+    email: 'alice@example.com',
+    password: '$2b$10$example.hash',
+    name: 'Alice Johnson',
+    role: 'CLIENT',
+    phone: '+1234567897',
+  },
+  {
+    email: 'bob@example.com',
+    password: '$2b$10$example.hash',
+    name: 'Bob Smith',
+    role: 'CLIENT',
+    phone: '+1234567898',
+  },
+  {
+    email: 'emma@example.com',
+    password: '$2b$10$example.hash',
+    name: 'Emma Wilson',
+    role: 'CLIENT',
+    phone: '+1234567899',
+  },
+  {
+    email: 'david@example.com',
+    password: '$2b$10$example.hash',
+    name: 'David Brown',
+    role: 'CLIENT',
+    phone: '+1234567900',
+  },
+];
+
+const customers = [
+  {
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    phone: '+1234567001',
+    address: '123 Main Street',
+    city: 'New York',
+    state: 'NY',
+    zipCode: '10001',
+    country: 'USA',
+    dateOfBirth: '1990-05-15',
+    idNumber: 'ID123456789',
+    idType: 'DRIVERS_LICENSE',
+    notes: 'Regular customer, prefers electronics',
+  },
+  {
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'jane.smith@example.com',
+    phone: '+1234567002',
+    address: '456 Oak Avenue',
+    city: 'Los Angeles',
+    state: 'CA',
+    zipCode: '90210',
+    country: 'USA',
+    dateOfBirth: '1985-08-22',
+    idNumber: 'ID987654321',
+    idType: 'PASSPORT',
+    notes: 'Party equipment specialist',
+  },
+  {
+    firstName: 'Michael',
+    lastName: 'Johnson',
+    email: 'michael.johnson@example.com',
+    phone: '+1234567003',
+    address: '789 Pine Street',
+    city: 'Chicago',
+    state: 'IL',
+    zipCode: '60601',
+    country: 'USA',
+    dateOfBirth: '1988-12-10',
+    idNumber: 'ID456789123',
+    idType: 'DRIVERS_LICENSE',
+    notes: 'Tools and equipment customer',
+  },
+  {
+    firstName: 'Sarah',
+    lastName: 'Williams',
+    email: 'sarah.williams@example.com',
+    phone: '+1234567004',
+    address: '321 Elm Street',
+    city: 'Houston',
+    state: 'TX',
+    zipCode: '77001',
+    country: 'USA',
+    dateOfBirth: '1992-03-18',
+    idNumber: 'ID789123456',
+    idType: 'PASSPORT',
+    notes: 'Sports equipment enthusiast',
+  },
+  {
+    firstName: 'Robert',
+    lastName: 'Brown',
+    email: 'robert.brown@example.com',
+    phone: '+1234567005',
+    address: '654 Maple Drive',
+    city: 'Phoenix',
+    state: 'AZ',
+    zipCode: '85001',
+    country: 'USA',
+    dateOfBirth: '1987-07-25',
+    idNumber: 'ID321654987',
+    idType: 'DRIVERS_LICENSE',
+    notes: 'Furniture rental customer',
+  },
+  {
+    firstName: 'Emily',
+    lastName: 'Davis',
+    email: 'emily.davis@example.com',
+    phone: '+1234567006',
+    address: '987 Cedar Lane',
+    city: 'Philadelphia',
+    state: 'PA',
+    zipCode: '19101',
+    country: 'USA',
+    dateOfBirth: '1995-11-30',
+    idNumber: 'ID147258369',
+    idType: 'PASSPORT',
+    notes: 'Event planning specialist',
+  },
+  {
+    firstName: 'Christopher',
+    lastName: 'Miller',
+    email: 'christopher.miller@example.com',
+    phone: '+1234567007',
+    address: '147 Birch Road',
+    city: 'San Antonio',
+    state: 'TX',
+    zipCode: '78201',
+    country: 'USA',
+    dateOfBirth: '1983-09-14',
+    idNumber: 'ID963852741',
+    idType: 'DRIVERS_LICENSE',
+    notes: 'Construction tools customer',
+  },
+  {
+    firstName: 'Amanda',
+    lastName: 'Wilson',
+    email: 'amanda.wilson@example.com',
+    phone: '+1234567008',
+    address: '258 Spruce Street',
+    city: 'San Diego',
+    state: 'CA',
+    zipCode: '92101',
+    country: 'USA',
+    dateOfBirth: '1991-01-08',
+    idNumber: 'ID852963741',
+    idType: 'PASSPORT',
+    notes: 'Beach equipment rentals',
+  },
+  {
+    firstName: 'Daniel',
+    lastName: 'Taylor',
+    email: 'daniel.taylor@example.com',
+    phone: '+1234567009',
+    address: '369 Willow Avenue',
+    city: 'Dallas',
+    state: 'TX',
+    zipCode: '75201',
+    country: 'USA',
+    dateOfBirth: '1989-04-12',
+    idNumber: 'ID741852963',
+    idType: 'DRIVERS_LICENSE',
+    notes: 'Office equipment rentals',
+  },
+  {
+    firstName: 'Jessica',
+    lastName: 'Anderson',
+    email: 'jessica.anderson@example.com',
+    phone: '+1234567010',
+    address: '741 Poplar Street',
+    city: 'San Jose',
+    state: 'CA',
+    zipCode: '95101',
+    country: 'USA',
+    dateOfBirth: '1993-06-20',
+    idNumber: 'ID369258147',
+    idType: 'PASSPORT',
+    notes: 'Tech equipment specialist',
+  },
+  {
+    firstName: 'Matthew',
+    lastName: 'Thomas',
+    email: 'matthew.thomas@example.com',
+    phone: '+1234567011',
+    address: '852 Ash Lane',
+    city: 'Austin',
+    state: 'TX',
+    zipCode: '73301',
+    country: 'USA',
+    dateOfBirth: '1986-02-28',
+    idNumber: 'ID258147369',
+    idType: 'DRIVERS_LICENSE',
+    notes: 'Music equipment rentals',
+  },
+  {
+    firstName: 'Ashley',
+    lastName: 'Jackson',
+    email: 'ashley.jackson@example.com',
+    phone: '+1234567012',
+    address: '963 Hickory Drive',
+    city: 'Jacksonville',
+    state: 'FL',
+    zipCode: '32099',
+    country: 'USA',
+    dateOfBirth: '1994-10-05',
+    idNumber: 'ID147369258',
+    idType: 'PASSPORT',
+    notes: 'Outdoor equipment customer',
+  },
+  {
+    firstName: 'Joshua',
+    lastName: 'White',
+    email: 'joshua.white@example.com',
+    phone: '+1234567013',
+    address: '159 Sycamore Street',
+    city: 'Fort Worth',
+    state: 'TX',
+    zipCode: '76101',
+    country: 'USA',
+    dateOfBirth: '1984-12-16',
+    idNumber: 'ID963147258',
+    idType: 'DRIVERS_LICENSE',
+    notes: 'Heavy machinery rentals',
+  },
+  {
+    firstName: 'Nicole',
+    lastName: 'Harris',
+    email: 'nicole.harris@example.com',
+    phone: '+1234567014',
+    address: '357 Magnolia Avenue',
+    city: 'Columbus',
+    state: 'OH',
+    zipCode: '43201',
+    country: 'USA',
+    dateOfBirth: '1990-08-03',
+    idNumber: 'ID258963147',
+    idType: 'PASSPORT',
+    notes: 'Wedding equipment specialist',
+  },
+  {
+    firstName: 'Kevin',
+    lastName: 'Clark',
+    email: 'kevin.clark@example.com',
+    phone: '+1234567015',
+    address: '486 Cypress Lane',
+    city: 'Charlotte',
+    state: 'NC',
+    zipCode: '28201',
+    country: 'USA',
+    dateOfBirth: '1988-05-19',
+    idNumber: 'ID147258963',
+    idType: 'DRIVERS_LICENSE',
+    notes: 'Garden equipment customer',
+  },
+];
+
 const products = [
   // Electronics
   {
@@ -285,25 +600,8 @@ export async function seed() {
     );
     console.log(`✅ Created ${createdProducts.length} products`);
 
-    // Create some sample users
-    console.log('Creating sample users...');
-    const users = [
-      {
-        email: 'client@example.com',
-        password: '$2b$10$example.hash',
-        name: 'John Client',
-        role: 'CLIENT',
-        phone: '+1234567891',
-      },
-      {
-        email: 'admin@rentalshop.com',
-        password: '$2b$10$example.hash',
-        name: 'Admin User',
-        role: 'ADMIN',
-        phone: '+1234567892',
-      },
-    ];
-
+    // Create users
+    console.log('Creating users...');
     const createdUsers = await Promise.all(
       users.map(async (user) => {
         return await prisma.user.upsert({
@@ -315,12 +613,46 @@ export async function seed() {
     );
     console.log(`✅ Created ${createdUsers.length} users`);
 
+    // Create admin records for admin users
+    console.log('Creating admin records...');
+    const adminUsers = createdUsers.filter(user => user.role === 'ADMIN');
+    const createdAdmins = await Promise.all(
+      adminUsers.map(async (user) => {
+        return await prisma.admin.upsert({
+          where: { userId: user.id },
+          update: {},
+          create: {
+            userId: user.id,
+            level: 'SUPER_ADMIN',
+          },
+        });
+      })
+    );
+    console.log(`✅ Created ${createdAdmins.length} admin records`);
+
+    // Create customers
+    console.log('Creating customers...');
+    const createdCustomers = await Promise.all(
+      customers.map(async (customer) => {
+        return await prisma.customer.create({
+          data: {
+            ...customer,
+            merchantId: merchant.id,
+            dateOfBirth: customer.dateOfBirth ? new Date(customer.dateOfBirth) : null,
+          },
+        });
+      })
+    );
+    console.log(`✅ Created ${createdCustomers.length} customers`);
+
     console.log('🎉 Database seeding completed successfully!');
     console.log('\n📊 Summary:');
     console.log(`- Categories: ${createdCategories.length}`);
     console.log(`- Outlets: ${createdOutlets.length}`);
     console.log(`- Products: ${createdProducts.length}`);
     console.log(`- Users: ${createdUsers.length}`);
+    console.log(`- Admin Records: ${createdAdmins.length}`);
+    console.log(`- Customers: ${createdCustomers.length}`);
 
   } catch (error) {
     console.error('❌ Error seeding database:', error);

@@ -28,6 +28,197 @@
 - ✅ Use consistent naming conventions (PascalCase for interfaces)
 - ❌ Don't redefine types in multiple places
 
+### **Database Design Principles & Performance**
+
+#### **Database Schema Design**
+```sql
+-- ✅ GOOD: Proper indexing for rental shop queries
+CREATE INDEX idx_orders_status_outlet ON orders(status, outlet_id);
+CREATE INDEX idx_orders_customer_created ON orders(customer_id, created_at DESC);
+CREATE INDEX idx_orders_pickup_return ON orders(pickup_plan_at, return_plan_at);
+CREATE INDEX idx_orders_search ON orders(order_number, customer_name, customer_phone);
+CREATE INDEX idx_order_items_product ON order_items(product_id, order_id);
+CREATE INDEX idx_payments_order_status ON payments(order_id, status);
+CREATE INDEX idx_products_outlet_available ON products(outlet_id, available DESC);
+CREATE INDEX idx_customers_merchant_search ON customers(merchant_id, first_name, last_name, phone);
+```
+
+#### **Indexing Strategy**
+```typescript
+// ✅ GOOD: Index for common query patterns
+// Orders by status and outlet (for staff dashboards)
+// Orders by customer and date (for customer history)
+// Orders by pickup/return dates (for scheduling)
+// Products by availability (for inventory management)
+// Payments by order and status (for financial tracking)
+
+// ❌ BAD: Missing indexes on frequently queried fields
+// No index on order_number for lookups
+// No index on customer search fields
+// No composite indexes for complex queries
+```
+
+#### **Query Optimization**
+```typescript
+// ✅ GOOD: Efficient queries with proper joins
+const orders = await prisma.order.findMany({
+  where: {
+    outletId: outletId,
+    status: { in: ['ACTIVE', 'CONFIRMED'] },
+    returnPlanAt: { lt: new Date() }
+  },
+  include: {
+    customer: { select: { firstName: true, lastName: true, phone: true } },
+    orderItems: { 
+      include: { product: { select: { name: true, barcode: true } } }
+    }
+  },
+  orderBy: { createdAt: 'desc' },
+  take: 20
+});
+
+// ❌ BAD: N+1 queries or inefficient includes
+const orders = await prisma.order.findMany();
+for (const order of orders) {
+  const customer = await prisma.customer.findUnique({ where: { id: order.customerId } });
+  const items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+}
+```
+
+#### **Database Schema Best Practices**
+```prisma
+// ✅ GOOD: Proper relationships and constraints
+model Order {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique // Indexed for fast lookups
+  orderType     String   // RENT, SALE, RENT_TO_OWN
+  status        String   @default("PENDING")
+  outletId      String
+  customerId    String?
+  
+  // Timestamps for tracking
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Rental-specific fields
+  pickupPlanAt  DateTime?
+  returnPlanAt  DateTime?
+  pickedUpAt    DateTime?
+  returnedAt    DateTime?
+  
+  // Financial fields
+  totalAmount   Float
+  depositAmount Float    @default(0)
+  
+  // Relations
+  outlet      Outlet      @relation(fields: [outletId], references: [id])
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  orderItems  OrderItem[]
+  payments    Payment[]
+  
+  @@index([status, outletId]) // Composite index for staff queries
+  @@index([customerId, createdAt(sort: Desc)]) // Customer history
+  @@index([pickupPlanAt, returnPlanAt]) // Scheduling queries
+  @@index([orderNumber]) // Fast order lookups
+}
+
+// ✅ GOOD: Optimized product model for inventory
+model Product {
+  id          String   @id @default(cuid())
+  outletId    String
+  name        String
+  barcode     String?  @unique
+  stock       Int      @default(0)
+  renting     Int      @default(0)
+  available   Int      @default(0) // Computed field
+  rentPrice   Float
+  deposit     Float    @default(0)
+  
+  outlet      Outlet   @relation(fields: [outletId], references: [id])
+  orderItems  OrderItem[]
+  
+  @@index([outletId, available(sort: Desc)]) // Inventory queries
+  @@index([barcode]) // Barcode scanning
+  @@index([name]) // Product search
+}
+```
+
+#### **Performance Optimization Rules**
+```typescript
+// ✅ GOOD: Pagination for large datasets
+export async function searchOrders(filters: OrderSearchFilter) {
+  const { limit = 20, offset = 0 } = filters;
+  
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where: buildWhereClause(filters),
+      include: { customer: true, outlet: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.order.count({ where: buildWhereClause(filters) })
+  ]);
+  
+  return { orders, total, hasMore: offset + limit < total };
+}
+
+// ✅ GOOD: Efficient search with full-text indexing
+export async function searchProducts(query: string) {
+  return await prisma.product.findMany({
+    where: {
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { barcode: { equals: query } },
+        { description: { contains: query, mode: 'insensitive' } }
+      ]
+    },
+    include: { outlet: true },
+    take: 50
+  });
+}
+
+// ❌ BAD: No pagination or inefficient search
+export async function getAllOrders() {
+  return await prisma.order.findMany({
+    include: { customer: true, outlet: true, orderItems: true }
+  }); // Could return thousands of records
+}
+```
+
+#### **Data Integrity & Constraints**
+```prisma
+// ✅ GOOD: Proper constraints and validation
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  totalPrice  Float
+  
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  @@index([orderId, productId]) // Composite index for order items
+  @@check(quantity > 0) // Business rule validation
+  @@check(unitPrice >= 0) // Price validation
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  orderId   String
+  amount    Float
+  method    String
+  status    String   @default("PENDING")
+  
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId, status]) // Payment tracking
+  @@check(amount > 0) // Amount validation
+}
+```
+
 ### **Configuration Best Practices**
 
 #### **TypeScript Configuration**
@@ -69,74 +260,47 @@ export default defineConfig({
 
 ### **Code Organization Rules**
 
-#### **File Structure**
-```
-packages/
-├── ui/src/components/     # ✅ Shared UI components
-├── auth/src/              # ✅ Authentication logic
-├── database/src/          # ✅ Database utilities
-└── utils/src/             # ✅ Common utilities
-
-apps/
-├── client/app/            # ✅ Client-specific pages
-├── admin/app/             # ✅ Admin-specific pages
-└── api/app/api/           # ✅ API endpoints
-```
-
-#### **Import Patterns**
+#### **Import Patterns & Component Usage**
 ```typescript
-// ✅ GOOD: Import from shared packages
-import { Button, Card } from '@rentalshop/ui';
-import { loginUser } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
-import { formatDate } from '@rentalshop/utils';
+// ✅ GOOD: Centralized imports from @rentalshop/ui
+import { 
+  Button, 
+  Card, 
+  Input, 
+  Select,
+  Textarea,
+  Badge,
+  formatDate,
+  formatCurrency,
+  cn 
+} from '@rentalshop/ui';
 
-// ❌ BAD: Import from individual apps
-import { Button } from '../../../components/Button';
-```
+// ✅ GOOD: Import business components
+import { OrderCard, OrderForm } from '@rentalshop/ui';
+import { CustomerCard, CustomerForm } from '@rentalshop/ui';
+import { LoginForm, RegisterForm } from '@rentalshop/ui';
 
-### **Component Development Rules**
-
-#### **Component Structure**
-```typescript
-// ✅ GOOD: Consistent component structure
-// packages/ui/src/components/button.tsx
-import React from 'react';
-import { cn } from '../lib/cn';
-import { buttonVariants } from './button.variants';
-import type { ButtonProps } from './button.types';
-
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
-    return (
-      <button
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-
-Button.displayName = 'Button';
-```
-
-#### **Component Usage**
-```typescript
-// ✅ GOOD: Use shared components
-// apps/client/app/login/page.tsx
-import { Button, Input, Card } from '@rentalshop/ui';
-
+// ✅ GOOD: Use components with proper structure
 export default function LoginPage() {
   return (
     <Card>
-      <Input type="email" placeholder="Email" />
-      <Button variant="primary">Login</Button>
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input type="email" placeholder="Email" />
+        <Button variant="primary">Login</Button>
+      </CardContent>
     </Card>
   );
 }
 
-// ❌ BAD: Create app-specific components
+// ❌ BAD: Use relative imports or create app-specific components
+import { Button } from '../components/Button';
+import { Card } from '../../shared/card';
+import { cn } from '../../lib/utils';
+
+// ❌ BAD: Inline components instead of using shared ones
 export default function LoginPage() {
   return (
     <div className="card">
@@ -147,21 +311,202 @@ export default function LoginPage() {
 }
 ```
 
+#### **File Structure**
+```
+packages/
+├── ui/src/components/     # ✅ Shared UI components
+├── auth/src/              # ✅ Authentication logic
+├── database/src/          # ✅ Database utilities with proper indexing
+└── utils/src/             # ✅ Common utilities
+
+apps/
+├── client/app/            # ✅ Client-specific pages
+├── admin/app/             # ✅ Admin-specific pages
+└── api/app/api/           # ✅ API endpoints with optimized queries
+```
+
+#### **Import Patterns**
+```typescript
+// ✅ GOOD: Import from shared packages with centralized UI components
+import { 
+  Button, 
+  Card, 
+  Input, 
+  Select,
+  Textarea,
+  Badge,
+  formatDate,
+  formatCurrency,
+  cn 
+} from '@rentalshop/ui';
+import { loginUser } from '@rentalshop/auth';
+import { prisma } from '@rentalshop/database';
+import { validateInput } from '@rentalshop/utils';
+
+// ✅ GOOD: Import specific components when needed
+import { OrderCard, OrderForm } from '@rentalshop/ui';
+import { CustomerCard, CustomerForm } from '@rentalshop/ui';
+
+// ❌ BAD: Import from individual apps or relative paths
+import { Button } from '../../../components/Button';
+import { Card } from '../shared/card';
+import { cn } from '../../lib/utils';
+```
+
+### **Component Development Rules**
+
+#### **Centralized Component Architecture**
+```typescript
+// ✅ GOOD: All components exported from centralized location
+// packages/ui/src/index.tsx
+export * from './components'; // Exports everything from components/index.ts
+
+// packages/ui/src/components/index.ts
+// ============================================================================
+// SHARED COMPONENTS (Core UI Components)
+// ============================================================================
+export { Button, buttonVariants } from './shared/button';
+export { Card, CardHeader, CardTitle, CardContent } from './shared/card';
+export { Input } from './shared/input';
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './shared/select';
+export { Textarea } from './shared/textarea';
+export { Badge, badgeVariants } from './shared/badge';
+
+// ============================================================================
+// BUSINESS COMPONENTS
+// ============================================================================
+export { LoginForm, RegisterForm, ForgetPasswordForm } from './auth';
+export { CustomerCard, CustomerForm } from './customers';
+export { ProductCard, ProductGrid } from './products';
+export { OrderCard, OrderForm } from './orders';
+```
+
+#### **Component Structure**
+```typescript
+// ✅ GOOD: Consistent component structure with centralized imports
+// packages/ui/src/components/shared/button.tsx
+import React from 'react';
+import { cn } from '@rentalshop/ui';
+import { cva, type VariantProps } from 'class-variance-authority';
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-action-primary text-text-inverted hover:bg-brand-primary",
+        destructive: "bg-action-danger text-text-inverted hover:bg-red-700",
+        outline: "border border-border bg-bg-card text-text-primary hover:bg-bg-secondary",
+        secondary: "bg-bg-secondary text-text-primary hover:bg-bg-tertiary",
+        ghost: "hover:bg-bg-secondary hover:text-text-primary",
+        link: "text-action-primary underline-offset-4 hover:underline",
+        success: "bg-action-success text-text-inverted hover:bg-green-700",
+        warning: "bg-action-warning text-text-inverted hover:bg-orange-700",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+```
+
+#### **Component Usage**
+```typescript
+// ✅ GOOD: Use centralized UI components
+// apps/client/app/login/page.tsx
+import { 
+  Button, 
+  Input, 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent 
+} from '@rentalshop/ui';
+
+export default function LoginPage() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input type="email" placeholder="Email" />
+        <Button variant="primary">Login</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ✅ GOOD: Import specific business components
+import { LoginForm, RegisterForm } from '@rentalshop/ui';
+
+export default function AuthPage() {
+  return <LoginForm onSubmit={handleLogin} />;
+}
+
+// ❌ BAD: Create app-specific components or use relative imports
+export default function LoginPage() {
+  return (
+    <div className="card">
+      <input type="email" />
+      <button className="btn-primary">Login</button>
+    </div>
+  );
+}
+
+// ❌ BAD: Use relative imports
+import { Button } from '../components/Button';
+import { Card } from '../../shared/card';
+```
+
 ### **API Development Rules**
 
 #### **API Route Structure**
 ```typescript
-// ✅ GOOD: Consistent API structure
-// apps/api/app/api/auth/login/route.ts
+// ✅ GOOD: Consistent API structure with proper indexing
+// apps/api/app/api/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { loginUser } from '@rentalshop/auth';
-import { validateLoginInput } from '@rentalshop/utils';
+import { searchOrders } from '@rentalshop/database';
+import { validateOrderInput } from '@rentalshop/utils';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    const validatedData = validateLoginInput(body);
-    const result = await loginUser(validatedData);
+    const { searchParams } = new URL(request.url);
+    const filters = parseSearchParams(searchParams);
+    
+    // Use indexed queries for performance
+    const result = await searchOrders(filters);
     
     return NextResponse.json(result);
   } catch (error) {
@@ -175,15 +520,28 @@ export async function POST(request: NextRequest) {
 
 #### **Database Operations**
 ```typescript
-// ✅ GOOD: Use shared database client
-// packages/auth/src/auth.ts
+// ✅ GOOD: Use shared database client with proper indexing
+// packages/orders/src/orders.ts
 import { prisma } from '@rentalshop/database';
 
-export const loginUser = async (credentials: LoginCredentials) => {
-  const user = await prisma.user.findUnique({
-    where: { email: credentials.email }
+export const searchOrders = async (filters: OrderFilters) => {
+  // Use indexed fields for efficient queries
+  const where = {
+    outletId: filters.outletId,
+    status: filters.status,
+    createdAt: {
+      gte: filters.startDate,
+      lte: filters.endDate
+    }
+  };
+  
+  return await prisma.order.findMany({
+    where,
+    include: { customer: true, outlet: true },
+    orderBy: { createdAt: 'desc' },
+    take: filters.limit || 20,
+    skip: filters.offset || 0
   });
-  // ... rest of logic
 };
 
 // ❌ BAD: Create separate database connections
@@ -195,44 +553,60 @@ const prisma = new PrismaClient();
 
 #### **Type Definitions**
 ```typescript
-// ✅ GOOD: Centralized types
+// ✅ GOOD: Centralized types with proper indexing considerations
 // packages/database/src/types.ts
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
+export interface OrderSearchFilter {
+  outletId?: string;
+  status?: OrderStatus;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+  offset?: number;
+  // Only include fields that are indexed for efficient queries
 }
 
-// ✅ GOOD: Import everywhere
-import type { User } from '@rentalshop/database';
+// ✅ GOOD: Index-aware query types
+export interface ProductSearchFilter {
+  outletId?: string;
+  available?: boolean;
+  categoryId?: string;
+  search?: string; // For indexed name/barcode search
+  limit?: number;
+  offset?: number;
+}
 
 // ❌ BAD: Redefine types
-interface User {
+interface Order {
   id: string;
-  email: string;
+  orderNumber: string;
   // ... duplicated definition
 }
 ```
 
 #### **Validation Schemas**
 ```typescript
-// ✅ GOOD: Shared validation
+// ✅ GOOD: Shared validation with database constraints
 // packages/utils/src/validation.ts
 import { z } from 'zod';
 
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+export const orderSchema = z.object({
+  orderType: z.enum(['RENT', 'SALE', 'RENT_TO_OWN']),
+  outletId: z.string().min(1),
+  customerId: z.string().optional(),
+  orderItems: z.array(z.object({
+    productId: z.string().min(1),
+    quantity: z.number().positive(),
+    unitPrice: z.number().nonnegative()
+  })).min(1)
 });
 
 // ✅ GOOD: Use everywhere
-import { loginSchema } from '@rentalshop/utils';
+import { orderSchema } from '@rentalshop/utils';
 
 // ❌ BAD: Duplicate schemas
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+const orderSchema = z.object({
+  orderType: z.enum(['RENT', 'SALE']),
+  // ... duplicated definition
 });
 ```
 
@@ -297,19 +671,20 @@ return { error: 'User not found' };
 
 #### **Code Documentation**
 ```typescript
-// ✅ GOOD: JSDoc comments
+// ✅ GOOD: JSDoc comments with performance notes
 /**
- * Authenticates a user with email and password
- * @param credentials - User login credentials
- * @returns Promise with user data and JWT token
- * @throws {AppError} When credentials are invalid
+ * Search orders with optimized database queries
+ * Uses indexed fields: status, outletId, createdAt for performance
+ * @param filters - Search filters (only indexed fields)
+ * @returns Promise with paginated order results
+ * @throws {AppError} When database query fails
  */
-export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  // Implementation
+export const searchOrders = async (filters: OrderSearchFilter): Promise<OrderSearchResponse> => {
+  // Implementation with proper indexing
 };
 
 // ❌ BAD: No documentation
-export const loginUser = async (credentials) => {
+export const searchOrders = async (filters) => {
   // Implementation
 };
 ```
@@ -318,12 +693,12 @@ export const loginUser = async (credentials) => {
 
 #### **Input Validation**
 ```typescript
-// ✅ GOOD: Validate all inputs
-import { loginSchema } from '@rentalshop/utils';
+// ✅ GOOD: Validate all inputs with database constraints
+import { orderSchema } from '@rentalshop/utils';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const validatedData = loginSchema.parse(body);
+  const validatedData = orderSchema.parse(body);
   // ... rest of logic
 }
 
@@ -351,7 +726,7 @@ AUTH_SECRET="your-secret"
 
 #### **Test Structure**
 ```typescript
-// ✅ GOOD: Consistent test structure
+// ✅ GOOD: Consistent test structure with database mocking
 // packages/utils/src/__tests__/date.test.ts
 import { formatDate } from '../date';
 
@@ -420,11 +795,28 @@ updated docs
 - ✅ Use type guards for runtime validation
 - ❌ Don't use `any` type without justification
 
+### **Database Performance Checklist**
+
+Before submitting any database changes, ensure:
+
+- [ ] **Proper Indexing**: All frequently queried fields are indexed
+- [ ] **Composite Indexes**: Multi-field queries have appropriate composite indexes
+- [ ] **Query Optimization**: No N+1 queries or inefficient joins
+- [ ] **Pagination**: Large datasets use proper pagination
+- [ ] **Constraints**: Business rules enforced with database constraints
+- [ ] **Relationships**: Proper foreign key relationships with cascade rules
+- [ ] **Search Optimization**: Full-text search on appropriate fields
+- [ ] **Performance Testing**: Queries tested with realistic data volumes
+- [ ] **Monitoring**: Query performance monitored in production
+- [ ] **Backup Strategy**: Database backup and recovery procedures in place
+
 ### **Review Checklist**
 
 Before submitting any code, ensure:
 
 - [ ] No duplicated configurations
+- [ ] Uses centralized `@rentalshop/ui` imports for all UI components
+- [ ] No relative imports for UI components
 - [ ] Uses shared components and utilities
 - [ ] Follows consistent naming conventions
 - [ ] Includes proper TypeScript types
@@ -432,23 +824,34 @@ Before submitting any code, ensure:
 - [ ] Includes tests for new functionality
 - [ ] Updates documentation if needed
 - [ ] Follows security best practices
-- [ ] Optimized for performance
+- [ ] Optimized for performance with proper indexing
 - [ ] Follows DRY principles
+- [ ] Database queries are optimized and indexed
+- [ ] No N+1 query problems
+- [ ] Proper pagination for large datasets
 
 ### **Remember**
 
 **ALWAYS prioritize:**
 1. **DRY (Don't Repeat Yourself)** - Never duplicate code or configurations
-2. **Shared Resources** - Use packages for reusable code
-3. **Consistency** - Follow established patterns
-4. **Type Safety** - Use TypeScript effectively
-5. **Performance** - Optimize bundles and imports
-6. **Security** - Validate inputs and handle errors properly
+2. **Centralized Imports** - Use `@rentalshop/ui` for all UI components and utilities
+3. **Shared Resources** - Use packages for reusable code
+4. **Consistency** - Follow established patterns
+5. **Type Safety** - Use TypeScript effectively
+6. **Performance** - Optimize bundles, imports, and database queries
+7. **Security** - Validate inputs and handle errors properly
+8. **Database Performance** - Proper indexing and query optimization
+9. **Scalability** - Design for growth and high data volumes
 
 **NEVER:**
 - Duplicate configurations across packages
+- Use relative imports for UI components (`import { Button } from '../components/Button'`)
 - Create app-specific versions of shared components
 - Redefine types that already exist
 - Skip input validation
 - Use `any` type without justification
 - Commit without running linting and tests
+- Create unindexed queries on frequently accessed fields
+- Use N+1 queries or inefficient database operations
+- Skip pagination for potentially large datasets
+- Ignore database performance implications
