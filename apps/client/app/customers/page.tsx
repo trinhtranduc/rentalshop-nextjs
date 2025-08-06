@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input } from '@rentalshop/ui';
 import { CustomerCard } from '@rentalshop/ui';
-import DashboardWrapper from '../../components/DashboardWrapper';
+import { DashboardWrapper } from '@rentalshop/ui';
 
 interface Customer {
   id: string;

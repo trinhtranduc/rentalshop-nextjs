@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@rentalshop/ui": "workspace:*",
+    "@rentalshop/auth": "workspace:*",
+    "@rentalshop/utils": "workspace:*",
     "@hookform/resolvers": "^3.3.0",
     "formik": "^2.4.6",
     "lucide-react": "^0.263.0",

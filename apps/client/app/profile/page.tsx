@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input } from '@rentalshop/ui';
 import { getStoredUser } from '../../lib/auth/auth';
-import DashboardWrapper from '../../components/DashboardWrapper';
+import { DashboardWrapper } from '@rentalshop/ui';
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);

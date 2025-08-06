@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input } from '@rentalshop/ui';
 import { ProductCard, ProductGrid } from '@rentalshop/ui';
-import DashboardWrapper from '../../components/DashboardWrapper';
+import { DashboardWrapper } from '@rentalshop/ui';
 import type { ProductSearchResult } from '@rentalshop/database';
 import type { Product } from '@rentalshop/ui';
 
