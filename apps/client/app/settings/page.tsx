@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
-import DashboardWrapper from '../../components/DashboardWrapper';
+import { DashboardWrapper } from '@rentalshop/ui';
 
 export default function SettingsPage() {
   return (

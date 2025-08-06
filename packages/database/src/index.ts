@@ -21,10 +21,13 @@ export {
   getProductById,
   updateProduct,
   deleteProduct,
+  hardDeleteProduct,
   searchProducts,
+  searchProductByBarcode,
   getProductsByOutlet,
   getProductsByMerchant,
   updateProductStock,
+  checkProductAvailability,
   getProducts,
 } from './product';
 

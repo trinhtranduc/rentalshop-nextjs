@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@rentalshop/ui';
-import DashboardWrapper from '../../components/DashboardWrapper';
+import { DashboardWrapper } from '@rentalshop/ui';
 import { OrderCard } from '@rentalshop/ui';
 import { OrderForm } from '@rentalshop/ui';
 import { getStoredUser } from '../../lib/auth/auth';

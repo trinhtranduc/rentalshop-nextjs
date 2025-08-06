@@ -3,11 +3,23 @@ import { verifyTokenSimple } from '@rentalshop/auth';
 import { 
   createOrder, 
   searchOrders, 
-  getOrderStats 
+  getOrderStats,
+  getOrderById,
+  updateOrder,
+  cancelOrder
 } from '@rentalshop/database';
-import type { OrderInput, OrderSearchFilter } from '@rentalshop/database';
+import type { OrderInput, OrderSearchFilter, OrderUpdateInput } from '@rentalshop/database';
 
-// GET /api/orders - Search orders
+/**
+ * GET /api/orders
+ * Get orders with filtering, pagination, and special operations
+ * 
+ * Query Parameters:
+ * - Standard filters: q, outletId, customerId, userId, orderType, status, startDate, endDate
+ * - Pagination: limit, offset
+ * - Special operations:
+ *   - orderId: Get specific order
+ */
 export async function GET(request: NextRequest) {
   try {
     // Verify authentication
@@ -27,8 +39,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parse query parameters
     const { searchParams } = new URL(request.url);
+    
+    // Handle specific order lookup
+    const orderId = searchParams.get('orderId');
+    if (orderId) {
+      const order = await getOrderById(orderId);
+      if (!order) {
+        return NextResponse.json(
+          { success: false, error: 'Order not found' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        data: order,
+      });
+    }
+
+    // Standard order search with filters
     const filters: OrderSearchFilter = {
       q: searchParams.get('q') || undefined,
       outletId: searchParams.get('outletId') || undefined,
@@ -63,7 +92,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/orders - Create new order
+/**
+ * POST /api/orders
+ * Create new order
+ */
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication
@@ -143,6 +175,130 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating order:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT /api/orders
+ * Update order (requires orderId in query params)
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    // Verify authentication
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get('orderId');
+    
+    if (!orderId) {
+      return NextResponse.json(
+        { success: false, error: 'Order ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+
+    // Validate update input
+    const updateInput: OrderUpdateInput = {};
+    
+    if (body.status !== undefined) updateInput.status = body.status;
+    if (body.pickupPlanAt !== undefined) updateInput.pickupPlanAt = new Date(body.pickupPlanAt);
+    if (body.returnPlanAt !== undefined) updateInput.returnPlanAt = new Date(body.returnPlanAt);
+    if (body.pickedUpAt !== undefined) updateInput.pickedUpAt = new Date(body.pickedUpAt);
+    if (body.returnedAt !== undefined) updateInput.returnedAt = new Date(body.returnedAt);
+    if (body.subtotal !== undefined) updateInput.subtotal = body.subtotal;
+    if (body.taxAmount !== undefined) updateInput.taxAmount = body.taxAmount;
+    if (body.discountAmount !== undefined) updateInput.discountAmount = body.discountAmount;
+    if (body.totalAmount !== undefined) updateInput.totalAmount = body.totalAmount;
+    if (body.depositAmount !== undefined) updateInput.depositAmount = body.depositAmount;
+    if (body.damageFee !== undefined) updateInput.damageFee = body.damageFee;
+    if (body.notes !== undefined) updateInput.notes = body.notes;
+    if (body.pickupNotes !== undefined) updateInput.pickupNotes = body.pickupNotes;
+    if (body.returnNotes !== undefined) updateInput.returnNotes = body.returnNotes;
+    if (body.damageNotes !== undefined) updateInput.damageNotes = body.damageNotes;
+
+    // Update the order
+    const updatedOrder = await updateOrder(orderId, updateInput, user.id);
+
+    return NextResponse.json({
+      success: true,
+      data: updatedOrder,
+    });
+
+  } catch (error) {
+    console.error('Error updating order:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/orders
+ * Cancel order (requires orderId in query params)
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // Verify authentication
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get('orderId');
+    
+    if (!orderId) {
+      return NextResponse.json(
+        { success: false, error: 'Order ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const reason = body.reason || 'Order cancelled by user';
+
+    // Cancel the order
+    const cancelledOrder = await cancelOrder(orderId, user.id, reason);
+
+    return NextResponse.json({
+      success: true,
+      data: cancelledOrder,
+    });
+
+  } catch (error) {
+    console.error('Error cancelling order:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { getStoredUser } from '../../lib/auth/auth';
-import DashboardWrapper from '../../components/DashboardWrapper';
+import { DashboardWrapper } from '@rentalshop/ui';
 
 interface DashboardStats {
   totalCustomers: number;
