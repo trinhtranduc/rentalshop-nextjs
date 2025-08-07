@@ -1,7 +1,11 @@
+// ============================================================================
+// CHART COMPONENTS
+// ============================================================================
 export { IncomeChart } from './IncomeChart';
 export { OrderChart } from './OrderChart';
-export { RecentOrders } from './RecentOrders';
+export { PieChart } from './PieChart';
+export { ColorfulList } from './ColorfulList';
+export { SimpleList } from './SimpleList';
 export { TopCustomers } from './TopCustomers';
 export { TopProducts } from './TopProducts';
-export { SimpleList } from './SimpleList';
-export { ColorfulList } from './ColorfulList'; 
+export { RecentOrders } from './RecentOrders'; 
