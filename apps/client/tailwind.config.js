@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  ...require('../../tailwind.config.base.js'),
+  ...require('../../tailwind.config.clean.js'),
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',

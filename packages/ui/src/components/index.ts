@@ -3,6 +3,10 @@
 // ============================================================================
 export { Button, buttonVariants } from './ui/button';
 export { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from './ui/card';
+export { ButtonColorful, buttonColorfulVariants } from './ui/button-colorful';
+export { CardColorful, CardHeaderColorful, CardTitleColorful, CardContentColorful, CardDescriptionColorful, CardFooterColorful } from './ui/card-colorful';
+export { ButtonClean, buttonCleanVariants } from './ui/button-clean';
+export { CardClean, CardHeaderClean, CardTitleClean, CardContentClean, CardDescriptionClean, CardFooterClean } from './ui/card-clean';
 export { Input } from './ui/input';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from './ui/select';
 export { Textarea } from './ui/textarea';
@@ -17,6 +21,14 @@ export { Sidebar } from './layout/sidebar';
 export { LanguageSwitcher } from './layout/LanguageSwitcher';
 export { SearchInput } from './layout/SearchInput';
 export { default as DashboardWrapper } from './layout/DashboardWrapper';
+export { default as DashboardWrapperColorful } from './layout/DashboardWrapperColorful';
+export { default as DashboardWrapperClean } from './layout/DashboardWrapperClean';
+export { TimePeriodSelector } from './layout/TimePeriodSelector';
+export { EnhancedStatCard } from './layout/EnhancedStatCard';
+export { QuickActionsGrid } from './layout/QuickActionsGrid';
+export { TodaysFocus } from './layout/TodaysFocus';
+export { ColorfulQuickActions } from './layout/ColorfulQuickActions';
+export { ColorfulTodaysFocus } from './layout/ColorfulTodaysFocus';
 
 // ============================================================================
 // FORM COMPONENTS
@@ -34,4 +46,15 @@ export { CustomerCard } from './features/CustomerCard';
 export { ProductCard } from './features/ProductCard';
 export { ProductGrid } from './features/ProductGrid';
 export { OrderCard } from './features/OrderCard';
-export type { Product } from './features/ProductGrid'; 
+export type { Product } from './features/ProductGrid';
+
+// ============================================================================
+// CHART COMPONENTS (Analytics & Dashboard)
+// ============================================================================
+export { IncomeChart } from './charts/IncomeChart';
+export { OrderChart } from './charts/OrderChart';
+export { TopProducts } from './charts/TopProducts';
+export { TopCustomers } from './charts/TopCustomers';
+export { RecentOrders } from './charts/RecentOrders';
+export { SimpleList } from './charts/SimpleList';
+export { ColorfulList } from './charts/ColorfulList'; 

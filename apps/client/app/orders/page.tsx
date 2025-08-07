@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '
 import { DashboardWrapper } from '@rentalshop/ui';
 import { OrderCard } from '@rentalshop/ui';
 import { OrderForm } from '@rentalshop/ui';
-import { getStoredUser } from '../../lib/auth/auth';
+import { getStoredUser } from '../../lib/auth';
 import type { OrderSearchResult, OrderInput, OrderType, OrderStatus } from '@rentalshop/database';
 
 export default function OrdersPage() {
