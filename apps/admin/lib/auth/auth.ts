@@ -1,5 +1,5 @@
 /**
- * Authentication utilities for client app
+ * Authentication utilities for admin app
  * Handles token storage and API requests with authentication
  */
 

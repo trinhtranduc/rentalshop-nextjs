@@ -5,39 +5,45 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* Brand Colors */
-  --brand-primary: #0F9347;
-  --brand-secondary: #2B3349;
+  /* Clean Brand Colors */
+  --brand-primary: #22c55e;
+  --brand-secondary: #64748b;
   
-  /* Action Colors */
-  --action-primary: #008AE8;
-  --action-success: #10B981;
-  --action-danger: #EF4444;
-  --action-warning: #f19920;
+  /* Minimal Action Colors */
+  --action-primary: #3b82f6;
+  --action-success: #10b981;
+  --action-danger: #ef4444;
+  --action-warning: #f59e0b;
   
-  /* Text Colors */
-  --text-primary: #323334;
-  --text-secondary: #6B7280;
-  --text-tertiary: #999999;
-  --text-inverted: #FFFFFF;
+  /* Clean Text Colors */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
+  --text-inverted: #ffffff;
+  --text-muted: #cbd5e1;
   
-  /* Background Colors */
-  --background-primary: #F5F5F5;
-  --background-secondary: #E7F0F5;
-  --background-tertiary: #F9FAFB;
-  --background-card: #FFFFFF;
+  /* Minimal Background Colors - Even Lighter */
+  --background-primary: #ffffff;
+  --background-secondary: #fafbfc;
+  --background-tertiary: #f8fafc;
+  --background-card: #ffffff;
   
   /* Navigation Colors */
-  --nav-background: #2B3349;
-  --nav-tint: #FFFFFF;
+  --nav-background: #1e293b;
+  --nav-tint: #ffffff;
   
-  /* Border Colors */
-  --border-color: #E5EAED;
+  /* Border Colors - Lighter */
+  --border-color: #f1f5f9;
+  --border-light: #f8fafc;
   
   /* Status Colors */
-  --status-active: #0F9347;
-  --status-inactive: #999999;
-  --status-pending: #f19920;
+  --status-active: #22c55e;
+  --status-inactive: #94a3b8;
+  --status-pending: #f59e0b;
+  --status-error: #ef4444;
+
+  /* Font Variables */
+  --font-inter: 'Inter', system-ui, sans-serif;
 }
 
 * {
@@ -50,12 +56,12 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-inter);
 }
 
 body {
   color: var(--text-primary);
-  background: var(--background-primary);
+  background: var(--background-secondary);
 }
 
 a {
@@ -63,7 +69,7 @@ a {
   text-decoration: none;
 }
 
-/* Custom utility classes */
+/* Clean utility classes */
 .bg-brand-primary { background-color: var(--brand-primary); }
 .bg-brand-secondary { background-color: var(--brand-secondary); }
 .bg-action-primary { background-color: var(--action-primary); }
@@ -87,8 +93,13 @@ a {
 .text-text-secondary { color: var(--text-secondary); }
 .text-text-tertiary { color: var(--text-tertiary); }
 .text-text-inverted { color: var(--text-inverted); }
+.text-text-muted { color: var(--text-muted); }
 
 .bg-nav-background { background-color: var(--nav-background); }
 .text-nav-tint { color: var(--nav-tint); }
 
-.border-border { border-color: var(--border-color); } 
+.border-border { border-color: var(--border-color); }
+.border-border-light { border-color: var(--border-light); }
+
+/* Font utility classes */
+.font-sans { font-family: var(--font-inter); } 

@@ -1,218 +1,327 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ProductGrid, SearchInput, Button } from '@rentalshop/ui';
-import type { ProductSearchResult } from '@rentalshop/database';
-import type { Product } from '@rentalshop/ui';
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent,
+  IncomeChart,
+  OrderChart,
+  TopProducts,
+  TopCustomers,
+  RecentOrders,
+  DashboardWrapper
+} from '@rentalshop/ui';
+import { getStoredUser } from '../../lib/auth';
 
-interface ProductsResponse {
-  success: boolean;
-  data: {
-    products: ProductSearchResult[];
-    total: number;
-    page: number;
-    totalPages: number;
-  };
-  error?: string;
+interface DashboardStats {
+  totalCustomers: number;
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
 }
 
-export default function AdminDashboard() {
-  const [products, setProducts] = useState<Product[]>([]);
+interface IncomeData {
+  month: string;
+  year: number;
+  realIncome: number;
+  futureIncome: number;
+}
+
+interface OrderData {
+  month: string;
+  year: number;
+  orderCount: number;
+}
+
+interface TopProduct {
+  id: string;
+  name: string;
+  rentPrice: number;
+  category: string;
+  rentalCount: number;
+  totalRevenue: number;
+  image?: string | null;
+}
+
+interface TopCustomer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  orderCount: number;
+  totalSpent: number;
+}
+
+interface RecentOrder {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  productNames: string;
+  productImage?: string | null;
+  totalAmount: number;
+  status: string;
+  orderType: string;
+  createdAt: string;
+  createdBy: string;
+  pickupPlanAt?: string;
+  returnPlanAt?: string;
+}
+
+export default function DashboardPage() {
+  const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalCustomers: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+  });
+  const [incomeData, setIncomeData] = useState<IncomeData[]>([]);
+  const [orderData, setOrderData] = useState<OrderData[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
+  const [loadingCharts, setLoadingCharts] = useState(true);
 
-  // Fetch products
-  const fetchProducts = async (filters?: { search?: string; categoryId?: string }) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams();
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.categoryId) params.append('categoryId', filters.categoryId);
-
-      const response = await fetch(`/api/products?${params.toString()}`);
-      const data: ProductsResponse = await response.json();
-
-      if (data.success) {
-        // Transform ProductSearchResult to Product for UI compatibility
-        const transformedProducts: Product[] = data.data.products.map(product => ({
-          id: product.id,
-          name: product.name,
-          description: product.description || undefined,
-          stock: product.stock,
-          renting: product.renting,
-          available: product.available,
-          rentPrice: product.rentPrice,
-          salePrice: product.salePrice || undefined,
-          deposit: product.deposit,
-          images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
-          category: {
-            name: product.category.name,
-          },
-          outlet: {
-            name: product.outlet.name,
-          },
-        }));
-        setProducts(transformedProducts);
-        
-        // Extract unique categories for filter
-        const uniqueCategories = Array.from(new Set(data.data.products.map(p => p.category.name)));
-        setCategories(uniqueCategories);
-      } else {
-        setError(data.error || 'Failed to load products');
-      }
-    } catch (err) {
-      setError('Failed to load products. Please try again.');
-      console.error('Error fetching products:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle search
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    fetchProducts({ search: value, categoryId: selectedCategory });
-  };
-
-  // Handle category filter
-  const handleCategoryFilter = (category: string) => {
-    const categoryId = category === selectedCategory ? '' : category;
-    setSelectedCategory(categoryId);
-    fetchProducts({ search: searchTerm, categoryId });
-  };
-
-  // Handle product actions
-  const handleViewProduct = (productId: string) => {
-    // Navigate to product detail page
-    window.location.href = `/dashboard/products/${productId}`;
-  };
-
-  const handleEditProduct = (productId: string) => {
-    // Navigate to edit product page
-    window.location.href = `/dashboard/products/${productId}/edit`;
-  };
-
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/products/${productId}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Remove product from state
-        setProducts(products.filter(p => p.id !== productId));
-        alert('Product deleted successfully');
-      } else {
-        alert(data.error || 'Failed to delete product');
-      }
-    } catch (err) {
-      alert('Failed to delete product. Please try again.');
-      console.error('Error deleting product:', err);
-    }
-  };
-
-  const handleAddProduct = () => {
-    // Navigate to add product page
-    window.location.href = '/dashboard/products/new';
-  };
-
-  // Load products on component mount
   useEffect(() => {
-    fetchProducts();
+    const currentUser = getStoredUser();
+    setUser(currentUser);
+    fetchDashboardData();
   }, []);
 
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setLoadingCharts(true);
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      // Fetch all dashboard data in parallel
+      const [
+        statsResponse,
+        incomeResponse,
+        ordersResponse,
+        topProductsResponse,
+        topCustomersResponse,
+        recentOrdersResponse
+      ] = await Promise.all([
+        fetch('http://localhost:3002/api/analytics/dashboard', { headers }),
+        fetch('http://localhost:3002/api/analytics/income', { headers }),
+        fetch('http://localhost:3002/api/analytics/orders', { headers }),
+        fetch('http://localhost:3002/api/analytics/top-products', { headers }),
+        fetch('http://localhost:3002/api/analytics/top-customers', { headers }),
+        fetch('http://localhost:3002/api/analytics/recent-orders', { headers })
+      ]);
+
+      // Process responses
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        if (statsData.success) {
+          setStats(statsData.data);
+        }
+      }
+
+      if (incomeResponse.ok) {
+        const incomeData = await incomeResponse.json();
+        if (incomeData.success) {
+          setIncomeData(incomeData.data);
+        }
+      }
+
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json();
+        if (ordersData.success) {
+          setOrderData(ordersData.data);
+        }
+      }
+
+      if (topProductsResponse.ok) {
+        const productsData = await topProductsResponse.json();
+        if (productsData.success) {
+          setTopProducts(productsData.data);
+        }
+      }
+
+      if (topCustomersResponse.ok) {
+        const customersData = await topCustomersResponse.json();
+        if (customersData.success) {
+          setTopCustomers(customersData.data);
+        }
+      }
+
+      if (recentOrdersResponse.ok) {
+        const ordersData = await recentOrdersResponse.json();
+        if (ordersData.success) {
+          setRecentOrders(ordersData.data);
+        }
+      }
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+      setLoadingCharts(false);
+    }
+  };
+
+  const StatCard = ({ title, value, icon, color }: {
+    title: string;
+    value: string | number;
+    icon: React.ReactNode;
+    color: string;
+  }) => (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
+          </div>
+          <div className={`p-3 rounded-full ${color}`}>
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Product Management</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Manage all products in the rental system
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0 flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
-                {products.length} products total
-              </span>
-              <Button onClick={handleAddProduct} className="bg-blue-600 hover:bg-blue-700">
-                Add Product
-              </Button>
-            </div>
-          </div>
+    <DashboardWrapper>
+      <div className="container mx-auto px-4 py-8">
+        {/* Welcome Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Admin Dashboard - Welcome back, {user?.name || 'Admin'}! 👋
+          </h1>
+          <p className="text-gray-600">
+            System overview and analytics for all outlets
+          </p>
         </div>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <SearchInput
-                placeholder="Search products..."
-                onSearch={handleSearch}
-                delay={500}
-                minLength={2}
-                className="w-full"
-              />
-            </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="Total Customers"
+            value={loading ? '...' : stats.totalCustomers}
+            icon={
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            }
+            color="bg-blue-500"
+          />
+          
+          <StatCard
+            title="Total Products"
+            value={loading ? '...' : stats.totalProducts}
+            icon={
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            }
+            color="bg-green-500"
+          />
+          
+          <StatCard
+            title="Total Orders"
+            value={loading ? '...' : stats.totalOrders}
+            icon={
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            }
+            color="bg-purple-500"
+          />
+          
+          <StatCard
+            title="Total Revenue"
+            value={loading ? '...' : `$${stats.totalRevenue.toLocaleString()}`}
+            icon={
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+            }
+            color="bg-yellow-500"
+          />
+        </div>
 
-            {/* Category Filter */}
-            <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-              <button
-                onClick={() => handleCategoryFilter('')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  selectedCategory === ''
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <IncomeChart data={incomeData} loading={loadingCharts} />
+          <OrderChart data={orderData} loading={loadingCharts} />
+        </div>
+
+        {/* Analytics Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <TopProducts data={topProducts} loading={loadingCharts} />
+          <TopCustomers data={topCustomers} loading={loadingCharts} />
+          <RecentOrders data={recentOrders} loading={loadingCharts} />
+        </div>
+
+        {/* Admin Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <a
+                href="/users"
+                className="flex items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
               >
-                All Categories
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryFilter(category)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === category
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+                <svg className="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+                <span>Manage Users</span>
+              </a>
+              
+              <a
+                href="/shops"
+                className="flex items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span>Manage Shops</span>
+              </a>
+              
+              <a
+                href="/analytics"
+                className="flex items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-6 h-6 text-purple-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Advanced Analytics</span>
+              </a>
+              
+              <a
+                href="/settings"
+                className="flex items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-6 h-6 text-orange-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>System Settings</span>
+              </a>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
-
-      {/* Products Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ProductGrid
-          products={products}
-          loading={loading}
-          error={error || undefined}
-          variant="admin"
-          onView={handleViewProduct}
-          onEdit={handleEditProduct}
-          onDelete={handleDeleteProduct}
-        />
-      </div>
-    </div>
+    </DashboardWrapper>
   );
 } 

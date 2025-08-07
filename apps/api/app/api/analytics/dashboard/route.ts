@@ -23,31 +23,45 @@ export async function GET(request: NextRequest) {
 
     // Get dashboard statistics
     const [
-      totalCustomers,
-      totalProducts
+      totalOrders,
+      realIncome,
+      futureIncome
     ] = await Promise.all([
-      // Count customers
-      prisma.customer.count({
-        where: { isActive: true }
+      // Count total orders
+      prisma.order.count({
+        where: { 
+          status: { in: ['CONFIRMED', 'ACTIVE', 'COMPLETED'] }
+        }
       }),
       
-      // Count products
-      prisma.product.count({
-        where: { isActive: true }
+      // Get real income (completed payments)
+      prisma.payment.aggregate({
+        where: {
+          status: 'COMPLETED',
+          type: { in: ['RENTAL_FEE', 'SALE'] }
+        },
+        _sum: {
+          amount: true
+        }
+      }),
+      
+      // Get future income (pending orders)
+      prisma.order.aggregate({
+        where: {
+          status: { in: ['CONFIRMED', 'ACTIVE'] }
+        },
+        _sum: {
+          totalAmount: true
+        }
       })
     ]);
-
-    // For now, set orders and revenue to 0 since Order model doesn't exist yet
-    const totalOrders = 0;
-    const totalRevenue = 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        totalCustomers,
-        totalProducts,
         totalOrders,
-        totalRevenue
+        realIncome: realIncome._sum.amount || 0,
+        futureIncome: futureIncome._sum.totalAmount || 0
       }
     });
 
