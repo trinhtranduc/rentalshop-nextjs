@@ -12,6 +12,8 @@ import type {
  * Search customers with various filters
  */
 export const searchCustomers = async (filters: CustomerSearchFilter): Promise<CustomerSearchResponse> => {
+  console.log('searchCustomers called with filters:', JSON.stringify(filters, null, 2));
+  
   const {
     q,
     merchantId,
@@ -52,48 +54,61 @@ export const searchCustomers = async (filters: CustomerSearchFilter): Promise<Cu
   }
 
   // Search query for name, email, phone, or idNumber
-  if (q) {
-    const searchQuery = q.toLowerCase();
+  if (q && q.trim()) {
+    const searchQuery = q.toLowerCase().trim();
     where.OR = [
       { firstName: { contains: searchQuery } },
       { lastName: { contains: searchQuery } },
       { email: { contains: searchQuery } },
-      { phone: { contains: searchQuery } },
-      { idNumber: { contains: searchQuery } }
+      { phone: { contains: searchQuery } }
     ];
   }
 
-  // Get total count
-  const total = await prisma.customer.count({ where });
+  try {
+    console.log('Database where clause:', JSON.stringify(where, null, 2));
+    
+    // Get total count
+    const total = await prisma.customer.count({ where });
+    console.log('Total customers found:', total);
 
-  // Get customers with pagination
-  const customers = await prisma.customer.findMany({
-    where,
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          companyName: true
+    // Get customers with pagination
+    const customers = await prisma.customer.findMany({
+      where,
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            companyName: true
+          }
         }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset
+    });
+
+    console.log('Customers found:', customers.length);
+
+    const hasMore = offset + limit < total;
+
+    return {
+      success: true,
+      data: {
+        customers: customers as CustomerSearchResult[],
+        total,
+        limit,
+        offset,
+        hasMore
       }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-    skip: offset
-  });
-
-  const hasMore = offset + limit < total;
-
-  return {
-    success: true,
-    data: {
-      customers: customers as CustomerSearchResult[],
-      total,
-      limit,
-      offset,
-      hasMore
-    }
-  };
+    };
+  } catch (error) {
+    console.error('Database error in searchCustomers:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    });
+    throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown database error'}`);
+  }
 };
 
 /**
@@ -225,14 +240,13 @@ export const getCustomers = async (
     where.idType = filters.idType;
   }
 
-  if (filters.search) {
-    const searchQuery = filters.search.toLowerCase();
+  if (filters.search && filters.search.trim()) {
+    const searchQuery = filters.search.toLowerCase().trim();
     where.OR = [
       { firstName: { contains: searchQuery } },
       { lastName: { contains: searchQuery } },
       { email: { contains: searchQuery } },
-      { phone: { contains: searchQuery } },
-      { idNumber: { contains: searchQuery } }
+      { phone: { contains: searchQuery } }
     ];
   }
 

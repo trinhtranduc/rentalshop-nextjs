@@ -64,6 +64,57 @@ export const isAuthenticated = (): boolean => {
 };
 
 /**
+ * Verify token with server
+ */
+export const verifyTokenWithServer = async (): Promise<boolean> => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      return false;
+    }
+
+    const { createApiUrl } = await import('@rentalshop/utils');
+    const response = await fetch(createApiUrl('/api/auth/verify'), {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.status === 401) {
+      // Token is invalid or expired
+      clearAuthData();
+      return false;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.success === true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    // On network error, fall back to local check
+    return isAuthenticated();
+  }
+};
+
+/**
+ * Check if user is authenticated with server verification
+ */
+export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
+  const localAuth = isAuthenticated();
+  if (!localAuth) {
+    return false;
+  }
+
+  // Verify with server
+  return await verifyTokenWithServer();
+};
+
+/**
  * Create authenticated fetch request
  */
 export const authenticatedFetch = async (
@@ -112,9 +163,14 @@ export const handleApiResponse = async (response: Response) => {
 export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
   try {
     console.log('🔐 loginUser called with:', { email });
-    console.log('🌐 Making request to /api/auth/login...');
     
-    const response = await fetch('/api/auth/login', {
+    // Get API URL from environment
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 
+                   (process.env.NODE_ENV === 'production' ? 'https://api.rentalshop.com' : 'http://localhost:3002');
+    
+    console.log('🌐 Making request to external API:', `${apiUrl}/api/auth/login`);
+    
+    const response = await fetch(`${apiUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

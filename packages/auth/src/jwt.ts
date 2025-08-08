@@ -1,7 +1,8 @@
 import * as jwt from 'jsonwebtoken';
 import { prisma } from '@rentalshop/database';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// Get JWT secret from environment or use a fallback
+const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SECRET_LOCAL || 'local-jwt-secret-key-change-this';
 
 export interface JWTPayload {
   userId: string;
@@ -29,6 +30,7 @@ export const verifyTokenSimple = async (token: string) => {
     });
     return user;
   } catch (error) {
+    console.error('JWT verification - Error:', error);
     return null;
   }
 }; 

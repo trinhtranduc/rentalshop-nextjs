@@ -8,19 +8,27 @@ interface LayoutProps {
   variant?: 'client' | 'admin'
   currentPage?: string
   children: React.ReactNode
+  user?: any
+  onLogout?: () => void
 }
 
-export function Layout({ variant = 'client', currentPage, children }: LayoutProps) {
+export function Layout({ 
+  variant = 'client', 
+  currentPage, 
+  children, 
+  user, 
+  onLogout = () => {} 
+}: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-bg-primary">
       {/* Sidebar */}
       <Sidebar
-        user={null}
+        user={user}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
-        onLogout={() => {}}
+        onLogout={onLogout}
         currentPath={currentPage || ''}
       />
       

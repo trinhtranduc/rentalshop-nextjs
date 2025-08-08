@@ -13,7 +13,7 @@ import {
   RecentOrders,
   DashboardWrapper
 } from '@rentalshop/ui';
-import { getStoredUser } from '../../lib/auth';
+import { useAuth } from '../../hooks/useAuth';
 
 interface DashboardStats {
   totalCustomers: number;
@@ -72,7 +72,7 @@ interface RecentOrder {
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
+  const { user, logout } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalCustomers: 0,
     totalProducts: 0,
@@ -88,8 +88,6 @@ export default function DashboardPage() {
   const [loadingCharts, setLoadingCharts] = useState(true);
 
   useEffect(() => {
-    const currentUser = getStoredUser();
-    setUser(currentUser);
     fetchDashboardData();
   }, []);
 
@@ -199,7 +197,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <DashboardWrapper>
+    <DashboardWrapper user={user} onLogout={logout} currentPath="/dashboard">
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Header */}
         <div className="mb-8">

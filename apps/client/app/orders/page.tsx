@@ -5,10 +5,11 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '
 import { DashboardWrapper } from '@rentalshop/ui';
 import { OrderCard } from '@rentalshop/ui';
 import { OrderForm } from '@rentalshop/ui';
-import { getStoredUser } from '../../lib/auth';
+import { useAuth } from '../../hooks/useAuth';
 import type { OrderSearchResult, OrderInput, OrderType, OrderStatus } from '@rentalshop/database';
 
 export default function OrdersPage() {
+  const { user, logout } = useAuth();
   const [orders, setOrders] = useState<OrderSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -20,8 +21,6 @@ export default function OrdersPage() {
     status: '' as OrderStatus | '',
     outletId: '',
   });
-
-  const user = getStoredUser();
 
   useEffect(() => {
     fetchOrders();
@@ -198,7 +197,7 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <DashboardWrapper>
+      <DashboardWrapper user={user} onLogout={logout} currentPath="/orders">
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -207,7 +206,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <DashboardWrapper>
+    <DashboardWrapper user={user} onLogout={logout} currentPath="/orders">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between">
