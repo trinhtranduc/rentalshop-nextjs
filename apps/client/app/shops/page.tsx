@@ -3,10 +3,13 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { DashboardWrapper } from '@rentalshop/ui';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function ShopsPage() {
+  const { user, logout } = useAuth();
+  
   return (
-    <DashboardWrapper>
+    <DashboardWrapper user={user} onLogout={logout} currentPath="/shops">
       <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Cửa hàng</h1>

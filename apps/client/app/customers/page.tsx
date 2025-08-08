@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input } from '@rentalshop/ui';
-import { CustomerCard } from '@rentalshop/ui';
+import { CustomerTable, CustomerDialog } from '@rentalshop/ui';
 import { DashboardWrapper } from '@rentalshop/ui';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Customer {
   id: string;
@@ -23,12 +24,15 @@ interface Customer {
 }
 
 export default function CustomersPage() {
+  const { user, logout } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -37,12 +41,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
+      const { authenticatedFetch } = await import('@rentalshop/utils');
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -51,12 +50,7 @@ export default function CustomersPage() {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await fetch(`http://localhost:3002/api/customers?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await authenticatedFetch(`/api/customers?${params}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch customers');
@@ -75,14 +69,66 @@ export default function CustomersPage() {
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     setCurrentPage(1);
     fetchCustomers();
-  };
+  }, [currentPage, showActiveOnly, searchTerm]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm !== '') {
+        handleSearch();
+      } else {
+        // If search is cleared, fetch all customers
+        setCurrentPage(1);
+        fetchCustomers();
+      }
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, handleSearch]);
 
   const handleEditCustomer = (customerId: string) => {
-    // TODO: Implement edit functionality
-    console.log('Edit customer:', customerId);
+    const customer = customers.find(c => c.id === customerId);
+    if (customer) {
+      setEditingCustomer(customer);
+      setDialogOpen(true);
+    }
+  };
+
+  const handleAddCustomer = () => {
+    setEditingCustomer(null);
+    setDialogOpen(true);
+  };
+
+  const handleSaveCustomer = async (customerData: Partial<Customer>) => {
+    try {
+      const { authenticatedFetch } = await import('@rentalshop/utils');
+
+      const url = editingCustomer 
+        ? `/api/customers/${editingCustomer.id}`
+        : '/api/customers';
+      
+      const method = editingCustomer ? 'PUT' : 'POST';
+
+      const response = await authenticatedFetch(url, {
+        method,
+        body: JSON.stringify(customerData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save customer');
+      }
+
+      // Refresh the customer list
+      fetchCustomers();
+      setDialogOpen(false);
+      setEditingCustomer(null);
+    } catch (error) {
+      console.error('Error saving customer:', error);
+      throw error;
+    }
   };
 
   const handleDeleteCustomer = async (customerId: string) => {
@@ -91,19 +137,10 @@ export default function CustomersPage() {
     }
 
     try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
+      const { authenticatedFetch } = await import('@rentalshop/utils');
 
-      const response = await fetch(`http://localhost:3002/api/customers/${customerId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await authenticatedFetch(`/api/customers/${customerId}`, {
+        method: 'DELETE'
       });
 
       if (response.ok) {
@@ -118,11 +155,16 @@ export default function CustomersPage() {
   };
 
   return (
-    <DashboardWrapper>
+    <DashboardWrapper user={user} onLogout={logout} currentPath="/customers">
       <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Customers</h1>
-        <p className="text-gray-600">Manage your customer database</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Customers</h1>
+          <p className="text-gray-600">Manage your customer database</p>
+        </div>
+        <Button onClick={handleAddCustomer}>
+          Add Customer
+        </Button>
       </div>
 
       {/* Search and Filters */}
@@ -131,6 +173,11 @@ export default function CustomersPage() {
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Search Customers
+              {searchTerm && (
+                <span className="ml-2 text-xs text-blue-600 font-normal">
+                  (Searching for "{searchTerm}")
+                </span>
+              )}
             </label>
             <div className="flex gap-2">
               <Input
@@ -138,12 +185,17 @@ export default function CustomersPage() {
                 placeholder="Search by name, email, or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="flex-1"
               />
-              <Button onClick={handleSearch}>
-                Search
-              </Button>
+              {searchTerm && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSearchTerm('')}
+                  className="whitespace-nowrap"
+                >
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
           
@@ -158,8 +210,11 @@ export default function CustomersPage() {
               <span className="ml-2 text-sm text-gray-700">Active only</span>
             </label>
             
-            <Button variant="outline" onClick={() => setSearchTerm('')}>
-              Clear
+            <Button variant="outline" onClick={() => {
+              setSearchTerm('');
+              setShowActiveOnly(true);
+            }}>
+              Reset Filters
             </Button>
           </div>
         </div>
@@ -183,17 +238,14 @@ export default function CustomersPage() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {customers.map((customer) => (
-              <CustomerCard
-                key={customer.id}
-                customer={customer}
-                showActions={true}
-                onEdit={() => handleEditCustomer(customer.id)}
-                onDelete={() => handleDeleteCustomer(customer.id)}
-              />
-            ))}
-          </div>
+          <Card className="mb-6">
+            <CustomerTable
+              customers={customers}
+              onEdit={handleEditCustomer}
+              onDelete={handleDeleteCustomer}
+              showActions={true}
+            />
+          </Card>
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -221,6 +273,15 @@ export default function CustomersPage() {
           )}
         </>
       )}
+
+      {/* Customer Dialog */}
+      <CustomerDialog
+        customer={editingCustomer}
+        onSave={handleSaveCustomer}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        trigger={null}
+      />
       </div>
     </DashboardWrapper>
   );

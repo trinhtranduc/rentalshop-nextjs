@@ -32,7 +32,7 @@ import {
   IncomeChart,
   OrderChart
 } from '@rentalshop/ui';
-import { getStoredUser } from '../../lib/auth';
+import { useAuth } from '../../hooks/useAuth';
 
 // ============================================================================
 // TYPES
@@ -563,7 +563,7 @@ const RentalCard = ({ rental }: { rental: RecentRental }) => {
 // MAIN COMPONENT
 // ============================================================================
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
+  const { user, logout } = useAuth();
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>('today');
   const [loading, setLoading] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -584,11 +584,6 @@ export default function DashboardPage() {
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date()
   });
-
-  useEffect(() => {
-    const currentUser = getStoredUser();
-    setUser(currentUser);
-  }, []);
 
   const getStats = () => {
     switch (timePeriod) {
@@ -620,7 +615,7 @@ export default function DashboardPage() {
   const revenueData = getRevenueData();
 
   return (
-    <DashboardWrapperClean>
+    <DashboardWrapperClean user={user} onLogout={logout} currentPath="/dashboard">
       <div className="container mx-auto px-4 py-6">
         {/* Welcome Header */}
         <div className="mb-8">

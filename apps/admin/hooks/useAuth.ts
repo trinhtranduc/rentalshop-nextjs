@@ -75,4 +75,4 @@ export function useAuth() {
     refreshUser,
     checkAuth,
   };
-} 
+}

@@ -11,6 +11,25 @@ export { Input } from './ui/input';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from './ui/select';
 export { Textarea } from './ui/textarea';
 export { Badge, badgeVariants } from './ui/badge';
+export { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableFooter, 
+  TableHead, 
+  TableRow, 
+  TableCell, 
+  TableCaption 
+} from './ui/table';
+export {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from './ui/dialog';
 
 // ============================================================================
 // LAYOUT COMPONENTS
@@ -43,6 +62,8 @@ export { OrderForm } from './forms/OrderForm';
 // FEATURE COMPONENTS (Business Logic Components)
 // ============================================================================
 export { CustomerCard } from './features/CustomerCard';
+export { CustomerTable } from './features/CustomerTable';
+export { CustomerDialog } from './features/CustomerDialog';
 export { ProductCard } from './features/ProductCard';
 export { ProductGrid } from './features/ProductGrid';
 export { OrderCard } from './features/OrderCard';

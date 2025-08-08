@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input } from '@rentalshop/ui';
-import { getStoredUser } from '../../lib/auth';
 import { DashboardWrapper } from '@rentalshop/ui';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, logout } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -16,33 +16,21 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const currentUser = getStoredUser();
-    setUser(currentUser);
-    if (currentUser) {
+    if (user) {
       setFormData({
-        name: currentUser.name || '',
-        email: currentUser.email || '',
-        phone: currentUser.phone || '',
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
       });
     }
-    setLoading(false);
-  }, []);
+  }, [user]);
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
+      const { authenticatedFetch } = await import('@rentalshop/utils');
 
-      const response = await fetch('http://localhost:3002/api/users/profile', {
+      const response = await authenticatedFetch('/api/users/profile', {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(formData),
       });
 
@@ -51,7 +39,6 @@ export default function ProfilePage() {
         if (data.success) {
           // Update local storage with new user data
           localStorage.setItem('user', JSON.stringify(data.data));
-          setUser(data.data);
           setIsEditing(false);
           alert('Cập nhật thông tin thành công!');
         }
@@ -73,7 +60,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <DashboardWrapper>
+    <DashboardWrapper user={user} onLogout={logout} currentPath="/profile">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Personal Profile</h1>

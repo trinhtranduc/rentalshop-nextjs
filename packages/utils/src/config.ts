@@ -163,3 +163,37 @@ export const isLocal = () => getEnvironment() === 'local';
 
 // Export environment type
 export type Config = z.infer<typeof configSchema>; 
+
+// ============================================================================
+// URL CONFIGURATION
+// ============================================================================
+
+/**
+ * Get the appropriate client URL based on environment
+ */
+export const getClientUrl = (): string => {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.CLIENT_URL_PROD || process.env.NEXT_PUBLIC_CLIENT_URL || 'https://rentalshop.com';
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.CLIENT_URL_DEV || process.env.NEXT_PUBLIC_CLIENT_URL || 'http://localhost:3000';
+  }
+  
+  return process.env.CLIENT_URL_LOCAL || process.env.NEXT_PUBLIC_CLIENT_URL || 'http://localhost:3000';
+};
+
+/**
+ * Get the appropriate admin URL based on environment
+ */
+export const getAdminUrl = (): string => {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.ADMIN_URL_PROD || process.env.NEXT_PUBLIC_ADMIN_URL || 'https://admin.rentalshop.com';
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.ADMIN_URL_DEV || process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001';
+  }
+  
+  return process.env.ADMIN_URL_LOCAL || process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001';
+}; 

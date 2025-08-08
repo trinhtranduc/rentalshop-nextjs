@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input } from '@rentalshop/ui';
 import { DashboardWrapper } from '@rentalshop/ui';
+import { useAuth } from '../../hooks/useAuth';
 
 interface User {
   id: string;
@@ -35,6 +36,7 @@ interface User {
 }
 
 export default function UsersPage() {
+  const { user, logout } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -146,7 +148,7 @@ export default function UsersPage() {
   };
 
   return (
-    <DashboardWrapper>
+    <DashboardWrapper user={user} onLogout={logout} currentPath="/users">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>

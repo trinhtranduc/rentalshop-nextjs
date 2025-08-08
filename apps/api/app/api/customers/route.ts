@@ -23,23 +23,36 @@ import { searchRateLimiter } from '../../../lib/middleware/rateLimit';
  *   - search: Advanced search functionality
  */
 export async function GET(request: NextRequest) {
+  console.log('GET /api/customers called');
+  
   try {
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    console.log('Token received:', token ? 'Yes' : 'No');
+    
     if (!token) {
+      console.log('No token provided');
       return NextResponse.json(
         { success: false, message: 'Access token required' },
         { status: 401 }
       );
     }
 
+    console.log('Verifying token...');
     const user = await verifyTokenSimple(token);
+    console.log('User verification result:', user ? 'Success' : 'Failed');
+    
     if (!user) {
+      console.log('Invalid token');
       return NextResponse.json(
         { success: false, message: 'Invalid token' },
         { status: 401 }
       );
     }
+
+    // Get merchantId from user
+    const userMerchantId = user.merchant?.id;
+    console.log('User merchant ID:', userMerchantId);
 
     const { searchParams } = new URL(request.url);
     
@@ -63,10 +76,10 @@ export async function GET(request: NextRequest) {
     const searchQuery = searchParams.get('search') || searchParams.get('q');
     if (searchQuery) {
       // Apply rate limiting for search operations
-      const rateLimitResult = searchRateLimiter(request);
-      if (rateLimitResult instanceof NextResponse) {
-        return rateLimitResult;
-      }
+      // const rateLimitResult = searchRateLimiter(request);
+      // if (rateLimitResult instanceof NextResponse) {
+      //   return rateLimitResult;
+      // }
       
       const merchantId = searchParams.get('merchantId');
       const isActive = searchParams.get('isActive');
@@ -103,11 +116,14 @@ export async function GET(request: NextRequest) {
         filters.q = searchQuery;
       }
 
+      // Use user's merchantId if not provided in params
       if (merchantId) {
         filters.merchantId = merchantId;
+      } else if (userMerchantId) {
+        filters.merchantId = userMerchantId;
       }
 
-      if (isActive !== null) {
+      if (isActive !== null && isActive !== undefined) {
         filters.isActive = isActive === 'true';
       }
 
@@ -127,9 +143,20 @@ export async function GET(request: NextRequest) {
         filters.idType = idType;
       }
 
-      // Search customers
-      const result = await searchCustomers(filters);
-      return NextResponse.json(result);
+      try {
+        console.log('Search filters:', JSON.stringify(filters, null, 2));
+        // Search customers
+        const result = await searchCustomers(filters);
+        console.log('Search result:', JSON.stringify(result, null, 2));
+        return NextResponse.json(result);
+      } catch (error) {
+        console.error('Error in searchCustomers:', error);
+        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+        return NextResponse.json(
+          { success: false, message: 'Search failed', error: error instanceof Error ? error.message : 'Unknown error' },
+          { status: 500 }
+        );
+      }
     }
 
     // Standard customer listing with filters
@@ -146,8 +173,11 @@ export async function GET(request: NextRequest) {
     // Build filters
     const filters: CustomerFilters = {};
 
+    // Use user's merchantId if not provided in params
     if (merchantId) {
       filters.merchantId = merchantId;
+    } else if (userMerchantId) {
+      filters.merchantId = userMerchantId;
     }
 
     if (isActive !== null) {
@@ -174,13 +204,21 @@ export async function GET(request: NextRequest) {
       filters.idType = idType;
     }
 
-    // Get customers
-    const result = await getCustomers(filters, page, limit);
+    try {
+      // Get customers
+      const result = await getCustomers(filters, page, limit);
 
-    return NextResponse.json({
-      success: true,
-      data: result
-    });
+      return NextResponse.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in getCustomers:', error);
+      return NextResponse.json(
+        { success: false, message: 'Failed to fetch customers', error: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
     console.error('Error fetching customers:', error);

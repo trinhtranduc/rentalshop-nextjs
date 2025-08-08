@@ -6,8 +6,10 @@ import { ProductCard, ProductGrid } from '@rentalshop/ui';
 import { DashboardWrapper } from '@rentalshop/ui';
 import type { ProductSearchResult } from '@rentalshop/database';
 import type { Product } from '@rentalshop/ui';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function ProductsPage() {
+  const { user, logout } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,7 +85,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <DashboardWrapper>
+    <DashboardWrapper user={user} onLogout={logout} currentPath="/products">
       <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Products</h1>

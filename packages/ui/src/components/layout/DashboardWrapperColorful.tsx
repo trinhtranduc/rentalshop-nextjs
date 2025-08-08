@@ -3,12 +3,24 @@ import { Sidebar } from './sidebar';
 
 interface DashboardWrapperColorfulProps {
   children: React.ReactNode;
+  user?: any;
+  onLogout?: () => void;
+  currentPath?: string;
 }
 
-export default function DashboardWrapperColorful({ children }: DashboardWrapperColorfulProps) {
+export default function DashboardWrapperColorful({ 
+  children, 
+  user, 
+  onLogout = () => {}, 
+  currentPath = '' 
+}: DashboardWrapperColorfulProps) {
   return (
     <div className="flex h-screen bg-gradient-to-br from-brand-50 via-bg-primary to-brand-100">
-      <Sidebar />
+      <Sidebar 
+        user={user}
+        onLogout={onLogout}
+        currentPath={currentPath}
+      />
       <main className="flex-1 overflow-y-auto">
         <div className="p-8 space-y-8">
           {/* Enhanced Header */}
