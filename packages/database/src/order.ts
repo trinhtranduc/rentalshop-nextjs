@@ -31,20 +31,12 @@ export async function createOrder(input: OrderInput, userId: string): Promise<Or
       data: {
         orderNumber,
         orderType: input.orderType,
-        userId,
         customerId: input.customerId,
         outletId: input.outletId,
         pickupPlanAt: input.pickupPlanAt,
         returnPlanAt: input.returnPlanAt,
-        subtotal: input.subtotal,
-        taxAmount: input.taxAmount || 0,
-        discountAmount: input.discountAmount || 0,
         totalAmount: input.totalAmount,
         depositAmount: input.depositAmount || 0,
-        notes: input.notes,
-        customerName: input.customerName,
-        customerPhone: input.customerPhone,
-        customerEmail: input.customerEmail,
       },
     });
 
@@ -58,34 +50,34 @@ export async function createOrder(input: OrderInput, userId: string): Promise<Or
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
-            deposit: item.deposit || 0,
-            notes: item.notes,
-            startDate: item.startDate,
-            endDate: item.endDate,
-            daysRented: item.daysRented,
+          // startDate/endDate/daysRented removed from schema
           },
         })
       )
     );
 
-    // Create order history entry
-    await tx.orderHistory.create({
-      data: {
-        orderId: order.id,
-        action: 'CREATED',
-        notes: 'Order created',
-        userId,
-      },
-    });
+    // Note: OrderHistory model removed in new schema; skip history creation
 
     // Update product stock if it's a rental
     if (input.orderType === 'RENT') {
       for (const item of input.orderItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
+        await tx.outletStock.upsert({
+          where: {
+            productId_outletId: {
+              productId: item.productId,
+              outletId: input.outletId,
+            },
+          },
+          update: {
             renting: { increment: item.quantity },
             available: { decrement: item.quantity },
+          },
+          create: {
+            productId: item.productId,
+            outletId: input.outletId,
+            stock: 0,
+            available: 0,
+            renting: item.quantity,
           },
         });
       }
@@ -105,13 +97,7 @@ export async function getOrderById(orderId: string): Promise<OrderWithDetails | 
   return await prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
+      // user removed from includes to match new schema
       customer: {
         select: {
           id: true,
@@ -142,9 +128,7 @@ export async function getOrderById(orderId: string): Promise<OrderWithDetails | 
         },
       },
       payments: true,
-      orderHistory: {
-        orderBy: { createdAt: 'desc' },
-      },
+      // orderHistory removed in new schema
     },
   });
 }
@@ -154,13 +138,7 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
   return await prisma.order.findUnique({
     where: { orderNumber },
     include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
+      // user removed from includes to match new schema
       customer: {
         select: {
           id: true,
@@ -191,9 +169,7 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
         },
       },
       payments: true,
-      orderHistory: {
-        orderBy: { createdAt: 'desc' },
-      },
+      // orderHistory removed in new schema
     },
   });
 }
@@ -220,63 +196,42 @@ export async function updateOrder(
       data: input,
     });
 
-    // Track changes in order history
-    const changes: OrderHistoryInput[] = [];
+    // OrderHistory removed; skip tracking changes
 
-    if (input.status && input.status !== currentOrder.status) {
-      changes.push({
-        orderId,
-        action: 'STATUS_CHANGED',
-        field: 'status',
-        oldValue: currentOrder.status,
-        newValue: input.status,
-        userId,
-      });
-    }
+    // (No history persistence)
 
-    if (input.pickedUpAt && !currentOrder.pickedUpAt) {
-      changes.push({
-        orderId,
-        action: 'PICKED_UP',
-        field: 'pickedUpAt',
-        newValue: input.pickedUpAt.toISOString(),
-        userId,
-      });
-    }
+    // (No history persistence)
 
     if (input.returnedAt && !currentOrder.returnedAt) {
-      changes.push({
-        orderId,
-        action: 'RETURNED',
-        field: 'returnedAt',
-        newValue: input.returnedAt.toISOString(),
-        userId,
-      });
-
-      // Update product stock when returned
+      // Update outlet stock when returned
       const orderItems = await tx.orderItem.findMany({
         where: { orderId },
       });
 
       for (const item of orderItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
+        await tx.outletStock.upsert({
+          where: {
+            productId_outletId: {
+              productId: item.productId,
+              outletId: currentOrder.outletId,
+            },
+          },
+          update: {
             renting: { decrement: item.quantity },
             available: { increment: item.quantity },
+          },
+          create: {
+            productId: item.productId,
+            outletId: currentOrder.outletId,
+            stock: 0,
+            available: item.quantity,
+            renting: 0,
           },
         });
       }
     }
 
-    // Create history entries
-    await Promise.all(
-      changes.map((change) =>
-        tx.orderHistory.create({
-          data: change,
-        })
-      )
-    );
+    // No history entries
 
     return await getOrderById(orderId);
   });
@@ -336,12 +291,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
             name: true,
           },
         },
-        user: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        // user removed
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -366,12 +316,8 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
       returnPlanAt: order.returnPlanAt,
       pickedUpAt: order.pickedUpAt,
       returnedAt: order.returnedAt,
-      customer: order.customer,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      customerEmail: order.customerEmail,
+       customer: order.customer,
       outlet: order.outlet,
-      user: order.user,
     })),
     total,
     limit,
@@ -441,12 +387,9 @@ export async function createPayment(input: PaymentInput, userId: string) {
   return await prisma.payment.create({
     data: {
       orderId: input.orderId,
-      userId,
       amount: input.amount,
       method: input.method,
-      type: input.type,
       reference: input.reference,
-      notes: input.notes,
     },
   });
 }
@@ -460,11 +403,7 @@ export async function getOrderPayments(orderId: string) {
 }
 
 // Add order history entry
-export async function addOrderHistory(input: OrderHistoryInput) {
-  return await prisma.orderHistory.create({
-    data: input,
-  });
-}
+// Order history removed in new schema
 
 // Get overdue rentals
 export async function getOverdueRentals(outletId?: string): Promise<OrderSearchResult[]> {
@@ -494,12 +433,7 @@ export async function getOverdueRentals(outletId?: string): Promise<OrderSearchR
           name: true,
         },
       },
-      user: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      // user removed
     },
     orderBy: { returnPlanAt: 'asc' },
   });
@@ -518,11 +452,7 @@ export async function getOverdueRentals(outletId?: string): Promise<OrderSearchR
     pickedUpAt: order.pickedUpAt,
     returnedAt: order.returnedAt,
     customer: order.customer,
-    customerName: order.customerName,
-    customerPhone: order.customerPhone,
-    customerEmail: order.customerEmail,
     outlet: order.outlet,
-    user: order.user,
   }));
 }
 
@@ -551,25 +481,29 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
     // Restore product stock if it was a rental
     if (order.orderType === 'RENT' && order.status === 'ACTIVE') {
       for (const item of order.orderItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
+        await tx.outletStock.upsert({
+          where: {
+            productId_outletId: {
+              productId: item.productId,
+              outletId: order.outletId,
+            },
+          },
+          update: {
             renting: { decrement: item.quantity },
             available: { increment: item.quantity },
+          },
+          create: {
+            productId: item.productId,
+            outletId: order.outletId,
+            stock: 0,
+            available: item.quantity,
+            renting: 0,
           },
         });
       }
     }
 
-    // Add to history
-    await tx.orderHistory.create({
-      data: {
-        orderId,
-        action: 'CANCELLED',
-        notes: reason || 'Order cancelled',
-        userId,
-      },
-    });
+    // No history in new schema
 
     return await getOrderById(orderId);
   });

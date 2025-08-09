@@ -1,6 +1,7 @@
 /**
  * Comprehensive Swagger documentation for all Rental Shop APIs
  */
+import { getApiUrl } from '../config';
 
 export const comprehensiveSwaggerConfig = {
   openapi: '3.0.0',
@@ -19,12 +20,8 @@ export const comprehensiveSwaggerConfig = {
   },
   servers: [
     {
-      url: 'http://localhost:3002',
-      description: 'Development server'
-    },
-    {
-      url: 'https://api.rentalshop.com',
-      description: 'Production server'
+      url: getApiUrl(),
+      description: 'API server'
     }
   ],
   tags: [

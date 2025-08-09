@@ -1,72 +1,15 @@
-// Database client
-export { prisma } from './client';
+// Database package exports
+export * from './client';
+export * from './config';
 
-// Database configuration
-export { getDatabaseConfig } from './config';
+// Database operations
+export * from './product';
+export * from './customer';
+export * from './order';
+export * from './utils';
+export * from './seed';
 
-// Customer management
-export {
-  createCustomer,
-  getCustomerById,
-  updateCustomer,
-  deleteCustomer,
-  searchCustomers,
-  getCustomersByMerchant,
-  getCustomers,
-} from './customer';
-
-// Product management
-export {
-  createProduct,
-  getProductById,
-  updateProduct,
-  deleteProduct,
-  hardDeleteProduct,
-  searchProducts,
-  searchProductByBarcode,
-  getProductsByOutlet,
-  getProductsByMerchant,
-  updateProductStock,
-  checkProductAvailability,
-  getProducts,
-} from './product';
-
-// Order management
-export {
-  generateOrderNumber,
-  createOrder,
-  getOrderById,
-  getOrderByNumber,
-  updateOrder,
-  searchOrders,
-  getOrderStats,
-  createPayment,
-  getOrderPayments,
-  addOrderHistory,
-  getOverdueRentals,
-  cancelOrder,
-  deleteOrder,
-} from './order';
-
-// Database utilities
-export {
-  findUserByEmail,
-  findUserById,
-  createUser,
-  updateUser,
-  createMerchant,
-  findMerchantByUserId,
-  findMerchantById,
-  createOutlet,
-  findOutletById,
-  findOutletsByMerchantId,
-  createOutletStaff,
-  findOutletStaffByUserId,
-  findOutletStaffByOutletId,
-  checkDatabaseConnection,
-} from './utils';
-
-// Types
+// Types (export individually to avoid conflicts)
 export type {
   CustomerWithMerchant,
   CustomerInput,
@@ -75,8 +18,6 @@ export type {
   CustomerSearchFilter,
   CustomerSearchResult,
   CustomerSearchResponse,
-  ProductSearchResult,
-  ProductSearchResponse,
   OrderType,
   OrderStatus,
   PaymentMethod,
@@ -97,11 +38,4 @@ export type {
   OrderStats,
   OrderStatsByPeriod,
   OrderExportData,
-} from './types';
-
-// Product types
-export type {
-  ProductFilters,
-  ProductListOptions,
-  ProductSearchFilter,
-} from './product'; 
+} from './types'; 

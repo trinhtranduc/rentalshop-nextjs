@@ -25,7 +25,7 @@ export const verifyTokenSimple = async (token: string) => {
       where: { id: payload.userId },
       include: {
         merchant: true,
-        admin: true,
+        outlet: true,
       },
     });
     return user;

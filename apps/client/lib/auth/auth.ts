@@ -1,8 +1,6 @@
 /**
- * Authentication utilities for client app
- * Handles token storage and API requests with authentication
+ * Authentication utilities for client app (reusing shared package)
  */
-
 export interface User {
   id: string;
   email: string;
@@ -20,141 +18,53 @@ export interface AuthResponse {
   message?: string;
 }
 
-/**
- * Get stored authentication token
- */
-export const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('authToken');
-};
+export {
+  getAuthToken,
+  getStoredUser,
+  storeAuthData,
+  clearAuthData,
+  authenticatedFetch,
+  handleApiResponse,
+} from '@rentalshop/auth';
 
-/**
- * Get stored user data
- */
-export const getStoredUser = (): User | null => {
-  if (typeof window === 'undefined') return null;
-  const userStr = localStorage.getItem('user');
-  return userStr ? JSON.parse(userStr) : null;
-};
+export const isAuthenticated = (): boolean => !!(typeof window !== 'undefined' && localStorage.getItem('authToken'));
 
-/**
- * Store authentication data
- */
-export const storeAuthData = (token: string, user: User): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('authToken', token);
-  localStorage.setItem('user', JSON.stringify(user));
-};
-
-/**
- * Clear authentication data
- */
-export const clearAuthData = (): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
-};
-
-/**
- * Check if user is authenticated
- */
-export const isAuthenticated = (): boolean => {
-  const token = getAuthToken();
-  return !!token;
-};
-
-/**
- * Verify token with server
- */
 export const verifyTokenWithServer = async (): Promise<boolean> => {
   try {
-    const token = getAuthToken();
-    if (!token) {
-      return false;
-    }
+    const token = (await import('@rentalshop/auth')).getAuthToken();
+    if (!token) return false;
 
     const { createApiUrl } = await import('@rentalshop/utils');
     const response = await fetch(createApiUrl('/api/auth/verify'), {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
 
     if (response.status === 401) {
-      // Token is invalid or expired
-      clearAuthData();
+      (await import('@rentalshop/auth')).clearAuthData();
       return false;
     }
 
     if (response.ok) {
       const data = await response.json();
+      if (data?.success && data?.data?.user) {
+        const existingToken = (await import('@rentalshop/auth')).getAuthToken();
+        if (existingToken) {
+          (await import('@rentalshop/auth')).storeAuthData(existingToken, data.data.user);
+        }
+      }
       return data.success === true;
     }
-
     return false;
   } catch (error) {
     console.error('Error verifying token:', error);
-    // On network error, fall back to local check
     return isAuthenticated();
   }
 };
 
-/**
- * Check if user is authenticated with server verification
- */
 export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
-  const localAuth = isAuthenticated();
-  if (!localAuth) {
-    return false;
-  }
-
-  // Verify with server
+  if (!isAuthenticated()) return false;
   return await verifyTokenWithServer();
-};
-
-/**
- * Create authenticated fetch request
- */
-export const authenticatedFetch = async (
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> => {
-  const token = getAuthToken();
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  return fetch(url, {
-    ...options,
-    headers,
-  });
-};
-
-/**
- * Handle API response and check for authentication errors
- */
-export const handleApiResponse = async (response: Response) => {
-  if (response.status === 401) {
-    // Token expired or invalid
-    clearAuthData();
-    window.location.href = '/login';
-    throw new Error('Authentication required');
-  }
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
 };
 
 /**
@@ -164,13 +74,8 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
   try {
     console.log('🔐 loginUser called with:', { email });
     
-    // Get API URL from environment
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 
-                   (process.env.NODE_ENV === 'production' ? 'https://api.rentalshop.com' : 'http://localhost:3002');
-    
-    console.log('🌐 Making request to external API:', `${apiUrl}/api/auth/login`);
-    
-    const response = await fetch(`${apiUrl}/api/auth/login`, {
+    console.log('🌐 Making request to API: /api/auth/login');
+    const response = await fetch(`/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -185,7 +90,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
 
     if (data.success && data.data?.token) {
       console.log('✅ Login successful, storing auth data...');
-      storeAuthData(data.data.token, data.data.user);
+      (await import('@rentalshop/auth')).storeAuthData(data.data.token, data.data.user);
       console.log('💾 Auth data stored successfully');
     } else {
       console.log('❌ Login failed:', data.message);
@@ -202,7 +107,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
  * Logout user
  */
 export const logoutUser = (): void => {
-  clearAuthData();
+  (async () => (await import('@rentalshop/auth')).clearAuthData())();
   window.location.href = '/login';
 };
 
@@ -211,8 +116,8 @@ export const logoutUser = (): void => {
  */
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const response = await authenticatedFetch('/api/auth/me');
-    const data = await handleApiResponse(response);
+    const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/auth');
+    const data = await handleApiResponse(await authenticatedFetch('/api/auth/me'));
     return data.success ? data.data : null;
   } catch (error) {
     console.error('Failed to get current user:', error);

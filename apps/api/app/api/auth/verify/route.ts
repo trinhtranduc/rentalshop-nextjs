@@ -27,18 +27,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Return user information
+    // Return user information (include outlet for role-based UI)
     return NextResponse.json({
       success: true,
       data: {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
-          role: user.role,
-          phone: user.phone,
-          merchant: user.merchant,
-          admin: user.admin
+          firstName: (user as any).firstName,
+          lastName: (user as any).lastName,
+          name: `${(user as any).firstName ?? ''} ${(user as any).lastName ?? ''}`.trim(),
+          role: (user as any).role,
+          phone: (user as any).phone,
+          merchant: (user as any).merchant,
+          outlet: (user as any).outlet || null,
         }
       },
       message: 'Token is valid'

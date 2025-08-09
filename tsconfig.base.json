@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["es6", "dom", "dom.iterable"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "esnext",
     "moduleResolution": "node",
     "esModuleInterop": true,
@@ -10,6 +10,7 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "types": ["node"],
     "isolatedModules": true,
     "declaration": true,
     "declarationMap": true,

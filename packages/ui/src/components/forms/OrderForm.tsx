@@ -21,13 +21,13 @@ import type {
   OrderItemInput, 
   OrderType, 
   CustomerSearchResult,
-  ProductSearchResult 
+  ProductWithStock 
 } from '@rentalshop/database';
 
 interface OrderFormProps {
   initialData?: Partial<OrderInput>;
   customers?: CustomerSearchResult[];
-  products?: ProductSearchResult[];
+  products?: ProductWithStock[];
   outlets?: Array<{ id: string; name: string }>;
   onSubmit: (data: OrderInput) => void;
   onCancel: () => void;

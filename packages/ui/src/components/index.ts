@@ -66,8 +66,10 @@ export { CustomerTable } from './features/CustomerTable';
 export { CustomerDialog } from './features/CustomerDialog';
 export { ProductCard } from './features/ProductCard';
 export { ProductGrid } from './features/ProductGrid';
+export { ProductTable } from './features/ProductTable';
+export { ProductDialog } from './features/ProductDialog';
 export { OrderCard } from './features/OrderCard';
-export type { Product } from './features/ProductGrid';
+export type { Product as GridProduct } from './features/ProductGrid';
 
 // ============================================================================
 // CHART COMPONENTS (Analytics & Dashboard)

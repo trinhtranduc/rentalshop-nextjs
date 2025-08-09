@@ -84,11 +84,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onCancel,
 }) => {
   const customerName = order.customer 
-    ? `${order.customer.firstName} ${order.customer.lastName}`
-    : order.customerName || 'Khách vãng lai';
+    ? `${order.customer.firstName} ${order.customer.lastName}`.trim()
+    : 'Khách vãng lai';
 
-  const customerPhone = order.customer?.phone || order.customerPhone || 'N/A';
-  const customerEmail = order.customer?.email || order.customerEmail || 'N/A';
+  const customerPhone = order.customer?.phone ?? 'N/A';
+  const customerEmail = order.customer?.email ?? 'N/A';
 
   const isOverdue = order.status === 'ACTIVE' && order.returnPlanAt && new Date(order.returnPlanAt) < new Date();
   const isPickupReady = order.status === 'CONFIRMED' && order.pickupPlanAt;
@@ -136,10 +136,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
           <div>
             <h4 className="font-medium text-gray-900 mb-2">Thông tin cửa hàng</h4>
-            <div className="space-y-1 text-sm">
-              <div><span className="font-medium">Cửa hàng:</span> {order.outlet.name}</div>
-              <div><span className="font-medium">Nhân viên:</span> {order.user.name}</div>
-            </div>
+              <div className="space-y-1 text-sm">
+                <div><span className="font-medium">Cửa hàng:</span> {order.outlet.name}</div>
+                {/* Nhân viên không còn trong schema trả về của OrderSearchResult */}
+              </div>
           </div>
         </div>
 

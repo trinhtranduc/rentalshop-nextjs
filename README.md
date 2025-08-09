@@ -98,9 +98,9 @@ Once started, your applications will be available at:
 - **Admin App (Admin Panel)**: http://localhost:3001
 - **API Server**: http://localhost:3002
 
-## 🔐 Default Login Accounts
+## 🔐 Seeded Login Accounts
 
-After seeding the database, you can use these test accounts:
+After running the seed (yarn db:seed), these accounts are available:
 
 ### **🌐 Application Access**
 
@@ -110,37 +110,57 @@ After seeding the database, you can use these test accounts:
 | **Admin App** | http://localhost:3001 | Super admin dashboard |
 | **API Server** | http://localhost:3002 | Backend API & Documentation |
 
-### **👥 User Accounts**
+### 👥 Merchant 1 — Rental Shop Demo
+- Merchant owner: `merchant@rentalshop.com` / `password123`
+- Outlet admin (Main): `outlet_admin_main@rentalshop.com` / `password123`
+- Outlet staff (Main): `outlet_staff_main@rentalshop.com` / `password123`
+- Outlet admin (Downtown): `outlet_admin_downtown@rentalshop.com` / `password123`
+- Outlet staff (Downtown): `outlet_staff_downtown@rentalshop.com` / `password123`
 
-#### **Super Admin** (Full System Access)
-- **Email**: `admin@rentalshop.com`
-- **Password**: `admin123`
-- **Role**: `ADMIN` (Super Admin)
-- **Access**: All applications, full system control
+### 👥 Merchant 2 — Outdoor Equipment Co.
+- Merchant owner: `merchant@outdoor.com` / `password123`
+- Outlet admin (Beach): `outlet_admin_beach@outdoor.com` / `password123`
+- Outlet staff (Beach): `outlet_staff_beach@outdoor.com` / `password123`
+- Outlet admin (Mountain): `outlet_admin_mountain@outdoor.com` / `password123`
+- Outlet staff (Mountain): `outlet_staff_mountain@outdoor.com` / `password123`
 
-#### **Merchant** (Business Owner)
-- **Email**: `merchant@rentalshop.com`
-- **Password**: `merchant123`
-- **Role**: `MERCHANT`
-- **Access**: Business management, outlet creation
+All of the above users are created by the seed with roles aligned to the simplified schema (USER/ADMIN) and linked to their respective merchants/outlets.
 
-#### **Outlet Manager** (Outlet Management)
-- **Email**: `manager@rentalshop.com`
-- **Password**: `manager123`
-- **Role**: `OUTLET_STAFF` (Manager)
-- **Access**: Specific outlet management
+## 🧾 Seeded Tenants Overview
 
-#### **Outlet Staff** (Daily Operations)
-- **Email**: `staff@rentalshop.com`
-- **Password**: `staff123`
-- **Role**: `OUTLET_STAFF` (Staff)
-- **Access**: Daily operations, customer service
+### Merchants
+- merchant1 — Rental Shop Demo
+  - Description: Demo rental shop for testing with multiple outlets
+  - Outlets: Main Branch (outlet1), Downtown Branch (outlet2)
+- merchant2 — Outdoor Equipment Co.
+  - Description: Outdoor equipment rental company with beach and mountain outlets
+  - Outlets: Beach Branch (outlet3), Mountain Branch (outlet4)
 
-#### **Client** (Customer)
-- **Email**: `client@rentalshop.com`
-- **Password**: `client123`
-- **Role**: `CLIENT`
-- **Access**: Product browsing, rentals, account management
+### Outlets
+- outlet1 — Main Branch (Merchant: Rental Shop Demo)
+  - Address: 123 Main Street, City Center
+  - Description: Main rental outlet in city center
+- outlet2 — Downtown Branch (Merchant: Rental Shop Demo)
+  - Address: 456 Downtown Ave, Business District
+  - Description: Downtown rental outlet for business customers
+- outlet3 — Beach Branch (Merchant: Outdoor Equipment Co.)
+  - Address: 789 Beach Road, Coastal Area
+  - Description: Beach equipment rental for water sports
+- outlet4 — Mountain Branch (Merchant: Outdoor Equipment Co.)
+  - Address: 321 Mountain Trail, Highland Area
+  - Description: Mountain equipment rental for hiking and climbing
+
+### Users (Accounts)
+- Merchant 1 (Rental Shop Demo)
+  - Admin: admin@rentalshop.com (ADMIN)
+  - Staff (Main): staff@rentalshop.com (USER) → Outlet: Main Branch
+  - Staff (Downtown): downtown@rentalshop.com (USER) → Outlet: Downtown Branch
+- Merchant 2 (Outdoor Equipment Co.)
+  - Admin: admin@outdoor.com (ADMIN)
+  - Staff (Beach): beach@outdoor.com (USER) → Outlet: Beach Branch
+  - Staff (Mountain): mountain@outdoor.com (USER) → Outlet: Mountain Branch
+
+All passwords: password123
 
 ## 📊 Database Management
 

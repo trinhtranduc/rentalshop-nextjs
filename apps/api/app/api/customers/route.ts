@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { 
   getCustomers, 
@@ -8,6 +9,8 @@ import {
   deleteCustomer,
   searchCustomers
 } from '@rentalshop/database';
+import { customersQuerySchema, customerCreateSchema, customerUpdateSchema } from '@rentalshop/utils';
+import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { CustomerFilters, CustomerInput, CustomerUpdateInput, CustomerSearchFilter } from '@rentalshop/database';
 import { searchRateLimiter } from '../../../lib/middleware/rateLimit';
 
@@ -51,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get merchantId from user
-    const userMerchantId = user.merchant?.id;
+    const userMerchantId = getUserScope(user as any).merchantId;
     console.log('User merchant ID:', userMerchantId);
 
     const { searchParams } = new URL(request.url);
@@ -159,16 +162,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Standard customer listing with filters
-    const merchantId = searchParams.get('merchantId');
-    const isActive = searchParams.get('isActive');
-    const search = searchParams.get('search');
-    const city = searchParams.get('city');
-    const state = searchParams.get('state');
-    const country = searchParams.get('country');
-    const idType = searchParams.get('idType') as any;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    // Standard customer listing with filters (merchant/outlet scoped)
+    const parsed = customersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, message: 'Invalid query', error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const { merchantId, isActive, search, city, state, country, idType, page, limit } = parsed.data as any;
 
     // Build filters
     const filters: CustomerFilters = {};
@@ -180,8 +180,8 @@ export async function GET(request: NextRequest) {
       filters.merchantId = userMerchantId;
     }
 
-    if (isActive !== null) {
-      filters.isActive = isActive === 'true';
+    if (isActive !== undefined) {
+      filters.isActive = Boolean(isActive);
     }
 
     if (search) {
@@ -205,12 +205,29 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+      // Authorization: ADMIN, MERCHANT, OUTLET team can read
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
       // Get customers
       const result = await getCustomers(filters, page, limit);
 
-      return NextResponse.json({
-        success: true,
-        data: result
+      const bodyString = JSON.stringify({ success: true, data: result });
+      const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
+      const ifNoneMatch = request.headers.get('if-none-match');
+
+      if (ifNoneMatch && ifNoneMatch === etag) {
+        return new NextResponse(null, {
+          status: 304,
+          headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' },
+        });
+      }
+
+      return new NextResponse(bodyString, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          ETag: etag,
+          'Cache-Control': 'private, max-age=60',
+        },
       });
     } catch (error) {
       console.error('Error in getCustomers:', error);
@@ -228,6 +245,8 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const runtime = 'nodejs';
 
 /**
  * POST /api/customers
@@ -254,44 +273,28 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-
-    // Validate required fields
-    const { firstName, lastName, email, phone, merchantId } = body;
-    if (!firstName || !lastName || !email || !phone || !merchantId) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Missing required fields: firstName, lastName, email, phone, merchantId' 
-        },
-        { status: 400 }
-      );
+    const parsedBody = customerCreateSchema.safeParse(body);
+    if (!parsedBody.success) {
+      return NextResponse.json({ success: false, message: 'Invalid payload', error: parsedBody.error.flatten() }, { status: 400 });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
+    const payload = parsedBody.data;
 
-    // Create customer data
     const customerData: CustomerInput = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.toLowerCase().trim(),
-      phone: phone.trim(),
-      merchantId,
-      address: body.address?.trim(),
-      city: body.city?.trim(),
-      state: body.state?.trim(),
-      zipCode: body.zipCode?.trim(),
-      country: body.country?.trim(),
-      dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
-      idNumber: body.idNumber?.trim(),
-      idType: body.idType,
-      notes: body.notes?.trim()
+      firstName: payload.firstName.trim(),
+      lastName: payload.lastName.trim(),
+      email: payload.email.toLowerCase().trim(),
+      phone: payload.phone.trim(),
+      merchantId: payload.merchantId,
+      address: payload.address?.trim(),
+      city: payload.city?.trim(),
+      state: payload.state?.trim(),
+      zipCode: payload.zipCode?.trim(),
+      country: payload.country?.trim(),
+      dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : undefined,
+      idNumber: payload.idNumber?.trim(),
+      idType: payload.idType as 'passport' | 'drivers_license' | 'national_id' | 'other' | undefined,
+      notes: payload.notes?.trim()
     };
 
     // Create customer
@@ -356,76 +359,29 @@ export async function PUT(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-
-    // Validate email format if provided
-    if (body.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(body.email)) {
-        return NextResponse.json(
-          { success: false, message: 'Invalid email format' },
-          { status: 400 }
-        );
-      }
+    const parsedBody = customerUpdateSchema.safeParse(body);
+    if (!parsedBody.success) {
+      return NextResponse.json({ success: false, message: 'Invalid payload', error: parsedBody.error.flatten() }, { status: 400 });
     }
 
-    // Prepare update data
-    const updateData: CustomerUpdateInput = {};
+    const payload = parsedBody.data;
 
-    if (body.firstName !== undefined) {
-      updateData.firstName = body.firstName.trim();
-    }
-
-    if (body.lastName !== undefined) {
-      updateData.lastName = body.lastName.trim();
-    }
-
-    if (body.email !== undefined) {
-      updateData.email = body.email.toLowerCase().trim();
-    }
-
-    if (body.phone !== undefined) {
-      updateData.phone = body.phone.trim();
-    }
-
-    if (body.address !== undefined) {
-      updateData.address = body.address?.trim();
-    }
-
-    if (body.city !== undefined) {
-      updateData.city = body.city?.trim();
-    }
-
-    if (body.state !== undefined) {
-      updateData.state = body.state?.trim();
-    }
-
-    if (body.zipCode !== undefined) {
-      updateData.zipCode = body.zipCode?.trim();
-    }
-
-    if (body.country !== undefined) {
-      updateData.country = body.country?.trim();
-    }
-
-    if (body.dateOfBirth !== undefined) {
-      updateData.dateOfBirth = body.dateOfBirth ? new Date(body.dateOfBirth) : undefined;
-    }
-
-    if (body.idNumber !== undefined) {
-      updateData.idNumber = body.idNumber?.trim();
-    }
-
-    if (body.idType !== undefined) {
-      updateData.idType = body.idType;
-    }
-
-    if (body.notes !== undefined) {
-      updateData.notes = body.notes?.trim();
-    }
-
-    if (body.isActive !== undefined) {
-      updateData.isActive = body.isActive;
-    }
+    const updateData: CustomerUpdateInput = {
+      ...(payload.firstName !== undefined && { firstName: payload.firstName.trim() }),
+      ...(payload.lastName !== undefined && { lastName: payload.lastName.trim() }),
+      ...(payload.email !== undefined && { email: payload.email.toLowerCase().trim() }),
+      ...(payload.phone !== undefined && { phone: payload.phone.trim() }),
+      ...(payload.address !== undefined && { address: payload.address?.trim() }),
+      ...(payload.city !== undefined && { city: payload.city?.trim() }),
+      ...(payload.state !== undefined && { state: payload.state?.trim() }),
+      ...(payload.zipCode !== undefined && { zipCode: payload.zipCode?.trim() }),
+      ...(payload.country !== undefined && { country: payload.country?.trim() }),
+      ...(payload.dateOfBirth !== undefined && { dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : undefined }),
+      ...(payload.idNumber !== undefined && { idNumber: payload.idNumber?.trim() }),
+      ...(payload.idType !== undefined && { idType: payload.idType }),
+      ...(payload.notes !== undefined && { notes: payload.notes?.trim() }),
+      ...(payload.isActive !== undefined && { isActive: payload.isActive as any }),
+    };
 
     // Update customer
     const customer = await updateCustomer(customerId, updateData);

@@ -67,7 +67,7 @@ export default function UsersPage() {
         ...(roleFilter && { role: roleFilter })
       });
 
-      const response = await fetch(`http://localhost:3002/api/users?${params}`, {
+      const response = await fetch(`/api/users?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -118,7 +118,7 @@ export default function UsersPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:3002/api/users/${userId}`, {
+      const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

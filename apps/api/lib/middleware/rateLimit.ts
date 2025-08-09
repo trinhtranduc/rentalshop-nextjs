@@ -28,7 +28,7 @@ export const createRateLimiter = (config: RateLimitConfig) => {
     }
   } = config;
 
-  return (request: NextRequest) => {
+  return (request: NextRequest): NextResponse | null => {
     const key = keyGenerator(request);
     const now = Date.now();
     
@@ -62,13 +62,9 @@ export const createRateLimiter = (config: RateLimitConfig) => {
       );
     }
 
-    // Add rate limit headers
-    const response = NextResponse.next();
-    response.headers.set('X-RateLimit-Limit', maxRequests.toString());
-    response.headers.set('X-RateLimit-Remaining', (maxRequests - rateLimitStore[key].count).toString());
-    response.headers.set('X-RateLimit-Reset', rateLimitStore[key].resetTime.toString());
-
-    return response;
+    // Return null to indicate the request should continue
+    // Rate limit headers will be added by the route handler if needed
+    return null;
   };
 };
 

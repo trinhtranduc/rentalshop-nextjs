@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { findUserById, findUserByEmail, createUser, updateUser } from '@rentalshop/database';
-import type { User } from '@rentalshop/database';
+import { usersQuerySchema, userCreateSchema } from '@rentalshop/utils';
+import { assertAnyRole } from '@rentalshop/auth';
 
 export interface UserFilters {
-  role?: 'CLIENT' | 'MERCHANT' | 'OUTLET_STAFF' | 'ADMIN';
+  role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
   isActive?: boolean;
   search?: string;
 }
@@ -40,37 +42,41 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Admin access required' },
-        { status: 403 }
-      );
+    try {
+      assertAnyRole(user as any, ['ADMIN']);
+    } catch {
+      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
-    
-    // Parse filters
-    const filters: UserFilters = {};
-    const options: UserListOptions = {};
-    
-    // Filter parameters
-    if (searchParams.get('role')) filters.role = searchParams.get('role') as any;
-    if (searchParams.get('isActive')) filters.isActive = searchParams.get('isActive') === 'true';
-    if (searchParams.get('search')) filters.search = searchParams.get('search')!;
-    
-    // Pagination and sorting parameters
-    if (searchParams.get('page')) options.page = parseInt(searchParams.get('page')!);
-    if (searchParams.get('limit')) options.limit = parseInt(searchParams.get('limit')!);
-    if (searchParams.get('sortBy')) options.sortBy = searchParams.get('sortBy') as any;
-    if (searchParams.get('sortOrder')) options.sortOrder = searchParams.get('sortOrder') as any;
+    const parsed = usersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, message: 'Invalid query', error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const q = parsed.data as any;
+    const filters: UserFilters = {
+      role: q.role,
+      isActive: q.isActive,
+      search: q.search,
+    };
+    const options: UserListOptions = {
+      page: q.page,
+      limit: q.limit,
+      sortBy: q.sortBy as any,
+      sortOrder: q.sortOrder as any,
+    };
 
     // Get users from database
     const result = await getUsers(filters, options);
 
-    return NextResponse.json({
-      success: true,
-      data: result,
-    });
+    const body = JSON.stringify({ success: true, data: result });
+    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const ifNoneMatch = request.headers.get('if-none-match');
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    }
+    return new NextResponse(body, { status: 200, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
@@ -108,34 +114,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Admin access required' },
-        { status: 403 }
-      );
+    try {
+      assertAnyRole(user as any, ['ADMIN']);
+    } catch {
+      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
     }
 
     const body = await request.json();
-    
-    // Validate required fields
-    const { email, password, name, role } = body;
-    if (!email || !password || !name) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Missing required fields: email, password, name' 
-        },
-        { status: 400 }
-      );
+    const parsed = userCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, message: 'Invalid payload', error: parsed.error.flatten() }, { status: 400 });
     }
 
     // Create user
+    const p = parsed.data;
+    const [firstName, ...rest] = p.name.trim().split(' ');
+    const lastName = rest.join(' ');
     const newUser = await createUser({
-      email: email.toLowerCase().trim(),
-      password,
-      name: name.trim(),
-      phone: body.phone?.trim(),
-      role: role || 'CLIENT',
+      email: p.email.toLowerCase().trim(),
+      password: p.password,
+      firstName: firstName || p.name.trim(),
+      lastName: lastName || '',
+      phone: p.phone?.trim(),
+      role: p.role || 'OUTLET_STAFF',
     });
 
     return NextResponse.json({
@@ -204,28 +205,15 @@ async function getUsers(
       merchant: {
         select: {
           id: true,
-          companyName: true,
+          name: true,
         }
       },
-      admin: {
+      outlet: {
         select: {
           id: true,
-          level: true,
-        }
-      },
-      outletStaff: {
-        include: {
-          outlet: {
-            select: {
-              id: true,
-              name: true,
-              merchant: {
-                select: {
-                  id: true,
-                  companyName: true,
-                }
-              }
-            }
+          name: true,
+          merchant: {
+            select: { id: true, name: true }
           }
         }
       }

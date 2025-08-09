@@ -1,5 +1,5 @@
 // ============================================================================
-// COMPONENTS (All UI Components)
+// COMPONENTS (Curated exports to enable tree-shaking)
 // ============================================================================
 export * from './components';
 

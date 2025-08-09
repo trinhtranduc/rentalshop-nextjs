@@ -1,608 +1,315 @@
 import { prisma } from './client';
-import type { ProductInput, ProductUpdateInput } from '@rentalshop/utils';
+import type { ProductSearchFilter } from './types';
 
-/**
- * Product service for CRUD operations
- * Centralized database operations following DRY principles
- */
-
-export interface ProductFilters {
-  outletId?: string;
-  categoryId?: string;
-  isActive?: boolean;
-  search?: string;
-  minPrice?: number;
-  maxPrice?: number;
-}
-
-export interface ProductListOptions {
-  page?: number;
-  limit?: number;
-  sortBy?: 'name' | 'rentPrice' | 'createdAt';
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface ProductSearchFilter {
-  query?: string; // Search term for name or barcode
-  outletId?: string;
-  merchantId?: string;
-  categoryId?: string;
-  isActive?: boolean;
-  inStock?: boolean; // Only products with available stock > 0
-  limit?: number;
-  offset?: number;
-}
-
-export interface ProductSearchResult {
+export interface ProductWithStock {
   id: string;
   name: string;
-  description: string | null;
-  barcode: string | null;
-  stock: number;
-  renting: number;
-  available: number;
+  description?: string;
+  barcode?: string;
+  totalStock: number;
   rentPrice: number;
-  salePrice: number | null;
+  salePrice?: number;
   deposit: number;
-  images: string;
+  images?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  outlet: {
-    id: string;
-    name: string;
-    merchant: {
-      id: string;
-      companyName: string;
-    };
-  };
   category: {
     id: string;
     name: string;
   };
+  merchant: {
+    id: string;
+    name: string;
+  };
+  outletStock: Array<{
+    id: string;
+    stock: number;
+    available: number;
+    renting: number;
+    outlet: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
-export interface ProductSearchResponse {
-  products: ProductSearchResult[];
-  total: number;
-  limit: number;
-  offset: number;
-  hasMore: boolean;
-}
-
-/**
- * Create a new product
- * @param data - Product data
- * @returns Created product
- */
-export const createProduct = async (data: ProductInput) => {
-  const product = await prisma.product.create({
-    data: {
-      name: data.name,
-      description: data.description,
-      stock: data.stock,
-      rentPrice: data.rentPrice,
-      salePrice: data.salePrice,
-      deposit: data.deposit,
-      categoryId: data.categoryId,
-      outletId: data.outletId,
-      images: data.images ? JSON.stringify(data.images) : '[]',
-    },
-    include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Get a product by ID
- * @param id - Product ID
- * @returns Product or null
- */
-export const getProductById = async (id: string) => {
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  if (!product) return null;
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Get products with filtering and pagination
- * @param filters - Filter options
- * @param options - Pagination and sorting options
- * @returns Products list and total count
- */
-export const getProducts = async (
-  filters: ProductFilters = {},
-  options: ProductListOptions = {}
-) => {
+export const getProducts = async (filters: ProductSearchFilter) => {
   const {
+    merchantId,
+    outletId,
+    categoryId,
+    search,
     page = 1,
-    limit = 10,
-    sortBy = 'createdAt',
-    sortOrder = 'desc',
-  } = options;
+    limit = 20,
+    isActive = true
+  } = filters;
 
   const skip = (page - 1) * limit;
 
   // Build where clause
   const where: any = {
-    isActive: true,
+    isActive,
+    ...(merchantId && { merchantId }),
+    ...(categoryId && { categoryId }),
+    ...(search && {
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { barcode: { equals: search } }
+      ]
+    })
   };
 
-  if (filters.outletId) where.outletId = filters.outletId;
-  if (filters.categoryId) where.categoryId = filters.categoryId;
-  if (filters.minPrice !== undefined) where.rentPrice = { gte: filters.minPrice };
-  if (filters.maxPrice !== undefined) {
-    where.rentPrice = { ...where.rentPrice, lte: filters.maxPrice };
-  }
-  if (filters.search) {
-    const searchTerm = filters.search.toLowerCase();
-    where.OR = [
-      { name: { contains: searchTerm } },
-      { description: { contains: searchTerm } },
-    ];
+  // If outletId is specified, only show products that have stock at that outlet
+  if (outletId) {
+    where.outletStock = {
+      some: {
+        outletId,
+        stock: { gt: 0 }
+      }
+    };
   }
 
-  // Get total count
-  const total = await prisma.product.count({ where });
-
-  // Get products
-  const products = await prisma.product.findMany({
-    where,
-    include: {
-      outlet: true,
-      category: true,
-    },
-    orderBy: { [sortBy]: sortOrder },
-    skip,
-    take: limit,
-  });
+  const [products, total] = await Promise.all([
+    (prisma as any).product.findMany({
+      where,
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        merchant: {
+        select: {
+          id: true,
+          name: true
+        }
+      } as any,
+        outletStock: {
+          include: {
+            outlet: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          ...(outletId && { where: { outletId } })
+        }
+      } as any,
+      orderBy: { name: 'asc' },
+      skip,
+      take: limit
+    }),
+    (prisma as any).product.count({ where })
+  ]);
 
   const totalPages = Math.ceil(total / limit);
 
   return {
-    products: products.map(product => ({
-      ...product,
-      images: JSON.parse(product.images),
-    })),
+    products,
     total,
     page,
-    totalPages,
+    totalPages
   };
 };
 
-/**
- * Update a product
- * @param id - Product ID
- * @param data - Update data
- * @returns Updated product
- */
-export const updateProduct = async (id: string, data: ProductUpdateInput) => {
-  const updateData: any = {};
-  
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.description !== undefined) updateData.description = data.description;
-  if (data.stock !== undefined) updateData.stock = data.stock;
-  if (data.rentPrice !== undefined) updateData.rentPrice = data.rentPrice;
-  if (data.salePrice !== undefined) updateData.salePrice = data.salePrice;
-  if (data.deposit !== undefined) updateData.deposit = data.deposit;
-  if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
-  if (data.images) {
-    updateData.images = JSON.stringify(data.images);
-  }
-
-  const product = await prisma.product.update({
-    where: { id },
-    data: updateData,
-    include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Delete a product (soft delete by setting isActive to false)
- * @param id - Product ID
- * @returns Deleted product
- */
-export const deleteProduct = async (id: string) => {
-  const product = await prisma.product.update({
-    where: { id },
-    data: { isActive: false },
-    include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Hard delete a product (use with caution)
- * @param id - Product ID
- * @returns Deleted product
- */
-export const hardDeleteProduct = async (id: string) => {
-  const product = await prisma.product.delete({
+export const getProductById = async (id: string) => {
+  return await (prisma as any).product.findUnique({
     where: { id },
     include: {
-      outlet: true,
-      category: true,
-    },
+      category: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      merchant: {
+        select: {
+          id: true,
+          name: true
+        }
+      } as any,
+      outletStock: {
+        include: {
+          outlet: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      }
+    } as any
   });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
 };
 
-/**
- * Update product stock
- * @param id - Product ID
- * @param quantity - Quantity to add/subtract (positive for add, negative for subtract)
- * @returns Updated product
- */
-export const updateProductStock = async (id: string, quantity: number) => {
-  const product = await prisma.product.update({
-    where: { id },
+export const createProduct = async (data: {
+  merchantId: string;
+  categoryId: string;
+  name: string;
+  description?: string;
+  barcode?: string;
+  totalStock: number;
+  rentPrice: number;
+  salePrice?: number;
+  deposit: number;
+  images?: string;
+  outletStock?: Array<{
+    outletId: string;
+    stock: number;
+  }>;
+}) => {
+  const { outletStock, ...productData } = data;
+
+  return await (prisma as any).product.create({
     data: {
-      stock: {
-        increment: quantity,
-      },
-    },
+      ...productData,
+      outletStock: {
+        create: outletStock?.map(os => ({
+          outletId: os.outletId,
+          stock: os.stock,
+          available: os.stock,
+          renting: 0
+        })) || []
+      }
+    } as any,
     include: {
-      outlet: true,
-      category: true,
-    },
+      category: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      merchant: {
+        select: {
+          id: true,
+          name: true
+        }
+      } as any,
+      outletStock: {
+        include: {
+          outlet: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      }
+    } as any
   });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
 };
 
-/**
- * Check if product is available for rent
- * @param id - Product ID
- * @returns Availability status
- */
-export const checkProductAvailability = async (id: string): Promise<boolean> => {
-  const product = await prisma.product.findUnique({
+export const updateProduct = async (
+  id: string,
+  data: {
+    categoryId?: string;
+    name?: string;
+    description?: string;
+    barcode?: string;
+    totalStock?: number;
+    rentPrice?: number;
+    salePrice?: number;
+    deposit?: number;
+    images?: string;
+    isActive?: boolean;
+  }
+) => {
+  return await (prisma as any).product.update({
     where: { id },
-    select: { stock: true, isActive: true },
-  });
-
-  return product ? product.stock > 0 && product.isActive : false;
-}; 
-
-/**
- * Search products by name or barcode with various filters
- */
-export const searchProducts = async (filter: ProductSearchFilter): Promise<ProductSearchResponse> => {
-  const {
-    query,
-    outletId,
-    merchantId,
-    categoryId,
-    isActive,
-    inStock,
-    limit = 20,
-    offset = 0,
-  } = filter;
-
-  // Build where clause
-  const whereClause: any = {};
-
-  // Search by name or barcode
-  if (query && query.trim()) {
-    const searchQuery = query.trim().toLowerCase();
-    whereClause.OR = [
-      {
-        name: {
-          contains: searchQuery,
-        },
-      },
-      {
-        barcode: {
-          contains: searchQuery,
-        },
-      },
-    ];
-  }
-
-  // Filter by outlet
-  if (outletId) {
-    whereClause.outletId = outletId;
-  }
-
-  // Filter by merchant
-  if (merchantId) {
-    whereClause.outlet = {
-      merchantId,
-    };
-  }
-
-  // Filter by category
-  if (categoryId) {
-    whereClause.categoryId = categoryId;
-  }
-
-  // Filter by active status
-  if (isActive !== undefined) {
-    whereClause.isActive = isActive;
-  }
-
-  // Filter by stock availability
-  if (inStock) {
-    whereClause.available = {
-      gt: 0,
-    };
-  }
-
-  // Get total count for pagination
-  const total = await prisma.product.count({
-    where: whereClause,
-  });
-
-  // Get products with pagination
-  const products = await prisma.product.findMany({
-    where: whereClause,
+    data: data as any,
     include: {
-      outlet: {
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              companyName: true,
-            },
-          },
-        },
-      },
       category: {
         select: {
           id: true,
-          name: true,
-        },
+          name: true
+        }
       },
-    },
-    orderBy: [
-      {
-        name: 'asc',
-      },
-      {
-        createdAt: 'desc',
-      },
-    ],
-    take: limit,
-    skip: offset,
-  });
-
-  return {
-    products,
-    total,
-    limit,
-    offset,
-    hasMore: offset + limit < total,
-  };
-};
-
-/**
- * Search products by exact barcode match
- */
-export const searchProductByBarcode = async (barcode: string): Promise<ProductSearchResult | null> => {
-  const product = await prisma.product.findFirst({
-    where: {
-      barcode: {
-        equals: barcode,
-      },
-      isActive: true,
-    },
-    include: {
-      outlet: {
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              companyName: true,
-            },
-          },
-        },
-      },
-      category: {
+      merchant: {
         select: {
           id: true,
-          name: true,
-        },
-      },
-    },
+          name: true
+        }
+      } as any,
+      outletStock: {
+        include: {
+          outlet: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      }
+    } as any
   });
-
-  return product;
 };
 
-/**
- * Get products by outlet with optional filters
- */
-export const getProductsByOutlet = async (
+export const deleteProduct = async (id: string) => {
+  return await (prisma as any).product.delete({
+    where: { id }
+  });
+};
+
+export const updateOutletStock = async (
+  productId: string,
   outletId: string,
-  options: {
-    categoryId?: string;
-    isActive?: boolean;
-    inStock?: boolean;
-    limit?: number;
-    offset?: number;
-  } = {}
-): Promise<ProductSearchResponse> => {
-  const { categoryId, isActive, inStock, limit = 20, offset = 0 } = options;
-
-  const whereClause: any = {
-    outletId,
-  };
-
-  if (categoryId) {
-    whereClause.categoryId = categoryId;
+  data: {
+    stock?: number;
+    available?: number;
+    renting?: number;
   }
-
-  if (isActive !== undefined) {
-    whereClause.isActive = isActive;
-  }
-
-  if (inStock) {
-    whereClause.available = {
-      gt: 0,
-    };
-  }
-
-  const total = await prisma.product.count({
-    where: whereClause,
-  });
-
-  const products = await prisma.product.findMany({
-    where: whereClause,
-    include: {
-      outlet: {
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              companyName: true,
-            },
-          },
-        },
-      },
-      category: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+) => {
+  return await (prisma as any).outletStock.upsert({
+    where: {
+      productId_outletId: {
+        productId,
+        outletId
+      }
     },
-    orderBy: [
-      {
-        name: 'asc',
-      },
-      {
-        createdAt: 'desc',
-      },
-    ],
-    take: limit,
-    skip: offset,
+    update: data,
+    create: {
+      productId,
+      outletId,
+      stock: data.stock || 0,
+      available: data.available || data.stock || 0,
+      renting: data.renting || 0
+    }
   });
-
-  return {
-    products,
-    total,
-    limit,
-    offset,
-    hasMore: offset + limit < total,
-  };
 };
 
-/**
- * Get products by merchant with optional filters
- */
-export const getProductsByMerchant = async (
-  merchantId: string,
-  options: {
-    categoryId?: string;
-    isActive?: boolean;
-    inStock?: boolean;
-    limit?: number;
-    offset?: number;
-  } = {}
-): Promise<ProductSearchResponse> => {
-  const { categoryId, isActive, inStock, limit = 20, offset = 0 } = options;
-
-  const whereClause: any = {
-    outlet: {
-      merchantId,
-    },
-  };
-
-  if (categoryId) {
-    whereClause.categoryId = categoryId;
-  }
-
-  if (isActive !== undefined) {
-    whereClause.isActive = isActive;
-  }
-
-  if (inStock) {
-    whereClause.available = {
-      gt: 0,
-    };
-  }
-
-  const total = await prisma.product.count({
-    where: whereClause,
-  });
-
-  const products = await prisma.product.findMany({
-    where: whereClause,
+export const getProductStockSummary = async (merchantId: string) => {
+  const products: any[] = await (prisma as any).product.findMany({
+    where: { merchantId, isActive: true },
     include: {
-      outlet: {
+      outletStock: {
         include: {
-          merchant: {
+          outlet: {
             select: {
               id: true,
-              companyName: true,
-            },
-          },
-        },
-      },
-      category: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-    orderBy: [
-      {
-        name: 'asc',
-      },
-      {
-        createdAt: 'desc',
-      },
-    ],
-    take: limit,
-    skip: offset,
+              name: true
+            }
+          }
+        }
+      }
+    } as any
   });
 
-  return {
-    products,
-    total,
-    limit,
-    offset,
-    hasMore: offset + limit < total,
-  };
+  return products.map(product => ({
+    id: product.id,
+    name: product.name,
+    totalStock: (product as any).totalStock,
+    totalAvailable: (product as any).outletStock.reduce((sum: number, os: any) => sum + os.available, 0),
+    totalRenting: (product as any).outletStock.reduce((sum: number, os: any) => sum + os.renting, 0),
+    outlets: (product as any).outletStock.map((os: any) => ({
+      outletId: os.outlet.id,
+      outletName: os.outlet.name,
+      stock: os.stock,
+      available: os.available,
+      renting: os.renting
+    }))
+  }));
 }; 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
+import { assertAnyRole } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 
 export async function GET(request: NextRequest) {
@@ -19,6 +21,13 @@ export async function GET(request: NextRequest) {
         { success: false, message: 'Invalid token' },
         { status: 401 }
       );
+    }
+
+    // RBAC: ADMIN or MERCHANT
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     // Get current year and month
@@ -56,10 +65,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: orderData
-    });
+    const body = JSON.stringify({ success: true, data: orderData });
+    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const ifNoneMatch = request.headers.get('if-none-match');
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    }
+    return new NextResponse(body, { status: 200, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching order analytics:', error);
@@ -73,3 +85,4 @@ export async function GET(request: NextRequest) {
     );
   }
 } 
+export const runtime = 'nodejs';

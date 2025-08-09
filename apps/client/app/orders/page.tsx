@@ -38,7 +38,7 @@ export default function OrdersPage() {
       if (filters.status) params.append('status', filters.status);
       if (filters.outletId) params.append('outletId', filters.outletId);
 
-      const response = await fetch(`http://localhost:3002/api/orders?${params}`, {
+      const response = await fetch(`/api/orders?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -60,7 +60,7 @@ export default function OrdersPage() {
       const token = localStorage.getItem('authToken');
       if (!token) return;
 
-      const response = await fetch('http://localhost:3002/api/orders/stats', {
+      const response = await fetch('/api/orders/stats', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -80,7 +80,7 @@ export default function OrdersPage() {
       const token = localStorage.getItem('authToken');
       if (!token) return;
 
-      const response = await fetch('http://localhost:3002/api/orders', {
+      const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -110,7 +110,7 @@ export default function OrdersPage() {
       const token = localStorage.getItem('authToken');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:3002/api/orders/${orderId}`, {
+      const response = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -138,7 +138,7 @@ export default function OrdersPage() {
       const token = localStorage.getItem('authToken');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:3002/api/orders/${orderId}`, {
+      const response = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -168,7 +168,7 @@ export default function OrdersPage() {
       const token = localStorage.getItem('authToken');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:3002/api/orders/${orderId}`, {
+      const response = await fetch(`/api/orders/${orderId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

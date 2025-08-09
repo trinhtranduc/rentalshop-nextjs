@@ -6,18 +6,31 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  name: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
-  role?: 'CLIENT' | 'SHOP_OWNER' | 'ADMIN';
+  role?: 'USER' | 'ADMIN';
 }
 
 export interface AuthUser {
   id: string;
   email: string;
+  firstName: string;
+  lastName: string;
   name: string;
   role: string;
   phone?: string;
-  avatar?: string;
+  merchant?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+  outlet?: {
+    id: string;
+    name: string;
+    address?: string;
+  };
 }
 
 export interface AuthResponse {
