@@ -34,18 +34,17 @@ export interface ApiConfig {
 }
 
 function getEnvironment(): Environment {
-  const env = process.env.NODE_ENV;
-  
-  switch (env) {
-    case 'local':
-      return 'local';
-    case 'development':
-      return 'development';
-    case 'production':
-      return 'production';
-    default:
-      return 'local';
+  // Prefer explicit app-level env when provided
+  const appEnv = (process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV) as Environment | undefined;
+  if (appEnv === 'local' || appEnv === 'development' || appEnv === 'production') {
+    return appEnv;
   }
+
+  // Fallback to NODE_ENV
+  const nodeEnv = process.env.NODE_ENV; // Typed as 'development' | 'production' | 'test'
+  if (nodeEnv === 'production') return 'production';
+  // Treat both 'development' and 'test' as development by default
+  return 'development';
 }
 
 function getConfig(): ApiConfig {

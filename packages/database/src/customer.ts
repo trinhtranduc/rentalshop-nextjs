@@ -76,11 +76,11 @@ export const searchCustomers = async (filters: CustomerSearchFilter): Promise<Cu
       where,
       include: {
         merchant: {
-          select: {
-            id: true,
-            companyName: true
-          }
+        select: {
+          id: true,
+          name: true
         }
+      } as any
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -138,9 +138,9 @@ export const getCustomerById = async (id: string) => {
       merchant: {
         select: {
           id: true,
-          companyName: true
+          name: true
         }
-      }
+      } as any
     }
   });
 };
@@ -155,9 +155,9 @@ export const createCustomer = async (data: CustomerInput) => {
       merchant: {
         select: {
           id: true,
-          companyName: true
+          name: true
         }
-      }
+      } as any
     }
   });
 };
@@ -173,9 +173,9 @@ export const updateCustomer = async (id: string, data: CustomerUpdateInput) => {
       merchant: {
         select: {
           id: true,
-          companyName: true
+          name: true
         }
-      }
+      } as any
     }
   });
 };
@@ -191,9 +191,9 @@ export const deleteCustomer = async (id: string) => {
       merchant: {
         select: {
           id: true,
-          companyName: true
+          name: true
         }
-      }
+      } as any
     }
   });
 };
@@ -255,11 +255,11 @@ export const getCustomers = async (
       where,
       include: {
         merchant: {
-          select: {
-            id: true,
-            companyName: true
-          }
+        select: {
+          id: true,
+          name: true
         }
+      } as any
       },
       orderBy: { createdAt: 'desc' },
       take: limit,

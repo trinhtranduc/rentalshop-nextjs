@@ -1,5 +1,5 @@
 import { prisma } from './client';
-import type { User, PasswordResetToken, EmailVerificationToken, Session, Merchant, Outlet, OutletStaff } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 // User Management
 export const findUserByEmail = async (email: string) => {
@@ -7,16 +7,6 @@ export const findUserByEmail = async (email: string) => {
     where: { email },
     include: {
       merchant: true,
-      admin: true,
-      outletStaff: {
-        include: {
-          outlet: {
-            include: {
-              merchant: true
-            }
-          }
-        }
-      },
     },
   });
 };
@@ -26,16 +16,6 @@ export const findUserById = async (id: string) => {
     where: { id },
     include: {
       merchant: true,
-      admin: true,
-      outletStaff: {
-        include: {
-          outlet: {
-            include: {
-              merchant: true
-            }
-          }
-        }
-      },
     },
   });
 };
@@ -43,31 +23,21 @@ export const findUserById = async (id: string) => {
 export const createUser = async (data: {
   email: string;
   password: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
-  role?: 'CLIENT' | 'MERCHANT' | 'OUTLET_STAFF' | 'ADMIN';
+  role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
 }) => {
   return prisma.user.create({
     data: {
       email: data.email,
       password: data.password,
-      name: data.name,
+      firstName: data.firstName,
+      lastName: data.lastName,
       phone: data.phone,
-      role: data.role || 'CLIENT',
+      role: data.role || 'OUTLET_STAFF',
     },
-    include: {
-      merchant: true,
-      admin: true,
-      outletStaff: {
-        include: {
-          outlet: {
-            include: {
-              merchant: true
-            }
-          }
-        }
-      },
-    },
+    include: { merchant: true },
   });
 };
 
@@ -75,325 +45,85 @@ export const updateUser = async (id: string, data: Partial<User>) => {
   return prisma.user.update({
     where: { id },
     data,
-    include: {
-      merchant: true,
-      admin: true,
-      outletStaff: {
-        include: {
-          outlet: {
-            include: {
-              merchant: true
-            }
-          }
-        }
-      },
-    },
+    include: { merchant: true },
   });
 };
 
 // Merchant Management
-export const createMerchant = async (data: {
-  userId: string;
-  companyName: string;
-  businessLicense?: string;
-  address: string;
-  description?: string;
-}) => {
+export const createMerchant = async (data: { name: string; description?: string; isActive?: boolean }) => {
   return prisma.merchant.create({
     data,
-    include: { 
-      user: true,
-      outlets: true
-    },
+    include: { users: true, outlets: true },
   });
 };
 
 export const findMerchantByUserId = async (userId: string) => {
-  return prisma.merchant.findUnique({
-    where: { userId },
-    include: { 
-      user: true,
-      outlets: {
-        include: {
-          outletStaff: {
-            include: {
-              user: true
-            }
-          },
-          products: true
-        }
-      }
-    },
+  return prisma.merchant.findFirst({
+    where: { users: { some: { id: userId } } },
+    include: { users: true, outlets: true },
   });
 };
 
 export const findMerchantById = async (id: string) => {
   return prisma.merchant.findUnique({
     where: { id },
-    include: { 
-      user: true,
-      outlets: {
-        include: {
-          outletStaff: {
-            include: {
-              user: true
-            }
-          },
-          products: true
-        }
-      }
-    },
+    include: { users: true, outlets: true },
   });
 };
 
 // Outlet Management
-export const createOutlet = async (data: {
-  merchantId: string;
-  name: string;
-  address: string;
-  description?: string;
-  phone: string;
-  email?: string;
-}) => {
-  return prisma.outlet.create({
-    data,
-    include: {
-      merchant: {
-        include: {
-          user: true
-        }
-      },
-      outletStaff: {
-        include: {
-          user: true
-        }
-      }
-    },
-  });
+export const createOutlet = async (data: { merchantId: string; name: string; address?: string; description?: string }) => {
+  return prisma.outlet.create({ data, include: { merchant: true, products: true, users: true } });
 };
 
 export const findOutletById = async (id: string) => {
-  return prisma.outlet.findUnique({
-    where: { id },
-    include: {
-      merchant: {
-        include: {
-          user: true
-        }
-      },
-      outletStaff: {
-        include: {
-          user: true
-        }
-      },
-      products: {
-        include: {
-          category: true
-        }
-      }
-    },
-  });
+  return prisma.outlet.findUnique({ where: { id }, include: { merchant: true, products: true, users: true } });
 };
 
 export const findOutletsByMerchantId = async (merchantId: string) => {
-  return prisma.outlet.findMany({
-    where: { merchantId },
-    include: {
-      outletStaff: {
-        include: {
-          user: true
-        }
-      },
-      products: {
-        include: {
-          category: true
-        }
-      }
-    },
-  });
+  return prisma.outlet.findMany({ where: { merchantId }, include: { products: true, users: true } });
 };
 
 // Outlet Staff Management
-export const createOutletStaff = async (data: {
-  userId: string;
-  outletId: string;
-  role?: 'STAFF' | 'MANAGER';
-}) => {
-  return prisma.outletStaff.create({
-    data,
-    include: {
-      user: true,
-      outlet: {
-        include: {
-          merchant: {
-            include: {
-              user: true
-            }
-          }
-        }
-      }
-    },
-  });
-};
+// Outlet staff model removed in new schema
 
-export const findOutletStaffByUserId = async (userId: string) => {
-  return prisma.outletStaff.findUnique({
-    where: { userId },
-    include: {
-      user: true,
-      outlet: {
-        include: {
-          merchant: {
-            include: {
-              user: true
-            }
-          }
-        }
-      }
-    },
-  });
-};
+// Outlet staff model removed in new schema
 
-export const findOutletStaffByOutletId = async (outletId: string) => {
-  return prisma.outletStaff.findMany({
-    where: { outletId },
-    include: {
-      user: true
-    },
-  });
-};
+// Outlet staff model removed in new schema
 
 // Password Reset Token Management
-export const createPasswordResetToken = async (userId: string, token: string, expiresAt: Date) => {
-  // Delete any existing tokens for this user
-  await prisma.passwordResetToken.deleteMany({
-    where: { userId },
-  });
+// Password reset token model removed in new schema
 
-  return prisma.passwordResetToken.create({
-    data: {
-      userId,
-      token,
-      expiresAt,
-    },
-  });
-};
+// Removed
 
-export const findPasswordResetToken = async (token: string) => {
-  return prisma.passwordResetToken.findUnique({
-    where: { token },
-    include: { user: true },
-  });
-};
+// Removed
 
-export const invalidatePasswordResetToken = async (token: string) => {
-  return prisma.passwordResetToken.delete({
-    where: { token },
-  });
-};
-
-export const cleanupExpiredPasswordResetTokens = async () => {
-  return prisma.passwordResetToken.deleteMany({
-    where: {
-      expiresAt: { lt: new Date() },
-    },
-  });
-};
+// Removed
 
 // Email Verification Token Management
-export const createEmailVerificationToken = async (userId: string, token: string, expiresAt: Date) => {
-  // Delete any existing tokens for this user
-  await prisma.emailVerificationToken.deleteMany({
-    where: { userId },
-  });
+// Email verification token model removed in new schema
 
-  return prisma.emailVerificationToken.create({
-    data: {
-      userId,
-      token,
-      expiresAt,
-    },
-  });
-};
+// Removed
 
-export const findEmailVerificationToken = async (token: string) => {
-  return prisma.emailVerificationToken.findUnique({
-    where: { token },
-    include: { user: true },
-  });
-};
+// Removed
 
-export const invalidateEmailVerificationToken = async (token: string) => {
-  return prisma.emailVerificationToken.delete({
-    where: { token },
-  });
-};
-
-export const cleanupExpiredEmailVerificationTokens = async () => {
-  return prisma.emailVerificationToken.deleteMany({
-    where: {
-      expiresAt: { lt: new Date() },
-    },
-  });
-};
+// Removed
 
 // Session Management
-export const createSession = async (data: {
-  userId: string;
-  token: string;
-  expiresAt: Date;
-  userAgent?: string;
-  ipAddress?: string;
-}) => {
-  return prisma.session.create({
-    data,
-  });
-};
+// Sessions removed in new schema
 
-export const findSession = async (token: string) => {
-  return prisma.session.findUnique({
-    where: { token },
-    include: { user: true },
-  });
-};
+// Removed
 
-export const invalidateSession = async (token: string) => {
-  return prisma.session.delete({
-    where: { token },
-  });
-};
+// Removed
 
-export const invalidateAllUserSessions = async (userId: string) => {
-  return prisma.session.deleteMany({
-    where: { userId },
-  });
-};
+// Removed
 
-export const cleanupExpiredSessions = async () => {
-  return prisma.session.deleteMany({
-    where: {
-      expiresAt: { lt: new Date() },
-    },
-  });
-};
+// Removed
 
 // Admin Management
-export const createAdmin = async (data: {
-  userId: string;
-  level?: 'STAFF' | 'MANAGER' | 'SUPER_ADMIN';
-}) => {
-  return prisma.admin.create({
-    data,
-    include: { user: true },
-  });
-};
+// Admin model removed in new schema
 
-export const findAdminByUserId = async (userId: string) => {
-  return prisma.admin.findUnique({
-    where: { userId },
-    include: { user: true },
-  });
-};
+// Removed
 
 // Database Health Check
 export const checkDatabaseConnection = async () => {

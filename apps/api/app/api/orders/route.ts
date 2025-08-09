@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { 
   createOrder, 
@@ -9,6 +10,8 @@ import {
   cancelOrder
 } from '@rentalshop/database';
 import type { OrderInput, OrderSearchFilter, OrderUpdateInput } from '@rentalshop/database';
+import { assertAnyRole, getUserScope } from '@rentalshop/auth';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
 
 /**
  * GET /api/orders
@@ -58,29 +61,56 @@ export async function GET(request: NextRequest) {
     }
 
     // Standard order search with filters
+    const parsedQuery = ordersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+    if (!parsedQuery.success) {
+      return NextResponse.json({ success: false, error: parsedQuery.error.flatten() }, { status: 400 });
+    }
+
+    const qd = parsedQuery.data;
     const filters: OrderSearchFilter = {
-      q: searchParams.get('q') || undefined,
-      outletId: searchParams.get('outletId') || undefined,
-      customerId: searchParams.get('customerId') || undefined,
-      userId: searchParams.get('userId') || undefined,
-      orderType: searchParams.get('orderType') as any || undefined,
-      status: searchParams.get('status') as any || undefined,
-      startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
-      endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
-      pickupDate: searchParams.get('pickupDate') ? new Date(searchParams.get('pickupDate')!) : undefined,
-      returnDate: searchParams.get('returnDate') ? new Date(searchParams.get('returnDate')!) : undefined,
-      minAmount: searchParams.get('minAmount') ? parseFloat(searchParams.get('minAmount')!) : undefined,
-      maxAmount: searchParams.get('maxAmount') ? parseFloat(searchParams.get('maxAmount')!) : undefined,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20,
-      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0,
+      q: qd.q,
+      outletId: qd.outletId,
+      customerId: qd.customerId,
+      userId: qd.userId,
+      orderType: qd.orderType as any,
+      status: qd.status as any,
+      startDate: qd.startDate,
+      endDate: qd.endDate,
+      pickupDate: qd.pickupDate,
+      returnDate: qd.returnDate,
+      minAmount: qd.minAmount,
+      maxAmount: qd.maxAmount,
+      limit: qd.limit,
+      offset: qd.offset,
     };
 
     // Get orders
+    // Authorization: ADMIN, MERCHANT, and outlet team can read
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
     const result = await searchOrders(filters);
 
-    return NextResponse.json({
-      success: true,
-      data: result,
+    const bodyString = JSON.stringify({ success: true, data: result });
+    const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
+    const ifNoneMatch = request.headers.get('if-none-match');
+
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' },
+      });
+    }
+
+    return new NextResponse(bodyString, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        ETag: etag,
+        'Cache-Control': 'private, max-age=60',
+      },
     });
 
   } catch (error) {
@@ -91,6 +121,8 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const runtime = 'nodejs';
 
 /**
  * POST /api/orders
@@ -115,53 +147,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse request body
-    const body = await request.json();
-    
-    // Validate required fields
-    if (!body.orderType || !body.outletId || !body.orderItems || body.orderItems.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
-        { status: 400 }
-      );
+    // Authorization: creating orders requires outlet team (OUTLET_ADMIN/OUTLET_STAFF) or ADMIN/MERCHANT
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    // Validate order items
-    for (const item of body.orderItems) {
-      if (!item.productId || !item.quantity || item.quantity <= 0) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid order items' },
-          { status: 400 }
-        );
-      }
+    // Parse and validate request body
+    const body = await request.json();
+    const parsed = orderCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.flatten() }, { status: 400 });
     }
 
     // Create order input
+    const p = parsed.data;
     const orderInput: OrderInput = {
-      orderType: body.orderType,
-      customerId: body.customerId || undefined,
-      outletId: body.outletId,
-      pickupPlanAt: body.pickupPlanAt ? new Date(body.pickupPlanAt) : undefined,
-      returnPlanAt: body.returnPlanAt ? new Date(body.returnPlanAt) : undefined,
-      subtotal: body.subtotal || 0,
-      taxAmount: body.taxAmount || 0,
-      discountAmount: body.discountAmount || 0,
-      totalAmount: body.totalAmount || 0,
-      depositAmount: body.depositAmount || 0,
-      notes: body.notes || '',
-      customerName: body.customerName || '',
-      customerPhone: body.customerPhone || '',
-      customerEmail: body.customerEmail || '',
-      orderItems: body.orderItems.map((item: any) => ({
+      orderType: p.orderType,
+      customerId: p.customerId,
+      outletId: p.outletId,
+      pickupPlanAt: p.pickupPlanAt,
+      returnPlanAt: p.returnPlanAt,
+      subtotal: p.subtotal,
+      taxAmount: p.taxAmount,
+      discountAmount: p.discountAmount,
+      totalAmount: p.totalAmount,
+      depositAmount: p.depositAmount,
+      notes: p.notes,
+      customerName: p.customerName,
+      customerPhone: p.customerPhone,
+      customerEmail: p.customerEmail,
+      orderItems: p.orderItems.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
-        unitPrice: item.unitPrice || 0,
-        totalPrice: item.totalPrice || 0,
-        deposit: item.deposit || 0,
-        notes: item.notes || '',
-        startDate: item.startDate ? new Date(item.startDate) : undefined,
-        endDate: item.endDate ? new Date(item.endDate) : undefined,
-        daysRented: item.daysRented || 0,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        deposit: item.deposit,
+        notes: item.notes,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        daysRented: item.daysRented,
       })),
     };
 
@@ -216,25 +242,35 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    // Authorization: updating orders requires outlet team or merchant/admin
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+    const parsed = orderUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.flatten() }, { status: 400 });
+    }
 
-    // Validate update input
-    const updateInput: OrderUpdateInput = {};
-    
-    if (body.status !== undefined) updateInput.status = body.status;
-    if (body.pickupPlanAt !== undefined) updateInput.pickupPlanAt = new Date(body.pickupPlanAt);
-    if (body.returnPlanAt !== undefined) updateInput.returnPlanAt = new Date(body.returnPlanAt);
-    if (body.pickedUpAt !== undefined) updateInput.pickedUpAt = new Date(body.pickedUpAt);
-    if (body.returnedAt !== undefined) updateInput.returnedAt = new Date(body.returnedAt);
-    if (body.subtotal !== undefined) updateInput.subtotal = body.subtotal;
-    if (body.taxAmount !== undefined) updateInput.taxAmount = body.taxAmount;
-    if (body.discountAmount !== undefined) updateInput.discountAmount = body.discountAmount;
-    if (body.totalAmount !== undefined) updateInput.totalAmount = body.totalAmount;
-    if (body.depositAmount !== undefined) updateInput.depositAmount = body.depositAmount;
-    if (body.damageFee !== undefined) updateInput.damageFee = body.damageFee;
-    if (body.notes !== undefined) updateInput.notes = body.notes;
-    if (body.pickupNotes !== undefined) updateInput.pickupNotes = body.pickupNotes;
-    if (body.returnNotes !== undefined) updateInput.returnNotes = body.returnNotes;
-    if (body.damageNotes !== undefined) updateInput.damageNotes = body.damageNotes;
+    const u = parsed.data;
+    const updateInput: OrderUpdateInput = {
+      ...(u.status !== undefined && { status: u.status as any }),
+      ...(u.pickupPlanAt !== undefined && { pickupPlanAt: u.pickupPlanAt }),
+      ...(u.returnPlanAt !== undefined && { returnPlanAt: u.returnPlanAt }),
+      ...(u.pickedUpAt !== undefined && { pickedUpAt: u.pickedUpAt }),
+      ...(u.returnedAt !== undefined && { returnedAt: u.returnedAt }),
+      ...(u.subtotal !== undefined && { subtotal: u.subtotal }),
+      ...(u.taxAmount !== undefined && { taxAmount: u.taxAmount }),
+      ...(u.discountAmount !== undefined && { discountAmount: u.discountAmount }),
+      ...(u.totalAmount !== undefined && { totalAmount: u.totalAmount }),
+      ...(u.depositAmount !== undefined && { depositAmount: u.depositAmount }),
+      ...(u.damageFee !== undefined && { damageFee: u.damageFee }),
+      ...(u.notes !== undefined && { notes: u.notes }),
+      ...(u.pickupNotes !== undefined && { pickupNotes: u.pickupNotes }),
+      ...(u.returnNotes !== undefined && { returnNotes: u.returnNotes }),
+      ...(u.damageNotes !== undefined && { damageNotes: u.damageNotes }),
+    };
 
     // Update the order
     const updatedOrder = await updateOrder(orderId, updateInput, user.id);
@@ -287,6 +323,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     const body = await request.json();
+    // Authorization: cancelling orders requires outlet team or merchant/admin
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
     const reason = body.reason || 'Order cancelled by user';
 
     // Cancel the order

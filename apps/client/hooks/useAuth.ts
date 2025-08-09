@@ -8,6 +8,14 @@ export interface User {
   name: string;
   role: string;
   phone?: string;
+  merchant?: {
+    id: string;
+    name: string;
+  } | null;
+  outlet?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export function useAuth() {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
+import { assertAnyRole } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 
 export async function GET(request: NextRequest) {
@@ -19,6 +21,13 @@ export async function GET(request: NextRequest) {
         { success: false, message: 'Invalid token' },
         { status: 401 }
       );
+    }
+
+    // RBAC: ADMIN or MERCHANT
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     // Get current year and month
@@ -43,15 +52,14 @@ export async function GET(request: NextRequest) {
       const realIncome = await prisma.payment.aggregate({
         where: {
           status: 'COMPLETED',
-          type: { in: ['RENTAL_FEE', 'SALE'] },
           createdAt: {
             gte: startOfMonth,
-            lte: endOfMonth
-          }
+            lte: endOfMonth,
+          },
         },
         _sum: {
-          amount: true
-        }
+          amount: true,
+        },
       });
 
       // Get future income (pending orders with future return dates)
@@ -82,16 +90,19 @@ export async function GET(request: NextRequest) {
       incomeData.push({
         month: monthName,
         year: year,
-        realIncome: realIncome._sum.amount || 0,
+        realIncome: (realIncome._sum?.amount as number | null) || 0,
         futureIncome: futureIncome._sum.totalAmount || 0,
         orderCount: orderCount
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: incomeData
-    });
+    const body = JSON.stringify({ success: true, data: incomeData });
+    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const ifNoneMatch = request.headers.get('if-none-match');
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    }
+    return new NextResponse(body, { status: 200, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching income analytics:', error);
@@ -105,3 +116,4 @@ export async function GET(request: NextRequest) {
     );
   }
 } 
+export const runtime = 'nodejs';

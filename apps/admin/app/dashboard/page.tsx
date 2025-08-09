@@ -116,12 +116,12 @@ export default function DashboardPage() {
         topCustomersResponse,
         recentOrdersResponse
       ] = await Promise.all([
-        fetch('http://localhost:3002/api/analytics/dashboard', { headers }),
-        fetch('http://localhost:3002/api/analytics/income', { headers }),
-        fetch('http://localhost:3002/api/analytics/orders', { headers }),
-        fetch('http://localhost:3002/api/analytics/top-products', { headers }),
-        fetch('http://localhost:3002/api/analytics/top-customers', { headers }),
-        fetch('http://localhost:3002/api/analytics/recent-orders', { headers })
+        fetch('/api/analytics/dashboard', { headers }),
+        fetch('/api/analytics/income', { headers }),
+        fetch('/api/analytics/orders', { headers }),
+        fetch('/api/analytics/top-products', { headers }),
+        fetch('/api/analytics/top-customers', { headers }),
+        fetch('/api/analytics/recent-orders', { headers })
       ]);
 
       // Process responses
@@ -258,8 +258,8 @@ export default function DashboardPage() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <IncomeChart data={incomeData} loading={loadingCharts} />
-          <OrderChart data={orderData} loading={loadingCharts} />
+          <IncomeChart data={incomeData as any} loading={loadingCharts} />
+          <OrderChart data={orderData as any} loading={loadingCharts} />
         </div>
 
         {/* Analytics Section */}

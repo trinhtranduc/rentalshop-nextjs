@@ -1,6 +1,7 @@
 /**
  * Swagger documentation for Product APIs
  */
+import { getApiUrl } from '../config';
 
 export const productSwaggerConfig = {
   openapi: '3.0.0',
@@ -15,12 +16,8 @@ export const productSwaggerConfig = {
   },
   servers: [
     {
-      url: 'http://localhost:3002',
-      description: 'Development server'
-    },
-    {
-      url: 'https://api.rentalshop.com',
-      description: 'Production server'
+      url: getApiUrl(),
+      description: 'API server'
     }
   ],
   tags: [

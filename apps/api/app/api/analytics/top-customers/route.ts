@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
+import { assertAnyRole } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 
 export async function GET(request: NextRequest) {
@@ -19,6 +21,13 @@ export async function GET(request: NextRequest) {
         { success: false, message: 'Invalid token' },
         { status: 401 }
       );
+    }
+
+    // RBAC: ADMIN or MERCHANT
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     // Get top customers in the last 30 days
@@ -59,9 +68,8 @@ export async function GET(request: NextRequest) {
             lastName: true,
             email: true,
             phone: true,
-            city: true,
-            state: true
-          }
+            address: true,
+          },
         });
 
         return {
@@ -69,17 +77,20 @@ export async function GET(request: NextRequest) {
           name: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
           email: customer?.email || '',
           phone: customer?.phone || '',
-          location: customer ? `${customer.city || ''}, ${customer.state || ''}`.trim() : '',
+          location: customer?.address || '',
           orderCount: item._count.customerId,
-          totalSpent: item._sum.totalAmount || 0
+          totalSpent: item._sum.totalAmount || 0,
         };
       })
     );
 
-    return NextResponse.json({
-      success: true,
-      data: topCustomersWithDetails
-    });
+    const body = JSON.stringify({ success: true, data: topCustomersWithDetails });
+    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const ifNoneMatch = request.headers.get('if-none-match');
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    }
+    return new NextResponse(body, { status: 200, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching top customers analytics:', error);
@@ -93,3 +104,4 @@ export async function GET(request: NextRequest) {
     );
   }
 } 
+export const runtime = 'nodejs';

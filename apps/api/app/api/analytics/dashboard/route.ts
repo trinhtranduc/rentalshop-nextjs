@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
+import { assertAnyRole } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 
 export async function GET(request: NextRequest) {
@@ -21,6 +23,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // RBAC: ADMIN or MERCHANT can view analytics
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
     // Get dashboard statistics
     const [
       totalOrders,
@@ -38,11 +47,10 @@ export async function GET(request: NextRequest) {
       prisma.payment.aggregate({
         where: {
           status: 'COMPLETED',
-          type: { in: ['RENTAL_FEE', 'SALE'] }
         },
         _sum: {
-          amount: true
-        }
+          amount: true,
+        },
       }),
       
       // Get future income (pending orders)
@@ -56,14 +64,21 @@ export async function GET(request: NextRequest) {
       })
     ]);
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       data: {
         totalOrders,
-        realIncome: realIncome._sum.amount || 0,
-        futureIncome: futureIncome._sum.totalAmount || 0
-      }
-    });
+        realIncome: (realIncome._sum?.amount as number | null) || 0,
+        futureIncome: futureIncome._sum.totalAmount || 0,
+      },
+    };
+    const body = JSON.stringify(payload);
+    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const ifNoneMatch = request.headers.get('if-none-match');
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    }
+    return new NextResponse(body, { status: 200, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
@@ -77,3 +92,4 @@ export async function GET(request: NextRequest) {
     );
   }
 } 
+export const runtime = 'nodejs';

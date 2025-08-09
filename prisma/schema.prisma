@@ -1,4 +1,4 @@
-// This is your Prisma schema file
+// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -10,433 +10,212 @@ datasource db {
   url      = env("DATABASE_URL_LOCAL")
 }
 
-// User Management
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
-  name      String
-  role      String   @default("CLIENT") // CLIENT, MERCHANT, OUTLET_STAFF, ADMIN
+  firstName String
+  lastName  String
   phone     String?
-  avatar    String?
+  role      String   @default("OUTLET_STAFF")
   isActive  Boolean  @default(true)
-  emailVerified Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  merchant    Merchant?
-  admin       Admin?
-  outletStaff OutletStaff?
-  orders      Order[]
-  payments    Payment[]
-  notifications Notification[]
-  passwordResetTokens PasswordResetToken[]
-  emailVerificationTokens EmailVerificationToken[]
-  sessions    Session[]
+  merchantId String?
+  merchant   Merchant? @relation(fields: [merchantId], references: [id])
+  outletId   String?
+  outlet     Outlet?   @relation(fields: [outletId], references: [id])
 
-  // Optimized indexes for high-volume system
-  @@index([email]) // Fast user lookups
-  @@index([role, isActive]) // Staff queries
-  @@index([createdAt(sort: Desc)]) // User registration analytics
-  @@map("users")
+  @@index([email])
+  @@index([merchantId])
+  @@index([outletId])
 }
 
-// Business Management
 model Merchant {
   id          String   @id @default(cuid())
-  userId      String   @unique
-  companyName String
-  businessLicense String?
-  address     String
+  name        String
   description String?
-  isVerified  Boolean  @default(false)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlets   Outlet[]
-  customers Customer[]
+  users      User[]
+  outlets    Outlet[]
+  products   Product[]
+  customers  Customer[]
+  categories Category[]
 
-  // Optimized indexes
-  @@index([isVerified, isActive]) // Merchant verification queries
-  @@index([companyName]) // Company name search
-  @@map("merchants")
+  @@index([name])
 }
 
 model Outlet {
   id          String   @id @default(cuid())
-  merchantId  String
   name        String
-  address     String
+  address     String?
   description String?
-  phone       String
-  email       String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  outletStaff OutletStaff[]
-  products    Product[]
-  orders      Order[]
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  users      User[]
+  products   OutletStock[]
+  orders     Order[]
 
-  // Optimized indexes for high-volume operations
-  @@index([merchantId, isActive]) // Merchant outlet queries
-  @@index([name]) // Outlet name search
-  @@index([phone]) // Phone number lookups
-  @@map("outlets")
+  @@index([merchantId])
+  @@index([name])
 }
 
-model OutletStaff {
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products   Product[]
+
+  @@unique([merchantId, name])
+  @@index([merchantId])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  barcode     String?  @unique
+  totalStock  Int      @default(0)  // Total stock across all outlets
+  rentPrice   Float
+  salePrice   Float?
+  deposit     Float    @default(0)
+  images      String?  // JSON array of image URLs
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  outletStock OutletStock[]
+  orderItems OrderItem[]
+
+  @@index([merchantId, name])
+  @@index([merchantId, categoryId])
+  @@index([barcode])
+  @@index([isActive])
+}
+
+model OutletStock {
   id        String   @id @default(cuid())
-  userId    String   @unique
+  stock     Int      @default(0)  // Total stock at this outlet
+  available Int      @default(0)  // Available for rent/sale
+  renting   Int      @default(0)  // Currently being rented
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   outletId  String
-  role      String   @default("STAFF") // STAFF, MANAGER
+  outlet    Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, outletId])
+  @@index([outletId, available])
+  @@index([productId])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String
+  address   String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  orders     Order[]
 
-  // Optimized indexes
-  @@index([outletId, isActive]) // Staff queries by outlet
-  @@index([role, isActive]) // Role-based queries
-  @@map("outlet_staff")
+  @@index([merchantId, firstName, lastName])
+  @@index([merchantId, phone])
+  @@index([email])
 }
 
-model Admin {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  level     String   @default("STAFF") // STAFF, MANAGER, SUPER_ADMIN
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Optimized indexes
-  @@index([level]) // Admin level queries
-  @@map("admins")
-}
-
-// Product Management
-model Category {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  icon        String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  products Product[]
-
-  // Optimized indexes
-  @@index([isActive]) // Active category queries
-  @@index([name]) // Category name search
-  @@map("categories")
-}
-
-model Product {
-  id          String   @id @default(cuid())
-  outletId    String
-  categoryId  String
-  name        String
-  description String?
-  barcode     String?  @unique // Product barcode for scanning
-  stock       Int      @default(0) // Total available stock
-  renting     Int      @default(0) // Currently being rented
-  available   Int      @default(0) // Available for rent (stock - renting)
-  rentPrice   Float    // Daily rental price
-  salePrice   Float?   // Sale price (optional - for products that can be sold)
-  deposit     Float    @default(0) // Security deposit
-  images      String   // JSON string of image URLs
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  outlet   Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id])
-  orderItems OrderItem[]
-
-  // High-performance indexes for inventory management
-  @@index([outletId, isActive, available(sort: Desc)]) // Available inventory queries (composite)
-  @@index([categoryId, isActive, available(sort: Desc)]) // Category inventory queries (composite)
-  @@index([barcode]) // Barcode scanning
-  @@index([name]) // Product name search
-  @@index([rentPrice]) // Price-based queries
-  @@map("products")
-}
-
-// Customer Management
-model Customer {
-  id          String   @id @default(cuid())
-  merchantId  String
-  firstName   String
-  lastName    String
-  email       String
-  phone       String
-  address     String?
-  city        String?
-  state       String?
-  zipCode     String?
-  country     String?
-  dateOfBirth DateTime?
-  idNumber    String?
-  idType      String?  // passport, drivers_license, national_id, other
-  isActive    Boolean  @default(true)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  orders   Order[]
-
-  // High-performance indexes for customer management
-  @@index([merchantId, isActive]) // Merchant customer queries
-  @@index([merchantId, firstName, lastName]) // Customer name search
-  @@index([phone]) // Phone number lookups
-  @@index([email]) // Email lookups
-  @@index([idNumber, idType]) // ID document queries
-  @@index([city, state, country]) // Location-based queries
-  @@index([createdAt(sort: Desc)]) // Customer registration analytics
-  @@map("customers")
-}
-
-// Comprehensive Order Management System - OPTIMIZED FOR HIGH VOLUME
 model Order {
   id            String   @id @default(cuid())
-  orderNumber   String   @unique // Auto-generated order number (e.g., ORD-2024-001)
+  orderNumber   String   @unique
   orderType     String   // RENT, SALE, RENT_TO_OWN
-  userId        String   // Staff who created the order
-  customerId    String?  // Customer (optional for walk-in customers)
-  outletId      String
-  status        String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED, OVERDUE, DAMAGED
+  status        String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED
+  totalAmount   Float
+  depositAmount Float    @default(0)
   
-  // Rental-specific fields
-  pickupPlanAt  DateTime? // Planned pickup date/time
-  returnPlanAt  DateTime? // Planned return date/time
-  pickedUpAt    DateTime? // Actual pickup date/time
-  returnedAt    DateTime? // Actual return date/time
-  
-  // Financial information
-  subtotal      Float    // Subtotal before tax and fees
-  taxAmount     Float    @default(0) // Tax amount
-  discountAmount Float   @default(0) // Discount amount
-  totalAmount   Float    // Final total amount
-  depositAmount Float    @default(0) // Security deposit
-  damageFee     Float    @default(0) // Damage fee if any
-  
-  // Additional information
-  notes         String?  // General notes
-  pickupNotes   String?  // Notes during pickup
-  returnNotes   String?  // Notes during return
-  damageNotes   String?  // Damage assessment notes
-  
-  // Customer information (for walk-in customers)
-  customerName  String?  // For non-registered customers
-  customerPhone String?  // For non-registered customers
-  customerEmail String?  // For non-registered customers
+  // Rental specific
+  pickupPlanAt  DateTime?
+  returnPlanAt  DateTime?
+  pickedUpAt    DateTime?
+  returnedAt    DateTime?
   
   // Timestamps
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
-  // Relations
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  customer    Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  outlet      Outlet      @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  orderItems  OrderItem[]
-  payments    Payment[]
-  orderHistory OrderHistory[]
 
-  // HIGH-PERFORMANCE INDEXES FOR MASSIVE ORDER VOLUMES
-  // Primary lookup indexes
-  @@index([orderNumber]) // Fast order number lookups (most common)
-  @@index([outletId, status, createdAt(sort: Desc)]) // Staff dashboard queries (composite)
-  @@index([customerId, createdAt(sort: Desc)]) // Customer order history
-  
-  // Rental-specific indexes
-  @@index([status, returnPlanAt]) // Overdue rental queries (composite)
-  @@index([pickupPlanAt, returnPlanAt]) // Scheduling queries (composite)
-  @@index([status, orderType, createdAt(sort: Desc)]) // Order type analytics (composite)
-  
-  // Financial and analytics indexes
-  @@index([outletId, totalAmount, createdAt(sort: Desc)]) // Financial analytics (composite)
-  @@index([createdAt(sort: Desc)]) // Recent orders
-  @@index([userId, createdAt(sort: Desc)]) // Staff order history
-  
-  // Search indexes
-  @@index([customerName, customerPhone]) // Walk-in customer search
-  @@index([status, outletId, orderType]) // Multi-dimensional queries (composite)
-  
-  @@map("orders")
+  // Relations
+  outletId   String
+  outlet     Outlet    @relation(fields: [outletId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  orderItems OrderItem[]
+  payments   Payment[]
+
+  @@index([status, outletId])
+  @@index([customerId, createdAt(sort: Desc)])
+  @@index([pickupPlanAt, returnPlanAt])
+  @@index([orderNumber])
 }
 
-// Order Items - OPTIMIZED FOR HIGH VOLUME
 model OrderItem {
   id          String   @id @default(cuid())
-  orderId     String
-  productId   String
   quantity    Int      @default(1)
-  unitPrice   Float    // Price per unit at time of order
-  totalPrice  Float    // Total price for this item
-  deposit     Float    @default(0) // Deposit for this item
-  notes       String?  // Item-specific notes
-  
-  // Rental-specific fields
-  startDate   DateTime? // Rental start date
-  endDate     DateTime? // Rental end date
-  daysRented  Int?      // Number of days rented
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  unitPrice   Float
+  totalPrice  Float
   
   // Relations
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-
-  // HIGH-PERFORMANCE INDEXES FOR ORDER ITEMS
-  @@index([orderId]) // Order item queries (most common)
-  @@index([productId, createdAt(sort: Desc)]) // Product usage analytics (composite)
-  @@index([startDate, endDate]) // Rental period queries (composite)
-  @@index([orderId, productId]) // Order-product relationship (composite)
-  
-  @@map("order_items")
-}
-
-// Order History - OPTIMIZED FOR AUDIT TRAILS
-model OrderHistory {
-  id        String   @id @default(cuid())
   orderId   String
-  action    String   // CREATED, STATUS_CHANGED, UPDATED, CANCELLED, etc.
-  field     String?  // Which field was changed
-  oldValue  String?  // Previous value
-  newValue  String?  // New value
-  notes     String?  // Additional notes
-  userId    String?  // User who made the change
-  createdAt DateTime @default(now())
-  
-  // Relations
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
 
-  // HIGH-PERFORMANCE INDEXES FOR AUDIT TRAILS
-  @@index([orderId, createdAt(sort: Desc)]) // Order audit trail (most common)
-  @@index([action, createdAt(sort: Desc)]) // Action-based analytics (composite)
-  @@index([userId, createdAt(sort: Desc)]) // User activity tracking (composite)
-  @@index([orderId, action, createdAt(sort: Desc)]) // Order action history (composite)
-  
-  @@map("order_history")
+  @@index([orderId, productId])
 }
 
-// Payment Management - OPTIMIZED FOR FINANCIAL TRACKING
 model Payment {
   id        String   @id @default(cuid())
-  orderId   String
-  userId    String
   amount    Float
-  method    String   // CASH, BANK_TRANSFER, CREDIT_CARD, DIGITAL_WALLET
-  type      String   // DEPOSIT, RENTAL_FEE, DAMAGE_FEE, REFUND
+  method    String   // CASH, CARD, TRANSFER
   status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
-  reference String?  // External payment reference
-  notes     String?  // Payment notes
+  reference String?  // Payment reference number
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  // HIGH-PERFORMANCE INDEXES FOR PAYMENT TRACKING
-  @@index([orderId, status, createdAt(sort: Desc)]) // Order payment tracking (composite)
-  @@index([orderId, type, createdAt(sort: Desc)]) // Payment type analytics (composite)
-  @@index([status, method, createdAt(sort: Desc)]) // Payment method analytics (composite)
-  @@index([userId, createdAt(sort: Desc)]) // User payment history (composite)
-  @@index([reference]) // External payment lookups
-  @@index([amount, createdAt(sort: Desc)]) // Financial analytics (composite)
-  
-  @@map("payments")
-}
-
-// Notification System - OPTIMIZED FOR REAL-TIME UPDATES
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      String   // INFO, SUCCESS, WARNING, ERROR
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // HIGH-PERFORMANCE INDEXES FOR NOTIFICATIONS
-  @@index([userId, isRead, createdAt(sort: Desc)]) // User notification queries (composite)
-  @@index([type, createdAt(sort: Desc)]) // Notification type analytics (composite)
-  @@index([userId, createdAt(sort: Desc)]) // Recent notifications (composite)
-  
-  @@map("notifications")
-}
-
-// Authentication & Security - OPTIMIZED FOR SESSION MANAGEMENT
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // HIGH-PERFORMANCE INDEXES FOR TOKEN MANAGEMENT
-  @@index([token]) // Token lookups (most common)
-  @@index([expiresAt, createdAt]) // Expired token cleanup (composite)
-  
-  @@map("password_reset_tokens")
-}
-
-model EmailVerificationToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // HIGH-PERFORMANCE INDEXES FOR TOKEN MANAGEMENT
-  @@index([token]) // Token lookups (most common)
-  @@index([expiresAt, createdAt]) // Expired token cleanup (composite)
-  
-  @@map("email_verification_tokens")
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // HIGH-PERFORMANCE INDEXES FOR SESSION MANAGEMENT
-  @@index([token]) // Session token lookups (most common)
-  @@index([expiresAt, createdAt]) // Expired session cleanup (composite)
-  @@index([userId, expiresAt]) // User session management (composite)
-  
-  @@map("sessions")
+  @@index([orderId, status])
+  @@index([status])
 } 

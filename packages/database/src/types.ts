@@ -2,19 +2,12 @@ import type {
   User,
   Merchant,
   Outlet,
-  OutletStaff,
-  Admin,
   Category,
   Product,
   Customer,
   Order,
   OrderItem,
-  OrderHistory,
   Payment,
-  Notification,
-  PasswordResetToken,
-  EmailVerificationToken,
-  Session,
 } from '@prisma/client';
 
 // Customer Types
@@ -39,7 +32,7 @@ export interface CustomerWithMerchant {
   merchantId: string;
   merchant: {
     id: string;
-    companyName: string;
+    name: string;
   };
 }
 
@@ -119,7 +112,7 @@ export interface CustomerSearchResult {
   updatedAt: Date;
   merchant: {
     id: string;
-    companyName: string;
+    name: string;
   };
 }
 
@@ -175,6 +168,87 @@ export interface ProductSearchResponse {
   };
 }
 
+export interface ProductSearchFilter {
+  merchantId?: string;
+  outletId?: string;
+  categoryId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  isActive?: boolean;
+}
+
+export interface ProductInput {
+  merchantId: string;
+  categoryId: string;
+  name: string;
+  description?: string;
+  barcode?: string;
+  totalStock: number;
+  rentPrice: number;
+  salePrice?: number;
+  deposit: number;
+  images?: string;
+  outletStock?: Array<{
+    outletId: string;
+    stock: number;
+  }>;
+}
+
+export interface ProductUpdateInput {
+  categoryId?: string;
+  name?: string;
+  description?: string;
+  barcode?: string;
+  totalStock?: number;
+  rentPrice?: number;
+  salePrice?: number;
+  deposit?: number;
+  images?: string;
+  isActive?: boolean;
+}
+
+export interface OutletStockInput {
+  productId: string;
+  outletId: string;
+  stock: number;
+  available?: number;
+  renting?: number;
+}
+
+export interface ProductWithStock {
+  id: string;
+  name: string;
+  description?: string;
+  barcode?: string;
+  totalStock: number;
+  rentPrice: number;
+  salePrice?: number;
+  deposit: number;
+  images?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  category: {
+    id: string;
+    name: string;
+  };
+  merchant: {
+    id: string;
+    name: string;
+  };
+  outletStock: Array<{
+    id: string;
+    stock: number;
+    available: number;
+    renting: number;
+    outlet: {
+      id: string;
+      name: string;
+    };
+  }>;
+}
+
 // Order Types
 export type OrderType = 'RENT' | 'SALE' | 'RENT_TO_OWN';
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'DAMAGED';
@@ -183,26 +257,20 @@ export type PaymentType = 'DEPOSIT' | 'RENTAL_FEE' | 'DAMAGE_FEE' | 'REFUND';
 export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
 
 export interface OrderWithDetails extends Order {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
   customer: {
     id: string;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     phone: string;
   } | null;
   outlet: {
     id: string;
     name: string;
-    address: string;
+    address: string | null;
   };
   orderItems: OrderItemWithProduct[];
   payments: Payment[];
-  orderHistory: OrderHistory[];
 }
 
 export interface OrderItemWithProduct extends OrderItem {
@@ -210,7 +278,7 @@ export interface OrderItemWithProduct extends OrderItem {
     id: string;
     name: string;
     description: string | null;
-    images: string;
+    images: string | null;
     barcode: string | null;
   };
 }
@@ -311,17 +379,10 @@ export interface OrderSearchResult {
     id: string;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     phone: string;
   } | null;
-  customerName: string | null;
-  customerPhone: string | null;
-  customerEmail: string | null;
   outlet: {
-    id: string;
-    name: string;
-  };
-  user: {
     id: string;
     name: string;
   };

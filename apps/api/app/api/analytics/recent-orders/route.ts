@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
+import { assertAnyRole } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 
 export async function GET(request: NextRequest) {
@@ -21,34 +23,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // RBAC: ADMIN or MERCHANT
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
     // Get recent orders (last 20 orders)
     const recentOrders = await prisma.order.findMany({
       where: {
         status: { not: 'CANCELLED' }
       },
       include: {
-        customer: {
-          select: {
-            firstName: true,
-            lastName: true,
-            phone: true
-          }
-        },
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                name: true,
-                images: true
-              }
-            }
-          }
-        },
-        user: {
-          select: {
-            name: true
-          }
-        }
+        customer: true,
+        orderItems: { include: { product: true } },
       },
       orderBy: {
         createdAt: 'desc'
@@ -60,16 +49,16 @@ export async function GET(request: NextRequest) {
     const formattedOrders = recentOrders.map(order => {
       const customerName = order.customer 
         ? `${order.customer.firstName} ${order.customer.lastName}`
-        : order.customerName || 'Walk-in Customer';
+        : 'Walk-in Customer';
       
-      const customerPhone = order.customer?.phone || order.customerPhone || 'N/A';
+      const customerPhone = order.customer?.phone || 'N/A';
       
       const productNames = order.orderItems
         .map(item => item.product.name)
         .join(', ');
       
       const productImage = order.orderItems[0]?.product.images 
-        ? JSON.parse(order.orderItems[0].product.images)[0] 
+        ? JSON.parse(order.orderItems[0].product.images as any)[0] 
         : null;
 
       return {
@@ -83,16 +72,19 @@ export async function GET(request: NextRequest) {
         status: order.status,
         orderType: order.orderType,
         createdAt: order.createdAt,
-        createdBy: order.user.name,
+        createdBy: '',
         pickupPlanAt: order.pickupPlanAt,
         returnPlanAt: order.returnPlanAt
       };
     });
 
-    return NextResponse.json({
-      success: true,
-      data: formattedOrders
-    });
+    const body = JSON.stringify({ success: true, data: formattedOrders });
+    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const ifNoneMatch = request.headers.get('if-none-match');
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    }
+    return new NextResponse(body, { status: 200, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching recent orders:', error);
@@ -106,3 +98,4 @@ export async function GET(request: NextRequest) {
     );
   }
 } 
+export const runtime = 'nodejs';

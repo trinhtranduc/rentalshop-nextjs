@@ -4,11 +4,11 @@ import { generateToken } from './jwt';
 import type { LoginCredentials, RegisterData, AuthResponse } from './types';
 
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  const user = await prisma.user.findUnique({
+  const user = await (prisma as any).user.findUnique({
     where: { email: credentials.email },
     include: {
       merchant: true,
-      admin: true,
+      outlet: true,
     },
   });
 
@@ -31,14 +31,20 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
     role: user.role,
   });
 
+  const u = user as any;
+
   return {
     user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      phone: user.phone || undefined,
-      avatar: user.avatar || undefined,
+      id: u.id,
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      name: `${u.firstName} ${u.lastName}`,
+      role: u.role,
+      phone: u.phone || undefined,
+      merchant: u.merchant || undefined,
+      outlet: u.outlet || undefined,
+      
     },
     token,
   };
@@ -59,10 +65,11 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
     data: {
       email: data.email,
       password: hashedPassword,
-      name: data.name,
+      firstName: data.firstName || data.name?.split(' ')[0] || '',
+      lastName: data.lastName || data.name?.split(' ').slice(1).join(' ') || '',
       phone: data.phone,
-      role: data.role || 'CLIENT',
-    },
+      role: data.role || 'USER',
+    } as any,
   });
 
   const token = generateToken({
@@ -71,14 +78,16 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
     role: user.role,
   });
 
+  const nu = user as any;
   return {
     user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      phone: user.phone || undefined,
-      avatar: user.avatar || undefined,
+      id: nu.id,
+      email: nu.email,
+      firstName: nu.firstName,
+      lastName: nu.lastName,
+      name: `${nu.firstName} ${nu.lastName}`,
+      role: nu.role,
+      phone: nu.phone || undefined,
     },
     token,
   };
