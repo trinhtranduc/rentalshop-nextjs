@@ -92,8 +92,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
     const result = await searchOrders(filters);
+    
+    // Add totalPages calculation for pagination
+    const totalPages = Math.ceil(result.total / (result.limit || 10));
+    const paginatedResult = {
+      ...result,
+      totalPages,
+      page: Math.floor((result.offset || 0) / (result.limit || 10)) + 1
+    };
 
-    const bodyString = JSON.stringify({ success: true, data: result });
+    const bodyString = JSON.stringify({ success: true, data: paginatedResult });
     const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');
 

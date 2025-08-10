@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input } from '@rentalshop/ui';
+import { Plus } from 'lucide-react';
 import { ProductTable, ProductDialog } from '@rentalshop/ui';
 import { DashboardWrapper } from '@rentalshop/ui';
 
@@ -57,7 +58,7 @@ export default function ProductsPage() {
       
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '20',
+        limit: '10',
         ...(searchTerm && { search: searchTerm })
       });
 
@@ -212,8 +213,11 @@ export default function ProductsPage() {
           <p className="text-gray-600">Manage your product catalog with outlet stock allocation</p>
         </div>
         {isMerchantLevel && (
-          <Button onClick={handleAddProduct}>
-            Add Product
+          <Button 
+            onClick={handleAddProduct}
+            className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Add Product
           </Button>
         )}
       </div>

@@ -19,6 +19,7 @@
     "paths": {
       "@rentalshop/ui": ["./packages/ui/src"],
       "@rentalshop/auth": ["./packages/auth/src"],
+      "@rentalshop/auth/browser": ["./packages/auth/src/browser.ts"],
       "@rentalshop/database": ["./packages/database/src"],
       "@rentalshop/utils": ["./packages/utils/src"]
     }

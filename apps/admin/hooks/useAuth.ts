@@ -5,9 +5,21 @@ import { isAuthenticated, getStoredUser, logoutUser, isAuthenticatedWithVerifica
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: string;
+  name?: string;
+  role?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
+  merchant?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+  outlet?: {
+    id: string;
+    name: string;
+    address?: string;
+  };
 }
 
 export function useAuth() {

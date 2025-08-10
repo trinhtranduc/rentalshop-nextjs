@@ -30,6 +30,7 @@ export {
   DialogFooter,
   DialogTrigger,
 } from './ui/dialog';
+export { SearchableSelect } from './ui/searchable-select';
 
 // ============================================================================
 // LAYOUT COMPONENTS
@@ -69,6 +70,7 @@ export { ProductGrid } from './features/ProductGrid';
 export { ProductTable } from './features/ProductTable';
 export { ProductDialog } from './features/ProductDialog';
 export { OrderCard } from './features/OrderCard';
+export { OrderTable } from './features/OrderTable';
 export type { Product as GridProduct } from './features/ProductGrid';
 
 // ============================================================================

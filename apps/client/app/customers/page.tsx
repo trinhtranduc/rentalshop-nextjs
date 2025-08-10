@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input } from '@rentalshop/ui';
+import { UserPlus } from 'lucide-react';
 import { CustomerTable, CustomerDialog } from '@rentalshop/ui';
 import { DashboardWrapper } from '@rentalshop/ui';
 import { useAuth } from '../../hooks/useAuth';
@@ -36,7 +37,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [currentPage, showActiveOnly]);
+  }, [currentPage]);
 
   const fetchCustomers = async () => {
     try {
@@ -45,7 +46,7 @@ export default function CustomersPage() {
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '20',
+        limit: '10',
         isActive: showActiveOnly.toString(),
         ...(searchTerm && { search: searchTerm })
       });
@@ -58,10 +59,10 @@ export default function CustomersPage() {
 
       const data = await response.json();
       
-      if (data.success) {
-        setCustomers(data.data.customers);
-        setTotalPages(data.data.totalPages);
-      }
+              if (data.success) {
+          setCustomers(data.data.customers);
+          setTotalPages(data.data.totalPages);
+        }
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
@@ -72,7 +73,7 @@ export default function CustomersPage() {
   const handleSearch = useCallback(() => {
     setCurrentPage(1);
     fetchCustomers();
-  }, [currentPage, showActiveOnly, searchTerm]);
+  }, []);
 
   // Debounced search effect
   useEffect(() => {
@@ -162,8 +163,11 @@ export default function CustomersPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Customers</h1>
           <p className="text-gray-600">Manage your customer database</p>
         </div>
-        <Button onClick={handleAddCustomer}>
-          Add Customer
+        <Button 
+          onClick={handleAddCustomer} 
+          className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+        >
+          <UserPlus className="w-4 h-4 mr-2" /> Add Customer
         </Button>
       </div>
 
@@ -174,7 +178,7 @@ export default function CustomersPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Search Customers
               {searchTerm && (
-                <span className="ml-2 text-xs text-blue-600 font-normal">
+                <span className="ml-2 text-sm text-blue-600 font-normal">
                   (Searching for "{searchTerm}")
                 </span>
               )}
@@ -207,7 +211,7 @@ export default function CustomersPage() {
                 onChange={(e) => setShowActiveOnly(e.target.checked)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-2 text-sm text-gray-700">Active only</span>
+              <span className="ml-2 text-base text-gray-700">Active only</span>
             </label>
             
             <Button variant="outline" onClick={() => {
@@ -224,7 +228,7 @@ export default function CustomersPage() {
       {loading ? (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading customers...</p>
+          <p className="mt-2 text-base text-gray-600">Loading customers...</p>
         </div>
       ) : customers.length === 0 ? (
         <Card className="text-center py-12">
@@ -232,8 +236,8 @@ export default function CustomersPage() {
             <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            <h3 className="text-lg font-medium mb-2">No customers found</h3>
-            <p>Try adjusting your search criteria or add a new customer.</p>
+            <h3 className="text-xl font-medium mb-2">No customers found</h3>
+            <p className="text-base">Try adjusting your search criteria or add a new customer.</p>
           </div>
         </Card>
       ) : (
