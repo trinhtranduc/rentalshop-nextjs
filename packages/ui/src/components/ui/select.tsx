@@ -10,14 +10,21 @@ const SelectGroup = SelectPrimitive.Group
 
 const SelectValue = SelectPrimitive.Value
 
+export interface SelectTriggerProps extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> {
+  variant?: 'default' | 'filled' | 'underline' | 'ghost';
+}
+
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+  SelectTriggerProps
+>(({ className, children, variant = 'default', ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      variant === 'filled' && "h-10 rounded-md bg-bg-secondary border border-border px-3 py-2 text-sm focus:bg-bg-card focus:border-action-primary focus:ring-4 focus:ring-blue-100",
+      variant === 'underline' && "h-10 border-0 border-b border-gray-300 rounded-none px-0 text-sm focus:border-blue-500 focus:ring-0",
+      variant === 'ghost' && "h-10 bg-transparent border-transparent px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100",
+      variant === 'default' && "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
       className
     )}
     {...props}

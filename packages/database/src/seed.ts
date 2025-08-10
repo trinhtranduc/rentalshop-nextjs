@@ -1,4 +1,6 @@
 import { prisma } from './client';
+import { createOrder, updateOrder, cancelOrder } from './order';
+import type { OrderInput, OrderType, OrderStatus } from './types';
 
 async function main() {
   console.log('🌱 Starting comprehensive database seed...');
@@ -431,6 +433,213 @@ async function main() {
 
   console.log('✅ Products created with outlet stock');
 
+  // Create sample orders for Orders page
+  console.log('🧾 Creating sample orders...');
+
+  const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const pick = <T,>(arr: T[]) => arr[randomInt(0, arr.length - 1)];
+
+  const makeOrderInput = (
+    orderType: OrderType,
+    outletId: string,
+    customerId: string | undefined,
+    productIds: string[],
+    priceLookup: Record<string, { rentPrice: number; salePrice?: number; deposit: number }>,
+    schedule?: { pickupPlanAt?: Date; returnPlanAt?: Date }
+  ): OrderInput => {
+    const orderItems = productIds.map((pid) => {
+      const { rentPrice, salePrice, deposit } = priceLookup[pid];
+      const quantity = randomInt(1, 2);
+      const unitPrice = orderType === 'SALE' ? (salePrice ?? rentPrice) : rentPrice;
+      return {
+        productId: pid,
+        quantity,
+        unitPrice,
+        totalPrice: unitPrice * quantity,
+        deposit: orderType === 'RENT' ? deposit * quantity : 0,
+      };
+    });
+
+    const subtotal = orderItems.reduce((s, i) => s + i.totalPrice, 0);
+    const depositAmount = orderItems.reduce((s, i) => s + (i.deposit ?? 0), 0);
+    const totalAmount = subtotal; // taxes/discounts not modeled in schema
+
+    return {
+      orderType,
+      customerId,
+      outletId,
+      pickupPlanAt: schedule?.pickupPlanAt,
+      returnPlanAt: schedule?.returnPlanAt,
+      subtotal,
+      totalAmount,
+      depositAmount,
+      orderItems,
+    };
+  };
+
+  // Build a quick price lookup for products
+  const productPriceLookup: Record<string, { rentPrice: number; salePrice?: number; deposit: number }> = {};
+  for (const p of [...merchant1Products, ...merchant2Products]) {
+    productPriceLookup[p.id] = {
+      rentPrice: p.rentPrice,
+      salePrice: p.salePrice ?? undefined,
+      deposit: p.deposit,
+    };
+  }
+
+  const ordersCreated: string[] = [];
+
+  // Helper to create and then optionally update status/timestamps
+  const createOrderWithStatus = async (
+    orderType: OrderType,
+    outletId: string,
+    customerId: string | undefined,
+    productIds: string[],
+    status: OrderStatus,
+    schedule?: { pickupPlanAt?: Date; returnPlanAt?: Date; pickedUpAt?: Date; returnedAt?: Date }
+  ) => {
+    const input = makeOrderInput(orderType, outletId, customerId, productIds, productPriceLookup, schedule);
+    const created = await createOrder(input, 'user1');
+    ordersCreated.push(created.id);
+
+    // Apply status transitions consistent with business rules
+    if (status === 'CANCELLED') {
+      // Directly cancel to ensure stock adjustments are handled correctly
+      await cancelOrder(created.id, 'user1', 'Seeded cancellation');
+    } else if (status !== 'PENDING') {
+      const update: any = { status };
+      if (schedule?.pickedUpAt) update.pickedUpAt = schedule.pickedUpAt;
+      if (schedule?.returnedAt) update.returnedAt = schedule.returnedAt;
+      await updateOrder(created.id, update, 'user1');
+    }
+  };
+
+  // Merchant 1 orders (outlet1 and outlet2) - mix of RENT and SALE
+  const m1Customers = customers.filter((c) => c.merchantId === merchant1.id);
+  const m1ProductIds = merchant1Products.map((p) => p.id);
+
+  // Create several RENT orders across statuses
+  for (let i = 0; i < 4; i++) {
+    await createOrderWithStatus(
+      'RENT',
+      i % 2 === 0 ? outlet1.id : outlet2.id,
+      pick(m1Customers).id,
+      [pick(m1ProductIds)],
+      'PENDING',
+      {
+        pickupPlanAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        returnPlanAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      }
+    );
+  }
+
+  for (let i = 0; i < 4; i++) {
+    await createOrderWithStatus(
+      'RENT',
+      i % 2 === 0 ? outlet1.id : outlet2.id,
+      pick(m1Customers).id,
+      [pick(m1ProductIds), pick(m1ProductIds)],
+      'CONFIRMED',
+      {
+        pickupPlanAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+        returnPlanAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+      }
+    );
+  }
+
+  for (let i = 0; i < 5; i++) {
+    await createOrderWithStatus(
+      'RENT',
+      i % 2 === 0 ? outlet1.id : outlet2.id,
+      pick(m1Customers).id,
+      [pick(m1ProductIds)],
+      'ACTIVE',
+      {
+        pickupPlanAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        returnPlanAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        pickedUpAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      }
+    );
+  }
+
+  for (let i = 0; i < 3; i++) {
+    await createOrderWithStatus(
+      'RENT',
+      i % 2 === 0 ? outlet1.id : outlet2.id,
+      pick(m1Customers).id,
+      [pick(m1ProductIds)],
+      'ACTIVE',
+      {
+        pickupPlanAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        returnPlanAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // overdue
+        pickedUpAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      }
+    );
+  }
+
+  for (let i = 0; i < 5; i++) {
+    await createOrderWithStatus(
+      'RENT',
+      i % 2 === 0 ? outlet1.id : outlet2.id,
+      pick(m1Customers).id,
+      [pick(m1ProductIds), pick(m1ProductIds)],
+      'COMPLETED',
+      {
+        pickupPlanAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        returnPlanAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        pickedUpAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        returnedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      }
+    );
+  }
+
+  for (let i = 0; i < 2; i++) {
+    await createOrderWithStatus(
+      'RENT',
+      i % 2 === 0 ? outlet1.id : outlet2.id,
+      pick(m1Customers).id,
+      [pick(m1ProductIds)],
+      'CANCELLED',
+      {
+        pickupPlanAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        returnPlanAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+      }
+    );
+  }
+
+  // SALE orders for merchant 1
+  for (let i = 0; i < 4; i++) {
+    await createOrderWithStatus(
+      'SALE',
+      i % 2 === 0 ? outlet1.id : outlet2.id,
+      pick(m1Customers).id,
+      [pick(m1ProductIds)],
+      i % 2 === 0 ? 'COMPLETED' : 'CONFIRMED'
+    );
+  }
+
+  // Merchant 2 orders (outlet3 and outlet4)
+  const m2Customers = customers.filter((c) => c.merchantId === merchant2.id);
+  const m2ProductIds = merchant2Products.map((p) => p.id);
+
+  for (let i = 0; i < 6; i++) {
+    await createOrderWithStatus(
+      i % 3 === 0 ? 'SALE' : 'RENT',
+      i % 2 === 0 ? outlet3.id : outlet4.id,
+      pick(m2Customers).id,
+      [pick(m2ProductIds)],
+      i % 3 === 0 ? 'COMPLETED' : 'PENDING',
+      i % 3 === 0
+        ? undefined
+        : {
+            pickupPlanAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+            returnPlanAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+          }
+    );
+  }
+
+  console.log(`✅ Sample orders created: ${ordersCreated.length}`);
+
   console.log('🎉 Comprehensive database seeding completed successfully!');
   console.log('\n📊 Summary:');
   console.log(`- Merchants: 2`);
@@ -438,6 +647,7 @@ async function main() {
   console.log(`- Categories: 5 (3 for merchant1, 2 for merchant2)`);
   console.log(`- Products: 60 (30 per merchant with outlet stock distribution)`);
   console.log(`- Users: 6 (2 admins, 4 staff)`);
+  console.log(`- Orders: ${ordersCreated.length} (mixed statuses and types)`);
   console.log(`- Customers: 20 (10 per merchant)`);
   
   console.log('\n🔑 Login Credentials (standardized)');

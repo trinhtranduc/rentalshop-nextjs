@@ -22,7 +22,8 @@ export interface AuthResponse {
 /**
  * Get stored authentication token
  */
-import { getAuthToken, getStoredUser, storeAuthData, clearAuthData, authenticatedFetch, handleApiResponse } from '@rentalshop/auth';
+// Use browser-only entry to avoid bundling Prisma in the admin client
+import { getAuthToken, getStoredUser, storeAuthData, clearAuthData, authenticatedFetch, handleApiResponse } from '@rentalshop/auth/browser';
 export { getAuthToken, getStoredUser, storeAuthData, clearAuthData, authenticatedFetch, handleApiResponse };
 
 // getStoredUser re-exported from @rentalshop/auth
@@ -131,7 +132,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
 
     if (data.success && data.data?.token) {
       console.log('✅ Login successful, storing auth data...');
-      (await import('@rentalshop/auth')).storeAuthData(data.data.token, data.data.user);
+      (await import('@rentalshop/auth/browser')).storeAuthData(data.data.token, data.data.user);
       console.log('💾 Auth data stored successfully');
     } else {
       console.log('❌ Login failed:', data.message);
@@ -148,7 +149,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
  * Logout user
  */
 export const logoutUser = (): void => {
-  (async () => (await import('@rentalshop/auth')).clearAuthData())();
+  (async () => (await import('@rentalshop/auth/browser')).clearAuthData())();
   window.location.href = '/login';
 };
 
@@ -157,7 +158,7 @@ export const logoutUser = (): void => {
  */
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/auth');
+    const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/auth/browser');
     const data = await handleApiResponse(await authenticatedFetch('/api/auth/me'));
     return data.success ? data.data : null;
   } catch (error) {

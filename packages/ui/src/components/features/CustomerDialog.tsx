@@ -8,6 +8,7 @@ import {
   DialogTrigger,
 } from '../ui/dialog';
 import { Button, Input, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
+import { Plus, UserPlus } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -132,7 +133,15 @@ export const CustomerDialog: React.FC<CustomerDialogProps> = ({
 
   const defaultTrigger = (
     <Button variant={isEditing ? "outline" : "default"}>
-      {isEditing ? 'Edit Customer' : 'Add Customer'}
+      {isEditing ? (
+        <>
+          Edit Customer <UserPlus className="w-4 h-4 ml-2" />
+        </>
+      ) : (
+        <>
+          Add Customer <UserPlus className="w-4 h-4 ml-2" />
+        </>
+      )}
     </Button>
   );
 

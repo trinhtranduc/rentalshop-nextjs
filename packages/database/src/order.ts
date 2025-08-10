@@ -25,7 +25,7 @@ export function generateOrderNumber(): string {
 export async function createOrder(input: OrderInput, userId: string): Promise<OrderWithDetails> {
   const orderNumber = generateOrderNumber();
   
-  return await prisma.$transaction(async (tx) => {
+  const createdOrderId = await prisma.$transaction(async (tx) => {
     // Create the order
     const order = await tx.order.create({
       data: {
@@ -83,13 +83,15 @@ export async function createOrder(input: OrderInput, userId: string): Promise<Or
       }
     }
 
-    // Return the complete order with details
-    const result = await getOrderById(order.id);
-    if (!result) {
-      throw new Error('Failed to create order');
-    }
-    return result as OrderWithDetails;
+    return order.id;
   });
+
+  // Fetch the complete order with details after commit
+  const result = await getOrderById(createdOrderId);
+  if (!result) {
+    throw new Error('Failed to create order');
+  }
+  return result as OrderWithDetails;
 }
 
 // Get order by ID with all details
@@ -180,7 +182,7 @@ export async function updateOrder(
   input: OrderUpdateInput,
   userId: string
 ): Promise<OrderWithDetails | null> {
-  return await prisma.$transaction(async (tx) => {
+  const updatedOrderId = await prisma.$transaction(async (tx) => {
     // Get current order to track changes
     const currentOrder = await tx.order.findUnique({
       where: { id: orderId },
@@ -233,8 +235,10 @@ export async function updateOrder(
 
     // No history entries
 
-    return await getOrderById(orderId);
+    return orderId;
   });
+
+  return await getOrderById(updatedOrderId);
 }
 
 // Search orders with filters
@@ -458,7 +462,7 @@ export async function getOverdueRentals(outletId?: string): Promise<OrderSearchR
 
 // Cancel order
 export async function cancelOrder(orderId: string, userId: string, reason?: string): Promise<OrderWithDetails | null> {
-  return await prisma.$transaction(async (tx) => {
+  const cancelledOrderId = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: { orderItems: true },
@@ -505,8 +509,10 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
 
     // No history in new schema
 
-    return await getOrderById(orderId);
+    return orderId;
   });
+
+  return await getOrderById(cancelledOrderId);
 }
 
 // Delete order (soft delete by setting status to CANCELLED)

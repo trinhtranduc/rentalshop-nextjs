@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { 
   getProducts, 
-  type ProductFilters, 
-  type ProductListOptions 
+  type ProductSearchFilter
 } from '@rentalshop/database';
 
 /**
@@ -14,44 +13,37 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Parse filters
-    const filters: ProductFilters = {};
-    const options: ProductListOptions = {};
+    const filters: ProductSearchFilter = {};
     
     // Filter parameters
     if (searchParams.get('outletId')) filters.outletId = searchParams.get('outletId')!;
     if (searchParams.get('categoryId')) filters.categoryId = searchParams.get('categoryId')!;
     if (searchParams.get('search')) filters.search = searchParams.get('search')!;
-    if (searchParams.get('minPrice')) filters.minPrice = parseFloat(searchParams.get('minPrice')!);
-    if (searchParams.get('maxPrice')) filters.maxPrice = parseFloat(searchParams.get('maxPrice')!);
     
-    // Pagination and sorting parameters (optimized for mobile)
-    if (searchParams.get('page')) options.page = parseInt(searchParams.get('page')!);
-    if (searchParams.get('limit')) options.limit = parseInt(searchParams.get('limit')!);
-    if (searchParams.get('sortBy')) options.sortBy = searchParams.get('sortBy') as any;
-    if (searchParams.get('sortOrder')) options.sortOrder = searchParams.get('sortOrder') as any;
+    // Pagination parameters (optimized for mobile)
+    if (searchParams.get('page')) filters.page = parseInt(searchParams.get('page')!);
+    if (searchParams.get('limit')) filters.limit = parseInt(searchParams.get('limit')!);
 
     // Default mobile-optimized settings
-    if (!options.limit) options.limit = 20; // Smaller batch size for mobile
-    if (!options.sortBy) options.sortBy = 'createdAt';
-    if (!options.sortOrder) options.sortOrder = 'desc';
+    if (!filters.limit) filters.limit = 20; // Smaller batch size for mobile
 
-    const result = await getProducts(filters, options);
+    const result = await getProducts(filters);
 
     // Transform data for mobile optimization
-    const mobileProducts = result.products.map(product => ({
+    const mobileProducts = result.products.map((product: any) => ({
       id: product.id,
       name: product.name,
       description: product.description,
       price: product.rentPrice || 0,
       deposit: product.deposit,
       images: product.images,
-      isAvailable: product.available > 0 && product.isActive,
+      isAvailable: product.outletStock?.[0]?.available > 0 && product.isActive,
       category: {
-        name: product.category.name,
+        name: product.category?.name,
       },
       outlet: {
-        name: product.outlet.name,
-        address: product.outlet.address,
+        name: product.outletStock?.[0]?.outlet?.name,
+        address: product.outletStock?.[0]?.outlet?.address,
       },
     }));
 

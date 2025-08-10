@@ -59,14 +59,14 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px]">Name</TableHead>
-            <TableHead className="w-[200px]">Email</TableHead>
-            <TableHead className="w-[150px]">Phone</TableHead>
-            <TableHead className="w-[200px]">Location</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
-            <TableHead className="w-[120px]">Merchant</TableHead>
+            <TableHead className="w-[200px] font-bold text-gray-900">Name</TableHead>
+            <TableHead className="w-[200px] font-bold text-gray-900">Email</TableHead>
+            <TableHead className="w-[150px] font-bold text-gray-900">Phone</TableHead>
+            <TableHead className="w-[200px] font-bold text-gray-900">Location</TableHead>
+            <TableHead className="w-[100px] font-bold text-gray-900">Status</TableHead>
+            <TableHead className="w-[120px] font-bold text-gray-900">Merchant</TableHead>
             {showActions && (
-              <TableHead className="w-[120px] text-right">Actions</TableHead>
+              <TableHead className="w-[120px] text-right font-bold text-gray-900">Actions</TableHead>
             )}
           </TableRow>
         </TableHeader>

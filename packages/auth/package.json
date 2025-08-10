@@ -7,6 +7,18 @@
   "types": "./src/index.ts",
   "sideEffects": false,
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    },
+    "./browser": {
+      "types": "./src/browser.ts",
+      "import": "./src/browser.ts",
+      "require": "./src/browser.ts"
+    }
+  },
   "files": [
     "dist/**"
   ],

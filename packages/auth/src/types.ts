@@ -10,7 +10,7 @@ export interface RegisterData {
   firstName?: string;
   lastName?: string;
   phone?: string;
-  role?: 'USER' | 'ADMIN';
+  role?: 'CLIENT' | 'SHOP_OWNER' | 'ADMIN';
 }
 
 export interface AuthUser {

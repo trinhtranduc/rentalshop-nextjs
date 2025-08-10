@@ -8,7 +8,7 @@ export interface DatabaseConfig {
 }
 
 export function getDatabaseConfig(): DatabaseConfig {
-  const nodeEnv = process.env.NODE_ENV || 'local';
+  const nodeEnv = (process.env.NODE_ENV || 'local') as 'local' | 'development' | 'production' | 'test';
   
   switch (nodeEnv) {
     case 'local':
@@ -38,7 +38,8 @@ export function getDatabaseConfig(): DatabaseConfig {
 }
 
 export function isLocalEnvironment(): boolean {
-  return process.env.NODE_ENV === 'local' || !process.env.NODE_ENV;
+  const nodeEnv = process.env.NODE_ENV;
+  return !nodeEnv || nodeEnv === 'development';
 }
 
 export function isDevelopmentEnvironment(): boolean {

@@ -6,7 +6,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
-import { Button, Input, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from '@rentalshop/ui';
+import { Button, Input, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, SearchableSelect } from '@rentalshop/ui';
+import { Plus } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -256,26 +257,15 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Category *
-              </label>
-              <Select
+              <label className="text-sm font-medium text-gray-700">Category *</label>
+              <SearchableSelect
                 value={formData.categoryId}
-                onValueChange={(value) => handleInputChange('categoryId', value)}
-                disabled={isView}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(val) => handleInputChange('categoryId', val)}
+                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                placeholder="Select category"
+                searchPlaceholder="Search categories..."
+                className="w-full"
+              />
             </div>
           </div>
 
@@ -385,7 +375,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
                     disabled={outletStock.length >= outlets.length}
                     className="text-xs"
                   >
-                    Add Outlet
+                    Add Outlet <Plus className="w-4 h-4 ml-2" />
                   </Button>
                 )}
               </div>

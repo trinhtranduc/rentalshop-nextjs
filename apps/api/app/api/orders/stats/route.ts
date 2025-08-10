@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from '@rentalshop/auth';
-import { getOrderStats, getOverdueRentals } from '@rentalshop/database';
+import { getOrderStats, getOverdueRentals, type OrderSearchResult } from '@rentalshop/database';
 
 // GET /api/orders/stats - Get order statistics
 export async function GET(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     // Get overdue rentals if requested
     const includeOverdue = searchParams.get('includeOverdue') === 'true';
-    let overdueRentals = [];
+    let overdueRentals: OrderSearchResult[] = [];
     if (includeOverdue) {
       overdueRentals = await getOverdueRentals(outletId);
     }

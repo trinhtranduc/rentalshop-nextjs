@@ -1,12 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
   async headers() {
-    const { getCorsOrigins } = require('./lib/config');
-    const origins = getCorsOrigins();
-    // Pick first origin as default for header; for multiple, consider dynamic CORS in middleware
+    // Avoid requiring TS files here; compute CORS origins directly from env
+    const csv = process.env.CORS_ORIGINS || '';
+    const envOrigins = csv
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const fallbacks = [
+      process.env.CLIENT_URL,
+      process.env.ADMIN_URL,
+      process.env.API_URL,
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+    ].filter(Boolean);
+    const origins = envOrigins.length ? envOrigins : fallbacks;
     const allowOrigin = origins[0] || '*';
     return [
       {
@@ -22,4 +31,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;

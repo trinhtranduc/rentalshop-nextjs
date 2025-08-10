@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">R</span>
               </div>
-              <span className="font-bold text-xl text-gray-900">RentalShop</span>
+              <span className="font-bold text-2xl text-gray-900 leading-none">RentalShop</span>
             </Link>
             
             {/* Close button for mobile */}
@@ -157,7 +157,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     )}>
                       {item.icon}
                     </span>
-                    <span>{item.label}</span>
+                    <span className={cn(
+                      'text-base',
+                      isActive ? 'font-medium' : 'font-normal'
+                    )}>{item.label}</span>
                   </div>
                   
                   {item.badge && (

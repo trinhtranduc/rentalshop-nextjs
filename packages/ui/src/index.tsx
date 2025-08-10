@@ -12,4 +12,4 @@ export { useThrottledSearch } from './hooks/useThrottledSearch';
 // UTILITIES
 // ============================================================================
 export { cn } from './lib/cn';
-export { formatDate, formatCurrency } from './lib/utils'; 
+export { formatDate, formatDateOnly, formatCurrency } from './lib/utils';

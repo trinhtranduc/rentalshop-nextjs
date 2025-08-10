@@ -28,6 +28,26 @@ export function formatDate(date: Date | string | null | undefined, locale: strin
 }
 
 /**
+ * Format a date to a date-only string (no time)
+ * @param date - Date to format
+ * @param locale - Locale for formatting (default: 'vi-VN')
+ * @returns Formatted date string (YYYY/MM/DD per locale)
+ */
+export function formatDateOnly(
+  date: Date | string | null | undefined,
+  locale: string = 'vi-VN'
+): string {
+  if (!date) return 'N/A';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) return 'Invalid Date';
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(dateObj);
+}
+
+/**
  * Format a number as currency
  * @param amount - Amount to format
  * @param currency - Currency code (default: 'VND')

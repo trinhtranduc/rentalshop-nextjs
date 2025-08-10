@@ -85,16 +85,16 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[250px]">Product</TableHead>
-            <TableHead className="w-[120px]">Category</TableHead>
-            <TableHead className="w-[100px]">Stock</TableHead>
-            <TableHead className="w-[100px]">Renting</TableHead>
-            <TableHead className="w-[120px]">Rent Price</TableHead>
-            <TableHead className="w-[120px]">Sale Price</TableHead>
-            <TableHead className="w-[120px]">Deposit</TableHead>
-            <TableHead className="w-[150px]">Outlets</TableHead>
+            <TableHead className="w-[250px] font-bold text-gray-900">Product</TableHead>
+            <TableHead className="w-[120px] font-bold text-gray-900">Category</TableHead>
+            <TableHead className="w-[100px] font-bold text-gray-900">Stock</TableHead>
+            <TableHead className="w-[100px] font-bold text-gray-900">Renting</TableHead>
+            <TableHead className="w-[120px] font-bold text-gray-900">Rent Price</TableHead>
+            <TableHead className="w-[120px] font-bold text-gray-900">Sale Price</TableHead>
+            <TableHead className="w-[120px] font-bold text-gray-900">Deposit</TableHead>
+            <TableHead className="w-[150px] font-bold text-gray-900">Outlets</TableHead>
             {showActions && (
-              <TableHead className="w-[120px] text-right">Actions</TableHead>
+              <TableHead className="w-[120px] text-right font-bold text-gray-900">Actions</TableHead>
             )}
           </TableRow>
         </TableHeader>

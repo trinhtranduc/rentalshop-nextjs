@@ -32,7 +32,8 @@ export default function AuthHelperPage() {
         setMessage(`❌ Login failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
-      setMessage(`❌ Error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setMessage(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -65,7 +66,8 @@ export default function AuthHelperPage() {
         setMessage(`❌ Registration failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
-      setMessage(`❌ Error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setMessage(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
