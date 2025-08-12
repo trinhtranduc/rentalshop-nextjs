@@ -28,6 +28,78 @@
 - ✅ Use consistent naming conventions (PascalCase for interfaces)
 - ❌ Don't redefine types in multiple places
 
+### **Component Organization Rules**
+
+#### **📁 `/forms` - Pure Form Components**
+**When to create here:**
+- **Reusable form logic** that can be used across different contexts
+- **Form validation and state management**
+- **Input field components and form layouts**
+- **NO business logic or API calls**
+
+**Examples:**
+```typescript
+// ✅ GOOD: Pure form components
+/forms/ProductForm.tsx        // Form logic + validation
+/forms/CustomerForm.tsx       // Form logic + validation  
+/forms/OrderForm.tsx          // Form logic + validation
+/forms/LoginForm.tsx          // Form logic + validation
+```
+
+**Characteristics:**
+- Form inputs and validation
+- State management for form data
+- Form submission handling
+- NO API calls
+- NO business logic
+- Reusable across different business contexts
+
+#### **📁 `/features` - Business Logic Components**
+**When to create here:**
+- **Complete business features** with API integration
+- **Components that combine forms + business logic**
+- **Reusable business components** (cards, tables, dialogs)
+- **Components that make API calls or handle business operations**
+
+**Examples:**
+```typescript
+// ✅ GOOD: Business logic components
+/features/ProductDialog.tsx   // Dialog + API calls + business logic
+/features/ProductTable.tsx    // Table + data fetching + actions
+/features/ProductCard.tsx     // Card + business operations
+/features/CustomerDialog.tsx  // Dialog + API calls + business logic
+```
+
+**Characteristics:**
+- API calls and data fetching
+- Business logic and operations
+- Combines multiple components (including forms)
+- Handles save/cancel operations
+- Specific to business domain
+
+#### **Component Decision Tree**
+```
+Is it a FORM with validation and inputs?
+├─ YES → /forms/
+│   ├─ Does it make API calls? → NO ✅
+│   ├─ Does it have business logic? → NO ✅
+│   └─ Is it reusable across contexts? → YES ✅
+│
+└─ NO → /features/
+    ├─ Does it make API calls? → YES ✅
+    ├─ Does it handle business operations? → YES ✅
+    ├─ Does it combine multiple components? → YES ✅
+    └─ Is it a complete business feature? → YES ✅
+```
+
+#### **Quick Rules of Thumb**
+1. **`/forms`** = "How to collect and validate data"
+2. **`/features`** = "What to do with the data + business operations"
+3. **`/forms`** = Reusable across different business contexts
+4. **`/features`** = Specific to business domain
+5. **`/forms`** = No API calls, no business logic
+6. **`/features`** = API calls, business logic, data management
+
 ### **Database Design Principles & Performance**
 
 #### **Database Schema Design**

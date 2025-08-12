@@ -1,10 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge, SearchableSelect } from '@rentalshop/ui';
-import { DashboardWrapper } from '@rentalshop/ui';
+import { 
+  Card, 
+  CardContent, 
+  Button,
+  OrderTable,
+  PageWrapper,
+  PageHeader,
+  PageTitle,
+  PageContent
+} from '@rentalshop/ui';
 import { useRouter } from 'next/navigation';
-import { OrderTable } from '@rentalshop/ui';
 import { OrderForm } from '@rentalshop/ui';
 import { useAuth } from '../../hooks/useAuth';
 import type { OrderSearchResult, OrderInput, OrderType, OrderStatus } from '@rentalshop/database';
@@ -187,49 +194,47 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <DashboardWrapper user={user} onLogout={logout} currentPath="/orders">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </DashboardWrapper>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
   return (
-    <DashboardWrapper user={user} onLogout={logout} currentPath="/orders">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900 mb-1">Quản lý đơn hàng</h1>
-              <p className="text-sm text-gray-600">Quản lý đơn hàng và giao dịch thuê/bán</p>
-            </div>
-            <div className="flex gap-3">
-              <Button 
-                onClick={() => {
-                  // TODO: Implement export functionality
-                  alert('Export functionality coming soon!');
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                Trích xuất
-              </Button>
-              <Button 
-                onClick={() => router.push('/orders/create')}
-                className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Tạo đơn hàng
-              </Button>
-            </div>
+    <PageWrapper>
+      <PageHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <PageTitle>Quản lý đơn hàng</PageTitle>
+            <p className="text-sm text-gray-600">Quản lý đơn hàng và giao dịch thuê/bán</p>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => {
+                // TODO: Implement export functionality
+                alert('Export functionality coming soon!');
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Trích xuất
+            </Button>
+            <Button 
+              onClick={() => router.push('/orders/create')}
+              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Tạo đơn hàng
+            </Button>
           </div>
         </div>
+      </PageHeader>
 
+      <PageContent>
         {/* Statistics Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -310,10 +315,12 @@ export default function OrdersPage() {
               {/* Search - grows */}
               <div className="flex-1 min-w-[240px]">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
-                <Input
+                <input
+                  type="text"
                   placeholder="Tìm theo số đơn hàng, tên khách hàng..."
                   value={filters.q}
                   onChange={(e) => setFilters(prev => ({ ...prev, q: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -321,35 +328,31 @@ export default function OrdersPage() {
               <div className="flex gap-3 md:justify-end">
                 <div className="w-56">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Loại đơn hàng</label>
-                  <SearchableSelect
+                  <select
                     value={filters.orderType || ''}
-                    onChange={(val) => setFilters(prev => ({ ...prev, orderType: (val as OrderType | '') || '' }))}
-                    options={[
-                      { value: '', label: 'Tất cả' },
-                      { value: 'RENT', label: 'Đơn thuê' },
-                      { value: 'SALE', label: 'Đơn bán' },
-                    ]}
-                    placeholder="Tất cả"
-                    displayMode="button"
-                  />
+                    onChange={(e) => setFilters(prev => ({ ...prev, orderType: (e.target.value as OrderType | '') || '' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="RENT">Đơn thuê</option>
+                    <option value="SALE">Đơn bán</option>
+                  </select>
                 </div>
                 <div className="w-56">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-                  <SearchableSelect
+                  <select
                     value={filters.status || ''}
-                    onChange={(val) => setFilters(prev => ({ ...prev, status: (val as OrderStatus) || '' }))}
-                    options={[
-                      { value: '', label: 'Tất cả' },
-                      { value: 'PENDING', label: 'Chờ xác nhận' },
-                      { value: 'CONFIRMED', label: 'Đã xác nhận' },
-                      { value: 'ACTIVE', label: 'Đang thuê' },
-                      { value: 'COMPLETED', label: 'Hoàn thành' },
-                      { value: 'CANCELLED', label: 'Đã hủy' },
-                      { value: 'OVERDUE', label: 'Quá hạn' },
-                    ]}
-                    placeholder="Tất cả"
-                    displayMode="button"
-                  />
+                    onChange={(e) => setFilters(prev => ({ ...prev, status: (e.target.value as OrderStatus) || '' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="PENDING">Chờ xác nhận</option>
+                    <option value="CONFIRMED">Đã xác nhận</option>
+                    <option value="ACTIVE">Đang thuê</option>
+                    <option value="COMPLETED">Hoàn thành</option>
+                    <option value="CANCELLED">Đã hủy</option>
+                    <option value="OVERDUE">Quá hạn</option>
+                  </select>
                 </div>
                 <div className="flex items-end">
                   <Button
@@ -423,7 +426,7 @@ export default function OrdersPage() {
         )}
 
         {/* Create Order moved to /orders/create */}
-      </div>
-    </DashboardWrapper>
+      </PageContent>
+    </PageWrapper>
   );
 } 

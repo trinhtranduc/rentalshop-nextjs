@@ -1,6 +1,97 @@
-# 🏪 Rental Shop Next.js Monorepo
+# Rental Shop Next.js Monorepo
 
-A comprehensive rental shop management system built with Next.js, featuring a multi-tenant architecture with Super Admin → Merchant → Outlet → Staff hierarchy.
+## 🎨 **Updated Color Scheme - Green Theme (Clean & Less Eye-Straining)**
+
+### **Color Philosophy**
+The new color scheme prioritizes **reduced eye strain** while maintaining **professional appearance** and **excellent readability**. We've moved from high-saturation colors to softer, more neutral tones that are easier on the eyes during long dashboard sessions.
+
+### **Primary Color Palette**
+
+#### **Brand Colors**
+- **Primary Green**: `#4CAF50` - Softer, less saturated green (main brand color)
+- **Secondary Green**: `#81C784` - Pastel green for secondary elements
+
+#### **Action Colors**
+- **Primary**: `#4CAF50` - Main action color (same as brand-primary)
+- **Success**: `#2E7D32` - Darker green for success states
+- **Danger**: `#E53935` - Softer red for error/danger states
+- **Warning**: `#FFC107` - Yellow for warning states
+
+#### **Background Colors**
+- **Primary**: `#F8FAFC` - Very light blue-gray (main background)
+- **Secondary**: `#F1F5F9` - Slightly darker background
+- **Tertiary**: `#E2E8F0` - Medium background
+- **Card**: `#FFFFFF` - Pure white for cards
+
+#### **Text Colors**
+- **Primary**: `#212121` - Dark gray for headings
+- **Secondary**: `#757575` - Medium gray for descriptions
+- **Tertiary**: `#9E9E9E` - Light gray for tertiary text
+- **Inverted**: `#FFFFFF` - White text on dark backgrounds
+
+#### **Status Colors (Following UX Best Practices)**
+| Status | Color | HEX | Usage |
+|--------|-------|-----|-------|
+| **Pending** | Yellow | `#FFC107` | Awaiting processing |
+| **Confirmed** | Green | `#4CAF50` | Order confirmed |
+| **In Progress** | Blue | `#2196F3` | Currently processing |
+| **Completed** | Dark Green | `#2E7D32` | Successfully completed |
+| **Cancelled** | Red | `#F44336` | Order cancelled |
+| **Overdue** | Dark Red | `#E53935` | Past due date |
+| **Refunded** | Gray | `#9E9E9E` | Payment refunded |
+
+### **Benefits of New Color Scheme**
+
+1. **Reduced Eye Strain**: Lower saturation colors are easier on the eyes
+2. **Better Contrast**: Improved readability with carefully chosen text/background combinations
+3. **Professional Appearance**: Maintains business-appropriate aesthetics
+4. **Accessibility**: Better color contrast ratios for users with visual impairments
+5. **Consistency**: Unified color system across all components and states
+
+### **Usage Guidelines**
+
+#### **For Status Indicators**
+```typescript
+// ✅ GOOD: Use semantic status colors
+<Badge className="bg-status-pending text-white">Pending</Badge>
+<Badge className="bg-status-confirmed text-white">Confirmed</Badge>
+<Badge className="bg-status-overdue text-white">Overdue</Badge>
+
+// ❌ BAD: Don't use arbitrary colors
+<Badge className="bg-red-500 text-white">Pending</Badge>
+```
+
+#### **For Primary Actions**
+```typescript
+// ✅ GOOD: Use primary green for main actions
+<Button className="bg-action-primary text-white">Save Changes</Button>
+<Button className="bg-action-success text-white">Confirm Order</Button>
+
+// ❌ BAD: Don't use high-saturation colors
+<Button className="bg-green-600 text-white">Save Changes</Button>
+```
+
+#### **For Backgrounds**
+```typescript
+// ✅ GOOD: Use soft, neutral backgrounds
+<div className="bg-bg-primary">Main content area</div>
+<div className="bg-bg-secondary">Secondary content</div>
+<div className="bg-bg-card">Card background</div>
+
+// ❌ BAD: Don't use bright or saturated backgrounds
+<div className="bg-blue-100">Main content area</div>
+```
+
+### **Migration Notes**
+
+- **Old colors** like `#0F9347` (high-saturation green) have been replaced with `#4CAF50` (softer green)
+- **Status colors** now follow a logical, semantic system
+- **Background colors** are softer and less eye-straining
+- **Text colors** provide better contrast and readability
+
+---
+
+## 🎯 DRY Principles & Best Practices
 
 ## 🏗️ Architecture
 

@@ -11,46 +11,52 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Brand Colors
+        // Brand Colors - Green Theme (Clean & Less Eye-Straining)
         'brand': {
-          primary: '#0F9347',    // APP_TONE_COLOR
-          secondary: '#2B3349',  // APP_TONE_NAV_COLOR
+          primary: '#4CAF50',    // Primary green - softer, less saturated
+          secondary: '#81C784',  // Secondary green - pastel
         },
-        // Action Colors
+        // Action Colors - Reduced Saturation
         'action': {
-          primary: '#008AE8',    // APP_BUTTON_BG_COLOR
-          success: '#10B981',
-          danger: '#EF4444',
-          warning: '#f19920',    // APP_ORANGE_COLOR
+          primary: '#4CAF50',    // Main green - same as brand-primary
+          success: '#2E7D32',    // Darker green for success
+          danger: '#E53935',     // Softer red for danger
+          warning: '#FFC107',    // Yellow for warnings
         },
-        // Text Colors
+        // Text Colors - Better Contrast
         'text': {
-          primary: '#323334',    // APP_TEXT_COLOR
-          secondary: '#6B7280',
-          tertiary: '#999999',   // APP_GRAY_COLOR
-          inverted: '#FFFFFF',
+          primary: '#212121',    // Dark gray for headings
+          secondary: '#757575',  // Medium gray for descriptions
+          tertiary: '#9E9E9E',  // Light gray for tertiary text
+          inverted: '#FFFFFF',   // White text
         },
-        // Background Colors
+        // Background Colors - Softer, Less Eye-Straining
         'bg': {
-          primary: '#F5F5F5',    // APP_BG_COLOR
-          secondary: '#E7F0F5',  // APP_TONE_LINE_BG_COLOR
-          tertiary: '#F9FAFB',
-          card: '#FFFFFF',
+          primary: '#F8FAFC',   // Very light blue-gray
+          secondary: '#F1F5F9', // Slightly darker background
+          tertiary: '#E2E8F0',  // Medium background
+          card: '#FFFFFF',      // Pure white for cards
         },
         // Navigation Colors
         'nav': {
-          background: '#2B3349', // APP_TONE_NAV_COLOR
-          tint: '#FFFFFF',
+          background: '#1E1E1E', // Dark gray for navigation
+          tint: '#FFFFFF',       // White text on nav
         },
-        // Border Colors
+        // Border Colors - Softer
         'border': {
-          DEFAULT: '#E5EAED',    // APP_BORDER_COLOR
+          DEFAULT: '#E2E8F0',   // Light blue-gray borders
         },
-        // Status Colors
+        // Status Colors - Following Your Suggestions
         'status': {
-          active: '#0F9347',
-          inactive: '#999999',
-          pending: '#f19920',
+          pending: '#FFC107',    // Yellow - pending
+          confirmed: '#4CAF50',  // Green - confirmed
+          'in-progress': '#2196F3', // Blue - in progress
+          completed: '#2E7D32',  // Dark green - completed
+          cancelled: '#F44336',  // Red - cancelled
+          overdue: '#E53935',    // Dark red - overdue
+          refunded: '#9E9E9E',  // Gray - refunded
+          active: '#4CAF50',     // Green - active
+          inactive: '#9E9E9E',   // Gray - inactive
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

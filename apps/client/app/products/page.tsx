@@ -1,10 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Input } from '@rentalshop/ui';
+import { 
+  Card, 
+  Button, 
+  Input,
+  ProductTable,
+  ProductDialog,
+  ProductForm,
+  PageWrapper,
+  PageHeader,
+  PageTitle,
+  PageContent
+} from '@rentalshop/ui';
 import { Plus } from 'lucide-react';
-import { ProductTable, ProductDialog } from '@rentalshop/ui';
-import { DashboardWrapper } from '@rentalshop/ui';
 
 // Extend the Product type for this page
 interface ExtendedProduct {
@@ -205,126 +214,128 @@ export default function ProductsPage() {
   };
 
   return (
-    <DashboardWrapper user={user} onLogout={logout} currentPath="/products">
-      <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Products</h1>
-          <p className="text-gray-600">Manage your product catalog with outlet stock allocation</p>
+    <PageWrapper>
+      <PageHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <PageTitle>Products</PageTitle>
+            <p className="text-gray-600">Manage your product catalog with outlet stock allocation</p>
+          </div>
+          {isMerchantLevel && (
+            <Button 
+              onClick={handleAddProduct}
+              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Add Product
+            </Button>
+          )}
         </div>
-        {isMerchantLevel && (
-          <Button 
-            onClick={handleAddProduct}
-            className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
-          >
-            <Plus className="w-4 h-4 mr-2" /> Add Product
-          </Button>
-        )}
-      </div>
+      </PageHeader>
 
       {/* Search and Filters */}
-      <Card className="mb-6 p-6">
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search Products
-              {searchTerm && (
-                <span className="ml-2 text-xs text-blue-600 font-normal">
-                  (Searching for "{searchTerm}")
-                </span>
-              )}
-            </label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Search by name, description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
-              />
-              {searchTerm && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSearchTerm('')}
-                  className="whitespace-nowrap"
-                >
-                  Clear
-                </Button>
-              )}
+      <PageContent>
+        <Card className="mb-6 p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search Products
+                {searchTerm && (
+                  <span className="ml-2 text-xs text-blue-600 font-normal">
+                    (Searching for "{searchTerm}")
+                  </span>
+                )}
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Search by name, description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1"
+                />
+                {searchTerm && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSearchTerm('')}
+                    className="whitespace-nowrap"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-          
-          <Button variant="outline" onClick={() => setSearchTerm('')}>
-            Reset Filters
-          </Button>
-        </div>
-      </Card>
-
-      {/* Products List */}
-      {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading products...</p>
-        </div>
-      ) : products.length === 0 ? (
-        <Card className="text-center py-12">
-          <div className="text-gray-500">
-            <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            <h3 className="text-lg font-medium mb-2">No products found</h3>
-            <p>Try adjusting your search criteria or add new products.</p>
+            
+            <Button variant="outline" onClick={() => setSearchTerm('')}>
+              Reset Filters
+            </Button>
           </div>
         </Card>
-      ) : (
-        <>
-          <Card className="mb-6">
-            <ProductTable
-              products={products}
-              onEdit={isMerchantLevel ? handleEditProduct : undefined}
-              onDelete={isMerchantLevel ? handleDeleteProduct : undefined}
-              onView={handleViewProduct}
-              showActions={true}
-            />
-          </Card>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-              
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
+        {/* Products List */}
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading products...</p>
+          </div>
+        ) : products.length === 0 ? (
+          <Card className="text-center py-12">
+            <div className="text-gray-500">
+              <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              <h3 className="text-lg font-medium mb-2">No products found</h3>
+              <p>Try adjusting your search criteria or add new products.</p>
             </div>
-          )}
-        </>
-      )}
+          </Card>
+        ) : (
+          <>
+            <Card className="mb-6">
+              <ProductTable
+                products={products}
+                onEdit={isMerchantLevel ? handleEditProduct : undefined}
+                onDelete={isMerchantLevel ? handleDeleteProduct : undefined}
+                onView={handleViewProduct}
+                showActions={true}
+              />
+            </Card>
 
-      {/* Product Dialog */}
-      <ProductDialog
-        product={editingProduct}
-        onSave={dialogMode === 'view' ? undefined : (handleSaveProduct as any)}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        trigger={null}
-        mode={dialogMode}
-      />
-      </div>
-    </DashboardWrapper>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Product Dialog */}
+        <ProductDialog
+          product={editingProduct}
+          onSave={dialogMode === 'view' ? undefined : (handleSaveProduct as any)}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          trigger={null}
+          mode={dialogMode}
+        />
+      </PageContent>
+    </PageWrapper>
   );
 } 

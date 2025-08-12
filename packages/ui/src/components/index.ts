@@ -11,6 +11,9 @@ export { Input } from './ui/input';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from './ui/select';
 export { Textarea } from './ui/textarea';
 export { Badge, badgeVariants } from './ui/badge';
+export { Separator } from './ui/separator';
+export { Label } from './ui/label';
+export { DateRangePicker, type DateRange, type DateRangePickerProps } from './ui/date-range-picker';
 export { 
   Table, 
   TableHeader, 
@@ -33,16 +36,31 @@ export {
 export { SearchableSelect } from './ui/searchable-select';
 
 // ============================================================================
+// PRODUCT AVAILABILITY COMPONENTS
+// ============================================================================
+export { ProductAvailabilityBadge } from './ui/product-availability-badge';
+export { ProductAvailabilityWarning } from './ui/product-availability-warning';
+export { ProductAvailabilityTest } from './ui/product-availability-test';
+export { ProductAvailabilityAsyncDisplay } from './ui/product-availability-async-display';
+export { useProductAvailability } from '../hooks/useProductAvailability';
+
+// ============================================================================
 // LAYOUT COMPONENTS
 // ============================================================================
-export { Layout } from './layout/layout';
-export { Navigation } from './layout/navigation';
+export { 
+  TopNavigation, 
+  ServerTopNavigation,
+  PageWrapper,
+  PageHeader,
+  PageTitle,
+  PageContent,
+  PageSection
+} from './layout';
+export { DashboardWrapper, DashboardWrapperClean, DashboardWrapperColorful } from './layout';
+export { PageWithTopNav } from './layout/PageWithTopNav';
 export { Sidebar } from './layout/sidebar';
 export { LanguageSwitcher } from './layout/LanguageSwitcher';
 export { SearchInput } from './layout/SearchInput';
-export { default as DashboardWrapper } from './layout/DashboardWrapper';
-export { default as DashboardWrapperColorful } from './layout/DashboardWrapperColorful';
-export { default as DashboardWrapperClean } from './layout/DashboardWrapperClean';
 export { TimePeriodSelector } from './layout/TimePeriodSelector';
 export { EnhancedStatCard } from './layout/EnhancedStatCard';
 export { QuickActionsGrid } from './layout/QuickActionsGrid';
@@ -58,6 +76,8 @@ export { default as RegisterForm } from './forms/RegisterForm';
 export { default as ForgetPasswordForm } from './forms/ForgetPasswordForm';
 export { CustomerForm } from './forms/CustomerForm';
 export { OrderForm } from './forms/OrderForm';
+export { CreateOrderForm } from './forms/CreateOrderForm';
+export { ProductForm } from './forms/ProductForm';
 
 // ============================================================================
 // FEATURE COMPONENTS (Business Logic Components)
@@ -71,6 +91,7 @@ export { ProductTable } from './features/ProductTable';
 export { ProductDialog } from './features/ProductDialog';
 export { OrderCard } from './features/OrderCard';
 export { OrderTable } from './features/OrderTable';
+export { SelectedProducts } from './features/SelectedProducts';
 export type { Product as GridProduct } from './features/ProductGrid';
 
 // ============================================================================

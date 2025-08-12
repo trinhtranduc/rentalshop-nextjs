@@ -2,9 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DashboardWrapper, Card, CardContent, Button } from '@rentalshop/ui';
-import { OrderForm } from '@rentalshop/ui';
-import type { CustomerSearchResult, ProductWithStock, OrderInput } from '@rentalshop/database';
+import { 
+  Card, 
+  CardContent, 
+  Button,
+  PageWrapper,
+  PageHeader,
+  PageTitle,
+  PageContent
+} from '@rentalshop/ui';
+import { CreateOrderForm } from '@rentalshop/ui';
+import type { CustomerSearchResult, ProductWithStock, ProductSearchResult, OrderInput } from '@rentalshop/database';
 import { authenticatedFetch } from '@rentalshop/utils';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -15,8 +23,11 @@ export default function CreateOrderPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [customers, setCustomers] = useState<CustomerSearchResult[]>([]);
-  const [products, setProducts] = useState<ProductWithStock[]>([]);
+  const [products, setProducts] = useState<ProductSearchResult[]>([]);
   const [outlets, setOutlets] = useState<Array<{ id: string; name: string }>>([]);
+
+  // Get merchant ID from user context
+  const merchantId = user?.merchant?.id;
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -36,8 +47,33 @@ export default function CreateOrderPage() {
 
         if (productsRes.ok) {
           const data = await productsRes.json();
-          // The API already returns outletStock with outlet info; cast to expected type
-          setProducts((data.data?.products || []) as ProductWithStock[]);
+          // Transform ProductWithStock to ProductSearchResult format
+          const transformedProducts = (data.data?.products || []).map((product: ProductWithStock) => ({
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            barcode: product.barcode,
+            stock: product.outletStock?.[0]?.stock || 0,
+            renting: product.outletStock?.[0]?.renting || 0,
+            available: product.outletStock?.[0]?.available || 0,
+            rentPrice: product.rentPrice,
+            salePrice: product.salePrice,
+            deposit: product.deposit,
+            images: product.images,
+            isActive: product.isActive,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt,
+            outlet: {
+              id: product.outletStock?.[0]?.outlet?.id || '',
+              name: product.outletStock?.[0]?.outlet?.name || '',
+              merchant: {
+                id: product.merchant?.id || '',
+                companyName: product.merchant?.name || '',
+              },
+            },
+            category: product.category,
+          }));
+          setProducts(transformedProducts);
         }
 
         if (outletsRes.ok) {
@@ -80,19 +116,14 @@ export default function CreateOrderPage() {
   };
 
   return (
-    <DashboardWrapper user={user} onLogout={logout} currentPath="/orders/create">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">Tạo đơn hàng</h1>
-          <Button variant="outline" onClick={() => router.push('/orders')}>Quay lại danh sách</Button>
-        </div>
-
+    <PageWrapper>
+      <PageContent>
         {loading ? (
           <Card>
             <CardContent className="p-8 text-center text-gray-600">Đang tải dữ liệu...</CardContent>
           </Card>
         ) : (
-          <OrderForm
+          <CreateOrderForm
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             customers={customers}
@@ -100,10 +131,11 @@ export default function CreateOrderPage() {
             outlets={outlets}
             loading={submitting}
             layout="split"
+            merchantId={merchantId}
           />
         )}
-      </div>
-    </DashboardWrapper>
+      </PageContent>
+    </PageWrapper>
   );
 }
 

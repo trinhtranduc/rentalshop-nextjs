@@ -5,42 +5,48 @@
 /* Using next/font (Inter) from layout.tsx; remove external Google Fonts import to avoid FOUT/metrics mismatch */
 
 :root {
-  /* Clean Brand Colors */
-  --brand-primary: #22c55e;
-  --brand-secondary: #64748b;
+  /* Green Theme – Clean & Less Eye-Straining */
+  --brand-primary: #4CAF50;        /* Primary green - softer, less saturated */
+  --brand-secondary: #81C784;      /* Secondary green - pastel */
   
-  /* Minimal Action Colors */
-  --action-primary: #3b82f6;
-  --action-success: #10b981;
-  --action-danger: #ef4444;
-  --action-warning: #f59e0b;
+  /* Action Colors - Reduced Saturation */
+  --action-primary: #4CAF50;       /* Main green - same as brand-primary */
+  --action-success: #2E7D32;       /* Darker green for success */
+  --action-danger: #E53935;        /* Softer red for danger */
+  --action-warning: #FFC107;       /* Yellow for warnings */
   
-  /* Clean Text Colors */
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
-  --text-inverted: #ffffff;
-  --text-muted: #cbd5e1;
+  /* Clean Text Colors - Better Contrast */
+  --text-primary: #212121;         /* Dark gray for headings */
+  --text-secondary: #757575;       /* Medium gray for descriptions */
+  --text-tertiary: #9E9E9E;        /* Light gray for tertiary text */
+  --text-inverted: #ffffff;        /* White text */
+  --text-muted: #BDBDBD;           /* Muted text color */
   
-  /* Minimal Background Colors - Even Lighter */
-  --background-primary: #ffffff;
-  --background-secondary: #fafbfc;
-  --background-tertiary: #f8fafc;
-  --background-card: #ffffff;
+  /* Background Colors - Softer, Less Eye-Straining */
+  --background-primary: #F8FAFC;   /* Very light blue-gray */
+  --background-secondary: #F1F5F9; /* Slightly darker background */
+  --background-tertiary: #E2E8F0;  /* Medium background */
+  --background-card: #ffffff;      /* Pure white for cards */
   
   /* Navigation Colors */
-  --nav-background: #1e293b;
-  --nav-tint: #ffffff;
+  --nav-background: #1E1E1E;       /* Dark gray for navigation */
+  --nav-tint: #ffffff;             /* White text on nav */
   
-  /* Border Colors - Lighter */
-  --border-color: #f1f5f9;
-  --border-light: #f8fafc;
+  /* Border Colors - Softer */
+  --border-color: #E2E8F0;         /* Light blue-gray borders */
+  --border-light: #F1F5F9;         /* Very light borders */
   
-  /* Status Colors */
-  --status-active: #22c55e;
-  --status-inactive: #94a3b8;
-  --status-pending: #f59e0b;
-  --status-error: #ef4444;
+  /* Status Colors - Following Your Suggestions */
+  --status-pending: #FFC107;       /* Yellow - pending */
+  --status-confirmed: #4CAF50;     /* Green - confirmed */
+  --status-in-progress: #2196F3;   /* Blue - in progress */
+  --status-completed: #2E7D32;     /* Dark green - completed */
+  --status-cancelled: #F44336;     /* Red - cancelled */
+  --status-overdue: #E53935;       /* Dark red - overdue */
+  --status-refunded: #9E9E9E;      /* Gray - refunded */
+  --status-active: #4CAF50;        /* Green - active */
+  --status-inactive: #9E9E9E;      /* Gray - inactive */
+  --status-error: #E53935;         /* Red - error */
 
   /* Font Variables */
   --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -91,6 +97,29 @@ a {
 .text-action-danger { color: var(--action-danger); }
 .text-action-warning { color: var(--action-warning); }
 
+/* Status Color Utilities - Following Your Suggestions */
+.bg-status-pending { background-color: var(--status-pending); }
+.bg-status-confirmed { background-color: var(--status-confirmed); }
+.bg-status-in-progress { background-color: var(--status-in-progress); }
+.bg-status-completed { background-color: var(--status-completed); }
+.bg-status-cancelled { background-color: var(--status-cancelled); }
+.bg-status-overdue { background-color: var(--status-overdue); }
+.bg-status-refunded { background-color: var(--status-refunded); }
+.bg-status-active { background-color: var(--status-active); }
+.bg-status-inactive { background-color: var(--status-inactive); }
+.bg-status-error { background-color: var(--status-error); }
+
+.text-status-pending { color: var(--status-pending); }
+.text-status-confirmed { color: var(--status-confirmed); }
+.text-status-in-progress { color: var(--status-in-progress); }
+.text-status-completed { color: var(--status-completed); }
+.text-status-cancelled { color: var(--status-cancelled); }
+.text-status-overdue { color: var(--status-overdue); }
+.text-status-refunded { color: var(--status-refunded); }
+.text-status-active { color: var(--status-active); }
+.text-status-inactive { color: var(--status-inactive); }
+.text-status-error { color: var(--status-error); }
+
 .bg-bg-primary { background-color: var(--background-primary); }
 .bg-bg-secondary { background-color: var(--background-secondary); }
 .bg-bg-tertiary { background-color: var(--background-tertiary); }
@@ -109,4 +138,56 @@ a {
 .border-border-light { border-color: var(--border-light); }
 
 /* Font utility classes */
-.font-sans { font-family: var(--font-inter); } 
+.font-sans { font-family: var(--font-inter); }
+
+/* Performance-optimized navigation styles */
+/* Use transform and opacity for smooth animations that don't block the main thread */
+.nav-link {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Optimized transitions for navigation items */
+.nav-item {
+  transition: color 150ms ease-out, background-color 150ms ease-out, transform 150ms ease-out;
+  will-change: color, background-color, transform;
+}
+
+.nav-item:hover {
+  transform: translateY(-1px);
+}
+
+/* Mobile menu performance optimizations */
+.mobile-menu {
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Smooth scrolling for better performance */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Optimize focus states for better accessibility and performance */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--action-primary);
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+} 

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import ServerTopNavigation from './components/ServerTopNavigation'
 import './globals.css'
+import Script from 'next/script'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -20,7 +22,13 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={`${inter.variable} font-sans`}>
-        {children}
+        <ServerTopNavigation 
+          currentPage="/"
+        />
+        <main className="pt-24">
+          {children}
+        </main>
+        <Script src="/components/mobile-menu.js" />
       </body>
     </html>
   )
