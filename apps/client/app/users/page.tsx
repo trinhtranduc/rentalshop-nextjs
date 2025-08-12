@@ -1,8 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Input } from '@rentalshop/ui';
-import { DashboardWrapper } from '@rentalshop/ui';
+import { 
+  Card, 
+  CardContent, 
+  Button, 
+  Input, 
+  Badge,
+  PageWrapper,
+  PageHeader,
+  PageTitle,
+  PageContent
+} from '@rentalshop/ui';
 import { useAuth } from '../../hooks/useAuth';
 
 interface User {
@@ -148,14 +157,14 @@ export default function UsersPage() {
   };
 
   return (
-    <DashboardWrapper user={user} onLogout={logout} currentPath="/users">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
-          <p className="text-gray-600">Manage users in the system</p>
-        </div>
+    <PageWrapper>
+      <PageHeader>
+        <PageTitle>User Management</PageTitle>
+        <p className="text-gray-600">Manage users in the system</p>
+      </PageHeader>
 
-        {/* Search and Filters */}
+      {/* Search and Filters */}
+      <PageContent>
         <Card className="mb-6 p-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
@@ -299,7 +308,7 @@ export default function UsersPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-2">
-                               <Button
+                                       <Button
                  variant="outline"
                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                  disabled={currentPage === 1}
@@ -322,7 +331,7 @@ export default function UsersPage() {
             )}
           </>
         )}
-      </div>
-    </DashboardWrapper>
+      </PageContent>
+    </PageWrapper>
   );
 } 

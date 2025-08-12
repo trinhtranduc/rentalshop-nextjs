@@ -1,10 +1,21 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Input } from '@rentalshop/ui';
+import { 
+  Card, 
+  CardContent, 
+  Button, 
+  Input, 
+  Badge,
+  CustomerTable,
+  CustomerDialog,
+  CustomerForm,
+  PageWrapper,
+  PageHeader,
+  PageTitle,
+  PageContent
+} from '@rentalshop/ui';
 import { UserPlus } from 'lucide-react';
-import { CustomerTable, CustomerDialog } from '@rentalshop/ui';
-import { DashboardWrapper } from '@rentalshop/ui';
 import { useAuth } from '../../hooks/useAuth';
 
 interface Customer {
@@ -156,137 +167,139 @@ export default function CustomersPage() {
   };
 
   return (
-    <DashboardWrapper user={user} onLogout={logout} currentPath="/customers">
-      <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Customers</h1>
-          <p className="text-gray-600">Manage your customer database</p>
+    <PageWrapper>
+      <PageHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <PageTitle>Customers</PageTitle>
+            <p className="text-gray-600">Manage your customer database and relationships</p>
+          </div>
+          <Button 
+            onClick={handleAddCustomer} 
+            className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+          >
+            <UserPlus className="w-4 h-4 mr-2" /> Add Customer
+          </Button>
         </div>
-        <Button 
-          onClick={handleAddCustomer} 
-          className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
-        >
-          <UserPlus className="w-4 h-4 mr-2" /> Add Customer
-        </Button>
-      </div>
+      </PageHeader>
 
       {/* Search and Filters */}
-      <Card className="mb-6 p-6">
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search Customers
-              {searchTerm && (
-                <span className="ml-2 text-sm text-blue-600 font-normal">
-                  (Searching for "{searchTerm}")
-                </span>
-              )}
-            </label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Search by name, email, or phone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
-              />
-              {searchTerm && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSearchTerm('')}
-                  className="whitespace-nowrap"
-                >
-                  Clear
-                </Button>
-              )}
+      <PageContent>
+        <Card className="mb-6 p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search Customers
+                {searchTerm && (
+                  <span className="ml-2 text-sm text-blue-600 font-normal">
+                    (Searching for "{searchTerm}")
+                  </span>
+                )}
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Search by name, email, or phone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1"
+                />
+                {searchTerm && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSearchTerm('')}
+                    className="whitespace-nowrap"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={showActiveOnly}
-                onChange={(e) => setShowActiveOnly(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-base text-gray-700">Active only</span>
-            </label>
             
-            <Button variant="outline" onClick={() => {
-              setSearchTerm('');
-              setShowActiveOnly(true);
-            }}>
-              Reset Filters
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Customer List */}
-      {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-base text-gray-600">Loading customers...</p>
-        </div>
-      ) : customers.length === 0 ? (
-        <Card className="text-center py-12">
-          <div className="text-gray-500">
-            <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <h3 className="text-xl font-medium mb-2">No customers found</h3>
-            <p className="text-base">Try adjusting your search criteria or add a new customer.</p>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={showActiveOnly}
+                  onChange={(e) => setShowActiveOnly(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-base text-gray-700">Active only</span>
+              </label>
+              
+              <Button variant="outline" onClick={() => {
+                setSearchTerm('');
+                setShowActiveOnly(true);
+              }}>
+                Reset Filters
+              </Button>
+            </div>
           </div>
         </Card>
-      ) : (
-        <>
-          <Card className="mb-6">
-            <CustomerTable
-              customers={customers}
-              onEdit={handleEditCustomer}
-              onDelete={handleDeleteCustomer}
-              showActions={true}
-            />
-          </Card>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-              
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
+        {/* Customer List */}
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-base text-gray-600">Loading customers...</p>
+          </div>
+        ) : customers.length === 0 ? (
+          <Card className="text-center py-12">
+            <div className="text-gray-500">
+              <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <h3 className="text-xl font-medium mb-2">No customers found</h3>
+              <p className="text-base">Try adjusting your search criteria or add a new customer.</p>
             </div>
-          )}
-        </>
-      )}
+          </Card>
+        ) : (
+          <>
+            <Card className="mb-6">
+              <CustomerTable
+                customers={customers}
+                onEdit={handleEditCustomer}
+                onDelete={handleDeleteCustomer}
+                showActions={true}
+              />
+            </Card>
 
-      {/* Customer Dialog */}
-      <CustomerDialog
-        customer={editingCustomer}
-        onSave={handleSaveCustomer}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        trigger={null}
-      />
-      </div>
-    </DashboardWrapper>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Customer Dialog */}
+        <CustomerDialog
+          customer={editingCustomer}
+          onSave={handleSaveCustomer}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          trigger={null}
+        />
+      </PageContent>
+    </PageWrapper>
   );
 } 

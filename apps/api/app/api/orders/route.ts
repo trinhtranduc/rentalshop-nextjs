@@ -12,6 +12,7 @@ import {
 import type { OrderInput, OrderSearchFilter, OrderUpdateInput } from '@rentalshop/database';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
+import { prisma } from '@rentalshop/database';
 
 /**
  * GET /api/orders
@@ -22,6 +23,7 @@ import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rental
  * - Pagination: limit, offset
  * - Special operations:
  *   - orderId: Get specific order
+ *   - productId: Get orders for specific product (for availability checking)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -43,86 +45,92 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    
-    // Handle specific order lookup
-    const orderId = searchParams.get('orderId');
-    if (orderId) {
-      const order = await getOrderById(orderId);
-      if (!order) {
-        return NextResponse.json(
-          { success: false, error: 'Order not found' },
-          { status: 404 }
-        );
-      }
+    const productId = searchParams.get('productId');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    // If productId is provided, get orders for that specific product
+    if (productId) {
+      const orders = await prisma.order.findMany({
+        where: {
+          orderItems: {
+            some: {
+              productId: productId
+            }
+          }
+        },
+        include: {
+          orderItems: {
+            where: {
+              productId: productId
+            },
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: limit,
+        skip: offset
+      });
+
       return NextResponse.json({
         success: true,
-        data: order,
+        data: {
+          orders: orders.map(order => ({
+            id: order.id,
+            orderType: order.orderType,
+            status: order.status,
+            pickupPlanAt: order.pickupPlanAt,
+            returnPlanAt: order.returnPlanAt,
+            orderItems: order.orderItems.map(item => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              name: item.product.name
+            }))
+          }))
+        }
       });
     }
 
-    // Standard order search with filters
-    const parsedQuery = ordersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
-    if (!parsedQuery.success) {
-      return NextResponse.json({ success: false, error: parsedQuery.error.flatten() }, { status: 400 });
-    }
-
-    const qd = parsedQuery.data;
-    const filters: OrderSearchFilter = {
-      q: qd.q,
-      outletId: qd.outletId,
-      customerId: qd.customerId,
-      userId: qd.userId,
-      orderType: qd.orderType as any,
-      status: qd.status as any,
-      startDate: qd.startDate,
-      endDate: qd.endDate,
-      pickupDate: qd.pickupDate,
-      returnDate: qd.returnDate,
-      minAmount: qd.minAmount,
-      maxAmount: qd.maxAmount,
-      limit: qd.limit,
-      offset: qd.offset,
-    };
-
-    // Get orders
-    // Authorization: ADMIN, MERCHANT, and outlet team can read
-    try {
-      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
-    } catch {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-    const result = await searchOrders(filters);
-    
-    // Add totalPages calculation for pagination
-    const totalPages = Math.ceil(result.total / (result.limit || 10));
-    const paginatedResult = {
-      ...result,
-      totalPages,
-      page: Math.floor((result.offset || 0) / (result.limit || 10)) + 1
-    };
-
-    const bodyString = JSON.stringify({ success: true, data: paginatedResult });
-    const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
-    const ifNoneMatch = request.headers.get('if-none-match');
-
-    if (ifNoneMatch && ifNoneMatch === etag) {
-      return new NextResponse(null, {
-        status: 304,
-        headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' },
-      });
-    }
-
-    return new NextResponse(bodyString, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ETag: etag,
-        'Cache-Control': 'private, max-age=60',
+    // Default behavior - get all orders
+    const orders = await prisma.order.findMany({
+      include: {
+        customer: true,
+        outlet: true,
+        orderItems: {
+          include: {
+            product: true
+          }
+        }
       },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: limit,
+      skip: offset
+    });
+
+    const total = await prisma.order.count();
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        orders,
+        total,
+        hasMore: offset + limit < total
+      }
     });
 
   } catch (error) {
-    console.error('Error searching orders:', error);
+    console.error('Error fetching orders:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

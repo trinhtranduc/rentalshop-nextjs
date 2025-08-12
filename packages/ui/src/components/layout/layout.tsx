@@ -10,6 +10,8 @@ interface LayoutProps {
   children: React.ReactNode
   user?: any
   onLogout?: () => void
+  hideSidebar?: boolean
+  allowCollapse?: boolean
 }
 
 export function Layout({ 
@@ -17,35 +19,49 @@ export function Layout({
   currentPage, 
   children, 
   user, 
-  onLogout = () => {} 
+  onLogout = () => {},
+  hideSidebar = false,
+  allowCollapse = true
 }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  const handleCollapseToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
+  }
 
   return (
     <div className="min-h-screen bg-bg-primary">
       {/* Sidebar */}
-      <Sidebar
-        user={user}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        onLogout={onLogout}
-        currentPath={currentPage || ''}
-      />
+      {!hideSidebar && (
+        <Sidebar
+          user={user}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          onLogout={onLogout}
+          currentPath={currentPage || ''}
+          isCollapsed={sidebarCollapsed}
+          onCollapseToggle={allowCollapse ? handleCollapseToggle : undefined}
+        />
+      )}
       
       {/* Main content */}
-      <div className="md:ml-64">
+      <div className={`${!hideSidebar ? 'transition-all duration-300 ease-in-out' : ''}`} 
+           style={{ marginLeft: hideSidebar ? '0' : sidebarCollapsed ? '4rem' : '16rem' }}>
         {/* Top bar */}
         <div className="bg-bg-card shadow-sm border-b border-border">
           <div className="flex items-center justify-between h-16 px-4">
             <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebarOpen(true)}
-                className="md:hidden mr-2"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
+              {!hideSidebar && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarOpen(true)}
+                  className="md:hidden mr-2"
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+              )}
               <h2 className="text-lg font-semibold text-text-primary">
                 {variant === 'admin' ? 'Admin Panel' : 'Rental Shop'}
               </h2>

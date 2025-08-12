@@ -5,18 +5,26 @@ import { ChevronDown } from 'lucide-react';
 export interface SearchableOption {
   value: string;
   label: string;
+  // Extended fields for rich product display
+  image?: string;
+  subtitle?: string;
+  details?: string[];
+  type?: 'customer' | 'product' | 'default';
 }
 
 export interface SearchableSelectProps {
   value?: string;
   onChange?: (value: string) => void;
-  options: SearchableOption[];
+  options?: SearchableOption[]; // Make optional since it's not needed when onSearch is provided
   placeholder?: string;
   searchPlaceholder?: string;
   className?: string;
   onSearch?: (query: string) => Promise<SearchableOption[]> | void;
   emptyText?: string;
   displayMode?: 'input' | 'button';
+  showAddNew?: boolean; // Show "Add New" option at top
+  addNewText?: string; // Text for "Add New" option
+  onAddNew?: () => void; // Callback when "Add New" is clicked
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -29,26 +37,42 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   onSearch,
   emptyText = 'Không có dữ liệu',
   displayMode = 'input',
+  showAddNew = false,
+  addNewText = 'Add New',
+  onAddNew,
 }) => {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
-  const [internalOptions, setInternalOptions] = React.useState<SearchableOption[]>(options);
+  const [internalOptions, setInternalOptions] = React.useState<SearchableOption[]>(options || []);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
 
+  // Initialize internal options based on mode
   React.useEffect(() => {
-    setInternalOptions(options);
-  }, [options]);
+    if (onSearch) {
+      // In search mode, start with empty options
+      setInternalOptions([]);
+    } else {
+      // In static mode, start with original options
+      setInternalOptions(options || []);
+    }
+  }, [onSearch, options]);
 
+  // Search effect for dynamic search mode
   React.useEffect(() => {
     let active = true;
     const run = async () => {
-      if (onSearch) {
+      if (onSearch && query.trim()) {  // Only search if query has content
         const res = await onSearch(query);
-        if (active && Array.isArray(res)) setInternalOptions(res);
+        if (active && Array.isArray(res)) {
+          setInternalOptions(res);
+        }
+      } else if (onSearch && !query.trim()) {
+        // Clear search results when query is empty
+        setInternalOptions([]);
       }
     };
-    // debounce 200ms
-    const t = setTimeout(run, 200);
+    // debounce 300ms to reduce API calls
+    const t = setTimeout(run, 300);
     return () => {
       active = false;
       clearTimeout(t);
@@ -56,15 +80,29 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   }, [query, onSearch]);
 
   const filtered = React.useMemo(() => {
-    if (onSearch) return internalOptions;
+    if (onSearch) {
+      // In search mode, return search results if available, otherwise show empty
+      if (query.trim()) {
+        return internalOptions;
+      } else {
+        return [];
+      }
+    }
+    
+    // In non-search mode, filter the static options
     const q = query.trim().toLowerCase();
-    if (!q) return internalOptions;
-    return internalOptions.filter((o) => o.label.toLowerCase().includes(q));
-  }, [query, internalOptions, onSearch]);
+    if (!q) {
+      return options || []; // Use original options, not internalOptions
+    }
+    
+    const filtered = options?.filter((o) => o.label.toLowerCase().includes(q));
+    return filtered || [];
+  }, [query, internalOptions, onSearch, options]);
 
   const selected = internalOptions.find((o) => o.value === value);
 
-  const displayValue = query !== '' ? query : (selected?.label ?? '');
+  // Keep selected label in input for better UX
+  const displayValue = selected?.label || query;
 
   // Close on outside click (works for both input and button modes)
   React.useEffect(() => {
@@ -73,7 +111,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       if (!el) return;
       if (open && !el.contains(e.target as Node)) {
         setOpen(false);
-        setQuery('');
+        // Don't clear query here - let search results persist
       }
     };
     document.addEventListener('mousedown', handler);
@@ -86,78 +124,208 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   return (
     <div className={cn('relative', className)} ref={rootRef}>
+      
       {displayMode === 'input' ? (
         <>
           <input
             value={displayValue}
-            onFocus={() => setOpen(true)}
+            onFocus={() => {
+              setOpen(true);
+            }}
             onChange={(e) => {
               setQuery(e.target.value);
               setOpen(true);
             }}
             onBlur={() => {
+              // Only close dropdown after a longer delay
               setTimeout(() => {
                 setOpen(false);
-                setQuery('');
-              }, 120);
+                // Don't clear query here - let it persist for search
+              }, 300);
             }}
             placeholder={selected ? selected.label : placeholder}
             className={cn(
-              'h-10 w-full rounded-md border border-gray-300 bg-gray-50 pl-3 pr-10 text-sm',
-              'focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100'
+              'h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200',
+              'focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0',
+              'hover:border-gray-400'
             )}
           />
-          <span className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 h-5 w-px bg-gray-300" />
+          <span className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" />
           <button
             type="button"
             aria-label="Toggle options"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
             onMouseDown={(e) => {
               e.preventDefault();
               setOpen((o) => !o);
             }}
           >
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-5 w-5" />
           </button>
+          
+          {/* Clear button when there's a query */}
+          {query && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('');
+                // Reset to original options when clearing search
+                if (onSearch) {
+                  setInternalOptions([]); // Clear search results
+                } else {
+                  setInternalOptions(options || []); // Restore original options
+                }
+                setOpen(false);
+              }}
+              className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+            >
+              ✕
+            </button>
+          )}
         </>
       ) : (
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           className={cn(
-            'h-10 w-full rounded-md border border-gray-300 bg-bg-card px-3 text-left text-sm flex items-center justify-between',
-            'hover:bg-bg-secondary focus:bg-bg-card focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100'
+            'h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-left text-sm flex items-center justify-between transition-all duration-200',
+            'hover:bg-gray-50 hover:border-gray-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0'
           )}
         >
           <span className={cn(!selected && 'text-gray-400')}>{selected ? selected.label : placeholder}</span>
-          <ChevronDown className="h-4 w-4 text-gray-500" />
+          <ChevronDown className="h-5 w-5 text-gray-500" />
         </button>
       )}
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-md">
-          <div className="max-h-56 overflow-auto py-1">
+        <div className="absolute z-[9999] mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+          <div className="max-h-64 overflow-auto py-2">
             {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-gray-500">{emptyText}</div>
+              <div className="px-4 py-6 text-center text-sm text-gray-500">
+                <div className="w-8 h-8 mx-auto mb-2 text-gray-300">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <div>{emptyText}</div>
+              </div>
             ) : (
-              filtered.map((opt) => (
-                <button
-                  type="button"
-                  key={opt.value}
-                  onClick={() => {
-                    onChange?.(opt.value);
-                    setOpen(false);
-                    setQuery('');
-                  }}
-                  className={cn(
-                    'flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50',
-                    value === opt.value && 'bg-blue-50 text-blue-700'
-                  )}
-                >
-                  <span className="line-clamp-1">{opt.label}</span>
-                  {value === opt.value && <span className="text-xs">✓</span>}
-                </button>
-              ))
+              <>
+                {/* Add New Customer Option */}
+                {showAddNew && onAddNew && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAddNew();
+                      setOpen(false);
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-green-50 hover:text-green-700 transition-all duration-150 ease-in-out border-b border-gray-100"
+                  >
+                    {/* Plus icon for add new */}
+                    <div className="flex-shrink-0 w-5 h-5 text-green-500">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </div>
+                    
+                    {/* Add New text */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-green-700">{addNewText}</div>
+                    </div>
+                  </button>
+                )}
+                
+                {/* Options with custom rendering based on type */}
+                {filtered.map((opt) => (
+                  <button
+                    type="button"
+                    key={opt.value}
+                    onClick={() => {
+                      onChange?.(opt.value);
+                      setOpen(false);
+                      // Keep the query for better UX - user can see what they selected
+                      // setQuery(''); // Removed this line
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out',
+                      value === opt.value && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    )}
+                  >
+                    {/* Icon or Image based on type */}
+                    {opt.type === 'product' && opt.image ? (
+                      // Product with image
+                      <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-gray-200">
+                        <img 
+                          src={opt.image} 
+                          alt={opt.label}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to package icon if image fails to load
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="hidden w-full h-full bg-gray-100 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                          </svg>
+                        </div>
+                      </div>
+                    ) : opt.type === 'product' ? (
+                      // Product without image - use package icon
+                      <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      </div>
+                    ) : (
+                      // Customer or default - use user icon
+                      <div className="flex-shrink-0 w-5 h-5 text-gray-400">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
+                    
+                    {/* Content based on type */}
+                    <div className="flex-1 min-w-0">
+                      {opt.type === 'product' ? (
+                        // Product layout with rich information
+                        <div className="space-y-1">
+                          <div className="font-medium text-gray-900 truncate">{opt.label}</div>
+                          {opt.subtitle && (
+                            <div className="text-sm text-gray-600 truncate">{opt.subtitle}</div>
+                          )}
+                          {opt.details && opt.details.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {opt.details.map((detail, index) => (
+                                <span 
+                                  key={index}
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                                >
+                                  {detail}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        // Customer or default layout
+                        <div className="font-medium text-gray-900 truncate">{opt.label}</div>
+                      )}
+                    </div>
+                    
+                    {/* Selection indicator */}
+                    {value === opt.value && (
+                      <div className="flex-shrink-0 w-5 h-5 text-blue-600">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </>
             )}
           </div>
         </div>

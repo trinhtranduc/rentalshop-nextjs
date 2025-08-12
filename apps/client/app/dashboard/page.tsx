@@ -27,10 +27,13 @@ import {
   CardTitleClean, 
   CardContentClean,
   ButtonClean,
-  DashboardWrapperClean,
   SimpleList,
   IncomeChart,
-  OrderChart
+  OrderChart,
+  PageWrapper,
+  PageHeader,
+  PageTitle,
+  PageContent
 } from '@rentalshop/ui';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -615,8 +618,11 @@ export default function DashboardPage() {
   const revenueData = getRevenueData();
 
   return (
-    <DashboardWrapperClean user={user} onLogout={logout} currentPath="/dashboard">
-      <div className="container mx-auto px-4 py-6">
+    <PageWrapper>
+      <PageHeader>
+        <PageTitle>Dashboard</PageTitle>
+      </PageHeader>
+      <PageContent>
         {/* Welcome Header */}
         <div className="mb-8">
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
@@ -1110,7 +1116,7 @@ export default function DashboardPage() {
             </div>
           </>
         )}
-      </div>
-    </DashboardWrapperClean>
+      </PageContent>
+    </PageWrapper>
   );
 } 

@@ -52,14 +52,20 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    console.log('Search params:', Object.fromEntries(searchParams.entries()));
+    
     const parsed = productsQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
+      console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json({ success: false, message: 'Invalid query', error: parsed.error.flatten() }, { status: 400 });
     }
 
     const { page, limit, search, outletId, categoryId } = parsed.data;
+    console.log('Parsed filters:', { page, limit, search, outletId, categoryId });
 
     const { merchantId } = getUserScope(user as any);
+    console.log('Merchant ID from scope:', merchantId);
+    
     const filters = {
       merchantId,
       outletId,
@@ -69,8 +75,17 @@ export async function GET(request: NextRequest) {
       limit,
       isActive: true
     } as const;
+    
+    console.log('Final filters:', filters);
 
+    console.log('Calling getProducts...');
     const result = await getProducts(filters);
+    console.log('getProducts result:', { 
+      productCount: result.products?.length || 0, 
+      total: result.total, 
+      page: result.page, 
+      totalPages: result.totalPages 
+    });
 
     // Caching headers (ETag and short-lived private cache)
     const bodyString = JSON.stringify({ success: true, data: result });
@@ -97,8 +112,17 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in GET /api/products:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown error type'
+    });
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch products' },
+      { 
+        success: false, 
+        message: 'Failed to fetch products',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

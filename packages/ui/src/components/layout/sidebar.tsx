@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { cn } from '@rentalshop/ui';
 import { Button, Card } from '@rentalshop/ui';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface SidebarProps {
   user?: any;
@@ -11,6 +12,8 @@ export interface SidebarProps {
   onToggle?: () => void;
   onLogout?: () => void;
   currentPath?: string;
+  isCollapsed?: boolean;
+  onCollapseToggle?: () => void;
 }
 
 interface MenuItem {
@@ -95,6 +98,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggle,
   onLogout,
   currentPath = '',
+  isCollapsed = false,
+  onCollapseToggle,
 }) => {
   return (
     <>
@@ -109,29 +114,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
+          isCollapsed ? 'w-16' : 'w-64'
         )}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
             <Link href="/dashboard" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-bold text-sm">R</span>
               </div>
-              <span className="font-bold text-2xl text-gray-900 leading-none">RentalShop</span>
+              {!isCollapsed && (
+                <span className="font-bold text-2xl text-gray-900 leading-none">RentalShop</span>
+              )}
             </Link>
             
-            {/* Close button for mobile */}
-            <button
-              onClick={onToggle}
-              className="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center space-x-2">
+              {/* Collapse Toggle Button */}
+              {onCollapseToggle && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onCollapseToggle}
+                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                  title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                >
+                  {isCollapsed ? (
+                    <ChevronRight className="w-4 h-4" />
+                  ) : (
+                    <ChevronLeft className="w-4 h-4" />
+                  )}
+                </Button>
+              )}
+              
+              {/* Close button for mobile */}
+              <button
+                onClick={onToggle}
+                className="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -144,11 +171,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
+                    'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group',
                     isActive
                       ? 'bg-green-100 text-green-700 border-r-2 border-green-600'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   )}
+                  title={isCollapsed ? item.label : undefined}
                 >
                   <div className="flex items-center space-x-3">
                     <span className={cn(
@@ -157,13 +185,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     )}>
                       {item.icon}
                     </span>
-                    <span className={cn(
-                      'text-base',
-                      isActive ? 'font-medium' : 'font-normal'
-                    )}>{item.label}</span>
+                    {!isCollapsed && (
+                      <span className={cn(
+                        'text-base',
+                        isActive ? 'font-medium' : 'font-normal'
+                      )}>{item.label}</span>
+                    )}
                   </div>
                   
-                  {item.badge && (
+                  {!isCollapsed && item.badge && (
                     <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
                       {item.badge}
                     </span>
@@ -175,55 +205,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* User Profile */}
           {user && (
-            <div className="border-t border-gray-200 p-4">
-              <Card className="p-4">
+            <div className="p-4 border-t border-gray-200">
+              <Card className="p-3">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">
-                      {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-sm">
+                      {user.firstName?.[0] || user.email?.[0] || 'U'}
                     </span>
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {user.name || 'User'}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user.email}
-                    </p>
-                    {user.role && (
-                      <p className="text-xs text-green-600 font-medium capitalize">
-                        {user.role}
+                  {!isCollapsed && (
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user.firstName && user.lastName 
+                          ? `${user.firstName} ${user.lastName}`
+                          : user.email || 'User'
+                        }
                       </p>
-                    )}
-                  </div>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user.role || 'User'}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
-                <div className="mt-4 space-y-2">
-                  <Link
-                    href="/profile"
-                    className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                {!isCollapsed && (
+                  <div className="mt-4 space-y-2">
+                    <Link
+                      href="/profile"
+                      className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span>Profile</span>
+                      </div>
+                    </Link>
+                    
+                    <Button
+                      onClick={onLogout}
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                       </svg>
-                      <span>Profile</span>
-                    </div>
-                  </Link>
-                  
-                  <Button
-                    onClick={onLogout}
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Logout
-                  </Button>
-                </div>
+                      Logout
+                    </Button>
+                  </div>
+                )}
               </Card>
             </div>
           )}
