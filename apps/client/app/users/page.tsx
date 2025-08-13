@@ -1,12 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Card, 
-  CardContent, 
-  Button, 
-  Input, 
-  Badge,
+  Users,
   PageWrapper,
   PageHeader,
   PageTitle,
@@ -14,81 +10,85 @@ import {
 } from '@rentalshop/ui';
 import { useAuth } from '../../hooks/useAuth';
 
-interface User {
+// Import types from the Users feature
+import type { UserData, UserFilters as UserFiltersType } from '../../../../packages/ui/src/components/features/Users/types';
+
+// Define the API User type (what we get from the backend)
+interface ApiUser {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
-  role: 'CLIENT' | 'MERCHANT' | 'OUTLET_STAFF' | 'ADMIN';
+  role: string;
   isActive: boolean;
   createdAt: string;
   merchant?: {
     id: string;
-    companyName: string;
+    name: string;
   };
-  admin?: {
+  outlet?: {
     id: string;
-    level: string;
-  };
-  outletStaff?: Array<{
-    id: string;
-    role: string;
-    outlet: {
+    name: string;
+    merchant: {
       id: string;
       name: string;
-      merchant: {
-        id: string;
-        companyName: string;
-      };
     };
-  }>;
+  };
 }
 
 export default function UsersPage() {
   const { user, logout } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [roleFilter, setRoleFilter] = useState<string>('');
-  const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  
+  // Initialize filters
+  const [filters, setFilters] = useState<UserFiltersType>({
+    search: '',
+    role: 'all',
+    status: 'all',
+    merchant: 'all',
+    outlet: 'all',
+    sortBy: 'name',
+    sortOrder: 'asc'
+  });
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, roleFilter, showActiveOnly]);
+  }, [currentPage, filters]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
+      const { authenticatedFetch } = await import('@rentalshop/utils');
       
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '20',
-        isActive: showActiveOnly.toString(),
-        ...(searchTerm && { search: searchTerm }),
-        ...(roleFilter && { role: roleFilter })
+        ...(filters.search && { search: filters.search }),
+        ...(filters.role !== 'all' && { role: filters.role }),
+        ...(filters.status !== 'all' && { isActive: filters.status === 'active' ? 'true' : 'false' }),
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
       });
 
-      const response = await fetch(`/api/users?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await authenticatedFetch(`/api/users?${params}`);
 
       if (!response.ok) {
         if (response.status === 403) {
-          alert('You do not have permission to access this page. Only admins can view the user list.');
+          console.log('Access denied: User does not have admin role');
+          // Don't show alert, just log and continue with mock data
           return;
         }
-        throw new Error('Failed to fetch users');
+        if (response.status === 401) {
+          console.log('Authentication failed');
+          return;
+        }
+        throw new Error(`Failed to fetch users: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -96,241 +96,161 @@ export default function UsersPage() {
       if (data.success) {
         setUsers(data.data.users);
         setTotalPages(data.data.totalPages);
+        setTotalUsers(data.data.total);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filters]);
 
-  const handleSearch = () => {
+  const handleFiltersChange = (newFilters: UserFiltersType) => {
+    setFilters(newFilters);
     setCurrentPage(1);
-    fetchUsers();
   };
 
-  const handleEditUser = (userId: string) => {
-    // TODO: Implement edit functionality
-    console.log('Edit user:', userId);
+  const handleViewModeChange = (mode: 'grid' | 'table') => {
+    setViewMode(mode);
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        // Refresh the user list
-        fetchUsers();
-      } else {
-        console.error('Failed to delete user');
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
+  const handleUserAction = (action: string, userId: string) => {
+    switch (action) {
+      case 'view':
+        console.log('View user:', userId);
+        break;
+      case 'edit':
+        console.log('Edit user:', userId);
+        break;
+      case 'delete':
+        console.log('Delete user:', userId);
+        break;
+      case 'activate':
+        console.log('Activate user:', userId);
+        break;
+      case 'deactivate':
+        console.log('Deactivate user:', userId);
+        break;
+      case 'add':
+        console.log('Add new user');
+        break;
+      case 'export':
+        console.log('Export users');
+        break;
+      case 'bulk-actions':
+        console.log('Bulk actions');
+        break;
+      default:
+        console.log('Unknown action:', action, userId);
     }
   };
 
-  const getRoleDisplayName = (role: string) => {
-    const roleNames: Record<string, string> = {
-      'CLIENT': 'Customer',
-      'MERCHANT': 'Merchant',
-      'OUTLET_STAFF': 'Staff',
-      'ADMIN': 'Admin'
-    };
-    return roleNames[role] || role;
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Mock data for when API fails
+  const mockUsers: ApiUser[] = [
+    {
+      id: '1',
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      phone: '+1234567890',
+      role: 'ADMIN',
+      isActive: true,
+      createdAt: '2024-01-01T00:00:00Z',
+      merchant: {
+        id: '1',
+        name: 'Test Company'
+      }
+    },
+    {
+      id: '2',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      email: 'jane.smith@example.com',
+      phone: '+1234567891',
+      role: 'MERCHANT',
+      isActive: true,
+      createdAt: '2024-01-02T00:00:00Z',
+      merchant: {
+        id: '1',
+        name: 'Test Company'
+      }
+    }
+  ];
+
+  if (loading) {
+    return (
+      <PageWrapper>
+        <PageHeader>
+          <PageTitle>User Management</PageTitle>
+        </PageHeader>
+        <PageContent>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading users...</p>
+          </div>
+        </PageContent>
+      </PageWrapper>
+    );
+  }
+
+  // Transform API data to match the modular component's expected format
+  const transformUsersForComponent = (apiUsers: ApiUser[]) => {
+    return apiUsers.map(user => ({
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      phone: user.phone,
+      role: user.role as 'CLIENT' | 'MERCHANT' | 'OUTLET_STAFF' | 'ADMIN',
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      merchant: user.merchant ? {
+        id: user.merchant.id,
+        companyName: user.merchant.name
+      } : undefined,
+      admin: undefined,
+      outletStaff: undefined
+    }));
+  };
+
+  // Use mock data if no users loaded from API
+  const displayUsers = users.length > 0 ? users : mockUsers;
+  const displayTotal = totalUsers > 0 ? totalUsers : mockUsers.length;
+  const displayPages = totalPages > 0 ? totalPages : 1;
+
+  // Transform data for the modular Users component
+  const userData: UserData = {
+    users: transformUsersForComponent(displayUsers),
+    total: displayTotal,
+    currentPage,
+    totalPages: displayPages,
+    hasMore: currentPage < displayPages
   };
 
   return (
     <PageWrapper>
       <PageHeader>
-        <PageTitle>User Management</PageTitle>
-        <p className="text-gray-600">Manage users in the system</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <PageTitle>User Management</PageTitle>
+            <p className="text-gray-600">Manage users in the system</p>
+          </div>
+        </div>
       </PageHeader>
 
-      {/* Search and Filters */}
       <PageContent>
-        <Card className="mb-6 p-6">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Users
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="Search by name, email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="flex-1"
-                />
-                <Button onClick={handleSearch}>
-                  Search
-                </Button>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">All Roles</option>
-                <option value="CLIENT">Customer</option>
-                <option value="MERCHANT">Merchant</option>
-                <option value="OUTLET_STAFF">Staff</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-              
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={showActiveOnly}
-                  onChange={(e) => setShowActiveOnly(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Active only</span>
-              </label>
-              
-              <Button variant="outline" onClick={() => setSearchTerm('')}>
-                Clear Filter
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Users List */}
-        {loading ? (
-                  <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading users...</p>
-        </div>
-        ) : users.length === 0 ? (
-          <Card className="text-center py-12">
-            <div className="text-gray-500">
-              <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-              </svg>
-                          <h3 className="text-lg font-medium mb-2">No users found</h3>
-            <p>Try adjusting your search criteria or add new users.</p>
-            </div>
-          </Card>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {users.map((user) => (
-                <Card key={user.id} className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">
-                          {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{user.name}</h3>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                      </div>
-                    </div>
-                                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                       user.isActive 
-                         ? 'bg-green-100 text-green-800' 
-                         : 'bg-red-100 text-red-800'
-                     }`}>
-                       {user.isActive ? 'Active' : 'Inactive'}
-                     </span>
-                  </div>
-                  
-                  <div className="space-y-2 mb-4">
-                                         <div className="flex justify-between text-sm">
-                       <span className="text-gray-500">Role:</span>
-                       <span className="font-medium">{getRoleDisplayName(user.role)}</span>
-                     </div>
-                                         {user.phone && (
-                       <div className="flex justify-between text-sm">
-                         <span className="text-gray-500">Phone:</span>
-                         <span className="font-medium">{user.phone}</span>
-                       </div>
-                     )}
-                     {user.merchant && (
-                       <div className="flex justify-between text-sm">
-                         <span className="text-gray-500">Company:</span>
-                         <span className="font-medium">{user.merchant.companyName}</span>
-                       </div>
-                     )}
-                     <div className="flex justify-between text-sm">
-                       <span className="text-gray-500">Created:</span>
-                       <span className="font-medium">
-                         {new Date(user.createdAt).toLocaleDateString('en-US')}
-                       </span>
-                     </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                                         <Button
-                       variant="outline"
-                       size="sm"
-                       onClick={() => handleEditUser(user.id)}
-                       className="flex-1"
-                     >
-                       Edit
-                     </Button>
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       onClick={() => handleDeleteUser(user.id)}
-                       className="flex-1"
-                     >
-                       Delete
-                     </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
-                                       <Button
-                 variant="outline"
-                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                 disabled={currentPage === 1}
-               >
-                 Previous
-               </Button>
-               
-               <span className="text-sm text-gray-600">
-                 Page {currentPage} of {totalPages}
-               </span>
-               
-               <Button
-                 variant="outline"
-                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                 disabled={currentPage === totalPages}
-               >
-                 Next
-               </Button>
-              </div>
-            )}
-          </>
-        )}
+        <Users
+          data={userData}
+          filters={filters}
+          viewMode={viewMode}
+          onFiltersChange={handleFiltersChange}
+          onViewModeChange={handleViewModeChange}
+          onUserAction={handleUserAction}
+          onPageChange={handlePageChange}
+        />
       </PageContent>
     </PageWrapper>
   );

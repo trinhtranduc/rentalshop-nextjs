@@ -41,11 +41,18 @@ interface OrderItemFormData {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  deposit: number;
-  notes: string;
-  startDate?: string;
-  endDate?: string;
-  daysRented?: number;
+  
+  // Core rental fields (keeping previous calculation logic)
+  rentalDays: number;       // Số ngày thuê (Rental Duration)
+  startDate?: string;       // Ngày bắt đầu thuê (Start Date) - Optional
+  endDate?: string;         // Ngày kết thúc thuê (End Date) - Optional
+  daysRented?: number;      // Calculated days (keeping for backward compatibility)
+  
+  // Financial fields
+  deposit: number;          // Tiền cọc (Deposit Amount) - keeping previous field
+  
+  // Additional info
+  notes: string;            // Ghi chú cho sản phẩm này
 }
 
 export const OrderForm: React.FC<OrderFormProps> = ({
@@ -83,11 +90,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalPrice: item.totalPrice,
+      rentalDays: item.rentalDays || 0,
+      startDate: item.startDate?.toISOString().split('T')[0] || '',
+      endDate: item.endDate?.toISOString().split('T')[0] || '',
+      daysRented: item.daysRented || 0,
       deposit: item.deposit || 0,
       notes: item.notes || '',
-      startDate: item.startDate?.toISOString().split('T')[0],
-      endDate: item.endDate?.toISOString().split('T')[0],
-      daysRented: item.daysRented,
     })) || []
   );
 
@@ -98,7 +106,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   // Calculate totals when order items change
   useEffect(() => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
-    const depositAmount = orderItems.reduce((sum, item) => sum + item.deposit, 0);
     const taxAmount = subtotal * 0.1; // 10% tax
     const totalAmount = subtotal + taxAmount - (formData.discountAmount || 0);
 
@@ -107,17 +114,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       subtotal,
       taxAmount,
       totalAmount,
-      depositAmount,
       orderItems: orderItems.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
-        deposit: item.deposit,
-        notes: item.notes,
+        rentalDays: item.rentalDays,
         startDate: item.startDate ? new Date(item.startDate) : undefined,
         endDate: item.endDate ? new Date(item.endDate) : undefined,
         daysRented: item.daysRented,
+        deposit: item.deposit,
+        notes: item.notes,
       })),
     }));
   }, [orderItems, formData.discountAmount]);
@@ -141,11 +148,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
-      deposit: 0,
-      notes: '',
+      rentalDays: 0,
       startDate: '',
       endDate: '',
       daysRented: 0,
+      deposit: 0,
+      notes: '',
     }]);
   };
 
@@ -163,20 +171,15 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         item.totalPrice = item.quantity * item.unitPrice;
       }
 
-      // Auto-calculate days rented for rentals
-      if (formData.orderType === 'RENT' && field === 'endDate' && item.startDate && item.endDate) {
-        const start = new Date(item.startDate);
-        const end = new Date(item.endDate);
-        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        item.daysRented = days > 0 ? days : 0;
-        item.totalPrice = item.quantity * item.unitPrice * item.daysRented;
+      // Auto-calculate total price for rentals based on rental days
+      if (formData.orderType === 'RENT' && field === 'rentalDays') {
+        item.totalPrice = item.quantity * item.unitPrice * (item.rentalDays || 1);
       }
 
-      // Auto-calculate deposit based on product
+      // Auto-calculate unit price and total price based on product
       if (field === 'productId') {
         const product = products.find(p => p.id === value);
         if (product) {
-          item.deposit = product.deposit;
           item.unitPrice = formData.orderType === 'RENT' ? product.rentPrice : (product.salePrice || 0);
           item.totalPrice = item.quantity * item.unitPrice;
         }

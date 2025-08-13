@@ -9,7 +9,7 @@ import {
   updateOrder,
   cancelOrder
 } from '@rentalshop/database';
-import type { OrderInput, OrderSearchFilter, OrderUpdateInput } from '@rentalshop/database';
+import type { OrderInput, OrderSearchFilter, OrderUpdateInput, OrderType, OrderStatus } from '@rentalshop/database';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
@@ -48,6 +48,15 @@ export async function GET(request: NextRequest) {
     const productId = searchParams.get('productId');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Extract search filters from query parameters
+    const q = searchParams.get('q');
+    const orderType = searchParams.get('orderType');
+    const status = searchParams.get('status');
+    const outletId = searchParams.get('outletId');
+    const customerId = searchParams.get('customerId');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
     // If productId is provided, get orders for that specific product
     if (productId) {
@@ -100,32 +109,33 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Default behavior - get all orders
-    const orders = await prisma.order.findMany({
-      include: {
-        customer: true,
-        outlet: true,
-        orderItems: {
-          include: {
-            product: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: limit,
-      skip: offset
-    });
+    // Build search filters
+    const searchFilters: OrderSearchFilter = {
+      limit,
+      offset,
+      ...(q && { q }),
+      ...(orderType && { orderType: orderType as OrderType }),
+      ...(status && { status: status as OrderStatus }),
+      ...(outletId && { outletId }),
+      ...(customerId && { customerId }),
+      ...(startDate && { startDate: new Date(startDate) }),
+      ...(endDate && { endDate: new Date(endDate) }),
+    };
 
-    const total = await prisma.order.count();
+    // Use the searchOrders function for proper filtering and pagination
+    const result = await searchOrders(searchFilters);
+    
+    // Calculate total pages for frontend pagination
+    const totalPages = Math.ceil(result.total / limit);
 
     return NextResponse.json({
       success: true,
       data: {
-        orders,
-        total,
-        hasMore: offset + limit < total
+        orders: result.orders,
+        total: result.total,
+        totalPages,
+        hasMore: result.hasMore,
+        currentPage: Math.floor(offset / limit) + 1
       }
     });
 

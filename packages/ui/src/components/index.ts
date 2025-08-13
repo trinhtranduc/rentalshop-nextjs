@@ -92,6 +92,7 @@ export { ProductDialog } from './features/ProductDialog';
 export { OrderCard } from './features/OrderCard';
 export { OrderTable } from './features/OrderTable';
 export { SelectedProducts } from './features/SelectedProducts';
+export { OrderPreviewDialog } from './features/OrderPreviewDialog';
 export type { Product as GridProduct } from './features/ProductGrid';
 
 // ============================================================================

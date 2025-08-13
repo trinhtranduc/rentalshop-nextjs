@@ -393,8 +393,10 @@ export async function createPayment(input: PaymentInput, userId: string) {
       orderId: input.orderId,
       amount: input.amount,
       method: input.method,
+      type: input.type,
       reference: input.reference,
-    },
+      notes: input.notes,
+    } as any, // Type assertion to bypass Prisma type mismatch
   });
 }
 

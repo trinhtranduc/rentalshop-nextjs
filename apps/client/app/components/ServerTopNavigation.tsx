@@ -1,5 +1,6 @@
-import React from 'react';
-import Link from 'next/link';
+'use client'
+
+import React, { useState } from 'react';
 import { 
   Home, 
   Package, 
@@ -10,12 +11,16 @@ import {
   User,
   StoreIcon
 } from 'lucide-react';
+import { useNavigation } from '../hooks/useNavigation';
 
 export interface ServerTopNavigationProps {
   currentPage: string;
 }
 
 export default function ServerTopNavigation({ currentPage }: ServerTopNavigationProps) {
+  const { isPending, navigateTo, prefetchRoute } = useNavigation();
+  const [hoveredTab, setHoveredTab] = useState<string | null>(null);
+
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/orders', label: 'Orders', icon: ShoppingCart },
@@ -26,6 +31,15 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
   ];
 
   const isActive = (href: string) => currentPage === href;
+
+  const handleTabClick = (href: string) => {
+    navigateTo(href);
+  };
+
+  const handleTabHover = (href: string) => {
+    setHoveredTab(href);
+    prefetchRoute(href);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -48,34 +62,53 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
+              const isHovered = hoveredTab === item.href;
+              
               return (
-                <Link
+                <button
                   key={item.href}
-                  href={item.href}
-                  prefetch={true}
-                  className={`nav-item text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-150 ease-out ${
+                  onClick={() => handleTabClick(item.href)}
+                  onMouseEnter={() => handleTabHover(item.href)}
+                  onMouseLeave={() => setHoveredTab(null)}
+                  className={`nav-item text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 ease-out relative ${
                     active 
                       ? 'text-blue-600 bg-blue-50' 
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                  } ${isHovered ? 'scale-105' : ''}`}
+                  disabled={isPending}
                 >
                   <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
                   {item.label}
-                </Link>
+                  
+                  {/* Loading indicator for active tab */}
+                  {isPending && active && (
+                    <div className="absolute inset-0 bg-blue-50/50 rounded-md flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  
+                  {/* Hover effect */}
+                  {isHovered && !active && (
+                    <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
+                  )}
+                </button>
               );
             })}
           </nav>
 
           {/* Right side - Settings only */}
           <div className="flex items-center space-x-4">
-            <Link 
-              href="/settings" 
-              prefetch={true}
-              className="nav-item text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors duration-150 ease-out"
+            <button
+              onClick={() => handleTabClick('/settings')}
+              onMouseEnter={() => prefetchRoute('/settings')}
+              className={`nav-item text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-50 transition-all duration-200 ${
+                currentPage === '/settings' ? 'text-blue-600 bg-blue-50' : ''
+              }`}
+              disabled={isPending}
             >
               <Settings className="w-4 h-4" />
               Settings
-            </Link>
+            </button>
           </div>
 
           {/* Mobile menu button */}
@@ -99,32 +132,49 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
               const Icon = item.icon;
               const active = isActive(item.href);
               return (
-                <Link
+                <button
                   key={item.href}
-                  href={item.href}
-                  prefetch={true}
-                  className={`nav-item block px-3 py-2 text-base font-medium flex items-center gap-3 transition-colors duration-150 ease-out ${
+                  onClick={() => handleTabClick(item.href)}
+                  className={`nav-item block w-full text-left px-3 py-2 text-base font-medium flex items-center gap-3 transition-all duration-200 ${
                     active 
                       ? 'text-blue-600 bg-blue-50' 
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                   }`}
+                  disabled={isPending}
                 >
                   <Icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
                   {item.label}
-                </Link>
+                  
+                  {/* Loading indicator for mobile */}
+                  {isPending && active && (
+                    <div className="ml-auto">
+                      <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </button>
               );
             })}
-            <Link 
-              href="/settings" 
-              prefetch={true}
-              className="nav-item block px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-colors duration-150 ease-out"
+            <button
+              onClick={() => handleTabClick('/settings')}
+              className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-200 ${
+                currentPage === '/settings' ? 'text-blue-600 bg-blue-50' : ''
+              }`}
+              disabled={isPending}
             >
               <Settings className="w-5 h-5" />
               Settings
-            </Link>
+            </button>
           </div>
         </div>
       </div>
+      
+      {/* Global loading bar */}
+      {isPending && (
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600">
+          <div className="h-full bg-blue-400 animate-pulse"></div>
+        </div>
+      )}
     </header>
   );
 }
+

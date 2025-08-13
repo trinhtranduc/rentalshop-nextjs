@@ -2,21 +2,19 @@
 // BUSINESS FEATURE COMPONENTS
 // ============================================================================
 
+// Dashboard Components
+export { Dashboard } from './Dashboard';
+
 // Customer Components
-export { CustomerCard } from './CustomerCard';
-export { CustomerDialog } from './CustomerDialog';
-export { CustomerTable } from './CustomerTable';
+export { Customers } from './Customers';
+
+// Order Components  
+export { Orders } from './Orders';
+export { OrderDetail } from './OrderDetail';
 
 // Product Components
-export { ProductCard } from './ProductCard';
-export { ProductDialog } from './ProductDialog';
-export { ProductGrid } from './ProductGrid';
-export { ProductTable } from './ProductTable';
+export { Products } from './Products';
 
-// Order Components
-export { OrderCard } from './OrderCard';
-export { OrderTable } from './OrderTable';
-
-// Selected Products Component
-export { SelectedProducts } from './SelectedProducts';
+// User Components
+export { Users } from './Users';
 

@@ -160,15 +160,29 @@ model Order {
   id            String   @id @default(cuid())
   orderNumber   String   @unique
   orderType     String   // RENT, SALE, RENT_TO_OWN
-  status        String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED
+  status        String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED, OVERDUE, DAMAGED
   totalAmount   Float
-  depositAmount Float    @default(0)
+  depositAmount Float    @default(0)  // Tiền cọc (Deposit)
+  securityDeposit Float  @default(0)  // Tiền thế chân (Security Deposit)
+  damageFee     Float    @default(0)  // Phí hư hỏng (Damage Fee)
+  lateFee       Float    @default(0)  // Phí trễ hạn (Late Fee)
   
   // Rental specific
-  pickupPlanAt  DateTime?
-  returnPlanAt  DateTime?
-  pickedUpAt    DateTime?
-  returnedAt    DateTime?
+  pickupPlanAt  DateTime?  // Ngày nhận hàng (Pickup Date)
+  returnPlanAt  DateTime?  // Ngày trả hàng (Return Date)
+  pickedUpAt    DateTime?  // Ngày thực tế nhận hàng
+  returnedAt    DateTime?  // Ngày thực tế trả hàng
+  rentalDuration Int?      // Số ngày thuê (Rental Duration in days)
+  
+  // Collateral information
+  collateralType String?   // Thế chân bằng tiền/giấy tờ (Cash/Document Collateral)
+  collateralDetails String? // Chi tiết thế chấp (ID Card, Passport, etc.)
+  
+  // Notes
+  notes         String?   // Ghi chú chung (General Notes)
+  pickupNotes   String?   // Ghi chú khi nhận hàng
+  returnNotes   String?   // Ghi chú khi trả hàng
+  damageNotes   String?   // Ghi chú về hư hỏng
   
   // Timestamps
   createdAt     DateTime @default(now())
@@ -191,8 +205,10 @@ model Order {
 model OrderItem {
   id          String   @id @default(cuid())
   quantity    Int      @default(1)
-  unitPrice   Float
-  totalPrice  Float
+  unitPrice   Float    // Tiền thuê hàng ngày (Daily Rental Rate)
+  totalPrice  Float    // Tổng tiền thuê (Total Rental Fee)
+  rentalDays  Int?     // Số ngày thuê (Rental Duration)
+  notes       String?  // Ghi chú cho sản phẩm này
   
   // Relations
   orderId   String
@@ -206,9 +222,11 @@ model OrderItem {
 model Payment {
   id        String   @id @default(cuid())
   amount    Float
-  method    String   // CASH, CARD, TRANSFER
+  method    String   // CASH, BANK_TRANSFER, CREDIT_CARD, DIGITAL_WALLET
+  type      String   // DEPOSIT, RENTAL_FEE, DAMAGE_FEE, LATE_FEE, REFUND
   status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
   reference String?  // Payment reference number
+  notes     String?  // Ghi chú thanh toán
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -217,5 +235,7 @@ model Payment {
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, status])
+  @@index([orderId, type])
   @@index([status])
+  @@index([type])
 } 

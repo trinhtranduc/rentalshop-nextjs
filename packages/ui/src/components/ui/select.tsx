@@ -21,10 +21,10 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      variant === 'filled' && "flex h-10 w-full items-center justify-between rounded-md bg-gray-50 border border-gray-300 px-3 py-2 text-sm focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100",
+      variant === 'filled' && "flex h-10 w-full items-center justify-between rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100",
       variant === 'underline' && "h-10 border-0 border-b border-gray-300 rounded-none px-0 text-sm focus:border-blue-500 focus:ring-0",
       variant === 'ghost' && "h-10 bg-transparent border-transparent px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100",
-      variant === 'default' && "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      variant === 'default' && "flex h-10 w-full items-center justify-between rounded-lg border border-border bg-bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
       className
     )}
     {...props}
