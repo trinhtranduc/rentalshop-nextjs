@@ -121,7 +121,7 @@ export default function ProductDocsPage() {
                     Get products with filtering and pagination
                   </p>
                   <div className="text-xs text-gray-500">
-                    Query params: outletId, categoryId, isActive, search, minPrice, maxPrice, page, limit, sortBy, sortOrder
+                    Query params: outletId, categoryId, isActive, search, page, limit, sortBy, sortOrder
                   </div>
                 </div>
 

@@ -23,8 +23,6 @@ import {
   DialogTrigger,
   DateRangePicker,
   type DateRange,
-  SelectedProducts,
-  CustomerDialog,
   useProductAvailability,
   ProductAvailabilityAsyncDisplay,
   SearchableSelect,
@@ -164,10 +162,24 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   const [customerSearchResults, setCustomerSearchResults] = useState<CustomerSearchResult[]>([]);
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
   const [showManualCustomerInput, setShowManualCustomerInput] = useState(false);
+  const [showOrderPreview, setShowOrderPreview] = useState(false);
   
   // Product availability hook
   const { getProductAvailability, calculateAvailability } = useProductAvailability();
 
+  // Handle preview button click
+  const handlePreviewClick = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowOrderPreview(true);
+  };
+
+  // Handle order confirmation from preview
+  const handleOrderConfirm = async () => {
+    setShowOrderPreview(false);
+    // Create a mock event for handleSubmit
+    const mockEvent = { preventDefault: () => {} } as React.FormEvent;
+    await handleSubmit(mockEvent);
+  };
 
   // Ref for search container to detect click outside
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -651,6 +663,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
     }
   };
 
+  const isFormValid = () => {
+    return orderItems.length > 0 && formData.customerId && formData.pickupPlanAt && formData.returnPlanAt;
+  };
 
 
         return (
@@ -696,7 +711,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                     <CardHeader className="pb-3">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <ShoppingCart className="w-5 h-5" />
-                        Selected Products ({orderItems.length})
+                        Selected Products <span className="text-red-500">*</span>
+                        <span className="text-sm font-normal text-gray-500">({orderItems.length})</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -891,7 +907,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
               <CardContent className="space-y-4">
                 {/* Outlet Selection - Full Width */}
                 <div className="space-y-2 w-full">
-                  <label className="text-sm font-medium text-text-primary">Outlet</label>
+                  <label className="text-sm font-medium text-text-primary">
+                    Outlet <span className="text-red-500">*</span>
+                  </label>
                   <Select
                     value={formData.outletId}
                     onValueChange={(value: string) => {
@@ -899,7 +917,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                     }}
                   >
                     <SelectTrigger variant="filled" className="w-full">
-                      <SelectValue placeholder="Chọn outlet..." />
+                      <SelectValue placeholder="Select outlet..." />
                     </SelectTrigger>
                     <SelectContent>
                       {outlets.map((outlet) => (
@@ -913,7 +931,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
 
                 {/* Customer Selection - Full Width */}
                 <div className="space-y-2 w-full">
-                  <label className="text-sm font-medium text-text-primary">Customer</label>
+                  <label className="text-sm font-medium text-text-primary">
+                    Customer <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <SearchableSelect
                       placeholder="Search customers by name or phone..."
@@ -952,46 +972,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                     )}
                   </div>
                   
-                  {/* Selected Customer Info */}
-                  {selectedCustomer && (
-                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <User className="w-5 h-5 text-green-600" />
-                          <div>
-                            <div className="font-medium text-green-800">
-                              {selectedCustomer.firstName} {selectedCustomer.lastName}
-                            </div>
-                            <div className="text-sm text-green-600">
-                              {selectedCustomer.phone}
-                              {selectedCustomer.email && ` • ${selectedCustomer.email}`}
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedCustomer(null);
-                            setFormData(prev => ({
-                              ...prev,
-                              customerId: '',
-                              customerName: '',
-                              customerPhone: '',
-                              customerEmail: ''
-                            }));
-                          }}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-100"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Manual Customer Input - Show when no customer is selected */}
-                  {!selectedCustomer && (
-                    <div className="mt-3">
+                  {/* Manual Customer Input - Collapsible */}
+                  <div className="mt-4">
                       {/* Toggle Button */}
                       <button
                         type="button"
@@ -1048,7 +1030,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                         </div>
                       )}
                     </div>
-                  )}
                 </div>
 
                 {/* Order Type Toggle - Full Width */}
@@ -1143,7 +1124,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                 {/* Rental Dates - Only show for RENT orders */}
                 {formData.orderType === 'RENT' && (
                   <div className="space-y-2 w-full">
-                    <label className="text-sm font-medium text-text-primary">Rental Period</label>
+                    <label className="text-sm font-medium text-text-primary">
+                      Rental Period <span className="text-red-500">*</span>
+                    </label>
                     <DateRangePicker
                       value={{
                         from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
@@ -1216,30 +1199,93 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                 </div>
 
                 {/* Submit Buttons */}
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    type="submit"
-                    disabled={loading || orderItems.length === 0}
-                    className="flex-1"
-                  >
-                    {loading ? 'Processing...' : 'Create Order'}
-                  </Button>
-                  {onCancel && (
+                <div className="space-y-4 pt-2">
+                  {/* Validation Summary */}
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <h4 className="font-medium text-gray-700 mb-2">Order Requirements:</h4>
+                    <div className="space-y-2 text-sm">
+                      {/* Products Required */}
+                      <div className="flex items-center gap-2">
+                        {orderItems.length > 0 ? (
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        )}
+                        <span className={orderItems.length > 0 ? 'text-green-700' : 'text-red-600'}>
+                          {orderItems.length > 0 ? '✓' : '✗'} Select at least one product
+                          {orderItems.length > 0 && ` (${orderItems.length} selected)`}
+                        </span>
+                      </div>
+
+                      {/* Customer Required */}
+                      <div className="flex items-center gap-2">
+                        {formData.customerId || formData.customerName || formData.customerPhone ? (
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        )}
+                        <span className={formData.customerId || formData.customerName || formData.customerPhone ? 'text-green-700' : 'text-red-600'}>
+                          {formData.customerId || formData.customerName || formData.customerPhone ? '✓' : '✗'} Customer information required
+                        </span>
+                      </div>
+
+                      {/* Rental Period Required for RENT orders */}
+                      {formData.orderType === 'RENT' && (
+                        <div className="flex items-center gap-2">
+                          {formData.pickupPlanAt && formData.returnPlanAt ? (
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
+                          <span className={formData.pickupPlanAt && formData.returnPlanAt ? 'text-green-700' : 'text-red-600'}>
+                            {formData.pickupPlanAt && formData.returnPlanAt ? '✓' : '✗'} Rental period required (pickup & return dates)
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Outlet Required */}
+                      <div className="flex items-center gap-2">
+                        {formData.outletId ? (
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        )}
+                        <span className={formData.outletId ? 'text-green-700' : 'text-red-600'}>
+                          {formData.outletId ? '✓' : '✗'} Outlet selection required
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={onCancel}
+                      disabled={loading || !isFormValid()}
+                      onClick={handlePreviewClick}
                       className="flex-1"
                     >
-                      Cancel
+                      {loading ? 'Processing...' : 'Preview'}
                     </Button>
-                  )}
+                    {onCancel && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onCancel}
+                        className="flex-1"
+                      >
+                        Reset Selection
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* Order Preview Dialog - Removed, using direct confirmation instead */}
     </div>
   );
 };

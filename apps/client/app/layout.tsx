@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import ServerTopNavigation from './components/ServerTopNavigation'
+import ClientTopNavigation from './components/ClientTopNavigation'
+import NavigationProgressBar from './components/NavigationProgressBar'
 import './globals.css'
 import Script from 'next/script'
 
@@ -22,9 +23,8 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={`${inter.variable} font-sans`}>
-        <ServerTopNavigation 
-          currentPage="/"
-        />
+        <NavigationProgressBar />
+        <ClientTopNavigation />
         <main className="pt-24">
           {children}
         </main>

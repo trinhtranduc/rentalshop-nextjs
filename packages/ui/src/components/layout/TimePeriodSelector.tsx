@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '../ui/button';
 
-type TimePeriod = 'today' | 'month' | 'year';
+type TimePeriod = 'today' | 'week' | 'month' | 'year';
 
 interface TimePeriodSelectorProps {
   currentPeriod: TimePeriod;
@@ -14,6 +14,7 @@ export const TimePeriodSelector: React.FC<TimePeriodSelectorProps> = ({
 }) => {
   const periods = [
     { key: 'today', label: 'Today', icon: '📅' },
+    { key: 'week', label: 'This Week', icon: '📅' },
     { key: 'month', label: 'This Month', icon: '📊' },
     { key: 'year', label: 'This Year', icon: '📈' }
   ] as const;

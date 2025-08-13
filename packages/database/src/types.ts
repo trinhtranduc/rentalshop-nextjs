@@ -253,8 +253,9 @@ export interface ProductWithStock {
 export type OrderType = 'RENT' | 'SALE' | 'RENT_TO_OWN';
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'DAMAGED';
 export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CREDIT_CARD' | 'DIGITAL_WALLET';
-export type PaymentType = 'DEPOSIT' | 'RENTAL_FEE' | 'DAMAGE_FEE' | 'REFUND';
+export type PaymentType = 'DEPOSIT' | 'SECURITY_DEPOSIT' | 'RENTAL_FEE' | 'DAMAGE_FEE' | 'LATE_FEE' | 'REFUND';
 export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+export type CollateralType = 'CASH' | 'ID_CARD' | 'PASSPORT' | 'DRIVERS_LICENSE' | 'OTHER';
 
 export interface OrderWithDetails extends Order {
   customer: {
@@ -289,12 +290,21 @@ export interface OrderInput {
   outletId: string;
   pickupPlanAt?: Date;
   returnPlanAt?: Date;
+  rentalDuration?: number; // Số ngày thuê (Rental Duration)
   subtotal: number;
   taxAmount?: number;
   discountAmount?: number;
   totalAmount: number;
-  depositAmount?: number;
-  notes?: string;
+  depositAmount?: number;      // Tiền cọc (Deposit)
+  securityDeposit?: number;    // Tiền thế chân (Security Deposit)
+  damageFee?: number;          // Phí hư hỏng (Damage Fee)
+  lateFee?: number;            // Phí trễ hạn (Late Fee)
+  collateralType?: CollateralType; // Thế chân bằng tiền/giấy tờ
+  collateralDetails?: string;  // Chi tiết thế chấp
+  notes?: string;              // Ghi chú chung
+  pickupNotes?: string;        // Ghi chú khi nhận hàng
+  returnNotes?: string;        // Ghi chú khi trả hàng
+  damageNotes?: string;        // Ghi chú về hư hỏng
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -304,13 +314,14 @@ export interface OrderInput {
 export interface OrderItemInput {
   productId: string;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  deposit?: number;
-  notes?: string;
-  startDate?: Date;
-  endDate?: Date;
-  daysRented?: number;
+  unitPrice: number;    // Tiền thuê hàng ngày (Daily Rental Rate)
+  totalPrice: number;   // Tổng tiền thuê (Total Rental Fee)
+  rentalDays?: number;  // Số ngày thuê (Rental Duration)
+  startDate?: Date;     // Ngày bắt đầu thuê (Start Date) - Optional
+  endDate?: Date;       // Ngày kết thúc thuê (End Date) - Optional
+  daysRented?: number;  // Calculated days (keeping for backward compatibility)
+  deposit?: number;     // Tiền cọc (Deposit Amount) - keeping previous field
+  notes?: string;       // Ghi chú cho sản phẩm này
 }
 
 export interface OrderUpdateInput {
@@ -319,16 +330,21 @@ export interface OrderUpdateInput {
   returnPlanAt?: Date;
   pickedUpAt?: Date;
   returnedAt?: Date;
+  rentalDuration?: number;
   subtotal?: number;
   taxAmount?: number;
   discountAmount?: number;
   totalAmount?: number;
-  depositAmount?: number;
-  damageFee?: number;
-  notes?: string;
-  pickupNotes?: string;
-  returnNotes?: string;
-  damageNotes?: string;
+  depositAmount?: number;      // Tiền cọc (Deposit)
+  securityDeposit?: number;    // Tiền thế chân (Security Deposit)
+  damageFee?: number;          // Phí hư hỏng (Damage Fee)
+  lateFee?: number;            // Phí trễ hạn (Late Fee)
+  collateralType?: CollateralType;
+  collateralDetails?: string;
+  notes?: string;              // Ghi chú chung
+  pickupNotes?: string;        // Ghi chú khi nhận hàng
+  returnNotes?: string;        // Ghi chú khi trả hàng
+  damageNotes?: string;        // Ghi chú về hư hỏng
 }
 
 export interface OrderFilters {

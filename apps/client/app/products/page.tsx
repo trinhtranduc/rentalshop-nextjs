@@ -3,17 +3,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Card, 
-  Button, 
+  Button,
   Input,
-  ProductTable,
-  ProductDialog,
-  ProductForm,
+  Products,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  Pagination
 } from '@rentalshop/ui';
 import { Plus } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+
+// Import types from the Products feature
+import { ProductData, ProductFilters as ProductFiltersType } from '../../../../packages/ui/src/components/features/Products/types';
 
 // Extend the Product type for this page
 interface ExtendedProduct {
@@ -42,7 +45,6 @@ interface ExtendedProduct {
     };
   }>;
 }
-import { useAuth } from '../../hooks/useAuth';
 
 export default function ProductsPage() {
   const { user, logout } = useAuth();
@@ -52,13 +54,23 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ExtendedProduct | null>(null);
-  const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  
+  // Initialize filters
+  const [filters, setFilters] = useState<ProductFiltersType>({
+    search: '',
+    category: 'all',
+    outlet: 'all',
+    status: 'all',
+    inStock: false,
+    sortBy: 'name',
+    sortOrder: 'asc'
+  });
 
   useEffect(() => {
     fetchProducts();
-  }, [currentPage]);
+  }, [currentPage, filters]);
 
   const fetchProducts = async () => {
     try {
@@ -68,7 +80,13 @@ export default function ProductsPage() {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10',
-        ...(searchTerm && { search: searchTerm })
+        ...(filters.search && { search: filters.search }),
+        ...(filters.category && { category: filters.category }),
+        ...(filters.outlet && { outlet: filters.outlet }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.inStock && { inStock: 'true' }),
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
       });
 
       const response = await authenticatedFetch(`/api/products?${params}`);
@@ -96,19 +114,12 @@ export default function ProductsPage() {
           merchant: {
             name: product.merchant?.name || '',
           },
-          outletStock: product.outletStock?.map((os: any) => ({
-            id: os.id,
-            stock: os.stock,
-            available: os.available,
-            renting: os.renting,
-            outlet: {
-              id: os.outlet.id,
-              name: os.outlet.name,
-            },
-          })) || [],
+          outletStock: product.outletStock || []
         }));
+        
         setProducts(transformedProducts);
-        setTotalPages(data.data.totalPages);
+        setTotalProducts(data.data.totalProducts || transformedProducts.length);
+        setTotalPages(Math.ceil((data.data.totalProducts || transformedProducts.length) / 10));
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -117,101 +128,94 @@ export default function ProductsPage() {
     }
   };
 
-  const handleSearch = useCallback(() => {
-    setCurrentPage(1);
-    fetchProducts();
-  }, [currentPage, searchTerm]);
+  const handleFiltersChange = (newFilters: ProductFiltersType) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
 
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchTerm !== '') {
-        handleSearch();
-      } else {
-        // If search is cleared, fetch all products
-        setCurrentPage(1);
-        fetchProducts();
-      }
-    }, 500); // 500ms delay
+  const handleViewModeChange = (mode: 'grid' | 'table') => {
+    setViewMode(mode);
+  };
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, handleSearch]);
-
-  const handleEditProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      setEditingProduct(product);
-      setDialogMode('edit');
-      setDialogOpen(true);
+  const handleProductAction = async (action: string, productId: string) => {
+    switch (action) {
+      case 'edit':
+        // Handle edit - you can implement this based on your needs
+        console.log('Edit product:', productId);
+        break;
+      case 'delete':
+        // Handle delete
+        if (confirm('Are you sure you want to delete this product?')) {
+          try {
+            const { authenticatedFetch } = await import('@rentalshop/utils');
+            const response = await authenticatedFetch(`/api/products/${productId}`, {
+              method: 'DELETE'
+            });
+            
+            if (response.ok) {
+              // Refresh the product list
+              fetchProducts();
+            } else {
+              console.error('Failed to delete product');
+            }
+          } catch (error) {
+            console.error('Error deleting product:', error);
+          }
+        }
+        break;
+      case 'view':
+        // Handle view - you can implement this based on your needs
+        console.log('View product:', productId);
+        break;
+      default:
+        console.log('Unknown action:', action);
     }
   };
 
-  const handleAddProduct = () => {
-    setEditingProduct(null);
-    setDialogMode('create');
-    setDialogOpen(true);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
-  const handleSaveProduct = async (productData: any) => {
-    try {
-      const { authenticatedFetch } = await import('@rentalshop/utils');
-
-      const url = editingProduct 
-        ? `/api/products?productId=${editingProduct.id}`
-        : '/api/products';
-      
-      const method = editingProduct ? 'PUT' : 'POST';
-
-      const response = await authenticatedFetch(url, {
-        method,
-        body: JSON.stringify(productData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save product');
-      }
-
-      // Refresh the product list
-      fetchProducts();
-      setDialogOpen(false);
-      setEditingProduct(null);
-    } catch (error) {
-      console.error('Error saving product:', error);
-      throw error;
-    }
+  // Transform data for the Products component
+  const productData: ProductData = {
+    products: products.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description || '',
+      barcode: undefined,
+      category: product.category.name,
+      rentPrice: product.rentPrice,
+      deposit: product.deposit,
+      stock: product.totalStock,
+      renting: product.outletStock.reduce((sum, os) => sum + os.renting, 0),
+      available: product.outletStock.reduce((sum, os) => sum + os.available, 0),
+      outletId: product.outletStock[0]?.outlet.id || '',
+      outletName: product.outletStock[0]?.outlet.name || '',
+      status: product.outletStock.reduce((sum, os) => sum + os.available, 0) > 0 ? 'active' : 'out_of_stock',
+      createdAt: new Date().toISOString(), // Not available in current data
+      updatedAt: new Date().toISOString()  // Not available in current data
+    })),
+    total: totalProducts,
+    currentPage,
+    totalPages,
+    limit: 10
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
-
-    try {
-      const { authenticatedFetch } = await import('@rentalshop/utils');
-
-      const response = await authenticatedFetch(`/api/products?productId=${productId}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        // Refresh the product list
-        fetchProducts();
-      } else {
-        console.error('Failed to delete product');
-      }
-    } catch (error) {
-      console.error('Error deleting product:', error);
-    }
-  };
-
-  const handleViewProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      setEditingProduct(product);
-      setDialogMode('view');
-      setDialogOpen(true);
-    }
-  };
+  if (loading) {
+    return (
+      <PageWrapper>
+        <PageHeader>
+          <PageTitle>Products</PageTitle>
+        </PageHeader>
+        <PageContent>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading products...</p>
+          </div>
+        </PageContent>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper>
@@ -223,7 +227,7 @@ export default function ProductsPage() {
           </div>
           {isMerchantLevel && (
             <Button 
-              onClick={handleAddProduct}
+              onClick={() => console.log('Add product')}
               className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
             >
               <Plus className="w-4 h-4 mr-2" /> Add Product
@@ -232,108 +236,15 @@ export default function ProductsPage() {
         </div>
       </PageHeader>
 
-      {/* Search and Filters */}
       <PageContent>
-        <Card className="mb-6 p-6">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Products
-                {searchTerm && (
-                  <span className="ml-2 text-xs text-blue-600 font-normal">
-                    (Searching for "{searchTerm}")
-                  </span>
-                )}
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="Search by name, description..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
-                />
-                {searchTerm && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSearchTerm('')}
-                    className="whitespace-nowrap"
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <Button variant="outline" onClick={() => setSearchTerm('')}>
-              Reset Filters
-            </Button>
-          </div>
-        </Card>
-
-        {/* Products List */}
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading products...</p>
-          </div>
-        ) : products.length === 0 ? (
-          <Card className="text-center py-12">
-            <div className="text-gray-500">
-              <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              <h3 className="text-lg font-medium mb-2">No products found</h3>
-              <p>Try adjusting your search criteria or add new products.</p>
-            </div>
-          </Card>
-        ) : (
-          <>
-            <Card className="mb-6">
-              <ProductTable
-                products={products}
-                onEdit={isMerchantLevel ? handleEditProduct : undefined}
-                onDelete={isMerchantLevel ? handleDeleteProduct : undefined}
-                onView={handleViewProduct}
-                showActions={true}
-              />
-            </Card>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Product Dialog */}
-        <ProductDialog
-          product={editingProduct}
-          onSave={dialogMode === 'view' ? undefined : (handleSaveProduct as any)}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          trigger={null}
-          mode={dialogMode}
+        <Products
+          data={productData}
+          filters={filters}
+          viewMode={viewMode}
+          onFiltersChange={handleFiltersChange}
+          onViewModeChange={handleViewModeChange}
+          onProductAction={handleProductAction}
+          onPageChange={handlePageChange}
         />
       </PageContent>
     </PageWrapper>

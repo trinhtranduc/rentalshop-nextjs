@@ -173,7 +173,7 @@ export const ProductAvailabilityTest: React.FC = () => {
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-3">Chọn Test Case:</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Object.entries(testCases).map(([key, testCase]) => (
+          {Object.entries(testCases).map(([key, testCaseData]) => (
             <button
               key={key}
               onClick={() => handleTestCaseChange(key)}
@@ -183,12 +183,12 @@ export const ProductAvailabilityTest: React.FC = () => {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="font-medium">{testCase.name}</div>
+              <div className="font-medium">{testCaseData.name}</div>
               <div className="text-sm text-gray-600 mt-1">
-                {testCase.pickupDate} - {testCase.returnDate}
+                {testCaseData.pickupDate} - {testCaseData.returnDate}
               </div>
               <div className="text-sm text-gray-500 mt-1">
-                Expected: {testCase.expectedAvailable} available
+                Expected: {testCaseData.expectedAvailable} available
               </div>
             </button>
           ))}

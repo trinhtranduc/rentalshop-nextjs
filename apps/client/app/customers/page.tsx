@@ -2,23 +2,20 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Card, 
-  CardContent, 
   Button, 
-  Input, 
-  Badge,
-  CustomerTable,
-  CustomerDialog,
-  CustomerForm,
+  Customers,
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent
 } from '@rentalshop/ui';
 import { UserPlus } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
 
-interface Customer {
+// Import types from the Customers feature
+import { CustomerData, CustomerFilters as CustomerFiltersType } from '../../../../packages/ui/src/components/features/Customers/types';
+
+// Extend the Customer type for this page
+interface ExtendedCustomer {
   id: string;
   firstName: string;
   lastName: string;
@@ -36,21 +33,22 @@ interface Customer {
 }
 
 export default function CustomersPage() {
-  const { user, logout } = useAuth();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<ExtendedCustomer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [showActiveOnly, setShowActiveOnly] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  
+  // Initialize filters
+  const [filters, setFilters] = useState<CustomerFiltersType>({
+    search: '',
+    status: 'all',
+    state: 'all',
+    sortBy: 'name',
+    sortOrder: 'asc'
+  });
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [currentPage]);
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       const { authenticatedFetch } = await import('@rentalshop/utils');
@@ -58,8 +56,11 @@ export default function CustomersPage() {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10',
-        isActive: showActiveOnly.toString(),
-        ...(searchTerm && { search: searchTerm })
+        ...(filters.search && { search: filters.search }),
+        ...(filters.status !== 'all' && { status: filters.status }),
+        ...(filters.state !== 'all' && { state: filters.state }),
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
       });
 
       const response = await authenticatedFetch(`/api/customers?${params}`);
@@ -70,101 +71,119 @@ export default function CustomersPage() {
 
       const data = await response.json();
       
-              if (data.success) {
-          setCustomers(data.data.customers);
-          setTotalPages(data.data.totalPages);
-        }
+      if (data.success) {
+        setCustomers(data.data.customers);
+        setTotalPages(data.data.totalPages);
+        setTotalCustomers(data.data.total || data.data.customers.length);
+      }
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filters]);
 
-  const handleSearch = useCallback(() => {
-    setCurrentPage(1);
-    fetchCustomers();
-  }, []);
-
-  // Debounced search effect
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchTerm !== '') {
-        handleSearch();
-      } else {
-        // If search is cleared, fetch all customers
-        setCurrentPage(1);
-        fetchCustomers();
-      }
-    }, 500); // 500ms delay
+    fetchCustomers();
+  }, [fetchCustomers]);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, handleSearch]);
+  const handleFiltersChange = (newFilters: CustomerFiltersType) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
 
-  const handleEditCustomer = (customerId: string) => {
-    const customer = customers.find(c => c.id === customerId);
-    if (customer) {
-      setEditingCustomer(customer);
-      setDialogOpen(true);
+  const handleCustomerAction = async (action: string, customerId: string) => {
+    switch (action) {
+      case 'edit':
+        // Handle edit - you can implement this based on your needs
+        console.log('Edit customer:', customerId);
+        break;
+      case 'delete':
+        // Handle delete
+        if (confirm('Are you sure you want to delete this customer?')) {
+          try {
+            const { authenticatedFetch } = await import('@rentalshop/utils');
+            const response = await authenticatedFetch(`/api/customers/${customerId}`, {
+              method: 'DELETE'
+            });
+            
+            if (response.ok) {
+              // Refresh the customer list
+              fetchCustomers();
+            } else {
+              console.error('Failed to delete customer');
+            }
+          } catch (error) {
+            console.error('Error deleting customer:', error);
+          }
+        }
+        break;
+      case 'view':
+        // Handle view - you can implement this based on your needs
+        console.log('View customer:', customerId);
+        break;
+      default:
+        console.log('Unknown action:', action);
     }
   };
 
-  const handleAddCustomer = () => {
-    setEditingCustomer(null);
-    setDialogOpen(true);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
-  const handleSaveCustomer = async (customerData: Partial<Customer>) => {
-    try {
-      const { authenticatedFetch } = await import('@rentalshop/utils');
-
-      const url = editingCustomer 
-        ? `/api/customers/${editingCustomer.id}`
-        : '/api/customers';
-      
-      const method = editingCustomer ? 'PUT' : 'POST';
-
-      const response = await authenticatedFetch(url, {
-        method,
-        body: JSON.stringify(customerData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save customer');
-      }
-
-      // Refresh the customer list
-      fetchCustomers();
-      setDialogOpen(false);
-      setEditingCustomer(null);
-    } catch (error) {
-      console.error('Error saving customer:', error);
-      throw error;
+  // Transform data for the Customers component
+  const customerData: CustomerData = {
+    customers: customers.map(customer => ({
+      id: customer.id,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      email: customer.email,
+      phone: customer.phone,
+      companyName: customer.merchant?.companyName,
+      address: customer.address,
+      city: undefined, // Not available in current data
+      state: customer.state,
+      zipCode: undefined, // Not available in current data
+      country: customer.country,
+      status: customer.isActive ? 'active' : 'inactive',
+      membershipLevel: 'basic', // Default value, not available in current data
+      totalOrders: 0, // Not available in current data
+      totalSpent: 0, // Not available in current data
+      lastOrderDate: undefined, // Not available in current data
+      createdAt: new Date().toISOString(), // Not available in current data
+      updatedAt: new Date().toISOString()  // Not available in current data
+    })),
+    total: totalCustomers,
+    currentPage,
+    totalPages,
+    limit: 10,
+    stats: {
+      totalCustomers: totalCustomers,
+      activeCustomers: customers.filter(c => c.isActive).length,
+      inactiveCustomers: customers.filter(c => !c.isActive).length,
+      blockedCustomers: 0, // Not available in current data
+      newCustomersThisMonth: 0, // Not available in current data
+      totalRevenue: 0, // Not available in current data
+      averageOrderValue: 0, // Not available in current data
+      topCustomers: [] // Not available in current data
     }
   };
 
-  const handleDeleteCustomer = async (customerId: string) => {
-    if (!confirm('Are you sure you want to delete this customer?')) {
-      return;
-    }
-
-    try {
-      const { authenticatedFetch } = await import('@rentalshop/utils');
-
-      const response = await authenticatedFetch(`/api/customers/${customerId}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        // Refresh the customer list
-        fetchCustomers();
-      } else {
-        console.error('Failed to delete customer');
-      }
-    } catch (error) {
-      console.error('Error deleting customer:', error);
-    }
-  };
+  if (loading) {
+    return (
+      <PageWrapper>
+        <PageHeader>
+          <PageTitle>Customers</PageTitle>
+        </PageHeader>
+        <PageContent>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading customers...</p>
+          </div>
+        </PageContent>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper>
@@ -175,7 +194,7 @@ export default function CustomersPage() {
             <p className="text-gray-600">Manage your customer database and relationships</p>
           </div>
           <Button 
-            onClick={handleAddCustomer} 
+            onClick={() => console.log('Add customer')}
             className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
           >
             <UserPlus className="w-4 h-4 mr-2" /> Add Customer
@@ -183,121 +202,13 @@ export default function CustomersPage() {
         </div>
       </PageHeader>
 
-      {/* Search and Filters */}
       <PageContent>
-        <Card className="mb-6 p-6">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Customers
-                {searchTerm && (
-                  <span className="ml-2 text-sm text-blue-600 font-normal">
-                    (Searching for "{searchTerm}")
-                  </span>
-                )}
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="Search by name, email, or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
-                />
-                {searchTerm && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSearchTerm('')}
-                    className="whitespace-nowrap"
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={showActiveOnly}
-                  onChange={(e) => setShowActiveOnly(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-base text-gray-700">Active only</span>
-              </label>
-              
-              <Button variant="outline" onClick={() => {
-                setSearchTerm('');
-                setShowActiveOnly(true);
-              }}>
-                Reset Filters
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Customer List */}
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-base text-gray-600">Loading customers...</p>
-          </div>
-        ) : customers.length === 0 ? (
-          <Card className="text-center py-12">
-            <div className="text-gray-500">
-              <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <h3 className="text-xl font-medium mb-2">No customers found</h3>
-              <p className="text-base">Try adjusting your search criteria or add a new customer.</p>
-            </div>
-          </Card>
-        ) : (
-          <>
-            <Card className="mb-6">
-              <CustomerTable
-                customers={customers}
-                onEdit={handleEditCustomer}
-                onDelete={handleDeleteCustomer}
-                showActions={true}
-              />
-            </Card>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Customer Dialog */}
-        <CustomerDialog
-          customer={editingCustomer}
-          onSave={handleSaveCustomer}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          trigger={null}
+        <Customers
+          data={customerData}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onCustomerAction={handleCustomerAction}
+          onPageChange={handlePageChange}
         />
       </PageContent>
     </PageWrapper>

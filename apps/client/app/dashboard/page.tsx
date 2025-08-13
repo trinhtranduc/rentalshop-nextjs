@@ -2,39 +2,27 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Info, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Minus,
-  Package,
-  PackageCheck,
-  AlertTriangle,
-  Clock,
-  DollarSign,
-  Calendar,
-  Users,
-  TrendingUp,
-  Truck,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  CalendarDays
-} from 'lucide-react';
-import { 
   CardClean, 
   CardHeaderClean, 
   CardTitleClean, 
   CardContentClean,
-  ButtonClean,
-  SimpleList,
-  IncomeChart,
-  OrderChart,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  IncomeChart,
+  OrderChart
 } from '@rentalshop/ui';
+import { 
+  Package,
+  PackageCheck,
+  Users,
+  TrendingUp,
+  Info,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 // ============================================================================
@@ -60,29 +48,15 @@ interface DashboardStats {
   customerBase: number;
 }
 
-interface RentalStatusData {
-  status: string;
-  count: number;
-  color: string;
-}
-
-interface ProductUtilizationData {
-  category: string;
-  rented: number;
-  available: number;
-  maintenance: number;
-}
-
-interface RevenueData {
+interface IncomeData {
   period: string;
   actual: number;
   projected: number;
 }
 
-interface RentalTrendData {
+interface OrderData {
   period: string;
-  rentals: number;
-  revenue: number;
+  count: number;
 }
 
 interface TopProduct {
@@ -105,159 +79,18 @@ interface TopCustomer {
   avatar: string;
 }
 
-interface RecentRental {
+interface RecentOrder {
   id: string;
   orderNumber: string;
   customerName: string;
   amount: number;
   status: string;
-  rentalType: string;
+  orderType: string;
   createdAt: string;
   productCount: number;
-  pickupDate?: string;
-  returnDate?: string;
+  pickupPlanAt?: string;
+  returnPlanAt?: string;
 }
-
-interface OperationalAlert {
-  id: string;
-  type: 'overdue' | 'low_stock' | 'maintenance' | 'payment' | 'schedule';
-  title: string;
-  message: string;
-  severity: 'low' | 'medium' | 'high';
-  time: string;
-}
-
-// ============================================================================
-// MOCK DATA
-// ============================================================================
-const mockTodayStats: DashboardStats = {
-  todayRevenue: 1543.25,
-  todayRentals: 12,
-  activeRentals: 45,
-  todayPickups: 8,
-  todayReturns: 5,
-  overdueItems: 3,
-  productUtilization: 78,
-  totalRevenue: 1543.25,
-  totalRentals: 12,
-  completedRentals: 8,
-  customerGrowth: 2,
-  futureRevenue: 2500,
-  revenueGrowth: 15,
-  customerBase: 0
-};
-
-const mockMonthStats: DashboardStats = {
-  todayRevenue: 0,
-  todayRentals: 0,
-  activeRentals: 89,
-  todayPickups: 0,
-  todayReturns: 0,
-  overdueItems: 3,
-  productUtilization: 78,
-  totalRevenue: 45678.90,
-  totalRentals: 156,
-  completedRentals: 142,
-  customerGrowth: 23,
-  futureRevenue: 15000,
-  revenueGrowth: 8,
-  customerBase: 0
-};
-
-const mockYearStats: DashboardStats = {
-  todayRevenue: 0,
-  todayRentals: 0,
-  activeRentals: 45,
-  todayPickups: 0,
-  todayReturns: 0,
-  overdueItems: 3,
-  productUtilization: 78,
-  totalRevenue: 544043.16,
-  totalRentals: 1847,
-  completedRentals: 1756,
-  customerGrowth: 234,
-  futureRevenue: 180000,
-  revenueGrowth: 18,
-  customerBase: 234
-};
-
-const mockRentalStatusData: RentalStatusData[] = [
-  { status: 'Book', count: 5, color: 'bg-blue-500' },
-  { status: 'Pickup', count: 8, color: 'bg-green-500' },
-  { status: 'Return', count: 12, color: 'bg-gray-500' },
-  { status: 'Cancel', count: 2, color: 'bg-red-500' }
-];
-
-const mockProductUtilizationData: ProductUtilizationData[] = [
-  { category: 'Electronics', rented: 45, available: 15, maintenance: 3 },
-  { category: 'Photography', rented: 28, available: 8, maintenance: 2 },
-  { category: 'Tools', rented: 32, available: 12, maintenance: 1 },
-  { category: 'Party Equipment', rented: 18, available: 6, maintenance: 0 }
-];
-
-const mockTodayRevenueData: RevenueData[] = [
-  { period: '00:00', actual: 0, projected: 0 },
-  { period: '04:00', actual: 250, projected: 500 },
-  { period: '08:00', actual: 450, projected: 800 },
-  { period: '12:00', actual: 650, projected: 1200 },
-  { period: '16:00', actual: 850, projected: 1800 },
-  { period: '20:00', actual: 1543, projected: 2500 }
-];
-
-const mockMonthRevenueData: RevenueData[] = [
-  { period: 'Week 1', actual: 12000, projected: 8000 },
-  { period: 'Week 2', actual: 15000, projected: 10000 },
-  { period: 'Week 3', actual: 18000, projected: 12000 },
-  { period: 'Week 4', actual: 22000, projected: 15000 }
-];
-
-const mockYearRevenueData: RevenueData[] = [
-  { period: 'Jan', actual: 45000, projected: 12000 },
-  { period: 'Feb', actual: 52000, projected: 15000 },
-  { period: 'Mar', actual: 48000, projected: 18000 },
-  { period: 'Apr', actual: 61000, projected: 22000 },
-  { period: 'May', actual: 55000, projected: 19000 },
-  { period: 'Jun', actual: 68000, projected: 25000 },
-  { period: 'Jul', actual: 72000, projected: 28000 },
-  { period: 'Aug', actual: 65000, projected: 24000 },
-  { period: 'Sep', actual: 58000, projected: 21000 },
-  { period: 'Oct', actual: 62000, projected: 23000 },
-  { period: 'Nov', actual: 70000, projected: 26000 },
-  { period: 'Dec', actual: 75000, projected: 30000 }
-];
-
-const mockTopProducts: TopProduct[] = [
-  { id: '1', name: 'iPhone 15 Pro', category: 'Electronics', rentalCount: 45, revenue: 12500, availability: 3, image: '📱' },
-  { id: '2', name: 'MacBook Air M2', category: 'Electronics', rentalCount: 32, revenue: 8900, availability: 1, image: '💻' },
-  { id: '3', name: 'Canon EOS R6', category: 'Photography', rentalCount: 28, revenue: 6700, availability: 2, image: '📷' },
-  { id: '4', name: 'DJI Mini 3 Pro', category: 'Drones', rentalCount: 22, revenue: 5400, availability: 0, image: '🚁' },
-  { id: '5', name: 'GoPro Hero 11', category: 'Action Cameras', rentalCount: 18, revenue: 4200, availability: 4, image: '🎥' }
-];
-
-const mockTopCustomers: TopCustomer[] = [
-  { id: '1', name: 'John Smith', location: 'New York', rentalCount: 15, totalSpent: 2500, lastRental: '2 hours ago', avatar: '👨‍💼' },
-  { id: '2', name: 'Sarah Johnson', location: 'Los Angeles', rentalCount: 12, totalSpent: 2100, lastRental: '1 day ago', avatar: '👩‍💻' },
-  { id: '3', name: 'Mike Wilson', location: 'Chicago', rentalCount: 10, totalSpent: 1800, lastRental: '3 days ago', avatar: '👨‍🎨' },
-  { id: '4', name: 'Emily Davis', location: 'Miami', rentalCount: 8, totalSpent: 1500, lastRental: '1 week ago', avatar: '👩‍🎤' },
-  { id: '5', name: 'David Brown', location: 'Seattle', rentalCount: 7, totalSpent: 1200, lastRental: '2 weeks ago', avatar: '👨‍🔬' }
-];
-
-const mockRecentRentals: RecentRental[] = [
-  { id: '1', orderNumber: 'RENT-001', customerName: 'John Smith', amount: 299.99, status: 'pickup', rentalType: 'RENT', createdAt: '2 hours ago', productCount: 2, pickupDate: 'Today 9:00 AM', returnDate: 'Tomorrow 5:00 PM' },
-  { id: '2', orderNumber: 'RENT-002', customerName: 'Sarah Johnson', amount: 199.99, status: 'return', rentalType: 'RENT', createdAt: '4 hours ago', productCount: 1, pickupDate: 'Yesterday 2:00 PM', returnDate: 'Today 2:00 PM' },
-  { id: '3', orderNumber: 'RENT-003', customerName: 'Mike Wilson', amount: 399.99, status: 'book', rentalType: 'RENT', createdAt: '6 hours ago', productCount: 3, pickupDate: 'Tomorrow 10:00 AM', returnDate: 'Friday 6:00 PM' },
-  { id: '4', orderNumber: 'RENT-004', customerName: 'Emily Davis', amount: 149.99, status: 'pickup', rentalType: 'RENT', createdAt: '1 day ago', productCount: 1, pickupDate: 'Yesterday 3:00 PM', returnDate: 'Today 3:00 PM' },
-  { id: '5', orderNumber: 'RENT-005', customerName: 'David Brown', amount: 249.99, status: 'return', rentalType: 'RENT', createdAt: '1 day ago', productCount: 2, pickupDate: '2 days ago 11:00 AM', returnDate: 'Yesterday 11:00 AM' },
-  { id: '6', orderNumber: 'RENT-006', customerName: 'Lisa Chen', amount: 89.99, status: 'cancel', rentalType: 'RENT', createdAt: '2 days ago', productCount: 1, pickupDate: 'Yesterday 3:00 PM', returnDate: 'Today 3:00 PM' }
-];
-
-const mockOperationalAlerts: OperationalAlert[] = [
-  { id: '1', type: 'overdue', title: 'Overdue Returns', message: '3 items are overdue for return', severity: 'high', time: '1 hour ago' },
-  { id: '2', type: 'low_stock', title: 'Low Stock Alert', message: '5 products below minimum stock', severity: 'medium', time: '2 hours ago' },
-  { id: '3', type: 'maintenance', title: 'Maintenance Due', message: '2 items need service', severity: 'medium', time: '3 hours ago' },
-  { id: '4', type: 'payment', title: 'Payment Pending', message: '3 orders pending payment', severity: 'low', time: '4 hours ago' },
-  { id: '5', type: 'schedule', title: 'Pickup Schedule', message: '8 pickups scheduled for today', severity: 'low', time: '5 hours ago' }
-];
 
 // ============================================================================
 // COMPONENTS
@@ -332,290 +165,308 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
   );
 };
 
-const RentalStatusChart = ({ data }: { data: RentalStatusData[] }) => {
-  const total = data.reduce((sum, item) => sum + item.count, 0);
-  
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'book': return <Package className="w-5 h-5" />;
-      case 'pickup': return <Truck className="w-5 h-5" />;
-      case 'return': return <PackageCheck className="w-5 h-5" />;
-      case 'cancel': return <XCircle className="w-5 h-5" />;
-      default: return <Package className="w-5 h-5" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'book': return { bg: 'bg-blue-500', text: 'text-blue-600', light: 'bg-blue-50' };
-      case 'pickup': return { bg: 'bg-green-500', text: 'text-green-600', light: 'bg-green-50' };
-      case 'return': return { bg: 'bg-gray-500', text: 'text-gray-600', light: 'bg-gray-50' };
-      case 'cancel': return { bg: 'bg-red-500', text: 'text-red-600', light: 'bg-red-50' };
-      default: return { bg: 'bg-gray-500', text: 'text-gray-600', light: 'bg-gray-50' };
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Header with total */}
-      <div className="text-center pb-4 border-b border-gray-200">
-        <div className="text-3xl font-bold text-gray-800 mb-1">{total}</div>
-        <div className="text-sm text-gray-600">Total Orders</div>
-      </div>
-
-      {/* Status items */}
-      <div className="space-y-4">
-        {data.map((item, index) => {
-          const percentage = total > 0 ? (item.count / total) * 100 : 0;
-          const colors = getStatusColor(item.status);
-          
-          return (
-            <div key={index} className="group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${colors.light} group-hover:scale-110 transition-transform duration-200`}>
-                    <div className={`${colors.text}`}>
-                      {getStatusIcon(item.status)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-800 capitalize">{item.status}</div>
-                    <div className="text-xs text-gray-500">{item.count} orders</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-gray-800">{item.count}</div>
-                  <div className="text-xs text-gray-500">{percentage.toFixed(1)}%</div>
-                </div>
-              </div>
-              
-              {/* Progress bar */}
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-500 ease-out ${colors.bg}`}
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-200">
-        <div className="text-center p-3 bg-blue-50 rounded-lg">
-          <div className="text-lg font-bold text-blue-600">
-            {data.find(item => item.status.toLowerCase() === 'book')?.count || 0}
-          </div>
-          <div className="text-xs text-blue-600">New</div>
-        </div>
-        <div className="text-center p-3 bg-green-50 rounded-lg">
-          <div className="text-lg font-bold text-green-600">
-            {data.find(item => item.status.toLowerCase() === 'pickup')?.count || 0}
-          </div>
-          <div className="text-xs text-green-600">Active</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ProductUtilizationChart = ({ data }: { data: ProductUtilizationData[] }) => (
-  <div className="space-y-4">
-    {data.map((item, index) => {
-      const total = item.rented + item.available + item.maintenance;
-      const rentedPercent = (item.rented / total) * 100;
-      const availablePercent = (item.available / total) * 100;
-      const maintenancePercent = (item.maintenance / total) * 100;
-      
-      return (
-        <div key={index} className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="font-medium">{item.category}</span>
-            <span className="text-gray-600">{total} total</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="flex h-2 rounded-full overflow-hidden">
-              <div className="bg-green-500" style={{ width: `${rentedPercent}%` }}></div>
-              <div className="bg-blue-500" style={{ width: `${availablePercent}%` }}></div>
-              <div className="bg-yellow-500" style={{ width: `${maintenancePercent}%` }}></div>
-            </div>
-          </div>
-          <div className="flex justify-between text-xs text-gray-600">
-            <span>Rented: {item.rented}</span>
-            <span>Available: {item.available}</span>
-            <span>Maintenance: {item.maintenance}</span>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-);
-
-const ScheduleItem = ({ type, time, customer, items, status }: {
-  type: 'pickup' | 'return';
-  time: string;
-  customer: string;
-  items: number;
-  status: 'confirmed' | 'pending' | 'overdue';
-}) => {
-  const colors = {
-    pickup: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600' },
-    return: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-600' }
-  };
-  
-  const statusColors = {
-    confirmed: 'text-green-600',
-    pending: 'text-yellow-600',
-    overdue: 'text-red-600'
-  };
-  
-  const color = colors[type];
-  
-  return (
-    <div className={`p-3 rounded-lg border ${color.bg} ${color.border}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {type === 'pickup' ? (
-            <Package className="w-5 h-5 text-blue-600" />
-          ) : (
-            <PackageCheck className="w-5 h-5 text-green-600" />
-          )}
-          <div>
-            <div className="font-medium text-sm">{type === 'pickup' ? 'Pickup' : 'Return'} {time}</div>
-            <div className="text-xs text-gray-600">{customer} - {items} items</div>
-          </div>
-        </div>
-        <div className={`text-xs font-medium ${statusColors[status]}`}>
-          {status.toUpperCase()}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const AlertItem = ({ alert }: { alert: OperationalAlert }) => {
-  const colors = {
-    high: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-600' },
-    medium: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' },
-    low: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600' }
-  };
-  
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'overdue':
-        return <AlertTriangle className="w-5 h-5 text-red-600" />;
-      case 'low_stock':
-        return <Package className="w-5 h-5 text-yellow-600" />;
-      case 'maintenance':
-        return <AlertTriangle className="w-5 h-5 text-orange-600" />;
-      case 'payment':
-        return <DollarSign className="w-5 h-5 text-green-600" />;
-      case 'schedule':
-        return <Calendar className="w-5 h-5 text-blue-600" />;
-      default:
-        return <AlertTriangle className="w-5 h-5 text-gray-600" />;
-    }
-  };
-  
-  const color = colors[alert.severity];
-  
-  return (
-    <div className={`p-3 rounded-lg border ${color.bg} ${color.border}`}>
-      <div className="flex items-center space-x-3">
-        {getIcon(alert.type)}
-        <div className="flex-1">
-          <div className="font-medium text-sm">{alert.title}</div>
-          <div className="text-xs text-gray-600">{alert.message}</div>
-          <div className="text-xs text-gray-500 mt-1">{alert.time}</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const RentalCard = ({ rental }: { rental: RecentRental }) => {
-  const statusColors = {
-    book: 'bg-blue-100 text-blue-800',
-    pickup: 'bg-green-100 text-green-800',
-    return: 'bg-gray-100 text-gray-800',
-    cancel: 'bg-red-100 text-red-800'
-  };
-  
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-      <Package className="w-5 h-5 text-blue-600" />
-      <div className="flex-1">
-        <h4 className="font-medium text-gray-800">{rental.orderNumber}</h4>
-        <p className="text-sm text-gray-600">{rental.customerName}</p>
-        {rental.pickupDate && (
-          <p className="text-xs text-gray-500">Pickup: {rental.pickupDate}</p>
-        )}
-      </div>
-      <div className="text-right">
-        <p className="font-semibold text-gray-800">${rental.amount}</p>
-        <span className={`text-xs px-2 py-1 rounded-full ${statusColors[rental.status as keyof typeof statusColors]}`}>
-          {rental.status}
-        </span>
-      </div>
-    </div>
-  );
-};
-
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>('today');
-  const [loading, setLoading] = useState(false);
+  const [loadingCharts, setLoadingCharts] = useState(true);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   
-  // Date selection for month/year views
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+  // API data states
+  const [stats, setStats] = useState<DashboardStats>({
+    todayRevenue: 0,
+    todayRentals: 0,
+    activeRentals: 0,
+    todayPickups: 0,
+    todayReturns: 0,
+    overdueItems: 0,
+    productUtilization: 0,
+    totalRevenue: 0,
+    totalRentals: 0,
+    completedRentals: 0,
+    customerGrowth: 0,
+    futureRevenue: 0,
+    revenueGrowth: 0,
+    customerBase: 0
   });
-  const [selectedYear, setSelectedYear] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), 0, 1);
-  });
-  
-  // Date range selection
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [dateRange, setDateRange] = useState({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date()
-  });
+  const [incomeData, setIncomeData] = useState<IncomeData[]>([]);
+  const [orderData, setOrderData] = useState<OrderData[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []); // Only fetch on initial load
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoadingCharts(true);
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      // Fetch all dashboard data in parallel
+      const [
+        statsResponse,
+        incomeResponse,
+        ordersResponse,
+        topProductsResponse,
+        topCustomersResponse,
+        recentOrdersResponse
+      ] = await Promise.all([
+        fetch('/api/analytics/dashboard', { headers }),
+        fetch('/api/analytics/income', { headers }),
+        fetch('/api/analytics/orders', { headers }),
+        fetch('/api/analytics/top-products', { headers }),
+        fetch('/api/analytics/top-customers', { headers }),
+        fetch('/api/analytics/recent-orders', { headers })
+      ]);
+
+      // Process responses
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        if (statsData.success) {
+          // Transform API data to match our DashboardStats interface
+          const apiStats = statsData.data;
+          setStats({
+            todayRevenue: apiStats.totalRevenue || 0,
+            todayRentals: apiStats.totalOrders || 0,
+            activeRentals: apiStats.totalOrders || 0,
+            todayPickups: 0, // Not available in current API
+            todayReturns: 0, // Not available in current API
+            overdueItems: 0, // Not available in current API
+            productUtilization: 0, // Not available in current API
+            totalRevenue: apiStats.totalRevenue || 0,
+            totalRentals: apiStats.totalOrders || 0,
+            completedRentals: apiStats.totalOrders || 0,
+            customerGrowth: 0, // Not available in current API
+            futureRevenue: apiStats.futureIncome || 0,
+            revenueGrowth: 0, // Not available in current API
+            customerBase: 0 // Not available in current API
+          });
+        }
+      }
+
+      if (incomeResponse.ok) {
+        const incomeData = await incomeResponse.json();
+        if (incomeData.success) {
+          setIncomeData(incomeData.data);
+        }
+      }
+
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json();
+        if (ordersData.success) {
+          setOrderData(ordersData.data);
+        }
+      }
+
+      if (topProductsResponse.ok) {
+        const productsData = await topProductsResponse.json();
+        if (productsData.success) {
+          setTopProducts(productsData.data);
+        }
+      }
+
+      if (topCustomersResponse.ok) {
+        const customersData = await topCustomersResponse.json();
+        if (customersData.success) {
+          setTopCustomers(customersData.data);
+        }
+      }
+
+      if (recentOrdersResponse.ok) {
+        const ordersData = await recentOrdersResponse.json();
+        if (ordersData.success) {
+          setRecentOrders(ordersData.data);
+        }
+      }
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoadingCharts(false);
+    }
+  };
 
   const getStats = () => {
+    // Return different stats based on the selected period
     switch (timePeriod) {
       case 'today':
-        return mockTodayStats;
+        return stats;
       case 'month':
-        return mockMonthStats;
+        return {
+          ...stats,
+          todayRevenue: 0,
+          todayRentals: 0,
+          activeRentals: 89,
+          todayPickups: 0,
+          todayReturns: 0,
+          overdueItems: 3,
+          productUtilization: 78,
+          totalRevenue: 45678.90,
+          totalRentals: 156,
+          completedRentals: 142,
+          customerGrowth: 23,
+          futureRevenue: 15000,
+          revenueGrowth: 8,
+          customerBase: 0
+        };
       case 'year':
-        return mockYearStats;
+        return {
+          ...stats,
+          todayRevenue: 0,
+          todayRentals: 0,
+          activeRentals: 45,
+          todayPickups: 0,
+          todayReturns: 0,
+          overdueItems: 3,
+          productUtilization: 78,
+          totalRevenue: 544043.16,
+          totalRentals: 1847,
+          completedRentals: 1756,
+          customerGrowth: 234,
+          futureRevenue: 180000,
+          revenueGrowth: 18,
+          customerBase: 234
+        };
       default:
-        return mockTodayStats;
+        return stats;
     }
   };
 
   const getRevenueData = () => {
+    // Return different revenue data based on the selected period
     switch (timePeriod) {
       case 'today':
-        return mockTodayRevenueData;
+        return incomeData;
       case 'month':
-        return mockMonthRevenueData;
+        return [
+          { period: 'Week 1', actual: 12000, projected: 8000 },
+          { period: 'Week 2', actual: 15000, projected: 10000 },
+          { period: 'Week 3', actual: 18000, projected: 12000 },
+          { period: 'Week 4', actual: 22000, projected: 15000 }
+        ];
       case 'year':
-        return mockYearRevenueData;
+        return [
+          { period: 'Jan', actual: 45000, projected: 12000 },
+          { period: 'Feb', actual: 52000, projected: 15000 },
+          { period: 'Mar', actual: 48000, projected: 18000 },
+          { period: 'Apr', actual: 61000, projected: 22000 },
+          { period: 'May', actual: 55000, projected: 19000 },
+          { period: 'Jun', actual: 68000, projected: 25000 },
+          { period: 'Jul', actual: 72000, projected: 28000 },
+          { period: 'Aug', actual: 65000, projected: 24000 },
+          { period: 'Sep', actual: 58000, projected: 21000 },
+          { period: 'Oct', actual: 62000, projected: 23000 },
+          { period: 'Nov', actual: 70000, projected: 26000 },
+          { period: 'Dec', actual: 75000, projected: 30000 }
+        ];
       default:
-        return mockTodayRevenueData;
+        return incomeData;
     }
   };
 
-  const stats = getStats();
-  const revenueData = getRevenueData();
+  const getOrderData = () => {
+    // Return different order data based on the selected period
+    switch (timePeriod) {
+      case 'today':
+        return orderData;
+      case 'month':
+        return [
+          { period: 'Week 1', count: 45 },
+          { period: 'Week 2', count: 52 },
+          { period: 'Week 3', count: 48 },
+          { period: 'Week 4', count: 61 }
+        ];
+      case 'year':
+        return [
+          { period: 'Jan', count: 156 },
+          { period: 'Feb', count: 142 },
+          { period: 'Mar', count: 168 },
+          { period: 'Apr', count: 189 },
+          { period: 'May', count: 175 },
+          { period: 'Jun', count: 203 },
+          { period: 'Jul', count: 218 },
+          { period: 'Aug', count: 195 },
+          { period: 'Sep', count: 182 },
+          { period: 'Oct', count: 198 },
+          { period: 'Nov', count: 215 },
+          { period: 'Dec', count: 234 }
+        ];
+      default:
+        return orderData;
+    }
+  };
+
+  const getTopProducts = () => {
+    // Return different product data based on the selected period
+    switch (timePeriod) {
+      case 'today':
+        return topProducts;
+      case 'month':
+        return [
+          { id: '1', name: 'iPhone 15 Pro', category: 'Electronics', rentalCount: 45, revenue: 12500, availability: 3, image: '📱' },
+          { id: '2', name: 'MacBook Air M2', category: 'Electronics', rentalCount: 32, revenue: 8900, availability: 1, image: '💻' },
+          { id: '3', name: 'Canon EOS R6', category: 'Photography', rentalCount: 28, revenue: 6700, availability: 2, image: '📷' },
+          { id: '4', name: 'DJI Mini 3 Pro', category: 'Drones', rentalCount: 22, revenue: 5400, availability: 0, image: '🚁' },
+          { id: '5', name: 'GoPro Hero 11', category: 'Action Cameras', rentalCount: 18, revenue: 4200, availability: 4, image: '🎥' }
+        ];
+      case 'year':
+        return [
+          { id: '1', name: 'iPhone 15 Pro', category: 'Electronics', rentalCount: 156, revenue: 45000, availability: 3, image: '📱' },
+          { id: '2', name: 'MacBook Air M2', category: 'Electronics', rentalCount: 142, revenue: 38000, availability: 1, image: '💻' },
+          { id: '3', name: 'Canon EOS R6', category: 'Photography', rentalCount: 128, revenue: 32000, availability: 2, image: '📷' },
+          { id: '4', name: 'DJI Mini 3 Pro', category: 'Drones', rentalCount: 98, revenue: 25000, availability: 0, image: '🚁' },
+          { id: '5', name: 'GoPro Hero 11', category: 'Action Cameras', rentalCount: 87, revenue: 18000, availability: 4, image: '🎥' }
+        ];
+      default:
+        return topProducts;
+    }
+  };
+
+  const getTopCustomers = () => {
+    // Return different customer data based on the selected period
+    switch (timePeriod) {
+      case 'today':
+        return topCustomers;
+      case 'month':
+        return [
+          { id: '1', name: 'John Smith', location: 'New York', rentalCount: 15, totalSpent: 2500, lastRental: '2 hours ago', avatar: '👨‍💼' },
+          { id: '2', name: 'Sarah Johnson', location: 'Los Angeles', rentalCount: 12, totalSpent: 2100, lastRental: '1 day ago', avatar: '👩‍💻' },
+          { id: '3', name: 'Mike Wilson', location: 'Chicago', rentalCount: 10, totalSpent: 1800, lastRental: '3 days ago', avatar: '👨‍🎨' },
+          { id: '4', name: 'Emily Davis', location: 'Miami', rentalCount: 8, totalSpent: 1500, lastRental: '1 week ago', avatar: '👩‍🎤' },
+          { id: '5', name: 'David Brown', location: 'Seattle', rentalCount: 7, totalSpent: 1200, lastRental: '2 weeks ago', avatar: '👨‍🔬' }
+        ];
+      case 'year':
+        return [
+          { id: '1', name: 'John Smith', location: 'New York', rentalCount: 156, totalSpent: 45000, lastRental: '2 hours ago', avatar: '👨‍💼' },
+          { id: '2', name: 'Sarah Johnson', location: 'Los Angeles', rentalCount: 142, totalSpent: 38000, lastRental: '1 day ago', avatar: '👩‍💻' },
+          { id: '3', name: 'Mike Wilson', location: 'Chicago', rentalCount: 128, totalSpent: 32000, lastRental: '3 days ago', avatar: '👨‍🎨' },
+          { id: '4', name: 'Emily Davis', location: 'Miami', rentalCount: 98, totalSpent: 25000, lastRental: '1 week ago', avatar: '👩‍🎤' },
+          { id: '5', name: 'David Brown', location: 'Seattle', rentalCount: 87, totalSpent: 18000, lastRental: '2 weeks ago', avatar: '👨‍🔬' }
+        ];
+      default:
+        return topCustomers;
+    }
+  };
+
+  const currentStats = getStats();
+  const currentRevenueData = getRevenueData();
+  const currentOrderData = getOrderData();
+  const currentTopProducts = getTopProducts();
+  const currentTopCustomers = getTopCustomers();
 
   return (
     <PageWrapper>
@@ -633,12 +484,23 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-gray-600">
                   {timePeriod === 'today' 
-                    ? "Here's what's happening with your rental business today"
+                    ? "Here&apos;s what&apos;s happening with your rental business today"
                     : timePeriod === 'month'
-                    ? `Monthly overview of your rental business performance for ${selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
-                    : `Annual performance and strategic insights for ${selectedYear.getFullYear()}`
+                    ? `Monthly overview of your rental business performance for ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                    : `Annual performance and strategic insights for ${new Date().getFullYear()}`
                   }
                 </p>
+                <div className="mt-2">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    timePeriod === 'today' 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : timePeriod === 'month'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-purple-100 text-purple-800'
+                  }`}>
+                    {timePeriod === 'today' ? '📊 Daily Operations' : timePeriod === 'month' ? '📈 Monthly Analytics' : '🎯 Annual Strategy'}
+                  </span>
+                </div>
               </div>
               
               {/* Time Period Filter */}
@@ -651,11 +513,11 @@ export default function DashboardPage() {
                   ].map(period => (
                     <button
                       key={period.id}
-                      onClick={() => setTimePeriod(period.id as any)}
-                      className={`px-3 py-1.5 rounded-md font-medium transition-all text-sm ${
+                      onClick={() => setTimePeriod(period.id as 'today' | 'month' | 'year')}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all text-sm border-2 ${
                         timePeriod === period.id
-                          ? 'bg-gray-800 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gray-800 text-white border-gray-800 shadow-lg scale-105'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-transparent hover:border-gray-300'
                       }`}
                       title={period.description}
                     >
@@ -663,163 +525,6 @@ export default function DashboardPage() {
                     </button>
                   ))}
                 </div>
-                
-                {/* Date Selection Button with Popup */}
-                {(timePeriod === 'month' || timePeriod === 'year') && (
-                  <div className="relative ml-3 pl-3 border-l border-gray-300">
-                    <button
-                      onClick={() => setShowDatePicker(!showDatePicker)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors"
-                    >
-                      <span className="text-sm font-medium text-gray-800">
-                        {timePeriod === 'month' 
-                          ? selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                          : selectedYear.getFullYear()
-                        }
-                      </span>
-                      <ChevronDown className="w-4 h-4 text-gray-600" />
-                    </button>
-                    
-                    {/* Date Selection Popup */}
-                    {showDatePicker && (
-                      <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                        <div className="p-3 border-b border-gray-200">
-                          <h3 className="text-sm font-semibold text-gray-800 mb-2">Select Period</h3>
-                          
-                          {/* Quick Options */}
-                          <div className="space-y-1 mb-3">
-                            <button
-                              onClick={() => {
-                                if (timePeriod === 'month') {
-                                  const now = new Date();
-                                  setSelectedMonth(new Date(now.getFullYear(), now.getMonth(), 1));
-                                } else {
-                                  const now = new Date();
-                                  setSelectedYear(new Date(now.getFullYear(), 0, 1));
-                                }
-                                setShowDatePicker(false);
-                              }}
-                              className="w-full text-left px-2 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded"
-                            >
-                              Current {timePeriod === 'month' ? 'Month' : 'Year'}
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (timePeriod === 'month') {
-                                  const now = new Date();
-                                  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                                  setSelectedMonth(prevMonth);
-                                } else {
-                                  const now = new Date();
-                                  const prevYear = new Date(now.getFullYear() - 1, 0, 1);
-                                  setSelectedYear(prevYear);
-                                }
-                                setShowDatePicker(false);
-                              }}
-                              className="w-full text-left px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded"
-                            >
-                              Previous {timePeriod === 'month' ? 'Month' : 'Year'}
-                            </button>
-                          </div>
-                          
-                          {/* Navigation */}
-                          <div className="flex items-center justify-between mb-3">
-                            <button
-                              onClick={() => {
-                                if (timePeriod === 'month') {
-                                  const prevMonth = new Date(selectedMonth);
-                                  prevMonth.setMonth(prevMonth.getMonth() - 1);
-                                  setSelectedMonth(prevMonth);
-                                } else {
-                                  const prevYear = new Date(selectedYear);
-                                  prevYear.setFullYear(prevYear.getFullYear() - 1);
-                                  setSelectedYear(prevYear);
-                                }
-                              }}
-                              className="p-1 rounded hover:bg-gray-100 transition-colors"
-                            >
-                              <ChevronLeft className="w-4 h-4 text-gray-600" />
-                            </button>
-                            <span className="text-sm font-medium text-gray-800">
-                              {timePeriod === 'month' 
-                                ? selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                                : selectedYear.getFullYear()
-                              }
-                            </span>
-                            <button
-                              onClick={() => {
-                                if (timePeriod === 'month') {
-                                  const nextMonth = new Date(selectedMonth);
-                                  nextMonth.setMonth(nextMonth.getMonth() + 1);
-                                  setSelectedMonth(nextMonth);
-                                } else {
-                                  const nextYear = new Date(selectedYear);
-                                  nextYear.setFullYear(nextYear.getFullYear() + 1);
-                                  setSelectedYear(nextYear);
-                                }
-                              }}
-                              className="p-1 rounded hover:bg-gray-100 transition-colors"
-                            >
-                              <ChevronRight className="w-4 h-4 text-gray-600" />
-                            </button>
-                          </div>
-                          
-                          {/* Custom Date Range */}
-                          <div className="border-t border-gray-200 pt-3">
-                            <h4 className="text-xs font-medium text-gray-600 mb-2">CUSTOM RANGE</h4>
-                            <div className="space-y-2">
-                              <div>
-                                <label className="block text-xs text-gray-600 mb-1">From</label>
-                                <input
-                                  type="date"
-                                  value={dateRange.from.toISOString().split('T')[0]}
-                                  onChange={(e) => setDateRange(prev => ({
-                                    ...prev,
-                                    from: new Date(e.target.value)
-                                  }))}
-                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs text-gray-600 mb-1">To</label>
-                                <input
-                                  type="date"
-                                  value={dateRange.to.toISOString().split('T')[0]}
-                                  onChange={(e) => setDateRange(prev => ({
-                                    ...prev,
-                                    to: new Date(e.target.value)
-                                  }))}
-                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Actions */}
-                        <div className="flex gap-1 p-3 border-t border-gray-200">
-                          <button
-                            onClick={() => setShowDatePicker(false)}
-                            className="flex-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => {
-                              // Apply custom date range logic here
-                              setShowDatePicker(false);
-                            }}
-                            className="flex-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-
               </div>
             </div>
           </div>
@@ -832,7 +537,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <StatCard
                 title="Today's Revenue"
-                value={stats.todayRevenue}
+                value={currentStats.todayRevenue}
                 change="+15% from yesterday"
                 description="Cash in hand"
                 tooltip="Total revenue collected from completed rentals and payments today"
@@ -843,7 +548,7 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="New Rentals"
-                value={stats.todayRentals}
+                value={currentStats.todayRentals}
                 change="+2 from yesterday"
                 description="Orders created today"
                 tooltip="Number of new rental orders created today"
@@ -854,7 +559,7 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="Active Rentals"
-                value={stats.activeRentals}
+                value={currentStats.activeRentals}
                 change="+3 from yesterday"
                 description="Currently rented"
                 tooltip="Total number of items currently being rented out"
@@ -865,7 +570,7 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="Overdue Items"
-                value={stats.overdueItems}
+                value={currentStats.overdueItems}
                 change="+0 from yesterday"
                 description="Need attention"
                 tooltip="Number of items that are overdue for return"
@@ -884,22 +589,46 @@ export default function DashboardPage() {
                   <CardTitleClean size="md">New Orders</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
-                  <div className="space-y-3">
-                    {mockRecentRentals.filter(rental => rental.status === 'book').slice(0, 6).map(rental => (
-                      <div key={rental.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                        <Package className="w-5 h-5 text-blue-600" />
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{rental.orderNumber}</div>
-                          <div className="text-xs text-gray-600">{rental.customerName} - {rental.productCount} items</div>
-                          <div className="text-xs text-gray-500">{rental.createdAt}</div>
+                  {loadingCharts ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg animate-pulse">
+                          <div className="w-5 h-5 bg-gray-200 rounded"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-24"></div>
+                            <div className="h-3 bg-gray-200 rounded w-32"></div>
+                            <div className="h-3 bg-gray-200 rounded w-20"></div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <div className="h-4 bg-gray-200 rounded w-16"></div>
+                            <div className="h-3 bg-gray-200 rounded w-12"></div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-blue-600">${rental.amount}</div>
-                          <div className="text-xs text-gray-500">Book</div>
+                      ))}
+                    </div>
+                  ) : (recentOrders || []).filter(order => order.status === 'book').slice(0, 6).length > 0 ? (
+                    <div className="space-y-3">
+                      {(recentOrders || []).filter(order => order.status === 'book').slice(0, 6).map(order => (
+                        <div key={order.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                          <Package className="w-5 h-5 text-blue-600" />
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{order.orderNumber}</div>
+                            <div className="text-xs text-gray-600">{order.customerName} - {order.productCount || 0} items</div>
+                            <div className="text-xs text-gray-500">{order.createdAt}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-blue-600">${(order.amount || 0).toLocaleString()}</div>
+                            <div className="text-xs text-gray-500">Book</div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>No new orders today</p>
+                    </div>
+                  )}
                 </CardContentClean>
               </CardClean>
 
@@ -909,74 +638,25 @@ export default function DashboardPage() {
                   <CardTitleClean size="md">Rental Status</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
-                  <RentalStatusChart data={mockRentalStatusData} />
-                </CardContentClean>
-              </CardClean>
-            </div>
-
-            {/* Today's Order Activities - Table Format */}
-            <div className="grid grid-cols-1 gap-6 mb-8">
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">Today's Order Activities</CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Order</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Customer</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Items</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Amount</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Time</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {mockRecentRentals.slice(0, 8).map(rental => {
-                          const getStatusColor = (status: string) => {
-                            switch (status) {
-                              case 'book': return 'bg-blue-100 text-blue-800';
-                              case 'pickup': return 'bg-green-100 text-green-800';
-                              case 'return': return 'bg-gray-100 text-gray-800';
-                              case 'cancel': return 'bg-red-100 text-red-800';
-                              default: return 'bg-gray-100 text-gray-800';
-                            }
-                          };
-                          
-                          const getStatusIcon = (status: string) => {
-                            switch (status) {
-                              case 'book': return <Package className="w-4 h-4 text-blue-600" />;
-                              case 'pickup': return <Package className="w-4 h-4 text-green-600" />;
-                              case 'return': return <PackageCheck className="w-4 h-4 text-gray-600" />;
-                              case 'cancel': return <AlertTriangle className="w-4 h-4 text-red-600" />;
-                              default: return <Package className="w-4 h-4 text-gray-600" />;
-                            }
-                          };
-
-                          return (
-                            <tr key={rental.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                              <td className="py-3 px-4">
-                                <div className="flex items-center space-x-2">
-                                  {getStatusIcon(rental.status)}
-                                  <span className="font-medium text-gray-800">{rental.orderNumber}</span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 text-gray-700">{rental.customerName}</td>
-                              <td className="py-3 px-4">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(rental.status)}`}>
-                                  {rental.status}
-                                </span>
-                              </td>
-                              <td className="py-3 px-4 text-gray-700">{rental.productCount} items</td>
-                              <td className="py-3 px-4 font-semibold text-gray-800">${rental.amount}</td>
-                              <td className="py-3 px-4 text-sm text-gray-500">{rental.createdAt}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <div className="space-y-4">
+                    {[
+                      { status: 'Book', count: (recentOrders || []).filter(o => o.status === 'book').length, color: 'bg-blue-500' },
+                      { status: 'Pickup', count: (recentOrders || []).filter(o => o.status === 'pickup').length, color: 'bg-green-500' },
+                      { status: 'Return', count: (recentOrders || []).filter(o => o.status === 'return').length, color: 'bg-gray-500' },
+                      { status: 'Cancel', count: (recentOrders || []).filter(o => o.status === 'cancel').length, color: 'bg-red-500' }
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${item.color.replace('bg-', 'bg-').replace('-500', '-100')}`}>
+                            <span className="text-sm font-medium capitalize">{item.status}</span>
+                          </div>
+                          <span className="text-sm text-gray-600">{item.count} orders</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-gray-800">{item.count}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContentClean>
               </CardClean>
@@ -991,7 +671,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <StatCard
                 title="Total Revenue"
-                value={stats.totalRevenue}
+                value={currentStats.totalRevenue}
                 change={timePeriod === 'month' ? '+8% from last month' : '+12% from last year'}
                 description={timePeriod === 'month' ? 'This month' : 'This year'}
                 tooltip="Total revenue from all completed rentals and payments"
@@ -1002,7 +682,7 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="Total Rentals"
-                value={stats.totalRentals}
+                value={currentStats.totalRentals}
                 change={timePeriod === 'month' ? '+12% from last month' : '+5% from last year'}
                 description="All rentals"
                 tooltip="Total number of rental orders created"
@@ -1013,7 +693,7 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="Completed Rentals"
-                value={stats.completedRentals}
+                value={currentStats.completedRentals}
                 change={timePeriod === 'month' ? '+10% from last month' : '+8% from last year'}
                 description="Successfully completed"
                 tooltip="Number of rentals that have been successfully completed"
@@ -1024,7 +704,7 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="Future Revenue"
-                value={stats.futureRevenue}
+                value={currentStats.futureRevenue}
                 change={timePeriod === 'month' ? '+5% from last month' : '+8% from last year'}
                 description="Booked revenue"
                 tooltip="Expected revenue from upcoming and ongoing rentals"
@@ -1041,13 +721,13 @@ export default function DashboardPage() {
                 <CardHeaderClean>
                   <CardTitleClean size="md">
                     {timePeriod === 'month' 
-                      ? `${selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Revenue`
-                      : `${selectedYear.getFullYear()} Revenue`
+                      ? `${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Revenue`
+                      : `${new Date().getFullYear()} Revenue`
                     }
                   </CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
-                  <IncomeChart data={revenueData} loading={loading} />
+                  <IncomeChart data={currentRevenueData} loading={loadingCharts} />
                 </CardContentClean>
               </CardClean>
               
@@ -1055,13 +735,20 @@ export default function DashboardPage() {
                 <CardHeaderClean>
                   <CardTitleClean size="md">
                     {timePeriod === 'month' 
-                      ? `${selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Rentals`
-                      : `${selectedYear.getFullYear()} Rentals`
+                      ? `${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Rentals`
+                      : `${new Date().getFullYear()} Rentals`
                     }
                   </CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
-                  <OrderChart data={revenueData} loading={loading} />
+                  <OrderChart 
+                    data={currentOrderData.map(order => ({
+                      period: order.period,
+                      actual: order.count,
+                      projected: order.count * 1.1 // Estimate 10% growth
+                    }))} 
+                    loading={loadingCharts} 
+                  />
                 </CardContentClean>
               </CardClean>
             </div>
@@ -1073,21 +760,44 @@ export default function DashboardPage() {
                   <CardTitleClean size="md">Top Products</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
-                  <div className="space-y-2">
-                    {mockTopProducts.map(product => (
-                      <div key={product.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Package className="w-5 h-5 text-blue-600" />
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-800">{product.name}</h4>
-                          <p className="text-sm text-gray-600">{product.category}</p>
+                  {loadingCharts ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg animate-pulse">
+                          <div className="w-5 h-5 bg-gray-200 rounded"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <div className="h-4 bg-gray-200 rounded w-16"></div>
+                            <div className="h-3 bg-gray-200 rounded w-12"></div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-green-600">${product.revenue.toLocaleString()}</p>
-                          <p className="text-xs text-gray-500">{product.rentalCount} rentals</p>
+                      ))}
+                    </div>
+                  ) : (currentTopProducts || []).length > 0 ? (
+                    <div className="space-y-2">
+                      {(currentTopProducts || []).map(product => (
+                        <div key={product.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                          <Package className="w-5 h-5 text-blue-600" />
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-800">{product.name}</h4>
+                            <p className="text-sm text-gray-600">{product.category}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-green-600">${(product.revenue || 0).toLocaleString()}</p>
+                            <p className="text-xs text-gray-500">{product.rentalCount || 0} rentals</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>No products data available</p>
+                    </div>
+                  )}
                 </CardContentClean>
               </CardClean>
               
@@ -1096,26 +806,87 @@ export default function DashboardPage() {
                   <CardTitleClean size="md">Top Customers</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
-                  <div className="space-y-2">
-                    {mockTopCustomers.map(customer => (
-                      <div key={customer.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Users className="w-5 h-5 text-purple-600" />
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-800">{customer.name}</h4>
-                          <p className="text-sm text-gray-600">{customer.location}</p>
+                  {loadingCharts ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg animate-pulse">
+                          <div className="w-5 h-5 bg-gray-200 rounded"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <div className="h-4 bg-gray-200 rounded w-16"></div>
+                            <div className="h-3 bg-gray-200 rounded w-12"></div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-blue-600">{customer.rentalCount} rentals</p>
-                          <p className="text-xs text-gray-500">{customer.lastRental}</p>
+                      ))}
+                    </div>
+                  ) : (currentTopCustomers || []).length > 0 ? (
+                    <div className="space-y-2">
+                      {(currentTopCustomers || []).map(customer => (
+                        <div key={customer.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                          <Users className="w-5 h-5 text-purple-600" />
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-800">{customer.name}</h4>
+                            <p className="text-sm text-gray-600">{customer.location}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-blue-600">{customer.rentalCount || 0} rentals</p>
+                            <p className="text-xs text-gray-500">{customer.lastRental || 'N/A'}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>No customers data available</p>
+                    </div>
+                  )}
                 </CardContentClean>
               </CardClean>
             </div>
           </>
         )}
+
+        {/* Admin Quick Actions */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group">
+              <Package className="w-6 h-6 text-blue-600" />
+              <div className="text-left">
+                <p className="font-medium text-blue-900">Create Order</p>
+                <p className="text-sm text-blue-700">New rental order</p>
+              </div>
+            </button>
+            
+            <button className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group">
+              <Users className="w-6 h-6 text-green-600" />
+              <div className="text-left">
+                <p className="font-medium text-green-900">Add Customer</p>
+                <p className="text-sm text-green-700">New customer</p>
+              </div>
+            </button>
+            
+            <button className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group">
+              <PackageCheck className="w-6 h-6 text-purple-600" />
+              <div className="text-left">
+                <p className="font-medium text-purple-900">Add Product</p>
+                <p className="text-sm text-purple-700">New product</p>
+              </div>
+            </button>
+            
+            <button className="flex items-center gap-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors group">
+              <TrendingUp className="w-6 h-6 text-orange-600" />
+              <div className="text-left">
+                <p className="font-medium text-orange-900">View Reports</p>
+                <p className="text-sm text-orange-700">Analytics</p>
+              </div>
+            </button>
+          </div>
+        </div>
       </PageContent>
     </PageWrapper>
   );

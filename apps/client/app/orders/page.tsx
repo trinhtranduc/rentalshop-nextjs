@@ -2,34 +2,31 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, 
-  CardContent, 
-  Button,
-  OrderTable,
+  Orders,
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent
 } from '@rentalshop/ui';
 import { useRouter } from 'next/navigation';
-import { OrderForm } from '@rentalshop/ui';
 import { useAuth } from '../../hooks/useAuth';
 import type { OrderSearchResult, OrderInput, OrderType, OrderStatus } from '@rentalshop/database';
 import { authenticatedFetch } from '@rentalshop/auth/browser';
+import type { OrderData, OrderFilters as OrderFiltersType } from '../../../../packages/ui/src/components/features/Orders/types';
 
 export default function OrdersPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [orders, setOrders] = useState<OrderSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<OrderSearchResult | null>(null);
   const [stats, setStats] = useState<any>(null);
-  const [filters, setFilters] = useState({
-    q: '',
-    orderType: '' as OrderType | '',
-    status: '' as OrderStatus | '',
-    outletId: '',
+  const [filters, setFilters] = useState<OrderFiltersType>({
+    search: '',
+    status: '',
+    orderType: '',
+    outlet: '',
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -53,10 +50,12 @@ export default function OrdersPage() {
       const params = new URLSearchParams({
         offset: ((currentPage - 1) * 10).toString(),
         limit: '10',
-        ...(filters.q && { q: filters.q }),
-        ...(filters.orderType && { orderType: filters.orderType }),
-        ...(filters.status && { status: filters.status }),
-        ...(filters.outletId && { outletId: filters.outletId }),
+        ...(filters.search && { q: filters.search }),
+        ...(filters.orderType && filters.orderType !== 'all' && { orderType: filters.orderType }),
+        ...(filters.status && filters.status !== 'all' && { status: filters.status }),
+        ...(filters.outlet && filters.outlet !== 'all' && { outletId: filters.outlet }),
+        ...(filters.sortBy && { sortBy: filters.sortBy }),
+        ...(filters.sortOrder && { sortOrder: filters.sortOrder })
       });
 
       console.log('🔍 API URL params:', params.toString());
@@ -100,26 +99,29 @@ export default function OrdersPage() {
     }
   };
 
-  const handleCreateOrder = async (orderData: OrderInput) => {
-    try {
-      const response = await authenticatedFetch('/api/orders', {
-        method: 'POST',
-        body: JSON.stringify(orderData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setShowCreateForm(false);
-        fetchOrders();
-        fetchStats();
-        alert('Đơn hàng đã được tạo thành công!');
-      } else {
-        const error = await response.json();
-        alert(`Lỗi: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error creating order:', error);
-      alert('Có lỗi xảy ra khi tạo đơn hàng');
+  const handleOrderAction = async (action: string, orderNumber: string) => {
+    switch (action) {
+      case 'view':
+        router.push(`/orders/${orderNumber}`);
+        break;
+      case 'pickup':
+        // Find the order by orderNumber to get the ID for API calls
+        const order = orders.find(o => o.orderNumber === orderNumber);
+        if (order) await handlePickup(order.id);
+        break;
+      case 'return':
+        const orderForReturn = orders.find(o => o.orderNumber === orderNumber);
+        if (orderForReturn) await handleReturn(orderForReturn.id);
+        break;
+      case 'cancel':
+        const orderForCancel = orders.find(o => o.orderNumber === orderNumber);
+        if (orderForCancel) await handleCancel(orderForCancel.id);
+        break;
+      case 'edit':
+        router.push(`/orders/${orderNumber}/edit`);
+        break;
+      default:
+        console.log('Unknown action:', action);
     }
   };
 
@@ -187,11 +189,6 @@ export default function OrdersPage() {
     }
   };
 
-  const handleViewOrder = (orderId: string) => {
-    // Navigate to order detail page
-    window.open(`/orders/${orderId}`, '_blank');
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -199,6 +196,56 @@ export default function OrdersPage() {
       </div>
     );
   }
+
+  // Transform the data to match the refactored Orders component interface
+  const orderData: OrderData = {
+    orders: orders.map(order => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: (() => {
+        switch (order.status) {
+          case 'OVERDUE':
+            return 'ACTIVE';
+          case 'DAMAGED':
+            return 'CANCELLED';
+          default:
+            return order.status;
+        }
+      })(),
+      customerId: order.customer?.id || '',
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
+      customerPhone: order.customer?.phone || '',
+      outletId: order.outlet?.id || '',
+      outletName: order.outlet?.name || '',
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
+      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : undefined,
+      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : undefined,
+      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : undefined,
+      createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
+      updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
+      orderItems: [], // Not available in OrderSearchResult
+      payments: [] // Not available in OrderSearchResult
+    })),
+    total: orders.length,
+    currentPage,
+    totalPages,
+    limit: 10,
+    stats: {
+      totalOrders: stats?.totalOrders || 0,
+      pendingOrders: stats?.pendingOrders || 0,
+      activeOrders: stats?.activeOrders || 0,
+      completedOrders: stats?.completedOrders || 0,
+      cancelledOrders: stats?.cancelledOrders || 0,
+      totalRevenue: stats?.totalRevenue || 0,
+      totalDeposits: stats?.totalDeposits || 0,
+      averageOrderValue: stats?.averageOrderValue || 0,
+      ordersThisMonth: stats?.ordersThisMonth || 0,
+      revenueThisMonth: stats?.revenueThisMonth || 0
+    }
+  };
 
   return (
     <PageWrapper>
@@ -209,223 +256,39 @@ export default function OrdersPage() {
             <p className="text-sm text-gray-600">Quản lý đơn hàng và giao dịch thuê/bán</p>
           </div>
           <div className="flex gap-3">
-            <Button 
+            <button 
               onClick={() => {
                 // TODO: Implement export functionality
                 alert('Export functionality coming soon!');
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4"
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
               Trích xuất
-            </Button>
-            <Button 
+            </button>
+            <button 
               onClick={() => router.push('/orders/create')}
-              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 rounded-md flex items-center"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               Tạo đơn hàng
-            </Button>
+            </button>
           </div>
         </div>
       </PageHeader>
 
       <PageContent>
-        {/* Statistics Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600">Tổng đơn hàng</p>
-                    <p className="text-xl font-semibold text-gray-900">{stats.totalOrders}</p>
-                  </div>
-                  <div className="p-2 bg-blue-100 rounded-full">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600">Doanh thu</p>
-                    <p className="text-xl font-semibold text-green-600">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.totalRevenue)}
-                    </p>
-                  </div>
-                  <div className="p-2 bg-green-100 rounded-full">
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600">Đang thuê</p>
-                    <p className="text-xl font-semibold text-blue-600">{stats.activeRentals}</p>
-                  </div>
-                  <div className="p-2 bg-blue-100 rounded-full">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600">Quá hạn</p>
-                    <p className="text-xl font-semibold text-red-600">{stats.overdueRentals}</p>
-                  </div>
-                  <div className="p-2 bg-red-100 rounded-full">
-                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-
-
-        {/* Advanced Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row md:items-end gap-4">
-              {/* Search - grows */}
-              <div className="flex-1 min-w-[240px]">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
-                <input
-                  type="text"
-                  placeholder="Tìm theo số đơn hàng, tên khách hàng..."
-                  value={filters.q}
-                  onChange={(e) => setFilters(prev => ({ ...prev, q: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {/* Right side filters */}
-              <div className="flex gap-3 md:justify-end">
-                <div className="w-56">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Loại đơn hàng</label>
-                  <select
-                    value={filters.orderType || ''}
-                    onChange={(e) => setFilters(prev => ({ ...prev, orderType: (e.target.value as OrderType | '') || '' }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Tất cả</option>
-                    <option value="RENT">Đơn thuê</option>
-                    <option value="SALE">Đơn bán</option>
-                  </select>
-                </div>
-                <div className="w-56">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-                  <select
-                    value={filters.status || ''}
-                    onChange={(e) => setFilters(prev => ({ ...prev, status: (e.target.value as OrderStatus) || '' }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Tất cả</option>
-                    <option value="PENDING">Chờ xác nhận</option>
-                    <option value="CONFIRMED">Đã xác nhận</option>
-                    <option value="ACTIVE">Đang thuê</option>
-                    <option value="COMPLETED">Hoàn thành</option>
-                    <option value="CANCELLED">Đã hủy</option>
-                    <option value="OVERDUE">Quá hạn</option>
-                  </select>
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => setFilters({ q: '', orderType: '', status: '', outletId: '' })}
-                  >
-                    Xóa bộ lọc
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Orders Table List */}
-        {orders.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <div className="text-gray-500">
-                <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                <h3 className="text-lg font-medium mb-2">Chưa có đơn hàng nào</h3>
-                <p>Bắt đầu tạo đơn hàng đầu tiên của bạn.</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <Card className="mb-6">
-              <OrderTable
-                orders={orders}
-                onView={handleViewOrder}
-                onPickup={handlePickup}
-                onReturn={handleReturn}
-                onCancel={handleCancel}
-              />
-            </Card>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    console.log('⬅️ Previous button clicked, current page:', currentPage);
-                    setCurrentPage(prev => Math.max(1, prev - 1));
-                  }}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    console.log('➡️ Next button clicked, current page:', currentPage);
-                    setCurrentPage(prev => Math.min(totalPages, prev + 1));
-                  }}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Create Order moved to /orders/create */}
+        <Orders
+          data={orderData}
+          filters={filters}
+          onFiltersChange={setFilters}
+          onOrderAction={handleOrderAction}
+          onPageChange={setCurrentPage}
+        />
       </PageContent>
     </PageWrapper>
   );
