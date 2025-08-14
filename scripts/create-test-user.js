@@ -25,6 +25,24 @@ async function createTestUser() {
       console.log('Created merchant:', merchant.id);
     }
 
+    // Get or create an outlet
+    let outlet = await prisma.outlet.findFirst({
+      where: { merchantId: merchant.id }
+    });
+    if (!outlet) {
+      console.log('No outlet found. Creating a test outlet...');
+      outlet = await prisma.outlet.create({
+        data: {
+          name: 'Main Store',
+          address: '123 Main Street',
+          phone: '555-0123',
+          merchantId: merchant.id,
+          isActive: true
+        }
+      });
+      console.log('Created outlet:', outlet.id);
+    }
+
     // Check if test user exists
     let user = await prisma.user.findUnique({
       where: { email: 'test@example.com' },
@@ -37,16 +55,27 @@ async function createTestUser() {
       
       user = await prisma.user.create({
         data: {
-          email: 'test@example.com',
+          email: "test@example.com",
           password: hashedPassword,
-          name: 'Test User',
-          role: 'CLIENT',
+          firstName: "Test",
+          lastName: "User",
+          role: "OUTLET_STAFF",
           isActive: true,
           merchant: {
-            connect: { id: merchant.id }
+            connect: {
+              id: merchant.id
+            }
+          },
+          outlet: {
+            connect: {
+              id: outlet.id
+            }
           }
         },
-        include: { merchant: true }
+        include: {
+          merchant: true,
+          outlet: true
+        }
       });
       console.log('Created test user:', user.id);
     } else {

@@ -9,7 +9,8 @@ import {
   Settings, 
   Store,
   User,
-  StoreIcon
+  StoreIcon,
+  Calendar
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 
@@ -28,6 +29,7 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
     { href: '/customers', label: 'Customers', icon: Users },
     { href: '/users', label: 'Users', icon: User },
     { href: '/shops', label: 'Shops', icon: Store },
+    { href: '/calendar', label: 'Calendar', icon: Calendar },
   ];
 
   const isActive = (href: string) => currentPage === href;

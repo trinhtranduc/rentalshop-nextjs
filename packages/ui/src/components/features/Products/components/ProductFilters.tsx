@@ -1,7 +1,6 @@
 import React from 'react';
 import { Input } from '../../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import { Button } from '../../../ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { ProductFilters as ProductFiltersType } from '../types';
 
@@ -15,18 +14,6 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
     onFiltersChange({
       ...filters,
       [key]: value
-    });
-  };
-
-  const resetFilters = () => {
-    onFiltersChange({
-      search: '',
-      category: 'all',
-      outlet: 'all',
-      status: 'all',
-      inStock: false,
-      sortBy: 'name',
-      sortOrder: 'asc'
     });
   };
 
@@ -102,47 +89,6 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
                 <SelectItem value="out_of_stock">Out of Stock</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        </div>
-        
-        {/* Advanced Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Sort By
-            </label>
-            <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="price">Price</SelectItem>
-                <SelectItem value="stock">Stock</SelectItem>
-                <SelectItem value="createdAt">Date Created</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Order
-            </label>
-            <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange('sortOrder', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">Ascending</SelectItem>
-                <SelectItem value="desc">Descending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-end">
-            <Button variant="outline" onClick={resetFilters} className="w-full">
-              Reset Filters
-            </Button>
           </div>
         </div>
       </CardContent>

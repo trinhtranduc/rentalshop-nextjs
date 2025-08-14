@@ -17,6 +17,7 @@ interface ProductsProps {
   onViewModeChange: (mode: 'grid' | 'table') => void;
   onProductAction: (action: string, productId: string) => void;
   onPageChange: (page: number) => void;
+  onSort?: (column: string) => void;
 }
 
 export function Products({ 
@@ -26,7 +27,8 @@ export function Products({
   onFiltersChange, 
   onViewModeChange, 
   onProductAction, 
-  onPageChange 
+  onPageChange,
+  onSort
 }: ProductsProps) {
   return (
     <div className="space-y-6">
@@ -50,6 +52,9 @@ export function Products({
         <ProductTable 
           products={data.products}
           onProductAction={onProductAction}
+          sortBy={filters.sortBy}
+          sortOrder={filters.sortOrder}
+          onSort={onSort}
         />
       )}
       

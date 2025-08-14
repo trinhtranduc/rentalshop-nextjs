@@ -31,11 +31,8 @@ export interface User {
 export interface UserFilters {
   search: string;
   role: string;
-  status: 'all' | 'active' | 'inactive';
   merchant: string;
   outlet: string;
-  sortBy: 'name' | 'email' | 'role' | 'createdAt';
-  sortOrder: 'asc' | 'desc';
 }
 
 export interface UserData {

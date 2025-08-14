@@ -18,3 +18,6 @@ export { Products } from './Products';
 // User Components
 export { Users } from './Users';
 
+// Calendar Components
+export { Calendar } from './Calendar';
+

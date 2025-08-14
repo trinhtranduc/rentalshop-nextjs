@@ -4,13 +4,90 @@ import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Order } from '../types';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface OrderTableProps {
   orders: Order[];
   onOrderAction: (action: string, orderId: string) => void;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (column: string) => void;
 }
 
-export function OrderTable({ orders, onOrderAction }: OrderTableProps) {
+// Move SortableHeader outside to prevent recreation on each render
+const SortableHeader = ({ 
+  column, 
+  children, 
+  sortable = true,
+  onSort,
+  sortBy,
+  sortOrder
+}: { 
+  column: string; 
+  children: React.ReactNode; 
+  sortable?: boolean;
+  onSort?: (column: string) => void;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}) => {
+  if (!sortable || !onSort) {
+    return <TableHead className="px-4 py-3">{children}</TableHead>;
+  }
+
+  const isActive = sortBy === column;
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('SortableHeader clicked:', column); // Debug log
+    onSort(column);
+  };
+  
+  return (
+    <TableHead 
+      className={`cursor-pointer transition-all duration-200 select-none px-4 py-3 ${
+        isActive 
+          ? 'bg-blue-50 dark:bg-blue-900/20 border-b-2 border-blue-500 dark:border-blue-400 shadow-sm' 
+          : 'hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-sm'
+      }`}
+      onClick={handleClick}
+      style={{ userSelect: 'none' }}
+    >
+      <div className="flex items-center justify-between group">
+        <span className={`font-medium transition-colors duration-200 ${
+          isActive 
+            ? 'text-blue-700 dark:text-blue-300' 
+            : 'text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200'
+        }`}>
+          {children}
+        </span>
+        <span className={`ml-2 transition-all duration-200 ${
+          isActive 
+            ? 'text-blue-600 dark:text-blue-400 scale-110' 
+            : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 group-hover:scale-105'
+        }`}>
+          {isActive ? (
+            sortOrder === 'asc' ? (
+              <ArrowUp className="w-4 h-4" />
+            ) : (
+              <ArrowDown className="w-4 h-4" />
+            )
+          ) : (
+            <ArrowUpDown className="w-4 h-4" />
+          )}
+        </span>
+      </div>
+    </TableHead>
+  );
+};
+
+export function OrderTable({ 
+  orders, 
+  onOrderAction,
+  sortBy = 'createdAt',
+  sortOrder = 'desc',
+  onSort
+}: OrderTableProps) {
   if (orders.length === 0) {
     return (
       <Card className="shadow-sm border-gray-200 dark:border-gray-700">
@@ -74,12 +151,6 @@ export function OrderTable({ orders, onOrderAction }: OrderTableProps) {
     });
   };
 
-  const getOrderSummary = (order: Order) => {
-    const itemCount = order.orderItems.length;
-    const totalItems = order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-    return `${itemCount} product${itemCount !== 1 ? 's' : ''} (${totalItems} items)`;
-  };
-
   return (
     <Card className="shadow-sm border-gray-200 dark:border-gray-700">
       <CardHeader className="pb-4">
@@ -92,14 +163,31 @@ export function OrderTable({ orders, onOrderAction }: OrderTableProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Actions</TableHead>
+                <SortableHeader column="orderNumber" sortable={false}>
+                  Order
+                </SortableHeader>
+                <SortableHeader column="customerName" sortable={false}>
+                  Customer
+                </SortableHeader>
+                <SortableHeader column="orderType" sortable={false}>
+                  Type
+                </SortableHeader>
+                <SortableHeader column="status" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>
+                  Status
+                </SortableHeader>
+                <SortableHeader column="totalAmount" sortable={false}>
+                  Amount
+                </SortableHeader>
+                <SortableHeader column="pickupPlanAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>
+                  Pickup
+                </SortableHeader>
+                <SortableHeader column="returnPlanAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>
+                  Return
+                </SortableHeader>
+                <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>
+                  Created
+                </SortableHeader>
+                <TableHead className="px-4 py-3">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -109,9 +197,6 @@ export function OrderTable({ orders, onOrderAction }: OrderTableProps) {
                     <div>
                       <div className="font-medium text-gray-900 dark:text-white">
                         {order.orderNumber}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatDate(order.createdAt)}
                       </div>
                     </div>
                   </TableCell>
@@ -136,12 +221,6 @@ export function OrderTable({ orders, onOrderAction }: OrderTableProps) {
                   </TableCell>
                   
                   <TableCell>
-                    <div className="text-sm">
-                      {getOrderSummary(order)}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
                     <div>
                       <div className="font-medium">{formatCurrency(order.totalAmount)}</div>
                       {order.depositAmount > 0 && (
@@ -153,13 +232,20 @@ export function OrderTable({ orders, onOrderAction }: OrderTableProps) {
                   </TableCell>
                   
                   <TableCell>
-                    <div className="text-sm space-y-1">
-                      {order.pickupPlanAt && (
-                        <div>Pickup: {formatDate(order.pickupPlanAt)}</div>
-                      )}
-                      {order.returnPlanAt && (
-                        <div>Return: {formatDate(order.returnPlanAt)}</div>
-                      )}
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {order.pickupPlanAt ? formatDate(order.pickupPlanAt) : 'N/A'}
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {order.returnPlanAt ? formatDate(order.returnPlanAt) : 'N/A'}
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {order.createdAt ? formatDate(order.createdAt) : 'N/A'}
                     </div>
                   </TableCell>
                   

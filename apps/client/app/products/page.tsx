@@ -176,6 +176,31 @@ export default function ProductsPage() {
     setCurrentPage(page);
   };
 
+  const handleSort = (column: string) => {
+    // Map column names to sort values
+    const columnMapping: Record<string, 'name' | 'price' | 'stock' | 'createdAt'> = {
+      'name': 'name',
+      'category': 'name', // Sort by name for category column
+      'rentPrice': 'price', // Sort by price for rentPrice column
+      'available': 'stock', // Sort by stock for available column
+      'status': 'name', // Sort by name for status column
+      'outletName': 'name', // Sort by name for outlet column
+      'price': 'price',
+      'stock': 'stock',
+      'createdAt': 'createdAt'
+    };
+    
+    const newSortBy = columnMapping[column] || 'name';
+    const newSortOrder = filters.sortBy === newSortBy && filters.sortOrder === 'asc' ? 'desc' : 'asc';
+    
+    setFilters(prev => ({
+      ...prev,
+      sortBy: newSortBy,
+      sortOrder: newSortOrder
+    }));
+    setCurrentPage(1); // Reset to first page when sorting changes
+  };
+
   // Transform data for the Products component
   const productData: ProductData = {
     products: products.map(product => ({
@@ -245,6 +270,7 @@ export default function ProductsPage() {
           onViewModeChange={handleViewModeChange}
           onProductAction={handleProductAction}
           onPageChange={handlePageChange}
+          onSort={handleSort}
         />
       </PageContent>
     </PageWrapper>

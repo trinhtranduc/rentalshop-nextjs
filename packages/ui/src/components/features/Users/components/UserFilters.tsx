@@ -17,7 +17,7 @@ export function UserFilters({ filters, onFiltersChange }: UserFiltersProps) {
 
   return (
     <div className="bg-white rounded-lg border p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Search */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -50,53 +50,20 @@ export function UserFilters({ filters, onFiltersChange }: UserFiltersProps) {
           </Select>
         </div>
 
-        {/* Status Filter */}
+        {/* Outlet Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Status
+            Outlet
           </label>
-          <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+          <Select value={filters.outlet} onValueChange={(value) => handleFilterChange('outlet', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="All statuses" />
+              <SelectValue placeholder="All outlets" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Sort By */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sort By
-          </label>
-          <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="role">Role</SelectItem>
-              <SelectItem value="createdAt">Created Date</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Sort Order */}
-      <div className="mt-4 flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Sort Order:</label>
-          <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange('sortOrder', value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="asc">Ascending</SelectItem>
-              <SelectItem value="desc">Descending</SelectItem>
+              <SelectItem value="all">All outlets</SelectItem>
+              <SelectItem value="main">Main Store</SelectItem>
+              <SelectItem value="branch1">Branch 1</SelectItem>
+              <SelectItem value="branch2">Branch 2</SelectItem>
             </SelectContent>
           </Select>
         </div>

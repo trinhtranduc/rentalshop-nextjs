@@ -23,7 +23,7 @@ export interface ProductFilters {
   outlet: string;
   status: string;
   inStock: boolean;
-  sortBy: 'name' | 'price' | 'stock' | 'createdAt';
+  sortBy: 'name' | 'createdAt';
   sortOrder: 'asc' | 'desc';
 }
 

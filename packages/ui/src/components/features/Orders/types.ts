@@ -43,7 +43,7 @@ export interface OrderFilters {
   status: string;
   orderType: string;
   outlet: string;
-  sortBy: 'orderNumber' | 'createdAt' | 'totalAmount' | 'customerName' | 'status';
+  sortBy: 'orderNumber' | 'createdAt' | 'pickupPlanAt' | 'returnPlanAt' | 'status' | 'totalAmount' | 'customerName' | 'orderType';
   sortOrder: 'asc' | 'desc';
 }
 

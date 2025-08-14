@@ -258,8 +258,9 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
   if (searchFilters.userId) where.userId = searchFilters.userId;
   if (searchFilters.orderType) where.orderType = searchFilters.orderType;
   if (searchFilters.status) where.status = searchFilters.status;
-  if (searchFilters.startDate) where.createdAt = { gte: searchFilters.startDate };
-  if (searchFilters.endDate) where.createdAt = { lte: searchFilters.endDate };
+  // For calendar filtering, use pickup/return dates instead of creation dates
+  if (searchFilters.startDate) where.pickupPlanAt = { gte: searchFilters.startDate };
+  if (searchFilters.endDate) where.pickupPlanAt = { lte: searchFilters.endDate };
   if (searchFilters.pickupDate) where.pickupPlanAt = { gte: searchFilters.pickupDate };
   if (searchFilters.returnDate) where.returnPlanAt = { lte: searchFilters.returnDate };
   if (searchFilters.minAmount) where.totalAmount = { gte: searchFilters.minAmount };
@@ -295,6 +296,17 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
             name: true,
           },
         },
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true,
+              },
+            },
+          },
+        },
         // user removed
       },
       orderBy: { createdAt: 'desc' },
@@ -320,8 +332,16 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
       returnPlanAt: order.returnPlanAt,
       pickedUpAt: order.pickedUpAt,
       returnedAt: order.returnedAt,
-       customer: order.customer,
+      customer: order.customer,
       outlet: order.outlet,
+      orderItems: order.orderItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        product: {
+          name: item.product.name,
+          barcode: item.product.barcode,
+        },
+      })),
     })),
     total,
     limit,

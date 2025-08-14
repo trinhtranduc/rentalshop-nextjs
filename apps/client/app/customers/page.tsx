@@ -30,6 +30,8 @@ interface ExtendedCustomer {
     id: string;
     companyName: string;
   };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export default function CustomersPage() {
@@ -43,7 +45,6 @@ export default function CustomersPage() {
   const [filters, setFilters] = useState<CustomerFiltersType>({
     search: '',
     status: 'all',
-    state: 'all',
     sortBy: 'name',
     sortOrder: 'asc'
   });
@@ -58,7 +59,6 @@ export default function CustomersPage() {
         limit: '10',
         ...(filters.search && { search: filters.search }),
         ...(filters.status !== 'all' && { status: filters.status }),
-        ...(filters.state !== 'all' && { state: filters.state }),
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder
       });
@@ -131,6 +131,30 @@ export default function CustomersPage() {
     setCurrentPage(page);
   };
 
+  const handleSort = (column: string) => {
+    // Map column names to sort values
+    const columnMapping: Record<string, 'name' | 'orders' | 'spent' | 'createdAt' | 'lastOrder'> = {
+      'name': 'name',
+      'contact': 'name', // Sort by name for contact column
+      'location': 'name', // Sort by name for location column
+      'status': 'name', // Sort by name for status column
+      'createdAt': 'createdAt', // Sort by creation date
+      'orders': 'orders',
+      'spent': 'spent',
+      'lastOrder': 'lastOrder'
+    };
+    
+    const newSortBy = columnMapping[column] || 'name';
+    const newSortOrder = filters.sortBy === newSortBy && filters.sortOrder === 'asc' ? 'desc' : 'asc';
+    
+    setFilters(prev => ({
+      ...prev,
+      sortBy: newSortBy,
+      sortOrder: newSortOrder
+    }));
+    setCurrentPage(1); // Reset to first page when sorting changes
+  };
+
   // Transform data for the Customers component
   const customerData: CustomerData = {
     customers: customers.map(customer => ({
@@ -150,8 +174,8 @@ export default function CustomersPage() {
       totalOrders: 0, // Not available in current data
       totalSpent: 0, // Not available in current data
       lastOrderDate: undefined, // Not available in current data
-      createdAt: new Date().toISOString(), // Not available in current data
-      updatedAt: new Date().toISOString()  // Not available in current data
+      createdAt: customer.createdAt || new Date().toISOString(), // Use actual date from API
+      updatedAt: customer.updatedAt || new Date().toISOString()  // Use actual date from API
     })),
     total: totalCustomers,
     currentPage,
@@ -209,6 +233,7 @@ export default function CustomersPage() {
           onFiltersChange={handleFiltersChange}
           onCustomerAction={handleCustomerAction}
           onPageChange={handlePageChange}
+          onSort={handleSort}
         />
       </PageContent>
     </PageWrapper>

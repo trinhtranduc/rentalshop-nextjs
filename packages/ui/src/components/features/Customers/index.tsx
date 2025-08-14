@@ -15,6 +15,7 @@ interface CustomersProps {
   onFiltersChange: (filters: CustomerFilters) => void;
   onCustomerAction: (action: string, customerId: string) => void;
   onPageChange: (page: number) => void;
+  onSort?: (column: string) => void;
 }
 
 export function Customers({ 
@@ -22,7 +23,8 @@ export function Customers({
   filters, 
   onFiltersChange, 
   onCustomerAction, 
-  onPageChange 
+  onPageChange,
+  onSort
 }: CustomersProps) {
   return (
     <div className="space-y-6">
@@ -34,6 +36,9 @@ export function Customers({
       <CustomerTable 
         customers={data.customers}
         onCustomerAction={onCustomerAction}
+        sortBy={filters.sortBy}
+        sortOrder={filters.sortOrder}
+        onSort={onSort}
       />
       
       <CustomerPagination 

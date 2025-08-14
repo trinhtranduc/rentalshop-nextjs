@@ -28,32 +28,6 @@ export const filterOrders = (orders: Order[], filters: OrderFilters): Order[] =>
       return false;
     }
     
-    // Customer filter
-    if (filters.customer && !order.customerName.toLowerCase().includes(filters.customer.toLowerCase())) {
-      return false;
-    }
-    
-    // Date range filter
-    if (filters.dateRange.start) {
-      const orderDate = new Date(order.createdAt);
-      const startDate = new Date(filters.dateRange.start);
-      if (orderDate < startDate) return false;
-    }
-    
-    if (filters.dateRange.end) {
-      const orderDate = new Date(order.createdAt);
-      const endDate = new Date(filters.dateRange.end);
-      if (orderDate > endDate) return false;
-    }
-    
-    // Amount range filter
-    if (filters.minAmount && order.totalAmount < filters.minAmount) {
-      return false;
-    }
-    if (filters.maxAmount && order.totalAmount > filters.maxAmount) {
-      return false;
-    }
-    
     return true;
   });
 };
@@ -72,6 +46,14 @@ export const sortOrders = (orders: Order[], sortBy: string, sortOrder: 'asc' | '
         aValue = new Date(a.createdAt).getTime();
         bValue = new Date(b.createdAt).getTime();
         break;
+      case 'pickupPlanAt':
+        aValue = a.pickupPlanAt ? new Date(a.pickupPlanAt).getTime() : 0;
+        bValue = b.pickupPlanAt ? new Date(b.pickupPlanAt).getTime() : 0;
+        break;
+      case 'returnPlanAt':
+        aValue = a.returnPlanAt ? new Date(a.returnPlanAt).getTime() : 0;
+        bValue = b.returnPlanAt ? new Date(b.returnPlanAt).getTime() : 0;
+        break;
       case 'totalAmount':
         aValue = a.totalAmount;
         bValue = b.totalAmount;
@@ -83,6 +65,10 @@ export const sortOrders = (orders: Order[], sortBy: string, sortOrder: 'asc' | '
       case 'status':
         aValue = a.status;
         bValue = b.status;
+        break;
+      case 'orderType':
+        aValue = a.orderType;
+        bValue = b.orderType;
         break;
       default:
         aValue = new Date(a.createdAt).getTime();
@@ -233,12 +219,6 @@ export const validateOrderData = (order: Partial<Order>): string[] => {
 
 export const calculateOrderTotal = (orderItems: any[]): number => {
   return orderItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
-};
-
-export const getOrderSummary = (order: Order): string => {
-  const itemCount = order.orderItems.length;
-  const totalItems = order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-  return `${itemCount} product${itemCount !== 1 ? 's' : ''} (${totalItems} items)`;
 };
 
 export const isOrderOverdue = (order: Order): boolean => {
