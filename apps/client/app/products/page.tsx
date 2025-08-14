@@ -6,6 +6,7 @@ import {
   Button,
   Input,
   Products,
+  ProductsLoading,
   PageWrapper,
   PageHeader,
   PageTitle,
@@ -233,10 +234,7 @@ export default function ProductsPage() {
           <PageTitle>Products</PageTitle>
         </PageHeader>
         <PageContent>
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading products...</p>
-          </div>
+          <ProductsLoading />
         </PageContent>
       </PageWrapper>
     );

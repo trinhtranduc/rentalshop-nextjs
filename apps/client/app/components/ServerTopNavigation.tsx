@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Home, 
   Package, 
@@ -19,8 +19,10 @@ export interface ServerTopNavigationProps {
 }
 
 export default function ServerTopNavigation({ currentPage }: ServerTopNavigationProps) {
-  const { isPending, navigateTo, prefetchRoute } = useNavigation();
+  const { navigateTo, prefetchRoute } = useNavigation();
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
+  const [clickedTab, setClickedTab] = useState<string | null>(null);
+  const [localCurrentPage, setLocalCurrentPage] = useState(currentPage);
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -32,9 +34,24 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
     { href: '/calendar', label: 'Calendar', icon: Calendar },
   ];
 
-  const isActive = (href: string) => currentPage === href;
+  // Update local state when prop changes
+  useEffect(() => {
+    setLocalCurrentPage(currentPage);
+  }, [currentPage]);
+
+  const isActive = (href: string) => localCurrentPage === href;
 
   const handleTabClick = (href: string) => {
+    // Immediately update local state for instant visual feedback
+    setLocalCurrentPage(href);
+    
+    // Set clicked state for visual feedback
+    setClickedTab(href);
+    
+    // Clear clicked state after a short delay
+    setTimeout(() => setClickedTab(null), 200);
+    
+    // Navigate
     navigateTo(href);
   };
 
@@ -72,22 +89,14 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
                   onClick={() => handleTabClick(item.href)}
                   onMouseEnter={() => handleTabHover(item.href)}
                   onMouseLeave={() => setHoveredTab(null)}
-                  className={`nav-item text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 ease-out relative ${
+                  className={`nav-item text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-150 ease-out relative ${
                     active 
-                      ? 'text-blue-600 bg-blue-50' 
+                      ? 'text-blue-600 bg-blue-50 shadow-sm' 
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                  } ${isHovered ? 'scale-105' : ''}`}
-                  disabled={isPending}
+                  } ${isHovered ? 'scale-105' : ''} ${clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
                 >
                   <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
                   {item.label}
-                  
-                  {/* Loading indicator for active tab */}
-                  {isPending && active && (
-                    <div className="absolute inset-0 bg-blue-50/50 rounded-md flex items-center justify-center">
-                      <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                    </div>
-                  )}
                   
                   {/* Hover effect */}
                   {isHovered && !active && (
@@ -103,10 +112,9 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
             <button
               onClick={() => handleTabClick('/settings')}
               onMouseEnter={() => prefetchRoute('/settings')}
-              className={`nav-item text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-50 transition-all duration-200 ${
-                currentPage === '/settings' ? 'text-blue-600 bg-blue-50' : ''
-              }`}
-              disabled={isPending}
+              className={`nav-item text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-50 transition-all duration-150 ${
+                currentPage === '/settings' ? 'text-blue-600 bg-blue-50 shadow-sm' : ''
+              } ${clickedTab === '/settings' ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
             >
               <Settings className="w-4 h-4" />
               Settings
@@ -137,31 +145,22 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
                 <button
                   key={item.href}
                   onClick={() => handleTabClick(item.href)}
-                  className={`nav-item block w-full text-left px-3 py-2 text-base font-medium flex items-center gap-3 transition-all duration-200 ${
+                  className={`nav-item block w-full text-left px-3 py-2 text-base font-medium flex items-center gap-3 transition-all duration-150 ${
                     active 
-                      ? 'text-blue-600 bg-blue-50' 
+                      ? 'text-blue-600 bg-blue-50 shadow-sm' 
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                  disabled={isPending}
+                  } ${clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
                 >
                   <Icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
                   {item.label}
-                  
-                  {/* Loading indicator for mobile */}
-                  {isPending && active && (
-                    <div className="ml-auto">
-                      <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                    </div>
-                  )}
                 </button>
               );
             })}
             <button
               onClick={() => handleTabClick('/settings')}
-              className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-200 ${
-                currentPage === '/settings' ? 'text-blue-600 bg-blue-50' : ''
-              }`}
-              disabled={isPending}
+              className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-150 ${
+                currentPage === '/settings' ? 'text-blue-600 bg-blue-50 shadow-sm' : ''
+              } ${clickedTab === '/settings' ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
             >
               <Settings className="w-5 h-5" />
               Settings
@@ -169,13 +168,6 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
           </div>
         </div>
       </div>
-      
-      {/* Global loading bar */}
-      {isPending && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600">
-          <div className="h-full bg-blue-400 animate-pulse"></div>
-        </div>
-      )}
     </header>
   );
 }

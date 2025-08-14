@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useTransition, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 
 export function useNavigation() {
   const router = useRouter()
   const pathname = usePathname()
-  const [isPending, startTransition] = useTransition()
   const [prefetchedRoutes, setPrefetchedRoutes] = useState<Set<string>>(new Set())
 
   // Prefetch a route
@@ -17,12 +16,11 @@ export function useNavigation() {
     }
   }, [router, prefetchedRoutes])
 
-  // Navigate to a route with transition
+  // Navigate to a route instantly (non-blocking)
   const navigateTo = useCallback((href: string) => {
-    startTransition(() => {
-      router.push(href)
-    })
-  }, [router, startTransition])
+    // Instant navigation without any delays
+    router.push(href)
+  }, [router])
 
   // Prefetch all main routes on mount
   useEffect(() => {
@@ -35,7 +33,7 @@ export function useNavigation() {
   }, [pathname, prefetchRoute])
 
   return {
-    isPending,
+    isPending: false, // Always false since we're not using transitions
     navigateTo,
     prefetchRoute,
     currentPath: pathname
