@@ -5,9 +5,10 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  Calendar,
+  CalendarLoading
 } from '@rentalshop/ui';
-import { Calendar } from '@rentalshop/ui';
 import { User, Phone } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -188,30 +189,7 @@ export default function CalendarPage() {
           <PageTitle>Pickup Calendar</PageTitle>
         </PageHeader>
         <PageContent>
-          <div className="space-y-6">
-            {/* Calendar Component - Always Visible */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-4">Pickup Calendar</h3>
-              
-              <Calendar
-                data={calendarData}
-                filters={filters}
-                pickupOrders={pickupOrders}
-                onFiltersChange={handleFiltersChange}
-                onDateClick={handleDateClick}
-                onPreviousMonth={goToPreviousMonth}
-                onNextMonth={goToNextMonth}
-              />
-            </div>
-
-            {/* Loading Message */}
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-gray-600">Loading pickup orders...</p>
-              </div>
-            </div>
-          </div>
+          <CalendarLoading />
         </PageContent>
       </PageWrapper>
     );
@@ -225,30 +203,7 @@ export default function CalendarPage() {
           <PageTitle>Pickup Calendar</PageTitle>
         </PageHeader>
         <PageContent>
-          <div className="space-y-6">
-            {/* Calendar Component - Always Visible */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-4">Pickup Calendar</h3>
-              
-              <Calendar
-                data={calendarData}
-                filters={filters}
-                pickupOrders={pickupOrders}
-                onFiltersChange={handleFiltersChange}
-                onDateClick={handleDateClick}
-                onPreviousMonth={goToPreviousMonth}
-                onNextMonth={goToNextMonth}
-              />
-            </div>
-
-            {/* Auth Loading Message */}
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-gray-600">Checking authentication...</p>
-              </div>
-            </div>
-          </div>
+          <CalendarLoading />
         </PageContent>
       </PageWrapper>
     );

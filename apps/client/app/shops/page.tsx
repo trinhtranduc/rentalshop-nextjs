@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
   Button, 
   Input,
+  ShopsLoading,
   PageWrapper,
   PageHeader,
   PageTitle,
@@ -15,6 +16,30 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function ShopsPage() {
   const { user, logout } = useAuth();
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate loading for demo purposes
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  if (loading) {
+    return (
+      <PageWrapper>
+        <PageHeader>
+          <PageTitle>Cửa hàng</PageTitle>
+          <p className="text-gray-600">Quản lý thông tin cửa hàng và chi nhánh</p>
+        </PageHeader>
+        <PageContent>
+          <ShopsLoading />
+        </PageContent>
+      </PageWrapper>
+    );
+  }
   
   return (
     <PageWrapper>

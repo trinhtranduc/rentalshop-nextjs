@@ -5,3 +5,4 @@ export { UserCard } from './UserCard';
 export { UserGrid } from './UserGrid';
 export { UserTable } from './UserTable';
 export { UserPagination } from './UserPagination';
+export { UsersLoading, UserDetailLoading } from './UsersLoading';

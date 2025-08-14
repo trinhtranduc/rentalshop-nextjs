@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import ClientTopNavigation from './components/ClientTopNavigation'
-import NavigationProgressBar from './components/NavigationProgressBar'
 import './globals.css'
 import Script from 'next/script'
 
@@ -23,7 +22,6 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={`${inter.variable} font-sans`}>
-        <NavigationProgressBar />
         <ClientTopNavigation />
         <main className="pt-24">
           {children}
