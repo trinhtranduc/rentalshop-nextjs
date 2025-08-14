@@ -17,13 +17,50 @@ export interface Product {
   updatedAt: string;
 }
 
+// New interfaces for enhanced product management
+export interface ProductWithDetails {
+  id: string;
+  name: string;
+  description?: string;
+  barcode?: string;
+  categoryId: string;
+  rentPrice: number;
+  salePrice?: number;
+  deposit: number;
+  totalStock: number;
+  images: string;
+  isActive: boolean;
+  outletStock: Array<{
+    outletId: string;
+    stock: number;
+    available: number;
+    renting: number;
+  }>;
+  category: { id: string; name: string };
+  merchant: { id: string; name: string };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface Outlet {
+  id: string;
+  name: string;
+}
+
 export interface ProductFilters {
   search: string;
   category: string;
   outlet: string;
   status: string;
   inStock: boolean;
-  sortBy: 'name' | 'createdAt';
+  sortBy: 'name' | 'createdAt' | 'price' | 'stock';
   sortOrder: 'asc' | 'desc';
 }
 

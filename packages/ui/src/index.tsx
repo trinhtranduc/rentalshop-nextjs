@@ -60,7 +60,7 @@ export { OrderDetail } from './components/features';
 // REFACTORED FEATURE COMPONENTS
 // ============================================================================
 export { Dashboard } from './components/features/Dashboard';
-export { Products } from './components/features/Products';
+export { Products, ProductFormDialog } from './components/features/Products';
 export { Customers } from './components/features/Customers';
 export { Orders } from './components/features/Orders';
 export { Users } from './components/features/Users';

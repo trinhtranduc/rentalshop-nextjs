@@ -30,12 +30,10 @@ import {
   Tag,
   Plus,
   Trash2,
-  AlertTriangle,
   CheckCircle,
   XCircle,
   Upload,
   Image as ImageIcon,
-  Settings,
   AlertCircle
 } from 'lucide-react';
 import type { 
@@ -49,14 +47,6 @@ interface Category {
   name: string;
   description?: string;
   isActive: boolean;
-}
-
-interface ProductVariant {
-  id: string;
-  name: string;
-  value: string;
-  additionalPrice: number;
-  stock: number;
 }
 
 interface ProductFormData {
@@ -73,18 +63,8 @@ interface ProductFormData {
   outletStock: Array<{
     outletId: string;
     stock: number;
-    minStock: number;
   }>;
-  variants: ProductVariant[];
-  minStockAlert: number;
-  allowBackorder: boolean;
   sku: string;
-  weight: number;
-  dimensions: {
-    length: number;
-    width: number;
-    height: number;
-  };
 }
 
 interface ProductFormProps {
@@ -92,12 +72,13 @@ interface ProductFormProps {
   categories: Category[];
   outlets: Array<{ id: string; name: string }>;
   onSubmit: (data: ProductInput) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   loading?: boolean;
   title?: string;
   submitText?: string;
   mode?: 'create' | 'edit';
   merchantId?: string; // Add merchantId prop
+  hideHeader?: boolean; // Hide header when used in dialog
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -110,7 +91,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   title = 'Product Information',
   submitText = 'Save Product',
   mode = 'create',
-  merchantId = ''
+  merchantId = '',
+  hideHeader = false
 }) => {
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -124,12 +106,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     images: [],
     isActive: true,
     outletStock: [],
-    variants: [],
-    minStockAlert: 5,
-    allowBackorder: false,
     sku: '',
-    weight: 0,
-    dimensions: { length: 0, width: 0, height: 0 },
     ...initialData
   });
 
@@ -146,7 +123,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         outletStock: outlets.map(outlet => ({
           outletId: outlet.id,
           stock: 0,
-          minStock: 2
         }))
       }));
     }
@@ -164,7 +140,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   }, [formData.name, formData.description, formData.categoryId, mode]);
 
   const handleAutoSave = useCallback(async () => {
-    if (!validateForm()) return;
+    // Don't validate during auto-save to avoid setState warnings
+    // Just proceed with auto-save logic
     
     setAutoSaveStatus('saving');
     try {
@@ -202,32 +179,41 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       newErrors.totalStock = 'Total stock cannot be negative';
     }
 
-    if (formData.minStockAlert < 0) {
-      newErrors.minStockAlert = 'Minimum stock alert cannot be negative';
-    }
-
-    // Validate outlet stock
-    const totalOutletStock = formData.outletStock.reduce((sum, item) => sum + item.stock, 0);
-    if (totalOutletStock !== formData.totalStock) {
-      newErrors.totalStock = `Total stock (${formData.totalStock}) must equal sum of outlet stock (${totalOutletStock})`;
-    }
-
-    // Validate variants
-    if (formData.variants.length > 0) {
-      const variantStock = formData.variants.reduce((sum, variant) => sum + variant.stock, 0);
-      if (variantStock !== formData.totalStock) {
-        newErrors.variants = `Variant stock (${variantStock}) must equal total stock (${formData.totalStock})`;
-      }
-    }
-
-    setValidationErrors(newErrors);
+    // Don't call setValidationErrors here - just return the errors
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate form and set errors if validation fails
     if (!validateForm()) {
+      // Set validation errors here instead
+      const newErrors: Partial<Record<keyof ProductFormData, string>> = {};
+
+      if (!formData.name.trim()) {
+        newErrors.name = 'Product name is required';
+      }
+
+      if (!formData.categoryId) {
+        newErrors.categoryId = 'Category is required';
+      }
+
+      if (formData.rentPrice <= 0) {
+        newErrors.rentPrice = 'Rent price must be greater than 0';
+      }
+
+      if (formData.deposit < 0) {
+        newErrors.deposit = 'Deposit cannot be negative';
+      }
+
+      if (formData.totalStock < 0) {
+        newErrors.totalStock = 'Total stock cannot be negative';
+      }
+
+
+
+      setValidationErrors(newErrors);
       return;
     }
 
@@ -263,7 +249,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   };
 
-  const updateOutletStock = (outletId: string, field: 'stock' | 'minStock', value: number) => {
+  const updateOutletStock = (outletId: string, field: 'stock', value: number) => {
     setFormData(prev => ({
       ...prev,
       outletStock: prev.outletStock.map(item =>
@@ -272,35 +258,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }));
   };
 
-  const addVariant = () => {
-    const newVariant: ProductVariant = {
-      id: `variant-${Date.now()}`,
-      name: '',
-      value: '',
-      additionalPrice: 0,
-      stock: 0
-    };
-    setFormData(prev => ({
-      ...prev,
-      variants: [...prev.variants, newVariant]
-    }));
-  };
 
-  const updateVariant = (id: string, field: keyof ProductVariant, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      variants: prev.variants.map(variant =>
-        variant.id === id ? { ...variant, [field]: value } : variant
-      )
-    }));
-  };
-
-  const removeVariant = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      variants: prev.variants.filter(variant => variant.id !== id)
-    }));
-  };
 
   // Image handling
   const handleImageUpload = (files: FileList | null) => {
@@ -350,62 +308,51 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const getProductStatus = () => {
     if (formData.totalStock === 0) return { status: 'Out of Stock', variant: 'destructive' as const };
-    if (formData.totalStock <= formData.minStockAlert) return { status: 'Low Stock', variant: 'warning' as const };
     return { status: 'In Stock', variant: 'default' as const };
   };
 
   const { status, variant } = getProductStatus();
 
-  const getStockAlerts = () => {
-    return formData.outletStock.filter(outlet => outlet.stock <= outlet.minStock);
-  };
 
-  const stockAlerts = getStockAlerts();
 
   return (
     <div className="space-y-6">
       {/* Header with Auto-save Status */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary mb-2">{title}</h1>
-          <p className="text-text-secondary">
-            {mode === 'create' ? 'Add a new product to your inventory' : 'Update product information'}
-          </p>
-          {mode === 'edit' && (
-            <div className="flex items-center gap-2 mt-2">
-              {autoSaveStatus === 'saving' && (
-                <div className="flex items-center gap-2 text-sm text-text-secondary">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-text-secondary" />
-                  Auto-saving...
-                </div>
-              )}
-              {autoSaveStatus === 'saved' && (
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <CheckCircle className="w-4 h-4" />
-                  Auto-saved
-                </div>
-              )}
-              {autoSaveStatus === 'error' && (
-                <div className="flex items-center gap-2 text-sm text-red-600">
-                  <XCircle className="w-4 h-4" />
-                  Auto-save failed
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {stockAlerts.length > 0 && (
-            <Badge variant="destructive" className="text-sm">
-              <AlertTriangle className="w-4 h-4 mr-1" />
-              {stockAlerts.length} Low Stock Alert{stockAlerts.length > 1 ? 's' : ''}
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-text-primary mb-2">{title}</h1>
+          
+            {mode === 'edit' && (
+              <div className="flex items-center gap-2 mt-2">
+                {autoSaveStatus === 'saving' && (
+                  <div className="flex items-center gap-2 text-sm text-text-secondary">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-text-secondary" />
+                    Auto-saving...
+                  </div>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    Auto-saved
+                  </div>
+                )}
+                {autoSaveStatus === 'error' && (
+                  <div className="flex items-center gap-2 text-sm text-red-600">
+                    <XCircle className="w-4 h-4" />
+                    Auto-save failed
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant={variant} className="text-sm">
+              {status}
             </Badge>
-          )}
-          <Badge variant={variant === 'warning' ? 'destructive' : variant} className="text-sm">
-            {status}
-          </Badge>
+          </div>
         </div>
-      </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
@@ -561,109 +508,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 />
                 {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Low Stock Alert</label>
-                <Input
-                  type="number"
-                  value={formData.minStockAlert}
-                  onChange={(e) => handleInputChange('minStockAlert', parseInt(e.target.value) || 0)}
-                  placeholder="5"
-                  min="0"
-                  className={errors.minStockAlert ? 'border-red-500' : ''}
-                />
-                {errors.minStockAlert && <p className="text-sm text-red-500">{errors.minStockAlert}</p>}
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="allowBackorder"
-                checked={formData.allowBackorder}
-                onChange={(e) => handleInputChange('allowBackorder', e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              <label htmlFor="allowBackorder" className="text-sm font-medium text-text-primary">
-                Allow backorders when out of stock
-              </label>
             </div>
           </CardContent>
         </Card>
 
-        {/* Product Variants */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Product Variants
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-text-secondary">
-                Add variants like size, color, or configuration options
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addVariant}
-                className="flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add Variant
-              </Button>
-            </div>
 
-            {formData.variants.length > 0 && (
-              <div className="space-y-3">
-                {formData.variants.map((variant, index) => (
-                  <div key={variant.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                    <div className="grid grid-cols-4 gap-3 flex-1">
-                      <Input
-                        placeholder="Variant name (e.g., Size)"
-                        value={variant.name}
-                        onChange={(e) => updateVariant(variant.id, 'name', e.target.value)}
-                      />
-                      <Input
-                        placeholder="Value (e.g., Large)"
-                        value={variant.value}
-                        onChange={(e) => updateVariant(variant.id, 'value', e.target.value)}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Additional price"
-                        value={variant.additionalPrice}
-                        onChange={(e) => updateVariant(variant.id, 'additionalPrice', parseFloat(e.target.value) || 0)}
-                        step="0.01"
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Stock"
-                        value={variant.stock}
-                        onChange={(e) => updateVariant(variant.id, 'stock', parseInt(e.target.value) || 0)}
-                        min="0"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeVariant(variant.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-                {errors.variants && (
-                  <p className="text-sm text-red-500">{errors.variants}</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Outlet Stock Management */}
         <Card>
@@ -679,17 +528,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 <TableRow>
                   <TableHead>Outlet</TableHead>
                   <TableHead>Stock</TableHead>
-                  <TableHead>Min Stock</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {formData.outletStock.map((outletStock) => {
                   const outlet = outlets.find(o => o.id === outletStock.outletId);
-                  const stockStatus = outletStock.stock === 0 ? 'Out of Stock' : 
-                                    outletStock.stock <= outletStock.minStock ? 'Low Stock' : 'In Stock';
-                  const statusVariant = outletStock.stock === 0 ? 'destructive' : 
-                                      outletStock.stock <= outletStock.minStock ? 'warning' : 'default';
+                  const stockStatus = outletStock.stock === 0 ? 'Out of Stock' : 'In Stock';
+                  const statusVariant = outletStock.stock === 0 ? 'destructive' : 'default';
                   
                   return (
                     <TableRow key={outletStock.outletId}>
@@ -705,17 +551,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                           className="w-20"
                         />
                       </TableCell>
+
                       <TableCell>
-                        <Input
-                          type="number"
-                          value={outletStock.minStock}
-                          onChange={(e) => updateOutletStock(outletStock.outletId, 'minStock', parseInt(e.target.value) || 0)}
-                          min="0"
-                          className="w-20"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusVariant === 'warning' ? 'destructive' : statusVariant} className="text-xs">
+                        <Badge variant={statusVariant} className="text-xs">
                           {stockStatus}
                         </Badge>
                       </TableCell>
@@ -725,26 +563,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </TableBody>
             </Table>
             
-            {formData.outletStock.length > 0 && (
-              <div className="mt-4 p-3 bg-bg-secondary rounded-lg">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Total Outlet Stock:</span>
-                  <span className="font-medium">
-                    {formData.outletStock.reduce((sum, item) => sum + item.stock, 0)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm mt-1">
-                  <span className="text-text-secondary">Total Stock:</span>
-                  <span className="font-medium">{formData.totalStock}</span>
-                </div>
-                {formData.outletStock.reduce((sum, item) => sum + item.stock, 0) !== formData.totalStock && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-red-500">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>Stock mismatch detected</span>
-                  </div>
-                )}
-              </div>
-            )}
+
           </CardContent>
         </Card>
 
@@ -815,113 +634,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           </CardContent>
         </Card>
 
-        {/* Physical Properties */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Physical Properties
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Weight (kg)</label>
-                <Input
-                  type="number"
-                  value={formData.weight}
-                  onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || 0)}
-                  placeholder="0.0"
-                  step="0.1"
-                  min="0"
-                />
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Dimensions (cm)</label>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs text-text-secondary">Length</label>
-                  <Input
-                    type="number"
-                    value={formData.dimensions.length}
-                    onChange={(e) => handleInputChange('dimensions', {
-                      ...formData.dimensions,
-                      length: parseFloat(e.target.value) || 0
-                    })}
-                    placeholder="0"
-                    step="0.1"
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-text-secondary">Width</label>
-                  <Input
-                    type="number"
-                    value={formData.dimensions.width}
-                    onChange={(e) => handleInputChange('dimensions', {
-                      ...formData.dimensions,
-                      width: parseFloat(e.target.value) || 0
-                    })}
-                    placeholder="0"
-                    step="0.1"
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-text-secondary">Height</label>
-                  <Input
-                    type="number"
-                    value={formData.dimensions.height}
-                    onChange={(e) => handleInputChange('dimensions', {
-                      ...formData.dimensions,
-                      height: parseFloat(e.target.value) || 0
-                    })}
-                    placeholder="0"
-                    step="0.1"
-                    min="0"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Additional Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tag className="w-5 h-5" />
-              Additional Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              <label htmlFor="isActive" className="text-sm font-medium text-text-primary">
-                Product is active and available for rental/sale
-              </label>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* Action Buttons */}
-        <div className="flex gap-3 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
+        <div className="flex justify-end">
           <Button
             type="submit"
             disabled={isSubmitting || !validateForm()}

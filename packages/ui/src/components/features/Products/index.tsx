@@ -5,30 +5,67 @@ import {
   ProductGrid, 
   ProductTable, 
   ProductActions, 
-  ProductPagination 
+  ProductPagination,
+  ProductFormDialog
 } from './components';
-import { ProductData, ProductFilters as ProductFiltersType } from './types';
+import { 
+  ProductData, 
+  ProductFilters as ProductFiltersType,
+  Category,
+  Outlet,
+  ProductWithDetails
+} from './types';
+
+// Export all components for easy access
+export { 
+  ProductHeader, 
+  ProductFilters, 
+  ProductGrid, 
+  ProductTable, 
+  ProductActions, 
+  ProductPagination,
+  ProductFormDialog
+} from './components';
 
 interface ProductsProps {
   data: ProductData;
   filters: ProductFiltersType;
   viewMode: 'grid' | 'table';
   onFiltersChange: (filters: ProductFiltersType) => void;
+  onSearchChange: (searchValue: string) => void;
+  onClearFilters?: () => void;
   onViewModeChange: (mode: 'grid' | 'table') => void;
   onProductAction: (action: string, productId: string) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
+  // Enhanced props for product management
+  categories?: Category[];
+  outlets?: Outlet[];
+  merchantId?: string;
+  onProductCreated?: (product: ProductWithDetails) => void;
+  onProductUpdated?: (product: ProductWithDetails) => void;
+  onError?: (error: string) => void;
 }
 
+// Export the main Products component
 export function Products({ 
   data, 
   filters, 
   viewMode, 
   onFiltersChange, 
+  onSearchChange,
+  onClearFilters,
   onViewModeChange, 
   onProductAction, 
   onPageChange,
-  onSort
+  onSort,
+  // Enhanced props
+  categories = [],
+  outlets = [],
+  merchantId = '',
+  onProductCreated,
+  onProductUpdated,
+  onError
 }: ProductsProps) {
   return (
     <div className="space-y-6">
@@ -41,12 +78,22 @@ export function Products({
       <ProductFilters 
         filters={filters}
         onFiltersChange={onFiltersChange}
+        onSearchChange={onSearchChange}
+        onClearFilters={onClearFilters}
       />
             
       {viewMode === 'grid' ? (
         <ProductGrid 
           products={data.products}
           onProductAction={onProductAction}
+          // Pass enhanced props
+          categories={categories}
+          outlets={outlets}
+          merchantId={merchantId}
+          onProductCreated={onProductCreated}
+          onProductUpdated={onProductUpdated}
+          onError={onError}
+          showAddButton={true}
         />
       ) : (
         <ProductTable 

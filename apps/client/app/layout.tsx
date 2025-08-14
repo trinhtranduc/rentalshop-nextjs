@@ -26,7 +26,7 @@ export default function RootLayout({
         <main className="pt-24">
           {children}
         </main>
-        <Script src="/components/mobile-menu.js" />
+        <Script src="/mobile-menu.js" />
       </body>
     </html>
   )
