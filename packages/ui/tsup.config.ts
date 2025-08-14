@@ -1,11 +1,23 @@
-import { createBaseConfig } from '../../tsup.config.base';
+import { defineConfig } from 'tsup';
 
-export default createBaseConfig('src/index.tsx', [
-  'react',
-  'react-dom',
-  'lucide-react',
-  '@radix-ui/react-slot',
-  'class-variance-authority',
-  'clsx',
-  'tailwind-merge'
-]); 
+export default defineConfig({
+  entry: ['src/index.tsx'],
+  format: ['esm', 'cjs'],
+  dts: false, // Temporarily disable DTS to avoid circular import issues
+  external: [
+    '@rentalshop/ui',
+    '@rentalshop/auth', 
+    '@rentalshop/database',
+    '@rentalshop/utils',
+    'react',
+    'react-dom',
+    'lucide-react',
+    '@radix-ui/react-slot',
+    'class-variance-authority',
+    'clsx',
+    'tailwind-merge'
+  ],
+  clean: true,
+  sourcemap: true,
+  minify: false,
+}); 

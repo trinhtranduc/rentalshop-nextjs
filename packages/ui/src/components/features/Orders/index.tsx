@@ -15,6 +15,7 @@ interface OrdersProps {
   onFiltersChange: (filters: OrderFiltersType) => void;
   onOrderAction: (action: string, orderId: string) => void;
   onPageChange: (page: number) => void;
+  onSort?: (column: string) => void;
 }
 
 export function Orders({ 
@@ -22,7 +23,8 @@ export function Orders({
   filters, 
   onFiltersChange, 
   onOrderAction, 
-  onPageChange 
+  onPageChange,
+  onSort
 }: OrdersProps) {
   return (
     <div className="space-y-6">
@@ -38,6 +40,9 @@ export function Orders({
       <OrderTable 
         orders={data.orders}
         onOrderAction={onOrderAction}
+        sortBy={filters.sortBy}
+        sortOrder={filters.sortOrder}
+        onSort={onSort}
       />
       
       <OrderPagination 

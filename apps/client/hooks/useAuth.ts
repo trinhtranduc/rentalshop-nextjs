@@ -38,7 +38,7 @@ export function useAuth() {
         setAuthenticated(false);
         setUser(null);
         setLoading(false);
-        router.push('/login');
+        // Don't redirect here, let the component handle it
         return;
       }
 
@@ -47,10 +47,25 @@ export function useAuth() {
       const currentUser = getStoredUser();
       
       setAuthenticated(serverAuth);
-      setUser(serverAuth ? currentUser : null);
+      if (serverAuth && currentUser) {
+        // Convert StoredUser to User, providing defaults for optional fields
+        const user: User = {
+          id: currentUser.id,
+          email: currentUser.email,
+          name: currentUser.name || 'Unknown User',
+          role: currentUser.role || 'USER',
+          phone: currentUser.phone,
+          merchant: currentUser.merchant || null,
+          outlet: currentUser.outlet || null,
+        };
+        setUser(user);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
 
-      if (!serverAuth) {
+      // Only redirect if we were authenticated but server verification failed
+      if (localAuth && !serverAuth) {
         // Token is invalid or expired, redirect to login
         router.push('/login');
       }
@@ -59,7 +74,7 @@ export function useAuth() {
       setAuthenticated(false);
       setUser(null);
       setLoading(false);
-      router.push('/login');
+      // Don't redirect on error, let the component handle it
     }
   };
 
@@ -72,7 +87,21 @@ export function useAuth() {
 
   const refreshUser = () => {
     const currentUser = getStoredUser();
-    setUser(currentUser);
+    if (currentUser) {
+      // Convert StoredUser to User, providing defaults for optional fields
+      const user: User = {
+        id: currentUser.id,
+        email: currentUser.email,
+        name: currentUser.name || 'Unknown User',
+        role: currentUser.role || 'USER',
+        phone: currentUser.phone,
+        merchant: currentUser.merchant || null,
+        outlet: currentUser.outlet || null,
+      };
+      setUser(user);
+    } else {
+      setUser(null);
+    }
   };
 
   return {

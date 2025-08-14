@@ -18,17 +18,6 @@ export function OrderFilters({ filters, onFiltersChange }: OrderFiltersProps) {
     });
   };
 
-  const resetFilters = () => {
-    onFiltersChange({
-      search: '',
-      status: 'all',
-      orderType: 'all',
-      outlet: 'all',
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
-  };
-
   return (
     <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 backdrop-blur-sm">
       <CardHeader className="pb-6 border-b border-gray-100 dark:border-gray-700">
@@ -43,25 +32,12 @@ export function OrderFilters({ filters, onFiltersChange }: OrderFiltersProps) {
               </p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={resetFilters} 
-            className="px-4 py-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-700 transition-all duration-200"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Reset All
-          </Button>
         </div>
       </CardHeader>
       
       <CardContent className="pt-6 space-y-6">
         {/* Primary Filters */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Primary Filters
-          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Search Field */}
             <div className="space-y-3">
@@ -136,62 +112,6 @@ export function OrderFilters({ filters, onFiltersChange }: OrderFiltersProps) {
                   <SelectItem value="branch2">Branch 2</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-        </div>
-        
-        {/* Secondary Filters */}
-        <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Display Options
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Sort By */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Sort By
-              </label>
-              <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
-                <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">Date Created</SelectItem>
-                  <SelectItem value="pickupPlanAt">Pickup Date</SelectItem>
-                  <SelectItem value="returnPlanAt">Return Date</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Sort Order */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Sort Order
-              </label>
-              <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange('sortOrder', value)}>
-                <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="desc" className="text-gray-700 dark:text-gray-300">Newest First</SelectItem>
-                  <SelectItem value="asc" className="text-gray-700 dark:text-gray-300">Oldest First</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Quick Actions */}
-            <div className="flex items-end">
-              <Button 
-                variant="outline" 
-                onClick={resetFilters} 
-                className="w-full py-3 border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-700 transition-all duration-200 group"
-              >
-                <svg className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Clear Filters
-              </Button>
             </div>
           </div>
         </div>

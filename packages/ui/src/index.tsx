@@ -20,7 +20,8 @@ export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 export { Separator } from './components/ui/separator';
 export { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
 export { Textarea } from './components/ui/textarea';
-export { DateRangePicker, type DateRange } from './components/ui/date-range-picker';
+export { DateRangePicker } from './components/ui/date-range-picker';
+export type { DateRange } from './components/ui/date-range-picker';
 export { Pagination } from './components/ui/pagination';
 
 // ============================================================================
@@ -45,6 +46,7 @@ export { Products } from './components/features/Products';
 export { Customers } from './components/features/Customers';
 export { Orders } from './components/features/Orders';
 export { Users } from './components/features/Users';
+export { Calendar } from './components/features/Calendar';
 
 
 // ============================================================================

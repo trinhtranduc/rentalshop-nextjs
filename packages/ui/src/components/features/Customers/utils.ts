@@ -19,11 +19,6 @@ export const filterCustomers = (customers: Customer[], filters: CustomerFilters)
       return false;
     }
     
-    // State filter
-    if (filters.state && customer.state && !customer.state.toLowerCase().includes(filters.state.toLowerCase())) {
-      return false;
-    }
-    
     return true;
   });
 };
@@ -210,7 +205,6 @@ export const searchCustomers = (customers: Customer[], query: string): Customer[
     `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchLower) ||
     customer.email.toLowerCase().includes(searchLower) ||
     customer.phone.toLowerCase().includes(searchLower) ||
-    (customer.companyName && customer.companyName.toLowerCase().includes(searchLower)) ||
-    (customer.state && customer.state.toLowerCase().includes(searchLower))
+    (customer.companyName && customer.companyName.toLowerCase().includes(searchLower))
   );
 };

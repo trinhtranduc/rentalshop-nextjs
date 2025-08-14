@@ -1,26 +1,24 @@
 import React from 'react';
 import { Button } from '@rentalshop/ui';
-import { Grid3X3, List, Users } from 'lucide-react';
+import { Grid3X3, List, Plus } from 'lucide-react';
 
 interface UserHeaderProps {
-  totalUsers: number;
   viewMode: 'grid' | 'table';
   onViewModeChange: (mode: 'grid' | 'table') => void;
+  onAddUser: () => void;
 }
 
-export function UserHeader({ totalUsers, viewMode, onViewModeChange }: UserHeaderProps) {
+export function UserHeader({ viewMode, onViewModeChange, onAddUser }: UserHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <Users className="w-6 h-6 text-blue-600" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Users</h2>
-          <p className="text-sm text-gray-600">
-            {totalUsers} {totalUsers === 1 ? 'user' : 'users'} total
-          </p>
-        </div>
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={onAddUser}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add User
+        </Button>
       </div>
       
       <div className="flex items-center gap-2">

@@ -4,7 +4,6 @@ import {
   UserFilters, 
   UserGrid, 
   UserTable, 
-  UserActions, 
   UserPagination 
 } from './components';
 import type { UserData, UserFilters as UserFiltersType } from './types';
@@ -28,20 +27,22 @@ export function Users({
   onUserAction, 
   onPageChange 
 }: UsersProps) {
+  const handleAddUser = () => {
+    onUserAction('add', '');
+  };
+
   return (
     <div className="space-y-6">
       <UserHeader 
-        totalUsers={data.total}
         onViewModeChange={onViewModeChange}
         viewMode={viewMode}
+        onAddUser={handleAddUser}
       />
       
       <UserFilters 
         filters={filters}
         onFiltersChange={onFiltersChange}
       />
-      
-      <UserActions onAction={(action: string, userId?: string) => onUserAction(action, userId || '')} />
       
       {viewMode === 'grid' ? (
         <UserGrid 

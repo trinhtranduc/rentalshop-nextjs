@@ -189,6 +189,34 @@ export default function OrdersPage() {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleSort = (column: string) => {
+    // Map column names to sort values
+    const columnMapping: Record<string, 'orderNumber' | 'createdAt' | 'pickupPlanAt' | 'returnPlanAt' | 'status' | 'totalAmount' | 'customerName'> = {
+      'orderNumber': 'orderNumber',
+      'customerName': 'customerName',
+      'orderType': 'orderType',
+      'status': 'status',
+      'totalAmount': 'totalAmount',
+      'pickupPlanAt': 'pickupPlanAt',
+      'returnPlanAt': 'returnPlanAt',
+      'createdAt': 'createdAt'
+    };
+    
+    const newSortBy = columnMapping[column] || 'createdAt';
+    const newSortOrder = filters.sortBy === newSortBy && filters.sortOrder === 'asc' ? 'desc' : 'asc';
+    
+    setFilters(prev => ({
+      ...prev,
+      sortBy: newSortBy,
+      sortOrder: newSortOrder
+    }));
+    setCurrentPage(1); // Reset to first page when sorting changes
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -287,7 +315,8 @@ export default function OrdersPage() {
           filters={filters}
           onFiltersChange={setFilters}
           onOrderAction={handleOrderAction}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
+          onSort={handleSort}
         />
       </PageContent>
     </PageWrapper>

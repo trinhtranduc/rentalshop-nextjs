@@ -70,8 +70,8 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
           <TableRow>
             <TableHead>User</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Outlet</TableHead>
             <TableHead>Contact</TableHead>
-            <TableHead>Organization</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Joined</TableHead>
             <TableHead className="w-[100px]">Actions</TableHead>
@@ -101,18 +101,7 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
               </TableCell>
               
               <TableCell>
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-900">{user.email}</div>
-                  {user.phone && (
-                    <div className="text-sm text-gray-500">{user.phone}</div>
-                  )}
-                </div>
-              </TableCell>
-              
-              <TableCell>
-                {user.merchant ? (
-                  <div className="text-sm text-gray-900">{user.merchant.companyName}</div>
-                ) : user.outletStaff && user.outletStaff.length > 0 ? (
+                {user.outletStaff && user.outletStaff.length > 0 ? (
                   <div className="space-y-1">
                     {user.outletStaff.map((staff) => (
                       <div key={staff.id} className="text-sm text-gray-900">
@@ -123,6 +112,15 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
                 ) : (
                   <span className="text-sm text-gray-500">-</span>
                 )}
+              </TableCell>
+              
+              <TableCell>
+                <div className="space-y-1">
+                  <div className="text-sm text-gray-900">{user.email}</div>
+                  {user.phone && (
+                    <div className="text-sm text-gray-500">{user.phone}</div>
+                  )}
+                </div>
               </TableCell>
               
               <TableCell>

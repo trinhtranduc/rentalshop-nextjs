@@ -1,7 +1,6 @@
 import React from 'react';
 import { Input } from '../../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import { Button } from '../../../ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { CustomerFilters } from '../types';
 
@@ -18,16 +17,6 @@ export function CustomerSearch({ filters, onFiltersChange }: CustomerSearchProps
     });
   };
 
-  const resetFilters = () => {
-    onFiltersChange({
-      search: '',
-      status: 'all',
-      state: 'all',
-      sortBy: 'name',
-      sortOrder: 'asc'
-    });
-  };
-
   return (
     <Card className="shadow-sm border-gray-200 dark:border-gray-700">
       <CardHeader className="pb-4">
@@ -37,8 +26,8 @@ export function CustomerSearch({ filters, onFiltersChange }: CustomerSearchProps
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Basic Search and Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-2">
+        <div className="flex justify-between items-end gap-4">
+          <div className="space-y-2 flex-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Search Customers
             </label>
@@ -54,7 +43,7 @@ export function CustomerSearch({ filters, onFiltersChange }: CustomerSearchProps
               Status
             </label>
             <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}>
-              <SelectTrigger>
+              <SelectTrigger className="min-w-[250px] h-10">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -64,44 +53,6 @@ export function CustomerSearch({ filters, onFiltersChange }: CustomerSearchProps
                 <SelectItem value="blocked">Blocked</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              State
-            </label>
-            <Input
-              placeholder="Filter by state"
-              value={filters.state}
-              onChange={(e) => handleFilterChange('state', e.target.value)}
-            />
-          </div>
-        </div>
-        
-        {/* Advanced Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Sort By
-            </label>
-            <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="orders">Total Orders</SelectItem>
-                <SelectItem value="spent">Total Spent</SelectItem>
-                <SelectItem value="createdAt">Date Created</SelectItem>
-                <SelectItem value="lastOrder">Last Order</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-end">
-            <Button variant="outline" onClick={resetFilters} className="w-full">
-              Reset Filters
-            </Button>
           </div>
         </div>
       </CardContent>

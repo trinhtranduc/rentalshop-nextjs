@@ -50,11 +50,8 @@ export default function UsersPage() {
   const [filters, setFilters] = useState<UserFiltersType>({
     search: '',
     role: 'all',
-    status: 'all',
     merchant: 'all',
-    outlet: 'all',
-    sortBy: 'name',
-    sortOrder: 'asc'
+    outlet: 'all'
   });
 
   useEffect(() => {
@@ -71,9 +68,7 @@ export default function UsersPage() {
         limit: '20',
         ...(filters.search && { search: filters.search }),
         ...(filters.role !== 'all' && { role: filters.role }),
-        ...(filters.status !== 'all' && { isActive: filters.status === 'active' ? 'true' : 'false' }),
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder
+        ...(filters.outlet !== 'all' && { outlet: filters.outlet })
       });
 
       const response = await authenticatedFetch(`/api/users?${params}`);
@@ -134,12 +129,7 @@ export default function UsersPage() {
       case 'add':
         console.log('Add new user');
         break;
-      case 'export':
-        console.log('Export users');
-        break;
-      case 'bulk-actions':
-        console.log('Bulk actions');
-        break;
+
       default:
         console.log('Unknown action:', action, userId);
     }
