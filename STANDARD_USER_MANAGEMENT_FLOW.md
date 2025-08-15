@@ -123,6 +123,40 @@ packages/database/src/
   - Type safety
   - **Merchant-scoped uniqueness**: Database-level constraints for merchant-scoped uniqueness
 
+## 🔔 Toast Notification System
+
+### **Purpose**
+Provide consistent user feedback across all operations with visual notifications.
+
+### **Components**
+- **Toast**: Individual notification component with different types
+- **ToastContainer**: Container for managing multiple toasts
+- **useToasts**: Hook for managing toast state and operations
+
+### **Features**
+- Multiple notification types: success, error, warning, info
+- Auto-hide with configurable duration
+- Manual close option
+- Smooth animations
+- Reusable across all pages
+
+### **Usage in User Management**
+```typescript
+const { showSuccess, showError } = useToasts();
+
+// Show success message
+showSuccess('User Created', 'New user has been created successfully');
+
+// Show error message (no auto-hide)
+showError('Operation Failed', 'Failed to create user');
+```
+
+### **Integration Points**
+1. **Form submissions**: Success/error feedback
+2. **API operations**: Loading states and results
+3. **Data operations**: Create, update, delete feedback
+4. **Error handling**: User-friendly error messages
+
 ## 🔐 Merchant-Scoped Uniqueness
 
 ### **Business Rules**

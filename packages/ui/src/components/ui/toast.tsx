@@ -1,0 +1,152 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { cn } from '../../lib/utils';
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+export interface ToastProps {
+  id: string;
+  type: ToastType;
+  title: string;
+  message?: string;
+  duration?: number;
+  onClose: (id: string) => void;
+}
+
+const toastIcons = {
+  success: CheckCircle,
+  error: AlertCircle,
+  warning: AlertTriangle,
+  info: Info,
+};
+
+const toastStyles = {
+  success: 'bg-green-50 border-green-200 text-green-800',
+  error: 'bg-red-50 border-red-200 text-red-800',
+  warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+  info: 'bg-blue-50 border-blue-200 text-blue-800',
+};
+
+const iconStyles = {
+  success: 'text-green-400',
+  error: 'text-red-400',
+  warning: 'text-yellow-400',
+  info: 'text-blue-400',
+};
+
+export const Toast: React.FC<ToastProps> = ({
+  id,
+  type,
+  title,
+  message,
+  duration = 5000,
+  onClose,
+}) => {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    if (duration > 0) {
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setTimeout(() => onClose(id), 300); // Wait for fade out animation
+      }, duration);
+
+      return () => clearTimeout(timer);
+    }
+  }, [duration, id, onClose]);
+
+  const Icon = toastIcons[type];
+
+  return (
+    <div
+      className={cn(
+        'fixed top-4 right-4 z-50 max-w-sm w-full transition-all duration-300 ease-in-out',
+        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      )}
+    >
+      <div
+        className={cn(
+          'border rounded-lg shadow-lg p-4 flex items-start space-x-3',
+          toastStyles[type]
+        )}
+      >
+        <Icon className={cn('w-5 h-5 mt-0.5 flex-shrink-0', iconStyles[type])} />
+        
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-medium">{title}</h4>
+          {message && (
+            <p className="text-sm mt-1 opacity-90">{message}</p>
+          )}
+        </div>
+        
+        <button
+          onClick={() => {
+            setIsVisible(false);
+            setTimeout(() => onClose(id), 300);
+          }}
+          className="ml-2 flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export interface ToastContainerProps {
+  toasts: ToastProps[];
+  onClose: (id: string) => void;
+}
+
+export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose }) => {
+  console.log('🎯 ToastContainer render:', { toastsCount: toasts.length, toasts });
+  
+  return (
+    <div className="fixed top-4 right-4 z-[9999] space-y-2">
+      {toasts.map((toast) => (
+        <Toast key={toast.id} {...toast} onClose={onClose} />
+      ))}
+    </div>
+  );
+};
+
+// Hook for managing toasts
+export const useToasts = () => {
+  const [toasts, setToasts] = useState<ToastProps[]>([]);
+
+  const addToast = (type: ToastType, title: string, message?: string, duration?: number) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newToast: ToastProps = {
+      id,
+      type,
+      title,
+      message,
+      duration,
+      onClose: removeToast,
+    };
+    
+    setToasts(prev => [...prev, newToast]);
+    return id;
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+
+  const showSuccess = (title: string, message?: string) => addToast('success', title, message);
+  const showError = (title: string, message?: string) => addToast('error', title, message, 0); // No auto-hide for errors
+  const showWarning = (title: string, message?: string) => addToast('warning', title, message);
+  const showInfo = (title: string, message?: string) => addToast('info', title, message);
+
+  return {
+    toasts,
+    addToast,
+    removeToast,
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
+  };
+};
