@@ -293,9 +293,6 @@ export default function UsersPage() {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
       console.error('User creation failed:', errorMessage);
       
-      // You could add a toast notification here
-      // toast.error(errorMessage);
-      
       // Re-throw to let the form handle the error
       throw error;
     } finally {
@@ -370,9 +367,6 @@ export default function UsersPage() {
       // Show error message to user
       const errorMessage = error instanceof Error ? error.message : 'Failed to update user';
       console.error('User update failed:', errorMessage);
-      
-      // You could add a toast notification here
-      // toast.error(errorMessage);
       
       // Fallback: Try to refresh the list manually on error
       console.log('🔄 Attempting manual refresh after error...');

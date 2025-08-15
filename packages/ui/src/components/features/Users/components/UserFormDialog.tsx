@@ -21,7 +21,7 @@ interface UserFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null; // null for creating new user
-  onSave: (userData: UserCreateInput | UserUpdateInput) => void;
+  onSave: (userData: UserCreateInput | UserUpdateInput) => Promise<void>;
   onCancel?: () => void;
 }
 
@@ -152,11 +152,16 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
       console.log('Submitting user data:', submitData);
       await onSave(submitData);
       
-      // Close dialog on success
-      onOpenChange(false);
+      // Success - dialog will be closed by parent component
+      // Toast will be shown by parent component
     } catch (error) {
       console.error('Error saving user:', error);
-      setErrors({ submit: error instanceof Error ? error.message : 'An error occurred while saving' });
+      
+      // Show error in form
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while saving';
+      setErrors({ submit: errorMessage });
+      
+      // Don't close dialog on error - let user fix the issue
     } finally {
       setIsSubmitting(false);
     }
