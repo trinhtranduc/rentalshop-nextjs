@@ -1,8 +1,11 @@
 export { UserHeader } from './UserHeader';
 export { UserFilters } from './UserFilters';
-export { UserActions } from './UserActions';
-export { UserCard } from './UserCard';
 export { UserGrid } from './UserGrid';
 export { UserTable } from './UserTable';
 export { UserPagination } from './UserPagination';
-export { UsersLoading, UserDetailLoading } from './UsersLoading';
+export { UserCard } from './UserCard';
+export { UsersLoading } from './UsersLoading';
+export { UserActions } from './UserActions';
+export { UserDetailDialog } from './UserDetailDialog';
+export { UserFormDialog } from './UserFormDialog';
+export { ChangePasswordDialog } from './ChangePasswordDialog';

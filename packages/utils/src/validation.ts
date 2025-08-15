@@ -211,8 +211,17 @@ export const userCreateSchema = z.object({
   role: userRoleEnum.optional(),
 });
 
+export const userUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  role: userRoleEnum.optional(),
+  isActive: z.boolean().optional(),
+});
+
 export type UsersQuery = z.infer<typeof usersQuerySchema>;
 export type UserCreateInput = z.infer<typeof userCreateSchema>;
+export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 
 // ============================================================================
 // Outlets validation schemas

@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from 'react';
-import { throttle } from '@rentalshop/utils';
 
 export interface UseThrottledSearchOptions {
   delay?: number;
@@ -18,18 +17,7 @@ export const useThrottledSearch = (options: UseThrottledSearchOptions = {}) => {
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Create throttled search function
-  const throttledSearch = useCallback(
-    throttle((searchQuery: string) => {
-      if (searchQuery.length >= minLength) {
-        setIsSearching(true);
-        onSearch?.(searchQuery);
-      }
-    }, delay),
-    [delay, minLength, onSearch]
-  );
-
-  // Handle search input change
+  // Handle search input change with debouncing
   const handleSearchChange = useCallback((value: string) => {
     setQuery(value);
     
@@ -49,11 +37,12 @@ export const useThrottledSearch = (options: UseThrottledSearchOptions = {}) => {
       return;
     }
 
-    // Set timeout for throttled search
+    // Set timeout for debounced search
     searchTimeoutRef.current = setTimeout(() => {
-      throttledSearch(value);
+      setIsSearching(true);
+      onSearch?.(value);
     }, delay);
-  }, [throttledSearch, delay, minLength, onSearch]);
+  }, [delay, minLength, onSearch]);
 
   // Clear search
   const clearSearch = useCallback(() => {

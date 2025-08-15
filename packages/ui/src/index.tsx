@@ -25,6 +25,11 @@ export type { DateRange } from './components/ui/date-range-picker';
 export { Pagination } from './components/ui/pagination';
 
 // ============================================================================
+// COMPONENTS (All UI Components)
+// ============================================================================
+export * from './components';
+
+// ============================================================================
 // SKELETON COMPONENTS (Loading States)
 // ============================================================================
 export { 
@@ -65,6 +70,18 @@ export { Customers } from './components/features/Customers';
 export { Orders } from './components/features/Orders';
 export { Users } from './components/features/Users';
 export { Calendar } from './components/features/Calendar';
+
+// ============================================================================
+// USER TYPES
+// ============================================================================
+export type { 
+  User, 
+  UserCreateInput, 
+  UserUpdateInput, 
+  UserFilters, 
+  UserData, 
+  UserAction 
+} from './components/features/Users/types';
 
 // ============================================================================
 // LOADING COMPONENTS (Feature-Specific Loading States)

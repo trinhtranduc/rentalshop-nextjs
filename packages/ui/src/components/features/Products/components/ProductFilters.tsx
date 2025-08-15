@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Input } from '../../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
@@ -13,15 +13,20 @@ interface ProductFiltersProps {
 }
 
 export function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: ProductFiltersProps) {
-  // Use throttled search to prevent excessive API calls
-  const { query, handleSearchChange: throttledSearchChange } = useThrottledSearch({
+  // Stabilize the onSearch callback to prevent hook recreation
+  const stableOnSearch = useCallback((searchQuery: string) => {
+    onSearchChange(searchQuery);
+  }, [onSearchChange]);
+
+  // Memoize the options to prevent hook recreation
+  const searchOptions = useMemo(() => ({
     delay: 500, // Wait 500ms after user stops typing
     minLength: 2, // Only search after 2+ characters
-    onSearch: (searchQuery: string) => {
-      // This only fires after the delay, not on every keystroke
-      onSearchChange(searchQuery); // Use separate search handler
-    }
-  });
+    onSearch: stableOnSearch
+  }), [stableOnSearch]);
+
+  // Use throttled search to prevent excessive API calls
+  const { query, handleSearchChange: throttledSearchChange } = useThrottledSearch(searchOptions);
 
   const handleFilterChange = (key: keyof ProductFiltersType, value: any) => {
     // For non-search filters, update immediately
@@ -108,17 +113,7 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
           </div>
         </div>
 
-        {/* Clear Filters Button */}
-        {onClearFilters && (
-          <div className="flex justify-end">
-            <button
-              onClick={onClearFilters}
-              className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
-            >
-              Clear All Filters
-            </button>
-          </div>
-        )}
+        
       </CardContent>
     </Card>
   );

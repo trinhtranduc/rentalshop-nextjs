@@ -1,21 +1,42 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Input } from '../../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Button } from '../../../ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { OrderFilters as OrderFiltersType } from '../types';
+import { useThrottledSearch } from '@rentalshop/ui';
 
 interface OrderFiltersProps {
   filters: OrderFiltersType;
   onFiltersChange: (filters: OrderFiltersType) => void;
+  onSearchChange: (searchValue: string) => void;
+  onClearFilters?: () => void;
 }
 
-export function OrderFilters({ filters, onFiltersChange }: OrderFiltersProps) {
+export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: OrderFiltersProps) {
+  // Stabilize the onSearch callback to prevent hook recreation
+  const stableOnSearch = useCallback((searchQuery: string) => {
+    onSearchChange(searchQuery);
+  }, [onSearchChange]);
+
+  // Memoize the options to prevent hook recreation
+  const searchOptions = useMemo(() => ({
+    delay: 500, // Wait 500ms after user stops typing
+    minLength: 2, // Only search after 2+ characters
+    onSearch: stableOnSearch
+  }), [stableOnSearch]);
+
+  // Use throttled search to prevent excessive API calls
+  const { query, handleSearchChange: throttledSearchChange } = useThrottledSearch(searchOptions);
+
   const handleFilterChange = (key: keyof OrderFiltersType, value: any) => {
-    onFiltersChange({
-      ...filters,
-      [key]: value
-    });
+    // For non-search filters, update immediately
+    if (key !== 'search') {
+      onFiltersChange({
+        ...filters,
+        [key]: value
+      });
+    }
   };
 
   return (
@@ -47,8 +68,8 @@ export function OrderFilters({ filters, onFiltersChange }: OrderFiltersProps) {
               <div className="relative">
                 <Input
                   placeholder="Order #, customer name..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  value={query} // Use the throttled query state
+                  onChange={(e) => throttledSearchChange(e.target.value)} // Use throttled handler directly
                   className="pl-10 pr-4 py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200"
                 />
                 <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -3,7 +3,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  role: 'CLIENT' | 'MERCHANT' | 'OUTLET_STAFF' | 'ADMIN';
+  role: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
   isActive: boolean;
   createdAt: string;
   merchant?: {
@@ -28,11 +28,27 @@ export interface User {
   }>;
 }
 
+export interface UserCreateInput {
+  name: string;
+  email: string;
+  phone?: string;
+  role: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  isActive: boolean;
+  password: string;
+}
+
+export interface UserUpdateInput {
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  isActive?: boolean;
+}
+
 export interface UserFilters {
   search: string;
   role: string;
   merchant: string;
-  outlet: string;
 }
 
 export interface UserData {

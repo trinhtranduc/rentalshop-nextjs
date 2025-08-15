@@ -44,4 +44,12 @@ export type {
   OrderStats,
   OrderStatsByPeriod,
   OrderExportData,
-} from './types'; 
+} from './types';
+
+// User management functions (explicitly export to ensure they're available)
+export {
+  findUserByEmail,
+  findUserById,
+  createUser,
+  updateUser
+} from './utils'; 

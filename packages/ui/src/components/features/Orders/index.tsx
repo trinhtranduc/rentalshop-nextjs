@@ -13,6 +13,8 @@ interface OrdersProps {
   data: OrderData;
   filters: OrderFiltersType;
   onFiltersChange: (filters: OrderFiltersType) => void;
+  onSearchChange: (searchValue: string) => void;
+  onClearFilters?: () => void;
   onOrderAction: (action: string, orderId: string) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
@@ -22,6 +24,8 @@ export function Orders({
   data, 
   filters, 
   onFiltersChange, 
+  onSearchChange,
+  onClearFilters,
   onOrderAction, 
   onPageChange,
   onSort
@@ -36,6 +40,8 @@ export function Orders({
       <OrderFilters 
         filters={filters}
         onFiltersChange={onFiltersChange}
+        onSearchChange={onSearchChange}
+        onClearFilters={onClearFilters}
       />      
       <OrderTable 
         orders={data.orders}

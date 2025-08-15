@@ -33,6 +33,7 @@ export {
   DialogFooter,
   DialogTrigger,
 } from './ui/dialog';
+export { ConfirmationDialog } from './ui/confirmation-dialog';
 export { SearchableSelect } from './ui/searchable-select';
 
 // ============================================================================
@@ -82,18 +83,15 @@ export { ProductForm } from './forms/ProductForm';
 // ============================================================================
 // FEATURE COMPONENTS (Business Logic Components)
 // ============================================================================
-export { CustomerCard } from './features/CustomerCard';
-export { CustomerTable } from './features/CustomerTable';
-export { CustomerDialog } from './features/CustomerDialog';
-export { ProductCard } from './features/ProductCard';
-export { ProductGrid } from './features/ProductGrid';
-export { ProductTable } from './features/ProductTable';
-export { ProductDialog } from './features/ProductDialog';
-export { OrderCard } from './features/OrderCard';
-export { OrderTable } from './features/OrderTable';
-export { SelectedProducts } from './features/SelectedProducts';
-export { OrderPreviewDialog } from './features/OrderPreviewDialog';
-export type { Product as GridProduct } from './features/ProductGrid';
+export { default as Customers } from './features/Customers';
+export { CustomerActions } from './features/Customers/components/CustomerActions';
+export { CustomerFormDialog } from './features/Customers/components/CustomerFormDialog';
+export { CustomerDetailDialog } from './features/Customers/components/CustomerDetailDialog';
+export { default as Products } from './features/Products';
+export { default as Orders } from './features/Orders';
+export { default as Dashboard } from './features/Dashboard';
+export { Calendar } from './features/Calendar';
+export { default as Users } from './features/Users';
 
 // ============================================================================
 // CHART COMPONENTS (Analytics & Dashboard)

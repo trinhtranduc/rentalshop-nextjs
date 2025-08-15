@@ -28,6 +28,9 @@ model User {
   outletId   String?
   outlet     Outlet?   @relation(fields: [outletId], references: [id])
 
+  // Merchant-scoped uniqueness constraints
+  @@unique([merchantId, email]) // Email unique within merchant
+  @@unique([merchantId, phone]) // Phone unique within merchant (when not null)
   @@index([email])
   @@index([merchantId])
   @@index([outletId])

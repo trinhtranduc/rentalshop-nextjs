@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui/table';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '../../../ui/dropdown-menu';
 import { Customer } from '../types';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Eye, Edit, ClipboardList, Trash2 } from 'lucide-react';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -12,6 +19,8 @@ interface CustomerTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
+  onViewOrders?: (customerId: string) => void;
+  onDeleteCustomer?: (customerId: string) => void;
 }
 
 // Move SortableHeader outside to prevent recreation on each render
@@ -86,8 +95,65 @@ export function CustomerTable({
   onCustomerAction, 
   sortBy = 'name', 
   sortOrder = 'asc',
-  onSort 
+  onSort,
+  onViewOrders,
+  onDeleteCustomer
 }: CustomerTableProps) {
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const triggerCustomerAction = (action: string, customer: Customer) => {
+    // Create custom event to communicate with CustomerActions component
+    const event = new CustomEvent('customer-action', {
+      detail: { action, customer }
+    });
+    window.dispatchEvent(event);
+    
+    // Also call the original onCustomerAction for backward compatibility
+    onCustomerAction(action, customer.id);
+    
+    // Close the dropdown after action
+    setOpenDropdownId(null);
+  };
+
+  const handleViewOrders = (customerId: string, customer: Customer) => {
+    // Create custom event to communicate with CustomerActions component
+    const event = new CustomEvent('customer-view-orders', {
+      detail: { customerId, customer }
+    });
+    window.dispatchEvent(event);
+    
+    // Also call the original onViewOrders for backward compatibility
+    onViewOrders?.(customerId);
+    
+    // Close the dropdown after action
+    setOpenDropdownId(null);
+  };
+
+  const handleDeleteCustomer = (customerId: string) => {
+    onDeleteCustomer?.(customerId);
+    setOpenDropdownId(null);
+  };
+
+  const toggleDropdown = (customerId: string) => {
+    setOpenDropdownId(openDropdownId === customerId ? null : customerId);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId && dropdownRefs.current[openDropdownId]) {
+        const dropdownElement = dropdownRefs.current[openDropdownId];
+        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdownId]);
+
   if (customers.length === 0) {
     return (
       <Card className="shadow-sm border-gray-200 dark:border-gray-700">
@@ -166,12 +232,12 @@ export function CustomerTable({
                 <SortableHeader column="location" sortable={false}>Location</SortableHeader>
                 <SortableHeader column="status" sortable={false}>Status</SortableHeader>
                 <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Created At</SortableHeader>
-                <TableHead>Actions</TableHead>
+                <TableHead className="w-20">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {customers.map((customer) => (
-                <TableRow key={customer.id}>
+                <TableRow key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   <TableCell>
                     <div>
                       <div className="font-medium text-gray-900 dark:text-white">
@@ -215,21 +281,53 @@ export function CustomerTable({
                   </TableCell>
                   
                   <TableCell>
-                    <div className="flex space-x-2">
+                    <div className="relative" ref={(el) => { dropdownRefs.current[customer.id] = el; }}>
                       <Button
+                        variant="ghost"
                         size="sm"
-                        variant="outline"
-                        onClick={() => onCustomerAction('edit', customer.id)}
+                        className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleDropdown(customer.id);
+                        }}
                       >
-                        Edit
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onCustomerAction('view', customer.id)}
-                      >
-                        View
-                      </Button>
+                      
+                      {openDropdownId === customer.id && (
+                        <div className="absolute right-0 top-full mt-1 z-50 min-w-[12rem] overflow-hidden rounded-md border bg-white dark:bg-gray-800 p-1 text-sm shadow-md">
+                          <div 
+                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
+                            onClick={() => triggerCustomerAction('view', customer)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </div>
+                          <div 
+                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
+                            onClick={() => triggerCustomerAction('edit', customer)}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Customer
+                          </div>
+                          <div 
+                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
+                            onClick={() => handleViewOrders(customer.id, customer)}
+                          >
+                            <ClipboardList className="mr-2 h-4 w-4" />
+                            View Orders
+                          </div>
+                          <div className="-mx-1 my-1 h-px bg-gray-200 dark:bg-gray-600"></div>
+                          <div 
+                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            onClick={() => handleDeleteCustomer(customer.id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Customer
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
