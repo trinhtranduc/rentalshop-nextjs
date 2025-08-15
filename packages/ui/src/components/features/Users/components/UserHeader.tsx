@@ -10,7 +10,7 @@ interface UserHeaderProps {
 
 export function UserHeader({ viewMode, onViewModeChange, onAddUser }: UserHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="flex justify-between items-center gap-4">
       <div className="flex items-center gap-2">
         <Button
           onClick={onAddUser}

@@ -22,6 +22,8 @@ export interface Customer {
 export interface CustomerFilters {
   search: string;
   status: string;
+  sortBy: 'name' | 'orders' | 'spent' | 'createdAt' | 'lastOrder';
+  sortOrder: 'asc' | 'desc';
 }
 
 export interface CustomerData {

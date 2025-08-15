@@ -71,7 +71,8 @@ export const handleApiResponse = async (response: Response) => {
     throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return data;
 };
 
 

@@ -13,24 +13,51 @@ interface CustomersProps {
   data: CustomerData;
   filters: CustomerFilters;
   onFiltersChange: (filters: CustomerFilters) => void;
-  onCustomerAction: (action: string, customerId: string) => void;
+  onSearchChange: (searchValue: string) => void;
+  onClearFilters?: () => void;
+  onCustomerAction: (action: string, customerId?: string) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
+  merchantId: string;
+  onCustomerCreated?: (customer: any) => void;
+  onCustomerUpdated?: (customer: any) => void;
+  onError?: (error: string) => void;
+  onViewOrders?: (customerId: string) => void;
+  onDeleteCustomer?: (customerId: string) => void;
 }
 
 export function Customers({ 
   data, 
   filters, 
   onFiltersChange, 
+  onSearchChange,
+  onClearFilters,
   onCustomerAction, 
   onPageChange,
-  onSort
+  onSort,
+  merchantId,
+  onCustomerCreated,
+  onCustomerUpdated,
+  onError,
+  onViewOrders,
+  onDeleteCustomer
 }: CustomersProps) {
   return (
     <div className="space-y-6">
+      <CustomerActions 
+        onAction={onCustomerAction}
+        merchantId={merchantId}
+        onCustomerCreated={onCustomerCreated}
+        onCustomerUpdated={onCustomerUpdated}
+        onError={onError}
+        onViewOrders={onViewOrders}
+      />
+      
       <CustomerSearch 
         filters={filters}
         onFiltersChange={onFiltersChange}
+        onSearchChange={onSearchChange}
+        onClearFilters={onClearFilters}
       />
             
       <CustomerTable 
@@ -39,6 +66,8 @@ export function Customers({
         sortBy={filters.sortBy}
         sortOrder={filters.sortOrder}
         onSort={onSort}
+        onViewOrders={onViewOrders}
+        onDeleteCustomer={onDeleteCustomer}
       />
       
       <CustomerPagination 

@@ -249,105 +249,132 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
   offset: number;
   hasMore: boolean;
 }> {
-  const { limit = 20, offset = 0, ...searchFilters } = filters;
+  try {
+    console.log('🔍 searchOrders called with filters:', JSON.stringify(filters, null, 2));
+    
+    const { limit = 20, offset = 0, ...searchFilters } = filters;
 
-  const where: any = {};
+    const where: any = {};
 
-  if (searchFilters.outletId) where.outletId = searchFilters.outletId;
-  if (searchFilters.customerId) where.customerId = searchFilters.customerId;
-  if (searchFilters.userId) where.userId = searchFilters.userId;
-  if (searchFilters.orderType) where.orderType = searchFilters.orderType;
-  if (searchFilters.status) where.status = searchFilters.status;
-  // For calendar filtering, use pickup/return dates instead of creation dates
-  if (searchFilters.startDate) where.pickupPlanAt = { gte: searchFilters.startDate };
-  if (searchFilters.endDate) where.pickupPlanAt = { lte: searchFilters.endDate };
-  if (searchFilters.pickupDate) where.pickupPlanAt = { gte: searchFilters.pickupDate };
-  if (searchFilters.returnDate) where.returnPlanAt = { lte: searchFilters.returnDate };
-  if (searchFilters.minAmount) where.totalAmount = { gte: searchFilters.minAmount };
-  if (searchFilters.maxAmount) where.totalAmount = { lte: searchFilters.maxAmount };
+    if (searchFilters.outletId) where.outletId = searchFilters.outletId;
+    if (searchFilters.customerId) where.customerId = searchFilters.customerId;
+    if (searchFilters.userId) where.userId = searchFilters.userId;
+    if (searchFilters.orderType) where.orderType = searchFilters.orderType;
+    if (searchFilters.status) where.status = searchFilters.status;
+    // For calendar filtering, use pickup/return dates instead of creation dates
+    if (searchFilters.startDate) where.pickupPlanAt = { gte: searchFilters.startDate };
+    if (searchFilters.endDate) where.pickupPlanAt = { lte: searchFilters.endDate };
+    if (searchFilters.pickupDate) where.pickupPlanAt = { gte: searchFilters.pickupDate };
+    if (searchFilters.returnDate) where.returnPlanAt = { lte: searchFilters.returnDate };
+    if (searchFilters.minAmount) where.totalAmount = { gte: searchFilters.minAmount };
+    if (searchFilters.maxAmount) where.totalAmount = { lte: searchFilters.maxAmount };
 
-  // Text search
-  if (searchFilters.q) {
-    where.OR = [
-      { orderNumber: { contains: searchFilters.q, mode: 'insensitive' } },
-      { customerName: { contains: searchFilters.q, mode: 'insensitive' } },
-      { customerPhone: { contains: searchFilters.q, mode: 'insensitive' } },
-      { customerEmail: { contains: searchFilters.q, mode: 'insensitive' } },
-      { notes: { contains: searchFilters.q, mode: 'insensitive' } },
-    ];
-  }
-
-  const [orders, total] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      include: {
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
-        },
-        outlet: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        orderItems: {
-          include: {
+    // Text search
+    if (searchFilters.q) {
+      where.OR = [
+        { orderNumber: { contains: searchFilters.q } },
+        // Search through customer relations instead of non-existent fields
+        { customer: { 
+          OR: [
+            { firstName: { contains: searchFilters.q } },
+            { lastName: { contains: searchFilters.q } },
+            { phone: { contains: searchFilters.q } },
+            { email: { contains: searchFilters.q } }
+          ]
+        } },
+        // Search through product names in order items
+        { orderItems: { 
+          some: {
             product: {
-              select: {
-                id: true,
-                name: true,
-                barcode: true,
+              OR: [
+                { name: { contains: searchFilters.q } },
+                { barcode: { contains: searchFilters.q } }
+              ]
+            }
+          }
+        } }
+      ];
+    }
+
+    console.log('🔍 searchOrders where clause:', JSON.stringify(where, null, 2));
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  barcode: true,
+                },
               },
             },
           },
+          // user removed
         },
-        // user removed
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
-    }),
-    prisma.order.count({ where }),
-  ]);
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.order.count({ where }),
+    ]);
 
-  const hasMore = offset + limit < total;
+    console.log('🔍 searchOrders found orders:', orders.length, 'total:', total);
 
-  return {
-    orders: orders.map((order) => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      orderType: order.orderType as OrderType,
-      status: order.status as OrderStatus,
-      totalAmount: order.totalAmount,
-      depositAmount: order.depositAmount,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      customer: order.customer,
-      outlet: order.outlet,
-      orderItems: order.orderItems.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        product: {
-          name: item.product.name,
-          barcode: item.product.barcode,
-        },
+    const hasMore = offset + limit < total;
+
+    return {
+      orders: orders.map((order) => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        orderType: order.orderType as OrderType,
+        status: order.status as OrderStatus,
+        totalAmount: order.totalAmount,
+        depositAmount: order.depositAmount,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        pickupPlanAt: order.pickupPlanAt,
+        returnPlanAt: order.returnPlanAt,
+        pickedUpAt: order.pickedUpAt,
+        returnedAt: order.returnedAt,
+        customer: order.customer,
+        outlet: order.outlet,
+        orderItems: order.orderItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          product: {
+            name: item.product.name,
+            barcode: item.product.barcode,
+          },
+        })),
       })),
-    })),
-    total,
-    limit,
-    offset,
-    hasMore,
-  };
+      total,
+      limit,
+      offset,
+      hasMore,
+    };
+  } catch (error) {
+    console.error('🔍 searchOrders error:', error);
+    throw error;
+  }
 }
 
 // Get order statistics

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   Button, 
   Customers,
@@ -36,6 +36,7 @@ interface ExtendedCustomer {
 }
 
 export default function CustomersPage() {
+  // State for customers and UI
   const [customers, setCustomers] = useState<ExtendedCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,19 +51,46 @@ export default function CustomersPage() {
     sortOrder: 'asc'
   });
 
+  // Separate search state to prevent unnecessary re-renders
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const hasInitializedRef = useRef(false);
+
   const fetchCustomers = useCallback(async () => {
     try {
-      setLoading(true);
+      // Show appropriate loading state
+      if (searchQuery !== undefined && hasInitializedRef.current) {
+        setIsSearching(true); // Table-only loading for search operations
+      } else if (!isInitialLoad) {
+        setLoading(true); // Full page loading for other operations
+      }
       const { authenticatedFetch } = await import('@rentalshop/utils');
 
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '10',
-        ...(filters.search && { search: filters.search }),
-        ...(filters.status !== 'all' && { status: filters.status }),
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder
-      });
+      // Build API parameters based on whether we're searching or listing
+      let params: URLSearchParams;
+      
+      if (searchQuery) {
+        // Search endpoint - use offset-based pagination
+        const offset = (currentPage - 1) * 10; // Convert page to offset
+        params = new URLSearchParams({
+          search: searchQuery,
+          limit: '10',
+          offset: offset.toString(),
+          ...(filters.status !== 'all' && { isActive: filters.status === 'active' ? 'true' : 'false' }),
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder
+        });
+      } else {
+        // Standard listing endpoint - use page-based pagination
+        params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: '10',
+          ...(filters.status !== 'all' && { isActive: filters.status === 'active' ? 'true' : 'false' }),
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder
+        });
+      }
 
       const response = await authenticatedFetch(`/api/customers?${params}`);
 
@@ -73,27 +101,99 @@ export default function CustomersPage() {
       const data = await response.json();
       
       if (data.success) {
-        setCustomers(data.data.customers);
-        setTotalPages(data.data.totalPages);
-        setTotalCustomers(data.data.total || data.data.customers.length);
+        // Handle both search response and standard listing response
+        let customers, total, totalPages;
+        
+        if (data.data.customers) {
+          // This is either a search response or standard listing
+          customers = data.data.customers;
+          total = data.data.total || customers.length;
+          
+          // Calculate totalPages based on the response structure
+          if (data.data.totalPages !== undefined) {
+            // Standard listing response
+            totalPages = data.data.totalPages;
+          } else if (data.data.limit && data.data.total) {
+            // Search response - calculate pages from limit and total
+            totalPages = Math.ceil(data.data.total / data.data.limit);
+          } else {
+            // Fallback calculation
+            totalPages = Math.ceil(total / 10);
+          }
+        } else {
+          // Fallback if data structure is unexpected
+          customers = [];
+          total = 0;
+          totalPages = 1;
+        }
+        
+        setCustomers(customers);
+        setTotalPages(totalPages);
+        setTotalCustomers(total);
+        
+        // If current page is beyond total pages after search, reset to page 1
+        if (currentPage > totalPages && totalPages > 0) {
+          setCurrentPage(1);
+        }
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
       setLoading(false);
+      setIsSearching(false);
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     }
-  }, [currentPage, filters]);
+  }, [currentPage, searchQuery, filters.status, filters.sortBy, filters.sortOrder, setCustomers, setTotalPages, setTotalCustomers, setLoading, setIsSearching, isInitialLoad, hasInitializedRef]);
 
+  // Effect for initial load - only runs once
   useEffect(() => {
     fetchCustomers();
-  }, [fetchCustomers]);
+    // Mark as initialized after first load
+    hasInitializedRef.current = true;
+  }, []); // Remove fetchCustomers dependency
 
-  const handleFiltersChange = (newFilters: CustomerFiltersType) => {
-    setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
-  };
+  // Effect for all data changes - intelligently handles search vs. other operations
+  useEffect(() => {
+    if (hasInitializedRef.current) {
+      fetchCustomers();
+    }
+  }, [searchQuery, currentPage, filters.status, filters.sortBy, filters.sortOrder]); // Remove fetchCustomers dependency
 
-  const handleCustomerAction = async (action: string, customerId: string) => {
+  // Separate handler for search changes - only updates search state
+  const handleSearchChange = useCallback((searchValue: string) => {
+    setSearchQuery(searchValue);
+    setCurrentPage(1); // Reset to first page when searching
+  }, []);
+
+  // Handler for other filter changes - only reloads table data
+  const handleFiltersChange = useCallback((newFilters: CustomerFiltersType) => {
+    // Check if the filters actually changed to prevent unnecessary updates
+    const hasChanged = Object.keys(newFilters).some(key => 
+      newFilters[key as keyof CustomerFiltersType] !== filters[key as keyof CustomerFiltersType]
+    );
+    
+    if (hasChanged) {
+      setFilters(newFilters);
+      setCurrentPage(1); // Reset to first page when filters change
+    }
+  }, [filters]);
+
+  // Handler for clearing all filters - only reloads table data
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      status: 'all',
+      sortBy: 'name',
+      sortOrder: 'asc'
+    });
+    setSearchQuery(''); // This will trigger the search effect to reload table
+    setCurrentPage(1);
+    // Don't call fetchCustomers directly - let the search effect handle it
+  }, []);
+
+  const handleCustomerAction = useCallback(async (action: string, customerId: string) => {
     switch (action) {
       case 'edit':
         // Handle edit - you can implement this based on your needs
@@ -126,13 +226,13 @@ export default function CustomersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  };
+  }, [fetchCustomers]);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
-  };
+  }, []);
 
-  const handleSort = (column: string) => {
+  const handleSort = useCallback((column: string) => {
     // Map column names to sort values
     const columnMapping: Record<string, 'name' | 'orders' | 'spent' | 'createdAt' | 'lastOrder'> = {
       'name': 'name',
@@ -154,10 +254,10 @@ export default function CustomersPage() {
       sortOrder: newSortOrder
     }));
     setCurrentPage(1); // Reset to first page when sorting changes
-  };
+  }, [filters.sortBy, filters.sortOrder, setFilters, setCurrentPage]);
 
-  // Transform data for the Customers component
-  const customerData: CustomerData = {
+  // Transform data for the Customers component - memoized to prevent unnecessary re-renders
+  const customerData: CustomerData = useMemo(() => ({
     customers: customers.map(customer => ({
       id: customer.id,
       firstName: customer.firstName,
@@ -192,7 +292,7 @@ export default function CustomersPage() {
       averageOrderValue: 0, // Not available in current data
       topCustomers: [] // Not available in current data
     }
-  };
+  }), [customers, totalCustomers, currentPage, totalPages]);
 
   if (loading) {
     return (
@@ -229,6 +329,8 @@ export default function CustomersPage() {
           data={customerData}
           filters={filters}
           onFiltersChange={handleFiltersChange}
+          onSearchChange={handleSearchChange}
+          onClearFilters={handleClearFilters}
           onCustomerAction={handleCustomerAction}
           onPageChange={handlePageChange}
           onSort={handleSort}

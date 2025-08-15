@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui/table';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
-import { Eye, Edit, UserCheck, UserX } from 'lucide-react';
+import { Eye, Edit, UserCheck, UserX, MoreHorizontal } from 'lucide-react';
 import type { User } from '../types';
 
 interface UserTableProps {
@@ -11,6 +11,42 @@ interface UserTableProps {
 }
 
 export function UserTable({ users, onUserAction }: UserTableProps) {
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId && dropdownRefs.current[openDropdownId]) {
+        const dropdownElement = dropdownRefs.current[openDropdownId];
+        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdownId]);
+
+  const handleDropdownToggle = (userId: string) => {
+    setOpenDropdownId(openDropdownId === userId ? null : userId);
+  };
+
+  const handleUserAction = (action: string, userId: string) => {
+    // Create custom event to communicate with UserActions component
+    const event = new CustomEvent('user-action', {
+      detail: { action, userId, user: users.find(u => u.id === userId) }
+    });
+    window.dispatchEvent(event);
+    
+    // Also call the original onUserAction for backward compatibility
+    onUserAction(action, userId);
+    
+    // Close the dropdown after action
+    setOpenDropdownId(null);
+  };
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'ADMIN':
@@ -32,12 +68,47 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
         return 'Admin';
       case 'MERCHANT':
         return 'Merchant';
+      case 'OUTLET_ADMIN':
+        return 'Outlet Admin';
       case 'OUTLET_STAFF':
-        return 'Staff';
-      case 'CLIENT':
-        return 'Client';
+        return 'Outlet Staff';
       default:
         return role;
+    }
+  };
+
+  const getRoleBadgeStyle = (role: string) => {
+    switch (role) {
+      case 'ADMIN':
+        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
+      case 'MERCHANT':
+        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800';
+      case 'OUTLET_ADMIN':
+        return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800';
+      case 'OUTLET_STAFF':
+        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800';
+    }
+  };
+
+  const getStatusBadgeStyle = (isActive: boolean) => {
+    if (isActive) {
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800';
+    } else {
+      return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
+    }
+  };
+
+  const getStatusDisplayName = (isActive: boolean) => {
+    return isActive ? 'Active' : 'Inactive';
+  };
+
+  const getStatusIcon = (isActive: boolean) => {
+    if (isActive) {
+      return '🟢'; // Green circle
+    } else {
+      return '🟡'; // Yellow circle
     }
   };
 
@@ -95,9 +166,9 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
               </TableCell>
               
               <TableCell>
-                <Badge variant={getRoleBadgeVariant(user.role)}>
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeStyle(user.role)}`}>
                   {getRoleDisplayName(user.role)}
-                </Badge>
+                </div>
               </TableCell>
               
               <TableCell>
@@ -124,9 +195,9 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
               </TableCell>
               
               <TableCell>
-                <Badge variant={user.isActive ? 'default' : 'secondary'}>
-                  {user.isActive ? 'Active' : 'Inactive'}
-                </Badge>
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(user.isActive)}`}>
+                  {getStatusDisplayName(user.isActive)}
+                </div>
               </TableCell>
               
               <TableCell>
@@ -136,45 +207,55 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
               </TableCell>
               
               <TableCell>
-                <div className="flex gap-1">
+                <div className="relative" ref={(el) => { dropdownRefs.current[user.id] = el; }}>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onUserAction('view', user.id)}
+                    onClick={() => handleDropdownToggle(user.id)}
                     className="h-8 w-8 p-0"
-                    title="View"
+                    title="Actions"
                   >
-                    <Eye className="h-4 w-4" />
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onUserAction('edit', user.id)}
-                    className="h-8 w-8 p-0"
-                    title="Edit"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  {user.isActive ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onUserAction('deactivate', user.id)}
-                      className="h-8 w-8 p-0"
-                      title="Deactivate"
-                    >
-                      <UserX className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onUserAction('activate', user.id)}
-                      className="h-8 w-8 p-0"
-                      title="Activate"
-                    >
-                      <UserCheck className="h-4 w-4" />
-                    </Button>
+                  
+                  {/* Dropdown Menu */}
+                  {openDropdownId === user.id && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[12rem]">
+                      <div className="py-1">
+                        <div 
+                          className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
+                          onClick={() => handleUserAction('view', user.id)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </div>
+                        <div 
+                          className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
+                          onClick={() => handleUserAction('edit', user.id)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit User
+                        </div>
+                        <div className="-mx-1 my-1 h-px bg-gray-200 dark:bg-gray-600"></div>
+                        {user.isActive ? (
+                          <div 
+                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                            onClick={() => handleUserAction('deactivate', user.id)}
+                          >
+                            <UserX className="mr-2 h-4 w-4" />
+                            Deactivate User
+                          </div>
+                        ) : (
+                          <div 
+                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            onClick={() => handleUserAction('activate', user.id)}
+                          >
+                            <UserCheck className="mr-2 h-4 w-4" />
+                            Activate User
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </TableCell>

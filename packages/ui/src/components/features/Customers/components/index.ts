@@ -1,7 +1,10 @@
-export { CustomerHeader } from './CustomerHeader';
-export { CustomerSearch } from './CustomerSearch';
-export { CustomerTable } from './CustomerTable';
 export { CustomerActions } from './CustomerActions';
-export { CustomerStats } from './CustomerStats';
+export { CustomerDetailDialog } from './CustomerDetailDialog';
+export { CustomerFormDialog } from './CustomerFormDialog';
+export { CustomerOrdersDialog } from './CustomerOrdersDialog';
+export { CustomerTable } from './CustomerTable';
+export { CustomerSearch } from './CustomerSearch';
+export { CustomerHeader } from './CustomerHeader';
 export { CustomerPagination } from './CustomerPagination';
+export { CustomerStats } from './CustomerStats';
 export { CustomersLoading, CustomerDetailLoading } from './CustomersLoading';

@@ -210,21 +210,21 @@ export default function ProductsPage() {
       fetchCategories();
       fetchOutlets();
     }
-  }, [isMerchantLevel, fetchCategories, fetchOutlets]);
+  }, [isMerchantLevel]); // Remove fetchCategories and fetchOutlets dependencies
 
   // Effect for initial products load - only runs once
   useEffect(() => {
     fetchProducts();
     // Mark as initialized after first load
     hasInitializedRef.current = true;
-  }, [fetchProducts]);
+  }, []); // Remove fetchProducts dependency
 
   // Effect for all data changes - intelligently handles search vs. other operations
   useEffect(() => {
     if (hasInitializedRef.current) {
       fetchProducts();
     }
-  }, [searchQuery, currentPage, filters.category, filters.outlet, filters.status, filters.inStock, filters.sortBy, filters.sortOrder, fetchProducts]);
+  }, [searchQuery, currentPage, filters.category, filters.outlet, filters.status, filters.inStock, filters.sortBy, filters.sortOrder]); // Remove fetchProducts dependency
 
   // Separate handler for search changes - only updates search state
   const handleSearchChange = useCallback((searchValue: string) => {

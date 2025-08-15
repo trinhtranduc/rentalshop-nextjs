@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { config } from '@rentalshop/utils';
 
 declare global {
   var __prisma: PrismaClient | undefined;
@@ -7,7 +6,7 @@ declare global {
 
 // Create a single PrismaClient instance that can be shared throughout the app
 const prisma = globalThis.__prisma || new PrismaClient({
-  log: config.logging.level === 'debug' ? ['query', 'error', 'warn'] : ['error'],
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
 // In development, set the global instance to avoid multiple instances

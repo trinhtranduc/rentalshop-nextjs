@@ -3,21 +3,41 @@ import type { User } from '@prisma/client';
 
 // User Management
 export const findUserByEmail = async (email: string) => {
-  return prisma.user.findUnique({
-    where: { email },
-    include: {
-      merchant: true,
-    },
-  });
+  console.log('Database: Finding user by email:', email);
+  
+  try {
+    const result = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        merchant: true,
+      },
+    });
+    
+    console.log('Database: User found by email:', result ? 'Yes' : 'No');
+    return result;
+  } catch (error) {
+    console.error('Database: Error finding user by email:', error);
+    throw error;
+  }
 };
 
 export const findUserById = async (id: string) => {
-  return prisma.user.findUnique({
-    where: { id },
-    include: {
-      merchant: true,
-    },
-  });
+  console.log('Database: Finding user by ID:', id);
+  
+  try {
+    const result = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        merchant: true,
+      },
+    });
+    
+    console.log('Database: User found by ID:', result ? 'Yes' : 'No');
+    return result;
+  } catch (error) {
+    console.error('Database: Error finding user by ID:', error);
+    throw error;
+  }
 };
 
 export const createUser = async (data: {
@@ -27,26 +47,77 @@ export const createUser = async (data: {
   lastName: string;
   phone?: string;
   role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  merchantId?: string; // Add merchantId to the function signature
 }) => {
-  return prisma.user.create({
-    data: {
-      email: data.email,
-      password: data.password,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      phone: data.phone,
-      role: data.role || 'OUTLET_STAFF',
-    },
-    include: { merchant: true },
-  });
+  console.log('Database: Creating user with data:', data);
+  
+  try {
+    // Check for merchant-scoped uniqueness before creating
+    if (data.merchantId) {
+      // Check if email already exists within the same merchant
+      const existingEmailUser = await prisma.user.findFirst({
+        where: {
+          email: data.email.toLowerCase(),
+          merchantId: data.merchantId
+        }
+      });
+      
+      if (existingEmailUser) {
+        throw new Error(`User with email '${data.email}' already exists in this merchant organization`);
+      }
+      
+      // Check if phone already exists within the same merchant (if phone is provided)
+      if (data.phone && data.phone.trim()) {
+        const existingPhoneUser = await prisma.user.findFirst({
+          where: {
+            phone: data.phone.trim(),
+            merchantId: data.merchantId
+          }
+        });
+        
+        if (existingPhoneUser) {
+          throw new Error(`User with phone '${data.phone}' already exists in this merchant organization`);
+        }
+      }
+    }
+    
+    const result = await prisma.user.create({
+      data: {
+        email: data.email.toLowerCase(),
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone?.trim(),
+        role: data.role || 'OUTLET_STAFF',
+        merchantId: data.merchantId, // Include merchantId in creation
+      },
+      include: { merchant: true },
+    });
+    
+    console.log('Database: User created successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Database: Error creating user:', error);
+    throw error;
+  }
 };
 
 export const updateUser = async (id: string, data: Partial<User>) => {
-  return prisma.user.update({
-    where: { id },
-    data,
-    include: { merchant: true },
-  });
+  console.log('Database: Updating user with ID:', id, 'data:', data);
+  
+  try {
+    const result = await prisma.user.update({
+      where: { id },
+      data,
+      include: { merchant: true },
+    });
+    
+    console.log('Database: User updated successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Database: Error updating user:', error);
+    throw error;
+  }
 };
 
 // Merchant Management
