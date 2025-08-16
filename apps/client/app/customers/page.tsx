@@ -11,6 +11,7 @@ import {
   PageContent
 } from '@rentalshop/ui';
 import { UserPlus } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 // Import types from the Customers feature
 import { CustomerData, CustomerFilters as CustomerFiltersType } from '../../../../packages/ui/src/components/features/Customers/types';
@@ -36,6 +37,8 @@ interface ExtendedCustomer {
 }
 
 export default function CustomersPage() {
+  const { user } = useAuth();
+  
   // State for customers and UI
   const [customers, setCustomers] = useState<ExtendedCustomer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -193,7 +196,12 @@ export default function CustomersPage() {
     // Don't call fetchCustomers directly - let the search effect handle it
   }, []);
 
-  const handleCustomerAction = useCallback(async (action: string, customerId: string) => {
+  const handleCustomerAction = useCallback(async (action: string, customerId?: string) => {
+    if (!customerId) {
+      console.warn('Customer action called without customerId');
+      return;
+    }
+    
     switch (action) {
       case 'edit':
         // Handle edit - you can implement this based on your needs
@@ -334,6 +342,7 @@ export default function CustomersPage() {
           onCustomerAction={handleCustomerAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
+          merchantId={user?.merchant?.id || ''}
         />
       </PageContent>
     </PageWrapper>

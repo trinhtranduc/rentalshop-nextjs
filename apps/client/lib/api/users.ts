@@ -1,13 +1,19 @@
 import { authenticatedFetch, handleApiResponse } from '../auth/auth';
 import type { User, UserCreateInput, UserUpdateInput } from '@rentalshop/ui';
 import { executeWithDataRefresh } from '@rentalshop/utils';
+import type { ApiResponse } from './client';
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data: T;
-  message?: string;
-  error?: string;
-}
+/**
+ * Users API Client - User Management Operations
+ * 
+ * This file handles all user management operations:
+ * - CRUD operations (create, read, update, delete)
+ * - User status management (activate, deactivate)
+ * - Password management
+ * - Bulk operations with automatic refresh
+ * 
+ * Imports shared types from client.ts to avoid duplication
+ */
 
 export interface UsersResponse {
   users: User[];
@@ -66,6 +72,14 @@ export const usersApi = {
   },
 
   /**
+   * Get user by public ID (for public URLs)
+   */
+  async getUserByPublicId(publicId: string): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`/api/users/${publicId}`);
+    return handleApiResponse(response);
+  },
+
+  /**
    * Create a new user
    */
   async createUser(userData: UserCreateInput): Promise<ApiResponse<User>> {
@@ -77,59 +91,30 @@ export const usersApi = {
   },
 
   /**
-   * Create a new user and automatically refresh the user list
-   * This handles database consistency delays automatically
+   * Update an existing user
+   * Note: The API expects the request body to include the public ID
    */
-  async createUserAndRefresh(userData: UserCreateInput, filters?: any): Promise<{
-    created: User;
-    refreshed: UsersResponse;
-  }> {
-    console.log('🔄 createUserAndRefresh called with:', { userData, filters });
+  async updateUser(userId: string, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
+    // Include the publicId in the request body as required by the API
+    const requestBody = {
+      publicId: userId,
+      ...userData
+    };
     
-    try {
-      // Step 1: Create the user
-      console.log('📡 Step 1: Creating user...');
-      const createResult = await this.createUser(userData);
-      console.log('✅ Create result:', createResult);
-      
-      if (!createResult.success || !createResult.data) {
-        throw new Error(`Create failed: ${createResult.error || 'Unknown error'}`);
-      }
-      
-      // Step 2: Wait a bit for database consistency
-      console.log('⏳ Step 2: Waiting 2 seconds for database consistency...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Step 3: Refresh the user list
-      console.log('📡 Step 3: Refreshing user list...');
-      const refreshResult = await this.getUsers(filters);
-      console.log('✅ Refresh result:', refreshResult);
-      
-      if (!refreshResult.success || !refreshResult.data) {
-        throw new Error(`Refresh failed: ${refreshResult.error || 'Unknown error'}`);
-      }
-      
-      const finalResult = {
-        created: createResult.data,
-        refreshed: refreshResult.data
-      };
-      
-      console.log('✅ Final result:', finalResult);
-      return finalResult;
-    } catch (error) {
-      console.error('❌ Error in createUserAndRefresh:', error);
-      throw error;
-    }
+    const response = await authenticatedFetch('/api/users', {
+      method: 'PUT',
+      body: JSON.stringify(requestBody),
+    });
+    return handleApiResponse(response);
   },
 
   /**
-   * Update an existing user
-   * Note: The API expects the request body to include the user ID
+   * Update user by public ID
    */
-  async updateUser(userId: string, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
-    // Include the ID in the request body as required by the API
+  async updateUserByPublicId(publicId: string, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
+    // Include the publicId in the request body as required by the API
     const requestBody = {
-      id: userId,
+      publicId,
       ...userData
     };
     
@@ -190,130 +175,94 @@ export const usersApi = {
    * Deactivate a user
    */
   async deactivateUser(userId: string): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${userId}/deactivate`, {
+    const response = await authenticatedFetch(`/api/users/${userId}`, {
       method: 'PATCH',
+      body: JSON.stringify({ action: 'deactivate' }),
     });
     return handleApiResponse(response);
   },
 
   /**
-   * Deactivate a user and automatically refresh the user list
+   * Deactivate user by public ID
    */
-  async deactivateUserAndRefresh(userId: string, filters?: any): Promise<{
-    deactivated: boolean;
-    refreshed: UsersResponse;
-  }> {
-    console.log('🔄 deactivateUserAndRefresh called with:', { userId, filters });
-    
-    try {
-      // Step 1: Deactivate the user
-      console.log('📡 Step 1: Deactivating user...');
-      const deactivateResult = await this.deactivateUser(userId);
-      console.log('✅ Deactivate result:', deactivateResult);
-      
-      if (!deactivateResult.success) {
-        throw new Error(`Deactivate failed: ${deactivateResult.error || 'Unknown error'}`);
-      }
-      
-      // Step 2: Wait a bit for database consistency
-      console.log('⏳ Step 2: Waiting 2 seconds for database consistency...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Step 3: Refresh the user list
-      console.log('📡 Step 3: Refreshing user list...');
-      const refreshResult = await this.getUsers(filters);
-      console.log('✅ Refresh result:', refreshResult);
-      
-      if (!refreshResult.success || !refreshResult.data) {
-        throw new Error(`Refresh failed: ${refreshResult.error || 'Unknown error'}`);
-      }
-      
-      const finalResult = {
-        deactivated: true,
-        refreshed: refreshResult.data
-      };
-      
-      console.log('✅ Final result:', finalResult);
-      return finalResult;
-    } catch (error) {
-      console.error('❌ Error in deactivateUserAndRefresh:', error);
-      throw error;
-    }
+  async deactivateUserByPublicId(publicId: string): Promise<ApiResponse<{ message: string }>> {
+    const response = await authenticatedFetch(`/api/users/${publicId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'deactivate' }),
+    });
+    return handleApiResponse(response);
   },
 
   /**
    * Activate a user
    */
   async activateUser(userId: string): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${userId}/activate`, {
+    const response = await authenticatedFetch(`/api/users/${userId}`, {
       method: 'PATCH',
+      body: JSON.stringify({ action: 'activate' }),
     });
     return handleApiResponse(response);
   },
 
   /**
-   * Activate a user and automatically refresh the user list
+   * Activate user by public ID
    */
-  async activateUserAndRefresh(userId: string, filters?: any): Promise<{
-    activated: boolean;
-    refreshed: UsersResponse;
-  }> {
-    console.log('🔄 activateUserAndRefresh called with:', { userId, filters });
-    
-    try {
-      // Step 1: Activate the user
-      console.log('📡 Step 1: Activating user...');
-      const activateResult = await this.activateUser(userId);
-      console.log('✅ Activate result:', activateResult);
-      
-      if (!activateResult.success) {
-        throw new Error(`Activate failed: ${activateResult.error || 'Unknown error'}`);
-      }
-      
-      // Step 2: Wait a bit for database consistency
-      console.log('⏳ Step 2: Waiting 2 seconds for database consistency...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Step 3: Refresh the user list
-      console.log('📡 Step 3: Refreshing user list...');
-      const refreshResult = await this.getUsers(filters);
-      console.log('✅ Refresh result:', refreshResult);
-      
-      if (!refreshResult.success || !refreshResult.data) {
-        throw new Error(`Refresh failed: ${refreshResult.error || 'Unknown error'}`);
-      }
-      
-      const finalResult = {
-        activated: true,
-        refreshed: refreshResult.data
-      };
-      
-      console.log('✅ Final result:', finalResult);
-      return finalResult;
-    } catch (error) {
-      console.error('❌ Error in activateUserAndRefresh:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Change user password
-   */
-  async changePassword(userId: string, newPassword: string): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${userId}/change-password`, {
+  async activateUserByPublicId(publicId: string): Promise<ApiResponse<{ message: string }>> {
+    const response = await authenticatedFetch(`/api/users/${publicId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ newPassword }),
+      body: JSON.stringify({ action: 'activate' }),
     });
     return handleApiResponse(response);
   },
 
   /**
-   * Delete a user (permanent)
+   * Delete a user
    */
   async deleteUser(userId: string): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/users/${userId}`, {
       method: 'DELETE',
     });
     return handleApiResponse(response);
-  }
+  },
+
+  /**
+   * Delete user by public ID
+   */
+  async deleteUserByPublicId(publicId: string): Promise<ApiResponse<{ message: string }>> {
+    const response = await authenticatedFetch(`/api/users/${publicId}`, {
+      method: 'DELETE',
+    });
+    return handleApiResponse(response);
+  },
+
+  /**
+   * Change user password
+   */
+  async changePassword(userId: string, passwordData: {
+    currentPassword?: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<ApiResponse<{ message: string }>> {
+    const response = await authenticatedFetch(`/api/users/${userId}/change-password`, {
+      method: 'PATCH',
+      body: JSON.stringify(passwordData),
+    });
+    return handleApiResponse(response);
+  },
+
+  /**
+   * Change password by public ID
+   */
+  async changePasswordByPublicId(publicId: string, passwordData: {
+    currentPassword?: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<ApiResponse<{ message: string }>> {
+    const response = await authenticatedFetch(`/api/users/${publicId}/change-password`, {
+      method: 'PATCH',
+      body: JSON.stringify(passwordData),
+    });
+    return handleApiResponse(response);
+  },
+
 };

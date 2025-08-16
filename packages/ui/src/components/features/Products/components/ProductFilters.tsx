@@ -3,7 +3,7 @@ import { Input } from '../../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { ProductFilters as ProductFiltersType } from '../types';
-import { useThrottledSearch } from '@rentalshop/ui';
+import { useThrottledSearch } from '../../../../hooks/useThrottledSearch';
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;

@@ -17,7 +17,7 @@ import {
   CalendarData, 
   CalendarFilters as CalendarFiltersType,
   PickupOrder 
-} from '../../../../packages/ui/src/components/features/Calendar/types';
+} from '@rentalshop/ui';
 
 export default function CalendarPage() {
   const { user, loading: authLoading, authenticated } = useAuth();

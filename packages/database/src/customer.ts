@@ -149,8 +149,18 @@ export const getCustomerById = async (id: string) => {
  * Create a new customer
  */
 export const createCustomer = async (data: CustomerInput) => {
+  // Generate the next public ID for the customer
+  const lastCustomer = await prisma.customer.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  const nextPublicId = (lastCustomer?.publicId || 0) + 1;
+
   return prisma.customer.create({
-    data,
+    data: {
+      ...data,
+      publicId: nextPublicId,
+    },
     include: {
       merchant: {
         select: {

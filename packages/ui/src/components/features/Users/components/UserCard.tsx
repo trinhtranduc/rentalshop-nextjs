@@ -1,5 +1,7 @@
 import React from 'react';
-import { Card, Badge, Button } from '@rentalshop/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
+import { Badge } from '../../../ui/badge';
+import { Button } from '../../../ui/button';
 import { Mail, Phone, Calendar, Building, User as UserIcon } from 'lucide-react';
 import type { User } from '../types';
 

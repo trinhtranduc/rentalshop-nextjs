@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@rentalshop/ui';
-import { ConfirmationDialog } from '../../../ui/confirmation-dialog';
+import { useRouter } from 'next/navigation';
+import { Button } from '../../../ui/button';
+import { ConfirmationDialog } from './ConfirmationDialog';
 import { UserDetailDialog } from './UserDetailDialog';
-import { UserFormDialog } from './UserFormDialog';
 import type { User, UserCreateInput, UserUpdateInput } from '../types';
+import { formatPublicId } from '@rentalshop/utils';
 
 interface UserActionsProps {
   onAction: (action: string, userId: string) => void;
   onUserCreated?: (user: UserCreateInput | UserUpdateInput) => void;
   onUserUpdated?: (user: User) => void;
   onError?: (error: string) => void;
+  onSuccess?: (message: string) => void; // New callback for success messages
 }
 
 export function UserActions({ 
   onAction, 
   onUserCreated, 
   onUserUpdated, 
-  onError 
+  onError,
+  onSuccess
 }: UserActionsProps) {
+  const router = useRouter();
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userToDeactivate, setUserToDeactivate] = useState<User | null>(null);
@@ -29,38 +31,32 @@ export function UserActions({
   useEffect(() => {
     const handleUserAction = (event: CustomEvent) => {
       const { action, userId, user } = event.detail;
+      console.log('🔍 UserActions: Event received:', { action, userId, user });
       
       if (action === 'view' && user) {
+        console.log('🔍 UserActions: Handling view action for user:', user);
         setSelectedUser(user);
         setIsViewDialogOpen(true);
       } else if (action === 'edit' && user) {
-        setSelectedUser(user);
-        setIsEditDialogOpen(true);
+        console.log('🔍 UserActions: Handling edit action for user:', user);
+        console.log('🔍 User publicId:', user.publicId, 'type:', typeof user.publicId);
+        console.log('🔍 Full user object:', user);
+        // Handle edit action by navigating to edit page
+        handleAction('edit', user);
       } else if (action === 'deactivate' && user) {
+        console.log('🔍 UserActions: Handling deactivate action for user:', user);
         setUserToDeactivate(user);
         setIsDeactivateDialogOpen(true);
-      } else if (action === 'add') {
-        // Handle add user action
-        setIsCreateDialogOpen(true);
       }
     };
 
     window.addEventListener('user-action', handleUserAction as EventListener);
     return () => window.removeEventListener('user-action', handleUserAction as EventListener);
-  }, []);
+  }, [router]);
 
   const handleViewDialogClose = () => {
     setIsViewDialogOpen(false);
     setSelectedUser(null);
-  };
-
-  const handleEditDialogClose = () => {
-    setIsEditDialogOpen(false);
-    setSelectedUser(null);
-  };
-
-  const handleCreateDialogClose = () => {
-    setIsCreateDialogOpen(false);
   };
 
   const handleDeactivateDialogClose = () => {
@@ -75,33 +71,48 @@ export function UserActions({
     }
   };
 
+  // Note: User creation and editing are now handled by separate pages
+  // These functions are kept for backward compatibility but are no longer used
   const handleSaveUser = async (userData: Partial<User>) => {
-    try {
-      if (selectedUser) {
-        // Handle user update
-        const updatedUser = { ...selectedUser, ...userData };
-        await onUserUpdated?.(updatedUser);
-        console.log('✅ User updated successfully:', updatedUser);
-        handleEditDialogClose();
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while updating the user';
-      console.error('❌ Error updating user:', errorMessage);
-      onError?.(errorMessage);
-    }
+    console.log('🔍 UserActions: handleSaveUser called but no longer used');
   };
 
   const handleCreateUser = async (userData: UserCreateInput | UserUpdateInput) => {
-    try {
-      console.log('🔄 Creating new user:', userData);
-      await onUserCreated?.(userData);
-      console.log('✅ User created successfully');
-      handleCreateDialogClose();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while creating the user';
-      console.error('❌ Error creating user:', errorMessage);
-      onError?.(errorMessage);
-      // Don't close dialog on error, let user fix the issue
+    console.log('🔍 UserActions: handleCreateUser called but no longer used');
+  };
+
+  const handleAction = (action: string, user: User) => {
+    console.log('🔍 UserActions: Action triggered:', { action, userId: user.id, publicId: user.publicId });
+    
+    switch (action) {
+      case 'edit':
+        // Navigate to user page where editing can be done inline
+        console.log('🔍 UserActions: Edit action - checking publicId:', { 
+          publicId: user.publicId, 
+          type: typeof user.publicId, 
+          isValid: user.publicId && typeof user.publicId === 'number' 
+        });
+        
+        if (user.publicId && typeof user.publicId === 'number') {
+          const formattedPublicId = formatPublicId('USER', user.publicId);
+          console.log('🔍 UserActions: Navigating to user page:', formattedPublicId);
+          console.log('🔍 Full URL:', `/users/${formattedPublicId}`);
+          router.push(`/users/${formattedPublicId}`);
+        } else {
+          console.error('❌ UserActions: No valid public ID available for user:', user);
+          console.error('❌ User data:', user);
+          // Show error message to user
+          onError?.('Cannot edit user: Missing or invalid public ID');
+        }
+        break;
+        
+      case 'add':
+        console.log('🔍 UserActions: Navigating to add user');
+        router.push('/users/add');
+        break;
+        
+      default:
+        console.warn('⚠️ UserActions: Unknown action:', action);
     }
   };
 
@@ -116,24 +127,6 @@ export function UserActions({
         onError={onError}
       />
 
-      {/* User Form Dialog - Edit Mode */}
-      <UserFormDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        user={selectedUser}
-        onSave={handleSaveUser}
-        onCancel={handleEditDialogClose}
-      />
-
-      {/* User Form Dialog - Create Mode */}
-      <UserFormDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        user={null}
-        onSave={handleCreateUser}
-        onCancel={handleCreateDialogClose}
-      />
-
       {/* Deactivate Confirmation Dialog */}
       <ConfirmationDialog
         open={isDeactivateDialogOpen}
@@ -144,7 +137,6 @@ export function UserActions({
         confirmText="Deactivate"
         cancelText="Cancel"
         onConfirm={handleConfirmDeactivate}
-        onCancel={handleDeactivateDialogClose}
       />
     </>
   );

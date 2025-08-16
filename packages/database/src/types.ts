@@ -308,6 +308,7 @@ export interface OrderInput {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  isReadyToDeliver?: boolean;  // Order is ready for delivery/pickup
   orderItems: OrderItemInput[];
 }
 
@@ -345,6 +346,7 @@ export interface OrderUpdateInput {
   pickupNotes?: string;        // Ghi chú khi nhận hàng
   returnNotes?: string;        // Ghi chú khi trả hàng
   damageNotes?: string;        // Ghi chú về hư hỏng
+  isReadyToDeliver?: boolean;  // Order is ready for delivery/pickup
 }
 
 export interface OrderFilters {
@@ -359,6 +361,7 @@ export interface OrderFilters {
   returnDate?: Date;
   minAmount?: number;
   maxAmount?: number;
+  isReadyToDeliver?: boolean;  // Filter by delivery readiness
 }
 
 export interface OrderSearchFilter {
@@ -374,6 +377,7 @@ export interface OrderSearchFilter {
   returnDate?: Date;
   minAmount?: number;
   maxAmount?: number;
+  isReadyToDeliver?: boolean;  // Filter by delivery readiness
   limit?: number;
   offset?: number;
 }
@@ -391,6 +395,7 @@ export interface OrderSearchResult {
   returnPlanAt: Date | null;
   pickedUpAt: Date | null;
   returnedAt: Date | null;
+  isReadyToDeliver: boolean;  // Order is ready for delivery/pickup
   customer: {
     id: string;
     firstName: string;

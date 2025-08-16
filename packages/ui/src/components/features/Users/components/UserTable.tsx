@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui/table';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
+import { ConfirmationDialog } from './ConfirmationDialog';
 import { Eye, Edit, UserCheck, UserX, MoreHorizontal } from 'lucide-react';
 import type { User } from '../types';
 
@@ -12,7 +13,11 @@ interface UserTableProps {
 
 export function UserTable({ users, onUserAction }: UserTableProps) {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
+  // Use publicId for dropdown management since internal IDs are not exposed
+  const getDropdownId = (user: User) => user.publicId?.toString() || user.id;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -30,17 +35,23 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
   }, [openDropdownId]);
 
   const handleDropdownToggle = (userId: string) => {
+    console.log('🔍 Dropdown toggle:', { userId, currentOpen: openDropdownId, willOpen: openDropdownId !== userId });
     setOpenDropdownId(openDropdownId === userId ? null : userId);
   };
 
   const handleUserAction = (action: string, userId: string) => {
-    // Create custom event to communicate with UserActions component
-    const event = new CustomEvent('user-action', {
-      detail: { action, userId, user: users.find(u => u.id === userId) }
-    });
-    window.dispatchEvent(event);
+    const user = users.find(u => u.id === userId);
+    console.log('🔍 UserTable: handleUserAction called:', { action, userId, user });
     
-    // Also call the original onUserAction for backward compatibility
+    if (action === 'delete') {
+      if (user) {
+        setDeleteConfirmUser(user);
+        setOpenDropdownId(null);
+        return;
+      }
+    }
+    
+    // Call the parent onUserAction handler
     onUserAction(action, userId);
     
     // Close the dropdown after action
@@ -220,21 +231,19 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
                   
                   {/* Dropdown Menu */}
                   {openDropdownId === user.id && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[12rem]">
+                    <div 
+                      key={`dropdown-${user.id}`}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 min-w-[12rem]" 
+                      style={{ zIndex: 1000 }}
+                    >
                       <div className="py-1">
                         <div 
+                          key={`view-${user.id}`}
                           className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
                           onClick={() => handleUserAction('view', user.id)}
                         >
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
-                        </div>
-                        <div 
-                          className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
-                          onClick={() => handleUserAction('edit', user.id)}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit User
                         </div>
                         <div className="-mx-1 my-1 h-px bg-gray-200 dark:bg-gray-600"></div>
                         {user.isActive ? (
@@ -254,6 +263,7 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
                             Activate User
                           </div>
                         )}
+
                       </div>
                     </div>
                   )}
@@ -263,6 +273,25 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
           ))}
         </TableBody>
       </Table>
+      
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmUser && (
+        <ConfirmationDialog
+          open={!!deleteConfirmUser}
+          onOpenChange={(open) => !open && setDeleteConfirmUser(null)}
+          type="danger"
+          title="Delete User"
+          description={`Are you sure you want to delete user "${deleteConfirmUser?.name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={() => {
+            if (deleteConfirmUser) {
+              onUserAction('delete', deleteConfirmUser.id);
+              setDeleteConfirmUser(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

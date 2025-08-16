@@ -66,12 +66,15 @@ export const handleApiResponse = async (response: Response) => {
     throw new Error('Authentication required');
   }
 
+  // Parse the response data first
+  const data = await response.json().catch(() => ({}));
+  
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    // For error responses, throw an error with the API's error message
+    const errorMessage = data.error || data.message || `HTTP error! status: ${response.status}`;
+    throw new Error(errorMessage);
   }
 
-  const data = await response.json();
   return data;
 };
 

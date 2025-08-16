@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@rentalshop/ui';
+import { Button } from '../../../ui/button';
 import { Grid3X3, List, Plus } from 'lucide-react';
 
 interface UserHeaderProps {

@@ -12,7 +12,7 @@ import {
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { Badge } from '../../../ui/badge';
-import { ConfirmationDialog } from '../../../ui/confirmation-dialog';
+import { ConfirmationDialog } from './ConfirmationDialog';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { userApiClient } from '../lib/UserApiClient';
 import { UserCheck, UserX, Key, AlertTriangle } from 'lucide-react';
@@ -323,21 +323,18 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         confirmText="Deactivate Account"
         cancelText="Cancel"
         onConfirm={handleDeactivateUser}
-        isLoading={isLoading}
-        disabled={user.role === 'ADMIN'}
       />
 
       {/* Activate User Confirmation Dialog */}
       <ConfirmationDialog
         open={isActivateConfirmOpen}
         onOpenChange={setIsActivateConfirmOpen}
-        type="success"
+        type="info"
         title="Activate User Account"
         description={`Are you sure you want to activate ${user.name}? This will allow them to log in to the system again.`}
         confirmText="Activate Account"
         cancelText="Cancel"
         onConfirm={handleActivateUser}
-        isLoading={isLoading}
       />
     </>
   );

@@ -29,12 +29,12 @@ export const filterProducts = (products: Product[], filters: ProductFilters): Pr
     }
     
     // Price range filter
-    if (filters.minPrice && product.rentPrice < filters.minPrice) {
-      return false;
-    }
-    if (filters.maxPrice && product.rentPrice > filters.maxPrice) {
-      return false;
-    }
+    // if (filters.minPrice && product.rentPrice < filters.minPrice) {
+    //   return false;
+    // }
+    // if (filters.maxPrice && product.rentPrice > filters.maxPrice) {
+    //   return false;
+    // }
     
     // Stock filter
     if (filters.inStock && product.available <= 0) {

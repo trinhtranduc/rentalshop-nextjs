@@ -1,8 +1,9 @@
 export interface User {
   id: string;
+  publicId: number | null; // Public ID for user-friendly URLs (nullable for users without valid publicId)
   name: string;
   email: string;
-  phone?: string;
+  phone: string; // Phone is now required due to database constraint
   role: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
   isActive: boolean;
   createdAt: string;
@@ -31,7 +32,7 @@ export interface User {
 export interface UserCreateInput {
   name: string;
   email: string;
-  phone?: string;
+  phone: string; // Phone is now required due to database constraint
   role: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
   isActive: boolean;
   password: string;
@@ -40,7 +41,7 @@ export interface UserCreateInput {
 export interface UserUpdateInput {
   name?: string;
   email?: string;
-  phone?: string;
+  phone?: string; // Phone is required due to database constraint, but optional for updates
   role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
   isActive?: boolean;
 }

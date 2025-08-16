@@ -14,21 +14,28 @@ import type {
   OrderStatus,
 } from './types';
 
-// Generate order number (e.g., ORD-2024-001)
+// Generate order number (e.g., 2024-001)
 export function generateOrderNumber(): string {
   const year = new Date().getFullYear();
   const timestamp = Date.now().toString().slice(-6);
-  return `ORD-${year}-${timestamp}`;
+  return `${year}-${timestamp}`;
 }
 
 // Create a new order with items
 export async function createOrder(input: OrderInput, userId: string): Promise<OrderWithDetails> {
   const orderNumber = generateOrderNumber();
   
-  const createdOrderId = await prisma.$transaction(async (tx) => {
+  // Get the next public ID for orders
+  const lastOrder = await prisma.order.findFirst({
+    orderBy: { publicId: 'desc' }
+  });
+  const nextPublicId = (lastOrder?.publicId || 0) + 1;
+  
+  const createdOrderId = await prisma.$transaction(async (tx: any) => {
     // Create the order
     const order = await tx.order.create({
       data: {
+        publicId: nextPublicId,
         orderNumber,
         orderType: input.orderType,
         customerId: input.customerId,
@@ -37,6 +44,7 @@ export async function createOrder(input: OrderInput, userId: string): Promise<Or
         returnPlanAt: input.returnPlanAt,
         totalAmount: input.totalAmount,
         depositAmount: input.depositAmount || 0,
+        isReadyToDeliver: input.isReadyToDeliver || false, // Default to false
       },
     });
 
@@ -182,7 +190,7 @@ export async function updateOrder(
   input: OrderUpdateInput,
   userId: string
 ): Promise<OrderWithDetails | null> {
-  const updatedOrderId = await prisma.$transaction(async (tx) => {
+  const updatedOrderId = await prisma.$transaction(async (tx: any) => {
     // Get current order to track changes
     const currentOrder = await tx.order.findUnique({
       where: { id: orderId },
@@ -268,6 +276,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
     if (searchFilters.returnDate) where.returnPlanAt = { lte: searchFilters.returnDate };
     if (searchFilters.minAmount) where.totalAmount = { gte: searchFilters.minAmount };
     if (searchFilters.maxAmount) where.totalAmount = { lte: searchFilters.maxAmount };
+    if (searchFilters.isReadyToDeliver !== undefined) where.isReadyToDeliver = searchFilters.isReadyToDeliver;
 
     // Text search
     if (searchFilters.q) {
@@ -355,6 +364,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
         returnPlanAt: order.returnPlanAt,
         pickedUpAt: order.pickedUpAt,
         returnedAt: order.returnedAt,
+        isReadyToDeliver: order.isReadyToDeliver,
         customer: order.customer,
         outlet: order.outlet,
         orderItems: order.orderItems.map((item) => ({
@@ -504,6 +514,7 @@ export async function getOverdueRentals(outletId?: string): Promise<OrderSearchR
     returnPlanAt: order.returnPlanAt,
     pickedUpAt: order.pickedUpAt,
     returnedAt: order.returnedAt,
+    isReadyToDeliver: order.isReadyToDeliver,
     customer: order.customer,
     outlet: order.outlet,
   }));
@@ -511,7 +522,7 @@ export async function getOverdueRentals(outletId?: string): Promise<OrderSearchR
 
 // Cancel order
 export async function cancelOrder(orderId: string, userId: string, reason?: string): Promise<OrderWithDetails | null> {
-  const cancelledOrderId = await prisma.$transaction(async (tx) => {
+  const cancelledOrderId = await prisma.$transaction(async (tx: any) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: { orderItems: true },
