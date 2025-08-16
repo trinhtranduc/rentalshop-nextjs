@@ -1,5 +1,7 @@
+'use client';
+
 import * as React from 'react';
-import { cn } from '@rentalshop/ui';
+import { cn } from '../../lib/cn';
 import { ChevronDown } from 'lucide-react';
 
 export interface SearchableOption {

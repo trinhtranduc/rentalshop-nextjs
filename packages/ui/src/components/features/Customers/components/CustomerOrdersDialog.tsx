@@ -50,7 +50,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
       const mockOrders: CustomerOrder[] = [
         {
           id: '1',
-          orderNumber: 'ORD-001',
+          orderNumber: '1',
           orderType: 'RENT',
           status: 'ACTIVE',
           totalAmount: 150.00,
@@ -64,7 +64,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
         },
         {
           id: '2',
-          orderNumber: 'ORD-002',
+          orderNumber: '2',
           orderType: 'SALE',
           status: 'COMPLETED',
           totalAmount: 299.99,
@@ -78,7 +78,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
         },
         {
           id: '3',
-          orderNumber: 'ORD-003',
+          orderNumber: '3',
           orderType: 'RENT',
           status: 'OVERDUE',
           totalAmount: 200.00,

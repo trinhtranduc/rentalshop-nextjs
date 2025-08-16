@@ -175,9 +175,17 @@ export const createProduct = async (data: {
   try {
     const { outletStock, ...productData } = data;
 
+    // Generate the next public ID for the product
+    const lastProduct = await prisma.product.findFirst({
+      orderBy: { publicId: 'desc' },
+      select: { publicId: true }
+    });
+    const nextPublicId = (lastProduct?.publicId || 0) + 1;
+
     return await prisma.product.create({
       data: {
         ...productData,
+        publicId: nextPublicId,
         outletStock: {
           create: outletStock?.map(os => ({
             outletId: os.outletId,

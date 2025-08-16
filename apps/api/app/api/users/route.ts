@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
-import { findUserById, findUserByEmail, createUser, updateUser } from '@rentalshop/database';
+import { findUserById, findUserByPublicId, createUser, updateUser } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole } from '@rentalshop/auth';
+
 
 export interface UserFilters {
   role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
@@ -207,25 +208,35 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Check if user with this email already exists (API-level check)
-    try {
-      if (merchantId) {
-        const existingUser = await findUserByEmail(userData.email);
-        if (existingUser && existingUser.merchantId === merchantId) {
-          console.log('❌ User with email already exists in merchant:', userData.email);
-          return NextResponse.json(
-            { success: false, error: 'User with this email already exists in this merchant organization' },
-            { status: 409 }
-          );
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error checking for existing user:', error);
-      // Continue with creation if we can't check
-    }
+    // Note: All uniqueness validation (email + phone) is handled at the database level
+    // in the createUser function. This reduces API calls and ensures consistency.
     
     console.log('📡 Calling createUser database function...');
-    const newUser = await createUser(userData);
+    const result = await createUser(userData);
+    
+    // Check if database function returned an error
+    if (!result.success) {
+      console.log('❌ Database validation failed:', result.error);
+      // Use the numeric code directly from database function
+      const statusCode = typeof result.code === 'number' ? result.code : 500;
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: result.error,
+          code: result.code
+        },
+        { status: statusCode }
+      );
+    }
+    
+    const newUser = result.data;
+    if (!newUser) {
+      console.error('❌ Database returned success but no user data');
+      return NextResponse.json(
+        { success: false, error: 'Database error: No user data returned' },
+        { status: 500 }
+      );
+    }
     
     console.log('✅ User created successfully:', {
       id: newUser.id,
@@ -259,6 +270,7 @@ export async function POST(request: NextRequest) {
         }
         statusCode = 409;
       } else if (error.message.includes('already exists in this merchant organization')) {
+        // This catches the specific error messages from our database function
         errorMessage = error.message;
         statusCode = 409;
       } else if (error.message.includes('Validation')) {
@@ -311,10 +323,11 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { publicId, ...updateData } = body;
     
-    if (!id) {
-      return NextResponse.json({ success: false, message: 'User ID is required' }, { status: 400 });
+    // Always use publicId for API operations
+    if (!publicId) {
+      return NextResponse.json({ success: false, message: 'Public ID is required' }, { status: 400 });
     }
 
     // Validate update data
@@ -332,8 +345,9 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    // Check if user exists
-    const existingUser = await findUserById(id);
+    // Check if user exists using publicId
+    const existingUser = await findUserByPublicId(parseInt(publicId));
+    
     if (!existingUser) {
       return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
     }
@@ -350,8 +364,8 @@ export async function PUT(request: NextRequest) {
     
     console.log('Final update data for database:', updateDataForDB);
     
-    // Update user
-    const updatedUser = await updateUser(id, updateDataForDB);
+    // Update user using the internal ID from existingUser
+    const updatedUser = await updateUser(existingUser.id, updateDataForDB);
 
     return NextResponse.json({
       success: true,
@@ -422,35 +436,76 @@ async function getUsers(
   // Get total count
   const total = await prisma.user.count({ where });
 
-  // Get users
+  // Get users - expose publicId as "id" to the client
   const users = await prisma.user.findMany({
     where,
-    include: {
+    select: {
+      id: true, // Internal ID for database operations
+      publicId: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
       merchant: {
         select: {
-          id: true,
+          id: true, // Internal ID for database operations
+          publicId: true,
           name: true,
         }
       },
       outlet: {
         select: {
-          id: true,
+          id: true, // Internal ID for database operations
+          publicId: true,
           name: true,
           merchant: {
-            select: { id: true, name: true }
+            select: { 
+              id: true, // Internal ID for database operations
+              publicId: true, 
+              name: true 
+            }
           }
         }
       }
-    },
+    } as any, // Type assertion to bypass Prisma type checking
     orderBy: { [actualSortBy]: sortOrder },
     skip,
     take: limit,
   });
 
+  // Transform the response to expose publicId as "id" to the client
+  const transformedUsers = users.map((user: any) => ({
+    id: user.publicId, // Client sees publicId as "id"
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    role: user.role,
+    isActive: user.isActive,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    merchant: user.merchant ? {
+      id: user.merchant.publicId, // Client sees merchant publicId as "id"
+      name: user.merchant.name,
+    } : undefined,
+    outlet: user.outlet ? {
+      id: user.outlet.publicId, // Client sees outlet publicId as "id"
+      name: user.outlet.name,
+      merchant: user.outlet.merchant ? {
+        id: user.outlet.merchant.publicId, // Client sees merchant publicId as "id"
+        name: user.outlet.merchant.name,
+      } : undefined,
+    } : undefined,
+  }));
+
   const totalPages = Math.ceil(total / limit);
 
   return {
-    users,
+    users: transformedUsers,
     total,
     page,
     totalPages,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pagination } from '@rentalshop/ui';
+import { Pagination } from '../../../ui/pagination';
 
 interface UserPaginationProps {
   currentPage: number;

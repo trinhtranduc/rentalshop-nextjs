@@ -1,6 +1,55 @@
 import { prisma } from './client';
 import type { User } from '@prisma/client';
 
+// Utility functions to generate the next public ID for each model type
+const generateNextUserPublicId = async (): Promise<number> => {
+  const lastUser = await prisma.user.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  return (lastUser?.publicId || 0) + 1;
+};
+
+const generateNextMerchantPublicId = async (): Promise<number> => {
+  const lastMerchant = await prisma.merchant.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  return (lastMerchant?.publicId || 0) + 1;
+};
+
+const generateNextOutletPublicId = async (): Promise<number> => {
+  const lastOutlet = await prisma.outlet.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  return (lastOutlet?.publicId || 0) + 1;
+};
+
+const generateNextProductPublicId = async (): Promise<number> => {
+  const lastProduct = await prisma.product.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  return (lastProduct?.publicId || 0) + 1;
+};
+
+const generateNextCustomerPublicId = async (): Promise<number> => {
+  const lastCustomer = await prisma.customer.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  return (lastCustomer?.publicId || 0) + 1;
+};
+
+const generateNextCategoryPublicId = async (): Promise<number> => {
+  const lastCategory = await prisma.category.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  return (lastCategory?.publicId || 0) + 1;
+};
+
 // User Management
 export const findUserByEmail = async (email: string) => {
   console.log('Database: Finding user by email:', email);
@@ -40,54 +89,88 @@ export const findUserById = async (id: string) => {
   }
 };
 
+export const findUserByPublicId = async (publicId: number) => {
+  console.log('Database: Finding user by public ID:', publicId);
+  
+  try {
+    const result = await prisma.user.findFirst({
+      where: { publicId },
+      include: {
+        merchant: true,
+      },
+    });
+    
+    console.log('Database: User found by public ID:', result ? 'Yes' : 'No');
+    return result;
+  } catch (error) {
+    console.error('Database: Error finding user by public ID:', error);
+    throw error;
+  }
+};
+
 export const createUser = async (data: {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-  phone?: string;
+  phone: string; // Phone is now required due to database constraint
   role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
   merchantId?: string; // Add merchantId to the function signature
 }) => {
-  console.log('Database: Creating user with data:', data);
+  console.log('Database: Creating user with data:', { ...data, password: '[HIDDEN]' });
   
   try {
-    // Check for merchant-scoped uniqueness before creating
-    if (data.merchantId) {
-      // Check if email already exists within the same merchant
-      const existingEmailUser = await prisma.user.findFirst({
-        where: {
-          email: data.email.toLowerCase(),
-          merchantId: data.merchantId
-        }
-      });
-      
-      if (existingEmailUser) {
-        throw new Error(`User with email '${data.email}' already exists in this merchant organization`);
-      }
-      
-      // Check if phone already exists within the same merchant (if phone is provided)
-      if (data.phone && data.phone.trim()) {
-        const existingPhoneUser = await prisma.user.findFirst({
-          where: {
+    // Check if user with email already exists
+    const existingEmailUser = await prisma.user.findFirst({
+      where: data.merchantId 
+        ? { 
+            email: data.email.toLowerCase(),
+            merchantId: data.merchantId
+          }
+        : { email: data.email.toLowerCase() }
+    });
+    
+    if (existingEmailUser) {
+      const scope = data.merchantId ? 'in this merchant organization' : 'in the system';
+      console.log('❌ Database: Email already exists, returning early:', { email: data.email, scope });
+      return {
+        success: false,
+        error: `User with email '${data.email}' already exists ${scope}`,
+        code: 409 // Conflict - duplicate resource
+      };
+    }
+    
+    // Check if user with phone already exists (when phone is provided)
+    const existingPhoneUser = await prisma.user.findFirst({
+      where: data.merchantId 
+        ? { 
             phone: data.phone.trim(),
             merchantId: data.merchantId
           }
-        });
-        
-        if (existingPhoneUser) {
-          throw new Error(`User with phone '${data.phone}' already exists in this merchant organization`);
-        }
-      }
+        : { phone: data.phone.trim() }
+    });
+    
+    if (existingPhoneUser) {
+      const scope = data.merchantId ? 'in this merchant organization' : 'in the system';
+      console.log('❌ Database: Phone already exists, returning early:', { phone: data.phone, scope });
+      return {
+        success: false,
+        error: `User with phone '${data.phone}' already exists ${scope}`,
+        code: 409 // Conflict - duplicate resource
+      };
     }
+    
+    // Generate the next public ID for the user
+    const nextPublicId = await generateNextUserPublicId();
     
     const result = await prisma.user.create({
       data: {
+        publicId: nextPublicId, // Now just a simple number like 1, 2, 3
         email: data.email.toLowerCase(),
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
-        phone: data.phone?.trim(),
+        phone: data.phone.trim(), // Phone is now required, always send it
         role: data.role || 'OUTLET_STAFF',
         merchantId: data.merchantId, // Include merchantId in creation
       },
@@ -95,10 +178,51 @@ export const createUser = async (data: {
     });
     
     console.log('Database: User created successfully:', result);
-    return result;
+    return { success: true, data: result };
   } catch (error) {
     console.error('Database: Error creating user:', error);
-    throw error;
+    
+    // Handle Prisma unique constraint violations with clean error messages
+    if (error instanceof Error) {
+      const errorMessage = error.message;
+      console.log('🔍 Database: Analyzing Prisma error:', errorMessage);
+      
+      if (errorMessage.includes('Unique constraint failed on the fields: (`email`)')) {
+        const scope = data.merchantId ? 'in this merchant organization' : 'in the system';
+        console.log('❌ Database: Prisma email constraint failed, returning clean error');
+        return {
+          success: false,
+          error: `User with email '${data.email}' already exists ${scope}`,
+          code: 409 // Conflict - duplicate resource
+        };
+      }
+      
+      if (errorMessage.includes('Unique constraint failed on the fields: (`phone`)')) {
+        const scope = data.merchantId ? 'in this merchant organization' : 'in the system';
+        console.log('❌ Database: Prisma phone constraint failed, returning clean error');
+        return {
+          success: false,
+          error: `User with phone '${data.phone}' already exists ${scope}`,
+          code: 409 // Conflict - duplicate resource
+        };
+      }
+      
+      if (errorMessage.includes('Unique constraint failed')) {
+        console.log('❌ Database: Generic Prisma constraint failed, returning clean error');
+        return {
+          success: false,
+          error: 'User with this information already exists',
+          code: 409 // Conflict - duplicate resource
+        };
+      }
+    }
+    
+    console.log('❌ Database: Unexpected error, returning generic error');
+    return {
+      success: false,
+      error: 'An unexpected error occurred while creating the user',
+      code: 500 // Internal server error
+    };
   }
 };
 
@@ -122,8 +246,18 @@ export const updateUser = async (id: string, data: Partial<User>) => {
 
 // Merchant Management
 export const createMerchant = async (data: { name: string; description?: string; isActive?: boolean }) => {
+  // Generate the next public ID for the merchant
+  const lastMerchant = await prisma.merchant.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  const nextPublicId = (lastMerchant?.publicId || 0) + 1;
+
   return prisma.merchant.create({
-    data,
+    data: {
+      ...data,
+      publicId: nextPublicId,
+    },
     include: { users: true, outlets: true },
   });
 };
@@ -144,7 +278,20 @@ export const findMerchantById = async (id: string) => {
 
 // Outlet Management
 export const createOutlet = async (data: { merchantId: string; name: string; address?: string; description?: string }) => {
-  return prisma.outlet.create({ data, include: { merchant: true, products: true, users: true } });
+  // Generate the next public ID for the outlet
+  const lastOutlet = await prisma.outlet.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  const nextPublicId = (lastOutlet?.publicId || 0) + 1;
+
+  return prisma.outlet.create({ 
+    data: {
+      ...data,
+      publicId: nextPublicId,
+    }, 
+    include: { merchant: true, products: true, users: true } 
+  });
 };
 
 export const findOutletById = async (id: string) => {

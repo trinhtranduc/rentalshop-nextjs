@@ -7,6 +7,9 @@
   "types": "./src/index.ts",
   "sideEffects": false,
   "license": "MIT",
+  "prisma": {
+    "schema": "../../prisma/schema.prisma"
+  },
   "files": [
     "dist/**"
   ],
@@ -15,12 +18,12 @@
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
+    "db:generate": "prisma generate --schema=../../prisma/schema.prisma",
+    "db:push": "prisma db push --schema=../../prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=../../prisma/schema.prisma",
+    "db:studio": "prisma studio --schema=../../prisma/schema.prisma",
     "db:seed": "tsx src/seed.ts",
-    "db:reset": "prisma migrate reset --force && yarn db:seed"
+    "db:reset": "prisma migrate reset --force --schema=../../prisma/schema.prisma && yarn db:seed"
   },
   "devDependencies": {
     "eslint": "^8.0.0",

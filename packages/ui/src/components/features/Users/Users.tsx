@@ -1,16 +1,13 @@
-import React, { useState } from 'react';
-import { 
-  UserFilters, 
-  UserGrid, 
-  UserTable, 
-  UserPagination,
-  UserFormDialog,
-  UserActions
-} from './components';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { UserFilters } from './components/UserFilters';
+import { UserGrid } from './components/UserGrid';
+import { UserTable } from './components/UserTable';
+import { UserPagination } from './components/UserPagination';
 import { ToastContainer, useToasts } from '../../ui/toast';
 import type { UserData, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput } from './types';
 import { User } from './types';
-import { Button } from '@rentalshop/ui';
+import { Button } from '../../ui/button';
 import { Grid3X3, List, Plus } from 'lucide-react';
 
 interface UsersProps {
@@ -42,44 +39,56 @@ export function Users({
   onUserUpdated,
   onError
 }: UsersProps) {
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const router = useRouter();
   const { toasts, showSuccess, showError, removeToast } = useToasts();
 
+  // Listen for manual refresh requests from the dialog
+  useEffect(() => {
+    const handleRefreshRequest = () => {
+      console.log('🔄 Manual refresh requested from dialog');
+      // Trigger a refresh of the user list
+      // This will be handled by the parent page component
+      window.dispatchEvent(new CustomEvent('force-refresh-users'));
+    };
+
+    window.addEventListener('refresh-users-list', handleRefreshRequest);
+    return () => window.removeEventListener('refresh-users-list', handleRefreshRequest);
+  }, []);
+
   const handleAddUser = () => {
-    setIsAddUserDialogOpen(true);
+    console.log('🔍 Users: Add User button clicked, navigating to add user page');
+    router.push('/users/add');
   };
 
   const handleUserCreated = async (userData: UserCreateInput | UserUpdateInput) => {
     try {
       console.log('🔄 Users component: handleUserCreated called with:', userData);
+      console.log('🔍 Users: About to call parent onUserCreated handler');
       
       // Call the parent handler
       if (onUserCreated) {
+        console.log('🔍 Users: Calling parent onUserCreated handler');
         await onUserCreated(userData);
         console.log('✅ Parent handler completed successfully');
       }
       
       // Show success toast
-      console.log('🎉 Showing success toast...');
-      showSuccess('User Created', 'New user has been created successfully');
-      console.log('✅ Success toast triggered');
+      showSuccess('User Created', 'User has been created successfully!');
+      console.log('🔍 Users: Success toast shown');
       
-      // Close the dialog
-      setIsAddUserDialogOpen(false);
     } catch (error) {
       console.error('❌ Error in handleUserCreated:', error);
       const errorMessage = error instanceof Error ? error.message : 'An error occurred while creating the user';
       
       // Show error toast
-      console.log('🚨 Showing error toast...');
       showError('User Creation Failed', errorMessage);
-      console.log('✅ Error toast triggered');
       
       // Call parent error handler
       onError?.(errorMessage);
       
-      // Don't close dialog on error, let user fix the issue
-      throw error;
+      // Don't re-throw the error - let the form handle it
+      // This keeps the form open so user can fix the error
+      console.log('🔍 Users: Error handled, not re-throwing to keep form open');
     }
   };
 
@@ -176,22 +185,9 @@ export function Users({
           onPageChange={onPageChange}
         />
 
-        {/* Add User Dialog - Direct from Add Button */}
-        <UserFormDialog
-          open={isAddUserDialogOpen}
-          onOpenChange={setIsAddUserDialogOpen}
-          user={null}
-          onSave={handleUserCreated}
-          onCancel={() => setIsAddUserDialogOpen(false)}
-        />
+        {/* Add User functionality now handled by navigation to /users/add */}
 
-        {/* User Actions for View, Edit, and Deactivate */}
-        <UserActions
-          onAction={onUserAction}
-          onUserCreated={onUserCreated}
-          onUserUpdated={onUserUpdated}
-          onError={onError}
-        />
+        {/* User Actions are now handled directly in the UserTable component */}
       </div>
 
       {/* Toast Container for notifications */}

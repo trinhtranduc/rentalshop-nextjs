@@ -207,14 +207,14 @@ export const userCreateSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   name: z.string().min(1),
-  phone: z.string().optional(),
+  phone: z.string().min(1, 'Phone number is required'), // Phone is now required
   role: userRoleEnum.optional(),
 });
 
 export const userUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
-  phone: z.string().optional(),
+  phone: z.string().min(1, 'Phone number is required').optional(), // Phone is required when provided
   role: userRoleEnum.optional(),
   isActive: z.boolean().optional(),
 });

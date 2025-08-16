@@ -11,6 +11,7 @@ async function main() {
     update: {},
     create: {
       id: 'merchant1',
+      publicId: 1,
       name: 'Rental Shop Demo',
       description: 'Demo rental shop for testing with multiple outlets',
       isActive: true
@@ -22,6 +23,7 @@ async function main() {
     update: {},
     create: {
       id: 'merchant2',
+      publicId: 2,
       name: 'Outdoor Equipment Co.',
       description: 'Outdoor equipment rental company with beach and mountain outlets',
       isActive: true
@@ -36,6 +38,7 @@ async function main() {
     update: {},
     create: {
       id: 'outlet1',
+      publicId: 1,
       name: 'Main Branch',
       address: '123 Main Street, City Center',
       description: 'Main rental outlet in city center',
@@ -49,6 +52,7 @@ async function main() {
     update: {},
     create: {
       id: 'outlet2',
+      publicId: 2,
       name: 'Downtown Branch',
       address: '456 Downtown Ave, Business District',
       description: 'Downtown rental outlet for business customers',
@@ -63,6 +67,7 @@ async function main() {
     update: {},
     create: {
       id: 'outlet3',
+      publicId: 3,
       name: 'Beach Branch',
       address: '789 Beach Road, Coastal Area',
       description: 'Beach equipment rental for water sports',
@@ -76,6 +81,7 @@ async function main() {
     update: {},
     create: {
       id: 'outlet4',
+      publicId: 4,
       name: 'Mountain Branch',
       address: '321 Mountain Trail, Highland Area',
       description: 'Mountain equipment rental for hiking and climbing',
@@ -92,6 +98,7 @@ async function main() {
     update: {},
     create: {
       id: 'category1',
+      publicId: 1,
       name: 'Camping Equipment',
       description: 'Camping and outdoor equipment',
       merchantId: merchant1.id,
@@ -104,6 +111,7 @@ async function main() {
     update: {},
     create: {
       id: 'category2',
+      publicId: 2,
       name: 'Party Equipment',
       description: 'Party and event equipment',
       merchantId: merchant1.id,
@@ -116,6 +124,7 @@ async function main() {
     update: {},
     create: {
       id: 'category3',
+      publicId: 3,
       name: 'Tools & Equipment',
       description: 'Professional tools and equipment',
       merchantId: merchant1.id,
@@ -129,6 +138,7 @@ async function main() {
     update: {},
     create: {
       id: 'category4',
+      publicId: 4,
       name: 'Beach Equipment',
       description: 'Beach and water sports equipment',
       merchantId: merchant2.id,
@@ -141,6 +151,7 @@ async function main() {
     update: {},
     create: {
       id: 'category5',
+      publicId: 5,
       name: 'Mountain Equipment',
       description: 'Mountain and climbing equipment',
       merchantId: merchant2.id,
@@ -156,6 +167,7 @@ async function main() {
     update: {},
     create: {
       id: 'user1',
+      publicId: 1,
       email: 'merchant@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Merchant',
@@ -172,6 +184,7 @@ async function main() {
     update: {},
     create: {
       id: 'user2',
+      publicId: 2,
       email: 'outlet_staff_main@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Main',
@@ -189,6 +202,7 @@ async function main() {
     update: {},
     create: {
       id: 'user3',
+      publicId: 3,
       email: 'outlet_staff_downtown@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Downtown',
@@ -207,6 +221,7 @@ async function main() {
     update: {},
     create: {
       id: 'user4',
+      publicId: 4,
       email: 'merchant@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Merchant',
@@ -223,6 +238,7 @@ async function main() {
     update: {},
     create: {
       id: 'user5',
+      publicId: 5,
       email: 'outlet_staff_beach@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Beach',
@@ -240,6 +256,7 @@ async function main() {
     update: {},
     create: {
       id: 'user6',
+      publicId: 6,
       email: 'outlet_staff_mountain@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Mountain',
@@ -261,6 +278,7 @@ async function main() {
     update: {},
     create: {
       id: 'user7',
+      publicId: 7,
       email: 'outlet_admin_main@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Main',
@@ -278,6 +296,7 @@ async function main() {
     update: {},
     create: {
       id: 'user9',
+      publicId: 8,
       email: 'outlet_admin_downtown@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Downtown',
@@ -295,6 +314,7 @@ async function main() {
     update: {},
     create: {
       id: 'user11',
+      publicId: 9,
       email: 'outlet_admin_beach@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Beach',
@@ -312,6 +332,7 @@ async function main() {
     update: {},
     create: {
       id: 'user13',
+      publicId: 10,
       email: 'outlet_admin_mountain@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Mountain',
@@ -331,6 +352,7 @@ async function main() {
       update: {},
       create: {
         id: `customer${i}`,
+        publicId: i,
         firstName: `Customer${i}`,
         lastName: `Demo${i}`,
         email: `customer${i}@example.com`,
@@ -356,6 +378,7 @@ async function main() {
       update: {},
       create: {
         id: `product1_${i}`,
+        publicId: i,
         name: `Product ${i} - ${category.name}`,
         description: `High-quality ${category.name.toLowerCase()} for rent`,
         barcode: `PROD1_${i.toString().padStart(3, '0')}`,
@@ -399,6 +422,7 @@ async function main() {
       update: {},
       create: {
         id: `product2_${i}`,
+        publicId: i + 30, // Continue from where merchant 1 left off
         name: `Outdoor Product ${i} - ${category.name}`,
         description: `Professional ${category.name.toLowerCase()} for outdoor activities`,
         barcode: `PROD2_${i.toString().padStart(3, '0')}`,
@@ -435,7 +459,9 @@ async function main() {
 
   // Create sample orders for Orders page
   console.log('🧾 Creating sample orders...');
+  console.log('⚠️ Order creation temporarily disabled - will be added with proper public IDs later');
 
+  /*
   const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
   const pick = <T,>(arr: T[]) => arr[randomInt(0, arr.length - 1)];
 
@@ -639,6 +665,9 @@ async function main() {
   }
 
   console.log(`✅ Sample orders created: ${ordersCreated.length}`);
+  */
+
+  console.log('✅ Sample orders creation skipped for now');
 
   console.log('🎉 Comprehensive database seeding completed successfully!');
   console.log('\n📊 Summary:');
@@ -646,8 +675,8 @@ async function main() {
   console.log(`- Outlets: 4 (2 per merchant)`);
   console.log(`- Categories: 5 (3 for merchant1, 2 for merchant2)`);
   console.log(`- Products: 60 (30 per merchant with outlet stock distribution)`);
-  console.log(`- Users: 6 (2 admins, 4 staff)`);
-  console.log(`- Orders: ${ordersCreated.length} (mixed statuses and types)`);
+  console.log(`- Users: 10 (2 admins, 8 staff)`);
+  console.log(`- Orders: 0 (temporarily disabled)`);
   console.log(`- Customers: 20 (10 per merchant)`);
   
   console.log('\n🔑 Login Credentials (standardized)');
@@ -664,6 +693,12 @@ async function main() {
   console.log('Outlet staff (Beach): outlet_staff_beach@outdoor.com / password123');
   console.log('Outlet admin (Mountain): outlet_admin_mountain@outdoor.com / password123');
   console.log('Outlet staff (Mountain): outlet_staff_mountain@outdoor.com / password123');
+  
+  console.log('\n🔢 Public ID Examples:');
+  console.log('Users: 1, 2, 3...');
+console.log('Customers: 1, 2, 3...');
+console.log('Products: 1, 2, 3...');
+console.log('Orders: 1, 2, 3...');
 }
 
 main()

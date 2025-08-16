@@ -50,6 +50,7 @@ export type {
 export {
   findUserByEmail,
   findUserById,
+  findUserByPublicId,
   createUser,
   updateUser
 } from './utils'; 

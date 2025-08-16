@@ -147,7 +147,7 @@ async function createTestOrders() {
 
     const testOrders = [
       {
-        orderNumber: `ORD-${Date.now()}-001`,
+        orderNumber: `${Date.now()}-001`,
         orderType: 'RENT',
         status: 'CONFIRMED',
         pickupPlanAt: new Date(currentYear, currentMonth, 5, 10, 0), // 5th of current month
@@ -158,7 +158,7 @@ async function createTestOrders() {
         customerId: customer.id
       },
       {
-        orderNumber: `ORD-${Date.now()}-002`,
+        orderNumber: `${Date.now()}-002`,
         orderType: 'RENT',
         status: 'ACTIVE',
         pickupPlanAt: new Date(currentYear, currentMonth, 8, 14, 0), // 8th of current month
@@ -169,7 +169,7 @@ async function createTestOrders() {
         customerId: customer.id
       },
       {
-        orderNumber: `ORD-${Date.now()}-003`,
+        orderNumber: `${Date.now()}-003`,
         orderType: 'RENT',
         status: 'CONFIRMED',
         pickupPlanAt: new Date(currentYear, currentMonth, 12, 9, 0), // 12th of current month
@@ -180,7 +180,7 @@ async function createTestOrders() {
         customerId: customer.id
       },
       {
-        orderNumber: `ORD-${Date.now()}-004`,
+        orderNumber: `${Date.now()}-004`,
         orderType: 'RENT',
         status: 'CONFIRMED',
         pickupPlanAt: new Date(currentYear, currentMonth, 15, 11, 0), // 15th of current month
@@ -191,7 +191,7 @@ async function createTestOrders() {
         customerId: customer.id
       },
       {
-        orderNumber: `ORD-${Date.now()}-005`,
+        orderNumber: `${Date.now()}-005`,
         orderType: 'RENT',
         status: 'ACTIVE',
         pickupPlanAt: new Date(currentYear, currentMonth, 20, 13, 0), // 20th of current month

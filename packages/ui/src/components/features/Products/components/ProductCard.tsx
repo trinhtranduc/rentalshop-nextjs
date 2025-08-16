@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Card, Button, cn } from '@rentalshop/ui';
+import { Card } from '../../../ui/card';
+import { Button } from '../../../ui/button';
+import { cn } from '../../../../lib/cn';
 import { ProductFormDialog } from './ProductFormDialog';
 import type { ProductWithDetails, Category, Outlet } from '../types';
 

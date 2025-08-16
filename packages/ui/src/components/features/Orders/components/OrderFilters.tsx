@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from '../../../ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { OrderFilters as OrderFiltersType } from '../types';
-import { useThrottledSearch } from '@rentalshop/ui';
+import { useThrottledSearch } from '../../../../hooks/useThrottledSearch';
 
 interface OrderFiltersProps {
   filters: OrderFiltersType;

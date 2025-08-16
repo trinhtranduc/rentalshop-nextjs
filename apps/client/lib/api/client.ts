@@ -1,9 +1,17 @@
 import { authenticatedFetch, handleApiResponse } from '../auth/auth';
-import type { Product } from '@rentalshop/ui';
 
 /**
- * API client for authenticated requests
- * Handles all API calls with proper authentication headers
+ * Main API Client - Centralized API utilities and shared interfaces
+ * 
+ * This file contains:
+ * - Shared interfaces (ApiResponse)
+ * - Generic API utilities (apiClient)
+ * - Core business APIs (products, categories, outlets, profile)
+ * 
+ * Domain-specific APIs are organized in separate files:
+ * - users.ts - User management operations
+ * - (future) orders.ts - Order operations
+ * - (future) customers.ts - Customer operations
  */
 
 export interface ApiResponse<T = any> {
@@ -11,13 +19,6 @@ export interface ApiResponse<T = any> {
   data: T;
   message?: string;
   error?: string;
-}
-
-export interface ProductsResponse {
-  products: Product[];
-  total: number;
-  page: number;
-  totalPages: number;
 }
 
 /**
@@ -37,7 +38,7 @@ export const productsApi = {
     limit?: number;
     sortBy?: string;
     sortOrder?: string;
-  }): Promise<ApiResponse<ProductsResponse>> {
+  }): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     
     if (filters) {
@@ -55,7 +56,7 @@ export const productsApi = {
   /**
    * Get product by ID
    */
-  async getProduct(id: string): Promise<ApiResponse<Product>> {
+  async getProduct(id: string): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/products/${id}`);
     return handleApiResponse(response);
   },
@@ -96,9 +97,9 @@ export const outletsApi = {
 };
 
 /**
- * User API
+ * Profile API (for current user operations)
  */
-export const userApi = {
+export const profileApi = {
   /**
    * Get current user profile
    */

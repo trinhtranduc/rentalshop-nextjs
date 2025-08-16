@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useProductAvailability } from '../../hooks/useProductAvailability';
 import { ProductAvailabilityBadge } from './product-availability-badge';

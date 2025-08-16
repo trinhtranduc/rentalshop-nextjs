@@ -16,17 +16,6 @@ import {
   ProductWithDetails
 } from './types';
 
-// Export all components for easy access
-export { 
-  ProductHeader, 
-  ProductFilters, 
-  ProductGrid, 
-  ProductTable, 
-  ProductActions, 
-  ProductPagination,
-  ProductFormDialog
-} from './components';
-
 interface ProductsProps {
   data: ProductData;
   filters: ProductFiltersType;

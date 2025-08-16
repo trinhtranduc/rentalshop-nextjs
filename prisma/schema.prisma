@@ -11,16 +11,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  firstName String
-  lastName  String
-  phone     String?
-  role      String   @default("OUTLET_STAFF")
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  publicId    Int      @unique // 1, 2, 3 (numeric ID)
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phone       String?
+  role        String   @default("OUTLET_STAFF")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
   merchantId String?
@@ -34,10 +35,12 @@ model User {
   @@index([email])
   @@index([merchantId])
   @@index([outletId])
+  @@index([publicId]) // Index for fast public ID lookups
 }
 
 model Merchant {
   id          String   @id @default(cuid())
+  publicId    Int      @unique // 1, 2, 3 (numeric ID)
   name        String
   description String?
   isActive    Boolean  @default(true)
@@ -52,10 +55,12 @@ model Merchant {
   categories Category[]
 
   @@index([name])
+  @@index([publicId])
 }
 
 model Outlet {
   id          String   @id @default(cuid())
+  publicId    Int      @unique // 1, 2, 3 (numeric ID)
   name        String
   address     String?
   description String?
@@ -72,10 +77,12 @@ model Outlet {
 
   @@index([merchantId])
   @@index([name])
+  @@index([publicId])
 }
 
 model Category {
   id          String   @id @default(cuid())
+  publicId    Int      @unique // 1, 2, 3 (numeric ID)
   name        String
   description String?
   isActive    Boolean  @default(true)
@@ -85,14 +92,16 @@ model Category {
   // Relations
   merchantId String
   merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  products   Product[]
+  products  Product[]
 
   @@unique([merchantId, name])
   @@index([merchantId])
+  @@index([publicId])
 }
 
 model Product {
   id          String   @id @default(cuid())
+  publicId    Int      @unique // 1, 2, 3 (numeric ID)
   name        String
   description String?
   barcode     String?  @unique
@@ -109,14 +118,15 @@ model Product {
   merchantId String
   merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   outletStock OutletStock[]
   orderItems OrderItem[]
 
-  @@index([merchantId, name])
-  @@index([merchantId, categoryId])
+  @@index([merchantId])
+  @@index([categoryId])
   @@index([barcode])
-  @@index([isActive])
+  @@index([name])
+  @@index([publicId])
 }
 
 model OutletStock {
@@ -139,15 +149,16 @@ model OutletStock {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  firstName String
-  lastName  String
-  email     String?
-  phone     String
-  address   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  publicId    Int      @unique // 1, 2, 3 (numeric ID)
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String
+  address     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
   merchantId String
@@ -157,10 +168,12 @@ model Customer {
   @@index([merchantId, firstName, lastName])
   @@index([merchantId, phone])
   @@index([email])
+  @@index([publicId])
 }
 
 model Order {
   id            String   @id @default(cuid())
+  publicId      Int      @unique // 1, 2, 3 (numeric ID)
   orderNumber   String   @unique
   orderType     String   // RENT, SALE, RENT_TO_OWN
   status        String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED, OVERDUE, DAMAGED
@@ -176,6 +189,9 @@ model Order {
   pickedUpAt    DateTime?  // Ngày thực tế nhận hàng
   returnedAt    DateTime?  // Ngày thực tế trả hàng
   rentalDuration Int?      // Số ngày thuê (Rental Duration in days)
+  
+  // Delivery status
+  isReadyToDeliver Boolean @default(false)  // Order is ready for delivery/pickup
   
   // Collateral information
   collateralType String?   // Thế chân bằng tiền/giấy tờ (Cash/Document Collateral)
@@ -203,6 +219,8 @@ model Order {
   @@index([customerId, createdAt(sort: Desc)])
   @@index([pickupPlanAt, returnPlanAt])
   @@index([orderNumber])
+  @@index([publicId])
+  @@index([isReadyToDeliver, outletId]) // Index for delivery readiness queries
 }
 
 model OrderItem {

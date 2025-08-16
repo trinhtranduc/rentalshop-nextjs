@@ -59,7 +59,8 @@ import {
   Table as TableIcon,
   Smartphone,
   ChevronDown,
-  Loader2
+  Loader2,
+  Info
 } from 'lucide-react';
 import type { 
   OrderInput, 
@@ -95,6 +96,7 @@ interface OrderFormData {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
+  isReadyToDeliver: boolean;  // Order is ready for delivery/pickup
   orderItems: OrderItemFormData[];
 }
 
@@ -146,6 +148,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
     customerName: '',
     customerPhone: '',
     customerEmail: '',
+    isReadyToDeliver: false,  // Default to false - not ready initially
     orderItems: [],
   });
 
@@ -642,6 +645,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         customerName: formData.customerName || undefined,
         customerPhone: formData.customerPhone || undefined,
         customerEmail: formData.customerEmail || undefined,
+        isReadyToDeliver: formData.isReadyToDeliver,  // Include the new field
         orderItems: orderItems.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -1165,6 +1169,25 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                   />
                 </div>
 
+                {/* Ready to Deliver */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isReadyToDeliver"
+                      checked={formData.isReadyToDeliver}
+                      onChange={(e) => setFormData(prev => ({ ...prev, isReadyToDeliver: e.target.checked }))}
+                      className="w-4 h-4 text-action-primary bg-bg-primary border-border rounded focus:ring-action-primary focus:ring-2"
+                    />
+                    <label htmlFor="isReadyToDeliver" className="text-sm font-medium text-text-primary">
+                      Order is ready for delivery/pickup
+                    </label>
+                  </div>
+                  <p className="text-xs text-text-secondary">
+                    Check this when the order has been prepared and is ready for customer pickup or delivery
+                  </p>
+                </div>
+
                 {/* Order Summary */}
                 <div className="space-y-3 p-4 border border-border rounded-lg bg-bg-primary">
                   <h4 className="font-medium text-text-primary">Order Summary</h4>
@@ -1252,6 +1275,18 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                         )}
                         <span className={formData.outletId ? 'text-green-700' : 'text-red-600'}>
                           {formData.outletId ? '✓' : '✗'} Outlet selection required
+                        </span>
+                      </div>
+
+                      {/* Ready to Deliver Status */}
+                      <div className="flex items-center gap-2">
+                        {formData.isReadyToDeliver ? (
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <Info className="w-4 h-4 text-blue-500" />
+                        )}
+                        <span className={formData.isReadyToDeliver ? 'text-green-700' : 'text-blue-600'}>
+                          {formData.isReadyToDeliver ? '✓' : 'ℹ'} {formData.isReadyToDeliver ? 'Order ready for delivery' : 'Order not yet ready for delivery'}
                         </span>
                       </div>
                     </div>
