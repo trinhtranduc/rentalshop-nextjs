@@ -1,9 +1,9 @@
 import React from 'react';
 import { 
-  OrderHeader,
-  OrderFilters,
+  OrderListHeader,
+  OrderListFilters,
   OrderTable,
-  OrderActions,
+  OrderListActions,
   OrderStats,
   OrderPagination
 } from './components';
@@ -32,12 +32,12 @@ export function Orders({
 }: OrdersProps) {
   return (
     <div className="space-y-6">
-      <OrderHeader 
+      <OrderListHeader 
         totalOrders={data.total}
         stats={data.stats}
       />
       
-      <OrderFilters 
+      <OrderListFilters 
         filters={filters}
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}

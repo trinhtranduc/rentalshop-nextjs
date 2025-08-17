@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@rentalshop/ui';
-import { OrderDetail } from '@rentalshop/ui';
+import { OrderDetail } from '../../../../../packages/ui/src/components/features/OrderDetail';
+// import { OrderDetail } from '@rentalshop/ui';
+
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { authenticatedFetch } from '@rentalshop/auth/browser';
 
@@ -97,6 +99,9 @@ export default function OrderDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const orderNumber = params.orderNumber as string;
+  
+  // Extract numeric part from order number (e.g., "2110" from "ORD-2110")
+  const numericOrderNumber = orderNumber.replace(/^ORD-/, '');
 
   useEffect(() => {
     if (!orderNumber) return;
@@ -106,7 +111,7 @@ export default function OrderDetailPage() {
         setLoading(true);
         setError(null);
 
-        const response = await authenticatedFetch(`/api/orders/by-number/${orderNumber}`);
+        const response = await authenticatedFetch(`/api/orders/by-number/ORD-${numericOrderNumber}`);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -138,7 +143,7 @@ export default function OrderDetailPage() {
 
   const handleEditOrder = () => {
     // Navigate to edit page or open edit dialog
-    router.push(`/orders/${orderNumber}/edit`);
+    router.push(`/orders/${numericOrderNumber}/edit`);
   };
 
   const handleCancelOrder = async () => {

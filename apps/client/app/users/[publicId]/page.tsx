@@ -10,18 +10,18 @@ import {
   UserReadOnlyInfo, 
   AccountManagementCard,
   ConfirmationDialog,
-  PasswordChangeDialog
+  ToastContainer
 } from '@rentalshop/ui';
 import { 
   ArrowLeft,
   Edit, 
-  Lock,
   UserCheck,
   UserX,
   Trash2
 } from 'lucide-react';
 import { usersApi } from '../../../lib/api/users';
 import type { User, UserUpdateInput } from '@rentalshop/ui';
+import { useToasts } from '@rentalshop/ui';
 
 export default function UserPage() {
   const router = useRouter();
@@ -39,16 +39,9 @@ export default function UserPage() {
   
   // Section visibility states
   const [showEditSection, setShowEditSection] = useState(false);
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [showSecuritySection, setShowSecuritySection] = useState(false);
   
-  // Password form data
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  
   // Fetch user data
   useEffect(() => {
     const fetchUser = async () => {
@@ -112,14 +105,6 @@ export default function UserPage() {
     setShowEditSection(!showEditSection);
   };
 
-  const handlePasswordChange = () => {
-    setShowPasswordSection(!showPasswordSection);
-  };
-
-  const handleSecurity = () => {
-    setShowSecuritySection(!showSecuritySection);
-  };
-
   const handleSave = async (userData: UserUpdateInput) => {
     try {
       setIsUpdating(true);
@@ -138,50 +123,20 @@ export default function UserPage() {
         // Hide edit section after successful update
         setShowEditSection(false);
         
-        // Show success message (you could add a toast notification here)
-        alert('User updated successfully!');
+        // Show success message
+        showSuccess('User Updated', 'User information has been updated successfully!');
       } else {
         console.error('❌ UserPage: API error:', response.error);
+        showError('Update Failed', response.error || 'Failed to update user');
         throw new Error(response.error || 'Failed to update user');
       }
       
     } catch (error) {
       console.error('❌ UserPage: Error updating user:', error);
+      showError('Update Failed', 'An error occurred while updating the user');
       throw error; // Re-throw so the form can handle it
     } finally {
       setIsUpdating(false);
-    }
-  };
-
-  const handlePasswordSubmit = async (passwordData: {
-    currentPassword?: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) => {
-    try {
-      console.log('🔐 UserPage: Changing password for user:', publicId);
-      
-      const response = await usersApi.changePasswordByPublicId(publicId, passwordData);
-      
-      if (response.success) {
-        console.log('✅ UserPage: Password changed successfully');
-        
-        // Clear password form
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        
-        // Hide password section
-        setShowPasswordSection(false);
-        
-        // Show success message
-        alert('Password changed successfully!');
-      } else {
-        console.error('❌ UserPage: Password change failed:', response.error);
-        throw new Error(response.error || 'Failed to change password');
-      }
-      
-    } catch (error) {
-      console.error('❌ UserPage: Error changing password:', error);
-      throw error;
     }
   };
 
@@ -190,15 +145,18 @@ export default function UserPage() {
     
     try {
       setIsUpdating(true);
-      const response = await usersApi.activateUser(user.id);
+      // Use publicId for activation as the API expects numeric publicId
+      const response = await usersApi.activateUserByPublicId(publicId);
       if (response.success) {
         // Refresh user data
         await refreshUserData();
-        alert('User activated successfully!');
+        showSuccess('User Activated', 'User account has been activated successfully!');
+      } else {
+        showError('Activation Failed', response.error || 'Failed to activate user');
       }
     } catch (error) {
       console.error('Error activating user:', error);
-      alert('Failed to activate user');
+      showError('Activation Failed', 'An error occurred while activating the user');
     } finally {
       setIsUpdating(false);
     }
@@ -216,16 +174,19 @@ export default function UserPage() {
     
     try {
       setIsUpdating(true);
-      const response = await usersApi.deactivateUser(user.id);
+      // Use publicId for deactivation as the API expects numeric publicId
+      const response = await usersApi.deactivateUserByPublicId(publicId);
       if (response.success) {
         // Refresh user data
         await refreshUserData();
-        alert('User deactivated successfully!');
+        showSuccess('User Deactivated', 'User account has been deactivated successfully!');
         setShowDeactivateConfirm(false);
+      } else {
+        showError('Deactivation Failed', response.error || 'Failed to deactivate user');
       }
     } catch (error) {
       console.error('Error deactivating user:', error);
-      alert('Failed to deactivate user');
+      showError('Deactivation Failed', 'An error occurred while deactivating the user');
     } finally {
       setIsUpdating(false);
     }
@@ -236,13 +197,17 @@ export default function UserPage() {
     
     try {
       setIsUpdating(true);
-      const response = await usersApi.deleteUser(user.id);
+      // Use publicId for deletion as the API expects numeric publicId
+      const response = await usersApi.deleteUserByPublicId(publicId);
       if (response.success) {
+        showSuccess('User Deleted', 'User account has been deleted successfully!');
         router.push('/users');
+      } else {
+        showError('Deletion Failed', response.error || 'Failed to delete user');
       }
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user');
+      showError('Deletion Failed', 'An error occurred while deleting the user');
     } finally {
       setIsUpdating(false);
       setShowDeleteConfirm(false);
@@ -304,15 +269,6 @@ export default function UserPage() {
               {showEditSection ? 'Cancel Edit' : 'Edit User'}
             </Button>
             
-            {!showEditSection && (
-              <Button 
-                variant="outline"
-                onClick={handlePasswordChange}
-              >
-                <Lock className="w-4 h-4 mr-2" />
-                Change Password
-              </Button>
-            )}
           </div>
         </UserPageHeader>
 
@@ -322,16 +278,14 @@ export default function UserPage() {
             <UserReadOnlyInfo user={user} />
           </UserInfoCard>
         ) : (
-          <UserInfoCard title="Edit User Information">
+          <div className="mt-8">
             <EditUserForm
               user={user}
               onSave={handleSave}
               onCancel={() => setShowEditSection(false)}
               isSubmitting={isUpdating}
-              onPasswordChange={handlePasswordSubmit}
-              onDeactivate={handleDeactivate}
             />
-          </UserInfoCard>
+          </div>
         )}
 
 
@@ -370,14 +324,8 @@ export default function UserPage() {
         onConfirm={confirmDeactivate}
       />
 
-      {/* Password Change Dialog */}
-      <PasswordChangeDialog
-        open={showPasswordSection}
-        onOpenChange={setShowPasswordSection}
-        userName={user.name}
-        onSubmit={handlePasswordSubmit}
-        isSubmitting={isUpdating}
-      />
+      {/* Toast Container for notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

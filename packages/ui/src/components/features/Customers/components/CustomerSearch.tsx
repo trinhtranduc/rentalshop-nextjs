@@ -67,15 +67,14 @@ export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onCle
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Status
             </label>
-            <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}>
+            <Select value={filters.status || 'active'} onValueChange={(value) => handleFilterChange('status', value)}>
               <SelectTrigger className="min-w-[250px] h-10">
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
+                <SelectItem value="active">Active Customers</SelectItem>
+                <SelectItem value="inactive">Inactive Customers</SelectItem>
+                <SelectItem value="blocked">Blocked Customers</SelectItem>
               </SelectContent>
             </Select>
           </div>

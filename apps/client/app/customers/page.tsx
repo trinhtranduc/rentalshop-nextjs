@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Button, 
   Customers,
@@ -8,10 +9,14 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  ConfirmationDialog,
+  ToastContainer
 } from '@rentalshop/ui';
 import { UserPlus } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useToasts } from '@rentalshop/ui';
+const { customersApi } = await import('../../lib/api/customers');
 
 // Import types from the Customers feature
 import { CustomerData, CustomerFilters as CustomerFiltersType } from '../../../../packages/ui/src/components/features/Customers/types';
@@ -19,6 +24,7 @@ import { CustomerData, CustomerFilters as CustomerFiltersType } from '../../../.
 // Extend the Customer type for this page
 interface ExtendedCustomer {
   id: string;
+  publicId?: string; // Public ID for navigation
   firstName: string;
   lastName: string;
   email: string;
@@ -37,6 +43,7 @@ interface ExtendedCustomer {
 }
 
 export default function CustomersPage() {
+  const router = useRouter();
   const { user } = useAuth();
   
   // State for customers and UI
@@ -46,10 +53,14 @@ export default function CustomersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
   
+  // Confirmation dialog state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<ExtendedCustomer | null>(null);
+  
   // Initialize filters
   const [filters, setFilters] = useState<CustomerFiltersType>({
     search: '',
-    status: 'all',
+    status: 'active', // Default to active customers since backend filters inactive by default
     sortBy: 'name',
     sortOrder: 'asc'
   });
@@ -59,6 +70,7 @@ export default function CustomersPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const hasInitializedRef = useRef(false);
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -80,7 +92,9 @@ export default function CustomersPage() {
           search: searchQuery,
           limit: '10',
           offset: offset.toString(),
-          ...(filters.status !== 'all' && { isActive: filters.status === 'active' ? 'true' : 'false' }),
+          // Only pass isActive filter when explicitly requesting inactive customers
+          ...(filters.status === 'inactive' && { isActive: 'false' }),
+          ...(filters.status === 'blocked' && { isActive: 'false' }), // Blocked customers are also inactive
           sortBy: filters.sortBy,
           sortOrder: filters.sortOrder
         });
@@ -89,7 +103,9 @@ export default function CustomersPage() {
         params = new URLSearchParams({
           page: currentPage.toString(),
           limit: '10',
-          ...(filters.status !== 'all' && { isActive: filters.status === 'active' ? 'true' : 'false' }),
+          // Only pass isActive filter when explicitly requesting inactive customers
+          ...(filters.status === 'inactive' && { isActive: 'false' }),
+          ...(filters.status === 'blocked' && { isActive: 'false' }), // Blocked customers are also inactive
           sortBy: filters.sortBy,
           sortOrder: filters.sortOrder
         });
@@ -141,6 +157,8 @@ export default function CustomersPage() {
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
+      // Show error toast
+      showError('Fetch Error', 'Failed to load customers. Please try again.');
     } finally {
       setLoading(false);
       setIsSearching(false);
@@ -187,7 +205,7 @@ export default function CustomersPage() {
   const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
-      status: 'all',
+      status: 'active', // Default to active customers since backend filters inactive by default
       sortBy: 'name',
       sortOrder: 'asc'
     });
@@ -204,8 +222,16 @@ export default function CustomersPage() {
     
     switch (action) {
       case 'edit':
-        // Handle edit - you can implement this based on your needs
-        console.log('Edit customer:', customerId);
+        // Navigate to customer edit page
+        console.log('🔍 CustomersPage: Edit customer:', customerId);
+        // Find the customer to get their public ID
+        const customerToEdit = customers.find(c => c.id === customerId);
+        if (customerToEdit && customerToEdit.publicId) {
+          router.push(`/customers/${customerToEdit.publicId}/edit`);
+        } else {
+          console.error('❌ CustomersPage: Customer not found or missing public ID:', customerId);
+          showError('Navigation Error', 'Customer not found or missing public ID');
+        }
         break;
       case 'delete':
         // Handle delete
@@ -221,20 +247,78 @@ export default function CustomersPage() {
               fetchCustomers();
             } else {
               console.error('Failed to delete customer');
+              showError('Delete Failed', 'Failed to delete customer. Please try again.');
             }
           } catch (error) {
             console.error('Error deleting customer:', error);
+            showError('Delete Error', 'An error occurred while deleting the customer');
           }
         }
         break;
       case 'view':
-        // Handle view - you can implement this based on your needs
-        console.log('View customer:', customerId);
+        // Navigate to customer detail page
+        console.log('🔍 CustomersPage: View customer:', customerId);
+        // Find the customer to get their public ID
+        const customer = customers.find(c => c.id === customerId);
+        if (customer && customer.publicId) {
+          router.push(`/customers/${customer.publicId}`);
+        } else {
+          console.error('❌ CustomersPage: Customer not found or missing public ID:', customerId);
+          showError('Navigation Error', 'Customer not found or missing public ID');
+        }
         break;
       default:
         console.log('Unknown action:', action);
     }
-  }, [fetchCustomers]);
+  }, [customers, router, fetchCustomers]);
+
+  // Handle customer deletion - show confirmation dialog first
+  const handleDeleteCustomer = useCallback((customerId: string) => {
+    const customer = customers.find(c => c.id === customerId);
+    if (customer) {
+      setCustomerToDelete(customer);
+      setShowDeleteConfirm(true);
+    }
+  }, [customers]);
+
+  // Handle confirmed customer deletion
+  const handleConfirmDelete = useCallback(async () => {
+    if (!customerToDelete) return;
+    
+    try {
+      console.log('🔍 CustomersPage: Deleting customer:', customerToDelete.id);
+      
+      // Import the API client
+      const { customersApi } = await import('../../lib/api/customers');
+      
+      // Call the delete API
+      const response = await customersApi.deleteCustomer(customerToDelete.id);
+      
+      if (response.success) {
+        console.log('✅ CustomersPage: Customer deleted successfully');
+        
+        // Remove the customer from the local state
+        setCustomers(prev => prev.filter(c => c.id !== customerToDelete.id));
+        setTotalCustomers(prev => prev - 1);
+        
+        // Show success toast
+        showSuccess('Customer Deleted', 'Customer has been deleted successfully!');
+      } else {
+        console.error('❌ CustomersPage: Failed to delete customer:', response.error);
+        // Show error toast
+        showError('Delete Failed', response.error || 'Failed to delete customer');
+      }
+      
+    } catch (error) {
+      console.error('❌ CustomersPage: Error deleting customer:', error);
+      // Show error toast
+      showError('Delete Error', error instanceof Error ? error.message : 'An unexpected error occurred while deleting the customer');
+    } finally {
+      // Close the confirmation dialog
+      setShowDeleteConfirm(false);
+      setCustomerToDelete(null);
+    }
+  }, [customerToDelete]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
@@ -268,6 +352,7 @@ export default function CustomersPage() {
   const customerData: CustomerData = useMemo(() => ({
     customers: customers.map(customer => ({
       id: customer.id,
+      publicId: customer.publicId, // Include publicId for navigation
       firstName: customer.firstName,
       lastName: customer.lastName,
       email: customer.email,
@@ -324,7 +409,7 @@ export default function CustomersPage() {
             <p className="text-gray-600">Manage your customer database and relationships</p>
           </div>
           <Button 
-            onClick={() => console.log('Add customer')}
+            onClick={() => router.push('/customers/add')}
             className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
           >
             <UserPlus className="w-4 h-4 mr-2" /> Add Customer
@@ -343,8 +428,23 @@ export default function CustomersPage() {
           onPageChange={handlePageChange}
           onSort={handleSort}
           merchantId={user?.merchant?.id || ''}
+          onDeleteCustomer={handleDeleteCustomer}
+        />
+
+        {/* Confirmation Dialog for Delete Customer */}
+        <ConfirmationDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          type="danger"
+          title="Delete Customer"
+          description={customerToDelete ? `Are you sure you want to delete ${customerToDelete.firstName} ${customerToDelete.lastName}? This action cannot be undone.` : ''}
+          confirmText="Delete Customer"
+          onConfirm={handleConfirmDelete}
         />
       </PageContent>
+      
+      {/* Toast Container for notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 } 

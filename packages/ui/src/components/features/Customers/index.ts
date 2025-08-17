@@ -12,5 +12,7 @@ export * from './components';
 export type { 
   CustomerData, 
   CustomerFilters,
-  Customer
+  Customer,
+  CustomerCreateInput,
+  CustomerUpdateInput
 } from './types';

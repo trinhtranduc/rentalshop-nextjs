@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AddUserForm, UserPageHeader, UserInfoCard } from '@rentalshop/ui';
+import { AddUserForm, UserPageHeader, UserInfoCard, ToastContainer } from '@rentalshop/ui';
 import { usersApi } from '../../../lib/api';
 import type { UserCreateInput } from '@rentalshop/ui';
+import { useToasts } from '@rentalshop/ui';
 
 export default function AddUserPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
 
   const handleSave = async (userData: UserCreateInput) => {
     try {
@@ -22,15 +24,22 @@ export default function AddUserPage() {
       if (response.success) {
         console.log('✅ AddUserPage: User created successfully:', response.data);
         
-        // Navigate back to users list
-        router.push('/users');
+        // Show success message
+        showSuccess('User Created', 'New user account has been created successfully!');
+        
+        // Navigate back to users list after a short delay to show the toast
+        setTimeout(() => {
+          router.push('/users');
+        }, 1500);
       } else {
         console.error('❌ AddUserPage: API error:', response.error);
+        showError('Creation Failed', response.error || 'Failed to create user');
         throw new Error(response.error || 'Failed to create user');
       }
       
     } catch (error) {
       console.error('❌ AddUserPage: Error creating user:', error);
+      showError('Creation Failed', 'An error occurred while creating the user');
       throw error; // Re-throw so the form can handle it
     } finally {
       setIsSubmitting(false);
@@ -61,6 +70,9 @@ export default function AddUserPage() {
           />
         </UserInfoCard>
       </div>
+      
+      {/* Toast Container for notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

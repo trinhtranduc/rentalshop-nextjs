@@ -2,8 +2,8 @@ export interface Customer {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   companyName?: string;
   address?: string;
   city?: string;
@@ -17,6 +17,36 @@ export interface Customer {
   lastOrderDate?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CustomerCreateInput {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  companyName?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  status: 'active' | 'inactive' | 'blocked';
+  membershipLevel: 'basic' | 'premium' | 'vip';
+}
+
+export interface CustomerUpdateInput {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  companyName?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  membershipLevel?: 'basic' | 'premium' | 'vip';
 }
 
 export interface CustomerFilters {
@@ -65,8 +95,8 @@ export interface CustomerAction {
 export interface CustomerSearchResult {
   id: string;
   name: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   status: string;
   totalOrders: number;
 }

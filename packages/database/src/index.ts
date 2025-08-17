@@ -11,6 +11,7 @@ export * from './seed';
 
 // Types (export individually to avoid conflicts)
 export type {
+  PhoneNumber,
   CustomerWithMerchant,
   CustomerInput,
   CustomerUpdateInput,
@@ -44,6 +45,11 @@ export type {
   OrderStats,
   OrderStatsByPeriod,
   OrderExportData,
+} from './types';
+
+// Utility functions
+export {
+  createPhoneNumber
 } from './types';
 
 // User management functions (explicitly export to ensure they're available)

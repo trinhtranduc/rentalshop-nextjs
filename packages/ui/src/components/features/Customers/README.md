@@ -1,154 +1,94 @@
-# Customers Feature Components
+# Customer Components
 
-This directory contains the customer management functionality for the rental shop application.
+This directory contains the essential customer management components for the rental shop application. Redundant components have been removed to maintain a clean, maintainable codebase.
 
-## Components
+## 🗂️ Component Structure
 
-### Customers (Main Component)
-The main `Customers` component that orchestrates all customer-related functionality.
+### Core Customer Components
+- **`CustomerInfoCard.tsx`** - Main customer information display with actions
+- **`CustomerTable.tsx`** - Customer listing table with sorting and actions
+- **`CustomerDetailDialog.tsx`** - Detailed customer view dialog
 
-**Props:**
-- `data: CustomerData` - Customer data including list, pagination, and stats
-- `filters: CustomerFilters` - Search and filter options
-- `merchantId: string` - ID of the current merchant
-- `onCustomerAction: (action: string, customerId?: string) => void` - Handler for customer actions
-- `onCustomerCreated?: (customer: CustomerWithMerchant) => void` - Callback when customer is created
-- `onCustomerUpdated?: (customer: CustomerWithMerchant) => void` - Callback when customer is updated
-- `onError?: (error: string) => void` - Error handler callback
+### Customer Forms
+- **`AddCustomerForm.tsx`** - Form to create new customers
+- **`EditCustomerForm.tsx`** - Form to edit existing customers
 
-### CustomerActions
-Provides action buttons for customer management including Add Customer, Import/Export, etc.
+### Customer Actions & Navigation
+- **`CustomerActions.tsx`** - Action buttons for customer operations
+- **`CustomerHeader.tsx`** - Customer statistics and metrics display
+- **`CustomerSearch.tsx`** - Search and filter functionality
+- **`CustomerPagination.tsx`** - Pagination controls for customer lists
 
-**Features:**
-- Add new customer (opens dialog)
-- Import customers from CSV/Excel
-- Export customers to CSV/Excel
-- Bulk actions
-- Customer segments
-- Loyalty program management
+### Customer Data & Utilities
+- **`CustomerStats.tsx`** - Customer statistics calculations
+- **`CustomerOrdersDialog.tsx`** - Customer orders view dialog
+- **`CustomersLoading.tsx`** - Loading states and skeletons
 
-### CustomerFormDialog
-Modal dialog for adding and editing customers.
+## 🧹 Cleanup Summary
 
-**Features:**
-- Create new customer
-- Edit existing customer
-- Form validation
-- API integration
-- Success/error handling
+### Removed Redundant Components
+- ❌ `CustomerInfoExample.tsx` - Example component (not needed in production)
+- ❌ `CustomerInfoUsage.tsx` - Another example component
+- ❌ `CustomerReadOnlyInfo.tsx` - Functionality covered by CustomerInfoCard
+- ❌ `CustomerManagementCard.tsx` - Functionality covered by CustomerInfoCard
+- ❌ `CustomerPageHeader.tsx` - Duplicated CustomerHeader functionality
+- ❌ `CustomerFormDialog.tsx` - Redundant with AddCustomerForm/EditCustomerForm
 
-## Usage Example
+### Benefits of Cleanup
+- ✅ **Reduced confusion** - Clear component hierarchy
+- ✅ **Easier maintenance** - Fewer files to maintain
+- ✅ **Better performance** - Smaller bundle size
+- ✅ **Consistent patterns** - Standardized component structure
+- ✅ **DRY principle** - No duplicate functionality
 
+## 📱 Component Usage
+
+### CustomerInfoCard (Main Display Component)
 ```tsx
-import { Customers } from '@rentalshop/ui';
-
-function CustomerManagementPage() {
-  const [customerData, setCustomerData] = useState<CustomerData>({
-    customers: [],
-    total: 0,
-    currentPage: 1,
-    totalPages: 1,
-    limit: 20,
-    stats: { /* ... */ }
-  });
-
-  const [filters, setFilters] = useState<CustomerFilters>({
-    search: '',
-    status: '',
-    sortBy: 'name',
-    sortOrder: 'asc'
-  });
-
-  const handleCustomerAction = (action: string, customerId?: string) => {
-    switch (action) {
-      case 'add-customer':
-        // Handled by CustomerActions component
-        break;
-      case 'edit-customer':
-        // Handle edit action
-        break;
-      // ... other actions
-    }
-  };
-
-  const handleCustomerCreated = (customer: CustomerWithMerchant) => {
-    // Refresh customer list or add to current list
-    setCustomerData(prev => ({
-      ...prev,
-      customers: [customer, ...prev.customers],
-      total: prev.total + 1
-    }));
-  };
-
-  const handleCustomerUpdated = (customer: CustomerWithMerchant) => {
-    // Update customer in current list
-    setCustomerData(prev => ({
-      ...prev,
-      customers: prev.customers.map(c => 
-        c.id === customer.id ? customer : c
-      )
-    }));
-  };
-
-  return (
-    <Customers
-      data={customerData}
-      filters={filters}
-      onFiltersChange={setFilters}
-      onSearchChange={(search) => setFilters(prev => ({ ...prev, search }))}
-      onCustomerAction={handleCustomerAction}
-      onPageChange={(page) => setFilters(prev => ({ ...prev, currentPage: page }))}
-      merchantId="merchant-123"
-      onCustomerCreated={handleCustomerCreated}
-      onCustomerUpdated={handleCustomerUpdated}
-      onError={(error) => console.error('Customer error:', error)}
-    />
-  );
-}
+<CustomerInfoCard
+  customer={customerData}
+  onEdit={() => handleEdit(customer.id)}
+  onViewOrders={() => handleViewOrders(customer.id)}
+  onDelete={() => handleDelete(customer.id)}
+  showActions={true}
+  isLoading={false}
+/>
 ```
 
-## API Integration
+### CustomerTable (Listing Component)
+```tsx
+<CustomerTable
+  customers={customers}
+  onCustomerAction={handleCustomerAction}
+  onViewOrders={handleViewOrders}
+  onDeleteCustomer={handleDeleteCustomer}
+/>
+```
 
-The components integrate with the following API endpoints:
+### CustomerDetailDialog (Detail View)
+```tsx
+<CustomerDetailDialog
+  open={isOpen}
+  onOpenChange={setIsOpen}
+  customer={customerData}
+/>
+```
 
-- `POST /api/customers` - Create new customer
-- `PUT /api/customers?customerId={id}` - Update existing customer
-- `GET /api/customers` - List customers with filters
-- `GET /api/customers/{id}` - Get customer details
+## 🎯 Key Features
 
-## Form Fields
+- **Required Fields Only** - First name and last name are required
+- **Optional Fields** - Email, phone, address, and other details are optional
+- **Smart Validation** - Validates format only when optional fields are provided
+- **Action Buttons** - Edit, View Orders, Delete (positioned at top right)
+- **Loading States** - Proper handling of undefined/null customer data
+- **Responsive Design** - Works on mobile and desktop
+- **Type Safety** - Supports both local and database customer types
+- **Consistent Styling** - Follows design system patterns
 
-The customer form includes:
+## 🔧 Maintenance Notes
 
-**Personal Information:**
-- First Name (required)
-- Last Name (required)
-- Email (required)
-- Phone (required)
-- Date of Birth
-- ID Type (passport, driver's license, national ID, other)
-- ID Number
-
-**Address Information:**
-- Street Address
-- City
-- State/Province
-- ZIP/Postal Code
-- Country
-
-**Additional Information:**
-- Notes
-
-## Validation
-
-- Required fields: firstName, lastName, email, phone, merchantId
-- Email format validation
-- Phone number validation
-- Form submission disabled until validation passes
-
-## Error Handling
-
-- API error messages displayed to user
-- Form validation errors shown inline
-- Success messages with auto-dismiss
-- Loading states during API calls
+- All components use the centralized `@rentalshop/ui` imports
+- Components handle both `Customer` and `CustomerWithMerchant` types
+- Proper null/undefined checks prevent runtime errors
+- Loading states provide better user experience
+- Action handlers are optional and properly typed

@@ -32,6 +32,10 @@ export default function OrdersPage() {
     status: '',
     orderType: '',
     outlet: '',
+    dateRange: {
+      start: '',
+      end: ''
+    },
     sortBy: 'createdAt',
     sortOrder: 'desc'
   });
@@ -183,6 +187,10 @@ export default function OrdersPage() {
       status: '',
       orderType: '',
       outlet: '',
+      dateRange: {
+        start: '',
+        end: ''
+      },
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });
@@ -192,9 +200,12 @@ export default function OrdersPage() {
   }, []);
 
   const handleOrderAction = useCallback(async (action: string, orderNumber: string) => {
+    // Extract numeric part for URL (e.g., "2110" from "ORD-2110")
+    const numericOrderNumber = orderNumber.replace(/^ORD-/, '');
+    
     switch (action) {
       case 'view':
-        router.push(`/orders/${orderNumber}`);
+        router.push(`/orders/${numericOrderNumber}`);
         break;
       case 'pickup':
         // Find the order by orderNumber to get the ID for API calls
@@ -210,7 +221,7 @@ export default function OrdersPage() {
         if (orderForCancel) await handleCancel(orderForCancel.id);
         break;
       case 'edit':
-        router.push(`/orders/${orderNumber}/edit`);
+        router.push(`/orders/${numericOrderNumber}/edit`);
         break;
       default:
         console.log('Unknown action:', action);

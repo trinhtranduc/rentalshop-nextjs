@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger 
 } from '../../../ui/dropdown-menu';
 import { Customer } from '../types';
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Eye, Edit, ClipboardList, Trash2 } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Eye, Trash2 } from 'lucide-react';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -19,7 +19,6 @@ interface CustomerTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
-  onViewOrders?: (customerId: string) => void;
   onDeleteCustomer?: (customerId: string) => void;
 }
 
@@ -96,7 +95,6 @@ export function CustomerTable({
   sortBy = 'name', 
   sortOrder = 'asc',
   onSort,
-  onViewOrders,
   onDeleteCustomer
 }: CustomerTableProps) {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -116,19 +114,7 @@ export function CustomerTable({
     setOpenDropdownId(null);
   };
 
-  const handleViewOrders = (customerId: string, customer: Customer) => {
-    // Create custom event to communicate with CustomerActions component
-    const event = new CustomEvent('customer-view-orders', {
-      detail: { customerId, customer }
-    });
-    window.dispatchEvent(event);
-    
-    // Also call the original onViewOrders for backward compatibility
-    onViewOrders?.(customerId);
-    
-    // Close the dropdown after action
-    setOpenDropdownId(null);
-  };
+
 
   const handleDeleteCustomer = (customerId: string) => {
     onDeleteCustomer?.(customerId);
@@ -304,20 +290,7 @@ export function CustomerTable({
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </div>
-                          <div 
-                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
-                            onClick={() => triggerCustomerAction('edit', customer)}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Customer
-                          </div>
-                          <div 
-                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
-                            onClick={() => handleViewOrders(customer.id, customer)}
-                          >
-                            <ClipboardList className="mr-2 h-4 w-4" />
-                            View Orders
-                          </div>
+
                           <div className="-mx-1 my-1 h-px bg-gray-200 dark:bg-gray-600"></div>
                           <div 
                             className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"

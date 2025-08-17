@@ -1,4 +1,4 @@
-import { Order, OrderFilters, OrderData, OrderStats } from './types';
+import { Order, OrderFilters, OrderData, OrderStats, OrderDetailData, SettingsForm } from './types';
 
 export const filterOrders = (orders: Order[], filters: OrderFilters): Order[] => {
   return orders.filter(order => {
@@ -238,4 +238,26 @@ export const getDaysUntilReturn = (order: Order): number | null => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   return diffDays;
+};
+
+export const calculateCollectionAmount = (order: OrderDetailData, settingsForm: SettingsForm): number => {
+  if (order.orderType === 'RENT') {
+    if (order.status === 'RESERVED') {
+      return settingsForm.bailAmount || 0;
+    } else if (order.status === 'PICKUP') {
+      return (settingsForm.bailAmount || 0) - (settingsForm.damageFee || 0);
+    }
+  }
+  return 0;
+};
+
+export const getCollectionTitle = (order: OrderDetailData): string => {
+  if (order.orderType === 'RENT') {
+    if (order.status === 'RESERVED') {
+      return 'Bail Amount';
+    } else if (order.status === 'PICKUP') {
+      return 'Collection Amount';
+    }
+  }
+  return 'Collection';
 };

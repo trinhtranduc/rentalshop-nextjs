@@ -9,8 +9,8 @@ import type { CustomerInput } from '@rentalshop/database';
 interface CustomerFormData {
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -77,13 +77,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       newErrors.lastName = 'Last name is required';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
 
-    if (!formData.phone.trim()) {
+    if (formData.phone && !formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     }
 
@@ -167,7 +165,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email *
+                Email
               </label>
               <Input
                 type="email"
@@ -186,7 +184,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone *
+                Phone
               </label>
               <Input
                 type="tel"

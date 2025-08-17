@@ -33,8 +33,12 @@ export const searchCustomers = async (filters: CustomerSearchFilter): Promise<Cu
     where.merchantId = merchantId;
   }
 
+  // Default to active customers only (soft delete logic)
+  // Only show inactive customers if explicitly requested
   if (isActive !== undefined) {
     where.isActive = isActive;
+  } else {
+    where.isActive = true; // Default to active customers only
   }
 
   if (city) {
@@ -129,47 +133,92 @@ export const getCustomersByMerchant = async (
 };
 
 /**
- * Get customer by ID
+ * Get customer by ID (supports both internal ID and public ID)
  */
 export const getCustomerById = async (id: string) => {
-  return prisma.customer.findUnique({
-    where: { id },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      } as any
-    }
-  });
+  // Check if the ID is numeric (public ID) or alphanumeric (internal ID)
+  const isPublicId = /^\d+$/.test(id);
+  
+  if (isPublicId) {
+    // Search by public ID
+    return prisma.customer.findUnique({
+      where: { publicId: parseInt(id) },
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            name: true
+          }
+        } as any
+      }
+    });
+  } else {
+    // Search by internal ID
+    return prisma.customer.findUnique({
+      where: { id },
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            name: true
+          }
+        } as any
+      }
+    });
+  }
 };
 
 /**
  * Create a new customer
  */
 export const createCustomer = async (data: CustomerInput) => {
-  // Generate the next public ID for the customer
-  const lastCustomer = await prisma.customer.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
-  });
-  const nextPublicId = (lastCustomer?.publicId || 0) + 1;
+  try {
+    // Generate the next public ID for the customer
+    const lastCustomer = await prisma.customer.findFirst({
+      orderBy: { publicId: 'desc' },
+      select: { publicId: true }
+    });
+    const nextPublicId = (lastCustomer?.publicId || 0) + 1;
 
-  return prisma.customer.create({
-    data: {
+    // Validate that the merchant exists
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: data.merchantId },
+      select: { id: true, name: true }
+    });
+
+    if (!merchant) {
+      throw new Error(`Merchant with ID ${data.merchantId} not found`);
+    }
+
+    // Prepare data for Prisma, handling dateOfBirth conversion
+    const customerData: any = {
       ...data,
       publicId: nextPublicId,
-    },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      } as any
+    };
+
+    // Handle dateOfBirth conversion if it's a string
+    if (data.dateOfBirth && typeof data.dateOfBirth === 'string') {
+      customerData.dateOfBirth = new Date(data.dateOfBirth);
     }
-  });
+
+    // Create the customer
+    const customer = await prisma.customer.create({
+      data: customerData,
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    return customer;
+  } catch (error) {
+    console.error('Error creating customer:', error);
+    throw error;
+  }
 };
 
 /**
@@ -191,20 +240,11 @@ export const updateCustomer = async (id: string, data: CustomerUpdateInput) => {
 };
 
 /**
- * Delete customer (soft delete by setting isActive to false)
+ * Delete customer (hard delete from database)
  */
 export const deleteCustomer = async (id: string) => {
-  return prisma.customer.update({
-    where: { id },
-    data: { isActive: false },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      } as any
-    }
+  return prisma.customer.delete({
+    where: { id }
   });
 };
 
@@ -230,8 +270,12 @@ export const getCustomers = async (
     where.merchantId = filters.merchantId;
   }
 
+  // Default to active customers only (soft delete logic)
+  // Only show inactive customers if explicitly requested
   if (filters.isActive !== undefined) {
     where.isActive = filters.isActive;
+  } else {
+    where.isActive = true; // Default to active customers only
   }
 
   if (filters.city) {
