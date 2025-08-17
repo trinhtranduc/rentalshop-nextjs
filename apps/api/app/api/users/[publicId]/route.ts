@@ -289,35 +289,31 @@ export async function DELETE(
     // Check if user has active orders or other dependencies
     const hasActiveOrders = await prisma.order.findFirst({
       where: { 
-        OR: [
-          { customerId: user.id },
-          { createdBy: user.id },
-          { updatedBy: user.id }
-        ]
+        customerId: user.id
       }
     });
 
     if (hasActiveOrders) {
       return NextResponse.json(
-        { success: false, message: 'Cannot delete user with active orders or order history' },
+        { success: false, message: 'Cannot delete user with active orders' },
         { status: 400 }
       );
     }
 
-    // Check for other potential dependencies
-    const hasOtherDependencies = await prisma.$transaction([
-      // Check if user is referenced in other tables
-      prisma.payment.findFirst({ where: { createdBy: user.id } }),
-      prisma.product.findFirst({ where: { createdBy: user.id } }),
-      prisma.category.findFirst({ where: { createdBy: user.id } }),
-      prisma.outlet.findFirst({ where: { createdBy: user.id } })
-    ]);
+    // Check if user is a merchant owner
+    if (user.merchantId && user.role === 'MERCHANT') {
+      const isMerchantOwner = await prisma.merchant.findFirst({
+        where: { 
+          id: user.merchantId 
+        }
+      });
 
-    if (hasOtherDependencies.some(Boolean)) {
-      return NextResponse.json(
-        { success: false, message: 'Cannot delete user with active system references' },
-        { status: 400 }
-      );
+      if (isMerchantOwner) {
+        return NextResponse.json(
+          { success: false, message: 'Cannot delete merchant owner account' },
+          { status: 400 }
+        );
+      }
     }
 
     // Delete user
