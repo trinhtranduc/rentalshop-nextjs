@@ -37,12 +37,16 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
     });
   };
 
-  const getStatusBadge = (isActive: boolean) => {
-    return (
-      <Badge variant={isActive ? 'default' : 'secondary'}>
-        {isActive ? 'Active' : 'Inactive'}
-      </Badge>
-    );
+  const getStatusBadgeStyle = (isActive: boolean) => {
+    if (isActive) {
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800';
+    } else {
+      return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
+    }
+  };
+
+  const getStatusDisplayName = (isActive: boolean) => {
+    return isActive ? 'Active' : 'Inactive';
   };
 
   return (
@@ -92,7 +96,11 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                  <div className="mt-1">{getStatusBadge(customer.isActive)}</div>
+                  <div className="mt-1">
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`}>
+                      {getStatusDisplayName(customer.isActive)}
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>

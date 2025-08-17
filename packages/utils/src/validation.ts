@@ -72,17 +72,22 @@ export type RentalInput = z.infer<typeof rentalSchema>;
 export const customerCreateSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().min(3, 'Phone is required'),
+  email: z.union([
+    z.string().email('Invalid email address'),
+    z.literal('')
+  ]).optional().default(''),
+  phone: z.string()
+    .min(8, 'Phone number must be at least 8 characters')
+    .regex(/^[0-9+\-\s()]+$/, 'Phone number contains invalid characters'),
   merchantId: z.string().min(1, 'Merchant is required'),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zipCode: z.string().optional(),
   country: z.string().optional(),
-  dateOfBirth: z.union([z.string().datetime({ offset: true }).optional(), z.string().optional()]),
+  dateOfBirth: z.string().optional(),
   idNumber: z.string().optional(),
-  idType: z.string().optional(),
+  idType: z.enum(['passport', 'drivers_license', 'national_id', 'other']).optional(),
   notes: z.string().optional(),
 });
 

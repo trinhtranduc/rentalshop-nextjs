@@ -269,24 +269,53 @@ export async function DELETE(
       );
     }
 
-    // Prevent deleting admin users
+    // Prevent deleting admin users (but allow admins to delete other admins)
     if (user.role === 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Cannot delete admin users' },
-        { status: 400 }
-      );
+      // Check if the current user is trying to delete themselves
+      if (currentUser.id === user.id) {
+        return NextResponse.json(
+          { success: false, message: 'Cannot delete your own admin account' },
+          { status: 400 }
+        );
+      }
+      
+      // Allow admin users to delete other admin users
+      console.log('Admin user deleting another admin user:', { 
+        currentUserId: currentUser.id, 
+        targetUserId: user.id 
+      });
     }
 
     // Check if user has active orders or other dependencies
     const hasActiveOrders = await prisma.order.findFirst({
       where: { 
-        customerId: user.id
+        OR: [
+          { customerId: user.id },
+          { createdBy: user.id },
+          { updatedBy: user.id }
+        ]
       }
     });
 
     if (hasActiveOrders) {
       return NextResponse.json(
-        { success: false, message: 'Cannot delete user with active orders' },
+        { success: false, message: 'Cannot delete user with active orders or order history' },
+        { status: 400 }
+      );
+    }
+
+    // Check for other potential dependencies
+    const hasOtherDependencies = await prisma.$transaction([
+      // Check if user is referenced in other tables
+      prisma.payment.findFirst({ where: { createdBy: user.id } }),
+      prisma.product.findFirst({ where: { createdBy: user.id } }),
+      prisma.category.findFirst({ where: { createdBy: user.id } }),
+      prisma.outlet.findFirst({ where: { createdBy: user.id } })
+    ]);
+
+    if (hasOtherDependencies.some(Boolean)) {
+      return NextResponse.json(
+        { success: false, message: 'Cannot delete user with active system references' },
         { status: 400 }
       );
     }

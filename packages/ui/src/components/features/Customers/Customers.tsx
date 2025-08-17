@@ -43,16 +43,7 @@ export function Customers({
   onDeleteCustomer
 }: CustomersProps) {
   return (
-    <div className="space-y-6">
-      <CustomerActions 
-        onAction={onCustomerAction}
-        merchantId={merchantId}
-        onCustomerCreated={onCustomerCreated}
-        onCustomerUpdated={onCustomerUpdated}
-        onError={onError}
-        onViewOrders={onViewOrders}
-      />
-      
+    <div className="space-y-6"> 
       <CustomerSearch 
         filters={filters}
         onFiltersChange={onFiltersChange}

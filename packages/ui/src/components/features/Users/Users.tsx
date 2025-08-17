@@ -8,7 +8,7 @@ import { ToastContainer, useToasts } from '../../ui/toast';
 import type { UserData, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput } from './types';
 import { User } from './types';
 import { Button } from '../../ui/button';
-import { Grid3X3, List, Plus } from 'lucide-react';
+import { Grid, List, Plus } from 'lucide-react';
 
 interface UsersProps {
   data: UserData;
@@ -153,7 +153,7 @@ export function Users({
               onClick={() => onViewModeChange('grid')}
               className="flex items-center gap-2"
             >
-              <Grid3X3 className="w-4 h-4" />
+              <Grid className="w-4 h-4" />
               Grid
             </Button>
           </div>

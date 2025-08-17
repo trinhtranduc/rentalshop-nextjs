@@ -1,8 +1,8 @@
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui/table';
-import { Button } from '../../../ui/button';
-import { Badge } from '../../../ui/badge';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui';
+import { Badge } from '@rentalshop/ui';
+import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { Order } from '../types';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 

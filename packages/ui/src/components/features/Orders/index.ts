@@ -1,10 +1,21 @@
 // ============================================================================
-// ORDERS FEATURE COMPONENTS
+// ORDERS FEATURE COMPONENTS (List + Detail)
 // ============================================================================
+
+// Main components
 export { default as Orders } from './Orders';
 
-// Export all components for easy access
-export * from './components';
+// Order list components
+export { 
+  OrderListHeader,
+  OrderListFilters,
+  OrderTable,
+  OrderListActions,
+  OrderStats,
+  OrderPagination,
+  OrdersLoading,
+  OrderDetailLoading
+} from './components';
 
 // ============================================================================
 // ORDER TYPES
@@ -12,5 +23,7 @@ export * from './components';
 export type { 
   OrderData, 
   OrderFilters,
-  Order
+  OrderDetailData, 
+  OrderDetailProps,
+  SettingsForm
 } from './types';

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '../../../ui/button';
-import { Card, CardContent } from '../../../ui/card';
+import { Button } from '@rentalshop/ui';
+import { Card, CardContent } from '@rentalshop/ui';
 
 interface OrderActionsProps {
   onAction: (action: string, orderId?: string) => void;

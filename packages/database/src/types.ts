@@ -10,7 +10,20 @@ import type {
   Payment,
 } from '@prisma/client';
 
-// Customer Types
+// ============================================================================
+// CUSTOMER TYPES
+// ============================================================================
+
+// Constrained phone number type
+export type PhoneNumber = string & { readonly __brand: 'PhoneNumber' };
+
+// Helper function to validate and create phone numbers
+export function createPhoneNumber(phone: string): PhoneNumber | null {
+  if (phone.length < 8) return null;
+  if (!/^[0-9+\-\s()]+$/.test(phone)) return null;
+  return phone as PhoneNumber;
+}
+
 export interface CustomerWithMerchant {
   id: string;
   firstName: string;
@@ -96,8 +109,8 @@ export interface CustomerSearchResult {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: PhoneNumber;
   address?: string;
   city?: string;
   state?: string;
@@ -109,7 +122,7 @@ export interface CustomerSearchResult {
   isActive: boolean;
   notes?: string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
   merchant: {
     id: string;
     name: string;

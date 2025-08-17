@@ -6,13 +6,15 @@ import {
   createCustomer, 
   getCustomerById, 
   updateCustomer, 
-  deleteCustomer,
   searchCustomers
 } from '@rentalshop/database';
 import { customersQuerySchema, customerCreateSchema, customerUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { CustomerFilters, CustomerInput, CustomerUpdateInput, CustomerSearchFilter } from '@rentalshop/database';
 import { searchRateLimiter } from '../../../lib/middleware/rateLimit';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 /**
  * GET /api/customers
@@ -293,7 +295,7 @@ export async function POST(request: NextRequest) {
       country: payload.country?.trim(),
       dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : undefined,
       idNumber: payload.idNumber?.trim(),
-      idType: payload.idType as 'passport' | 'drivers_license' | 'national_id' | 'other' | undefined,
+      idType: payload.idType,
       notes: payload.notes?.trim()
     };
 
@@ -380,7 +382,7 @@ export async function PUT(request: NextRequest) {
       ...(payload.idNumber !== undefined && { idNumber: payload.idNumber?.trim() }),
       ...(payload.idType !== undefined && { idType: payload.idType }),
       ...(payload.notes !== undefined && { notes: payload.notes?.trim() }),
-      ...(payload.isActive !== undefined && { isActive: payload.isActive as any }),
+      ...(payload.isActive !== undefined && { isActive: payload.isActive }),
     };
 
     // Update customer
@@ -443,8 +445,24 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Soft delete customer
-    const customer = await deleteCustomer(customerId);
+    // Check if customer has active orders or other dependencies
+    const hasActiveOrders = await prisma.order.findFirst({
+      where: { 
+        customerId: customerId
+      }
+    });
+
+    if (hasActiveOrders) {
+      return NextResponse.json(
+        { success: false, message: 'Cannot delete customer with active orders' },
+        { status: 400 }
+      );
+    }
+
+    // Delete customer from database
+    await prisma.customer.delete({
+      where: { id: customerId }
+    });
 
     return NextResponse.json({
       success: true,

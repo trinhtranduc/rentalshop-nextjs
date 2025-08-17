@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '../../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import { CustomerFormDialog } from './CustomerFormDialog';
-import { CustomerDetailDialog } from './CustomerDetailDialog';
-import { CustomerOrdersDialog } from './CustomerOrdersDialog';
-import type { CustomerWithMerchant } from '@rentalshop/database';
 import { Plus, Users, Filter } from 'lucide-react';
 
 interface CustomerActionsProps {
   onAction: (action: string, customerId: string) => void;
   merchantId: string;
-  onCustomerCreated?: (customer: CustomerWithMerchant) => void;
-  onCustomerUpdated?: (customer: CustomerWithMerchant) => void;
+  onCustomerCreated?: (customer: any) => void;
+  onCustomerUpdated?: (customer: any) => void;
   onError?: (error: string) => void;
   onViewOrders?: (customerId: string) => void;
 }
@@ -24,117 +21,63 @@ export function CustomerActions({
   onError,
   onViewOrders
 }: CustomerActionsProps) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isOrdersDialogOpen, setIsOrdersDialogOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<CustomerWithMerchant | null>(null);
-  const [viewingCustomer, setViewingCustomer] = useState<CustomerWithMerchant | null>(null);
-  const [selectedCustomerForOrders, setSelectedCustomerForOrders] = useState<CustomerWithMerchant | null>(null);
+  const router = useRouter();
 
-  const convertCustomerToDatabaseType = (customer: any): CustomerWithMerchant => {
-    return {
-      ...customer,
-      merchantId: merchantId,
-      merchant: {
-        id: merchantId,
-        name: 'Current Merchant' // This would ideally be fetched from the merchant service
-      },
-      // Add any other required fields here
-      // This would need to be fetched or passed in
-    };
-  };
-
-  // Listen for edit actions from the table
+  // Listen for actions from the table and handle navigation
   useEffect(() => {
-    const handleEditAction = (event: CustomEvent) => {
-      if (event.detail.action === 'edit' && event.detail.customer) {
-        const customerData = convertCustomerToDatabaseType(event.detail.customer);
-        setEditingCustomer(customerData);
-        setIsAddDialogOpen(true);
-      } else if (event.detail.action === 'view' && event.detail.customer) {
-        const customerData = convertCustomerToDatabaseType(event.detail.customer);
-        setViewingCustomer(customerData);
-        setIsViewDialogOpen(true);
+    const handleCustomerAction = (event: CustomEvent) => {
+      const { action, customer } = event.detail;
+      
+      if (!customer) return;
+      
+      switch (action) {
+        case 'view':
+          // Navigate to customer detail page
+          if (customer.publicId) {
+            router.push(`/customers/${customer.publicId}`);
+          } else {
+            console.error('Customer missing publicId for navigation:', customer);
+          }
+          break;
+          
+        case 'edit':
+          // Navigate to customer edit page
+          if (customer.publicId) {
+            router.push(`/customers/${customer.publicId}/edit`);
+          } else {
+            console.error('Customer missing publicId for navigation:', customer);
+          }
+          break;
+          
+        default:
+          console.log('Unknown customer action:', action);
       }
     };
 
     const handleViewOrdersAction = (event: CustomEvent) => {
-      console.log('CustomerActions: Received customer-view-orders event:', event.detail);
-      if (event.detail.customerId && event.detail.customer) {
-        const customerData = convertCustomerToDatabaseType(event.detail.customer);
-        console.log('CustomerActions: Converting customer data:', customerData);
-        setSelectedCustomerForOrders(customerData);
-        setIsOrdersDialogOpen(true);
-        console.log('CustomerActions: Orders dialog should now be open');
+      const { customerId, customer } = event.detail;
+      
+      if (customer && customer.publicId) {
+        // Navigate to customer orders page
+        router.push(`/customers/${customer.publicId}/orders`);
+      } else if (onViewOrders) {
+        // Fallback to callback if no publicId
+        onViewOrders(customerId);
       }
     };
 
-    window.addEventListener('customer-action', handleEditAction as EventListener);
+    window.addEventListener('customer-action', handleCustomerAction as EventListener);
     window.addEventListener('customer-view-orders', handleViewOrdersAction as EventListener);
     
     return () => {
-      window.removeEventListener('customer-action', handleEditAction as EventListener);
+      window.removeEventListener('customer-action', handleCustomerAction as EventListener);
       window.removeEventListener('customer-view-orders', handleViewOrdersAction as EventListener);
     };
-  }, [merchantId]);
+  }, [router, onViewOrders]);
 
   const handleAddCustomer = () => {
-    setEditingCustomer(null);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleEditCustomer = (customer: CustomerWithMerchant) => {
-    setEditingCustomer(customer);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleViewCustomer = (customer: CustomerWithMerchant) => {
-    setViewingCustomer(customer);
-    setIsViewDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setIsAddDialogOpen(false);
-    setEditingCustomer(null);
-  };
-
-  const handleViewDialogClose = () => {
-    setIsViewDialogOpen(false);
-    setViewingCustomer(null);
-  };
-
-  const handleSuccess = (customer: CustomerWithMerchant) => {
-    if (editingCustomer) {
-      onCustomerUpdated?.(customer);
-    } else {
-      onCustomerCreated?.(customer);
-    }
-    setIsAddDialogOpen(false);
-  };
-
-  const handleError = (error: string) => {
-    onError?.(error);
-  };
-
-  const handleViewOrders = (customerId: string) => {
-    // Find the customer data to show in orders dialog
-    if (viewingCustomer && viewingCustomer.id === customerId) {
-      setSelectedCustomerForOrders(viewingCustomer);
-      setIsOrdersDialogOpen(true);
-      setIsViewDialogOpen(false);
-    } else if (editingCustomer && editingCustomer.id === customerId) {
-      setSelectedCustomerForOrders(editingCustomer);
-      setIsOrdersDialogOpen(true);
-      setIsAddDialogOpen(false);
-    } else {
-      // If we don't have the customer data, call the callback
-      onViewOrders?.(customerId);
-    }
-  };
-
-  const handleOrdersDialogClose = () => {
-    setIsOrdersDialogOpen(false);
-    setSelectedCustomerForOrders(null);
+    // Navigate to add customer page
+    router.push('/customers/add');
   };
 
   const actions = [
@@ -155,36 +98,20 @@ export function CustomerActions({
   ];
 
   return (
-    <>
-      {/* Add/Edit Customer Dialog */}
-      <CustomerFormDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        customer={editingCustomer}
-        merchantId={merchantId}
-        onSuccess={handleSuccess}
-        onError={handleError}
-      />
-
-      {/* View Customer Details Dialog */}
-      <CustomerDetailDialog
-        open={isViewDialogOpen}
-        onOpenChange={setIsViewDialogOpen}
-        customer={viewingCustomer}
-        onEdit={() => {
-          if (viewingCustomer) {
-            handleEditCustomer(viewingCustomer);
-          }
-        }}
-        onViewOrders={handleViewOrders}
-      />
-
-      {/* Customer Orders Dialog */}
-      <CustomerOrdersDialog
-        open={isOrdersDialogOpen}
-        onOpenChange={handleOrdersDialogClose}
-        customer={selectedCustomerForOrders}
-      />
-    </>
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3">
+        {actions.map((action) => (
+          <Button
+            key={action.id}
+            onClick={action.onClick}
+            variant={action.variant}
+            className="flex items-center space-x-2"
+          >
+            <action.icon className="w-4 h-4" />
+            <span>{action.label}</span>
+          </Button>
+        ))}
+      </div>
+    </div>
   );
 }

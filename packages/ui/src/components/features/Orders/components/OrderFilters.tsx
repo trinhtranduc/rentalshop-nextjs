@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo } from 'react';
-import { Input } from '../../../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import { Button } from '../../../ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
+import { Input } from '@rentalshop/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui';
+import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { OrderFilters as OrderFiltersType } from '../types';
 import { useThrottledSearch } from '../../../../hooks/useThrottledSearch';
 
