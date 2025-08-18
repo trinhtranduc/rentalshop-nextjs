@@ -19,7 +19,7 @@ export interface Product {
 
 // New interfaces for enhanced product management
 export interface ProductWithDetails {
-  id: string;
+  id: string | number; // Now contains the public ID (numeric) from API
   name: string;
   description?: string;
   barcode?: string;

@@ -201,21 +201,74 @@ After running the seed (yarn db:seed), these accounts are available:
 | **Admin App** | http://localhost:3001 | Super admin dashboard |
 | **API Server** | http://localhost:3002 | Backend API & Documentation |
 
-### 👥 Merchant 1 — Rental Shop Demo
-- Merchant owner: `merchant@rentalshop.com` / `password123`
-- Outlet admin (Main): `outlet_admin_main@rentalshop.com` / `password123`
-- Outlet staff (Main): `outlet_staff_main@rentalshop.com` / `password123`
-- Outlet admin (Downtown): `outlet_admin_downtown@rentalshop.com` / `password123`
-- Outlet staff (Downtown): `outlet_staff_downtown@rentalshop.com` / `password123`
+### 👥 **System Administrator**
+- **System Admin**: `admin@rentalshop.com` / `password123`
+  - Role: **ADMIN** (System-wide access)
+  - Scope: All merchants and outlets
 
-### 👥 Merchant 2 — Outdoor Equipment Co.
-- Merchant owner: `merchant@outdoor.com` / `password123`
-- Outlet admin (Beach): `outlet_admin_beach@outdoor.com` / `password123`
-- Outlet staff (Beach): `outlet_staff_beach@outdoor.com` / `password123`
-- Outlet admin (Mountain): `outlet_admin_mountain@outdoor.com` / `password123`
-- Outlet staff (Mountain): `outlet_staff_mountain@outdoor.com` / `password123`
+### 👥 **Merchant 1 — Rental Shop Demo**
+- **Merchant Owner**: `merchant@rentalshop.com` / `password123`
+  - Role: **MERCHANT** (Organization-wide access)
+  - Scope: Rental Shop Demo organization
+- **Outlet Admin (Main Branch)**: `outlet_admin_main@rentalshop.com` / `password123`
+  - Role: **OUTLET_ADMIN** (Outlet management)
+  - Scope: Main Branch outlet
+- **Outlet Staff (Main Branch)**: `outlet_staff_main@rentalshop.com` / `password123`
+  - Role: **OUTLET_STAFF** (Limited outlet access)
+  - Scope: Main Branch outlet
+- **Outlet Admin (Downtown Branch)**: `outlet_admin_downtown@rentalshop.com` / `password123`
+  - Role: **OUTLET_ADMIN** (Outlet management)
+  - Scope: Downtown Branch outlet
+- **Outlet Staff (Downtown Branch)**: `outlet_staff_downtown@rentalshop.com` / `password123`
+  - Role: **OUTLET_STAFF** (Limited outlet access)
+  - Scope: Downtown Branch outlet
 
-All of the above users are created by the seed with roles aligned to the simplified schema (USER/ADMIN) and linked to their respective merchants/outlets.
+### 👥 **Merchant 2 — Outdoor Equipment Co.**
+- **Merchant Owner**: `merchant@outdoor.com` / `password123`
+  - Role: **MERCHANT** (Organization-wide access)
+  - Scope: Outdoor Equipment Co. organization
+- **Outlet Admin (Beach Branch)**: `outlet_admin_beach@outdoor.com` / `password123`
+  - Role: **OUTLET_ADMIN** (Outlet management)
+  - Scope: Beach Branch outlet
+- **Outlet Staff (Beach Branch)**: `outlet_staff_beach@outdoor.com` / `password123`
+  - Role: **OUTLET_STAFF** (Limited outlet access)
+  - Scope: Beach Branch outlet
+- **Outlet Admin (Mountain Branch)**: `outlet_admin_mountain@outdoor.com` / `password123`
+  - Role: **OUTLET_ADMIN** (Outlet management)
+  - Scope: Mountain Branch outlet
+- **Outlet Staff (Mountain Branch)**: `outlet_staff_mountain@outdoor.com` / `password123`
+  - Role: **OUTLET_STAFF** (Limited outlet access)
+  - Scope: Mountain Branch outlet
+
+**All passwords**: `password123`
+
+### 🔐 **Role Hierarchy & Permissions**
+
+```
+ADMIN (System-wide)
+├── Can access all merchants and outlets
+├── Can manage all users system-wide
+├── Can configure system settings
+└── Can view all analytics
+
+MERCHANT (Organization-wide)
+├── Can manage their merchant organization
+├── Can create and manage multiple outlets
+├── Can manage users within their organization
+└── Can access organization-wide analytics
+
+OUTLET_ADMIN (Outlet-wide)
+├── Can manage their assigned outlet
+├── Can manage outlet staff and users
+├── Can manage products and inventory
+└── Can access outlet-specific analytics
+
+OUTLET_STAFF (Limited outlet access)
+├── Can view outlet information
+├── Can process basic orders
+├── Can check product availability
+└── Can perform basic customer service
+```
 
 ## 🧾 Seeded Tenants Overview
 
@@ -242,16 +295,86 @@ All of the above users are created by the seed with roles aligned to the simplif
   - Description: Mountain equipment rental for hiking and climbing
 
 ### Users (Accounts)
-- Merchant 1 (Rental Shop Demo)
-  - Admin: admin@rentalshop.com (ADMIN)
-  - Staff (Main): staff@rentalshop.com (USER) → Outlet: Main Branch
-  - Staff (Downtown): downtown@rentalshop.com (USER) → Outlet: Downtown Branch
-- Merchant 2 (Outdoor Equipment Co.)
-  - Admin: admin@outdoor.com (ADMIN)
-  - Staff (Beach): beach@outdoor.com (USER) → Outlet: Beach Branch
-  - Staff (Mountain): mountain@outdoor.com (USER) → Outlet: Mountain Branch
 
-All passwords: password123
+#### **System Administrator**
+- **admin@rentalshop.com** (ADMIN)
+  - Role: System Administrator
+  - Scope: System-wide access
+  - Can manage: All merchants, outlets, and users
+
+#### **Merchant 1 (Rental Shop Demo)**
+- **merchant@rentalshop.com** (MERCHANT)
+  - Role: Merchant Owner
+  - Scope: Rental Shop Demo organization
+  - Can manage: Own organization, outlets, and users
+- **outlet_admin_main@rentalshop.com** (OUTLET_ADMIN)
+  - Role: Outlet Administrator
+  - Scope: Main Branch outlet
+  - Can manage: Own outlet, staff, and products
+- **outlet_staff_main@rentalshop.com** (OUTLET_STAFF)
+  - Role: Outlet Staff
+  - Scope: Main Branch outlet
+  - Can manage: Basic operations only
+- **outlet_admin_downtown@rentalshop.com** (OUTLET_ADMIN)
+  - Role: Outlet Administrator
+  - Scope: Downtown Branch outlet
+  - Can manage: Own outlet, staff, and products
+- **outlet_staff_downtown@rentalshop.com** (OUTLET_STAFF)
+  - Role: Outlet Staff
+  - Scope: Downtown Branch outlet
+  - Can manage: Basic operations only
+
+#### **Merchant 2 (Outdoor Equipment Co.)**
+- **merchant@outdoor.com** (MERCHANT)
+  - Role: Merchant Owner
+  - Scope: Outdoor Equipment Co. organization
+  - Can manage: Own organization, outlets, and users
+- **outlet_admin_beach@outdoor.com** (OUTLET_ADMIN)
+  - Role: Outlet Administrator
+  - Scope: Beach Branch outlet
+  - Can manage: Own outlet, staff, and products
+- **outlet_staff_beach@outdoor.com** (OUTLET_STAFF)
+  - Role: Outlet Staff
+  - Scope: Beach Branch outlet
+  - Can manage: Basic operations only
+- **outlet_admin_mountain@outdoor.com** (OUTLET_ADMIN)
+  - Role: Outlet Administrator
+  - Scope: Mountain Branch outlet
+  - Can manage: Own outlet, staff, and products
+- **outlet_staff_mountain@outdoor.com** (OUTLET_STAFF)
+  - Role: Outlet Staff
+  - Scope: Mountain Branch outlet
+  - Can manage: Basic operations only
+
+**All passwords**: `password123`
+
+### 🔐 **Role Hierarchy & Permissions**
+
+```
+ADMIN (System-wide)
+├── Can access all merchants and outlets
+├── Can manage all users system-wide
+├── Can configure system settings
+└── Can view all analytics
+
+MERCHANT (Organization-wide)
+├── Can manage their merchant organization
+├── Can create and manage multiple outlets
+├── Can manage users within their organization
+└── Can access organization-wide analytics
+
+OUTLET_ADMIN (Outlet-wide)
+├── Can manage their assigned outlet
+├── Can manage outlet staff and users
+├── Can manage products and inventory
+└── Can access outlet-specific analytics
+
+OUTLET_STAFF (Limited outlet access)
+├── Can view outlet information
+├── Can process basic orders
+├── Can check product availability
+└── Can perform basic customer service
+```
 
 ## 📊 Database Management
 
@@ -423,18 +546,86 @@ If you see MetaMask connection errors:
 
 ## 🔐 Authentication & Authorization
 
-### User Roles
+### User Roles & Hierarchy
 
-1. **CLIENT**: Customers who rent items
-2. **MERCHANT**: Business owners with multiple outlets
-3. **OUTLET_STAFF**: Outlet managers and staff
-4. **ADMIN**: System administrators
+Our system implements a **four-tier role hierarchy** designed for multi-tenant rental shop management:
 
-### Admin Levels
+#### 🏢 **System Level**
+1. **ADMIN** (System Administrator)
+   - **Access**: Full system-wide access
+   - **Permissions**: 
+     - Manage all merchants and outlets
+     - Manage all users system-wide
+     - Access system-wide analytics
+     - Configure system settings
+     - View all data across the platform
+   - **Scope**: No merchant or outlet restrictions
 
-1. **STAFF**: Basic admin access
-2. **MANAGER**: Enhanced admin access
-3. **SUPER_ADMIN**: Full system access
+#### 🏪 **Merchant Level**
+2. **MERCHANT** (Business Owner)
+   - **Access**: Organization-wide access within their merchant
+   - **Permissions**:
+     - Manage their own merchant organization
+     - Create and manage multiple outlets
+     - Manage users within their organization
+     - Access organization-wide analytics
+     - Configure business settings
+   - **Scope**: Restricted to their merchant organization
+   - **Assignment**: Automatically assigned when users register
+
+#### 🏬 **Outlet Level**
+3. **OUTLET_ADMIN** (Outlet Manager)
+   - **Access**: Full access to their assigned outlet
+   - **Permissions**:
+     - Manage their assigned outlet
+     - Manage outlet staff and users
+     - Manage products and inventory
+     - Access outlet-specific analytics
+     - Process orders and payments
+   - **Scope**: Restricted to their assigned outlet
+   - **Assignment**: Must be assigned to specific outlet
+
+4. **OUTLET_STAFF** (Outlet Employee)
+   - **Access**: Limited access to their assigned outlet
+   - **Permissions**:
+     - View outlet information
+     - Process basic orders
+     - Check product availability
+     - Access limited outlet data
+     - Basic customer service functions
+   - **Scope**: Restricted to their assigned outlet
+   - **Assignment**: Must be assigned to specific outlet
+
+### Role Assignment Rules
+
+- **ADMIN**: Cannot be assigned to merchants or outlets (system-wide)
+- **MERCHANT**: Must be assigned to a merchant, cannot be assigned to specific outlets
+- **OUTLET_ADMIN**: Must be assigned to both a merchant and a specific outlet
+- **OUTLET_STAFF**: Must be assigned to both a merchant and a specific outlet
+
+### Default Setup
+
+When a user registers to the system:
+1. They are automatically assigned the **MERCHANT** role
+2. A default merchant organization is created for them
+3. A default outlet is created under their merchant
+4. They can then create additional outlets and assign staff
+
+### Access Control Matrix
+
+| Role | System Access | Merchant Access | Outlet Access | User Management | Product Management |
+|------|---------------|-----------------|---------------|------------------|-------------------|
+| **ADMIN** | ✅ Full | ✅ All Merchants | ✅ All Outlets | ✅ All Users | ✅ All Products |
+| **MERCHANT** | ❌ None | ✅ Own Merchant | ✅ Own Outlets | ✅ Own Users | ✅ Own Products |
+| **OUTLET_ADMIN** | ❌ None | ❌ None | ✅ Own Outlet | ✅ Own Outlet Users | ✅ Own Outlet Products |
+| **OUTLET_STAFF** | ❌ None | ❌ None | ⚠️ Limited | ❌ None | ⚠️ View Only |
+
+### Security Features
+
+- **Role-based Access Control (RBAC)**: Each role has specific permissions
+- **Merchant Isolation**: Users can only access data within their assigned scope
+- **Outlet Isolation**: Outlet users are restricted to their specific outlet
+- **Audit Logging**: All user actions are logged for security monitoring
 
 ## 📱 Applications Overview
 

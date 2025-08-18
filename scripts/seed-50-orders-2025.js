@@ -6,6 +6,9 @@
  * Uses existing categories, products, and customers to avoid conflicts
  */
 
+// Load environment variables
+require('dotenv').config({ path: '.env.local' });
+
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();

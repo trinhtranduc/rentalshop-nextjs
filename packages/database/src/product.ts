@@ -75,7 +75,20 @@ export const getProducts = async (filters: ProductSearchFilter) => {
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        include: {
+        select: {
+          id: true, // Keep internal ID for database operations
+          publicId: true, // Include public ID
+          name: true,
+          description: true,
+          barcode: true,
+          totalStock: true,
+          rentPrice: true,
+          salePrice: true,
+          deposit: true,
+          images: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
           category: {
             select: {
               id: true,
@@ -123,8 +136,78 @@ export const getProducts = async (filters: ProductSearchFilter) => {
 
 export const getProductById = async (id: string) => {
   try {
+    // Check if the ID is numeric (public ID) or alphanumeric (internal ID)
+    const isPublicId = /^\d+$/.test(id);
+    
+    if (isPublicId) {
+      // Search by public ID
+      return await prisma.product.findUnique({
+        where: { publicId: parseInt(id) },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          merchant: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          outletStock: {
+            include: {
+              outlet: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      });
+    } else {
+      // Search by internal ID
+      return await prisma.product.findUnique({
+        where: { id },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          merchant: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          outletStock: {
+            include: {
+              outlet: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error in getProductById:', error);
+    throw new Error(`Failed to fetch product: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const getProductByPublicId = async (publicId: number) => {
+  try {
     return await prisma.product.findUnique({
-      where: { id },
+      where: { publicId },
       include: {
         category: {
           select: {
@@ -151,7 +234,7 @@ export const getProductById = async (id: string) => {
       }
     });
   } catch (error) {
-    console.error('Error in getProductById:', error);
+    console.error('Error in getProductByPublicId:', error);
     throw new Error(`Failed to fetch product: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

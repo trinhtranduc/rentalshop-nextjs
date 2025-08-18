@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '../../../ui/card';
 import { Button } from '../../../ui/button';
 import { cn } from '../../../../lib/cn';
-import { ProductFormDialog } from './ProductFormDialog';
+
 import type { ProductWithDetails, Category, Outlet } from '../types';
 
 export interface ProductCardProps {
@@ -292,19 +292,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </Card>
 
-      {/* Enhanced Edit Dialog - only show if enhanced props are provided */}
-      {categories.length > 0 && outlets.length > 0 && merchantId && (
-        <ProductFormDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          product={getProductForEdit()}
-          categories={categories}
-          outlets={outlets}
-          merchantId={merchantId}
-          onSuccess={handleSuccess}
-          onError={handleError}
-        />
-      )}
+
     </>
   );
 }; 

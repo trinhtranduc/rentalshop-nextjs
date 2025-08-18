@@ -114,12 +114,79 @@ export const createUser = async (data: {
   firstName: string;
   lastName: string;
   phone: string; // Phone is now required due to database constraint
-  role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
-  merchantId?: string; // Add merchantId to the function signature
+  role: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  merchantId?: string; // Required for MERCHANT, OUTLET_ADMIN, OUTLET_STAFF roles
+  outletId?: string; // Required for OUTLET_ADMIN and OUTLET_STAFF roles
 }) => {
   console.log('Database: Creating user with data:', { ...data, password: '[HIDDEN]' });
   
   try {
+    // Validate role-specific requirements
+    if (data.role === 'ADMIN') {
+      // Admin users don't need merchant or outlet assignment
+      if (data.merchantId || data.outletId) {
+        console.log('❌ Database: Admin users should not have merchant or outlet assignments');
+        return {
+          success: false,
+          error: 'Admin users cannot be assigned to specific merchants or outlets',
+          code: 400
+        };
+      }
+    } else if (data.role === 'MERCHANT') {
+      // Merchant users must have a merchantId but no outletId
+      if (!data.merchantId) {
+        console.log('❌ Database: Merchant users must have a merchantId');
+        return {
+          success: false,
+          error: 'Merchant users must be assigned to a merchant organization',
+          code: 400
+        };
+      }
+      if (data.outletId) {
+        console.log('❌ Database: Merchant users should not have outlet assignments');
+        return {
+          success: false,
+          error: 'Merchant users cannot be assigned to specific outlets',
+          code: 400
+        };
+      }
+    } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
+      // Outlet users must have both merchantId and outletId
+      if (!data.merchantId) {
+        console.log('❌ Database: Outlet users must have a merchantId');
+        return {
+          success: false,
+          error: 'Outlet users must be assigned to a merchant organization',
+          code: 400
+        };
+      }
+      if (!data.outletId) {
+        console.log('❌ Database: Outlet users must have an outletId');
+        return {
+          success: false,
+          error: 'Outlet users must be assigned to a specific outlet',
+          code: 400
+        };
+      }
+      
+      // Verify that the outlet belongs to the specified merchant
+      const outlet = await prisma.outlet.findFirst({
+        where: {
+          id: data.outletId,
+          merchantId: data.merchantId
+        }
+      });
+      
+      if (!outlet) {
+        console.log('❌ Database: Outlet does not belong to the specified merchant');
+        return {
+          success: false,
+          error: 'The specified outlet does not belong to the specified merchant',
+          code: 400
+        };
+      }
+    }
+    
     // Check if user with email already exists
     const existingEmailUser = await prisma.user.findFirst({
       where: data.merchantId 
@@ -165,64 +232,35 @@ export const createUser = async (data: {
     
     const result = await prisma.user.create({
       data: {
-        publicId: nextPublicId, // Now just a simple number like 1, 2, 3
-        email: data.email.toLowerCase(),
+        publicId: nextPublicId,
+        email: data.email.toLowerCase().trim(),
         password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone.trim(), // Phone is now required, always send it
-        role: data.role || 'OUTLET_STAFF',
-        merchantId: data.merchantId, // Include merchantId in creation
-      },
-      include: { merchant: true },
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        phone: data.phone.trim(),
+        role: data.role,
+        merchantId: data.merchantId,
+        outletId: data.outletId,
+        isActive: true
+      }
     });
     
-    console.log('Database: User created successfully:', result);
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Database: Error creating user:', error);
+    console.log('✅ Database: User created successfully:', {
+      id: result.id,
+      publicId: result.publicId,
+      email: result.email,
+      role: result.role,
+      merchantId: result.merchantId,
+      outletId: result.outletId
+    });
     
-    // Handle Prisma unique constraint violations with clean error messages
-    if (error instanceof Error) {
-      const errorMessage = error.message;
-      console.log('🔍 Database: Analyzing Prisma error:', errorMessage);
-      
-      if (errorMessage.includes('Unique constraint failed on the fields: (`email`)')) {
-        const scope = data.merchantId ? 'in this merchant organization' : 'in the system';
-        console.log('❌ Database: Prisma email constraint failed, returning clean error');
-        return {
-          success: false,
-          error: `User with email '${data.email}' already exists ${scope}`,
-          code: 409 // Conflict - duplicate resource
-        };
-      }
-      
-      if (errorMessage.includes('Unique constraint failed on the fields: (`phone`)')) {
-        const scope = data.merchantId ? 'in this merchant organization' : 'in the system';
-        console.log('❌ Database: Prisma phone constraint failed, returning clean error');
-        return {
-          success: false,
-          error: `User with phone '${data.phone}' already exists ${scope}`,
-          code: 409 // Conflict - duplicate resource
-        };
-      }
-      
-      if (errorMessage.includes('Unique constraint failed')) {
-        console.log('❌ Database: Generic Prisma constraint failed, returning clean error');
-        return {
-          success: false,
-          error: 'User with this information already exists',
-          code: 409 // Conflict - duplicate resource
-        };
-      }
-    }
-    
-    console.log('❌ Database: Unexpected error, returning generic error');
     return {
-      success: false,
-      error: 'An unexpected error occurred while creating the user',
-      code: 500 // Internal server error
+      success: true,
+      user: result
     };
+  } catch (error) {
+    console.error('❌ Database: Error creating user:', error);
+    throw error;
   }
 };
 

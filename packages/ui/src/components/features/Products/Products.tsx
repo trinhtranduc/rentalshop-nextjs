@@ -6,7 +6,6 @@ import {
   ProductTable, 
   ProductActions, 
   ProductPagination,
-  ProductFormDialog
 } from './components';
 import { 
   ProductData, 

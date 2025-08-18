@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ProductCard } from './ProductCard';
 import { Product } from '../types';
-import { ProductFormDialog } from './ProductFormDialog';
+
 import type { ProductWithDetails, Category, Outlet } from '../types';
 
 interface ProductGridProps {
@@ -104,19 +104,7 @@ export function ProductGrid({
         ))}
       </div>
 
-      {/* Add Product Dialog - only show if enhanced props are provided */}
-      {showAddButton && categories.length > 0 && outlets.length > 0 && merchantId && (
-        <ProductFormDialog
-          open={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
-          product={null}
-          categories={categories}
-          outlets={outlets}
-          merchantId={merchantId}
-          onSuccess={handleSuccess}
-          onError={handleError}
-        />
-      )}
+
     </>
   );
 }

@@ -87,8 +87,19 @@ export async function GET(request: NextRequest) {
       totalPages: result.totalPages 
     });
 
+    // Transform the response to use public ID as the main id field
+    const transformedResult = {
+      ...result,
+      products: result.products?.map(product => ({
+        ...product,
+        id: product.publicId, // Use public ID as the main id field
+        // Keep internal ID as internalId if needed for database operations
+        internalId: product.id
+      }))
+    };
+
     // Caching headers (ETag and short-lived private cache)
-    const bodyString = JSON.stringify({ success: true, data: result });
+    const bodyString = JSON.stringify({ success: true, data: transformedResult });
     const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');
 

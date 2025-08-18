@@ -110,7 +110,7 @@ export interface CustomerSearchResult {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: PhoneNumber;
+  phone?: string;
   address?: string;
   city?: string;
   state?: string;

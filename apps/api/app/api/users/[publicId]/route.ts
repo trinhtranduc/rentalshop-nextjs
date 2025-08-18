@@ -269,10 +269,19 @@ export async function DELETE(
       );
     }
 
+    console.log('🔍 DELETE /api/users/[publicId] - User found:', {
+      userId: user.id,
+      publicId: user.publicId,
+      email: user.email,
+      role: user.role,
+      merchantId: user.merchantId
+    });
+
     // Prevent deleting admin users (but allow admins to delete other admins)
     if (user.role === 'ADMIN') {
       // Check if the current user is trying to delete themselves
       if (currentUser.id === user.id) {
+        console.log('❌ Admin user trying to delete themselves:', currentUser.id);
         return NextResponse.json(
           { success: false, message: 'Cannot delete your own admin account' },
           { status: 400 }
@@ -280,7 +289,7 @@ export async function DELETE(
       }
       
       // Allow admin users to delete other admin users
-      console.log('Admin user deleting another admin user:', { 
+      console.log('✅ Admin user deleting another admin user:', { 
         currentUserId: currentUser.id, 
         targetUserId: user.id 
       });
@@ -294,6 +303,7 @@ export async function DELETE(
     });
 
     if (hasActiveOrders) {
+      console.log('❌ User has active orders, cannot delete:', user.id);
       return NextResponse.json(
         { success: false, message: 'Cannot delete user with active orders' },
         { status: 400 }
@@ -309,6 +319,7 @@ export async function DELETE(
       });
 
       if (isMerchantOwner) {
+        console.log('❌ User is merchant owner, cannot delete:', user.id);
         return NextResponse.json(
           { success: false, message: 'Cannot delete merchant owner account' },
           { status: 400 }
@@ -316,10 +327,14 @@ export async function DELETE(
       }
     }
 
+    console.log('✅ All checks passed, proceeding with user deletion:', user.id);
+
     // Delete user
     await prisma.user.delete({
       where: { id: user.id }
     });
+
+    console.log('✅ User deleted successfully from database:', user.id);
 
     return NextResponse.json({
       success: true,

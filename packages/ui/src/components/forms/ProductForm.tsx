@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
   CardContent,
   Button,
   Input,
@@ -15,14 +15,14 @@ import {
   SelectValue,
   Textarea,
   Badge,
-  formatCurrency,
   Table,
   TableHeader,
   TableBody,
   TableHead,
   TableRow,
   TableCell
-} from '@rentalshop/ui';
+} from '../ui';
+import { formatCurrency } from '../../lib';
 import { 
   Package, 
   DollarSign, 
@@ -75,7 +75,7 @@ interface ProductFormProps {
   onCancel?: () => void;
   loading?: boolean;
   title?: string;
-  submitText?: string;
+  submitText?: string | React.ReactNode;
   mode?: 'create' | 'edit';
   merchantId?: string; // Add merchantId prop
   hideHeader?: boolean; // Hide header when used in dialog
@@ -117,7 +117,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   // Initialize outlet stock if not provided
   useEffect(() => {
+    console.log('🔄 ProductForm useEffect - outlets:', outlets);
+    console.log('🔄 ProductForm useEffect - formData.outletStock:', formData.outletStock);
+    
     if (formData.outletStock.length === 0 && outlets.length > 0) {
+      console.log('✅ Initializing outlet stock for', outlets.length, 'outlets');
       setFormData(prev => ({
         ...prev,
         outletStock: outlets.map(outlet => ({
@@ -523,6 +527,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground">
+                Total outlets: {outlets.length} | Outlet stock entries: {formData.outletStock.length}
+              </p>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
