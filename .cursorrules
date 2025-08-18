@@ -28,6 +28,108 @@
 - ✅ Use consistent naming conventions (PascalCase for interfaces)
 - ❌ Don't redefine types in multiple places
 
+## 🔐 **User Role System & Authorization**
+
+### **Four-Tier Role Hierarchy**
+
+Our system implements a **four-tier role hierarchy** designed for multi-tenant rental shop management:
+
+#### **🏢 System Level**
+1. **ADMIN** (System Administrator)
+   - **Access**: Full system-wide access
+   - **Permissions**: 
+     - Manage all merchants and outlets
+     - Manage all users system-wide
+     - Access system-wide analytics
+     - Configure system settings
+     - View all data across the platform
+   - **Scope**: No merchant or outlet restrictions
+   - **Database**: No `merchantId` or `outletId` assigned
+
+#### **🏪 Merchant Level**
+2. **MERCHANT** (Business Owner)
+   - **Access**: Organization-wide access within their merchant
+   - **Permissions**:
+     - Manage their own merchant organization
+     - Create and manage multiple outlets
+     - Manage users within their organization
+     - Access organization-wide analytics
+     - Configure business settings
+   - **Scope**: Restricted to their merchant organization
+   - **Assignment**: Automatically assigned when users register
+   - **Database**: Must have `merchantId`, cannot have `outletId`
+
+#### **🏬 Outlet Level**
+3. **OUTLET_ADMIN** (Outlet Manager)
+   - **Access**: Full access to their assigned outlet
+   - **Permissions**:
+     - Manage their assigned outlet
+     - Manage outlet staff and users
+     - Manage products and inventory
+     - Access outlet-specific analytics
+     - Process orders and payments
+   - **Scope**: Restricted to their assigned outlet
+   - **Assignment**: Must be assigned to specific outlet
+   - **Database**: Must have both `merchantId` and `outletId`
+
+4. **OUTLET_STAFF** (Outlet Employee)
+   - **Access**: Limited access to their assigned outlet
+   - **Permissions**:
+     - View outlet information
+     - Process basic orders
+     - Check product availability
+     - Access limited outlet data
+     - Basic customer service functions
+   - **Scope**: Restricted to their assigned outlet
+   - **Assignment**: Must be assigned to specific outlet
+   - **Database**: Must have both `merchantId` and `outletId`
+
+### **Role Assignment Rules**
+
+- **ADMIN**: Cannot be assigned to merchants or outlets (system-wide)
+- **MERCHANT**: Must be assigned to a merchant, cannot be assigned to specific outlets
+- **OUTLET_ADMIN**: Must be assigned to both a merchant and a specific outlet
+- **OUTLET_STAFF**: Must be assigned to both a merchant and a specific outlet
+
+### **Authorization Functions**
+
+```typescript
+// ✅ GOOD: Use proper authorization functions
+import { 
+  hasAnyRole, 
+  assertAnyRole, 
+  isMerchantLevel, 
+  isOutletTeam,
+  canManageUsers,
+  canManageOutlets,
+  canManageProducts 
+} from '@rentalshop/auth';
+
+// Check if user can manage users
+if (canManageUsers(user)) {
+  // Allow user management
+}
+
+// Check if user can manage outlets
+if (canManageOutlets(user)) {
+  // Allow outlet management
+}
+
+// Check if user can manage products
+if (canManageProducts(user)) {
+  // Allow product management
+}
+```
+
+### **Access Control Matrix**
+
+| Role | System Access | Merchant Access | Outlet Access | User Management | Product Management |
+|------|---------------|-----------------|---------------|------------------|-------------------|
+| **ADMIN** | ✅ Full | ✅ All Merchants | ✅ All Outlets | ✅ All Users | ✅ All Products |
+| **MERCHANT** | ❌ None | ✅ Own Merchant | ✅ Own Outlets | ✅ Own Users | ✅ Own Products |
+| **OUTLET_ADMIN** | ❌ None | ❌ None | ✅ Own Outlet | ✅ Own Outlet Users | ✅ Own Outlet Products |
+| **OUTLET_STAFF** | ❌ None | ❌ None | ⚠️ Limited | ❌ None | ⚠️ View Only |
+
 ### **Component Organization Rules**
 
 #### **📁 `/forms` - Pure Form Components**
@@ -387,7 +489,7 @@ export default function LoginPage() {
 ```
 packages/
 ├── ui/src/components/     # ✅ Shared UI components
-├── auth/src/              # ✅ Authentication logic
+├── auth/src/              # ✅ Authentication logic with role-based access
 ├── database/src/          # ✅ Database utilities with proper indexing
 └── utils/src/             # ✅ Common utilities
 
@@ -566,19 +668,80 @@ import { Card } from '../../shared/card';
 
 #### **API Route Structure**
 ```typescript
-// ✅ GOOD: Consistent API structure with proper indexing
+// ✅ GOOD: Consistent API structure with proper authorization
 // apps/api/app/api/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { searchOrders } from '@rentalshop/database';
 import { validateOrderInput } from '@rentalshop/utils';
+import { assertAnyRole, canManageProducts } from '@rentalshop/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify authentication and authorization
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user can access orders (all roles can view orders)
     const { searchParams } = new URL(request.url);
     const filters = parseSearchParams(searchParams);
     
     // Use indexed queries for performance
-    const result = await searchOrders(filters);
+    const result = await searchOrders(filters, user);
+    
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 400 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Verify authentication and authorization
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user can create orders
+    if (!canManageProducts(user)) {
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const validatedData = orderSchema.parse(body);
+    
+    // Create order with proper scope validation
+    const result = await createOrder(validatedData, user);
     
     return NextResponse.json(result);
   } catch (error) {
@@ -592,21 +755,37 @@ export async function GET(request: NextRequest) {
 
 #### **Database Operations**
 ```typescript
-// ✅ GOOD: Use shared database client with proper indexing
+// ✅ GOOD: Use shared database client with proper authorization
 // packages/orders/src/orders.ts
 import { prisma } from '@rentalshop/database';
+import { getUserScope } from '@rentalshop/auth';
 
-export const searchOrders = async (filters: OrderFilters) => {
-  // Use indexed fields for efficient queries
-  const where = {
-    outletId: filters.outletId,
-    status: filters.status,
-    createdAt: {
-      gte: filters.startDate,
-      lte: filters.endDate
-    }
-  };
+export const searchOrders = async (filters: OrderFilters, user: AuthUser) => {
+  const scope = getUserScope(user);
   
+  // Build where clause based on user role and scope
+  const where: any = {};
+  
+  if (scope.merchantId) {
+    where.merchantId = scope.merchantId;
+  }
+  
+  if (scope.outletId) {
+    where.outletId = scope.outletId;
+  }
+  
+  // Add other filters
+  if (filters.status) {
+    where.status = filters.status;
+  }
+  
+  if (filters.startDate || filters.endDate) {
+    where.createdAt = {};
+    if (filters.startDate) where.createdAt.gte = filters.startDate;
+    if (filters.endDate) where.createdAt.lte = filters.endDate;
+  }
+  
+  // Use indexed fields for efficient queries
   return await prisma.order.findMany({
     where,
     include: { customer: true, outlet: true },
@@ -625,7 +804,7 @@ const prisma = new PrismaClient();
 
 #### **Type Definitions**
 ```typescript
-// ✅ GOOD: Centralized types with proper indexing considerations
+// ✅ GOOD: Centralized types with proper authorization considerations
 // packages/database/src/types.ts
 export interface OrderSearchFilter {
   outletId?: string;
@@ -647,6 +826,16 @@ export interface ProductSearchFilter {
   offset?: number;
 }
 
+// ✅ GOOD: Role-aware user types
+export interface UserCreateInput {
+  name: string;
+  email: string;
+  phone: string;
+  role: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  merchantId?: string; // Required for MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+  outletId?: string; // Required for OUTLET_ADMIN and OUTLET_STAFF
+}
+
 // ❌ BAD: Redefine types
 interface Order {
   id: string;
@@ -657,7 +846,7 @@ interface Order {
 
 #### **Validation Schemas**
 ```typescript
-// ✅ GOOD: Shared validation with database constraints
+// ✅ GOOD: Shared validation with database constraints and role validation
 // packages/utils/src/validation.ts
 import { z } from 'zod';
 
@@ -672,8 +861,32 @@ export const orderSchema = z.object({
   })).min(1)
 });
 
+// ✅ GOOD: Role-specific validation
+export const userCreateSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().min(1),
+  role: z.enum(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']),
+  merchantId: z.string().optional(),
+  outletId: z.string().optional()
+}).refine((data) => {
+  // Validate role-specific requirements
+  if (data.role === 'ADMIN') {
+    return !data.merchantId && !data.outletId;
+  }
+  if (data.role === 'MERCHANT') {
+    return !!data.merchantId && !data.outletId;
+  }
+  if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
+    return !!data.merchantId && !!data.outletId;
+  }
+  return false;
+}, {
+  message: "Invalid role assignment. ADMIN: no merchant/outlet, MERCHANT: merchant only, OUTLET_*: both merchant and outlet required"
+});
+
 // ✅ GOOD: Use everywhere
-import { orderSchema } from '@rentalshop/utils';
+import { orderSchema, userCreateSchema } from '@rentalshop/utils';
 
 // ❌ BAD: Duplicate schemas
 const orderSchema = z.object({
@@ -743,16 +956,22 @@ return { error: 'User not found' };
 
 #### **Code Documentation**
 ```typescript
-// ✅ GOOD: JSDoc comments with performance notes
+// ✅ GOOD: JSDoc comments with authorization notes
 /**
- * Search orders with optimized database queries
+ * Search orders with optimized database queries and role-based access control
  * Uses indexed fields: status, outletId, createdAt for performance
+ * Automatically scopes results based on user role and permissions
+ * 
  * @param filters - Search filters (only indexed fields)
+ * @param user - Authenticated user for role-based access control
  * @returns Promise with paginated order results
- * @throws {AppError} When database query fails
+ * @throws {AppError} When database query fails or access denied
  */
-export const searchOrders = async (filters: OrderSearchFilter): Promise<OrderSearchResponse> => {
-  // Implementation with proper indexing
+export const searchOrders = async (
+  filters: OrderSearchFilter, 
+  user: AuthUser
+): Promise<OrderSearchResponse> => {
+  // Implementation with proper authorization and indexing
 };
 
 // ❌ BAD: No documentation
@@ -765,8 +984,8 @@ export const searchOrders = async (filters) => {
 
 #### **Input Validation**
 ```typescript
-// ✅ GOOD: Validate all inputs with database constraints
-import { orderSchema } from '@rentalshop/utils';
+// ✅ GOOD: Validate all inputs with database constraints and role validation
+import { orderSchema, userCreateSchema } from '@rentalshop/utils';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -798,19 +1017,48 @@ AUTH_SECRET="your-secret"
 
 #### **Test Structure**
 ```typescript
-// ✅ GOOD: Consistent test structure with database mocking
-// packages/utils/src/__tests__/date.test.ts
-import { formatDate } from '../date';
+// ✅ GOOD: Consistent test structure with authorization testing
+// packages/utils/src/__tests__/authorization.test.ts
+import { 
+  hasAnyRole, 
+  isMerchantLevel, 
+  isOutletTeam,
+  canManageUsers 
+} from '../authorization';
 
-describe('formatDate', () => {
-  it('should format date correctly', () => {
-    const date = new Date('2024-01-01');
-    expect(formatDate(date)).toBe('01/01/2024');
+describe('Authorization Functions', () => {
+  describe('hasAnyRole', () => {
+    it('should return true for valid role', () => {
+      const user = { role: 'ADMIN' };
+      expect(hasAnyRole(user, ['ADMIN', 'MERCHANT'])).toBe(true);
+    });
+    
+    it('should return false for invalid role', () => {
+      const user = { role: 'OUTLET_STAFF' };
+      expect(hasAnyRole(user, ['ADMIN', 'MERCHANT'])).toBe(false);
+    });
+  });
+  
+  describe('canManageUsers', () => {
+    it('should allow ADMIN to manage users', () => {
+      const user = { role: 'ADMIN' };
+      expect(canManageUsers(user)).toBe(true);
+    });
+    
+    it('should allow MERCHANT to manage users', () => {
+      const user = { role: 'MERCHANT' };
+      expect(canManageUsers(user)).toBe(true);
+    });
+    
+    it('should not allow OUTLET_STAFF to manage users', () => {
+      const user = { role: 'OUTLET_STAFF' };
+      expect(canManageUsers(user)).toBe(false);
+    });
   });
 });
 
 // ❌ BAD: Inconsistent test structure
-test('formatDate works', () => {
+test('authorization works', () => {
   // Test without proper structure
 });
 ```
@@ -819,10 +1067,11 @@ test('formatDate works', () => {
 
 #### **Commit Messages**
 ```bash
-# ✅ GOOD: Conventional commits
-feat(ui): add new product card component
-fix(api): resolve authentication bug
-docs(readme): update installation instructions
+# ✅ GOOD: Conventional commits with role information
+feat(auth): add role-based access control for four-tier hierarchy
+fix(api): resolve authorization bug in outlet management
+docs(readme): update user roles documentation
+feat(ui): add role-aware user management components
 
 # ❌ BAD: Inconsistent commits
 added new component
@@ -882,6 +1131,19 @@ Before submitting any database changes, ensure:
 - [ ] **Monitoring**: Query performance monitored in production
 - [ ] **Backup Strategy**: Database backup and recovery procedures in place
 
+### **Authorization Checklist**
+
+Before submitting any authorization changes, ensure:
+
+- [ ] **Role Validation**: Proper role assignment rules enforced
+- [ ] **Scope Validation**: Users can only access data within their scope
+- [ ] **Permission Checks**: All sensitive operations check user permissions
+- [ ] **Merchant Isolation**: Users cannot access other merchant data
+- [ ] **Outlet Isolation**: Outlet users restricted to their outlet
+- [ ] **Admin Override**: System admins have appropriate access
+- [ ] **Audit Logging**: All authorization decisions are logged
+- [ ] **Testing**: Authorization logic thoroughly tested
+
 ### **Review Checklist**
 
 Before submitting any code, ensure:
@@ -901,6 +1163,10 @@ Before submitting any code, ensure:
 - [ ] Database queries are optimized and indexed
 - [ ] No N+1 query problems
 - [ ] Proper pagination for large datasets
+- [ ] **Authorization properly implemented for four-tier role system**
+- [ ] **Role assignment rules enforced**
+- [ ] **Scope validation implemented**
+- [ ] **Permission checks in place**
 
 ### **Remember**
 
@@ -914,6 +1180,7 @@ Before submitting any code, ensure:
 7. **Security** - Validate inputs and handle errors properly
 8. **Database Performance** - Proper indexing and query optimization
 9. **Scalability** - Design for growth and high data volumes
+10. **Authorization** - Implement proper role-based access control
 
 **NEVER:**
 - Duplicate configurations across packages
@@ -927,3 +1194,7 @@ Before submitting any code, ensure:
 - Use N+1 queries or inefficient database operations
 - Skip pagination for potentially large datasets
 - Ignore database performance implications
+- **Skip authorization checks**
+- **Allow users to access data outside their scope**
+- **Create users with invalid role assignments**
+- **Bypass role-based access control**

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Card, 
   Button,
@@ -15,7 +16,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { ProductFormDialog } from '../../../../packages/ui/src/components/features/Products/components/ProductFormDialog';
+
 
 // Import types from the Products feature
 import { 
@@ -28,7 +29,7 @@ import {
 
 // Extend the Product type for this page
 interface ExtendedProduct {
-  id: string;
+  id: string | number; // Now contains the public ID from API
   name: string;
   description?: string;
   totalStock: number;
@@ -57,6 +58,7 @@ interface ExtendedProduct {
 }
 
 export default function ProductsPage() {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const isMerchantLevel = user && ((user.role === 'ADMIN' && !user.outlet?.id) || user.role === 'MERCHANT');
   
@@ -69,14 +71,12 @@ export default function ProductsPage() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   
-  // State for enhanced functionality
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [viewingProduct, setViewingProduct] = useState<ProductWithDetails | null>(null);
+
+
+
+
+
+
   
   // Initialize filters
   const [filters, setFilters] = useState<ProductFiltersType>({
@@ -130,7 +130,7 @@ export default function ProductsPage() {
       if (data.success) {
         // Handle the new data structure with outletStock
         const transformedProducts: ExtendedProduct[] = data.data.products.map((product: any) => ({
-          id: product.id,
+          id: product.id, // This is now the public ID from the API
           name: product.name,
           description: product.description || '',
           totalStock: product.totalStock,
@@ -164,53 +164,7 @@ export default function ProductsPage() {
     }
   }, [currentPage, searchQuery, filters.category, filters.outlet, filters.status, filters.inStock, filters.sortBy, filters.sortOrder, setProducts, setTotalProducts, setTotalPages, setLoading, setIsSearching, isInitialLoad, hasInitializedRef]);
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const { authenticatedFetch } = await import('@rentalshop/utils');
-      const response = await authenticatedFetch('/api/categories');
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setCategories(data.data.map((cat: any) => ({
-            id: cat.id,
-            name: cat.name,
-            description: cat.description,
-            isActive: cat.isActive
-          })));
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  }, [setCategories]);
 
-  const fetchOutlets = useCallback(async () => {
-    try {
-      const { authenticatedFetch } = await import('@rentalshop/utils');
-      const response = await authenticatedFetch('/api/outlets');
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data && data.data.outlets) {
-          setOutlets(data.data.outlets.map((outlet: any) => ({
-            id: outlet.id,
-            name: outlet.name
-          })));
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching outlets:', error);
-    }
-  }, [setOutlets]);
-
-  // Effect for initial load and categories/outlets - only runs once
-  useEffect(() => {
-    if (isMerchantLevel) {
-      fetchCategories();
-      fetchOutlets();
-    }
-  }, [isMerchantLevel]); // Remove fetchCategories and fetchOutlets dependencies
 
   // Effect for initial products load - only runs once
   useEffect(() => {
@@ -265,47 +219,20 @@ export default function ProductsPage() {
     setViewMode(mode);
   }, []);
 
-  // Transform ExtendedProduct to ProductWithDetails - memoized to prevent recreation
-  const transformToProductWithDetails = useCallback((product: ExtendedProduct): ProductWithDetails => ({
-    id: product.id,
-    name: product.name,
-    description: product.description || '',
-    barcode: '',
-    categoryId: product.category.id,
-    rentPrice: product.rentPrice,
-    salePrice: product.salePrice,
-    deposit: product.deposit,
-    totalStock: product.totalStock,
-    images: product.images || '',
-    isActive: true,
-    outletStock: product.outletStock.map(os => ({
-      outletId: os.outlet.id,
-      stock: os.stock,
-      available: os.available,
-      renting: os.renting
-    })),
-    category: { id: product.category.id, name: product.category.name },
-    merchant: { id: product.merchant.id, name: product.merchant.name },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }), []);
+
 
   const handleProductAction = useCallback(async (action: string, productId: string) => {
     switch (action) {
       case 'edit':
-        // Find the product and open edit dialog
-        const productToEdit = products.find(p => p.id === productId);
-        if (productToEdit) {
-          setEditingProduct(transformToProductWithDetails(productToEdit));
-          setIsEditDialogOpen(true);
-        }
+        // Navigate to edit page using public ID
+        router.push(`/products/${productId}/edit`);
         break;
       case 'delete':
-        // Handle delete
+        // Handle delete using public ID
         if (confirm('Are you sure you want to delete this product?')) {
           try {
             const { authenticatedFetch } = await import('@rentalshop/utils');
-            const response = await authenticatedFetch(`/api/products?productId=${productId}`, {
+            const response = await authenticatedFetch(`/api/products/${productId}`, {
               method: 'DELETE'
             });
             
@@ -321,17 +248,13 @@ export default function ProductsPage() {
         }
         break;
       case 'view':
-        // Find the product and open view dialog
-        const productToView = products.find(p => p.id === productId);
-        if (productToView) {
-          setViewingProduct(transformToProductWithDetails(productToView));
-          setIsViewDialogOpen(true);
-        }
+        // Navigate to view page using public ID
+        router.push(`/products/${productId}`);
         break;
       default:
         console.log('Unknown action:', action);
     }
-  }, [products, transformToProductWithDetails, fetchProducts, setIsEditDialogOpen, setIsViewDialogOpen]);
+  }, [router, fetchProducts]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
@@ -362,30 +285,12 @@ export default function ProductsPage() {
     setCurrentPage(1); // Reset to first page when sorting changes
   }, [filters.sortBy, filters.sortOrder, setFilters, setCurrentPage]);
 
-  // Handle product creation success
-  const handleProductCreated = useCallback((product: ProductWithDetails) => {
-    console.log('Product created:', product);
-    setIsAddDialogOpen(false);
-    fetchProducts(); // Refresh the list
-  }, [fetchProducts]);
 
-  // Handle product update success
-  const handleProductUpdated = useCallback((product: ProductWithDetails) => {
-    console.log('Product updated:', product);
-    setIsEditDialogOpen(false);
-    fetchProducts(); // Refresh the list
-  }, [fetchProducts]);
-
-  // Handle errors
-  const handleError = useCallback((error: string) => {
-    console.error('Product operation error:', error);
-    // You could show a toast notification here
-  }, []);
 
   // Transform data for the Products component - memoized to prevent unnecessary re-renders
   const productData: ProductData = useMemo(() => ({
     products: products.map(product => ({
-      id: product.id,
+      id: product.id.toString(), // Use the ID from the API (now public ID)
       name: product.name,
       description: product.description || '',
       barcode: undefined,
@@ -430,7 +335,7 @@ export default function ProductsPage() {
           </div>
           {isMerchantLevel && (
             <Button 
-              onClick={() => setIsAddDialogOpen(true)}
+              onClick={() => router.push('/products/add')}
               className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
             >
               <Plus className="w-4 h-4 mr-2" /> Add Product
@@ -451,57 +356,10 @@ export default function ProductsPage() {
           onProductAction={handleProductAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
-                    // Enhanced props for product management
-          categories={categories}
-          outlets={outlets}
-          merchantId={user?.merchant?.id || ''}
-          onProductCreated={handleProductCreated}
-          onProductUpdated={handleProductUpdated}
-          onError={handleError}
         />
       </PageContent>
 
-      {/* Add Product Dialog */}
-      {isMerchantLevel && (
-        <ProductFormDialog
-          open={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
-          product={null}
-          categories={categories}
-          outlets={outlets}
-          merchantId={user?.merchant?.id || ''}
-          onSuccess={handleProductCreated}
-          onError={handleError}
-        />
-      )}
 
-      {/* Edit Product Dialog */}
-      {isMerchantLevel && editingProduct && (
-        <ProductFormDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          product={editingProduct}
-          categories={categories}
-          outlets={outlets}
-          merchantId={user?.merchant?.id || ''}
-          onSuccess={handleProductUpdated}
-          onError={handleError}
-        />
-      )}
-
-      {/* View Product Dialog - You can create a custom view dialog or use the form dialog in read-only mode */}
-      {viewingProduct && (
-        <ProductFormDialog
-          open={isViewDialogOpen}
-          onOpenChange={setIsViewDialogOpen}
-          product={viewingProduct}
-          categories={categories}
-          outlets={outlets}
-          merchantId={user?.merchant?.id || ''}
-          onSuccess={() => setIsViewDialogOpen(false)}
-          onError={handleError}
-        />
-      )}
     </PageWrapper>
   );
 } 

@@ -30,12 +30,51 @@ export function getUserScope(user: Partial<AuthUser>): { merchantId?: string; ou
   return { merchantId, outletId };
 }
 
+/**
+ * Check if user has merchant-level access (can manage multiple outlets)
+ * ADMIN: System-wide access to all merchants
+ * MERCHANT: Access to their own merchant organization
+ */
 export function isMerchantLevel(user: Pick<AuthUser, 'role'>): boolean {
   return hasAnyRole(user, ['ADMIN', 'MERCHANT']);
 }
 
+/**
+ * Check if user has outlet-level access (can manage specific outlet)
+ * OUTLET_ADMIN: Full access to their assigned outlet
+ * OUTLET_STAFF: Limited access to their assigned outlet
+ */
 export function isOutletTeam(user: Pick<AuthUser, 'role'>): boolean {
   return hasAnyRole(user, ['OUTLET_ADMIN', 'OUTLET_STAFF']);
+}
+
+/**
+ * Check if user can manage other users
+ * ADMIN: Can manage all users system-wide
+ * MERCHANT: Can manage users within their merchant organization
+ * OUTLET_ADMIN: Can manage users within their outlet
+ */
+export function canManageUsers(user: Pick<AuthUser, 'role'>): boolean {
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+}
+
+/**
+ * Check if user can manage outlets
+ * ADMIN: Can manage all outlets system-wide
+ * MERCHANT: Can manage outlets within their merchant organization
+ */
+export function canManageOutlets(user: Pick<AuthUser, 'role'>): boolean {
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT']);
+}
+
+/**
+ * Check if user can manage products
+ * ADMIN: Can manage all products system-wide
+ * MERCHANT: Can manage products within their merchant organization
+ * OUTLET_ADMIN: Can manage products within their outlet
+ */
+export function canManageProducts(user: Pick<AuthUser, 'role'>): boolean {
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
 }
 
 

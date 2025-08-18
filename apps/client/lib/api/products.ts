@@ -63,10 +63,18 @@ export const productsApi = {
   },
 
   /**
-   * Get product by ID
+   * Get product by ID (supports both public ID and internal ID)
    */
   async getProductById(productId: string): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/products/${productId}`);
+    return handleApiResponse(response);
+  },
+
+  /**
+   * Get product by public ID (numeric ID like 1, 2, 3)
+   */
+  async getProductByPublicId(publicId: number): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`/api/products/${publicId}`);
     return handleApiResponse(response);
   },
 
@@ -127,3 +135,44 @@ export const productsApi = {
     return handleApiResponse(response);
   }
 };
+
+// Export individual functions for direct use in components
+export const getProducts = (filters?: ProductFilters) => productsApi.getProducts(filters);
+export const getProductById = (productId: string) => productsApi.getProductById(productId);
+export const getProductByBarcode = (barcode: string) => productsApi.getProductByBarcode(barcode);
+export const checkAvailability = (productId: string) => productsApi.checkAvailability(productId);
+export const createProduct = (productData: any) => productsApi.createProduct(productData);
+export const updateProduct = (productId: string, productData: Partial<any>) => productsApi.updateProduct(productId, productData);
+export const deleteProduct = (productId: string) => productsApi.deleteProduct(productId);
+export const getProductStats = () => productsApi.getProductStats();
+
+// Additional functions needed for the new pages
+export const getCategories = async (): Promise<Category[]> => {
+  const response = await authenticatedFetch('/api/categories');
+  const result = await handleApiResponse(response);
+  return result.data || [];
+};
+
+export const getOutlets = async (merchantId?: string): Promise<Outlet[]> => {
+  const params = new URLSearchParams();
+  if (merchantId) {
+    params.append('merchantId', merchantId);
+  }
+  
+  const response = await authenticatedFetch(`/api/outlets?${params.toString()}`);
+  const result = await handleApiResponse(response);
+  return result.data?.outlets || [];
+};
+
+// Type definitions for the additional functions
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface Outlet {
+  id: string;
+  name: string;
+}

@@ -3,7 +3,7 @@ import { createOrder, updateOrder, cancelOrder } from './order';
 import type { OrderInput, OrderType, OrderStatus } from './types';
 
 async function main() {
-  console.log('🌱 Starting comprehensive database seed...');
+  console.log('🌱 Starting comprehensive database seed with four-tier role system...');
 
   // Create merchants
   const merchant1 = await prisma.merchant.upsert({
@@ -99,7 +99,7 @@ async function main() {
     create: {
       id: 'category1',
       publicId: 1,
-      name: 'Camping Equipment',
+      name: 'Camping',
       description: 'Camping and outdoor equipment',
       merchantId: merchant1.id,
       isActive: true
@@ -112,7 +112,7 @@ async function main() {
     create: {
       id: 'category2',
       publicId: 2,
-      name: 'Party Equipment',
+      name: 'Party',
       description: 'Party and event equipment',
       merchantId: merchant1.id,
       isActive: true
@@ -125,35 +125,35 @@ async function main() {
     create: {
       id: 'category3',
       publicId: 3,
-      name: 'Tools & Equipment',
-      description: 'Professional tools and equipment',
+      name: 'Tools',
+      description: 'Tools and construction equipment',
       merchantId: merchant1.id,
       isActive: true
     }
   });
 
   // Create categories for merchant 2
-  const beachCategory = await prisma.category.upsert({
+  const waterSportsCategory = await prisma.category.upsert({
     where: { id: 'category4' },
     update: {},
     create: {
       id: 'category4',
       publicId: 4,
-      name: 'Beach Equipment',
-      description: 'Beach and water sports equipment',
+      name: 'Water Sports',
+      description: 'Water sports and beach equipment',
       merchantId: merchant2.id,
       isActive: true
     }
   });
 
-  const mountainCategory = await prisma.category.upsert({
+  const hikingCategory = await prisma.category.upsert({
     where: { id: 'category5' },
     update: {},
     create: {
       id: 'category5',
       publicId: 5,
-      name: 'Mountain Equipment',
-      description: 'Mountain and climbing equipment',
+      name: 'Hiking',
+      description: 'Hiking and mountain equipment',
       merchantId: merchant2.id,
       isActive: true
     }
@@ -161,188 +161,232 @@ async function main() {
 
   console.log('✅ Categories created');
 
-  // Create users for merchant 1
-  const adminUser1 = await prisma.user.upsert({
-    where: { id: 'user1' },
+  // ============================================================================
+  // CREATE USERS WITH PROPER FOUR-TIER ROLE SYSTEM
+  // ============================================================================
+
+  // 1. SYSTEM ADMIN (No merchant or outlet assignment)
+  const systemAdmin = await prisma.user.upsert({
+    where: { id: 'system_admin' },
     update: {},
     create: {
-      id: 'user1',
+      id: 'system_admin',
       publicId: 1,
-      email: 'merchant@rentalshop.com',
+      email: 'admin@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
-      firstName: 'Merchant',
-      lastName: 'Owner',
+      firstName: 'System',
+      lastName: 'Administrator',
       phone: '+1234567890',
       role: 'ADMIN',
-      merchantId: merchant1.id,
+      // No merchantId or outletId for system admin
       isActive: true
     }
   });
 
-  const staffUser1 = await prisma.user.upsert({
-    where: { id: 'user2' },
+  // 2. MERCHANT OWNERS (Assigned to merchant, no outlet)
+  const merchantOwner1 = await prisma.user.upsert({
+    where: { id: 'merchant_owner_1' },
     update: {},
     create: {
-      id: 'user2',
+      id: 'merchant_owner_1',
       publicId: 2,
-      email: 'outlet_staff_main@rentalshop.com',
+      email: 'merchant@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
-      firstName: 'Main',
-      lastName: 'Staff',
+      firstName: 'Rental',
+      lastName: 'Merchant',
       phone: '+1234567891',
-      role: 'USER',
+      role: 'MERCHANT',
       merchantId: merchant1.id,
-      outletId: outlet1.id,
+      // No outletId for merchant owners
       isActive: true
     }
   });
 
-  const staffUser2 = await prisma.user.upsert({
-    where: { id: 'user3' },
+  const merchantOwner2 = await prisma.user.upsert({
+    where: { id: 'merchant_owner_2' },
     update: {},
     create: {
-      id: 'user3',
+      id: 'merchant_owner_2',
       publicId: 3,
-      email: 'outlet_staff_downtown@rentalshop.com',
-      password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
-      firstName: 'Downtown',
-      lastName: 'Staff',
-      phone: '+1234567892',
-      role: 'USER',
-      merchantId: merchant1.id,
-      outletId: outlet2.id,
-      isActive: true
-    }
-  });
-
-  // Create users for merchant 2
-  const adminUser2 = await prisma.user.upsert({
-    where: { id: 'user4' },
-    update: {},
-    create: {
-      id: 'user4',
-      publicId: 4,
       email: 'merchant@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
-      firstName: 'Merchant',
-      lastName: 'Owner',
-      phone: '+1234567893',
-      role: 'ADMIN',
+      firstName: 'Outdoor',
+      lastName: 'Merchant',
+      phone: '+1234567892',
+      role: 'MERCHANT',
       merchantId: merchant2.id,
+      // No outletId for merchant owners
       isActive: true
     }
   });
 
-  const beachStaff = await prisma.user.upsert({
-    where: { id: 'user5' },
+  // 3. OUTLET ADMINS (Assigned to both merchant and specific outlet)
+  const outletAdminMain = await prisma.user.upsert({
+    where: { id: 'outlet_admin_main' },
     update: {},
     create: {
-      id: 'user5',
-      publicId: 5,
-      email: 'outlet_staff_beach@outdoor.com',
-      password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
-      firstName: 'Beach',
-      lastName: 'Staff',
-      phone: '+1234567894',
-      role: 'USER',
-      merchantId: merchant2.id,
-      outletId: outlet3.id,
-      isActive: true
-    }
-  });
-
-  const mountainStaff = await prisma.user.upsert({
-    where: { id: 'user6' },
-    update: {},
-    create: {
-      id: 'user6',
-      publicId: 6,
-      email: 'outlet_staff_mountain@outdoor.com',
-      password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
-      firstName: 'Mountain',
-      lastName: 'Staff',
-      phone: '+1234567895',
-      role: 'USER',
-      merchantId: merchant2.id,
-      outletId: outlet4.id,
-      isActive: true
-    }
-  });
-
-  console.log('✅ Users created');
-
-  // Per-outlet admin accounts (model: merchant -> outlet -> users)
-  // Merchant 1 - Outlet 1 (Main Branch)
-  await prisma.user.upsert({
-    where: { id: 'user7' },
-    update: {},
-    create: {
-      id: 'user7',
-      publicId: 7,
+      id: 'outlet_admin_main',
+      publicId: 4,
       email: 'outlet_admin_main@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Main',
       lastName: 'Admin',
-      role: 'ADMIN',
+      phone: '+1234567893',
+      role: 'OUTLET_ADMIN',
       merchantId: merchant1.id,
       outletId: outlet1.id,
       isActive: true
     }
   });
 
-  // Merchant 1 - Outlet 2 (Downtown Branch)
-  await prisma.user.upsert({
-    where: { id: 'user9' },
+  const outletAdminDowntown = await prisma.user.upsert({
+    where: { id: 'outlet_admin_downtown' },
     update: {},
     create: {
-      id: 'user9',
-      publicId: 8,
+      id: 'outlet_admin_downtown',
+      publicId: 5,
       email: 'outlet_admin_downtown@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Downtown',
       lastName: 'Admin',
-      role: 'ADMIN',
+      phone: '+1234567894',
+      role: 'OUTLET_ADMIN',
       merchantId: merchant1.id,
       outletId: outlet2.id,
       isActive: true
     }
   });
 
-  // Merchant 2 - Outlet 3 (Beach Branch)
-  await prisma.user.upsert({
-    where: { id: 'user11' },
+  const outletAdminBeach = await prisma.user.upsert({
+    where: { id: 'outlet_admin_beach' },
     update: {},
     create: {
-      id: 'user11',
-      publicId: 9,
+      id: 'outlet_admin_beach',
+      publicId: 6,
       email: 'outlet_admin_beach@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Beach',
       lastName: 'Admin',
-      role: 'ADMIN',
+      phone: '+1234567895',
+      role: 'OUTLET_ADMIN',
       merchantId: merchant2.id,
       outletId: outlet3.id,
       isActive: true
     }
   });
 
-  // Merchant 2 - Outlet 4 (Mountain Branch)
-  await prisma.user.upsert({
-    where: { id: 'user13' },
+  const outletAdminMountain = await prisma.user.upsert({
+    where: { id: 'outlet_admin_mountain' },
     update: {},
     create: {
-      id: 'user13',
-      publicId: 10,
+      id: 'outlet_admin_mountain',
+      publicId: 7,
       email: 'outlet_admin_mountain@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Mountain',
       lastName: 'Admin',
-      role: 'ADMIN',
+      phone: '+1234567896',
+      role: 'OUTLET_ADMIN',
       merchantId: merchant2.id,
       outletId: outlet4.id,
       isActive: true
     }
   });
+
+  // 4. OUTLET STAFF (Assigned to both merchant and specific outlet)
+  const outletStaffMain = await prisma.user.upsert({
+    where: { id: 'outlet_staff_main' },
+    update: {},
+    create: {
+      id: 'outlet_staff_main',
+      publicId: 8,
+      email: 'outlet_staff_main@rentalshop.com',
+      password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
+      firstName: 'Main',
+      lastName: 'Staff',
+      phone: '+1234567897',
+      role: 'OUTLET_STAFF',
+      merchantId: merchant1.id,
+      outletId: outlet1.id,
+      isActive: true
+    }
+  });
+
+  const outletStaffDowntown = await prisma.user.upsert({
+    where: { id: 'outlet_staff_downtown' },
+    update: {},
+    create: {
+      id: 'outlet_staff_downtown',
+      publicId: 9,
+      email: 'outlet_staff_downtown@rentalshop.com',
+      password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
+      firstName: 'Downtown',
+      lastName: 'Staff',
+      phone: '+1234567898',
+      role: 'OUTLET_STAFF',
+      merchantId: merchant1.id,
+      outletId: outlet2.id,
+      isActive: true
+    }
+  });
+
+  const outletStaffBeach = await prisma.user.upsert({
+    where: { id: 'outlet_staff_beach' },
+    update: {},
+    create: {
+      id: 'outlet_staff_beach',
+      publicId: 10,
+      email: 'outlet_staff_beach@outdoor.com',
+      password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
+      firstName: 'Beach',
+      lastName: 'Staff',
+      phone: '+1234567899',
+      role: 'OUTLET_STAFF',
+      merchantId: merchant2.id,
+      outletId: outlet3.id,
+      isActive: true
+    }
+  });
+
+  const outletStaffMountain = await prisma.user.upsert({
+    where: { id: 'outlet_staff_mountain' },
+    update: {},
+    create: {
+      id: 'outlet_staff_mountain',
+      publicId: 11,
+      email: 'outlet_staff_mountain@outdoor.com',
+      password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
+      firstName: 'Mountain',
+      lastName: 'Staff',
+      phone: '+1234567900',
+      role: 'OUTLET_STAFF',
+      merchantId: merchant2.id,
+      outletId: outlet4.id,
+      isActive: true
+    }
+  });
+
+  console.log('✅ Users created with proper four-tier role system');
+
+  // ============================================================================
+  // ROLE SYSTEM SUMMARY
+  // ============================================================================
+  console.log('\n🔐 FOUR-TIER ROLE SYSTEM IMPLEMENTED:');
+  console.log('🏢 ADMIN (System-wide): admin@rentalshop.com');
+  console.log('🏪 MERCHANT (Organization-wide):');
+  console.log('   - merchant@rentalshop.com (Rental Shop Demo)');
+  console.log('   - merchant@outdoor.com (Outdoor Equipment Co.)');
+  console.log('🏬 OUTLET_ADMIN (Outlet-wide):');
+  console.log('   - outlet_admin_main@rentalshop.com (Main Branch)');
+  console.log('   - outlet_admin_downtown@rentalshop.com (Downtown Branch)');
+  console.log('   - outlet_admin_beach@outdoor.com (Beach Branch)');
+  console.log('   - outlet_admin_mountain@outdoor.com (Mountain Branch)');
+  console.log('👥 OUTLET_STAFF (Limited outlet access):');
+  console.log('   - outlet_staff_main@rentalshop.com (Main Branch)');
+  console.log('   - outlet_staff_downtown@rentalshop.com (Downtown Branch)');
+  console.log('   - outlet_staff_beach@outdoor.com (Beach Branch)');
+  console.log('   - outlet_staff_mountain@outdoor.com (Mountain Branch)');
+  console.log('\nAll passwords: password123\n');
 
   // Create customers
   const customers = [];
@@ -413,7 +457,7 @@ async function main() {
 
   // Create products for merchant 2 (30 products)
   const merchant2Products = [];
-  const merchant2Categories = [beachCategory, mountainCategory];
+  const merchant2Categories = [waterSportsCategory, hikingCategory];
   
   for (let i = 1; i <= 30; i++) {
     const category = merchant2Categories[i % 2];
@@ -675,11 +719,14 @@ async function main() {
   console.log(`- Outlets: 4 (2 per merchant)`);
   console.log(`- Categories: 5 (3 for merchant1, 2 for merchant2)`);
   console.log(`- Products: 60 (30 per merchant with outlet stock distribution)`);
-  console.log(`- Users: 10 (2 admins, 8 staff)`);
+  console.log(`- Users: 11 (1 System Admin, 2 Merchant Owners, 4 Outlet Admins, 4 Outlet Staff)`);
   console.log(`- Orders: 0 (temporarily disabled)`);
   console.log(`- Customers: 20 (10 per merchant)`);
   
   console.log('\n🔑 Login Credentials (standardized)');
+  console.log('\n=== SYSTEM ADMIN (admin@rentalshop.com) ===');
+  console.log('System Administrator: admin@rentalshop.com / password123');
+  
   console.log('\n=== MERCHANT 1 (Rental Shop Demo) ===');
   console.log('Merchant owner: merchant@rentalshop.com / password123');
   console.log('Outlet admin (Main): outlet_admin_main@rentalshop.com / password123');

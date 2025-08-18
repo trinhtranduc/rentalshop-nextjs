@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
-import { ProductFormDialog } from './ProductFormDialog';
+
 import type { ProductWithDetails, Category, Outlet } from '../types';
 
 interface ProductActionsProps {
@@ -130,17 +130,7 @@ export function ProductActions({
         </CardContent>
       </Card>
 
-      {/* Add/Edit Product Dialog */}
-      <ProductFormDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        product={editingProduct}
-        categories={categories}
-        outlets={outlets}
-        merchantId={merchantId}
-        onSuccess={handleSuccess}
-        onError={handleError}
-      />
+
     </>
   );
 }
