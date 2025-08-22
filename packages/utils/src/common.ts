@@ -129,6 +129,13 @@ export const authenticatedFetch = async (
 
 /**
  * Parse API response
+ * 
+ * This function handles the nested API response structure:
+ * API returns: { success: true, data: { ... }, message: "..." }
+ * We extract: { success: true, data: { ... } }
+ * 
+ * This allows frontend to access user data directly via response.data
+ * instead of response.data.data
  */
 export const parseApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   if (!response.ok) {
@@ -148,10 +155,22 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
   }
 
   try {
-    const data = await response.json();
+    const responseData = await response.json();
+    
+    // Handle nested API response structure
+    // API returns: { success: true, data: { ... }, message: "..." }
+    // We extract: { success: true, data: { ... } }
+    if (responseData.success && responseData.data !== undefined) {
+      return {
+        success: true,
+        data: responseData.data, // Extract the nested data
+      };
+    }
+    
+    // Fallback for non-standard responses
     return {
       success: true,
-      data,
+      data: responseData,
     };
   } catch (error) {
     return {

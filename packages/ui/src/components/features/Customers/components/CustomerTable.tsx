@@ -100,6 +100,11 @@ export function CustomerTable({
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  // Debug logging
+  console.log('🔍 CustomerTable received customers:', customers);
+  console.log('🔍 CustomerTable customers length:', customers?.length);
+  console.log('🔍 CustomerTable first customer:', customers?.[0]);
+
   const triggerCustomerAction = (action: string, customer: Customer) => {
     // Create custom event to communicate with CustomerActions component
     const event = new CustomEvent('customer-action', {
@@ -156,20 +161,6 @@ export function CustomerTable({
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-      blocked: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-    };
-    
-    return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants]}>
-        {status}
-      </Badge>
-    );
-  };
-
   const getMembershipBadge = (level: string) => {
     const variants = {
       basic: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
@@ -216,7 +207,6 @@ export function CustomerTable({
                 <SortableHeader column="name" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Customer</SortableHeader>
                 <SortableHeader column="contact" sortable={false}>Contact</SortableHeader>
                 <SortableHeader column="location" sortable={false}>Location</SortableHeader>
-                <SortableHeader column="status" sortable={false}>Status</SortableHeader>
                 <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Created At</SortableHeader>
                 <TableHead className="w-20">Actions</TableHead>
               </TableRow>
@@ -229,11 +219,9 @@ export function CustomerTable({
                       <div className="font-medium text-gray-900 dark:text-white">
                         {customer.firstName} {customer.lastName}
                       </div>
-                      {customer.companyName && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {customer.companyName}
-                        </div>
-                      )}
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        ID: {customer.publicId}
+                      </div>
                     </div>
                   </TableCell>
                   
@@ -248,6 +236,11 @@ export function CustomerTable({
                   
                   <TableCell>
                     <div>
+                      {customer.city && customer.state && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {customer.city}, {customer.state}
+                        </div>
+                      )}
                       {customer.country && (
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {customer.country}
@@ -257,12 +250,8 @@ export function CustomerTable({
                   </TableCell>
                   
                   <TableCell>
-                    {getStatusBadge(customer.status)}
-                  </TableCell>
-                  
-                  <TableCell>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {customer.createdAt ? formatDate(customer.createdAt) : 'N/A'}
+                      {customer.createdAt ? formatDate(customer.createdAt.toString()) : 'N/A'}
                     </div>
                   </TableCell>
                   

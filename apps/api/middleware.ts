@@ -22,7 +22,8 @@ const publicRoutes = [
 // Admin-only routes
 const adminRoutes = [
   '/api/admin',
-  '/api/users',
+  // Removed /api/users since it now has proper role-based authorization
+  // that allows ADMIN, MERCHANT, and OUTLET_ADMIN roles
 ];
 
 export async function middleware(request: NextRequest) {

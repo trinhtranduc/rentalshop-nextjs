@@ -31,15 +31,43 @@ export async function GET(
       );
     }
 
-    // Check if user is admin
-    try {
-      assertAnyRole(currentUser as any, ['ADMIN']);
-    } catch {
+    // Check authorization based on user role
+    let canAccess = false;
+    let userScope: { merchantId?: string; outletId?: string } = {};
+
+    if (currentUser.role === 'ADMIN') {
+      // Admin can see all users system-wide
+      canAccess = true;
+      userScope = {};
+      console.log('🔐 Admin access granted - can see all users system-wide');
+    } else if (currentUser.role === 'MERCHANT') {
+      // Merchant can see all users within their organization
+      canAccess = true;
+      userScope = { merchantId: currentUser.merchantId || undefined };
+      console.log('🔐 Merchant access granted - scope:', userScope);
+    } else if (currentUser.role === 'OUTLET_ADMIN') {
+      // Outlet admin can see users within their outlet
+      canAccess = true;
+      userScope = { 
+        merchantId: currentUser.merchantId || undefined, 
+        outletId: currentUser.outletId || undefined 
+      };
+      console.log('🔐 Outlet Admin access granted - scope:', userScope);
+    } else if (currentUser.role === 'OUTLET_STAFF') {
+      // Outlet staff cannot manage users
+      canAccess = false;
+      console.log('🔐 Outlet Staff access denied - cannot manage users');
+    }
+
+    if (!canAccess) {
+      console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
       return NextResponse.json(
-        { success: false, message: 'Admin access required' },
+        { success: false, message: 'Insufficient permissions to view users' }, 
         { status: 403 }
       );
     }
+
+    console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
 
     const { publicId } = params;
     console.log('🔍 GET /api/users/[publicId] - Looking for user with public ID:', publicId);
@@ -69,6 +97,31 @@ export async function GET(
       );
     }
 
+    // Validate scope access - ensure user can only view users within their scope
+    if (userScope.merchantId && user.merchantId !== userScope.merchantId) {
+      console.log('❌ Scope violation: User trying to access user from different merchant', {
+        userMerchantId: user.merchantId,
+        userScopeMerchantId: userScope.merchantId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: User not in your organization' },
+        { status: 403 }
+      );
+    }
+
+    if (userScope.outletId && user.outletId !== userScope.outletId) {
+      console.log('❌ Scope violation: User trying to access user from different outlet', {
+        userOutletId: user.outletId,
+        userScopeOutletId: userScope.outletId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: User not in your outlet' },
+        { status: 403 }
+      );
+    }
+
+    console.log('✅ Scope validation passed - user can access this user data');
+
     console.log('✅ User found, transforming data...');
 
     // Transform the data to match the expected format
@@ -80,7 +133,30 @@ export async function GET(
       role: user.role,
       isActive: user.isActive,
       createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString()
+      updatedAt: user.updatedAt.toISOString(),
+      
+      // Add missing fields that UI needs
+      firstName: user.firstName,
+      lastName: user.lastName,
+      merchantId: user.merchantId,
+      outletId: user.outletId,
+      emailVerified: (user as any).emailVerified || false,
+      lastLoginAt: (user as any).lastLoginAt?.toISOString(),
+      
+      // Include merchant and outlet objects
+      merchant: user.merchant ? {
+        id: user.merchant.id,
+        name: user.merchant.name
+      } : undefined,
+      
+      outlet: (user as any).outlet ? {
+        id: (user as any).outlet.id,
+        name: (user as any).outlet.name,
+        merchant: user.merchant ? {
+          id: user.merchant.id,
+          name: user.merchant.name
+        } : undefined
+      } : undefined
     };
 
     console.log('✅ Transformed user data:', transformedUser);
@@ -130,12 +206,50 @@ export async function PATCH(
       );
     }
 
-    // Check if user is admin
-    try {
-      assertAnyRole(currentUser as any, ['ADMIN']);
-    } catch {
-      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
+    // Check authorization based on user role
+    let canAccess = false;
+    let userScope: { merchantId?: string; outletId?: string } = {};
+
+    // Normalize role for comparison (handle case sensitivity)
+    const normalizedRole = currentUser.role?.toUpperCase() || '';
+
+    if (normalizedRole === 'ADMIN') {
+      // Admin can activate/deactivate all users system-wide
+      canAccess = true;
+      userScope = {};
+      console.log('🔐 Admin access granted - can activate/deactivate all users system-wide');
+    } else if (normalizedRole === 'MERCHANT') {
+      // Merchant can activate/deactivate users within their organization
+      canAccess = true;
+      userScope = { merchantId: currentUser.merchantId || undefined };
+      console.log('🔐 Merchant access granted - scope:', userScope);
+    } else if (normalizedRole === 'OUTLET_ADMIN') {
+      // Outlet admin can activate/deactivate users within their outlet
+      canAccess = true;
+      userScope = { 
+        merchantId: currentUser.merchantId || undefined, 
+        outletId: currentUser.outletId || undefined 
+      };
+      console.log('🔐 Outlet Admin access granted - scope:', userScope);
+    } else if (normalizedRole === 'OUTLET_STAFF') {
+      // Outlet staff cannot activate/deactivate users
+      canAccess = false;
+      console.log('🔐 Outlet Staff access denied - cannot activate/deactivate users');
+    } else {
+      // Unknown role
+      canAccess = false;
+      console.log('❌ Unknown role:', currentUser.role, 'Normalized:', normalizedRole);
     }
+
+    if (!canAccess) {
+      console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions to activate/deactivate users' }, 
+        { status: 403 }
+      );
+    }
+
+    console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
 
     const { publicId } = params;
     const body = await request.json();
@@ -166,6 +280,31 @@ export async function PATCH(
         { status: 400 }
       );
     }
+
+    // Validate scope access - ensure user can only activate/deactivate users within their scope
+    if (userScope.merchantId && user.merchantId !== userScope.merchantId) {
+      console.log('❌ Scope violation: User trying to activate/deactivate user from different merchant', {
+        userMerchantId: user.merchantId,
+        userScopeMerchantId: userScope.merchantId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: Cannot modify user from different organization' },
+        { status: 403 }
+      );
+    }
+
+    if (userScope.outletId && user.outletId !== userScope.outletId) {
+      console.log('❌ Scope violation: User trying to activate/deactivate user from different outlet', {
+        userOutletId: user.outletId,
+        userScopeOutletId: userScope.outletId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: Cannot modify user from different outlet' },
+        { status: 403 }
+      );
+    }
+
+    console.log('✅ Scope validation passed - user can activate/deactivate this user data');
 
     // Prevent modifying admin users
     if (user.role === 'ADMIN') {
@@ -238,15 +377,50 @@ export async function DELETE(
       );
     }
 
-    // Check if user is admin
-    try {
-      assertAnyRole(currentUser as any, ['ADMIN']);
-    } catch {
+    // Check authorization based on user role
+    let canAccess = false;
+    let userScope: { merchantId?: string; outletId?: string } = {};
+
+    // Normalize role for comparison (handle case sensitivity)
+    const normalizedRole = currentUser.role?.toUpperCase() || '';
+
+    if (normalizedRole === 'ADMIN') {
+      // Admin can delete all users system-wide
+      canAccess = true;
+      userScope = {};
+      console.log('🔐 Admin access granted - can delete all users system-wide');
+    } else if (normalizedRole === 'MERCHANT') {
+      // Merchant can delete users within their organization
+      canAccess = true;
+      userScope = { merchantId: currentUser.merchantId || undefined };
+      console.log('🔐 Merchant access granted - scope:', userScope);
+    } else if (normalizedRole === 'OUTLET_ADMIN') {
+      // Outlet admin can delete users within their outlet
+      canAccess = true;
+      userScope = { 
+        merchantId: currentUser.merchantId || undefined, 
+        outletId: currentUser.outletId || undefined 
+      };
+      console.log('🔐 Outlet Admin access granted - scope:', userScope);
+    } else if (normalizedRole === 'OUTLET_STAFF') {
+      // Outlet staff cannot delete users
+      canAccess = false;
+      console.log('🔐 Outlet Staff access denied - cannot delete users');
+    } else {
+      // Unknown role
+      canAccess = false;
+      console.log('❌ Unknown role:', currentUser.role, 'Normalized:', normalizedRole);
+    }
+
+    if (!canAccess) {
+      console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
       return NextResponse.json(
-        { success: false, message: 'Admin access required' },
+        { success: false, message: 'Insufficient permissions to delete users' }, 
         { status: 403 }
       );
     }
+
+    console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
 
     const { publicId } = params;
 
@@ -268,6 +442,31 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Validate scope access - ensure user can only delete users within their scope
+    if (userScope.merchantId && user.merchantId !== userScope.merchantId) {
+      console.log('❌ Scope violation: User trying to delete user from different merchant', {
+        userMerchantId: user.merchantId,
+        userScopeMerchantId: userScope.merchantId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: Cannot delete user from different organization' },
+        { status: 403 }
+      );
+    }
+
+    if (userScope.outletId && user.outletId !== userScope.outletId) {
+      console.log('❌ Scope violation: User trying to delete user from different outlet', {
+        userOutletId: user.outletId,
+        userScopeOutletId: userScope.outletId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: Cannot delete user from different outlet' },
+        { status: 403 }
+      );
+    }
+
+    console.log('✅ Scope validation passed - user can delete this user data');
 
     console.log('🔍 DELETE /api/users/[publicId] - User found:', {
       userId: user.id,

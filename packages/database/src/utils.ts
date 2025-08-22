@@ -97,6 +97,7 @@ export const findUserByPublicId = async (publicId: number) => {
       where: { publicId },
       include: {
         merchant: true,
+        outlet: true,
       },
     });
     

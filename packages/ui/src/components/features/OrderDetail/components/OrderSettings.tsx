@@ -1,13 +1,10 @@
-import React from 'react';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
-import { Label } from '../../../ui/label';
-import { Textarea } from '../../../ui/textarea';
-import { Edit } from 'lucide-react';
-import { OrderData, SettingsForm } from '@rentalshop/types';
+import React, { useState } from 'react';
+import { Button, Input, Label, Textarea } from '@rentalshop/ui';
+import { Save, X, Edit } from 'lucide-react';
+import { SettingsForm } from '@rentalshop/types';
 
 interface OrderSettingsProps {
-  order: OrderData;
+  order: any; // OrderData type was removed from imports, so using 'any' for now
   settingsForm: SettingsForm;
   isEditingSettings: boolean;
   loading: boolean;
@@ -18,7 +15,7 @@ interface OrderSettingsProps {
 
 const SettingsFormFields: React.FC<{
   settingsForm: SettingsForm;
-  order: OrderData;
+  order: any; // OrderData type was removed from imports, so using 'any' for now
   onChange: (updates: Partial<SettingsForm>) => void;
 }> = ({ settingsForm, order, onChange }) => (
   <>

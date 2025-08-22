@@ -8,16 +8,26 @@ interface UserReadOnlyInfoProps {
 }
 
 export const UserReadOnlyInfo: React.FC<UserReadOnlyInfoProps> = ({ user }) => {
+  const formatDate = (date: Date | string) => {
+    if (!date) return 'Not available';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
     <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
       <div>
-        <dt className="text-sm font-medium text-gray-500">Full Name</dt>
-        <dd className="mt-1 text-sm text-gray-900">{user.name}</dd>
+        <dt className="text-sm font-medium text-gray-500">First Name</dt>
+        <dd className="mt-1 text-sm text-gray-900">{user.firstName || 'Not provided'}</dd>
       </div>
       
       <div>
-        <dt className="text-sm font-medium text-gray-500">Email</dt>
-        <dd className="mt-1 text-sm text-gray-900">{user.email}</dd>
+        <dt className="text-sm font-medium text-gray-500">Last Name</dt>
+        <dd className="mt-1 text-sm text-gray-900">{user.lastName || 'Not provided'}</dd>
       </div>
       
       <div>
@@ -26,29 +36,35 @@ export const UserReadOnlyInfo: React.FC<UserReadOnlyInfoProps> = ({ user }) => {
       </div>
       
       <div>
-        <dt className="text-sm font-medium text-gray-500">Role</dt>
-        <dd className="mt-1 text-sm text-gray-900">{user.role}</dd>
-      </div>
-      
-      <div>
-        <dt className="text-sm font-medium text-gray-500">Status</dt>
-        <dd className="mt-1">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            user.isActive 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            {user.isActive ? 'Active' : 'Inactive'}
-          </span>
-        </dd>
+        <dt className="text-sm font-medium text-gray-500">Email</dt>
+        <dd className="mt-1 text-sm text-gray-900">{user.email}</dd>
       </div>
       
       <div>
         <dt className="text-sm font-medium text-gray-500">Created</dt>
-        <dd className="mt-1 text-sm text-gray-900">
-          {new Date(user.createdAt).toLocaleDateString()}
-        </dd>
+        <dd className="mt-1 text-sm text-gray-900">{formatDate(user.createdAt)}</dd>
       </div>
+      
+      {user.merchant && (
+        <div>
+          <dt className="text-sm font-medium text-gray-500">Merchant</dt>
+          <dd className="mt-1 text-sm text-gray-900">{user.merchant.name}</dd>
+        </div>
+      )}
+      
+      {user.outlet && (
+        <div>
+          <dt className="text-sm font-medium text-gray-500">Outlet</dt>
+          <dd className="mt-1 text-sm text-gray-900">{user.outlet.name}</dd>
+        </div>
+      )}
+      
+      {!user.merchant && !user.outlet && (
+        <div className="col-span-2">
+          <dt className="text-sm font-medium text-gray-500">Organization</dt>
+          <dd className="mt-1 text-sm text-gray-500 italic">No organization assigned</dd>
+        </div>
+      )}
     </dl>
   );
 };

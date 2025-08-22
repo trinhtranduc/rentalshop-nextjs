@@ -10,14 +10,16 @@ import {
   UserReadOnlyInfo, 
   AccountManagementCard,
   ConfirmationDialog,
-  ToastContainer
+  ToastContainer,
+  ChangePasswordDialog
 } from '@rentalshop/ui';
 import { 
   ArrowLeft,
   Edit, 
   UserCheck,
   UserX,
-  Trash2
+  Trash2,
+  Key
 } from 'lucide-react';
 import { usersApi } from "@rentalshop/utils";
 import type { User, UserUpdateInput } from '@rentalshop/ui';
@@ -36,6 +38,7 @@ export default function UserPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   
   // Section visibility states
   const [showEditSection, setShowEditSection] = useState(false);
@@ -99,6 +102,14 @@ export default function UserPage() {
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
+  };
+
+  const handlePasswordChangeSuccess = () => {
+    showSuccess('Password Changed', 'User password has been changed successfully!');
+  };
+
+  const handlePasswordChangeError = (error: string) => {
+    showError('Password Change Failed', error);
   };
 
   const handleEdit = () => {
@@ -269,6 +280,14 @@ export default function UserPage() {
               {showEditSection ? 'Cancel Edit' : 'Edit User'}
             </Button>
             
+            <Button 
+              onClick={() => setShowChangePassword(true)}
+              variant="outline"
+              className="border-green-200 text-green-700 hover:bg-green-50"
+            >
+              <Key className="w-4 h-4 mr-2" />
+              Change Password
+            </Button>
           </div>
         </UserPageHeader>
 
@@ -326,6 +345,16 @@ export default function UserPage() {
 
       {/* Toast Container for notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={showChangePassword}
+        onOpenChange={setShowChangePassword}
+        userId={user.id}
+        userName={user.name}
+        onSuccess={handlePasswordChangeSuccess}
+        onError={handlePasswordChangeError}
+      />
     </div>
   );
 }

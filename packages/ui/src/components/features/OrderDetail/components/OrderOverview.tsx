@@ -1,11 +1,9 @@
 import React from 'react';
-import { Separator } from '../../../ui/separator';
-import { User, MapPin, Calendar, ShoppingCart, Phone, Mail } from 'lucide-react';
-import { formatDate } from '../../../../lib/utils';
-import { OrderData } from '@rentalshop/types';
+import { Separator } from '@rentalshop/ui';
+import { OrderDetailData } from '@rentalshop/types';
 
 interface OrderOverviewProps {
-  order: OrderData;
+  order: OrderDetailData;
 }
 
 const InfoSection: React.FC<{ 
@@ -22,7 +20,7 @@ const InfoSection: React.FC<{
   </div>
 );
 
-const CustomerInfo: React.FC<{ customer: OrderData['customer']; customerFullName?: string }> = ({ 
+const CustomerInfo: React.FC<{ customer: OrderDetailData['customer']; customerFullName?: string }> = ({ 
   customer, 
   customerFullName 
 }) => (
@@ -50,7 +48,7 @@ const CustomerInfo: React.FC<{ customer: OrderData['customer']; customerFullName
   </InfoSection>
 );
 
-const OutletInfo: React.FC<{ outlet: OrderData['outlet'] }> = ({ outlet }) => (
+const OutletInfo: React.FC<{ outlet: OrderDetailData['outlet'] }> = ({ outlet }) => (
   <InfoSection
     icon={<MapPin className="w-4 h-4 text-gray-600" />}
     title="Outlet"
@@ -64,7 +62,7 @@ const OutletInfo: React.FC<{ outlet: OrderData['outlet'] }> = ({ outlet }) => (
   </InfoSection>
 );
 
-const ImportantDates: React.FC<{ order: OrderData }> = ({ order }) => (
+const ImportantDates: React.FC<{ order: OrderDetailData }> = ({ order }) => (
   <InfoSection
     icon={<Calendar className="w-4 h-4 text-gray-600" />}
     title="Important Dates"
@@ -98,7 +96,7 @@ const ImportantDates: React.FC<{ order: OrderData }> = ({ order }) => (
   </InfoSection>
 );
 
-const OrderSummaryInfo: React.FC<{ order: OrderData }> = ({ order }) => (
+const OrderSummaryInfo: React.FC<{ order: OrderDetailData }> = ({ order }) => (
   <InfoSection
     icon={<ShoppingCart className="w-4 h-4 text-gray-600" />}
     title="Order Summary"

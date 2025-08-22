@@ -56,42 +56,21 @@ export function Products({
   onError
 }: ProductsProps) {
   return (
-    <div className="space-y-6">
-      <ProductHeader 
-        totalProducts={data.total}
-        onViewModeChange={onViewModeChange}
-        viewMode={viewMode}
-      />
-      
+    <div className="space-y-6">      
       <ProductFilters 
         filters={filters}
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}
         onClearFilters={onClearFilters}
       />
-            
-      {viewMode === 'grid' ? (
-        <ProductGrid 
-          products={data.products}
-          onProductAction={onProductAction}
-          // Pass enhanced props
-          categories={categories}
-          outlets={outlets}
-          merchantId={merchantId}
-          onProductCreated={onProductCreated}
-          onProductUpdated={onProductUpdated}
-          onError={onError}
-          showAddButton={true}
-        />
-      ) : (
-        <ProductTable 
+
+      <ProductTable 
           products={data.products}
           onProductAction={onProductAction}
           sortBy={filters.sortBy}
           sortOrder={filters.sortOrder}
           onSort={onSort}
-        />
-      )}
+      />
       
       <ProductPagination 
         currentPage={data.currentPage}
