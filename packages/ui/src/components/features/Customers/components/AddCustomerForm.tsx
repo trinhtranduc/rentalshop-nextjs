@@ -7,7 +7,7 @@ import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Card, CardContent } from '../../../ui/card';
-import type { CustomerCreateInput } from '../types';
+import type { CustomerCreateInput } from '@rentalshop/types';
 
 interface AddCustomerFormProps {
   onSave: (customerData: CustomerCreateInput) => Promise<void>;

@@ -1,4 +1,4 @@
-import { OrderData, SettingsForm } from './types';
+import { OrderData, SettingsForm } from '@rentalshop/types';
 
 export const getStatusColor = (status: string): string => {
   const statusColors: Record<string, string> = {

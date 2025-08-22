@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 
-import type { ProductWithDetails, Category, Outlet } from '../types';
+import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
 interface ProductActionsProps {
   onAction: (action: string, productId?: string) => void;

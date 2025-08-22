@@ -12,7 +12,7 @@ import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
 import { useToasts } from '../../../ui/toast';
 import type { ProductInput } from '@rentalshop/database';
-import type { Category, Outlet } from '../types';
+import type { Category, Outlet } from '@rentalshop/types';
 
 interface ProductAddFormProps {
   categories: Category[];

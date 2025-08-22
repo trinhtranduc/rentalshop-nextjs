@@ -3,97 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@rentalshop/ui';
-import { OrderDetail } from '../../../../../packages/ui/src/components/features/OrderDetail';
-// import { OrderDetail } from '@rentalshop/ui';
+import { OrderDetail } from '@rentalshop/ui';
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { authenticatedFetch } from '@rentalshop/auth/browser';
+import { authenticatedFetch } from '@rentalshop/utils';
 
-// Define the OrderData interface locally since it's not exported from the UI package
-interface OrderData {
-  id: string;
-  orderNumber: string;
-  orderType: 'RENT' | 'SALE' | 'RENT_TO_OWN';
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  pickupPlanAt?: string;
-  returnPlanAt?: string;
-  pickedUpAt?: string;
-  returnedAt?: string;
-  subtotal: number;
-  taxAmount?: number;
-  discountAmount?: number;
-  totalAmount: number;
-  depositAmount: number;
-  damageFee?: number;
-  notes?: string;
-  pickupNotes?: string;
-  returnNotes?: string;
-  damageNotes?: string;
-  customer?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    phone: string;
-  } | null;
-  outlet: {
-    id: string;
-    name: string;
-    address: string | null;
-  };
-  orderItems: Array<{
-    id: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-    product: {
-      id: string;
-      name: string;
-      description: string | null;
-      images: string | null;
-      barcode: string | null;
-      productCode?: string;
-    };
-    note?: string;
-    rentalDays?: number;
-  }>;
-  payments: Array<{
-    id: string;
-    amount: number;
-    method: string;
-    status: string;
-    createdAt: string;
-  }>;
-  // Computed fields from the API
-  customerFullName?: string;
-  customerContact?: string;
-  totalItems?: number;
-  isRental?: boolean;
-  isOverdue?: boolean;
-  daysOverdue?: number;
-  rentalDuration?: number;
-  paymentSummary?: {
-    totalPaid: number;
-    totalPending: number;
-    totalFailed: number;
-    remainingBalance: number;
-  };
-  statusTimeline?: Array<{
-    status: string;
-    timestamp: string;
-    description: string;
-  }>;
-  // Additional fields for order management
-  bailAmount?: number;
-  material?: string;
-}
+import type { OrderDetailData } from '@rentalshop/types';
 
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [order, setOrder] = useState<OrderData | null>(null);
+  const [order, setOrder] = useState<OrderDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -317,6 +237,24 @@ export default function OrderDetailPage() {
     }
   };
 
+  // Wrapper functions to match OrderDetail component interface
+  const handlePickupWrapper = (orderId: string) => {
+    handlePickupOrder(orderId, {
+      order_status: 'PICKUPED',
+      bail_amount: 0,
+      material: '',
+      notes: ''
+    });
+  };
+
+  const handleReturnWrapper = (orderId: string) => {
+    handleReturnOrder(orderId, {
+      order_status: 'RETURNED',
+      notes: '',
+      damage_fee: 0
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -404,8 +342,8 @@ export default function OrderDetailPage() {
           onEdit={handleEditOrder}
           onCancel={handleCancelOrder}
           onStatusChange={handleStatusChange}
-          onPickup={handlePickupOrder}
-          onReturn={handleReturnOrder}
+          onPickup={handlePickupWrapper}
+          onReturn={handleReturnWrapper}
           onSaveSettings={handleSaveSettings}
           loading={actionLoading}
           showActions={true}

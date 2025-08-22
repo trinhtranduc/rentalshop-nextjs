@@ -1,4 +1,4 @@
-import { Order, OrderFilters, OrderData, OrderStats, OrderDetailData, SettingsForm } from './types';
+import { Order, OrderFilters, OrderData, OrderStats, OrderDetailData, SettingsForm } from '@rentalshop/types';
 
 export const filterOrders = (orders: Order[], filters: OrderFilters): Order[] => {
   return orders.filter(order => {

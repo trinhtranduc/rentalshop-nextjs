@@ -1,4 +1,4 @@
-import { User } from '../types';
+import { User } from '@rentalshop/types';
 
 export interface UserApiResponse {
   success: boolean;

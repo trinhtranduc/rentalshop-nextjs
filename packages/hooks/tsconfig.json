@@ -1,1 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@rentalshop/auth": ["../../packages/auth/src"],
+      "@rentalshop/ui": ["../../packages/ui/src"],
+      "@rentalshop/utils": ["../../packages/utils/src"]
+    }
+  },
+  "include": ["src/**/*"]
+}
 

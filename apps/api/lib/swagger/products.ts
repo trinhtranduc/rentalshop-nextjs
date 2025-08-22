@@ -1,7 +1,7 @@
 /**
  * Swagger documentation for Product APIs
  */
-import { getApiUrl } from '../config';
+import { getApiUrl } from '@rentalshop/utils';
 
 export const productSwaggerConfig = {
   openapi: '3.0.0',

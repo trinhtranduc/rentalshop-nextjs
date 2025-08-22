@@ -1,12 +1,12 @@
 import React from 'react';
 import { Button } from '../../../ui/button';
 import { X, Printer, Package, RotateCcw } from 'lucide-react';
-import { OrderData, SettingsForm } from '../types';
+import { OrderDetailData, SettingsForm } from '@rentalshop/types';
 
 interface OrderActionsProps {
-  order: OrderData;
+  order: OrderDetailData;
   settingsForm: SettingsForm;
-  onCancel?: (order: OrderData) => void;
+  onCancel?: (order: OrderDetailData) => void;
   onPickup?: (orderId: string, data: any) => void;
   onReturn?: (orderId: string, data: any) => void;
 }
@@ -18,17 +18,17 @@ export const OrderActions: React.FC<OrderActionsProps> = ({
   onPickup, 
   onReturn 
 }) => {
-  const canCancel = order.status !== 'PICKUP' && 
+  const canCancel = order.status !== 'PICKUPED' && 
                    order.status !== 'RETURNED' && 
                    order.status !== 'CANCELLED';
   
   const canPickup = order.orderType === 'RENT' && 
-                   order.status !== 'PICKUP' && 
+                   order.status !== 'PICKUPED' && 
                    order.status !== 'RETURNED' && 
                    order.status !== 'CANCELLED';
   
   const canReturn = order.orderType === 'RENT' && 
-                   order.status === 'PICKUP';
+                   order.status === 'PICKUPED';
 
   return (
     <div className="space-y-4">

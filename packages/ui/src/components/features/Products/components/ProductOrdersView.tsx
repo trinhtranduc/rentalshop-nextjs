@@ -35,8 +35,8 @@ import {
 import { formatCurrency, formatDate } from '../../../../lib';
 import { ProductsLoading } from './ProductsLoading';
 import { 
-  OrderListHeader,
-  OrderListFilters,
+  OrderHeader,
+  OrderFilters,
   OrderTable,
   OrderListActions,
   OrderStats,
@@ -523,7 +523,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
       <div className="space-y-6">
         {/* OrderListHeader hidden as requested */}
         
-        <OrderListFilters 
+        <OrderFilters 
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onSearchChange={handleSearchChange}

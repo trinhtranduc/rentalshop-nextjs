@@ -19,10 +19,10 @@ import {
 } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth } from '../../../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 import { 
   getProductById
-} from '../../../../lib/api/products';
+} from "@rentalshop/utils";
 import type { ProductWithDetails } from '@rentalshop/ui';
 
 export default function ProductOrdersPage() {

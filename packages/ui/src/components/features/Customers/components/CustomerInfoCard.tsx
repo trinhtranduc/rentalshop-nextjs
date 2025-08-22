@@ -14,7 +14,7 @@ import {
   Trash2
 } from 'lucide-react';
 import type { CustomerWithMerchant } from '@rentalshop/database';
-import type { Customer } from '../types';
+import type { Customer } from '@rentalshop/types';
 
 // Union type to handle both local and database customer types
 type CustomerData = Customer | CustomerWithMerchant;

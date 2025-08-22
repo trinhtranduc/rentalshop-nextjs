@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ProductCard } from './ProductCard';
-import { Product } from '../types';
+import { Product } from '@rentalshop/types';
 
-import type { ProductWithDetails, Category, Outlet } from '../types';
+import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
 interface ProductGridProps {
   products: Product[];

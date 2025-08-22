@@ -12,4 +12,4 @@ export * from './components';
 export type { 
   DashboardData, 
   DashboardPeriod
-} from './types';
+} from '@rentalshop/types';

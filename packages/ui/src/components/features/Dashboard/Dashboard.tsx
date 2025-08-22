@@ -8,7 +8,7 @@ import {
   DashboardNavigation
 } from './components';
 import DashboardWrapper from '../../layout/DashboardWrapper';
-import { DashboardData } from './types';
+import { DashboardData } from '@rentalshop/types';
 
 interface DashboardProps {
   data: DashboardData;

@@ -14,17 +14,15 @@ import {
   ToastContainer
 } from '@rentalshop/ui';
 import { UserPlus } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 import { useToasts } from '@rentalshop/ui';
-const { customersApi } = await import('../../lib/api/customers');
-
-// Import types from the Customers feature
-import { CustomerData, CustomerFilters as CustomerFiltersType } from '../../../../packages/ui/src/components/features/Customers/types';
+import { PaginationResult, Customer, CustomerFilters } from '@rentalshop/types';
+const { customersApi } = await import('@rentalshop/utils');
 
 // Extend the Customer type for this page
 interface ExtendedCustomer {
   id: string;
-  publicId?: string; // Public ID for navigation
+  publicId: number; // Change to number to match Customer type
   firstName: string;
   lastName: string;
   email: string;
@@ -32,6 +30,7 @@ interface ExtendedCustomer {
   address?: string;
   city?: string;
   state?: string;
+  zipCode?: string; // Add missing zipCode field
   country?: string;
   isActive: boolean;
   merchant: {
@@ -58,7 +57,7 @@ export default function CustomersPage() {
   const [customerToDelete, setCustomerToDelete] = useState<ExtendedCustomer | null>(null);
   
   // Initialize filters
-  const [filters, setFilters] = useState<CustomerFiltersType>({
+  const [filters, setFilters] = useState<CustomerFilters>({
     search: '',
     status: 'active', // Default to active customers since backend filters inactive by default
     sortBy: 'name',
@@ -67,7 +66,6 @@ export default function CustomersPage() {
 
   // Separate search state to prevent unnecessary re-renders
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const hasInitializedRef = useRef(false);
   const { toasts, showSuccess, showError, removeToast } = useToasts();
@@ -76,65 +74,60 @@ export default function CustomersPage() {
     try {
       // Show appropriate loading state
       if (searchQuery !== undefined && hasInitializedRef.current) {
-        setIsSearching(true); // Table-only loading for search operations
+        setLoading(true); // Table-only loading for search operations
       } else if (!isInitialLoad) {
         setLoading(true); // Full page loading for other operations
       }
-      const { authenticatedFetch } = await import('@rentalshop/utils');
 
-      // Build API parameters based on whether we're searching or listing
-      let params: URLSearchParams;
-      
+      // Build API parameters for customersApi.getCustomers()
+      const apiFilters: {
+        limit: number;
+        sortBy?: string;
+        sortOrder?: string;
+        offset?: number;
+        search?: string;
+        page?: number;
+        isActive?: boolean;
+      } = {
+        limit: 10,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
+      };
+
       if (searchQuery) {
         // Search endpoint - use offset-based pagination
-        const offset = (currentPage - 1) * 10; // Convert page to offset
-        params = new URLSearchParams({
-          search: searchQuery,
-          limit: '10',
-          offset: offset.toString(),
-          // Only pass isActive filter when explicitly requesting inactive customers
-          ...(filters.status === 'inactive' && { isActive: 'false' }),
-          ...(filters.status === 'blocked' && { isActive: 'false' }), // Blocked customers are also inactive
-          sortBy: filters.sortBy,
-          sortOrder: filters.sortOrder
-        });
+        apiFilters.offset = (currentPage - 1) * 10; // Convert page to offset
+        apiFilters.search = searchQuery;
       } else {
         // Standard listing endpoint - use page-based pagination
-        params = new URLSearchParams({
-          page: currentPage.toString(),
-          limit: '10',
-          // Only pass isActive filter when explicitly requesting inactive customers
-          ...(filters.status === 'inactive' && { isActive: 'false' }),
-          ...(filters.status === 'blocked' && { isActive: 'false' }), // Blocked customers are also inactive
-          sortBy: filters.sortBy,
-          sortOrder: filters.sortOrder
-        });
+        apiFilters.page = currentPage;
       }
 
-      const response = await authenticatedFetch(`/api/customers?${params}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch customers');
+      // Only pass isActive filter when explicitly requesting inactive customers
+      if (filters.status === 'inactive') {
+        apiFilters.isActive = false;
+      } else if (filters.status === 'blocked') {
+        apiFilters.isActive = false; // Blocked customers are also inactive
       }
 
-      const data = await response.json();
-      
-      if (data.success) {
+      const response = await customersApi.getCustomers(apiFilters);
+
+      if (response.success && response.data) {
         // Handle both search response and standard listing response
         let customers, total, totalPages;
         
-        if (data.data.customers) {
+        if (response.data.customers) {
           // This is either a search response or standard listing
-          customers = data.data.customers;
-          total = data.data.total || customers.length;
+          customers = response.data.customers;
+          total = response.data.total || customers.length;
           
           // Calculate totalPages based on the response structure
-          if (data.data.totalPages !== undefined) {
+          if (response.data.totalPages !== undefined) {
             // Standard listing response
-            totalPages = data.data.totalPages;
-          } else if (data.data.limit && data.data.total) {
+            totalPages = response.data.totalPages;
+          } else if (response.data.limit && response.data.total) {
             // Search response - calculate pages from limit and total
-            totalPages = Math.ceil(data.data.total / data.data.limit);
+            totalPages = Math.ceil(response.data.total / response.data.limit);
           } else {
             // Fallback calculation
             totalPages = Math.ceil(total / 10);
@@ -154,6 +147,8 @@ export default function CustomersPage() {
         if (currentPage > totalPages && totalPages > 0) {
           setCurrentPage(1);
         }
+      } else {
+        throw new Error(response.error || 'Failed to fetch customers');
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -161,12 +156,11 @@ export default function CustomersPage() {
       showError('Fetch Error', 'Failed to load customers. Please try again.');
     } finally {
       setLoading(false);
-      setIsSearching(false);
       if (isInitialLoad) {
         setIsInitialLoad(false);
       }
     }
-  }, [currentPage, searchQuery, filters.status, filters.sortBy, filters.sortOrder, setCustomers, setTotalPages, setTotalCustomers, setLoading, setIsSearching, isInitialLoad, hasInitializedRef]);
+  }, [currentPage, searchQuery, filters.status, filters.sortBy, filters.sortOrder, setCustomers, setTotalPages, setTotalCustomers, setLoading, isInitialLoad, hasInitializedRef]);
 
   // Effect for initial load - only runs once
   useEffect(() => {
@@ -189,10 +183,10 @@ export default function CustomersPage() {
   }, []);
 
   // Handler for other filter changes - only reloads table data
-  const handleFiltersChange = useCallback((newFilters: CustomerFiltersType) => {
+  const handleFiltersChange = useCallback((newFilters: CustomerFilters) => {
     // Check if the filters actually changed to prevent unnecessary updates
     const hasChanged = Object.keys(newFilters).some(key => 
-      newFilters[key as keyof CustomerFiltersType] !== filters[key as keyof CustomerFiltersType]
+      newFilters[key as keyof CustomerFilters] !== filters[key as keyof CustomerFilters]
     );
     
     if (hasChanged) {
@@ -288,9 +282,6 @@ export default function CustomersPage() {
     try {
       console.log('🔍 CustomersPage: Deleting customer:', customerToDelete.id);
       
-      // Import the API client
-      const { customersApi } = await import('../../lib/api/customers');
-      
       // Call the delete API
       const response = await customersApi.deleteCustomer(customerToDelete.id);
       
@@ -349,41 +340,31 @@ export default function CustomersPage() {
   }, [filters.sortBy, filters.sortOrder, setFilters, setCurrentPage]);
 
   // Transform data for the Customers component - memoized to prevent unnecessary re-renders
-  const customerData: CustomerData = useMemo(() => ({
-    customers: customers.map(customer => ({
+  const customerData: PaginationResult<Customer> = useMemo(() => ({
+    data: customers.map(customer => ({
       id: customer.id,
-      publicId: customer.publicId, // Include publicId for navigation
+      publicId: customer.publicId, // Convert to number as required by Customer type
       firstName: customer.firstName,
       lastName: customer.lastName,
       email: customer.email,
       phone: customer.phone,
-      companyName: customer.merchant?.companyName,
       address: customer.address,
-      city: undefined, // Not available in current data
+      city: customer.city,
       state: customer.state,
-      zipCode: undefined, // Not available in current data
+      zipCode: customer.zipCode,
       country: customer.country,
-      status: customer.isActive ? 'active' : 'inactive',
-      membershipLevel: 'basic', // Default value, not available in current data
-      totalOrders: 0, // Not available in current data
-      totalSpent: 0, // Not available in current data
-      lastOrderDate: undefined, // Not available in current data
-      createdAt: customer.createdAt || new Date().toISOString(), // Use actual date from API
-      updatedAt: customer.updatedAt || new Date().toISOString()  // Use actual date from API
+      merchantId: customer.merchant.id, // Required field for Customer type
+      outletId: undefined, // Not available in current data
+      createdAt: customer.createdAt ? new Date(customer.createdAt) : new Date(),
+      updatedAt: customer.updatedAt ? new Date(customer.updatedAt) : new Date()
     })),
-    total: totalCustomers,
-    currentPage,
-    totalPages,
-    limit: 10,
-    stats: {
-      totalCustomers: totalCustomers,
-      activeCustomers: customers.filter(c => c.isActive).length,
-      inactiveCustomers: customers.filter(c => !c.isActive).length,
-      blockedCustomers: 0, // Not available in current data
-      newCustomersThisMonth: 0, // Not available in current data
-      totalRevenue: 0, // Not available in current data
-      averageOrderValue: 0, // Not available in current data
-      topCustomers: [] // Not available in current data
+    pagination: {
+      page: currentPage,
+      totalPages,
+      total: totalCustomers,
+      limit: 10,
+      hasNext: currentPage < totalPages,
+      hasPrev: currentPage > 1
     }
   }), [customers, totalCustomers, currentPage, totalPages]);
 
@@ -427,7 +408,7 @@ export default function CustomersPage() {
           onCustomerAction={handleCustomerAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
-          merchantId={user?.merchant?.id || ''}
+          merchantId={user?.merchantId || ''}
           onDeleteCustomer={handleDeleteCustomer}
         />
 

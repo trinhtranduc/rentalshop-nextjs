@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileText, AlertCircle, Info, MessageSquare } from 'lucide-react';
-import { OrderData } from '../types';
+import { OrderData } from '@rentalshop/types';
 
 interface NotesSectionProps {
   order: OrderData;

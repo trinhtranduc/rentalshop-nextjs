@@ -15,7 +15,7 @@ import {
   Pagination
 } from '@rentalshop/ui';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 
 
 // Import types from the Products feature

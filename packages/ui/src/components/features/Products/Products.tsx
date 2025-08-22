@@ -13,7 +13,7 @@ import {
   Category,
   Outlet,
   ProductWithDetails
-} from './types';
+} from '@rentalshop/types';
 
 interface ProductsProps {
   data: ProductData;

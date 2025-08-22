@@ -17,4 +17,4 @@ export type {
   OrderData, 
   OrderDetailProps,
   SettingsForm
-} from './types';
+} from '@rentalshop/types';

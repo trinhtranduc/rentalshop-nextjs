@@ -1,5 +1,5 @@
 import { prisma } from './client';
-import type { ProductSearchFilter } from './types';
+import type { ProductSearchFilter } from '@rentalshop/types';
 
 export interface ProductWithStock {
   id: string;

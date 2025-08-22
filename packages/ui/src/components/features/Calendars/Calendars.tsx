@@ -8,7 +8,7 @@ import { CalendarLoading } from './components/CalendarLoading';
 import type { 
   PickupOrder, 
   CalendarFilters as CalendarFiltersType
-} from './types';
+} from '@rentalshop/types';
 
 interface CalendarsProps {
   orders?: PickupOrder[];

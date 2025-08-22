@@ -3,8 +3,8 @@ import { Input } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
-import { OrderFilters as OrderFiltersType } from '../types';
-import { useThrottledSearch } from '../../../../hooks/useThrottledSearch';
+import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
+import { useThrottledSearch } from '@rentalshop/hooks';
 
 interface OrderFiltersProps {
   filters: OrderFiltersType;

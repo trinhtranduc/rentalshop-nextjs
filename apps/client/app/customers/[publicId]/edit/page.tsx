@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { EditCustomerForm, CustomerPageHeader, ToastContainer } from '@rentalshop/ui';
-import { customersApi } from '../../../../lib/api/customers';
+import { customersApi } from "@rentalshop/utils";
 import type { Customer, CustomerUpdateInput } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
 

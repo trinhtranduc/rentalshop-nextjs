@@ -10,10 +10,9 @@ import {
   PageContent
 } from '@rentalshop/ui';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../hooks/useAuth';
-import type { OrderSearchResult, OrderInput, OrderType, OrderStatus } from '@rentalshop/database';
-import { authenticatedFetch } from '@rentalshop/auth/browser';
-import type { OrderData, OrderFilters as OrderFiltersType } from '../../../../packages/ui/src/components/features/Orders/types';
+import { useAuth } from '@rentalshop/hooks';
+import type { OrderSearchResult, OrderInput, OrderType, OrderStatus, OrderFilters as OrderFiltersType, OrderData } from '@rentalshop/types';
+import { authenticatedFetch } from '@rentalshop/utils';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -29,8 +28,8 @@ export default function OrdersPage() {
   // Initialize filters
   const [filters, setFilters] = useState<OrderFiltersType>({
     search: '',
-    status: '',
-    orderType: '',
+    status: undefined,
+    orderType: undefined,
     outlet: '',
     dateRange: {
       start: '',
@@ -59,8 +58,8 @@ export default function OrdersPage() {
         offset: ((currentPage - 1) * 10).toString(),
         limit: '10',
         ...(searchQuery && { q: searchQuery }),
-        ...(filters.orderType && filters.orderType !== 'all' && { orderType: filters.orderType }),
-        ...(filters.status && filters.status !== 'all' && { status: filters.status }),
+        ...(filters.orderType && { orderType: filters.orderType }),
+        ...(filters.status && { status: filters.status }),
         ...(filters.outlet && filters.outlet !== 'all' && { outletId: filters.outlet }),
         ...(filters.sortBy && { sortBy: filters.sortBy }),
         ...(filters.sortOrder && { sortOrder: filters.sortOrder })
@@ -184,8 +183,8 @@ export default function OrdersPage() {
   const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
-      status: '',
-      orderType: '',
+      status: undefined,
+      orderType: undefined,
       outlet: '',
       dateRange: {
         start: '',
@@ -322,7 +321,7 @@ export default function OrdersPage() {
 
   // Transform the data to match the refactored Orders component interface - memoized to prevent unnecessary re-renders
   // MUST be defined before any conditional returns to follow React Rules of Hooks
-  const orderData: OrderData = useMemo(() => ({
+  const orderData = useMemo(() => ({
     orders: orders.map(order => ({
       id: order.id,
       orderNumber: order.orderNumber,

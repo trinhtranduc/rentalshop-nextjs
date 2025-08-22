@@ -3,7 +3,7 @@ import { Card } from '../../../ui/card';
 import { Button } from '../../../ui/button';
 import { cn } from '../../../../lib/cn';
 
-import type { ProductWithDetails, Category, Outlet } from '../types';
+import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
 export interface ProductCardProps {
   id: string;

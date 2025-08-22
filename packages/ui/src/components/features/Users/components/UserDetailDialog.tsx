@@ -16,7 +16,7 @@ import { ConfirmationDialog } from './ConfirmationDialog';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { userApiClient } from '../lib/UserApiClient';
 import { UserCheck, UserX, Key, AlertTriangle } from 'lucide-react';
-import type { User } from '../types';
+import type { User } from '@rentalshop/types';
 
 interface UserDetailDialogProps {
   open: boolean;

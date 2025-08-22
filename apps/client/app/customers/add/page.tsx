@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AddCustomerForm, CustomerPageHeader, ToastContainer } from '@rentalshop/ui';
-import { customersApi } from '../../../lib/api/customers';
-import { useAuth } from '../../../hooks/useAuth';
+import { customersApi } from "@rentalshop/utils";
+import { useAuth } from '@rentalshop/hooks';
 import type { CustomerInput } from '@rentalshop/database';
 import type { CustomerCreateInput } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';

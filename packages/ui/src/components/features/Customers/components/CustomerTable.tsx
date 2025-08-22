@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '../../../ui/dropdown-menu';
-import { Customer } from '../types';
+import { Customer } from '@rentalshop/types';
 import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Eye, Trash2 } from 'lucide-react';
 
 interface CustomerTableProps {

@@ -1,4 +1,4 @@
-import { getApiUrl } from '../config';
+import { getApiUrl } from '@rentalshop/utils';
 
 export const customerSwaggerConfig = {
   openapi: '3.0.0',

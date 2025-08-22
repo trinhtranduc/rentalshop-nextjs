@@ -14,7 +14,7 @@ import {
 import { CreateOrderForm } from '@rentalshop/ui';
 import type { CustomerSearchResult, ProductWithStock, ProductSearchResult, OrderInput } from '@rentalshop/database';
 import { authenticatedFetch } from '@rentalshop/utils';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 
 export default function CreateOrderPage() {
   const router = useRouter();

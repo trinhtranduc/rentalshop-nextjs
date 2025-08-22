@@ -10,18 +10,19 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "types": ["node"],
     "isolatedModules": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "jsx": "preserve",
+    "jsxImportSource": "react",
     "baseUrl": ".",
     "paths": {
       "@rentalshop/ui": ["./packages/ui/src"],
       "@rentalshop/auth": ["./packages/auth/src"],
-      "@rentalshop/auth/browser": ["./packages/auth/src/browser.ts"],
       "@rentalshop/database": ["./packages/database/src"],
-      "@rentalshop/utils": ["./packages/utils/src"]
+      "@rentalshop/utils": ["./packages/utils/src"],
+      "@rentalshop/types": ["./packages/types/src"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "**/node_modules"]

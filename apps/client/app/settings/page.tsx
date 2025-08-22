@@ -14,7 +14,7 @@ import {
   Label,
   Badge
 } from '@rentalshop/ui';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 import { useState } from 'react';
 
 export default function SettingsPage() {

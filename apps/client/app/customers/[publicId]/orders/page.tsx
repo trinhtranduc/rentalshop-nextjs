@@ -14,8 +14,8 @@ import {
   DollarSign,
   Package
 } from 'lucide-react';
-import { customersApi } from '../../../../lib/api/customers';
-import { ordersApi } from '../../../../lib/api/orders';
+import { customersApi } from "@rentalshop/utils";
+import { ordersApi } from "@rentalshop/utils";
 import type { Customer } from '@rentalshop/ui';
 
 // Simplified Order interface for this page

@@ -1,5 +1,4 @@
 // ============================================================================
-// HOOKS
+// UI HOOKS - Re-exported from shared package
 // ============================================================================
-export { useProductAvailability } from './useProductAvailability';
-export { useThrottledSearch } from './useThrottledSearch';
+// Note: Business logic hooks are imported directly from @rentalshop/hooks where needed

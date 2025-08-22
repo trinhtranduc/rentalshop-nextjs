@@ -6,7 +6,7 @@ import type {
   CustomerSearchFilter,
   CustomerSearchResult,
   CustomerSearchResponse 
-} from './types';
+} from '@rentalshop/types';
 
 /**
  * Search customers with various filters

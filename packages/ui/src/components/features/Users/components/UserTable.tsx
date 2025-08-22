@@ -4,7 +4,7 @@ import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { ConfirmationDialog } from './ConfirmationDialog';
 import { Eye, Edit, UserCheck, UserX, MoreHorizontal } from 'lucide-react';
-import type { User } from '../types';
+import type { User } from '@rentalshop/types';
 
 interface UserTableProps {
   users: User[];

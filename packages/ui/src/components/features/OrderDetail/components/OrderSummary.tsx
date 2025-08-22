@@ -1,7 +1,7 @@
 import React from 'react';
 import { DollarSign } from 'lucide-react';
 import { formatCurrency } from '../../../../lib/utils';
-import { OrderData, SettingsForm } from '../types';
+import { OrderData, SettingsForm } from '@rentalshop/types';
 import { calculateCollectionAmount, getCollectionTitle } from '../utils';
 
 interface OrderSummaryProps {

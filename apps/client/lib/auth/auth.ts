@@ -26,13 +26,13 @@ export {
   clearAuthData,
   authenticatedFetch,
   handleApiResponse,
-} from '@rentalshop/auth/browser';
+} from '@rentalshop/utils';
 
 export const isAuthenticated = (): boolean => !!(typeof window !== 'undefined' && localStorage.getItem('authToken'));
 
 export const verifyTokenWithServer = async (): Promise<boolean> => {
   try {
-    const token = (await import('@rentalshop/auth/browser')).getAuthToken();
+    const token = (await import('@rentalshop/utils')).getAuthToken();
     if (!token) return false;
 
     const { createApiUrl } = await import('@rentalshop/utils');
@@ -42,16 +42,16 @@ export const verifyTokenWithServer = async (): Promise<boolean> => {
     });
 
     if (response.status === 401) {
-      (await import('@rentalshop/auth/browser')).clearAuthData();
+      (await import('@rentalshop/utils')).clearAuthData();
       return false;
     }
 
     if (response.ok) {
       const data = await response.json();
       if (data?.success && data?.data?.user) {
-        const existingToken = (await import('@rentalshop/auth/browser')).getAuthToken();
+        const existingToken = (await import('@rentalshop/utils')).getAuthToken();
         if (existingToken) {
-          (await import('@rentalshop/auth/browser')).storeAuthData(existingToken, data.data.user);
+          (await import('@rentalshop/utils')).storeAuthData(existingToken, data.data.user);
         }
       }
       return data.success === true;
@@ -91,7 +91,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
 
     if (data.success && data.data?.token) {
       console.log('✅ Login successful, storing auth data...');
-      (await import('@rentalshop/auth/browser')).storeAuthData(data.data.token, data.data.user);
+      (await import('@rentalshop/utils')).storeAuthData(data.data.token, data.data.user);
       console.log('💾 Auth data stored successfully');
     } else {
       console.log('❌ Login failed:', data.message);
@@ -108,7 +108,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
  * Logout user
  */
 export const logoutUser = (): void => {
-  (async () => (await import('@rentalshop/auth/browser')).clearAuthData())();
+  (async () => (await import('@rentalshop/utils')).clearAuthData())();
   window.location.href = '/login';
 };
 
@@ -117,7 +117,7 @@ export const logoutUser = (): void => {
  */
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/auth/browser');
+    const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/utils');
     const data = await handleApiResponse(await authenticatedFetch('/api/auth/me'));
     return data.success ? data.data : null;
   } catch (error) {

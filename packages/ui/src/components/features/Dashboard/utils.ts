@@ -1,4 +1,4 @@
-import { DashboardData, DashboardStats, OrderData, IncomeData } from './types';
+import { DashboardData, DashboardStats, OrderData, IncomeData } from '@rentalshop/types';
 
 export const calculateGrowthRate = (current: number, previous: number): string => {
   if (previous === 0) return current > 0 ? '+100%' : '0%';

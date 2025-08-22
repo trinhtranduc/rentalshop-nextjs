@@ -14,12 +14,12 @@ import {
 import { ProductDetail } from '@rentalshop/ui';
 
 import { Edit, ArrowLeft, Package, BarChart3 } from 'lucide-react';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 import { 
   getProductById, 
   getCategories, 
   getOutlets 
-} from '../../../lib/api/products';
+} from '@rentalshop/utils';
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/ui';
 
 export default function ProductViewPage() {
