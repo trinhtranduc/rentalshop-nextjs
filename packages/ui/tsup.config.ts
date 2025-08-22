@@ -15,7 +15,10 @@ export default defineConfig({
     '@radix-ui/react-slot',
     'class-variance-authority',
     'clsx',
-    'tailwind-merge'
+    'tailwind-merge',
+    'next',
+    'next/navigation',
+    'next/link'
   ],
   clean: true,
   sourcemap: true,

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ProductDetailList } from './ProductDetailList';
-import type { ProductWithDetails } from '../types';
+import type { ProductWithDetails } from '@rentalshop/types';
 
 interface ProductDetailMultiLayoutProps {
   product: ProductWithDetails;

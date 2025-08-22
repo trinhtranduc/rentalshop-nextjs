@@ -2,7 +2,7 @@ import React from 'react';
 import { Separator } from '../../../ui/separator';
 import { User, MapPin, Calendar, ShoppingCart, Phone, Mail } from 'lucide-react';
 import { formatDate } from '../../../../lib/utils';
-import { OrderData } from '../types';
+import { OrderData } from '@rentalshop/types';
 
 interface OrderOverviewProps {
   order: OrderData;

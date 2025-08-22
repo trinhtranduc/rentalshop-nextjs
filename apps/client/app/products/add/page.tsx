@@ -8,12 +8,12 @@ import {
   PageTitle,
   PageContent
 } from '@rentalshop/ui';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 import { 
   createProduct,
   getCategories, 
   getOutlets 
-} from '../../../lib/api/products';
+} from '@rentalshop/utils';
 import type { Category, Outlet } from '@rentalshop/ui';
 import type { ProductInput } from '@rentalshop/database';
 import { ProductAddForm } from '../../../../../packages/ui/src/components/features/Products/components';

@@ -7,20 +7,20 @@ import {
   CustomerStats,
   CustomerPagination
 } from './components';
-import { CustomerData, CustomerFilters } from './types';
+import { Customer, CustomerFilters, PaginationResult } from '@rentalshop/types';
 
 interface CustomersProps {
-  data: CustomerData;
-  filters: CustomerFilters;
-  onFiltersChange: (filters: CustomerFilters) => void;
+  data: PaginationResult<Customer>;
+  filters: CustomerFilters & { sortBy?: string; sortOrder?: 'asc' | 'desc' };
+  onFiltersChange: (filters: CustomerFilters & { sortBy?: string; sortOrder?: 'asc' | 'desc' }) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
   onCustomerAction: (action: string, customerId?: string) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
   merchantId: string;
-  onCustomerCreated?: (customer: any) => void;
-  onCustomerUpdated?: (customer: any) => void;
+  onCustomerCreated?: (customer: Customer) => void;
+  onCustomerUpdated?: (customer: Customer) => void;
   onError?: (error: string) => void;
   onViewOrders?: (customerId: string) => void;
   onDeleteCustomer?: (customerId: string) => void;
@@ -52,19 +52,18 @@ export function Customers({
       />
             
       <CustomerTable 
-        customers={data.customers}
+        customers={data.data}
         onCustomerAction={onCustomerAction}
         sortBy={filters.sortBy}
         sortOrder={filters.sortOrder}
         onSort={onSort}
-        onViewOrders={onViewOrders}
         onDeleteCustomer={onDeleteCustomer}
       />
       
       <CustomerPagination 
-        currentPage={data.currentPage}
-        totalPages={data.totalPages}
-        total={data.total}
+        currentPage={data.pagination.page}
+        totalPages={data.pagination.totalPages}
+        total={data.pagination.total}
         onPageChange={onPageChange}
       />
     </div>

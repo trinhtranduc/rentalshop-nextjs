@@ -1,789 +1,474 @@
-# Rental Shop Next.js Monorepo
+# 🏪 Rental Shop Next.js Monorepo
 
-## 🎨 **Updated Color Scheme - Green Theme (Clean & Less Eye-Straining)**
+A modern, consolidated monorepo for rental shop management with shared packages and role-based access control.
 
-### **Color Philosophy**
-The new color scheme prioritizes **reduced eye strain** while maintaining **professional appearance** and **excellent readability**. We've moved from high-saturation colors to softer, more neutral tones that are easier on the eyes during long dashboard sessions.
+## 🚀 **QUICK START**
 
-### **Primary Color Palette**
+### **Prerequisites**
+- Node.js 18+ 
+- Yarn 1.22+
+- PostgreSQL database
+- Git
 
-#### **Brand Colors**
-- **Primary Green**: `#4CAF50` - Softer, less saturated green (main brand color)
-- **Secondary Green**: `#81C784` - Pastel green for secondary elements
-
-#### **Action Colors**
-- **Primary**: `#4CAF50` - Main action color (same as brand-primary)
-- **Success**: `#2E7D32` - Darker green for success states
-- **Danger**: `#E53935` - Softer red for error/danger states
-- **Warning**: `#FFC107` - Yellow for warning states
-
-#### **Background Colors**
-- **Primary**: `#F8FAFC` - Very light blue-gray (main background)
-- **Secondary**: `#F1F5F9` - Slightly darker background
-- **Tertiary**: `#E2E8F0` - Medium background
-- **Card**: `#FFFFFF` - Pure white for cards
-
-#### **Text Colors**
-- **Primary**: `#212121` - Dark gray for headings
-- **Secondary**: `#757575` - Medium gray for descriptions
-- **Tertiary**: `#9E9E9E` - Light gray for tertiary text
-- **Inverted**: `#FFFFFF` - White text on dark backgrounds
-
-#### **Status Colors (Following UX Best Practices)**
-| Status | Color | HEX | Usage |
-|--------|-------|-----|-------|
-| **Pending** | Yellow | `#FFC107` | Awaiting processing |
-| **Confirmed** | Green | `#4CAF50` | Order confirmed |
-| **In Progress** | Blue | `#2196F3` | Currently processing |
-| **Completed** | Dark Green | `#2E7D32` | Successfully completed |
-| **Cancelled** | Red | `#F44336` | Order cancelled |
-| **Overdue** | Dark Red | `#E53935` | Past due date |
-| **Refunded** | Gray | `#9E9E9E` | Payment refunded |
-
-### **Benefits of New Color Scheme**
-
-1. **Reduced Eye Strain**: Lower saturation colors are easier on the eyes
-2. **Better Contrast**: Improved readability with carefully chosen text/background combinations
-3. **Professional Appearance**: Maintains business-appropriate aesthetics
-4. **Accessibility**: Better color contrast ratios for users with visual impairments
-5. **Consistency**: Unified color system across all components and states
-
-### **Usage Guidelines**
-
-#### **For Status Indicators**
-```typescript
-// ✅ GOOD: Use semantic status colors
-<Badge className="bg-status-pending text-white">Pending</Badge>
-<Badge className="bg-status-confirmed text-white">Confirmed</Badge>
-<Badge className="bg-status-overdue text-white">Overdue</Badge>
-
-// ❌ BAD: Don't use arbitrary colors
-<Badge className="bg-red-500 text-white">Pending</Badge>
-```
-
-#### **For Primary Actions**
-```typescript
-// ✅ GOOD: Use primary green for main actions
-<Button className="bg-action-primary text-white">Save Changes</Button>
-<Button className="bg-action-success text-white">Confirm Order</Button>
-
-// ❌ BAD: Don't use high-saturation colors
-<Button className="bg-green-600 text-white">Save Changes</Button>
-```
-
-#### **For Backgrounds**
-```typescript
-// ✅ GOOD: Use soft, neutral backgrounds
-<div className="bg-bg-primary">Main content area</div>
-<div className="bg-bg-secondary">Secondary content</div>
-<div className="bg-bg-card">Card background</div>
-
-// ❌ BAD: Don't use bright or saturated backgrounds
-<div className="bg-blue-100">Main content area</div>
-```
-
-### **Migration Notes**
-
-- **Old colors** like `#0F9347` (high-saturation green) have been replaced with `#4CAF50` (softer green)
-- **Status colors** now follow a logical, semantic system
-- **Background colors** are softer and less eye-straining
-- **Text colors** provide better contrast and readability
-
----
-
-## 🎯 DRY Principles & Best Practices
-
-## 🏗️ Architecture
-
-```
-Super Admin (System Admin)
-├── Manages entire system
-├── Can create/manage merchants
-└── Has full access to all data
-
-Merchants (Business Owners)
-├── Each merchant has 1 owner account
-├── Can have multiple outlets
-├── Manages their business operations
-└── Can create outlet managers and staff
-
-Outlets (Physical Locations)
-├── Each outlet belongs to 1 merchant
-├── Has outlet manager and staff
-├── Contains products for rental
-└── Handles local operations
-
-Outlet Staff
-├── Outlet Manager: Manages specific outlet
-└── Outlet Staff: Handles daily operations
-```
-
-## 🚀 Quick Start Guide
-
-### Prerequisites
-
-- **Node.js** 18.0.0 or higher
-- **Yarn** package manager
-- **Git**
-
-### Step 1: Clone and Setup
-
+### **1. Clone & Install**
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone <your-repo-url>
 cd rentalshop-nextjs
 
 # Install dependencies
 yarn install
 ```
 
-### Step 2: Environment Configuration
-
+### **2. Environment Setup**
 ```bash
 # Copy environment template
 cp env.example .env.local
 
-# Edit environment variables (optional for local development)
-# The default local environment uses SQLite and doesn't require external services
+# Edit .env.local with your database and API keys
+DATABASE_URL="postgresql://username:password@localhost:5432/rentalshop"
+JWT_SECRET="your-secret-key"
+NEXTAUTH_SECRET="your-nextauth-secret"
 ```
 
-### Step 3: Database Setup (Local Development)
-
+### **3. Database Setup**
 ```bash
-# One-command database setup (recommended)
-./scripts/setup-database.sh
+# Run database migrations
+yarn db:migrate
 
-# Or manually:
-# Generate Prisma client
-yarn db:generate
-
-# Push schema to SQLite database
-yarn db:push
-
-# Seed with sample data
+# Seed the database (optional)
 yarn db:seed
 ```
 
-### Step 4: Start Development Server
-
+### **4. Build Packages**
 ```bash
-# Start all applications (recommended)
-yarn dev:all
+# Build all shared packages
+yarn build:packages
 
-# Or start individual apps:
-# Client app only
-cd apps/client && yarn dev
-
-# Admin app only  
-cd apps/admin && yarn dev
-
-# API app only
-cd apps/api && yarn dev
-```
-
-## 🌐 Application URLs
-
-Once started, your applications will be available at:
-
-- **Client App (Shop Owner Portal)**: http://localhost:3000
-- **Admin App (Admin Panel)**: http://localhost:3001
-- **API Server**: http://localhost:3002
-
-## 🔐 Seeded Login Accounts
-
-After running the seed (yarn db:seed), these accounts are available:
-
-### **🌐 Application Access**
-
-| Application | URL | Purpose |
-|-------------|-----|---------|
-| **Client App** | http://localhost:3000 | Customer-facing rental interface |
-| **Admin App** | http://localhost:3001 | Super admin dashboard |
-| **API Server** | http://localhost:3002 | Backend API & Documentation |
-
-### 👥 **System Administrator**
-- **System Admin**: `admin@rentalshop.com` / `password123`
-  - Role: **ADMIN** (System-wide access)
-  - Scope: All merchants and outlets
-
-### 👥 **Merchant 1 — Rental Shop Demo**
-- **Merchant Owner**: `merchant@rentalshop.com` / `password123`
-  - Role: **MERCHANT** (Organization-wide access)
-  - Scope: Rental Shop Demo organization
-- **Outlet Admin (Main Branch)**: `outlet_admin_main@rentalshop.com` / `password123`
-  - Role: **OUTLET_ADMIN** (Outlet management)
-  - Scope: Main Branch outlet
-- **Outlet Staff (Main Branch)**: `outlet_staff_main@rentalshop.com` / `password123`
-  - Role: **OUTLET_STAFF** (Limited outlet access)
-  - Scope: Main Branch outlet
-- **Outlet Admin (Downtown Branch)**: `outlet_admin_downtown@rentalshop.com` / `password123`
-  - Role: **OUTLET_ADMIN** (Outlet management)
-  - Scope: Downtown Branch outlet
-- **Outlet Staff (Downtown Branch)**: `outlet_staff_downtown@rentalshop.com` / `password123`
-  - Role: **OUTLET_STAFF** (Limited outlet access)
-  - Scope: Downtown Branch outlet
-
-### 👥 **Merchant 2 — Outdoor Equipment Co.**
-- **Merchant Owner**: `merchant@outdoor.com` / `password123`
-  - Role: **MERCHANT** (Organization-wide access)
-  - Scope: Outdoor Equipment Co. organization
-- **Outlet Admin (Beach Branch)**: `outlet_admin_beach@outdoor.com` / `password123`
-  - Role: **OUTLET_ADMIN** (Outlet management)
-  - Scope: Beach Branch outlet
-- **Outlet Staff (Beach Branch)**: `outlet_staff_beach@outdoor.com` / `password123`
-  - Role: **OUTLET_STAFF** (Limited outlet access)
-  - Scope: Beach Branch outlet
-- **Outlet Admin (Mountain Branch)**: `outlet_admin_mountain@outdoor.com` / `password123`
-  - Role: **OUTLET_ADMIN** (Outlet management)
-  - Scope: Mountain Branch outlet
-- **Outlet Staff (Mountain Branch)**: `outlet_staff_mountain@outdoor.com` / `password123`
-  - Role: **OUTLET_STAFF** (Limited outlet access)
-  - Scope: Mountain Branch outlet
-
-**All passwords**: `password123`
-
-### 🔐 **Role Hierarchy & Permissions**
-
-```
-ADMIN (System-wide)
-├── Can access all merchants and outlets
-├── Can manage all users system-wide
-├── Can configure system settings
-└── Can view all analytics
-
-MERCHANT (Organization-wide)
-├── Can manage their merchant organization
-├── Can create and manage multiple outlets
-├── Can manage users within their organization
-└── Can access organization-wide analytics
-
-OUTLET_ADMIN (Outlet-wide)
-├── Can manage their assigned outlet
-├── Can manage outlet staff and users
-├── Can manage products and inventory
-└── Can access outlet-specific analytics
-
-OUTLET_STAFF (Limited outlet access)
-├── Can view outlet information
-├── Can process basic orders
-├── Can check product availability
-└── Can perform basic customer service
-```
-
-## 🧾 Seeded Tenants Overview
-
-### Merchants
-- merchant1 — Rental Shop Demo
-  - Description: Demo rental shop for testing with multiple outlets
-  - Outlets: Main Branch (outlet1), Downtown Branch (outlet2)
-- merchant2 — Outdoor Equipment Co.
-  - Description: Outdoor equipment rental company with beach and mountain outlets
-  - Outlets: Beach Branch (outlet3), Mountain Branch (outlet4)
-
-### Outlets
-- outlet1 — Main Branch (Merchant: Rental Shop Demo)
-  - Address: 123 Main Street, City Center
-  - Description: Main rental outlet in city center
-- outlet2 — Downtown Branch (Merchant: Rental Shop Demo)
-  - Address: 456 Downtown Ave, Business District
-  - Description: Downtown rental outlet for business customers
-- outlet3 — Beach Branch (Merchant: Outdoor Equipment Co.)
-  - Address: 789 Beach Road, Coastal Area
-  - Description: Beach equipment rental for water sports
-- outlet4 — Mountain Branch (Merchant: Outdoor Equipment Co.)
-  - Address: 321 Mountain Trail, Highland Area
-  - Description: Mountain equipment rental for hiking and climbing
-
-### Users (Accounts)
-
-#### **System Administrator**
-- **admin@rentalshop.com** (ADMIN)
-  - Role: System Administrator
-  - Scope: System-wide access
-  - Can manage: All merchants, outlets, and users
-
-#### **Merchant 1 (Rental Shop Demo)**
-- **merchant@rentalshop.com** (MERCHANT)
-  - Role: Merchant Owner
-  - Scope: Rental Shop Demo organization
-  - Can manage: Own organization, outlets, and users
-- **outlet_admin_main@rentalshop.com** (OUTLET_ADMIN)
-  - Role: Outlet Administrator
-  - Scope: Main Branch outlet
-  - Can manage: Own outlet, staff, and products
-- **outlet_staff_main@rentalshop.com** (OUTLET_STAFF)
-  - Role: Outlet Staff
-  - Scope: Main Branch outlet
-  - Can manage: Basic operations only
-- **outlet_admin_downtown@rentalshop.com** (OUTLET_ADMIN)
-  - Role: Outlet Administrator
-  - Scope: Downtown Branch outlet
-  - Can manage: Own outlet, staff, and products
-- **outlet_staff_downtown@rentalshop.com** (OUTLET_STAFF)
-  - Role: Outlet Staff
-  - Scope: Downtown Branch outlet
-  - Can manage: Basic operations only
-
-#### **Merchant 2 (Outdoor Equipment Co.)**
-- **merchant@outdoor.com** (MERCHANT)
-  - Role: Merchant Owner
-  - Scope: Outdoor Equipment Co. organization
-  - Can manage: Own organization, outlets, and users
-- **outlet_admin_beach@outdoor.com** (OUTLET_ADMIN)
-  - Role: Outlet Administrator
-  - Scope: Beach Branch outlet
-  - Can manage: Own outlet, staff, and products
-- **outlet_staff_beach@outdoor.com** (OUTLET_STAFF)
-  - Role: Outlet Staff
-  - Scope: Beach Branch outlet
-  - Can manage: Basic operations only
-- **outlet_admin_mountain@outdoor.com** (OUTLET_ADMIN)
-  - Role: Outlet Administrator
-  - Scope: Mountain Branch outlet
-  - Can manage: Own outlet, staff, and products
-- **outlet_staff_mountain@outdoor.com** (OUTLET_STAFF)
-  - Role: Outlet Staff
-  - Scope: Mountain Branch outlet
-  - Can manage: Basic operations only
-
-**All passwords**: `password123`
-
-### 🔐 **Role Hierarchy & Permissions**
-
-```
-ADMIN (System-wide)
-├── Can access all merchants and outlets
-├── Can manage all users system-wide
-├── Can configure system settings
-└── Can view all analytics
-
-MERCHANT (Organization-wide)
-├── Can manage their merchant organization
-├── Can create and manage multiple outlets
-├── Can manage users within their organization
-└── Can access organization-wide analytics
-
-OUTLET_ADMIN (Outlet-wide)
-├── Can manage their assigned outlet
-├── Can manage outlet staff and users
-├── Can manage products and inventory
-└── Can access outlet-specific analytics
-
-OUTLET_STAFF (Limited outlet access)
-├── Can view outlet information
-├── Can process basic orders
-├── Can check product availability
-└── Can perform basic customer service
-```
-
-## 📊 Database Management
-
-### View Database Contents
-
-```bash
-# Open Prisma Studio (visual interface)
-yarn db:studio
-
-# Or use the command line viewer
-yarn db:view
-```
-
-### Database Commands
-
-```bash
-# Reset and reseed database
-yarn db:reset
-
-# Generate Prisma client
-yarn db:generate
-
-# Push schema changes
-yarn db:push
-
-# Seed database
-yarn db:seed
-```
-
-## 📁 Project Structure
-
-```
-rentalshop-nextjs/
-├── apps/
-│   ├── client/          # Customer-facing app (Port 3000)
-│   │   ├── app/         # Next.js 14 App Router
-│   │   ├── components/  # Client-specific components
-│   │   └── lib/         # Client utilities
-│   ├── admin/           # Admin dashboard (Port 3001)
-│   │   ├── app/         # Next.js 14 App Router
-│   │   ├── components/  # Admin-specific components
-│   │   └── lib/         # Admin utilities
-│   └── api/             # API server (Port 3002)
-│       ├── app/         # Next.js 14 App Router
-│       ├── lib/         # API utilities
-│       └── middleware/  # API middleware
-├── packages/
-│   ├── ui/              # Shared UI components
-│   ├── auth/            # Authentication utilities
-│   ├── database/        # Database client and utilities
-│   └── utils/           # Common utilities
-├── prisma/
-│   ├── schema.prisma    # Database schema (SQLite for local, PostgreSQL for production)
-│   └── migrations/      # Database migrations
-└── scripts/
-    ├── setup-database.sh # Database setup script
-    └── view-database.js  # Database viewer script
-```
-
-## 🛠️ Available Commands
-
-### Development Commands
-
-```bash
-# Start all applications
-yarn dev:all
-
-# Start with specific environment
-yarn dev:local        # Local environment (SQLite)
-yarn dev:development  # Development environment (PostgreSQL)
-yarn dev:production   # Production environment (PostgreSQL)
-
-# Start individual apps
-cd apps/client && yarn dev    # Client app only
-cd apps/admin && yarn dev     # Admin app only
-cd apps/api && yarn dev       # API app only
-```
-
-### Build Commands
-
-```bash
-# Build all packages and apps
-yarn build
-
-# Build individual packages
+# Or build individual packages
+cd packages/types && yarn build
 cd packages/ui && yarn build
 cd packages/auth && yarn build
 cd packages/database && yarn build
 cd packages/utils && yarn build
+cd packages/hooks && yarn build
 ```
 
-### Database Commands
-
+### **5. Start Development**
 ```bash
-# Local environment (SQLite)
-yarn db:generate        # Generate Prisma client
-yarn db:push           # Push schema to database
-yarn db:seed           # Seed with sample data
+# Start all applications (recommended)
+yarn dev:all
 
-# Database management
-yarn db:studio         # Open Prisma Studio
-yarn db:view           # View database summary
-yarn db:reset          # Reset and reseed database
+# Alternative: Start all applications using turbo
+yarn dev
+
+# Or start specific apps individually
+yarn dev:client    # Client app (port 3000)
+yarn dev:admin     # Admin app (port 3001) 
+yarn dev:api       # API server (port 3002)
 ```
 
-### Utility Commands
+**Note**: `yarn dev:all` and `yarn dev` both run all applications simultaneously using Turbo. Use `yarn dev:client`, `yarn dev:admin`, or `yarn dev:api` to run only specific applications.
 
-```bash
-yarn lint               # Run ESLint
-yarn format             # Format code with Prettier
-yarn clean              # Clean build artifacts
+## 🏗️ **MONOREPO ARCHITECTURE**
+
+```
+rentalshop-nextjs/
+├── 📦 packages/                           # Shared packages for all platforms
+│   ├── 🎨 ui/                            # UI component library
+│   │   └── src/
+│   │       ├── components/
+│   │       │   ├── ui/                   # Shared UI primitives (buttons, cards, inputs)
+│   │       │   ├── features/             # Business logic components
+│   │       │   │   ├── Products/         # Product management
+│   │       │   │   ├── Orders/           # Order management
+│   │       │   │   ├── Customers/        # Customer management
+│   │       │   │   ├── Users/            # User management
+│   │       │   │   ├── Dashboard/        # Analytics & reporting
+│   │       │   │   ├── Calendars/        # Scheduling & availability
+│   │       │   │   ├── Settings/         # Configuration
+│   │       │   │   └── Shops/            # Shop management
+│   │       │   ├── forms/                # Pure form components
+│   │       │   │   ├── LoginForm.tsx
+│   │       │   │   ├── RegisterForm.tsx
+│   │       │   │   ├── CustomerForm.tsx
+│   │       │   │   ├── ProductForm.tsx
+│   │       │   │   ├── OrderForm.tsx
+│   │       │   │   ├── CreateOrderForm.tsx
+│   │       │   │   └── ForgetPasswordForm.tsx
+│   │       │   └── layout/               # Layout components
+│   │       ├── hooks/                   # UI-specific hooks
+│   │       ├── lib/                     # UI utilities
+│   │       └── index.tsx                # Main package exports
+│   │
+│   ├── 🔐 auth/                          # Complete authentication system
+│   │   └── src/
+│   │       ├── auth.ts                   # Core auth logic
+│   │       ├── client/                    # Client-specific auth
+│   │       │   └── index.ts              # ✅ COMPLETED
+│   │       ├── admin/                     # Admin-specific auth
+│   │       │   └── index.ts              # ✅ COMPLETED
+│   │       ├── browser.ts                 # Browser auth
+│   │       ├── jwt.ts                     # JWT handling
+│   │       ├── password.ts                # Password utilities
+│   │       ├── authorization.ts           # Role-based access control
+│   │       └── types.ts                   # Auth types
+│   │
+│   ├── 🗄️ database/                      # Database layer
+│   │   └── src/
+│   │       ├── client.ts                  # Prisma client
+│   │       ├── models/                    # Database operations
+│   │       ├── seed.ts                    # Database seeding
+│   │       └── types.ts                   # Database types
+│   │
+│   ├── 🎣 hooks/                          # React hooks & business logic
+│   │   └── src/
+│   │       ├── hooks/                     # Business logic hooks
+│   │       │   ├── useAuth.ts             # Authentication hook ✅
+│   │       │   ├── useProductAvailability.ts # Product availability hook ✅
+│   │       │   ├── useThrottledSearch.ts  # Debounced search hook ✅
+│   │       │   └── index.ts               # Hooks exports
+│   │       └── index.ts                   # Package exports
+│   │
+│   ├── 🛠️ utils/                          # Utilities and API layer
+│   │   └── src/
+│   │       ├── api/                       # ✅ COMPLETE API client
+│   │       │   ├── products.ts            # Product API
+│   │       │   ├── customers.ts           # Customer API
+│   │       │   ├── orders.ts              # Order API
+│   │       │   ├── outlets.ts             # Outlet API
+│   │       │   ├── analytics.ts           # Analytics API
+│   │       │   ├── categories.ts          # Category API
+│   │       │   ├── notifications.ts       # Notification API
+│   │       │   ├── profile.ts             # Profile API
+│   │       │   ├── shops.ts               # Shop API
+│   │       │   ├── users.ts               # User API
+│   │       │   └── index.ts               # API exports
+│   │       ├── config/                    # ✅ COMPLETE Configuration
+│   │       │   ├── index.ts               # Main config exports
+│   │       │   ├── main.ts                # Main configuration
+│   │       │   ├── api.ts                 # API configuration
+│   │       │   ├── database.ts            # Database configuration
+│   │       │   └── environment.ts         # Environment configuration
+│   │       ├── validation.ts              # Validation schemas
+│   │       ├── errors.ts                  # Error handling
+│   │       ├── common.ts                  # Common utilities
+│   │       ├── publicId.ts                # Public ID utilities
+│   │       ├── date.ts                    # Date utilities
+│   │       └── index.ts                   # Package exports
+│   │
+│   └── 📝 types/                          # Type system (✅ COMPLETED)
+│       └── src/
+│           ├── auth/                       # Authentication types
+│           ├── users/                      # User types
+│           ├── products/                   # Product types
+│           ├── orders/                     # Order types
+│           ├── customers/                  # Customer types
+│           ├── merchants/                  # Merchant types
+│           ├── outlets/                    # Outlet types
+│           └── index.ts                    # Main exports
+│
+├── 🌐 apps/                                # Application-specific code only
+│   ├── 📱 client/                         # Client application
+│   │   ├── app/                           # Next.js app router
+│   │   ├── components/                    # Client-specific components ONLY
+│   │   ├── lib/                           # ⚠️ PARTIAL - auth, hooks, utils still exist
+│   │   │   ├── auth/                      # ❌ REMOVE - moved to @rentalshop/auth
+│   │   │   ├── hooks/                     # ❌ REMOVE - moved to @rentalshop/hooks
+│   │   │   └── utils/                     # ❌ REMOVE - moved to @rentalshop/utils
+│   │   └── hooks/                         # ❌ REMOVE - moved to @rentalshop/hooks
+│   │
+│   ├── 🖥️ admin/                          # Admin application
+│   │   ├── app/                           # Next.js app router
+│   │   ├── components/                    # Admin-specific components ONLY
+│   │   ├── lib/                           # ⚠️ PARTIAL - auth, hooks still exist
+│   │   │   ├── auth/                      # ❌ REMOVE - moved to @rentalshop/auth
+│   │   │   └── hooks/                     # ❌ REMOVE - moved to @rentalshop/hooks
+│   │   └── hooks/                         # ❌ REMOVE - moved to @rentalshop/hooks
+│   │
+│   └── 🔌 api/                            # API server
+│       ├── app/                           # Next.js app router
+│       ├── lib/                           # API-specific only
+│       │   ├── swagger/                   # API documentation
+│       │   ├── middleware/                # API middleware
+│       │   ├── controllers/               # API controllers
+│       │   ├── validators/                # API validators
+│       │   ├── utils/                     # API utilities
+│       │   ├── jwt-edge.ts                # Edge-specific JWT
+│       │   └── database/                  # ❌ REMOVE - use @rentalshop/database
+│       └── types/                         # API-specific types
+│
+├── 🗄️ prisma/                             # Database (UNCHANGED)
+├── 📋 scripts/                             # Scripts (UNCHANGED)
+└── ⚙️ config/                              # Build configs (UNCHANGED)
 ```
 
-## 🔧 Troubleshooting
+## 📊 **CONSOLIDATION STATUS**
 
-### Common Issues
+### ✅ **COMPLETED PHASES**
+- **Phase 1: API Layer Consolidation** - ✅ **100% COMPLETE**
+- **Phase 2: Authentication Consolidation** - ✅ **100% COMPLETE**
+- **Phase 3: Configuration Consolidation** - ✅ **100% COMPLETE**
+- **Phase 4: Types Package Creation** - ✅ **100% COMPLETE**
 
-#### 1. Port Already in Use
+### 🔄 **CURRENT PHASE**
+- **Phase 5: Hooks Package Population** - 🚧 **IN PROGRESS**
+
+## 🛠️ **DEVELOPMENT COMMANDS**
+
+### **Package Management**
 ```bash
-# If you get "EADDRINUSE" error, kill existing processes
-lsof -ti:3000 | xargs kill -9  # Kill process on port 3000
-lsof -ti:3001 | xargs kill -9  # Kill process on port 3001
-lsof -ti:3002 | xargs kill -9  # Kill process on port 3002
-```
-
-#### 2. Dependencies Not Found
-```bash
-# Clean install dependencies
-rm -rf node_modules
-rm -rf apps/*/node_modules
-rm -rf packages/*/node_modules
+# Install dependencies
 yarn install
+
+# Add dependency to specific package
+cd packages/ui && yarn add react-hook-form
+
+# Add workspace dependency
+yarn add @rentalshop/types --workspace=packages/ui
 ```
 
-#### 3. Database Connection Issues
+### **Building & Development**
 ```bash
-# Reset local database
-rm -f prisma/dev.db
-yarn db:generate
-yarn db:push
+# Build all packages
+yarn build:packages
+
+# Build specific package
+cd packages/types && yarn build
+cd packages/ui && yarn build
+
+# Watch mode for development
+cd packages/ui && yarn dev
+
+# Type checking
+yarn type-check
+```
+
+### **Database Operations**
+```bash
+# Run migrations
+yarn db:migrate
+
+# Reset database
+yarn db:reset
+
+# Seed database
 yarn db:seed
 
-# Or use the setup script
-./scripts/setup-database.sh
+# Generate Prisma client
+yarn db:generate
+
+# Studio (database GUI)
+yarn db:studio
 ```
 
-#### 4. Build Errors
-```bash
-# Clean and rebuild
-yarn clean
-yarn build
-```
-
-### MetaMask Integration
-
-If you see MetaMask connection errors:
-
-1. **Install MetaMask Extension**:
-   - Go to [metamask.io](https://metamask.io)
-   - Install the browser extension
-   - Create or import a wallet
-
-2. **Configure MetaMask**:
-   - Add test networks if needed
-   - Ensure MetaMask is unlocked
-   - Grant permission to the website
-
-3. **Alternative**: The MetaMask integration is optional for basic functionality
-
-## 🔐 Authentication & Authorization
-
-### User Roles & Hierarchy
-
-Our system implements a **four-tier role hierarchy** designed for multi-tenant rental shop management:
-
-#### 🏢 **System Level**
-1. **ADMIN** (System Administrator)
-   - **Access**: Full system-wide access
-   - **Permissions**: 
-     - Manage all merchants and outlets
-     - Manage all users system-wide
-     - Access system-wide analytics
-     - Configure system settings
-     - View all data across the platform
-   - **Scope**: No merchant or outlet restrictions
-
-#### 🏪 **Merchant Level**
-2. **MERCHANT** (Business Owner)
-   - **Access**: Organization-wide access within their merchant
-   - **Permissions**:
-     - Manage their own merchant organization
-     - Create and manage multiple outlets
-     - Manage users within their organization
-     - Access organization-wide analytics
-     - Configure business settings
-   - **Scope**: Restricted to their merchant organization
-   - **Assignment**: Automatically assigned when users register
-
-#### 🏬 **Outlet Level**
-3. **OUTLET_ADMIN** (Outlet Manager)
-   - **Access**: Full access to their assigned outlet
-   - **Permissions**:
-     - Manage their assigned outlet
-     - Manage outlet staff and users
-     - Manage products and inventory
-     - Access outlet-specific analytics
-     - Process orders and payments
-   - **Scope**: Restricted to their assigned outlet
-   - **Assignment**: Must be assigned to specific outlet
-
-4. **OUTLET_STAFF** (Outlet Employee)
-   - **Access**: Limited access to their assigned outlet
-   - **Permissions**:
-     - View outlet information
-     - Process basic orders
-     - Check product availability
-     - Access limited outlet data
-     - Basic customer service functions
-   - **Scope**: Restricted to their assigned outlet
-   - **Assignment**: Must be assigned to specific outlet
-
-### Role Assignment Rules
-
-- **ADMIN**: Cannot be assigned to merchants or outlets (system-wide)
-- **MERCHANT**: Must be assigned to a merchant, cannot be assigned to specific outlets
-- **OUTLET_ADMIN**: Must be assigned to both a merchant and a specific outlet
-- **OUTLET_STAFF**: Must be assigned to both a merchant and a specific outlet
-
-### Default Setup
-
-When a user registers to the system:
-1. They are automatically assigned the **MERCHANT** role
-2. A default merchant organization is created for them
-3. A default outlet is created under their merchant
-4. They can then create additional outlets and assign staff
-
-### Access Control Matrix
-
-| Role | System Access | Merchant Access | Outlet Access | User Management | Product Management |
-|------|---------------|-----------------|---------------|------------------|-------------------|
-| **ADMIN** | ✅ Full | ✅ All Merchants | ✅ All Outlets | ✅ All Users | ✅ All Products |
-| **MERCHANT** | ❌ None | ✅ Own Merchant | ✅ Own Outlets | ✅ Own Users | ✅ Own Products |
-| **OUTLET_ADMIN** | ❌ None | ❌ None | ✅ Own Outlet | ✅ Own Outlet Users | ✅ Own Outlet Products |
-| **OUTLET_STAFF** | ❌ None | ❌ None | ⚠️ Limited | ❌ None | ⚠️ View Only |
-
-### Security Features
-
-- **Role-based Access Control (RBAC)**: Each role has specific permissions
-- **Merchant Isolation**: Users can only access data within their assigned scope
-- **Outlet Isolation**: Outlet users are restricted to their specific outlet
-- **Audit Logging**: All user actions are logged for security monitoring
-
-## 📱 Applications Overview
-
-### Client App (`http://localhost:3000`)
-- **Purpose**: Customer-facing rental interface
-- **Features**:
-  - Product browsing and rental
-  - User account management
-  - Payment processing
-  - Order tracking
-- **Target Users**: End customers
-
-### Admin App (`http://localhost:3001`)
-- **Purpose**: Super admin dashboard
-- **Features**:
-  - Merchant management
-  - System-wide analytics
-  - User management
-  - System settings
-- **Target Users**: System administrators
-
-### API App (`http://localhost:3002`)
-- **Purpose**: Backend API server
-- **Features**:
-  - RESTful API endpoints
-  - Authentication services
-  - Database operations
-  - File upload handling
-- **Target Users**: Frontend applications
-
-## 🗄️ Database Configuration
-
-### Local Development (SQLite)
-- **Database File**: `./dev.db`
-- **No external dependencies required**
-- **Perfect for development and testing**
-
-### Production (PostgreSQL)
-- **Requires PostgreSQL database**
-- **Configure connection string in environment variables**
-- **Supports advanced features and scalability**
-
-## 🔄 Environment Types
-
-### Local Environment (`NODE_ENV=local`)
-- ✅ Uses SQLite database
-- ✅ Console email logging
-- ✅ Local file storage
-- ✅ Debug logging
-- ✅ No email verification required
-- ✅ **Recommended for development**
-
-### Development Environment (`NODE_ENV=development`)
-- Uses PostgreSQL database
-- Resend email service
-- Cloudinary file storage
-- Info logging
-- Email verification enabled
-
-### Production Environment (`NODE_ENV=production`)
-- Uses PostgreSQL database
-- Resend email service
-- Cloudinary file storage
-- Warn logging
-- Email verification enabled
-- Rate limiting enabled
-
-## 🧪 Testing
-
+### **Testing & Quality**
 ```bash
 # Run tests
 yarn test
 
-# Run tests with coverage
-yarn test:coverage
+# Lint code
+yarn lint
 
-# Run tests in watch mode
-yarn test:watch
+# Format code
+yarn format
+
+# Type check
+yarn type-check
 ```
 
-## 📊 Health Checks
+## 🌐 **ACCESSING APPLICATIONS**
 
-### API Health Check
+After starting development:
+
+- **Client App**: http://localhost:3000
+- **Admin App**: http://localhost:3001  
+- **API Server**: http://localhost:3002
+- **API Docs**: http://localhost:3002/docs
+- **Database Studio**: http://localhost:5555
+
+## 🎯 **COMPONENT ORGANIZATION RULES**
+
+### **📁 `/forms` - Pure Form Components**
+- **Purpose**: Reusable form logic and validation
+- **Characteristics**: No API calls, no business logic, pure presentation
+- **Examples**: `LoginForm`, `CustomerForm`, `ProductForm`, `OrderForm`
+- **When to use**: Form inputs, validation, state management
+
+### **📁 `/ui` - Shared UI Primitives**
+- **Purpose**: Reusable UI components across all contexts
+- **Characteristics**: Pure presentation, multiple variants, no business logic
+- **Examples**: `Button`, `Card`, `Input`, `Table`, `Dialog`
+- **When to use**: Basic UI elements, layouts, design system components
+
+### **📁 `/features` - Business Logic Components**
+- **Purpose**: Complete business features with API integration
+- **Characteristics**: API calls, business logic, combines multiple components
+- **Examples**: `Products/`, `Customers/`, `Orders/`, `Users/`, `Dashboard/`
+- **When to use**: Business operations, data management, complex features
+
+### **📁 `/layout` - Layout Components**
+- **Purpose**: Page structure and navigation
+- **Characteristics**: Layout logic, navigation, no business domain knowledge
+- **Examples**: Navigation bars, sidebars, page wrappers
+- **When to use**: Page structure, navigation, layout management
+
+## 📦 **PACKAGE USAGE**
+
+### **UI Components**
+```typescript
+import { Button, Card, Input, Select } from '@rentalshop/ui';
+import { LoginForm, CustomerForm } from '@rentalshop/ui';
+import { Users, Products, Orders } from '@rentalshop/ui';
+```
+
+### **Authentication**
+```typescript
+import { useAuth, loginUser, logoutUser } from '@rentalshop/auth';
+import { hasAnyRole, canManageUsers } from '@rentalshop/auth';
+```
+
+### **API Client**
+```typescript
+import { 
+  getProducts, 
+  createCustomer, 
+  searchOrders 
+} from '@rentalshop/utils';
+```
+
+### **Database**
+```typescript
+import { prisma } from '@rentalshop/database';
+```
+
+### **Types**
+```typescript
+import type { User, Product, Order } from '@rentalshop/types';
+```
+
+## 🔐 **USER ROLE SYSTEM**
+
+### **Four-Tier Role Hierarchy**:
+1. **ADMIN** - System-wide access (no merchant/outlet restrictions)
+2. **MERCHANT** - Organization-wide access (merchant only, no outlet)
+3. **OUTLET_ADMIN** - Full outlet access (merchant + outlet)
+4. **OUTLET_STAFF** - Limited outlet access (merchant + outlet)
+
+### **Authorization Functions**:
+```typescript
+import { 
+  hasAnyRole, 
+  assertAnyRole, 
+  isMerchantLevel, 
+  isOutletTeam,
+  canManageUsers,
+  canManageOutlets,
+  canManageProducts 
+} from '@rentalshop/auth';
+```
+
+## 🔧 **DEVELOPMENT RULES**
+
+### **DRY Principles**:
+- ✅ Use shared packages for all common functionality
+- ✅ Never duplicate configurations across packages
+- ✅ Use centralized imports (`@rentalshop/ui`, `@rentalshop/auth`, etc.)
+- ❌ Don't create app-specific versions of shared components
+
+### **Component Organization**:
+- **`/forms`** - Pure form components (NO business logic, NO API calls)
+- **`/features`** - Business logic components (API calls, business operations)
+
+### **Authorization**:
+- ✅ Always check user permissions before sensitive operations
+- ✅ Use proper role-based access control functions
+- ✅ Validate user scope (merchant/outlet restrictions)
+
+## 📊 **PERFORMANCE OPTIMIZATION**
+
+### **Database**:
+- ✅ Proper indexing on frequently queried fields
+- ✅ Composite indexes for complex queries
+- ✅ Pagination for large datasets
+- ❌ No N+1 queries
+
+### **Bundle**:
+- ✅ Tree shaking with specific imports
+- ✅ External dependencies configuration
+- ✅ Minimal bundle sizes
+
+## 🚨 **SECURITY**
+
+### **Authentication**:
+- ✅ JWT-based authentication
+- ✅ Role-based access control
+- ✅ Scope validation (merchant/outlet isolation)
+
+### **Input Validation**:
+- ✅ Zod schemas for all inputs
+- ✅ Database constraints
+- ✅ Role assignment validation
+
+## 🐛 **TROUBLESHOOTING**
+
+### **Common Issues**
+
+**1. Types not found**
 ```bash
-curl http://localhost:3002/api/health
+# Rebuild types package
+cd packages/types && yarn build
+
+# Reinstall dependencies
+cd ../.. && yarn install
 ```
 
-### Database Health Check
+**2. Build errors**
 ```bash
-curl http://localhost:3002/api/health/database
+# Clean and rebuild
+yarn clean
+yarn build:packages
 ```
 
-## 🔒 Security Features
+**3. Database connection issues**
+```bash
+# Check environment variables
+cat .env.local
 
-- JWT-based authentication
-- Role-based access control
-- Password hashing with bcrypt
-- Rate limiting
-- CORS configuration
-- Input validation with Zod
-- SQL injection prevention (Prisma)
+# Test database connection
+yarn db:studio
+```
 
-## 📝 Contributing
+**4. Port conflicts**
+```bash
+# Kill processes on ports
+lsof -ti:3000 | xargs kill -9
+lsof -ti:3001 | xargs kill -9
+lsof -ti:3002 | xargs kill -9
+```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### **Development Tips**
+- Always run `yarn build:packages` after making changes to shared packages
+- Use `yarn type-check` to catch type errors early
+- Check the console for detailed error messages
+- Use the database studio to verify data
 
-## 📄 License
+## 📈 **NEXT STEPS**
+
+1. ✅ **Complete Phase 4** - Types package creation
+2. **Continue Phase 5** - Hooks package population
+3. **Clean up old directories** - Remove moved files
+4. **Update all imports** - Use shared packages
+5. **Test and validate** - Ensure everything works
+
+## 🤝 **CONTRIBUTING**
+
+1. Follow the DRY principles
+2. Use shared packages for common functionality
+3. Implement proper authorization
+4. Follow TypeScript best practices
+5. Test your changes thoroughly
+
+## 📄 **LICENSE**
 
 This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For support and questions:
-
-1. Check this documentation
-2. Search existing issues
-3. Create a new issue with detailed information
-
-## 🎯 Current Status
-
-✅ **All applications running successfully**
-- Client App: http://localhost:3000
-- Admin App: http://localhost:3001
-- API App: http://localhost:3002
-
-✅ **All packages building successfully**
-- UI Package: Shared components
-- Auth Package: Authentication utilities
-- Database Package: Database client
-- Utils Package: Common utilities
-
-✅ **Database seeded with comprehensive sample data**
-- **11 Users**: Admin, Merchant, Manager, Staff, Client accounts
-- **6 Categories**: Electronics, Tools, Party Equipment, Sports Equipment, Furniture, Vehicles
-- **1 Merchant**: Sample Rental Company
-- **3 Outlets**: Downtown Rental Center, Westside Equipment, Party Palace
-- **2 Admin Records**: Super Admin accounts
-- **15 Customers**: Sample customer profiles with complete information
-- **13 Products**: Various rental items across all categories
-- **6 Sample Orders**: Including RENT, SALE, ACTIVE, PENDING, COMPLETED, and OVERDUE orders
-
-✅ **Authentication working**
-- JWT-based authentication
-- Role-based access control
-- Test accounts ready for all user types
-
-✅ **API Documentation available**
-- SwaggerUI: http://localhost:3002/docs
-- OpenAPI spec: http://localhost:3002/api/docs
-
-## 🚀 Next Steps
-
-1. **Explore the applications** using the provided test accounts
-2. **Customize the environment** by editing `.env.local`
-3. **Add your own data** through the admin interface
-4. **Extend functionality** by modifying the packages
-5. **Deploy to production** when ready 

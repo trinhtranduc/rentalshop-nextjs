@@ -9,13 +9,13 @@ import {
   PageTitle,
   PageContent
 } from '@rentalshop/ui';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 
 // Import types from the Users feature
 import type { UserData, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput, User } from '@rentalshop/ui';
 
 // Import the users API client
-import { usersApi } from '../../lib/api/users';
+import { usersApi } from "@rentalshop/utils";
 
 export default function UsersPage() {
   const { user, logout } = useAuth();

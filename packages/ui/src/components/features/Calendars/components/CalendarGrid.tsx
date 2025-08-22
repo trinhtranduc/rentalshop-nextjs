@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDay, PickupOrder } from '../types';
+import { CalendarDay, PickupOrder } from '@rentalshop/types';
 
 interface CalendarGridProps {
   currentDate: Date;

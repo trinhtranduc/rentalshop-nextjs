@@ -2,8 +2,8 @@ import React, { useCallback, useMemo } from 'react';
 import { Input } from '../../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
-import { CustomerFilters } from '../types';
-import { useThrottledSearch } from '@rentalshop/ui';
+import { CustomerFilters } from '@rentalshop/types';
+import { useThrottledSearch } from '@rentalshop/hooks';
 
 interface CustomerSearchProps {
   filters: CustomerFilters;
@@ -61,22 +61,6 @@ export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onCle
               value={query} // Use the throttled query state
               onChange={handleInputChange} // Use our debug handler
             />
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Status
-            </label>
-            <Select value={filters.status || 'active'} onValueChange={(value) => handleFilterChange('status', value)}>
-              <SelectTrigger className="min-w-[250px] h-10">
-                <SelectValue placeholder="Select Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active Customers</SelectItem>
-                <SelectItem value="inactive">Inactive Customers</SelectItem>
-                <SelectItem value="blocked">Blocked Customers</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </CardContent>

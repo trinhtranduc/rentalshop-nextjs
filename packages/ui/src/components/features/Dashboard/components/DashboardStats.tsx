@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import { DashboardStats as DashboardStatsType } from '../types';
+import { DashboardStats as DashboardStatsType } from '@rentalshop/types';
 
 interface DashboardStatsProps {
   stats: DashboardStatsType;

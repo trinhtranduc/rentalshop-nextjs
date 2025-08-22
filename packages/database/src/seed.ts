@@ -1,6 +1,6 @@
 import { prisma } from './client';
 import { createOrder, updateOrder, cancelOrder } from './order';
-import type { OrderInput, OrderType, OrderStatus } from './types';
+import type { OrderInput, OrderType, OrderStatus } from '@rentalshop/types';
 
 async function main() {
   console.log('🌱 Starting comprehensive database seed with four-tier role system...');

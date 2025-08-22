@@ -7,7 +7,7 @@ import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Card, CardContent } from '../../../ui/card';
-import type { User, UserUpdateInput } from '../types';
+import type { User, UserUpdateInput } from '@rentalshop/types';
 
 interface EditUserFormProps {
   user: User;

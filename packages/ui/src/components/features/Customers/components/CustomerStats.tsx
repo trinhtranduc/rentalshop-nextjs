@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import { Badge } from '../../../ui/badge';
-import { CustomerStats as CustomerStatsType, TopCustomer } from '../types';
+import { CustomerStats as CustomerStatsType, TopCustomer } from '@rentalshop/types';
 
 interface CustomerStatsProps {
   stats: CustomerStatsType;
@@ -25,6 +25,11 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
     });
   };
 
+  // Calculate derived stats from available data
+  const activeCustomers = stats.topCustomers.length; // Customers with orders
+  const totalRevenue = stats.topCustomers.reduce((sum, customer) => sum + customer.totalSpent, 0);
+  const averageOrderValue = activeCustomers > 0 ? totalRevenue / activeCustomers : 0;
+
   return (
     <div className="space-y-6">
       {/* Top Customers */}
@@ -38,7 +43,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
         <CardContent>
           <div className="space-y-4">
             {stats.topCustomers.map((customer, index) => (
-              <div key={customer.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div key={customer.customer.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                     index === 0 ? 'bg-yellow-100 text-yellow-800' :
@@ -50,10 +55,10 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
                   </div>
                   <div>
                     <div className="font-medium text-gray-900 dark:text-white">
-                      {customer.name}
+                      {`${customer.customer.firstName} ${customer.customer.lastName}`}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {customer.totalOrders} orders
+                      {customer.orderCount} orders
                     </div>
                   </div>
                 </div>
@@ -63,7 +68,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
                     {formatCurrency(customer.totalSpent)}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Last: {formatDate(customer.lastOrderDate)}
+                    Customer ID: {customer.customer.publicId}
                   </div>
                 </div>
               </div>
@@ -92,10 +97,10 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
                   <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div 
                       className="bg-green-600 h-2 rounded-full" 
-                      style={{ width: `${(stats.activeCustomers / stats.totalCustomers) * 100}%` }}
+                      style={{ width: `${(activeCustomers / stats.totalCustomers) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium">{stats.activeCustomers}</span>
+                  <span className="text-sm font-medium">{activeCustomers}</span>
                 </div>
               </div>
               
@@ -105,23 +110,23 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
                   <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div 
                       className="bg-gray-600 h-2 rounded-full" 
-                      style={{ width: `${(stats.inactiveCustomers / stats.totalCustomers) * 100}%` }}
+                      style={{ width: `${((stats.totalCustomers - activeCustomers) / stats.totalCustomers) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium">{stats.inactiveCustomers}</span>
+                  <span className="text-sm font-medium">{stats.totalCustomers - activeCustomers}</span>
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Blocked</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">New This Month</span>
                 <div className="flex items-center space-x-2">
-                  <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="w-20 bg-blue-200 dark:bg-blue-700 rounded-full h-2">
                     <div 
-                      className="bg-red-600 h-2 rounded-full" 
-                      style={{ width: `${(stats.blockedCustomers / stats.totalCustomers) * 100}%` }}
+                      className="bg-blue-600 h-2 rounded-full" 
+                      style={{ width: `${(stats.newCustomersThisMonth / stats.totalCustomers) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium">{stats.blockedCustomers}</span>
+                  <span className="text-sm font-medium">{stats.newCustomersThisMonth}</span>
                 </div>
               </div>
             </div>
@@ -136,7 +141,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Average Order Value</span>
-                <span className="font-medium">{formatCurrency(stats.averageOrderValue)}</span>
+                <span className="font-medium">{formatCurrency(averageOrderValue)}</span>
               </div>
               
               <div className="flex items-center justify-between">
@@ -150,7 +155,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
               
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</span>
-                <span className="font-medium text-lg">{formatCurrency(stats.totalRevenue)}</span>
+                <span className="font-medium text-lg">{formatCurrency(totalRevenue)}</span>
               </div>
             </div>
           </CardContent>

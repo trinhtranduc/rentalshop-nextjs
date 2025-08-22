@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
-import { OrderStats } from '../types';
+import { OrderStats } from '@rentalshop/types';
 
 interface OrderHeaderProps {
   totalOrders: number;

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AddUserForm, UserPageHeader, UserInfoCard, ToastContainer } from '@rentalshop/ui';
-import { usersApi } from '../../../lib/api';
+import { usersApi } from "@rentalshop/utils";
 import type { UserCreateInput } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
 

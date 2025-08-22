@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@rentalshop/ui';
 import { Badge } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
-import { Order } from '../types';
+import { Order } from '@rentalshop/types';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface OrderTableProps {

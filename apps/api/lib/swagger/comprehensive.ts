@@ -1,7 +1,7 @@
 /**
  * Comprehensive Swagger documentation for all Rental Shop APIs
  */
-import { getApiUrl } from '../config';
+import { getApiUrl } from '@rentalshop/utils';
 
 export const comprehensiveSwaggerConfig = {
   openapi: '3.0.0',

@@ -32,7 +32,7 @@ import {
   ArrowRight,
   ArrowLeft
 } from 'lucide-react';
-import type { ProductWithDetails } from '../types';
+import type { ProductWithDetails } from '@rentalshop/types';
 import { formatCurrency, formatDate } from '../../../../lib';
 
 interface ProductDetailListProps {

@@ -15,13 +15,13 @@ import {
 import { ProductEdit } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth } from '../../../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 import { 
   getProductById, 
   updateProduct,
   getCategories, 
   getOutlets 
-} from '../../../../lib/api/products';
+} from "@rentalshop/utils";
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/ui';
 import type { ProductInput } from '@rentalshop/database';
 

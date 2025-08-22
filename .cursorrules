@@ -146,6 +146,9 @@ if (canManageProducts(user)) {
 /forms/CustomerForm.tsx       // Form logic + validation  
 /forms/OrderForm.tsx          // Form logic + validation
 /forms/LoginForm.tsx          // Form logic + validation
+/forms/RegisterForm.tsx       // Form logic + validation
+/forms/ForgetPasswordForm.tsx // Form logic + validation
+/forms/CreateOrderForm.tsx    // Form logic + validation
 ```
 
 **Characteristics:**
@@ -166,10 +169,14 @@ if (canManageProducts(user)) {
 **Examples:**
 ```typescript
 // ✅ GOOD: Business logic components
-/features/ProductDialog.tsx   // Dialog + API calls + business logic
-/features/ProductTable.tsx    // Table + data fetching + actions
-/features/ProductCard.tsx     // Card + business operations
-/features/CustomerDialog.tsx  // Dialog + API calls + business logic
+/features/Products/           // Product management + API calls
+/features/Customers/          // Customer management + API calls
+/features/Orders/             // Order management + API calls
+/features/Users/              // User management + API calls
+/features/Dashboard/          // Analytics + data fetching
+/features/Calendars/          // Calendar + scheduling logic
+/features/Settings/           // Configuration + business logic
+/features/Shops/              // Shop management + API calls
 ```
 
 **Characteristics:**
@@ -179,6 +186,32 @@ if (canManageProducts(user)) {
 - Handles save/cancel operations
 - Specific to business domain
 
+#### **📁 `/ui` - Shared UI Components**
+**When to create here:**
+- **Reusable UI primitives** (buttons, inputs, cards, etc.)
+- **Layout components** (navigation, sidebars, etc.)
+- **Utility components** (skeletons, loaders, etc.)
+- **NO business logic, pure presentation**
+
+**Examples:**
+```typescript
+// ✅ GOOD: Shared UI components
+/ui/button.tsx               // Button variants + styling
+/ui/card.tsx                 // Card layout + variants
+/ui/input.tsx                // Input field + validation states
+/ui/table.tsx                // Table structure + sorting
+/ui/dialog.tsx               // Modal dialogs + overlays
+/ui/skeleton.tsx             // Loading placeholders
+/ui/charts/                  // Chart components + data viz
+```
+
+**Characteristics:**
+- Pure presentation components
+- Multiple variants and themes
+- Reusable across all contexts
+- No business domain knowledge
+- Consistent design system
+
 #### **Component Decision Tree**
 ```
 Is it a FORM with validation and inputs?
@@ -186,6 +219,12 @@ Is it a FORM with validation and inputs?
 │   ├─ Does it make API calls? → NO ✅
 │   ├─ Does it have business logic? → NO ✅
 │   └─ Is it reusable across contexts? → YES ✅
+│
+├─ Is it a UI primitive or layout component?
+├─ YES → /ui/
+│   ├─ Does it have business logic? → NO ✅
+│   ├─ Is it purely presentational? → YES ✅
+│   └─ Is it reusable everywhere? → YES ✅
 │
 └─ NO → /features/
     ├─ Does it make API calls? → YES ✅
@@ -196,11 +235,14 @@ Is it a FORM with validation and inputs?
 
 #### **Quick Rules of Thumb**
 1. **`/forms`** = "How to collect and validate data"
-2. **`/features`** = "What to do with the data + business operations"
-3. **`/forms`** = Reusable across different business contexts
-4. **`/features`** = Specific to business domain
-5. **`/forms`** = No API calls, no business logic
-6. **`/features`** = API calls, business logic, data management
+2. **`/ui`** = "How to present and layout content"
+3. **`/features`** = "What to do with the data + business operations"
+4. **`/forms`** = Reusable across different business contexts
+5. **`/ui`** = Reusable across ALL contexts (pure presentation)
+6. **`/features`** = Specific to business domain
+7. **`/forms`** = No API calls, no business logic
+8. **`/ui`** = No API calls, no business logic, pure presentation
+9. **`/features`** = API calls, business logic, data management
 
 ### **Database Design Principles & Performance**
 
@@ -430,6 +472,104 @@ export default defineConfig({
   dts: true,
   // ... 15+ lines of duplicated config
 });
+```
+
+### **Repository Structure & Organization**
+
+#### **📁 Root Level Structure**
+```
+rentalshop-nextjs/
+├── apps/                          # Next.js applications
+│   ├── client/                    # Customer-facing rental shop app
+│   ├── admin/                     # Admin dashboard app
+│   └── api/                       # Backend API server
+├── packages/                      # Shared packages
+│   ├── ui/                        # UI component library
+│   ├── auth/                      # Authentication & authorization
+│   ├── database/                  # Database utilities & Prisma
+│   ├── types/                     # TypeScript type definitions
+│   ├── utils/                     # Utility functions & API clients
+│   └── hooks/                     # React hooks & business logic
+├── prisma/                        # Database schema & migrations
+├── scripts/                       # Development & deployment scripts
+└── config files                   # Root configuration files
+```
+
+#### **📁 Packages Structure**
+```
+packages/
+├── ui/src/components/
+│   ├── forms/                     # Pure form components
+│   │   ├── LoginForm.tsx
+│   │   ├── RegisterForm.tsx
+│   │   ├── CustomerForm.tsx
+│   │   ├── ProductForm.tsx
+│   │   ├── OrderForm.tsx
+│   │   ├── CreateOrderForm.tsx
+│   │   └── ForgetPasswordForm.tsx
+│   ├── features/                  # Business logic components
+│   │   ├── Products/              # Product management
+│   │   ├── Customers/             # Customer management
+│   │   ├── Orders/                # Order management
+│   │   ├── Users/                 # User management
+│   │   ├── Dashboard/             # Analytics & reporting
+│   │   ├── Calendars/             # Scheduling & availability
+│   │   ├── Settings/              # Configuration
+│   │   └── Shops/                 # Shop management
+│   ├── ui/                        # Shared UI primitives
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── input.tsx
+│   │   ├── table.tsx
+│   │   ├── dialog.tsx
+│   │   ├── skeleton.tsx
+│   │   └── charts/                # Chart components
+│   └── layout/                    # Layout components
+├── auth/src/                      # Authentication logic
+├── database/src/                   # Database utilities
+├── types/src/                      # Type definitions
+├── utils/src/                      # Utility functions
+│   ├── api/                       # API client functions
+│   ├── config/                    # Configuration utilities
+│   └── common.ts                  # Common utilities
+└── hooks/src/                      # React hooks
+    └── hooks/                      # Business logic hooks
+        ├── useAuth.ts
+        ├── useProductAvailability.ts
+        └── useThrottledSearch.ts
+```
+
+#### **📁 Apps Structure**
+```
+apps/
+├── client/                        # Customer rental shop
+│   ├── app/                       # Next.js 13+ app directory
+│   │   ├── dashboard/             # Customer dashboard
+│   │   ├── products/              # Product browsing
+│   │   ├── orders/                # Order management
+│   │   ├── customers/             # Customer profiles
+│   │   └── settings/              # User settings
+│   └── lib/                       # Client utilities
+├── admin/                         # Admin dashboard
+│   ├── app/                       # Next.js 13+ app directory
+│   │   ├── dashboard/             # Admin overview
+│   │   ├── users/                 # User management
+│   │   ├── products/              # Product management
+│   │   ├── orders/                # Order management
+│   │   └── analytics/             # Business analytics
+│   └── lib/                       # Admin utilities
+└── api/                           # Backend API server
+    ├── app/                       # Next.js 13+ app directory
+    │   └── api/                   # API routes
+    │       ├── auth/               # Authentication endpoints
+    │       ├── products/           # Product endpoints
+    │       ├── orders/             # Order endpoints
+    │       ├── customers/          # Customer endpoints
+    │       ├── users/              # User endpoints
+    │       └── analytics/          # Analytics endpoints
+    ├── lib/                       # API utilities
+    ├── middleware/                 # API middleware
+    └── validators/                 # Input validation
 ```
 
 ### **Code Organization Rules**

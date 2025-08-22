@@ -1,6 +1,6 @@
 import React from 'react';
 import { Package, User, Mail, Clock } from 'lucide-react';
-import type { PickupOrder } from '../types';
+import type { PickupOrder } from '@rentalshop/types';
 
 interface OrdersListProps {
   orders: PickupOrder[];

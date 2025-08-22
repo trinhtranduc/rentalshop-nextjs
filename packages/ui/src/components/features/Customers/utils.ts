@@ -1,4 +1,4 @@
-import { Customer, CustomerFilters, CustomerData, CustomerStats } from './types';
+import { Customer, CustomerFilters, CustomerData, CustomerStats } from '@rentalshop/types';
 
 export const filterCustomers = (customers: Customer[], filters: CustomerFilters): Customer[] => {
   return customers.filter(customer => {

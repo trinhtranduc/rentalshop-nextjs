@@ -1,18 +1,18 @@
 import React from 'react';
 import { 
-  OrderListHeader,
-  OrderListFilters,
+  OrderHeader,
+  OrderFilters,
   OrderTable,
   OrderListActions,
   OrderStats,
   OrderPagination
 } from './components';
-import { OrderData, OrderFilters as OrderFiltersType } from './types';
+import type { OrdersData, OrderFilters } from '@rentalshop/types';
 
 interface OrdersProps {
-  data: OrderData;
-  filters: OrderFiltersType;
-  onFiltersChange: (filters: OrderFiltersType) => void;
+  data: OrdersData;
+  filters: OrderFilters;
+  onFiltersChange: (filters: OrderFilters) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
   onOrderAction: (action: string, orderId: string) => void;
@@ -32,12 +32,12 @@ export function Orders({
 }: OrdersProps) {
   return (
     <div className="space-y-6">
-      <OrderListHeader 
+      <OrderHeader
         totalOrders={data.total}
         stats={data.stats}
       />
       
-      <OrderListFilters 
+      <OrderFilters 
         filters={filters}
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}

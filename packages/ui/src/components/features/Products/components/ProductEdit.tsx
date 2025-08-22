@@ -12,7 +12,7 @@ import { useToasts } from '../../../ui/toast';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 // import { ProductForm } from '../../../forms/ProductForm';
 import type { ProductInput, ProductUpdateInput } from '@rentalshop/database';
-import type { ProductWithDetails, Category, Outlet } from '../types';
+import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
 interface ProductEditFormProps {
   product: ProductWithDetails;

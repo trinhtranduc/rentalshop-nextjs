@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TrendingUp, Package, DollarSign, User, MapPin, FileText } from 'lucide-react';
-import { OrderDetailProps, SettingsForm } from './types';
+import { OrderDetailProps, SettingsForm } from '@rentalshop/types';
 import {
   OrderHeader,
   StatusBadges,

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars } from '@rentalshop/ui';
-import { useAuth } from '../../hooks/useAuth';
-import { ordersApi } from '../../lib/api';
+import { useAuth } from '@rentalshop/hooks';
+import { ordersApi } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
 export default function CalendarPage() {

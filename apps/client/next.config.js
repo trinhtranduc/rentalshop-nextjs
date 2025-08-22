@@ -71,6 +71,11 @@ const nextConfig = {
   
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
+    // Add aliases for workspace packages to ensure proper resolution
+    config.resolve.alias = {
+      ...config.resolve.alias
+    };
+    
     // Optimize bundle size
     if (!dev && !isServer) {
       config.optimization.splitChunks = {

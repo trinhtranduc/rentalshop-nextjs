@@ -11,8 +11,10 @@
   "dependencies": {
     "@hookform/resolvers": "^3.3.0",
     "@rentalshop/auth": "file:../../packages/auth",
+    "@rentalshop/hooks": "file:../../packages/hooks",
     "@rentalshop/ui": "file:../../packages/ui",
     "@rentalshop/utils": "file:../../packages/utils",
+    "critters": "^0.0.25",
     "formik": "^2.4.6",
     "lucide-react": "^0.263.0",
     "next": "^14.0.0",

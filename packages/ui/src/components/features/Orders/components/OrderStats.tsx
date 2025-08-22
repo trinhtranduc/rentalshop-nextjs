@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
 import { Badge } from '@rentalshop/ui';
-import { OrderStats as OrderStatsType } from '../types';
+import { OrderStats as OrderStatsType } from '@rentalshop/types';
 
 interface OrderStatsProps {
   stats: OrderStatsType;

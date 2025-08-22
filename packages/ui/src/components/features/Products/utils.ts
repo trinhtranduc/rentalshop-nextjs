@@ -1,4 +1,4 @@
-import { Product, ProductFilters, ProductData } from './types';
+import { Product, ProductFilters, ProductData } from '@rentalshop/types';
 
 export const filterProducts = (products: Product[], filters: ProductFilters): Product[] => {
   return products.filter(product => {

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import { Badge } from '../../../ui/badge';
 import { Button } from '../../../ui/button';
 import { Mail, Phone, Calendar, Building, User as UserIcon } from 'lucide-react';
-import type { User } from '../types';
+import type { User } from '@rentalshop/types';
 
 interface UserCardProps {
   user: User;

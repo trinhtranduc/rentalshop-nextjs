@@ -7,12 +7,4 @@ export { default as Products } from './Products';
 export * from './components';
 
 
-// ============================================================================
-// PRODUCT TYPES
-// ============================================================================
-export type { 
-  ProductData, 
-  Category,
-  Outlet,
-  ProductWithDetails
-} from './types';
+// Note: Types are imported directly from @rentalshop/types where needed

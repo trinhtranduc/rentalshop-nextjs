@@ -12,7 +12,7 @@ import type {
   OrderStats,
   OrderType,
   OrderStatus,
-} from './types';
+} from '@rentalshop/types';
 
 // Generate order number (e.g., 2024-001)
 export function generateOrderNumber(): string {
@@ -104,7 +104,7 @@ export async function createOrder(input: OrderInput, userId: string): Promise<Or
 
 // Get order by ID with all details
 export async function getOrderById(orderId: string): Promise<OrderWithDetails | null> {
-  return await prisma.order.findUnique({
+  const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
       // user removed from includes to match new schema
@@ -122,6 +122,13 @@ export async function getOrderById(orderId: string): Promise<OrderWithDetails | 
           id: true,
           name: true,
           address: true,
+          merchantId: true,
+          merchant: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       orderItems: {
@@ -141,11 +148,19 @@ export async function getOrderById(orderId: string): Promise<OrderWithDetails | 
       // orderHistory removed in new schema
     },
   });
+
+  if (!order) return null;
+
+  // Transform the data to match OrderWithDetails interface
+  return {
+    ...order,
+    merchantId: order.outlet.merchantId,
+  } as OrderWithDetails;
 }
 
 // Get order by order number
 export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDetails | null> {
-  return await prisma.order.findUnique({
+  const order = await prisma.order.findUnique({
     where: { orderNumber },
     include: {
       // user removed from includes to match new schema
@@ -163,6 +178,13 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
           id: true,
           name: true,
           address: true,
+          merchantId: true,
+          merchant: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       orderItems: {
@@ -182,6 +204,14 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
       // orderHistory removed in new schema
     },
   });
+
+  if (!order) return null;
+
+  // Transform the data to match OrderWithDetails interface
+  return {
+    ...order,
+    merchantId: order.outlet.merchantId,
+  } as OrderWithDetails;
 }
 
 // Update order

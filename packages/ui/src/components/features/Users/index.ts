@@ -18,7 +18,7 @@ export type {
   UserFilters, 
   UserData, 
   UserAction 
-} from './types';
+} from '@rentalshop/types';
 
 // ============================================================================
 // USER UTILITIES

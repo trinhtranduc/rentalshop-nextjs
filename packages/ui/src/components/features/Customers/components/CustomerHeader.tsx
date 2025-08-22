@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import { CustomerStats } from '../types';
+import { CustomerStats } from '@rentalshop/types';
 
 interface CustomerHeaderProps {
   totalCustomers: number;
@@ -16,6 +16,10 @@ export function CustomerHeader({ totalCustomers, stats }: CustomerHeaderProps) {
       maximumFractionDigits: 0
     }).format(amount);
   };
+
+  // Calculate derived stats from available data
+  const activeCustomers = stats.topCustomers.length; // Customers with orders
+  const totalRevenue = stats.topCustomers.reduce((sum, customer) => sum + customer.totalSpent, 0);
 
   return (
     <div className="space-y-6">
@@ -44,10 +48,10 @@ export function CustomerHeader({ totalCustomers, stats }: CustomerHeaderProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {stats.activeCustomers.toLocaleString()}
+              {activeCustomers.toLocaleString()}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {((stats.activeCustomers / stats.totalCustomers) * 100).toFixed(1)}% of total
+              {((activeCustomers / stats.totalCustomers) * 100).toFixed(1)}% of total
             </p>
           </CardContent>
         </Card>
@@ -76,7 +80,7 @@ export function CustomerHeader({ totalCustomers, stats }: CustomerHeaderProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {formatCurrency(stats.totalRevenue)}
+              {formatCurrency(totalRevenue)}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               From all customers

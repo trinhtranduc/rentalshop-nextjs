@@ -2,8 +2,8 @@ import React, { useCallback, useMemo } from 'react';
 import { Input } from '../../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
-import { ProductFilters as ProductFiltersType } from '../types';
-import { useThrottledSearch } from '../../../../hooks/useThrottledSearch';
+import { ProductFilters as ProductFiltersType } from '@rentalshop/types';
+import { useThrottledSearch } from '@rentalshop/hooks';
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;

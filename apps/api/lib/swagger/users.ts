@@ -1,7 +1,7 @@
 /**
  * Swagger documentation for User Management APIs
  */
-import { getApiUrl } from '../config';
+import { getApiUrl } from '@rentalshop/utils';
 
 export const userSwaggerConfig = {
   openapi: '3.0.0',

@@ -19,7 +19,7 @@ import {
   UserX,
   Trash2
 } from 'lucide-react';
-import { usersApi } from '../../../lib/api/users';
+import { usersApi } from "@rentalshop/utils";
 import type { User, UserUpdateInput } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
 

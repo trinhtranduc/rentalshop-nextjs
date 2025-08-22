@@ -5,8 +5,8 @@ import { UserGrid } from './components/UserGrid';
 import { UserTable } from './components/UserTable';
 import { UserPagination } from './components/UserPagination';
 import { ToastContainer, useToasts } from '../../ui/toast';
-import type { UserData, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput } from './types';
-import { User } from './types';
+import type { UserData, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
+import { User } from '@rentalshop/types';
 import { Button } from '../../ui/button';
 import { Grid, List, Plus } from 'lucide-react';
 

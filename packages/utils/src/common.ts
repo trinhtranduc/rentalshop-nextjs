@@ -65,4 +65,117 @@ export const isValidEmail = (email: string): boolean => {
 export const isValidPhone = (phone: string): boolean => {
   const phoneRegex = /^(\+84|84|0)[3|5|7|8|9][0-9]{8}$/;
   return phoneRegex.test(phone.replace(/\s/g, ''));
+};
+
+// ============================================================================
+// API UTILITIES
+// ============================================================================
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Create API URL with proper base URL
+ */
+export const createApiUrl = (endpoint: string): string => {
+  // Remove leading slash if present
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  
+  // Check if it's already a full URL
+  if (cleanEndpoint.startsWith('http://') || cleanEndpoint.startsWith('https://')) {
+    return cleanEndpoint;
+  }
+  
+  // For relative endpoints, construct full URL
+  if (cleanEndpoint.startsWith('api/')) {
+    // Use environment-specific API URL
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    return `${baseUrl}/${cleanEndpoint}`;
+  }
+  
+  // Default to relative API path
+  return `/api/${cleanEndpoint}`;
+};
+
+/**
+ * Authenticated fetch wrapper
+ */
+export const authenticatedFetch = async (
+  url: string, 
+  options: RequestInit = {}
+): Promise<Response> => {
+  const token = typeof window !== 'undefined' 
+    ? localStorage.getItem('authToken') 
+    : null;
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+};
+
+/**
+ * Parse API response
+ */
+export const parseApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
+  if (!response.ok) {
+    const errorText = await response.text();
+    try {
+      const errorData = JSON.parse(errorText);
+      return {
+        success: false,
+        error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+      };
+    } catch {
+      return {
+        success: false,
+        error: `HTTP ${response.status}: ${response.statusText}`,
+      };
+    }
+  }
+
+  try {
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: 'Failed to parse response',
+    };
+  }
+};
+
+/**
+ * Execute with data refresh
+ */
+export const executeWithDataRefresh = async <T>(
+  operation: () => Promise<T>,
+  refreshCallback?: () => void
+): Promise<T> => {
+  try {
+    const result = await operation();
+    if (refreshCallback) {
+      refreshCallback();
+    }
+    return result;
+  } catch (error) {
+    console.error('Operation failed:', error);
+    throw error;
+  }
 }; 

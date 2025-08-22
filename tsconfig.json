@@ -1,33 +1,28 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["dom", "dom.iterable", "es6"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "outDir": "./dist",
+    "rootDir": ".",
     "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@rentalshop/ui": ["./packages/ui/src"],
-      "@rentalshop/auth": ["./packages/auth/src"],
-      "@rentalshop/database": ["./packages/database/src"],
-      "@rentalshop/utils": ["./packages/utils/src"]
-    }
+    "jsx": "preserve"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "packages/**/src/**/*.ts",
+    "packages/**/src/**/*.d.ts",
+    "apps/**/src/**/*.ts",
+    "apps/**/src/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".next",
+    "**/node_modules",
+    "**/dist",
+    "**/.next",
+    "**/*.tsx",
+    "**/*.jsx"
+  ]
 } 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserCard } from './UserCard';
-import type { User } from '../types';
+import type { User } from '@rentalshop/types';
 
 interface UserGridProps {
   users: User[];

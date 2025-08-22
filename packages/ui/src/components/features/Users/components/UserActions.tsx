@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../../../ui/button';
 import { ConfirmationDialog } from './ConfirmationDialog';
 import { UserDetailDialog } from './UserDetailDialog';
-import type { User, UserCreateInput, UserUpdateInput } from '../types';
+import type { User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { formatPublicId } from '@rentalshop/utils';
 
 interface UserActionsProps {

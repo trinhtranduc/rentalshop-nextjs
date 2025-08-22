@@ -4,7 +4,7 @@ import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
 import { Textarea } from '../../../ui/textarea';
 import { Edit } from 'lucide-react';
-import { OrderData, SettingsForm } from '../types';
+import { OrderData, SettingsForm } from '@rentalshop/types';
 
 interface OrderSettingsProps {
   order: OrderData;

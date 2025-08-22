@@ -7,8 +7,8 @@ export { default as Orders } from './Orders';
 
 // Order list components
 export { 
-  OrderListHeader,
-  OrderListFilters,
+  OrderHeader,
+  OrderFilters,
   OrderTable,
   OrderListActions,
   OrderStats,
@@ -17,13 +17,4 @@ export {
   OrderDetailLoading
 } from './components';
 
-// ============================================================================
-// ORDER TYPES
-// ============================================================================
-export type { 
-  OrderData, 
-  OrderFilters,
-  OrderDetailData, 
-  OrderDetailProps,
-  SettingsForm
-} from './types';
+// Note: Types are imported directly from @rentalshop/types where needed

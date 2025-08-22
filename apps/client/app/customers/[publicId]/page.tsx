@@ -23,7 +23,7 @@ import {
   Calendar,
   X
 } from 'lucide-react';
-import { customersApi } from '../../../lib/api/customers';
+import { customersApi } from "@rentalshop/utils";
 import type { Customer } from '@rentalshop/ui';
 import type { EditCustomerFormRef } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
