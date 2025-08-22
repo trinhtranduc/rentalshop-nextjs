@@ -1,7 +1,16 @@
 import React, { useCallback, useMemo } from 'react';
-import { Input } from '../../../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
+import { 
+  Input,
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue,
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent 
+} from '@rentalshop/ui';
 import type { UserFilters } from '@rentalshop/types';
 import { useThrottledSearch } from '@rentalshop/hooks';
 

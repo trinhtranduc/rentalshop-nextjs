@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,69 +8,62 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  publicId    Int      @unique // 1, 2, 3 (numeric ID)
-  email       String   @unique
-  password    String
-  firstName   String
-  lastName    String
-  phone       String?
-  role        String   @default("OUTLET_STAFF")
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
+  id         String    @id @default(cuid())
+  publicId   Int       @unique
+  email      String    @unique
+  password   String
+  firstName  String
+  lastName   String
+  phone      String?
+  role       String    @default("OUTLET_STAFF")
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   merchantId String?
-  merchant   Merchant? @relation(fields: [merchantId], references: [id])
   outletId   String?
   outlet     Outlet?   @relation(fields: [outletId], references: [id])
+  merchant   Merchant? @relation(fields: [merchantId], references: [id])
 
-  // Merchant-scoped uniqueness constraints
-  @@unique([merchantId, email]) // Email unique within merchant
-  @@unique([merchantId, phone]) // Phone unique within merchant (when not null)
+  @@unique([merchantId, email])
+  @@unique([merchantId, phone])
   @@index([email])
   @@index([merchantId])
   @@index([outletId])
-  @@index([publicId]) // Index for fast public ID lookups
+  @@index([publicId])
 }
 
 model Merchant {
-  id          String   @id @default(cuid())
-  publicId    Int      @unique // 1, 2, 3 (numeric ID)
+  id          String     @id @default(cuid())
+  publicId    Int        @unique
   name        String
   description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  users      User[]
-  outlets    Outlet[]
-  products   Product[]
-  customers  Customer[]
-  categories Category[]
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  categories  Category[]
+  customers   Customer[]
+  outlets     Outlet[]
+  products    Product[]
+  users       User[]
 
   @@index([name])
   @@index([publicId])
 }
 
 model Outlet {
-  id          String   @id @default(cuid())
-  publicId    Int      @unique // 1, 2, 3 (numeric ID)
+  id          String        @id @default(cuid())
+  publicId    Int           @unique
   name        String
   address     String?
   description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  merchantId String
-  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  users      User[]
-  products   OutletStock[]
-  orders     Order[]
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  merchantId  String
+  orders      Order[]
+  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products    OutletStock[]
+  users       User[]
 
   @@index([merchantId])
   @@index([name])
@@ -81,18 +71,16 @@ model Outlet {
 }
 
 model Category {
-  id          String   @id @default(cuid())
-  publicId    Int      @unique // 1, 2, 3 (numeric ID)
+  id          String    @id @default(cuid())
+  publicId    Int       @unique
   name        String
   description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  merchantId String
-  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  products  Product[]
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  merchantId  String
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products    Product[]
 
   @@unique([merchantId, name])
   @@index([merchantId])
@@ -100,27 +88,25 @@ model Category {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  publicId    Int      @unique // 1, 2, 3 (numeric ID)
+  id          String        @id @default(cuid())
+  publicId    Int           @unique
   name        String
   description String?
-  barcode     String?  @unique
-  totalStock  Int      @default(0)  // Total stock across all outlets
+  barcode     String?       @unique
+  totalStock  Int           @default(0)
   rentPrice   Float
   salePrice   Float?
-  deposit     Float    @default(0)
-  images      String?  // JSON array of image URLs
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  merchantId String
-  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  deposit     Float         @default(0)
+  images      String?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  merchantId  String
+  categoryId  String
+  orderItems  OrderItem[]
   outletStock OutletStock[]
-  orderItems OrderItem[]
+  category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   @@index([merchantId])
   @@index([categoryId])
@@ -131,17 +117,15 @@ model Product {
 
 model OutletStock {
   id        String   @id @default(cuid())
-  stock     Int      @default(0)  // Total stock at this outlet
-  available Int      @default(0)  // Available for rent/sale
-  renting   Int      @default(0)  // Currently being rented
+  stock     Int      @default(0)
+  available Int      @default(0)
+  renting   Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   outletId  String
-  outlet    Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  outlet    Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, outletId])
   @@index([outletId, available])
@@ -149,8 +133,8 @@ model OutletStock {
 }
 
 model Customer {
-  id          String   @id @default(cuid())
-  publicId    Int      @unique // 1, 2, 3 (numeric ID)
+  id          String    @id @default(cuid())
+  publicId    Int       @unique
   firstName   String
   lastName    String
   email       String
@@ -162,16 +146,14 @@ model Customer {
   country     String?
   dateOfBirth DateTime?
   idNumber    String?
-  idType      String?  // passport, drivers_license, national_id, other
+  idType      String?
   notes       String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  merchantId String
-  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  orders     Order[]
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  merchantId  String
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  orders      Order[]
 
   @@index([merchantId, firstName, lastName])
   @@index([merchantId, phone])
@@ -180,70 +162,56 @@ model Customer {
 }
 
 model Order {
-  id            String   @id @default(cuid())
-  publicId      Int      @unique // 1, 2, 3 (numeric ID)
-  orderNumber   String   @unique
-  orderType     String   // RENT, SALE, RENT_TO_OWN
-  status        String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED, OVERDUE, DAMAGED
-  totalAmount   Float
-  depositAmount Float    @default(0)  // Tiền cọc (Deposit)
-  securityDeposit Float  @default(0)  // Tiền thế chân (Security Deposit)
-  damageFee     Float    @default(0)  // Phí hư hỏng (Damage Fee)
-  lateFee       Float    @default(0)  // Phí trễ hạn (Late Fee)
-  
-  // Rental specific
-  pickupPlanAt  DateTime?  // Ngày nhận hàng (Pickup Date)
-  returnPlanAt  DateTime?  // Ngày trả hàng (Return Date)
-  pickedUpAt    DateTime?  // Ngày thực tế nhận hàng
-  returnedAt    DateTime?  // Ngày thực tế trả hàng
-  rentalDuration Int?      // Số ngày thuê (Rental Duration in days)
-  
-  // Delivery status
-  isReadyToDeliver Boolean @default(false)  // Order is ready for delivery/pickup
-  
-  // Collateral information
-  collateralType String?   // Thế chân bằng tiền/giấy tờ (Cash/Document Collateral)
-  collateralDetails String? // Chi tiết thế chấp (ID Card, Passport, etc.)
-  
-  // Notes
-  notes         String?   // Ghi chú chung (General Notes)
-  pickupNotes   String?   // Ghi chú khi nhận hàng
-  returnNotes   String?   // Ghi chú khi trả hàng
-  damageNotes   String?   // Ghi chú về hư hỏng
-  
-  // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  outletId   String
-  outlet     Outlet    @relation(fields: [outletId], references: [id])
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id])
-  orderItems OrderItem[]
-  payments   Payment[]
+  id                String      @id @default(cuid())
+  publicId          Int         @unique
+  orderNumber       String      @unique
+  orderType         String
+  status            String      @default("PENDING")
+  totalAmount       Float
+  depositAmount     Float       @default(0)
+  securityDeposit   Float       @default(0)
+  damageFee         Float       @default(0)
+  lateFee           Float       @default(0)
+  pickupPlanAt      DateTime?
+  returnPlanAt      DateTime?
+  pickedUpAt        DateTime?
+  returnedAt        DateTime?
+  rentalDuration    Int?
+  isReadyToDeliver  Boolean     @default(false)
+  collateralType    String?
+  collateralDetails String?
+  notes             String?
+  pickupNotes       String?
+  returnNotes       String?
+  damageNotes       String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  outletId          String
+  customerId        String?
+  customer          Customer?   @relation(fields: [customerId], references: [id])
+  outlet            Outlet      @relation(fields: [outletId], references: [id])
+  orderItems        OrderItem[]
+  payments          Payment[]
 
   @@index([status, outletId])
   @@index([customerId, createdAt(sort: Desc)])
   @@index([pickupPlanAt, returnPlanAt])
   @@index([orderNumber])
   @@index([publicId])
-  @@index([isReadyToDeliver, outletId]) // Index for delivery readiness queries
+  @@index([isReadyToDeliver, outletId])
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  quantity    Int      @default(1)
-  unitPrice   Float    // Tiền thuê hàng ngày (Daily Rental Rate)
-  totalPrice  Float    // Tổng tiền thuê (Total Rental Fee)
-  rentalDays  Int?     // Số ngày thuê (Rental Duration)
-  notes       String?  // Ghi chú cho sản phẩm này
-  
-  // Relations
-  orderId   String
-  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  id         String  @id @default(cuid())
+  quantity   Int     @default(1)
+  unitPrice  Float
+  totalPrice Float
+  orderId    String
+  productId  String
+  notes      String?
+  rentalDays Int?
+  product    Product @relation(fields: [productId], references: [id])
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, productId])
 }
@@ -251,20 +219,18 @@ model OrderItem {
 model Payment {
   id        String   @id @default(cuid())
   amount    Float
-  method    String   // CASH, BANK_TRANSFER, CREDIT_CARD, DIGITAL_WALLET
-  type      String   // DEPOSIT, RENTAL_FEE, DAMAGE_FEE, LATE_FEE, REFUND
-  status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
-  reference String?  // Payment reference number
-  notes     String?  // Ghi chú thanh toán
+  method    String
+  type      String
+  status    String   @default("PENDING")
+  reference String?
+  notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, status])
   @@index([orderId, type])
   @@index([status])
   @@index([type])
-} 
+}

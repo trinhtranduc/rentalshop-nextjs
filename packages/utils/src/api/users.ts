@@ -62,7 +62,7 @@ export const usersApi = {
     const response = await authenticatedFetch(`/api/users?${queryParams.toString()}`);
     console.log('📡 Raw API response:', response);
     
-    const result = await parseApiResponse<any>(response);
+    const result = await parseApiResponse<UsersResponse>(response);
     console.log('✅ Processed API response:', result);
     
     return result;
@@ -73,7 +73,7 @@ export const usersApi = {
    */
   async getUserById(userId: string): Promise<ApiResponse<User>> {
     const response = await authenticatedFetch(`/api/users/${userId}`);
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<User>(response);
   },
 
   /**
@@ -81,7 +81,7 @@ export const usersApi = {
    */
   async getUserByPublicId(publicId: string): Promise<ApiResponse<User>> {
     const response = await authenticatedFetch(`/api/users/${publicId}`);
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<User>(response);
   },
 
   /**
@@ -92,12 +92,12 @@ export const usersApi = {
       method: 'POST',
       body: JSON.stringify(userData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<User>(response);
   },
 
   /**
    * Update an existing user
-   * Note: The API expects the request body to include the public ID
+   * Note: The API expects the request body can only update users within their scope
    */
   async updateUser(userId: string, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
     // Include the publicId in the request body as required by the API
@@ -110,7 +110,7 @@ export const usersApi = {
       method: 'PUT',
       body: JSON.stringify(requestBody),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<User>(response);
   },
 
   /**
@@ -127,7 +127,7 @@ export const usersApi = {
       method: 'PUT',
       body: JSON.stringify(requestBody),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<User>(response);
   },
 
   /**
@@ -184,7 +184,7 @@ export const usersApi = {
       method: 'PATCH',
       body: JSON.stringify({ action: 'deactivate' }),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
@@ -195,7 +195,7 @@ export const usersApi = {
       method: 'PATCH',
       body: JSON.stringify({ action: 'deactivate' }),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
@@ -206,7 +206,7 @@ export const usersApi = {
       method: 'PATCH',
       body: JSON.stringify({ action: 'activate' }),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
@@ -217,7 +217,7 @@ export const usersApi = {
       method: 'PATCH',
       body: JSON.stringify({ action: 'activate' }),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
@@ -227,7 +227,7 @@ export const usersApi = {
     const response = await authenticatedFetch(`/api/users/${userId}`, {
       method: 'DELETE',
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
@@ -237,7 +237,7 @@ export const usersApi = {
     const response = await authenticatedFetch(`/api/users/${publicId}`, {
       method: 'DELETE',
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
@@ -252,7 +252,7 @@ export const usersApi = {
       method: 'PATCH',
       body: JSON.stringify(passwordData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
@@ -267,7 +267,7 @@ export const usersApi = {
       method: 'PATCH',
       body: JSON.stringify(passwordData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
 };

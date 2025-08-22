@@ -4,11 +4,18 @@ import { UserFilters } from './components/UserFilters';
 import { UserGrid } from './components/UserGrid';
 import { UserTable } from './components/UserTable';
 import { UserPagination } from './components/UserPagination';
-import { ToastContainer, useToasts } from '../../ui/toast';
-import type { UserData, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
-import { User } from '@rentalshop/types';
-import { Button } from '../../ui/button';
+import { ToastContainer, useToasts, Button } from '@rentalshop/ui';
+import type { UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput, User } from '@rentalshop/types';
 import { Grid, List, Plus } from 'lucide-react';
+
+// Define UserData interface locally since it's not exported from types
+interface UserData {
+  users: User[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  hasMore: boolean;
+}
 
 interface UsersProps {
   data: UserData;
@@ -60,15 +67,15 @@ export function Users({
     router.push('/users/add');
   };
 
-  const handleUserCreated = async (userData: UserCreateInput | UserUpdateInput) => {
+  const handleUserCreated = async (userInput: UserCreateInput | UserUpdateInput) => {
     try {
-      console.log('🔄 Users component: handleUserCreated called with:', userData);
+      console.log('🔄 Users component: handleUserCreated called with:', userInput);
       console.log('🔍 Users: About to call parent onUserCreated handler');
       
       // Call the parent handler
       if (onUserCreated) {
         console.log('🔍 Users: Calling parent onUserCreated handler');
-        await onUserCreated(userData);
+        await onUserCreated(userInput);
         console.log('✅ Parent handler completed successfully');
       }
       
@@ -126,39 +133,7 @@ export function Users({
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Add User Button and View Mode Toggle */}
-        <div className="flex justify-between items-center">
-          <Button
-            onClick={handleAddUser}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add User
-          </Button>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === 'table' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onViewModeChange('table')}
-              className="flex items-center gap-2"
-            >
-              <List className="w-4 h-4" />
-              Table
-            </Button>
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onViewModeChange('grid')}
-              className="flex items-center gap-2"
-            >
-              <Grid className="w-4 h-4" />
-              Grid
-            </Button>
-          </div>
-        </div>
-        
+      <div className="space-y-6">        
         <UserFilters 
           filters={filters}
           onFiltersChange={onFiltersChange}

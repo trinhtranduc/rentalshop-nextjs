@@ -16,6 +16,7 @@ export interface CustomersResponse {
   page?: number;
   totalPages?: number;
   limit?: number;
+  hasMore?: boolean;
 }
 
 export interface CustomerFilters {

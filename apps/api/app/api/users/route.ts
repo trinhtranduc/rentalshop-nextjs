@@ -42,11 +42,65 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user is admin
+    console.log('🔍 Full user object from token:', JSON.stringify(user, null, 2));
+    console.log('🔍 User role:', user.role);
+    console.log('🔍 User merchantId:', user.merchantId);
+    console.log('🔍 User outletId:', user.outletId);
+    console.log('🔍 User email:', user.email);
+
+    // Initialize userScope outside try block
+    let userScope: { merchantId?: string; outletId?: string } = {};
+
     try {
-      assertAnyRole(user as any, ['ADMIN']);
-    } catch {
-      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
+      // Check authorization based on user role
+      let canAccess = false;
+
+      // Normalize role for comparison (handle case sensitivity)
+      const normalizedRole = user.role?.toUpperCase() || '';
+
+      if (normalizedRole === 'ADMIN') {
+        // Admin can see all users system-wide
+        canAccess = true;
+        userScope = {};
+        console.log('🔐 Admin access granted - can see all users system-wide');
+      } else if (normalizedRole === 'MERCHANT') {
+        // Merchant can see all users within their organization
+        canAccess = true;
+        userScope = { merchantId: user.merchantId || undefined };
+        console.log('🔐 Merchant access granted - scope:', userScope);
+      } else if (normalizedRole === 'OUTLET_ADMIN') {
+        // Outlet admin can see users within their outlet
+        canAccess = true;
+        userScope = { 
+          merchantId: user.merchantId || undefined, 
+          outletId: user.outletId || undefined 
+        };
+        console.log('🔐 Outlet Admin access granted - scope:', userScope);
+      } else if (normalizedRole === 'OUTLET_STAFF') {
+        // Outlet staff cannot manage users
+        canAccess = false;
+        console.log('🔐 Outlet Staff access denied - cannot manage users');
+      } else {
+        // Unknown role
+        canAccess = false;
+        console.log('❌ Unknown role:', user.role, 'Normalized:', normalizedRole);
+      }
+
+      if (!canAccess) {
+        console.log('❌ Access denied for user:', { role: user.role, merchantId: user.merchantId, outletId: user.outletId });
+        return NextResponse.json(
+          { success: false, message: 'Insufficient permissions to view users' }, 
+          { status: 403 }
+        );
+      }
+
+      console.log('✅ Access granted for user:', { role: user.role, scope: userScope });
+    } catch (error) {
+      console.error('❌ Error in authorization logic:', error);
+      return NextResponse.json(
+        { success: false, message: 'Authorization error', error: error instanceof Error ? error.message : 'Unknown error' }, 
+        { status: 500 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -69,7 +123,9 @@ export async function GET(request: NextRequest) {
     };
 
     // Get users from database
-    const result = await getUsers(filters, options);
+    console.log('🔄 Calling getUsers with scope:', userScope);
+    const result = await getUsers(filters, options, userScope);
+    console.log('✅ getUsers returned:', { success: !!result, dataKeys: result ? Object.keys(result) : 'no result' });
 
     const body = JSON.stringify({ success: true, data: result });
     const etag = crypto.createHash('sha1').update(body).digest('hex');
@@ -161,8 +217,6 @@ export async function POST(request: NextRequest) {
 
     // Create user
     const p = parsed.data;
-    const [firstName, ...rest] = p.name.trim().split(' ');
-    const lastName = rest.join(' ');
     
     // Get merchant ID from the authenticated user
     let merchantId: string | undefined;
@@ -182,8 +236,8 @@ export async function POST(request: NextRequest) {
     const userData = {
       email: p.email.toLowerCase().trim(),
       password: p.password,
-      firstName: firstName || p.name.trim(),
-      lastName: lastName || '',
+      firstName: p.firstName.trim(),
+      lastName: p.lastName.trim(),
       phone: p.phone?.trim(),
       role: p.role || 'OUTLET_STAFF',
       merchantId: merchantId, // Include merchant ID for uniqueness checking
@@ -229,7 +283,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const newUser = result.data;
+    // At this point, result.success is true, so result.user should exist
+    const newUser = (result as any).user;
     if (!newUser) {
       console.error('❌ Database returned success but no user data');
       return NextResponse.json(
@@ -315,12 +370,50 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check if user is admin
-    try {
-      assertAnyRole(currentUser as any, ['ADMIN']);
-    } catch {
-      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
+    // Check authorization based on user role
+    let canAccess = false;
+    let userScope: { merchantId?: string; outletId?: string } = {};
+
+    // Normalize role for comparison (handle case sensitivity)
+    const normalizedRole = currentUser.role?.toUpperCase() || '';
+
+    if (normalizedRole === 'ADMIN') {
+      // Admin can update all users system-wide
+      canAccess = true;
+      userScope = {};
+      console.log('🔐 Admin access granted - can update all users system-wide');
+    } else if (normalizedRole === 'MERCHANT') {
+      // Merchant can update users within their organization
+      canAccess = true;
+      userScope = { merchantId: currentUser.merchantId || undefined };
+      console.log('🔐 Merchant access granted - scope:', userScope);
+    } else if (normalizedRole === 'OUTLET_ADMIN') {
+      // Outlet admin can update users within their outlet
+      canAccess = true;
+      userScope = { 
+        merchantId: currentUser.merchantId || undefined, 
+        outletId: currentUser.outletId || undefined 
+      };
+      console.log('🔐 Outlet Admin access granted - scope:', userScope);
+    } else if (normalizedRole === 'OUTLET_STAFF') {
+      // Outlet staff cannot update users
+      canAccess = false;
+      console.log('🔐 Outlet Staff access denied - cannot update users');
+    } else {
+      // Unknown role
+      canAccess = false;
+      console.log('❌ Unknown role:', currentUser.role, 'Normalized:', normalizedRole);
     }
+
+    if (!canAccess) {
+      console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions to update users' }, 
+        { status: 403 }
+      );
+    }
+
+    console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
 
     const body = await request.json();
     const { publicId, ...updateData } = body;
@@ -352,15 +445,33 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
     }
 
-    // Transform name to firstName and lastName for database compatibility
-    const updateDataForDB: any = { ...parsed.data };
-    if (updateDataForDB.name) {
-      const [firstName, ...rest] = updateDataForDB.name.trim().split(' ');
-      updateDataForDB.firstName = firstName || updateDataForDB.name.trim();
-      updateDataForDB.lastName = rest.join(' ') || '';
-      delete updateDataForDB.name; // Remove name field as it doesn't exist in database
-      console.log('Transformed update data:', { firstName: updateDataForDB.firstName, lastName: updateDataForDB.lastName });
+    // Validate scope access - ensure user can only update users within their scope
+    if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
+      console.log('❌ Scope violation: User trying to update user from different merchant', {
+        existingUserMerchantId: existingUser.merchantId,
+        userScopeMerchantId: userScope.merchantId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: Cannot update user from different organization' },
+        { status: 403 }
+      );
     }
+
+    if (userScope.outletId && existingUser.outletId !== userScope.outletId) {
+      console.log('❌ Scope violation: User trying to update user from different outlet', {
+        existingUserOutletId: existingUser.outletId,
+        userScopeOutletId: userScope.outletId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: Cannot update user from different outlet' },
+        { status: 403 }
+      );
+    }
+
+    console.log('✅ Scope validation passed - user can update this user data');
+
+    // Prepare update data for database - firstName and lastName are already in the correct format
+    const updateDataForDB = { ...parsed.data };
     
     console.log('Final update data for database:', updateDataForDB);
     
@@ -390,7 +501,8 @@ export async function PUT(request: NextRequest) {
  */
 async function getUsers(
   filters: UserFilters = {},
-  options: UserListOptions = {}
+  options: UserListOptions = {},
+  userScope: { merchantId?: string; outletId?: string } = {}
 ) {
   const { prisma } = await import('@rentalshop/database');
   
@@ -403,7 +515,8 @@ async function getUsers(
 
   // Map sortBy to actual database fields
   const sortByMap: Record<string, string> = {
-    name: 'firstName', // Map 'name' to 'firstName' since we don't have a 'name' field
+    firstName: 'firstName',
+    lastName: 'lastName',
     email: 'email',
     createdAt: 'createdAt'
   };
@@ -415,12 +528,25 @@ async function getUsers(
   // Build where clause
   const where: any = {};
 
+  // Apply role-based scope filtering
+  if (userScope.merchantId) {
+    where.merchantId = userScope.merchantId;
+    console.log('🔍 Filtering by merchantId:', userScope.merchantId);
+  }
+  
+  if (userScope.outletId) {
+    where.outletId = userScope.outletId;
+    console.log('🔍 Filtering by outletId:', userScope.outletId);
+  }
+
   if (filters.role) {
     where.role = filters.role;
+    console.log('🔍 Filtering by role:', filters.role);
   }
 
   if (filters.isActive !== undefined) {
     where.isActive = filters.isActive;
+    console.log('🔍 Filtering by isActive:', filters.isActive);
   }
 
   if (filters.search) {
@@ -431,7 +557,10 @@ async function getUsers(
       { email: { contains: searchTerm } },
       { phone: { contains: searchTerm } },
     ];
+    console.log('🔍 Filtering by search term:', searchTerm);
   }
+
+  console.log('🔍 Final where clause:', JSON.stringify(where, null, 2));
 
   // Get total count
   const total = await prisma.user.count({ where });
@@ -503,6 +632,14 @@ async function getUsers(
   }));
 
   const totalPages = Math.ceil(total / limit);
+
+  console.log('✅ getUsers result:', {
+    total,
+    page,
+    totalPages,
+    usersCount: transformedUsers.length,
+    scope: userScope
+  });
 
   return {
     users: transformedUsers,

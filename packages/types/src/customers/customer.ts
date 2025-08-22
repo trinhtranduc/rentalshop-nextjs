@@ -14,6 +14,11 @@ export interface Customer {
   state?: string;
   zipCode?: string;
   country?: string;
+  dateOfBirth?: Date;
+  idNumber?: string;
+  idType?: 'passport' | 'drivers_license' | 'national_id' | 'other';
+  notes?: string;
+  isActive: boolean;
   merchantId: string;
   outletId?: string;
   createdAt: Date;

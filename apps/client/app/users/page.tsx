@@ -1,23 +1,36 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Users,
   UsersLoading,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  Button
 } from '@rentalshop/ui';
+import { UserPlus } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 
-// Import types from the Users feature
-import type { UserData, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput, User } from '@rentalshop/ui';
+// Import types from the types package
+import type { UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput, User } from '@rentalshop/types';
+
+// Define UserData interface locally since it's not exported from types
+interface UserData {
+  users: User[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  hasMore: boolean;
+}
 
 // Import the users API client
 import { usersApi } from "@rentalshop/utils";
 
 export default function UsersPage() {
+  const router = useRouter();
   const { user, logout } = useAuth();
   
   // State for users and UI
@@ -31,8 +44,8 @@ export default function UsersPage() {
   // Initialize filters
   const [filters, setFilters] = useState<UserFiltersType>({
     search: '',
-    role: 'all',
-    merchant: 'all'
+    role: undefined,
+    merchantId: undefined
   });
 
   // Separate search state to prevent unnecessary re-renders
@@ -57,17 +70,17 @@ export default function UsersPage() {
     console.log('🔍 transformUsersForComponent called with:', apiUsers.length, 'users');
     
     const transformed = apiUsers.map(user => {
-      // Ensure we have a valid numeric publicId
+      // Ensure we have a valid string publicId
       let publicId = user.publicId;
       console.log('🔍 Processing user:', { id: user.id, publicId, publicIdType: typeof publicId });
       
-      if (!publicId || typeof publicId !== 'number') {
+      if (!publicId || typeof publicId !== 'string') {
         console.warn('⚠️ User missing publicId or invalid type:', { userId: user.id, publicId, type: typeof publicId });
-        // Don't use user.id as fallback since it's not numeric
-        publicId = null;
+        // Don't use user.id as fallback since it's not a string
+        publicId = '';
       }
       
-      const transformedUser = {
+      const transformedUser: User = {
         id: user.id,
         publicId: publicId, // Use the validated publicId
         name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
@@ -75,13 +88,18 @@ export default function UsersPage() {
         phone: user.phone,
         role: user.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF',
         isActive: user.isActive,
-        createdAt: user.createdAt,
-        merchant: user.merchant ? {
-          id: user.merchant.id,
-          companyName: user.merchant.companyName || user.merchant.name
-        } : undefined,
-        admin: undefined,
-        outletStaff: undefined
+        createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
+        emailVerified: user.emailVerified || false,
+        updatedAt: user.updatedAt ? new Date(user.updatedAt) : new Date(),
+        merchantId: user.merchant?.id,
+        outletId: user.outletId,
+        lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt) : undefined,
+        
+        // Preserve the full merchant and outlet objects for display
+        firstName: user.firstName,
+        lastName: user.lastName,
+        merchant: user.merchant,
+        outlet: user.outlet
       };
       
       console.log('🔍 Transformed user:', { id: transformedUser.id, publicId: transformedUser.publicId });
@@ -150,7 +168,7 @@ export default function UsersPage() {
       // Use the new users API client
       const response = await usersApi.getUsers({
         search: searchQuery || undefined,
-        role: filters.role !== 'all' ? filters.role : undefined,
+        role: filters.role,
         page: pageToFetch,
         limit: 20
       });
@@ -158,29 +176,113 @@ export default function UsersPage() {
       console.log('API response:', response);
 
       if (response.success && response.data) {
-        const { users: newUsers, total, totalPages } = response.data;
-        console.log('Setting users:', { usersCount: newUsers.length, total, totalPages });
-        console.log('Users data:', newUsers);
-        console.log('🔍 First user data structure:', newUsers[0]);
-        console.log('🔍 First user publicId:', newUsers[0]?.publicId, 'type:', typeof newUsers[0]?.publicId);
+        console.log('📊 Raw response data structure:', response.data);
         
-        setUsers(newUsers);
+        // Handle the standard ApiResponse structure
+        // API returns: { success: true, data: { users: [...], total: 8, ... } }
+        let users, total, totalPages;
+        
+        // Check if data has the expected structure
+        if (response.data && typeof response.data === 'object' && 'users' in response.data) {
+          // Standard structure: response.data.users
+          users = (response.data as any).users || [];
+          total = (response.data as any).total || users.length;
+          totalPages = (response.data as any).totalPages || Math.ceil(total / 10);
+          
+          console.log('✅ Found standard data structure');
+        } else if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+          // Nested structure: response.data.data.users
+          const nestedData = (response.data as any).data;
+          users = nestedData?.users || [];
+          total = nestedData?.total || users.length;
+          totalPages = nestedData?.totalPages || Math.ceil(total / 10);
+          
+          console.log('✅ Found nested data structure');
+        } else {
+          // Fallback: check for any array in the response
+          console.warn('⚠️ Unexpected response structure, searching for user data...');
+          
+          // Try to find users array in any nested object
+          const findUsersArray = (obj: any): any[] | null => {
+            if (Array.isArray(obj)) {
+              // Check if this array contains user-like objects
+              if (obj.length > 0 && obj[0]?.firstName && obj[0]?.lastName) {
+                return obj;
+              }
+            } else if (obj && typeof obj === 'object') {
+              for (const key in obj) {
+                const result = findUsersArray(obj[key]);
+                if (result) return result;
+              }
+            }
+            return null;
+          };
+          
+          users = findUsersArray(response.data) || [];
+          total = users.length;
+          totalPages = Math.ceil(total / 10);
+          
+          if (users.length > 0) {
+            console.log('✅ Found users array in nested structure');
+          } else {
+            console.error('❌ No users array found in response');
+          }
+        }
+        
+        console.log('📊 Processed data:', { 
+          users: users?.length || 0, 
+          total, 
+          totalPages,
+          sampleUser: users?.[0] 
+        });
+        
+        // Validate user data structure
+        if (users && users.length > 0) {
+          const firstUser = users[0];
+          console.log('🔍 Sample user structure:', {
+            hasId: !!firstUser.id,
+            hasFirstName: !!firstUser.firstName,
+            hasLastName: !!firstUser.lastName,
+            hasEmail: !!firstUser.email,
+            hasPhone: !!firstUser.phone,
+            hasRole: !!firstUser.role,
+            hasMerchant: !!firstUser.merchant,
+            keys: Object.keys(firstUser)
+          });
+        }
+        
+        // Check if users array is empty and log the full response
+        if (!users || users.length === 0) {
+          console.warn('⚠️ Users array is empty! Full response data:', response.data);
+          console.warn('⚠️ Response data keys:', Object.keys(response.data || {}));
+          
+          // Try to find any useful information in the response
+          if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+            const nestedData = (response.data as any).data;
+            console.warn('⚠️ Nested data keys:', Object.keys(nestedData || {}));
+          }
+          
+          // Set empty state
+          setUsers([]);
+          setTotalPages(1);
+          setTotalUsers(0);
+          return;
+        }
+        
+        setUsers(users);
         setTotalPages(totalPages);
         setTotalUsers(total);
         
-        console.log('State updated:', { usersCount: newUsers.length, total, totalPages });
-        
         // If current page is beyond total pages after search, reset to page 1
-        if (pageToFetch > totalPages && totalPages > 0) {
-          console.log('Current page beyond total pages, resetting to page 1');
+        if (currentPage > totalPages && totalPages > 0) {
           setCurrentPage(1);
         }
       } else {
-        console.error('Failed to fetch users:', response.error);
-        // Fallback to mock data if API fails
-        setUsers(mockUsers);
-        setTotalPages(1);
-        setTotalUsers(mockUsers.length);
+        console.error('❌ API response failed:', response);
+        console.error('❌ Response success:', response.success);
+        console.error('❌ Response data:', response.data);
+        console.error('❌ Response error:', response.error);
+        throw new Error(response.error || 'Failed to fetch users');
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -235,8 +337,8 @@ export default function UsersPage() {
   const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
-      role: 'all',
-      merchant: 'all'
+      role: undefined,
+      merchantId: undefined
     });
     setSearchQuery(''); // This will trigger the search effect to reload table
     setCurrentPage(1);
@@ -248,35 +350,49 @@ export default function UsersPage() {
   }, []);
 
   // API Integration Functions
-  const handleUserCreated = useCallback(async (userData: UserCreateInput | UserUpdateInput) => {
+  const handleUserCreated = useCallback(async (userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    password: string;
+    role: string;
+    merchantId?: string;
+    outletId?: string;
+  }) => {
     try {
       setLoading(true);
       console.log('🔄 Creating user with data:', userData);
       
-      // Check if this is a create or update operation
-      if ('password' in userData) {
-        // This is a create operation - ONLY create user, no refresh
-        console.log('📡 Calling createUser (NO REFRESH)...');
-        const result = await usersApi.createUser(userData as UserCreateInput);
+      // Convert form data to API expected format
+      const apiUserData = {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        phone: userData.phone,
+        password: userData.password,
+        role: userData.role,
+        merchantId: userData.merchantId,
+        outletId: userData.outletId
+      };
+      
+      console.log('🔄 Converted to API format:', apiUserData);
+      
+      const result = await usersApi.createUser(apiUserData as any);
         
-        if (result.success && result.data) {
-          console.log('✅ User created successfully:', result.data);
-          console.log('🔍 No data refresh - dialog should stay open');
-          
-          // Don't refresh data - just let the dialog handle success
-          // The user list will be refreshed when the dialog is closed or manually
-          console.log('✅ User creation completed successfully (NO RELOAD)');
-          
-          // CRITICAL: Return success without changing any parent state
-          // This prevents the parent from interfering with dialog state
-          return;
-        } else {
-          throw new Error(result.error || 'Failed to create user');
-        }
+      if (result.success && result.data) {
+        console.log('✅ User created successfully:', result.data);
+        console.log('🔍 No data refresh - dialog should stay open');
+        
+        // Don't refresh data - just let the dialog handle success
+        // The user list will be refreshed when the dialog is closed or manually
+        console.log('✅ User creation completed successfully (NO RELOAD)');
+        
+        // CRITICAL: Return success without changing any parent state
+        // This prevents the parent from interfering with dialog state
+        return;
       } else {
-        // This is an update operation - should not happen here, but handle gracefully
-        console.warn('⚠️ Update operation received in create handler');
-        throw new Error('Invalid operation: Update received in create handler');
+        throw new Error(result.error || 'Failed to create user');
       }
     } catch (error) {
       console.error('❌ Error creating user:', error);
@@ -313,7 +429,7 @@ export default function UsersPage() {
       
       // Update user with automatic refresh
       console.log('📡 Calling updateUserAndRefresh...');
-      const result = await usersApi.updateUserAndRefresh(userData.id, userData, {
+      const result = await usersApi.updateUserAndRefresh(userData.id, userData as any, {
         page: currentPage,
         limit: 20
       });
@@ -474,7 +590,7 @@ export default function UsersPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>User Management</PageTitle>
+          <PageTitle>Users</PageTitle>
         </PageHeader>
         <PageContent>
           <UsersLoading />
@@ -488,8 +604,28 @@ export default function UsersPage() {
       <PageHeader>
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle>User Management</PageTitle>
+            <PageTitle>Users</PageTitle>
             <p className="text-gray-600">Manage users in the system</p>
+          </div>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => {
+                // TODO: Implement export functionality
+                alert('Export functionality coming soon!');
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Export
+            </button>
+            <Button 
+              onClick={() => router.push('/users/add')}
+              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+            >
+              <UserPlus className="w-4 h-4 mr-2" /> Add User
+            </Button>
           </div>
         </div>
       </PageHeader>
@@ -505,7 +641,7 @@ export default function UsersPage() {
           onViewModeChange={handleViewModeChange}
           onUserAction={handleUserAction}
           onPageChange={handlePageChange}
-          onUserCreated={handleUserCreated}
+          onUserCreated={handleUserCreated as any}
           onUserUpdated={handleUserUpdated}
           onError={handleError}
         />

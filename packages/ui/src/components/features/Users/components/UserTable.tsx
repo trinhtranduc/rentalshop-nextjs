@@ -1,7 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui/table';
-import { Button } from '../../../ui/button';
-import { Badge } from '../../../ui/badge';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow,
+  Button,
+  Badge,
+  Card,
+  CardContent
+} from '@rentalshop/ui';
 import { ConfirmationDialog } from './ConfirmationDialog';
 import { Eye, Edit, UserCheck, UserX, MoreHorizontal } from 'lucide-react';
 import type { User } from '@rentalshop/types';
@@ -133,15 +142,17 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
 
   if (users.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-500 dark:text-gray-400">
-          <div className="text-4xl mb-4">👥</div>
-          <h3 className="text-lg font-medium mb-2">No users found</h3>
-          <p className="text-sm">
-            Try adjusting your filters or add some users to get started.
-          </p>
-        </div>
-      </div>
+      <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+        <CardContent className="text-center py-12">
+          <div className="text-gray-500 dark:text-gray-400">
+            <div className="text-4xl mb-4">👥</div>
+            <h3 className="text-lg font-medium mb-2">No users found</h3>
+            <p className="text-sm">
+              Try adjusting your filters or add some users to get started.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -166,11 +177,16 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-sm font-medium text-blue-600">
-                      {user.name.charAt(0).toUpperCase()}
+                      {(user.firstName || user.name || 'U').charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">{user.name}</div>
+                    <div className="font-medium text-gray-900">
+                      {user.firstName && user.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : user.name || 'Unknown User'
+                      }
+                    </div>
                     <div className="text-sm text-gray-500">{user.email}</div>
                   </div>
                 </div>
@@ -183,13 +199,12 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
               </TableCell>
               
               <TableCell>
-                {user.outletStaff && user.outletStaff.length > 0 ? (
-                  <div className="space-y-1">
-                    {user.outletStaff.map((staff) => (
-                      <div key={staff.id} className="text-sm text-gray-900">
-                        {staff.outlet.name}
-                      </div>
-                    ))}
+                {user.outlet ? (
+                  <div className="text-sm text-gray-900">
+                    <div className="font-medium">{user.outlet.name}</div>
+                    {user.outlet.merchant && (
+                      <div className="text-xs text-gray-500">{user.outlet.merchant.name}</div>
+                    )}
                   </div>
                 ) : (
                   <span className="text-sm text-gray-500">-</span>
@@ -213,7 +228,7 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
               
               <TableCell>
                 <span className="text-sm text-gray-900">
-                  {formatDate(user.createdAt)}
+                  {formatDate(typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString())}
                 </span>
               </TableCell>
               
@@ -248,7 +263,7 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
                         <div className="-mx-1 my-1 h-px bg-gray-200 dark:bg-gray-600"></div>
                         {user.isActive ? (
                           <div 
-                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                             onClick={() => handleUserAction('deactivate', user.id)}
                           >
                             <UserX className="mr-2 h-4 w-4" />

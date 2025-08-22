@@ -23,11 +23,10 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({
   isSubmitting: externalIsSubmitting,
 }) => {
   const [formData, setFormData] = useState({
-    name: user.name || '',
+    firstName: user.firstName || '',
+    lastName: user.lastName || '',
     email: user.email || '',
-    phone: user.phone || '',
-    role: user.role || '',
-    isActive: user.isActive
+    phone: user.phone || ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,11 +40,10 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({
   // Update form data when user changes
   useEffect(() => {
     setFormData({
-      name: user.name || '',
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       email: user.email || '',
-      phone: user.phone || '',
-      role: user.role || '',
-      isActive: user.isActive
+      phone: user.phone || ''
     });
     setErrors({});
   }, [user]);
@@ -63,11 +61,18 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Name validation - required
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+    // First Name validation - required
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    }
+
+    // Last Name validation - required
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
     }
 
     // Email validation - required
@@ -86,11 +91,6 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({
       newErrors.phone = 'Phone number must be at least 8 digits';
     } else if (formData.phone.trim().length > 15) {
       newErrors.phone = 'Phone number must be less than 16 digits';
-    }
-
-    // Role validation - required
-    if (!formData.role) {
-      newErrors.role = 'Role is required';
     }
 
     setErrors(newErrors);
@@ -112,11 +112,10 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({
     
     try {
       const submitData = {
-        name: formData.name.trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
-        role: formData.role,
-        isActive: formData.isActive
       };
       
       console.log('🔍 EditUserForm: About to call onSave with data:', submitData);
@@ -149,22 +148,38 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({
           <CardContent className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
               <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-              Personal Information
+              Basic Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="firstName">First Name *</Label>
                 <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter full name"
-                  className={errors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  placeholder="Enter first name"
+                  className={errors.firstName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                   disabled={isSubmitting}
                   required
                 />
-                {errors.name && (
-                  <p className="text-sm text-red-600">{errors.name}</p>
+                {errors.firstName && (
+                  <p className="text-sm text-red-600">{errors.firstName}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  placeholder="Enter last name"
+                  className={errors.lastName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                  disabled={isSubmitting}
+                  required
+                />
+                {errors.lastName && (
+                  <p className="text-sm text-red-600">{errors.lastName}</p>
                 )}
               </div>
 
@@ -199,28 +214,6 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({
                 <p className="text-xs text-gray-500">Phone number must contain only numbers (8-15 digits)</p>
                 {errors.phone && (
                   <p className="text-sm text-red-600">{errors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="role">Role *</Label>
-                <Select 
-                  value={formData.role} 
-                  onValueChange={(value) => handleInputChange('role', value)}
-                  disabled={isSubmitting}
-                >
-                  <SelectTrigger className={errors.role ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="OUTLET_STAFF">Outlet Staff</SelectItem>
-                    <SelectItem value="OUTLET_ADMIN">Outlet Admin</SelectItem>
-                    <SelectItem value="MERCHANT">Merchant</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.role && (
-                  <p className="text-sm text-red-600">{errors.role}</p>
                 )}
               </div>
             </div>

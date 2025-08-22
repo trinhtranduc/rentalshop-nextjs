@@ -204,20 +204,22 @@ export const usersQuerySchema = z.object({
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  sortBy: z.enum(['name', 'email', 'createdAt']).default('createdAt').optional(),
+  sortBy: z.enum(['firstName', 'lastName', 'email', 'createdAt']).default('createdAt').optional(),
   sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
 });
 
 export const userCreateSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
-  name: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   phone: z.string().min(1, 'Phone number is required'), // Phone is now required
   role: userRoleEnum.optional(),
 });
 
 export const userUpdateSchema = z.object({
-  name: z.string().min(1).optional(),
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
   email: z.string().email().optional(),
   phone: z.string().min(1, 'Phone number is required').optional(), // Phone is required when provided
   role: userRoleEnum.optional(),

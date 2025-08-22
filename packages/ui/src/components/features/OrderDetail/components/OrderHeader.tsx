@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '../../../ui/button';
+import { Button } from '@rentalshop/ui';
 import { Edit } from 'lucide-react';
 import { OrderDetailData } from '@rentalshop/types';
 

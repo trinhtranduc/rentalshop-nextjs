@@ -1,10 +1,9 @@
 import React from 'react';
-import { Badge } from '../../../ui/badge';
-import { Clock, CheckCircle, XCircle, Package } from 'lucide-react';
-import { OrderData } from '@rentalshop/types';
+import { Badge } from '@rentalshop/ui';
+import { OrderDetailData } from '@rentalshop/types';
 
 interface StatusBadgesProps {
-  order: OrderData;
+  order: OrderDetailData;
 }
 
 const getStatusColor = (status: string) => {

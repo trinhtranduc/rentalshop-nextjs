@@ -71,13 +71,6 @@ export default function ProductsPage() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   
-
-
-
-
-
-
-  
   // Initialize filters
   const [filters, setFilters] = useState<ProductFiltersType>({
     search: '',
@@ -94,8 +87,6 @@ export default function ProductsPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const hasInitializedRef = useRef(false);
-
-
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -334,12 +325,26 @@ export default function ProductsPage() {
             <p className="text-gray-600">Manage your product catalog with outlet stock allocation</p>
           </div>
           {isMerchantLevel && (
-            <Button 
-              onClick={() => router.push('/products/add')}
-              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
-            >
-              <Plus className="w-4 h-4 mr-2" /> Add Product
-            </Button>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  // TODO: Implement export functionality
+                  alert('Export functionality coming soon!');
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Export
+              </button>
+              <Button 
+                onClick={() => router.push('/products/add')}
+                className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+              >
+                <Plus className="w-4 h-4 mr-2" /> Add Product
+              </Button>
+            </div>
           )}
         </div>
       </PageHeader>

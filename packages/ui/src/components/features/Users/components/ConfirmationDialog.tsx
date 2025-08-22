@@ -1,11 +1,20 @@
 'use client'
 
 import React from 'react';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
-import { Label } from '../../../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
+import { 
+  Button,
+  Input,
+  Label,
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue,
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from '@rentalshop/ui';
 import { AlertTriangle, Trash2, UserX, Lock } from 'lucide-react';
 
 interface ConfirmationDialogProps {
