@@ -12,8 +12,13 @@ import {
   PageContent
 } from '@rentalshop/ui';
 import { CreateOrderForm } from '@rentalshop/ui';
-import type { CustomerSearchResult, ProductWithStock, ProductSearchResult, OrderInput } from '@rentalshop/database';
-import { authenticatedFetch } from '@rentalshop/utils';
+import type { CustomerSearchResult, ProductWithStock, OrderInput } from '@rentalshop/types';
+import { 
+  customersApi, 
+  productsApi, 
+  outletsApi, 
+  ordersApi 
+} from '@rentalshop/utils';
 import { useAuth } from '@rentalshop/hooks';
 
 export default function CreateOrderPage() {
@@ -23,63 +28,53 @@ export default function CreateOrderPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [customers, setCustomers] = useState<CustomerSearchResult[]>([]);
-  const [products, setProducts] = useState<ProductSearchResult[]>([]);
+  const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [outlets, setOutlets] = useState<Array<{ id: string; name: string }>>([]);
 
   // Get merchant ID from user context
   const merchantId = user?.merchant?.id;
 
   useEffect(() => {
+    if (!merchantId) return; // Don't fetch without merchant ID
+    
     const fetchAll = async () => {
       try {
         setLoading(true);
 
         const [customersRes, productsRes, outletsRes] = await Promise.all([
-          authenticatedFetch('/api/customers?page=1&limit=50&isActive=true'),
-          authenticatedFetch('/api/products?page=1&limit=100'),
-          authenticatedFetch('/api/outlets'),
+          customersApi.getCustomers({ 
+            page: 1, 
+            limit: 50, 
+            isActive: true,
+            merchantId: merchantId || undefined
+          }),
+          productsApi.getProducts({ 
+            page: 1, 
+            limit: 100,
+            merchantId: merchantId || undefined
+          }),
+          outletsApi.getOutlets({ 
+            merchantId: merchantId || undefined
+          }),
         ]);
 
-        if (customersRes.ok) {
-          const data = await customersRes.json();
-          setCustomers(data.data?.customers || []);
+        if (customersRes.success) {
+          setCustomers(customersRes.data?.customers || []);
+        } else {
+          console.error('Failed to fetch customers:', customersRes.error);
         }
 
-        if (productsRes.ok) {
-          const data = await productsRes.json();
-          // Transform ProductWithStock to ProductSearchResult format
-          const transformedProducts = (data.data?.products || []).map((product: ProductWithStock) => ({
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            barcode: product.barcode,
-            stock: product.outletStock?.[0]?.stock || 0,
-            renting: product.outletStock?.[0]?.renting || 0,
-            available: product.outletStock?.[0]?.available || 0,
-            rentPrice: product.rentPrice,
-            salePrice: product.salePrice,
-            deposit: product.deposit,
-            images: product.images,
-            isActive: product.isActive,
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt,
-            outlet: {
-              id: product.outletStock?.[0]?.outlet?.id || '',
-              name: product.outletStock?.[0]?.outlet?.name || '',
-              merchant: {
-                id: product.merchant?.id || '',
-                companyName: product.merchant?.name || '',
-              },
-            },
-            category: product.category,
-          }));
-          setProducts(transformedProducts);
+        if (productsRes.success) {
+          setProducts(productsRes.data?.products || []);
+        } else {
+          console.error('Failed to fetch products:', productsRes.error);
         }
 
-        if (outletsRes.ok) {
-          const data = await outletsRes.json();
-          const mapped = (data.data?.outlets || []).map((o: any) => ({ id: o.id, name: o.name }));
+        if (outletsRes.success) {
+          const mapped = (outletsRes.data?.outlets || []).map((o: any) => ({ id: o.id, name: o.name }));
           setOutlets(mapped);
+        } else {
+          console.error('Failed to fetch outlets:', outletsRes.error);
         }
       } catch (error) {
         console.error('Error loading data for order creation:', error);
@@ -89,20 +84,17 @@ export default function CreateOrderPage() {
     };
 
     fetchAll();
-  }, []);
+  }, [merchantId]);
 
   const handleSubmit = async (orderData: OrderInput) => {
     try {
       setSubmitting(true);
-      const response = await authenticatedFetch('/api/orders', {
-        method: 'POST',
-        body: JSON.stringify(orderData),
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'Failed to create order');
+      const result = await ordersApi.createOrder(orderData);
+      if (result.success) {
+        router.push('/orders');
+      } else {
+        throw new Error(result.error || 'Failed to create order');
       }
-      router.push('/orders');
     } catch (error) {
       console.error('Create order failed:', error);
       alert((error as Error).message || 'Create order failed');
@@ -115,12 +107,27 @@ export default function CreateOrderPage() {
     router.push('/orders');
   };
 
+  if (!merchantId) {
+    return (
+      <PageWrapper>
+        <PageContent>
+          <Card>
+            <CardContent className="p-8 text-center text-gray-600">
+              <div className="mb-4">Merchant ID not found</div>
+              <div className="text-sm text-gray-500">Please log in again to access this page</div>
+            </CardContent>
+          </Card>
+        </PageContent>
+      </PageWrapper>
+    );
+  }
+
   return (
     <PageWrapper>
       <PageContent>
         {loading ? (
           <Card>
-            <CardContent className="p-8 text-center text-gray-600">Đang tải dữ liệu...</CardContent>
+            <CardContent className="p-8 text-center text-gray-600">Loading data...</CardContent>
           </Card>
         ) : (
           <CreateOrderForm
@@ -131,7 +138,7 @@ export default function CreateOrderPage() {
             outlets={outlets}
             loading={submitting}
             layout="split"
-            merchantId={merchantId}
+            merchantId={merchantId?.toString()}
           />
         )}
       </PageContent>

@@ -23,6 +23,7 @@ export interface ProductFilters {
   search?: string;
   categoryId?: string;
   outletId?: string;
+  merchantId?: string;
   minPrice?: number;
   maxPrice?: number;
   available?: boolean;
@@ -135,16 +136,6 @@ export const productsApi = {
     return await parseApiResponse<any>(response);
   }
 };
-
-// Export individual functions for direct use in components
-export const getProducts = (filters?: ProductFilters) => productsApi.getProducts(filters);
-export const getProductById = (productId: string) => productsApi.getProductById(productId);
-export const getProductByBarcode = (barcode: string) => productsApi.getProductByBarcode(barcode);
-export const checkAvailability = (productId: string) => productsApi.checkAvailability(productId);
-export const createProduct = (productData: any) => productsApi.createProduct(productData);
-export const updateProduct = (productId: string, productData: Partial<any>) => productsApi.updateProduct(productId, productData);
-export const deleteProduct = (productId: string) => productsApi.deleteProduct(productId);
-export const getProductStats = () => productsApi.getProductStats();
 
 // Additional functions needed for the new pages
 export const getCategories = async (): Promise<Category[]> => {

@@ -13,7 +13,7 @@ import {
   TopCustomers,
   RecentOrders
 } from '@rentalshop/ui';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@rentalshop/hooks';
 
 interface DashboardStats {
   totalCustomers: number;

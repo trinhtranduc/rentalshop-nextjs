@@ -8,3 +8,4 @@ export { CustomerForm } from './CustomerForm';
 export { ProductForm } from './ProductForm';
 export { OrderForm } from './OrderForm';
 export { CreateOrderForm } from './CreateOrderForm';
+export { EditOrderForm } from './EditOrderForm';

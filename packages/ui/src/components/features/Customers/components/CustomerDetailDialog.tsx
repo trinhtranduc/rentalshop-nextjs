@@ -12,7 +12,8 @@ import {
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { Badge } from '../../../ui/badge';
-import type { CustomerWithMerchant } from '@rentalshop/database';
+import { User, UserX, Building, Calendar, Phone, Mail, Home, FileText } from 'lucide-react';
+import type { CustomerWithMerchant } from '@rentalshop/types';
 
 interface CustomerDetailDialogProps {
   open: boolean;
@@ -64,21 +65,17 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
         </DialogHeader>
 
         <div className="mt-6 space-y-6">
-          {/* Personal Information */}
+          {/* Customer Overview */}
           <Card>
             <CardContent className="p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                Personal Information
+                <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                Customer Overview
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                  <p className="text-gray-900 text-base font-medium">{customer.firstName}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                  <p className="text-gray-900 text-base font-medium">{customer.lastName}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <p className="text-gray-900 text-base font-medium">{`${customer.firstName} ${customer.lastName}`}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -96,11 +93,21 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                  <div className="mt-1">
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`}>
-                      {getStatusDisplayName(customer.isActive)}
-                    </div>
+                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`}>
+                    {getStatusDisplayName(customer.isActive)}
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Customer ID</label>
+                  <p className="text-gray-500 text-sm font-mono">{customer.id}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
+                  <p className="text-gray-900 text-base">{formatDate(customer.createdAt)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
+                  <p className="text-gray-900 text-base">{formatDate(customer.updatedAt)}</p>
                 </div>
               </div>
             </CardContent>
@@ -162,16 +169,6 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                     {customer.notes || 'No notes available'}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Created At</label>
-                    <p className="text-gray-900 text-base">{formatDate(customer.createdAt)}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
-                    <p className="text-gray-900 text-base">{formatDate(customer.updatedAt)}</p>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -194,6 +191,47 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-2">Merchant ID</label>
                   <p className="text-gray-500 text-sm font-mono">
                     {customer.merchant?.id || 'Not specified'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Customer Actions */}
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                Customer Actions
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Account Management</h4>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    disabled
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Edit Customer
+                  </Button>
+                  <p className="text-xs text-gray-500">
+                    Modify customer information and details
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Account Status</h4>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-orange-600 border-orange-200 hover:bg-orange-50"
+                    disabled
+                  >
+                    <UserX className="mr-2 h-4 w-4" />
+                    Deactivate Account
+                  </Button>
+                  <p className="text-xs text-gray-500">
+                    Deactivate customer account if needed
                   </p>
                 </div>
               </div>

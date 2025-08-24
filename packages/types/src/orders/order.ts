@@ -47,12 +47,39 @@ export interface OrderCreateInput {
 
 export interface OrderUpdateInput {
   status?: OrderStatus;
-  totalAmount?: number;
-  depositAmount?: number;
   pickupPlanAt?: Date;
   returnPlanAt?: Date;
   pickedUpAt?: Date;
   returnedAt?: Date;
+  rentalDuration?: number;
+  subtotal?: number;
+  taxAmount?: number;
+  discountAmount?: number;
+  totalAmount?: number;
+  depositAmount?: number;
+  securityDeposit?: number;
+  damageFee?: number;
+  lateFee?: number;
+  collateralType?: string;
+  collateralDetails?: string;
+  notes?: string;
+  pickupNotes?: string;
+  returnNotes?: string;
+  damageNotes?: string;
+  isReadyToDeliver?: boolean;
+  // Additional settings fields
+  bailAmount?: number;
+  material?: string;
+  // Order items management
+  orderItems?: Array<{
+    id?: string;
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    deposit?: number;
+    notes?: string;
+  }>;
 }
 
 export interface OrderFilters {
@@ -201,6 +228,8 @@ export interface OrderSearchFilter {
   isReadyToDeliver?: boolean;
   limit?: number;
   offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface OrderSearchResponse {
@@ -270,13 +299,29 @@ export interface OrderData extends Order {
     phone: string;
   };
   outlet?: {
+    id: string;
     name: string;
     address: string;
+    merchantId: string;
+    merchant: {
+      id: string;
+      publicId: number;
+      name: string;
+      description?: string;
+    };
   };
   // Additional properties that the UI components need
   customerName?: string;
   customerPhone?: string;
   outletName?: string;
+  // Direct merchant access for convenience
+  merchantId?: string;
+  merchant?: {
+    id: string;
+    publicId: number;
+    name: string;
+    description?: string;
+  };
 }
 
 // Orders component data structure
@@ -300,8 +345,6 @@ export interface OrderDetailData extends OrderData {
   }>;
   // Additional properties for order details
   damageFee?: number;
-  bailAmount?: number;
-  material?: string;
   securityDeposit?: number;
   collateralType?: string;
   collateralDetails?: string;
@@ -322,8 +365,6 @@ export interface OrderDetailProps {
 
 export interface SettingsForm {
   damageFee: number;
-  bailAmount: number;
-  material: string;
   securityDeposit: number;
   collateralType: string;
   collateralDetails: string;

@@ -1,3 +1,7 @@
+import CONSTANTS from '@rentalshop/constants';
+
+const API = CONSTANTS.API;
+
 export const formatCurrency = (amount: number, currency: string = 'VND'): string => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -102,29 +106,64 @@ export const createApiUrl = (endpoint: string): string => {
 };
 
 /**
- * Authenticated fetch wrapper
+ * Authenticated fetch wrapper for API calls
+ * Handles authentication headers and common error cases
  */
 export const authenticatedFetch = async (
-  url: string, 
+  url: string,
   options: RequestInit = {}
 ): Promise<Response> => {
-  const token = typeof window !== 'undefined' 
-    ? localStorage.getItem('authToken') 
-    : null;
-
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
+  // Get token from localStorage or other storage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  
+  // Set default headers using API constants
+  const headers: Record<string, string> = {
+    [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
+    [API.HEADERS.ACCEPT]: API.CONTENT_TYPES.JSON,
+    ...(options.headers as Record<string, string>),
   };
-
+  
+  // Add authorization header if token exists
   if (token) {
-    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    headers[API.HEADERS.AUTHORIZATION] = `Bearer ${token}`;
   }
-
-  return fetch(url, {
-    ...options,
+  
+  // Set default options using API constants
+  const defaultOptions: RequestInit = {
+    method: API.METHODS.GET,
     headers,
-  });
+    ...options,
+  };
+  
+  try {
+    const response = await fetch(url, defaultOptions);
+    
+    // Handle common HTTP status codes using API constants
+    if (response.status === API.STATUS.UNAUTHORIZED) {
+      // Handle unauthorized - redirect to login or refresh token
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
+      }
+      throw new Error('Unauthorized access');
+    }
+    
+    if (response.status === API.STATUS.FORBIDDEN) {
+      throw new Error('Access forbidden');
+    }
+    
+    if (response.status >= API.STATUS.INTERNAL_SERVER_ERROR) {
+      throw new Error('Server error occurred');
+    }
+    
+    return response;
+  } catch (error) {
+    // Handle network errors using API constants
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(API.ERROR_CODES.NETWORK_ERROR);
+    }
+    throw error;
+  }
 };
 
 /**

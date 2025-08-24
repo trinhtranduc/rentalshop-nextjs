@@ -2,17 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@rentalshop/ui';
-import { OrderDetail } from '@rentalshop/ui';
+import { Button, OrderDetail, useToasts } from '@rentalshop/ui';
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { authenticatedFetch } from '@rentalshop/utils';
+import { ArrowLeft } from 'lucide-react';
+import { ordersApi } from '@rentalshop/utils';
 
 import type { OrderDetailData } from '@rentalshop/types';
 
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { showSuccess, showError } = useToasts();
   const [order, setOrder] = useState<OrderDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,20 +31,8 @@ export default function OrderDetailPage() {
         setLoading(true);
         setError(null);
 
-        const response = await authenticatedFetch(`/api/orders/by-number/ORD-${numericOrderNumber}`);
+        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderNumber}`);
 
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError('Order not found');
-          } else if (response.status === 403) {
-            setError('You do not have permission to view this order');
-          } else {
-            setError('Failed to fetch order details');
-          }
-          return;
-        }
-
-        const result = await response.json();
         if (result.success) {
           setOrder(result.data);
         } else {
@@ -76,27 +64,18 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const response = await authenticatedFetch(`/api/orders/${order?.id}`, {
-        method: 'DELETE',
-        body: JSON.stringify({
-          reason: 'Order cancelled by user'
-        }),
-      });
+      const result = await ordersApi.deleteOrder(order.id);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to cancel order');
-      }
-
-      const result = await response.json();
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        // You could also show a success message here
+        showSuccess('Order Cancelled', 'Order has been cancelled successfully');
+      } else {
+        throw new Error(result.error || 'Failed to cancel order');
       }
     } catch (err) {
       console.error('Error cancelling order:', err);
-      alert('Failed to cancel order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      showError('Cancellation Failed', 'Failed to cancel order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -108,27 +87,20 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const response = await authenticatedFetch(`/api/orders/${order?.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          status: newStatus
-        }),
+      const result = await ordersApi.updateOrder(order.id, {
+        status: newStatus
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update order status');
-      }
-
-      const result = await response.json();
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        // You could also show a success message here
+        showSuccess('Status Updated', `Order status has been updated to ${newStatus}`);
+      } else {
+        throw new Error(result.error || 'Failed to update order status');
       }
     } catch (err) {
       console.error('Error updating order status:', err);
-      alert('Failed to update order status: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      showError('Status Update Failed', 'Failed to update order status: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -157,11 +129,11 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        alert('Order picked up successfully!');
+        showSuccess('Order Pickup', 'Order has been picked up successfully!');
       }
     } catch (err) {
       console.error('Error picking up order:', err);
-      alert('Failed to pickup order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      showError('Pickup Failed', 'Failed to pickup order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -189,11 +161,11 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        alert('Order returned successfully!');
+        showSuccess('Order Return', 'Order has been returned successfully!');
       }
     } catch (err) {
       console.error('Error returning order:', err);
-      alert('Failed to return order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      showError('Return Failed', 'Failed to return order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -208,30 +180,23 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const response = await authenticatedFetch(`/api/orders/${order?.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          damageFee: data.damageFee,
-          bailAmount: data.bailAmount,
-          material: data.material,
-          notes: data.notes
-        }),
+      const result = await ordersApi.updateOrder(order.id, {
+        damageFee: data.damageFee,
+        bailAmount: data.bailAmount,
+        material: data.material,
+        notes: data.notes
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save order settings');
-      }
-
-      const result = await response.json();
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        alert('Order settings saved successfully!');
+        showSuccess('Settings Saved', 'Order settings saved successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to save order settings');
       }
     } catch (err) {
       console.error('Error saving order settings:', err);
-      alert('Failed to save order settings: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      showError('Save Failed', 'Failed to save order settings: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -257,11 +222,19 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-lg text-gray-600">Loading order details...</p>
-          <p className="text-sm text-gray-500 mt-2">Please wait while we fetch your order information</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto p-6">
+          {/* Back Button Skeleton */}
+          <div className="mb-6">
+            <div className="w-32 h-10 bg-gray-200 rounded-md animate-pulse"></div>
+          </div>
+          
+          {/* Order Detail Skeleton */}
+          <OrderDetail
+            order={{} as OrderDetailData}
+            loading={true}
+            showActions={false}
+          />
         </div>
       </div>
     );

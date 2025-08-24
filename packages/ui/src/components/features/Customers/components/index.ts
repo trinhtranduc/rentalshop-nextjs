@@ -2,6 +2,7 @@
 export { CustomerTable } from './CustomerTable';
 export { CustomerDetailDialog } from './CustomerDetailDialog';
 export { CustomerInfoCard } from './CustomerInfoCard';
+export { CustomerOrdersSummaryCard } from './CustomerOrdersSummaryCard';
 export { CustomerPageHeader } from './CustomerPageHeader';
 
 // Customer forms

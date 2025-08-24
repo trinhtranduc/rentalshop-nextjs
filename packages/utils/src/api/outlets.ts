@@ -22,6 +22,7 @@ export interface OutletsResponse {
 export interface OutletFilters {
   search?: string;
   shopId?: string;
+  merchantId?: string;
   isActive?: boolean;
   page?: number;
   limit?: number;

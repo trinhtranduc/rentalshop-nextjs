@@ -13,7 +13,7 @@ import {
   ShoppingBag,
   Trash2
 } from 'lucide-react';
-import type { CustomerWithMerchant } from '@rentalshop/database';
+import type { CustomerWithMerchant } from '@rentalshop/types';
 import type { Customer } from '@rentalshop/types';
 
 // Union type to handle both local and database customer types
@@ -150,60 +150,42 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
             </div>
           )}
         </div>
+        <div className="border-b border-gray-200 mt-4"></div>
       </CardHeader>
       
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Personal Information */}
           <div className="space-y-4">
-            <h4 className="text-md font-medium text-gray-700 border-b pb-2">Personal Details</h4>
-            
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <User className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Full Name</p>
-                  <p className="text-base text-gray-900">{customer.firstName} {customer.lastName}</p>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-normal text-gray-500 mb-2">Full Name</label>
+                <p className="text-gray-900 text-base font-medium">{customer.firstName} {customer.lastName}</p>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <Mail className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Email</p>
-                  <p className="text-base text-gray-900">{customer.email}</p>
-                </div>
+              <div>
+                <label className="block text-sm font-normal text-gray-500 mb-2">Email</label>
+                <p className="text-gray-900 text-base">{customer.email}</p>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p className="text-base text-gray-900">{customer.phone}</p>
-                </div>
+              <div>
+                <label className="block text-sm font-normal text-gray-500 mb-2">Phone</label>
+                <p className="text-gray-900 text-base">{customer.phone}</p>
               </div>
             </div>
           </div>
 
           {/* Address and Account Information */}
           <div className="space-y-4">
-            <h4 className="text-md font-medium text-gray-700 border-b pb-2">Location & Account</h4>
-            
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-gray-400 mt-1" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Address</p>
-                  <p className="text-base text-gray-900">{formatAddress()}</p>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-normal text-gray-500 mb-2">Address</label>
+                <p className="text-gray-900 text-base">{formatAddress()}</p>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Member Since</p>
-                  <p className="text-base text-gray-900">{formatDate(customer.createdAt)}</p>
-                </div>
+              <div>
+                <label className="block text-sm font-normal text-gray-500 mb-2">Member Since</label>
+                <p className="text-gray-900 text-base">{formatDate(customer.createdAt)}</p>
               </div>
             </div>
           </div>

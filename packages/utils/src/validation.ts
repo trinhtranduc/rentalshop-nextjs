@@ -172,16 +172,35 @@ export const orderUpdateSchema = z.object({
   returnPlanAt: z.coerce.date().optional(),
   pickedUpAt: z.coerce.date().optional(),
   returnedAt: z.coerce.date().optional(),
+  rentalDuration: z.coerce.number().int().positive().optional(),
   subtotal: z.coerce.number().nonnegative().optional(),
   taxAmount: z.coerce.number().nonnegative().optional(),
   discountAmount: z.coerce.number().nonnegative().optional(),
   totalAmount: z.coerce.number().nonnegative().optional(),
   depositAmount: z.coerce.number().nonnegative().optional(),
+  securityDeposit: z.coerce.number().nonnegative().optional(),
   damageFee: z.coerce.number().nonnegative().optional(),
+  lateFee: z.coerce.number().nonnegative().optional(),
+  collateralType: z.string().optional(),
+  collateralDetails: z.string().optional(),
   notes: z.string().optional(),
   pickupNotes: z.string().optional(),
   returnNotes: z.string().optional(),
   damageNotes: z.string().optional(),
+  isReadyToDeliver: z.boolean().optional(),
+  // Additional settings fields
+  bailAmount: z.coerce.number().nonnegative().optional(),
+  material: z.string().optional(),
+  // Order items management
+  orderItems: z.array(z.object({
+    id: z.string().optional(),
+    productId: z.string().min(1),
+    quantity: z.coerce.number().int().positive(),
+    unitPrice: z.coerce.number().nonnegative(),
+    totalPrice: z.coerce.number().nonnegative(),
+    deposit: z.coerce.number().nonnegative().optional(),
+    notes: z.string().optional(),
+  })).optional(),
 });
 
 export type OrdersQuery = z.infer<typeof ordersQuerySchema>;

@@ -74,6 +74,15 @@ export async function GET(
             id: true,
             name: true,
             address: true,
+            merchantId: true,
+            merchant: {
+              select: {
+                id: true,
+                publicId: true,
+                name: true,
+                description: true,
+              }
+            }
           },
         },
         orderItems: {
@@ -193,6 +202,9 @@ export async function GET(
         ? `${order.customer.firstName} ${order.customer.lastName}`
         : undefined,
       customerContact: order.customer?.phone || order.customer?.email,
+      // Add direct merchant information for convenience
+      merchantId: order.outlet?.merchantId,
+      merchant: order.outlet?.merchant,
       paymentSummary: {
         totalPaid,
         totalPending,

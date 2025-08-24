@@ -211,4 +211,7 @@ export const getApiDatabaseUrl = () => apiConfig.database.url;
 export const getApiJwtSecret = () => apiConfig.auth.jwtSecret;
 export const getApiCorsOrigins = () => apiConfig.cors.origins;
 
+// Add missing getApiUrl function
+export const getApiUrl = () => apiConfig.urls.api;
+
 

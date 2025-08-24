@@ -104,10 +104,50 @@ export const ordersApi = {
   },
 
   /**
-   * Get order by order number
+   * Get order by order number (e.g., "ORD-2110")
    */
   async getOrderByNumber(orderNumber: string): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/orders/by-number/${orderNumber}`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get order details with full information (customer, products, outlet, etc.)
+   */
+  async getOrderDetails(orderId: string): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`/api/orders/${orderId}?include=details`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Update an existing order
+   */
+  async updateOrder(orderId: string, orderData: any): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`/api/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify(orderData),
+    });
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Create a new order
+   */
+  async createOrder(orderData: any): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch('/api/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Delete an order
+   */
+  async deleteOrder(orderId: string): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`/api/orders/${orderId}`, {
+      method: 'DELETE',
+    });
     return await parseApiResponse<any>(response);
   },
 

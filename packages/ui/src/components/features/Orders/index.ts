@@ -10,7 +10,7 @@ export {
   OrderHeader,
   OrderFilters,
   OrderTable,
-  OrderListActions,
+  OrderActions,
   OrderStats,
   OrderPagination,
   OrdersLoading,

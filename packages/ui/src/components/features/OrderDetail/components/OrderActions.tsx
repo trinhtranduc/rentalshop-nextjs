@@ -34,64 +34,67 @@ export const OrderActions: React.FC<OrderActionsProps> = ({
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-gray-900">Order Actions</h3>
       
-      {/* Primary Actions */}
-      <div className="flex flex-wrap gap-3">
-        {/* Cancel Order */}
-        {canCancel && (
-          <Button
-            variant="destructive"
-            onClick={() => onCancel?.(order)}
-            className="px-6"
-          >
-            <X className="w-4 h-4 mr-2" />
-            Cancel Order
-          </Button>
-        )}
+      {/* Actions Layout: Cancel on left, others on right */}
+      <div className="flex justify-between items-center">
+        {/* Left side - Cancel button */}
+        <div>
+          {canCancel && (
+            <Button
+              variant="destructive"
+              onClick={() => onCancel?.(order)}
+              className="px-6"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel Order
+            </Button>
+          )}
+        </div>
 
-        {/* Pickup Order */}
-        {canPickup && (
-          <Button
-            variant="default"
-            onClick={() => onPickup?.(order.id, {
-              order_status: 'PICKUP',
-              bail_amount: settingsForm.bailAmount,
-              material: settingsForm.material,
-              notes: settingsForm.notes
-            })}
-            className="px-6"
-          >
-            <Package className="w-4 h-4 mr-2" />
-            Pickup Order
-          </Button>
-        )}
+        {/* Right side - Other action buttons */}
+        <div className="flex gap-3">
+          {/* Pickup Order */}
+          {canPickup && (
+            <Button
+              variant="default"
+              onClick={() => onPickup?.(order.id, {
+                order_status: 'PICKUP',
+                bail_amount: settingsForm.bailAmount,
+                material: settingsForm.material,
+                notes: settingsForm.notes
+              })}
+              className="px-6"
+            >
+              <Package className="w-4 h-4 mr-2" />
+              Pickup Order
+            </Button>
+          )}
 
-        {/* Return Order */}
-        {canReturn && (
-          <Button
-            variant="default"
-            onClick={() => onReturn?.(order.id, {
-              order_status: 'RETURNED',
-              notes: settingsForm.notes,
-              damage_fee: settingsForm.damageFee
-            })}
-            className="px-6"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Return Order
-          </Button>
-        )}
-      </div>
+          {/* Return Order */}
+          {canReturn && (
+            <Button
+              variant="default"
+              onClick={() => onReturn?.(order.id, {
+                order_status: 'RETURNED',
+                notes: settingsForm.notes,
+                damage_fee: settingsForm.damageFee
+              })}
+              className="px-6"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Return Order
+            </Button>
+          )}
 
-      {/* Secondary Actions */}
-      <div className="flex flex-wrap gap-3 pt-3 border-t border-gray-200">
-        <Button
-          variant="outline"
-          onClick={() => window.print()}
-          className="px-4"
-        >
-          <Printer className="w-4 h-4 mr-2" />
-          Print Order
-        </Button>
+          {/* Print Order - Always visible */}
+          <Button
+            variant="outline"
+            onClick={() => window.print()}
+            className="px-4"
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            Print Order
+          </Button>
+        </div>
       </div>
     </div>
   );

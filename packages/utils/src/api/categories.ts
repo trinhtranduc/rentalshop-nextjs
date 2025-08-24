@@ -22,6 +22,7 @@ export interface CategoriesResponse {
 export interface CategoryFilters {
   search?: string;
   parentId?: string;
+  merchantId?: string;
   isActive?: boolean;
   page?: number;
   limit?: number;
