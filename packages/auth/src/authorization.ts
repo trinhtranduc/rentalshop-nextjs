@@ -77,4 +77,65 @@ export function canManageProducts(user: Pick<AuthUser, 'role'>): boolean {
   return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
 }
 
+/**
+ * Centralized function to check if user can access user management operations
+ * ADMIN: Can access all users system-wide
+ * MERCHANT: Can access users within their merchant organization
+ * OUTLET_ADMIN: Can access users within their outlet
+ * OUTLET_STAFF: Cannot access user management
+ */
+export function canAccessUserManagement(user: Pick<AuthUser, 'role'>): boolean {
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+}
+
+/**
+ * Get user scope for authorization checks
+ * Returns the scope (merchantId, outletId) based on user role
+ */
+export function getUserManagementScope(user: Partial<AuthUser>): { 
+  canAccess: boolean; 
+  scope: { merchantId?: string; outletId?: string } 
+} {
+  const normalizedRole = normalizeRole(user.role);
+  
+  if (!normalizedRole) {
+    return { canAccess: false, scope: {} };
+  }
+  
+  switch (normalizedRole) {
+    case 'ADMIN':
+      return { 
+        canAccess: true, 
+        scope: {} // No scope restrictions for admin
+      };
+      
+    case 'MERCHANT':
+      return { 
+        canAccess: true, 
+        scope: { merchantId: user.merchant?.id }
+      };
+      
+    case 'OUTLET_ADMIN':
+      return { 
+        canAccess: true, 
+        scope: { 
+          merchantId: user.merchant?.id, 
+          outletId: user.outlet?.id 
+        }
+      };
+      
+    case 'OUTLET_STAFF':
+      return { 
+        canAccess: false, 
+        scope: {} 
+      };
+      
+    default:
+      return { 
+        canAccess: false, 
+        scope: {} 
+      };
+  }
+}
+
 

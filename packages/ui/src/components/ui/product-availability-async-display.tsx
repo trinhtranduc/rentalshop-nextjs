@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import type { ProductSearchResult } from '@rentalshop/database';
+import type { ProductWithStock } from '@rentalshop/types';
 
 interface AvailabilityStatus {
   status: string;
@@ -11,12 +11,12 @@ interface AvailabilityStatus {
 }
 
 interface ProductAvailabilityAsyncDisplayProps {
-  product: ProductSearchResult | undefined;
+  product: ProductWithStock | undefined;
   pickupDate?: string;
   returnDate?: string;
   requestedQuantity: number;
   getProductAvailabilityStatus: (
-    product: ProductSearchResult, 
+    product: ProductWithStock, 
     startDate?: string, 
     endDate?: string, 
     requestedQuantity?: number

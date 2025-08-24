@@ -1,3 +1,33 @@
+/**
+ * CreateOrderForm - A reusable form component for both creating and editing orders
+ * 
+ * USAGE EXAMPLES:
+ * 
+ * 1. CREATE MODE (default):
+ * <CreateOrderForm
+ *   customers={customers}
+ *   products={products}
+ *   outlets={outlets}
+ *   onSubmit={handleCreateOrder}
+ *   onCancel={handleCancel}
+ * />
+ * 
+ * 2. EDIT MODE:
+ * <CreateOrderForm
+ *   isEditMode={true}
+ *   initialOrder={existingOrder}
+ *   orderNumber={existingOrder.orderNumber}
+ *   customers={customers}
+ *   products={products}
+ *   outlets={outlets}
+ *   onSubmit={handleUpdateOrder}
+ *   onCancel={handleCancel}
+ * />
+ * 
+ * The form automatically detects edit mode and pre-populates all fields with existing data.
+ * In edit mode, the submit button shows "Update Order" instead of "Preview".
+ */
+
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -23,8 +53,6 @@ import {
   DialogTrigger,
   DateRangePicker,
   type DateRange,
-  useProductAvailability,
-  ProductAvailabilityAsyncDisplay,
   SearchableSelect,
   Textarea,
   Table,
@@ -32,9 +60,12 @@ import {
   TableBody,
   TableHead,
   TableRow,
-  TableCell
+  TableCell,
+  ProductAvailabilityAsyncDisplay
 } from '@rentalshop/ui';
-import { formatCurrency } from '@rentalshop/utils';
+import { formatCurrency, productsApi, customersApi } from '@rentalshop/utils';
+import { useProductAvailability } from '@rentalshop/hooks';
+import { PAGINATION, SEARCH, VALIDATION, BUSINESS } from '@rentalshop/constants';
 
 import { 
   Search, 
@@ -65,8 +96,8 @@ import {
 import type { 
   OrderInput, 
   CustomerSearchResult,
-  ProductSearchResult
-} from '@rentalshop/database';
+  ProductWithStock
+} from '@rentalshop/types';
 
 interface OrderItemFormData {
   productId: string;
@@ -96,7 +127,6 @@ interface OrderFormData {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
-  isReadyToDeliver: boolean;  // Order is ready for delivery/pickup
   orderItems: OrderItemFormData[];
 }
 
@@ -110,7 +140,7 @@ interface ValidationErrors {
 
 interface CreateOrderFormProps {
   customers?: CustomerSearchResult[];
-  products?: ProductSearchResult[];
+  products?: ProductWithStock[];
   outlets?: Array<{ id: string; name: string }>;
   categories?: Array<{ id: string; name: string }>;
   onSubmit?: (data: OrderInput) => void;
@@ -118,6 +148,10 @@ interface CreateOrderFormProps {
   loading?: boolean;
   layout?: 'stacked' | 'split';
   merchantId?: string; // Add merchant ID for creating new customers
+  // Edit mode props
+  isEditMode?: boolean;
+  initialOrder?: any; // Order data for editing
+  orderNumber?: string; // Order number for display in edit mode
 }
 
 export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
@@ -130,33 +164,102 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   loading = false,
   layout = 'split',
   merchantId,
+  // Edit mode props
+  isEditMode = false,
+  initialOrder,
+  orderNumber,
 }) => {
   // Form state
-  const [formData, setFormData] = useState<OrderFormData>({
-    orderType: 'RENT',
-    customerId: '',
-    outletId: outlets[0]?.id || '',
-    pickupPlanAt: '',
-    returnPlanAt: '',
-    subtotal: 0,
-    discountType: 'amount',
-    discountValue: 0,
-    discountAmount: 0,
-    depositAmount: 0,
-    totalAmount: 0,
-    notes: '',
-    customerName: '',
-    customerPhone: '',
-    customerEmail: '',
-    isReadyToDeliver: false,  // Default to false - not ready initially
-    orderItems: [],
+  const [formData, setFormData] = useState<OrderFormData>(() => {
+    // Initialize with existing order data if in edit mode
+    if (isEditMode && initialOrder) {
+      return {
+        orderType: initialOrder.orderType || 'RENT',
+        customerId: initialOrder.customerId || '',
+        outletId: initialOrder.outletId || outlets[0]?.id || '',
+        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
+        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        subtotal: initialOrder.subtotal || 0,
+        discountType: 'amount',
+        discountValue: BUSINESS.DEFAULT_DISCOUNT,
+        discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
+        depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
+        totalAmount: initialOrder.totalAmount || 0,
+        notes: initialOrder.notes || '',
+        customerName: initialOrder.customerName || '',
+        customerPhone: initialOrder.customerPhone || '',
+        customerEmail: initialOrder.customerEmail || '',
+        orderItems: [],
+      };
+    }
+    
+    // Default values for create mode
+    return {
+      orderType: 'RENT',
+      customerId: '',
+      outletId: outlets[0]?.id || '',
+      pickupPlanAt: '',
+      returnPlanAt: '',
+      subtotal: 0,
+      discountType: 'amount',
+      discountValue: BUSINESS.DEFAULT_DISCOUNT,
+      discountAmount: BUSINESS.DEFAULT_DISCOUNT,
+      depositAmount: BUSINESS.DEFAULT_DEPOSIT,
+      totalAmount: 0,
+      notes: '',
+      customerName: '',
+      customerPhone: '',
+      customerEmail: '',
+      orderItems: [],
+    };
   });
 
-  const [orderItems, setOrderItems] = useState<OrderItemFormData[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [orderItems, setOrderItems] = useState<OrderItemFormData[]>(() => {
+    // Initialize with existing order items if in edit mode
+    if (isEditMode && initialOrder?.orderItems) {
+      return initialOrder.orderItems.map((item: any) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        deposit: item.deposit || 0,
+        notes: item.notes || '',
+        startDate: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : undefined,
+        endDate: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : undefined,
+        daysRented: initialOrder.pickupPlanAt && initialOrder.returnPlanAt ? 
+          Math.ceil((new Date(initialOrder.returnPlanAt).getTime() - new Date(initialOrder.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : undefined,
+      }));
+    }
+    return [];
+  });
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(() => {
+    // Initialize with existing customer if in edit mode
+    if (isEditMode && initialOrder?.customer) {
+      return {
+        id: initialOrder.customerId || '',
+        publicId: 0, // Default value
+        firstName: initialOrder.customer.firstName,
+        lastName: initialOrder.customer.lastName,
+        phone: initialOrder.customer.phone,
+        email: initialOrder.customer.email || '',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        merchantId: '',
+        merchant: { id: '', name: '' }
+      };
+    }
+    return null;
+  });
+  const [searchQuery, setSearchQuery] = useState(() => {
+    // Initialize with selected customer info if in edit mode
+    if (isEditMode && initialOrder?.customer) {
+      return `${initialOrder.customer.firstName} ${initialOrder.customer.lastName} - ${initialOrder.customer.phone}`;
+    }
+    return '';
+  });
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [filteredProducts, setFilteredProducts] = useState<ProductSearchResult[]>(products);
+  const [filteredProducts, setFilteredProducts] = useState<ProductWithStock[]>(products);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showProductList, setShowProductList] = useState(false);
@@ -168,7 +271,109 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   const [showOrderPreview, setShowOrderPreview] = useState(false);
   
   // Product availability hook
-  const { getProductAvailability, calculateAvailability } = useProductAvailability();
+  const { calculateAvailability } = useProductAvailability();
+
+  // Create a custom getProductAvailabilityStatus function
+  const getProductAvailabilityStatus = async (product: ProductWithStock, startDate?: string, endDate?: string, requestedQuantity: number = BUSINESS.DEFAULT_QUANTITY) => {
+    try {
+      // Debug: Log the product data we're working with
+      console.log('Product availability check:', {
+        productId: product.id,
+        productName: product.name,
+        rawOutletStock: product.outletStock,
+        startDate,
+        endDate,
+        requestedQuantity
+      });
+
+      // Get stock information from outletStock array (this is where the real data is)
+      const outletStock = product.outletStock?.[0]; // Get first outlet stock entry
+      const available = outletStock?.available ?? 0;
+      const stock = outletStock?.stock ?? 0;
+      const renting = outletStock?.renting ?? 0;
+      const totalStock = stock; // Use outlet stock instead of totalStock
+
+      console.log('Processed values:', { 
+        available, 
+        stock, 
+        renting, 
+        totalStock,
+        outletStock: product.outletStock 
+      });
+
+      if (!startDate || !endDate) {
+        // Return basic availability status
+        if (available === 0) {
+          return { 
+            status: 'out-of-stock', 
+            text: 'Out of Stock', 
+            color: 'bg-red-100 text-red-600' 
+          };
+        } else if (available <= VALIDATION.LOW_STOCK_THRESHOLD) {
+          return { 
+            status: 'low-stock', 
+            text: `Low Stock (${available})`, 
+            color: 'bg-orange-100 text-orange-600' 
+          };
+        } else {
+          return { 
+            status: 'available', 
+            text: `Available (${available})`, 
+            color: 'bg-green-100 text-green-600' 
+          };
+        }
+      }
+
+      // Use the hook's calculateAvailability function
+      const availability = calculateAvailability(
+        {
+          id: product.id,
+          name: product.name,
+          stock: stock,
+          renting: renting,
+          available: available
+        },
+        startDate,
+        endDate,
+        requestedQuantity
+      );
+
+      console.log('Hook response:', availability);
+
+      // Ensure we have valid numeric values from the hook response
+      const availableQuantity = availability?.availableQuantity ?? 0;
+      const isAvailable = availability?.available ?? false;
+
+      console.log('Final values:', { availableQuantity, isAvailable });
+
+      // Return formatted status for display
+      if (isAvailable) {
+        return { 
+          status: 'available', 
+          text: `Available (${availableQuantity})`, 
+          color: 'bg-green-100 text-green-600' 
+        };
+      } else {
+        return { 
+          status: 'unavailable', 
+          text: `Unavailable (${availableQuantity}/${stock})`, 
+          color: 'bg-red-100 text-red-600' 
+        };
+      }
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      // Fallback to basic status with safe defaults
+      const outletStock = product.outletStock?.[0];
+      const available = outletStock?.available ?? 0;
+      if (available === 0) {
+        return { status: 'unknown', text: 'Out of Stock', color: 'bg-red-100 text-red-600' };
+      } else if (available <= VALIDATION.LOW_STOCK_THRESHOLD) {
+        return { status: 'unknown', text: 'Low Stock', color: 'bg-orange-100 text-orange-600' };
+      } else {
+        return { status: 'unknown', text: 'In Stock', color: 'bg-green-100 text-green-600' };
+      }
+    }
+  };
 
   // Handle preview button click
   const handlePreviewClick = (e: React.FormEvent) => {
@@ -188,45 +393,20 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // API search functions
-  const searchProducts = useCallback(async (query: string): Promise<ProductSearchResult[]> => {
+  const searchProducts = useCallback(async (query: string): Promise<ProductWithStock[]> => {
     if (!query.trim()) return [];
     
     try {
       setIsLoadingProducts(true);
-      const { authenticatedFetch } = await import('@rentalshop/utils');
       
-      const response = await authenticatedFetch(`/api/products?search=${encodeURIComponent(query)}&limit=20`);
+      const result = await productsApi.getProducts({ 
+        search: query, 
+        limit: PAGINATION.SEARCH_LIMIT
+      });
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data?.products) {
-          // Transform the products to match ProductSearchResult format
-          return data.data.products.map((product: any) => ({
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            barcode: product.barcode,
-            stock: product.outletStock?.[0]?.stock || 0,
-            renting: product.outletStock?.[0]?.renting || 0,
-            available: product.outletStock?.[0]?.available || 0,
-            rentPrice: product.rentPrice,
-            salePrice: product.salePrice,
-            deposit: product.deposit,
-            images: product.images,
-            isActive: product.isActive,
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt,
-            outlet: {
-              id: product.outletStock?.[0]?.outlet?.id || '',
-              name: product.outletStock?.[0]?.outlet?.name || '',
-              merchant: {
-                id: product.merchant?.id || '',
-                companyName: product.merchant?.name || '',
-              },
-            },
-            category: product.category,
-          }));
-        }
+      if (result.success && result.data?.products) {
+        // Return the products directly since they're already ProductWithStock
+        return result.data.products;
       }
       return [];
     } catch (error) {
@@ -247,33 +427,28 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
     try {
       setIsLoadingCustomers(true);
       
-      const { authenticatedFetch } = await import('@rentalshop/utils');
+              const result = await customersApi.getCustomers({ 
+          search: query, 
+          limit: PAGINATION.SEARCH_LIMIT, 
+          isActive: true 
+        });
       
-      const response = await authenticatedFetch(`/api/customers?search=${encodeURIComponent(query)}&limit=20&isActive=true`);
-      
-      if (response.ok) {
-        const data = await response.json();
+      if (result.success && result.data?.customers && result.data.customers.length > 0) {
+        // Store the full customer data for later use
+        setCustomerSearchResults(result.data.customers);
         
-        if (data.success && data.data?.customers && data.data.customers.length > 0) {
-          // Store the full customer data for later use
-          setCustomerSearchResults(data.data.customers);
-          
-          // Return in SearchableSelect format
-          const searchOptions = data.data.customers.map((customer: CustomerSearchResult) => ({
-            value: customer.id,
-            label: `${customer.firstName} ${customer.lastName} - ${customer.phone}`,
-            type: 'customer' as const
-          }));
-          
-          return searchOptions;
-        } else {
-          setCustomerSearchResults([]);
-          return [];
-        }
+        // Return in SearchableSelect format
+        const searchOptions = result.data.customers.map((customer: CustomerSearchResult) => ({
+          value: customer.id,
+          label: `${customer.firstName} ${customer.lastName} - ${customer.phone}`,
+          type: 'customer' as const
+        }));
+        
+        return searchOptions;
+      } else {
+        setCustomerSearchResults([]);
+        return [];
       }
-      
-      setCustomerSearchResults([]);
-      return [];
     } catch (error) {
       console.error('Error searching customers:', error);
       setCustomerSearchResults([]);
@@ -292,28 +467,35 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
     try {
       setIsLoadingProducts(true);
       
-      const { authenticatedFetch } = await import('@rentalshop/utils');
+      const result = await productsApi.getProducts({ 
+        search: query, 
+        limit: PAGINATION.SEARCH_LIMIT
+      });
       
-      const response = await authenticatedFetch(`/api/products?search=${encodeURIComponent(query)}&limit=20`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data?.products) {
-          // Transform the products to match enhanced SearchableSelect format
-          return data.data.products.map((product: any) => ({
+      if (result.success && result.data?.products) {
+        // Transform the products to match enhanced SearchableSelect format
+        return result.data.products.map((product: any) => {
+          // Get stock information from outletStock array (this is where the real data is)
+          const outletStock = product.outletStock?.[0];
+          const available = outletStock?.available ?? 0;
+          const stock = outletStock?.stock ?? 0;
+          const totalStock = stock; // Use outlet stock instead of totalStock
+          
+          return {
             value: product.id,
             label: product.name,
             image: product.image || product.imageUrl, // Support both image and imageUrl fields
             subtitle: product.barcode ? `Barcode: ${product.barcode}` : 'No Barcode',
             details: [
-              `$${product.rentPrice.toFixed(2)}`,
+              `$${(product.rentPrice || 0).toFixed(2)}`,
               `Deposit: $${(product.deposit || 0).toFixed(2)}`,
-              `Stock: ${product.available}`,
+              `Available: ${available}`,
+              `Total Stock: ${totalStock}`,
               product.category?.name || 'No Category'
             ].filter(Boolean), // Remove empty values
             type: 'product' as const
-          }));
-        }
+          };
+        });
       }
       return [];
     } catch (error) {
@@ -335,41 +517,30 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         return;
       }
       
-      const { authenticatedFetch } = await import('@rentalshop/utils');
-      
-      const response = await authenticatedFetch('/api/customers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...customerData,
-          merchantId: currentMerchantId,
-          isActive: true
-        }),
+      const result = await customersApi.createCustomer({
+        ...customerData,
+        merchantId: currentMerchantId,
+        isActive: true
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data?.customer) {
-          const newCustomer = data.data.customer;
-          
-          // Add to search results
-          setCustomerSearchResults(prev => [newCustomer, ...prev]);
-          
-          // Auto-select the new customer
-          setFormData(prev => ({
-            ...prev,
-            customerId: newCustomer.id,
-            customerName: `${newCustomer.firstName} ${newCustomer.lastName}`,
-            customerPhone: newCustomer.phone,
-            customerEmail: newCustomer.email || '',
-          }));
-          setSelectedCustomer(newCustomer);
-          
-          // Close dialog
-          setShowAddCustomerDialog(false);
-        }
+      if (result.success && result.data?.customer) {
+        const newCustomer = result.data.customer;
+        
+        // Add to search results
+        setCustomerSearchResults(prev => [newCustomer, ...prev]);
+        
+        // Auto-select the new customer
+        setFormData(prev => ({
+          ...prev,
+          customerId: newCustomer.id,
+          customerName: `${newCustomer.firstName} ${newCustomer.lastName}`,
+          customerPhone: newCustomer.phone,
+          customerEmail: newCustomer.email || '',
+        }));
+        setSelectedCustomer(newCustomer);
+        
+        // Close dialog
+        setShowAddCustomerDialog(false);
       }
     } catch (error) {
       console.error('Error creating customer:', error);
@@ -435,6 +606,66 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
     }
   }, [selectedCustomer]);
 
+  // Initialize form data when initialOrder changes (for edit mode)
+  useEffect(() => {
+    if (isEditMode && initialOrder) {
+      // Update form data with initial order values
+      setFormData(prev => ({
+        ...prev,
+        orderType: initialOrder.orderType || 'RENT',
+        customerId: initialOrder.customerId || '',
+        outletId: initialOrder.outletId || outlets[0]?.id || '',
+        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
+        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        subtotal: initialOrder.subtotal || 0,
+        discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
+        depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
+        totalAmount: initialOrder.totalAmount || 0,
+        notes: initialOrder.notes || '',
+        customerName: initialOrder.customerName || '',
+        customerPhone: initialOrder.customerPhone || '',
+        customerEmail: initialOrder.customerEmail || '',
+      }));
+
+      // Update order items
+      if (initialOrder.orderItems) {
+        const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          deposit: item.deposit || 0,
+          notes: item.notes || '',
+          startDate: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : undefined,
+          endDate: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : undefined,
+          daysRented: initialOrder.pickupPlanAt && initialOrder.returnPlanAt ? 
+            Math.ceil((new Date(initialOrder.returnPlanAt).getTime() - new Date(initialOrder.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : undefined,
+        }));
+        setOrderItems(initialOrderItems);
+      }
+
+      // Update selected customer and search query
+      if (initialOrder.customer) {
+        const customer = {
+          id: initialOrder.customerId || '',
+          publicId: 0,
+          firstName: initialOrder.customer.firstName,
+          lastName: initialOrder.customer.lastName,
+          phone: initialOrder.customer.phone,
+          email: initialOrder.customer.email || '',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          merchantId: '',
+          merchant: { id: '', name: '' }
+        };
+        setSelectedCustomer(customer);
+        // Set the search query to show the customer info
+        setSearchQuery(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
+      }
+    }
+  }, [isEditMode, initialOrder, outlets]);
+
   // Detect click outside popup to close it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -453,7 +684,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   }, [showProductList]);
 
   // Add product to order
-  const addProductToOrder = (product: ProductSearchResult) => {
+  const addProductToOrder = (product: ProductWithStock) => {
     const existingItem = orderItems.find(item => item.productId === product.id);
     
     if (existingItem) {
@@ -465,13 +696,25 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
       );
       setOrderItems(updatedItems);
     } else {
-      // Add new product
+      // Add new product - use rentPrice since salePrice doesn't exist on ProductWithStock
+      // Ensure we have valid numeric values with defaults
+      const rentPrice = product.rentPrice ?? 0;
+      const deposit = product.deposit ?? 0;
+      
+      console.log('Adding product to order:', {
+        productId: product.id,
+        productName: product.name,
+        rentPrice,
+        deposit,
+        outletStock: product.outletStock
+      });
+      
       const newItem: OrderItemFormData = {
         productId: product.id,
-        quantity: 1,
-        unitPrice: formData.orderType === 'RENT' ? product.rentPrice : (product.salePrice || 0),
-        totalPrice: formData.orderType === 'RENT' ? product.rentPrice : (product.salePrice || 0),
-        deposit: product.deposit,
+        quantity: BUSINESS.DEFAULT_QUANTITY,
+        unitPrice: formData.orderType === 'RENT' ? rentPrice : rentPrice, // Use rentPrice as fallback
+        totalPrice: formData.orderType === 'RENT' ? rentPrice : rentPrice,
+        deposit: deposit,
         notes: '',
         startDate: formData.orderType === 'RENT' ? formData.pickupPlanAt : undefined,
         endDate: formData.orderType === 'RENT' ? formData.returnPlanAt : undefined,
@@ -510,56 +753,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
     const end = new Date(endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
-  // Get product availability status for rental period
-  const getProductAvailabilityStatus = async (product: ProductSearchResult, startDate?: string, endDate?: string, requestedQuantity: number = 1) => {
-    try {
-      // Use the advanced availability hook
-      const availability = await getProductAvailability(
-        product, 
-        startDate || null, 
-        endDate || null, 
-        requestedQuantity
-      );
-
-      // Return formatted status for display
-      if (availability.status === 'available') {
-        return { 
-          status: 'available', 
-          text: `Available (${availability.available}/${availability.storage})`, 
-          color: 'bg-green-100 text-green-600' 
-        };
-      } else if (availability.hasDateConflict) {
-        return { 
-          status: 'date-conflict', 
-          text: `Date Conflict - ${availability.conflictingQuantity} items rented`, 
-          color: 'bg-red-100 text-red-600' 
-        };
-      } else if (availability.storage === 0) {
-        return { 
-          status: 'out-of-stock', 
-          text: 'Out of Stock', 
-          color: 'bg-red-100 text-red-600' 
-        };
-      } else {
-        return { 
-          status: 'unavailable', 
-          text: `Unavailable (${availability.available}/${availability.storage})`, 
-          color: 'bg-orange-100 text-orange-600' 
-        };
-      }
-    } catch (error) {
-      console.error('Error checking availability:', error);
-      // Fallback to basic status
-      if (product.available === 0) {
-        return { status: 'unknown', text: 'Out of Stock', color: 'bg-red-100 text-red-600' };
-      } else if (product.available <= 2) {
-        return { status: 'unknown', text: 'Low Stock', color: 'bg-orange-100 text-orange-600' };
-      } else {
-        return { status: 'unknown', text: 'In Stock', color: 'bg-green-100 text-green-600' };
-      }
-    }
   };
 
   // Update rental dates and recalculate prices
@@ -603,14 +796,16 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
       }
       if (formData.pickupPlanAt && formData.returnPlanAt) {
         const days = calculateRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
-        if (days <= 0) {
-          errors.returnPlanAt = 'Return date must be after pickup date';
+        if (days < BUSINESS.MIN_RENTAL_DAYS) {
+          errors.returnPlanAt = `Rental must be at least ${BUSINESS.MIN_RENTAL_DAYS} day`;
+        } else if (days > BUSINESS.MAX_RENTAL_DAYS) {
+          errors.returnPlanAt = `Rental cannot exceed ${BUSINESS.MAX_RENTAL_DAYS} days`;
         }
       }
     }
 
-    if (formData.orderType === 'RENT' && formData.depositAmount < 0) {
-      errors.depositAmount = 'Deposit amount cannot be negative';
+    if (formData.orderType === 'RENT' && formData.depositAmount < VALIDATION.MIN_DEPOSIT_AMOUNT) {
+      errors.depositAmount = `Deposit amount cannot be less than ${VALIDATION.MIN_DEPOSIT_AMOUNT}`;
     }
 
     setValidationErrors(errors);
@@ -645,7 +840,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         customerName: formData.customerName || undefined,
         customerPhone: formData.customerPhone || undefined,
         customerEmail: formData.customerEmail || undefined,
-        isReadyToDeliver: formData.isReadyToDeliver,  // Include the new field
         orderItems: orderItems.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -659,6 +853,11 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         }))
       };
       
+      // Add order ID for edit mode
+      if (isEditMode && initialOrder?.id) {
+        orderData.id = initialOrder.id;
+      }
+      
       onSubmit?.(orderData);
     } catch (error) {
       console.error('Error submitting order:', error);
@@ -668,13 +867,41 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   };
 
   const isFormValid = () => {
-    return orderItems.length > 0 && formData.customerId && formData.pickupPlanAt && formData.returnPlanAt;
+    const hasProducts = orderItems.length > 0;
+    const hasCustomer = formData.customerId || formData.customerName || formData.customerPhone;
+    
+    if (formData.orderType === 'RENT') {
+      return hasProducts && hasCustomer && formData.pickupPlanAt && formData.returnPlanAt;
+    } else {
+      return hasProducts && hasCustomer;
+    }
   };
 
 
         return (
     <div className="min-h-screen bg-bg-secondary">
       <div className="w-full">
+
+        {/* Header for edit mode */}
+        {isEditMode && orderNumber && (
+          <div className="bg-white border-b border-gray-200 px-6 py-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Edit Order #{orderNumber}
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Modify order information and items
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="default" className="bg-blue-100 text-blue-800">
+                  EDIT MODE
+                </Badge>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
           {/* Left Column - Products Section (2/3) */}
@@ -748,7 +975,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                                 <div className="flex-shrink-0">
                                   {(() => {
                                     const product = products.find(p => p.id === item.productId);
-                                    const imageUrl = product?.images;
+                                    const imageUrl = product?.images?.[0]; // Access first image from array
                                     
                                     if (imageUrl) {
                                       return (
@@ -829,7 +1056,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                                     type="number"
                                     min="1"
                                     value={item.quantity}
-                                    onChange={(e) => updateOrderItem(item.productId, 'quantity', parseInt(e.target.value) || 1)}
+                                    onChange={(e) => updateOrderItem(item.productId, 'quantity', parseInt(e.target.value) || BUSINESS.DEFAULT_QUANTITY)}
                                     className="h-8 text-sm"
                                   />
                                 </div>
@@ -844,7 +1071,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                                     min="0"
                                     step="0.01"
                                     value={item.unitPrice}
-                                    onChange={(e) => updateOrderItem(item.productId, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                    onChange={(e) => updateOrderItem(item.productId, 'unitPrice', parseFloat(e.target.value) || BUSINESS.DEFAULT_DISCOUNT)}
                                     className="h-8 text-sm"
                                   />
                                 </div>
@@ -859,7 +1086,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                                     min="0"
                                     step="0.01"
                                     value={item.deposit}
-                                    onChange={(e) => updateOrderItem(item.productId, 'deposit', parseFloat(e.target.value) || 0)}
+                                    onChange={(e) => updateOrderItem(item.productId, 'deposit', parseFloat(e.target.value) || BUSINESS.DEFAULT_DEPOSIT)}
                                     className="h-8 text-sm"
                                   />
                                 </div>
@@ -939,36 +1166,80 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                     Customer <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <SearchableSelect
-                      placeholder="Search customers by name or phone..."
-                      value={formData.customerId}
-                      onChange={(value: string) => {
-                        // Find customer from search results first, then fallback to static customers
-                        const customer = customerSearchResults.find(c => c.id === value) || 
-                                       customers.find(c => c.id === value);
-                        if (customer) {
-                          setFormData(prev => ({
-                            ...prev,
-                            customerId: value,
-                            customerName: customer.firstName + ' ' + customer.lastName,
-                            customerPhone: customer.phone,
-                            customerEmail: customer.email || ''
-                          }));
-                          setSelectedCustomer(customer);
-                        }
-                      }}
-                      // Remove options prop when using onSearch to prevent conflicts
-                      // options={customers.map(customer => ({
-                      //   value: customer.id,
-                      //   label: `${customer.firstName} ${customer.lastName} - ${customer.phone}`
-                      // }))}
-                      onSearch={searchCustomers}
-                      searchPlaceholder="Type to search customers..."
-                      emptyText="No customers found. Try a different search term."
-                      showAddNew={true}
-                      addNewText="Add New Customer"
-                      onAddNew={() => setShowAddCustomerDialog(true)}
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search customers by name or phone..."
+                        value={searchQuery}
+
+                        onFocus={() => {
+                          // Show search results when focused if there's a query
+                          if (searchQuery.trim()) {
+                            searchCustomers(searchQuery);
+                          }
+                        }}
+                        onInput={(e) => {
+                          const query = e.currentTarget.value;
+                          setSearchQuery(query);
+                          if (query.trim()) {
+                            searchCustomers(query);
+                          } else {
+                            setCustomerSearchResults([]);
+                            // Clear selected customer when search is cleared
+                            setSelectedCustomer(null);
+                            setFormData(prev => ({
+                              ...prev,
+                              customerId: '',
+                              customerName: '',
+                              customerPhone: '',
+                              customerEmail: ''
+                            }));
+                          }
+                        }}
+                        className="h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0 hover:border-gray-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (searchQuery.trim()) {
+                            searchCustomers(searchQuery);
+                          }
+                        }}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+                      >
+                        <Search className="w-4 h-4" />
+                      </button>
+                      
+                      {/* Search Results Dropdown */}
+                      {customerSearchResults.length > 0 && searchQuery.trim() && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                          {customerSearchResults.map((customer) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCustomer(customer);
+                                setFormData(prev => ({
+                                  ...prev,
+                                  customerId: customer.id,
+                                  customerName: `${customer.firstName} ${customer.lastName}`,
+                                  customerPhone: customer.phone,
+                                  customerEmail: customer.email || ''
+                                }));
+                                setSearchQuery(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
+                                setCustomerSearchResults([]);
+                              }}
+                              className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">
+                                {customer.firstName} {customer.lastName}
+                              </div>
+                              <div className="text-sm text-gray-600">{customer.phone}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     {isLoadingCustomers && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                         <Loader2 className="w-4 h-4 animate-spin text-text-secondary" />
@@ -976,6 +1247,47 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                     )}
                   </div>
                   
+                  {/* Selected Customer Display */}
+                  {selectedCustomer && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">Selected Customer</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCustomer(null);
+                            setFormData(prev => ({
+                              ...prev,
+                              customerId: '',
+                              customerName: '',
+                              customerPhone: '',
+                              customerEmail: ''
+                            }));
+                          }}
+                          className="text-blue-600 hover:text-blue-700 text-sm"
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        <div className="text-sm font-medium text-blue-900">
+                          {selectedCustomer.firstName} {selectedCustomer.lastName}
+                        </div>
+                        <div className="text-xs text-blue-700">
+                          Phone: {selectedCustomer.phone}
+                        </div>
+                        {selectedCustomer.email && (
+                          <div className="text-xs text-blue-700">
+                            Email: {selectedCustomer.email}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Manual Customer Input - Collapsible */}
                   <div className="mt-4">
                       {/* Toggle Button */}
@@ -1169,25 +1481,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                   />
                 </div>
 
-                {/* Ready to Deliver */}
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="isReadyToDeliver"
-                      checked={formData.isReadyToDeliver}
-                      onChange={(e) => setFormData(prev => ({ ...prev, isReadyToDeliver: e.target.checked }))}
-                      className="w-4 h-4 text-action-primary bg-bg-primary border-border rounded focus:ring-action-primary focus:ring-2"
-                    />
-                    <label htmlFor="isReadyToDeliver" className="text-sm font-medium text-text-primary">
-                      Order is ready for delivery/pickup
-                    </label>
-                  </div>
-                  <p className="text-xs text-text-secondary">
-                    Check this when the order has been prepared and is ready for customer pickup or delivery
-                  </p>
-                </div>
-
                 {/* Order Summary */}
                 <div className="space-y-3 p-4 border border-border rounded-lg bg-bg-primary">
                   <h4 className="font-medium text-text-primary">Order Summary</h4>
@@ -1278,17 +1571,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                         </span>
                       </div>
 
-                      {/* Ready to Deliver Status */}
-                      <div className="flex items-center gap-2">
-                        {formData.isReadyToDeliver ? (
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Info className="w-4 h-4 text-blue-500" />
-                        )}
-                        <span className={formData.isReadyToDeliver ? 'text-green-700' : 'text-blue-600'}>
-                          {formData.isReadyToDeliver ? '✓' : 'ℹ'} {formData.isReadyToDeliver ? 'Order ready for delivery' : 'Order not yet ready for delivery'}
-                        </span>
-                      </div>
+
                     </div>
                   </div>
 
@@ -1300,7 +1583,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                       onClick={handlePreviewClick}
                       className="flex-1"
                     >
-                      {loading ? 'Processing...' : 'Preview'}
+                      {loading ? 'Processing...' : isEditMode ? 'Update Order' : 'Preview'}
                     </Button>
                     {onCancel && (
                       <Button
@@ -1309,7 +1592,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                         onClick={onCancel}
                         className="flex-1"
                       >
-                        Reset Selection
+                        {isEditMode ? 'Cancel' : 'Reset Selection'}
                       </Button>
                     )}
                   </div>

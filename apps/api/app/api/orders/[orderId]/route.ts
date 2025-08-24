@@ -207,16 +207,27 @@ export async function PUT(
       ...(updateData.returnPlanAt !== undefined && { returnPlanAt: updateData.returnPlanAt }),
       ...(updateData.pickedUpAt !== undefined && { pickedUpAt: updateData.pickedUpAt }),
       ...(updateData.returnedAt !== undefined && { returnedAt: updateData.returnedAt }),
+      ...(updateData.rentalDuration !== undefined && { rentalDuration: updateData.rentalDuration }),
       ...(updateData.subtotal !== undefined && { subtotal: updateData.subtotal }),
       ...(updateData.taxAmount !== undefined && { taxAmount: updateData.taxAmount }),
       ...(updateData.discountAmount !== undefined && { discountAmount: updateData.discountAmount }),
       ...(updateData.totalAmount !== undefined && { totalAmount: updateData.totalAmount }),
       ...(updateData.depositAmount !== undefined && { depositAmount: updateData.depositAmount }),
+      ...(updateData.securityDeposit !== undefined && { securityDeposit: updateData.securityDeposit }),
       ...(updateData.damageFee !== undefined && { damageFee: updateData.damageFee }),
+      ...(updateData.lateFee !== undefined && { lateFee: updateData.lateFee }),
+      ...(updateData.collateralType !== undefined && { collateralType: updateData.collateralType }),
+      ...(updateData.collateralDetails !== undefined && { collateralDetails: updateData.collateralDetails }),
       ...(updateData.notes !== undefined && { notes: updateData.notes }),
       ...(updateData.pickupNotes !== undefined && { pickupNotes: updateData.pickupNotes }),
       ...(updateData.returnNotes !== undefined && { returnNotes: updateData.returnNotes }),
       ...(updateData.damageNotes !== undefined && { damageNotes: updateData.damageNotes }),
+      ...(updateData.isReadyToDeliver !== undefined && { isReadyToDeliver: updateData.isReadyToDeliver }),
+      // Additional settings fields
+      ...(updateData.bailAmount !== undefined && { bailAmount: updateData.bailAmount }),
+      ...(updateData.material !== undefined && { material: updateData.material }),
+      // Order items management
+      ...(updateData.orderItems !== undefined && { orderItems: updateData.orderItems }),
     };
 
     // Update the order

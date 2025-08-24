@@ -32,6 +32,7 @@
     "@radix-ui/react-toast": "^1.2.5",
     "@rentalshop/types": "file:../types",
     "@rentalshop/hooks": "file:../hooks",
+    "@rentalshop/constants": "file:../constants",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.344.0",

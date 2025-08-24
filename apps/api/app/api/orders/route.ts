@@ -9,7 +9,7 @@ import {
   updateOrder,
   cancelOrder
 } from '@rentalshop/database';
-import type { OrderInput, OrderSearchFilter, OrderUpdateInput, OrderType, OrderStatus } from '@rentalshop/database';
+import type { OrderInput, OrderSearchFilter, OrderUpdateInput, OrderType, OrderStatus } from '@rentalshop/types';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
@@ -57,6 +57,8 @@ export async function GET(request: NextRequest) {
     const customerId = searchParams.get('customerId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const sortBy = searchParams.get('sortBy');
+    const sortOrder = searchParams.get('sortOrder');
 
     // If productId is provided, get orders for that specific product
     if (productId) {
@@ -120,6 +122,8 @@ export async function GET(request: NextRequest) {
       ...(customerId && { customerId }),
       ...(startDate && { startDate: new Date(startDate) }),
       ...(endDate && { endDate: new Date(endDate) }),
+      ...(sortBy && { sortBy }),
+      ...(sortOrder && { sortOrder: sortOrder as 'asc' | 'desc' }),
     };
 
     // Use the searchOrders function for proper filtering and pagination

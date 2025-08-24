@@ -230,18 +230,92 @@ export async function updateOrder(
       throw new Error('Order not found');
     }
 
+    // Prepare order update data (excluding orderItems)
+    const { orderItems, ...orderUpdateData } = input;
+
     // Update the order
     const updatedOrder = await tx.order.update({
       where: { id: orderId },
-      data: input,
+      data: orderUpdateData,
     });
 
-    // OrderHistory removed; skip tracking changes
+    // Handle order items updates if provided
+    if (orderItems && orderItems.length > 0) {
+      // Delete existing order items
+      await tx.orderItem.deleteMany({
+        where: { orderId },
+      });
 
-    // (No history persistence)
+      // Create new order items
+      await Promise.all(
+        orderItems.map((item: any) =>
+          tx.orderItem.create({
+            data: {
+              orderId,
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+            },
+          })
+        )
+      );
 
-    // (No history persistence)
+      // Update outlet stock if it's a rental order
+      if (currentOrder.orderType === 'RENT') {
+        // Reset stock for current order
+        const currentOrderItems = await tx.orderItem.findMany({
+          where: { orderId },
+        });
 
+        for (const item of currentOrderItems) {
+          await tx.outletStock.upsert({
+            where: {
+              productId_outletId: {
+                productId: item.productId,
+                outletId: currentOrder.outletId,
+              },
+            },
+            update: {
+              renting: { decrement: item.quantity },
+              available: { increment: item.quantity },
+            },
+            create: {
+              productId: item.productId,
+              outletId: currentOrder.outletId,
+              stock: 0,
+              available: item.quantity,
+              renting: 0,
+            },
+          });
+        }
+
+        // Update stock for new order items
+        for (const item of orderItems) {
+          await tx.outletStock.upsert({
+            where: {
+              productId_outletId: {
+                productId: item.productId,
+                outletId: currentOrder.outletId,
+              },
+            },
+            update: {
+              renting: { increment: item.quantity },
+              available: { decrement: item.quantity },
+            },
+            create: {
+              productId: item.productId,
+              outletId: currentOrder.outletId,
+              stock: 0,
+              available: 0,
+              renting: item.quantity,
+            },
+          });
+        }
+      }
+    }
+
+    // Handle return stock update
     if (input.returnedAt && !currentOrder.returnedAt) {
       // Update outlet stock when returned
       const orderItems = await tx.orderItem.findMany({
@@ -271,12 +345,33 @@ export async function updateOrder(
       }
     }
 
-    // No history entries
-
     return orderId;
   });
 
   return await getOrderById(updatedOrderId);
+}
+
+// Helper function to build orderBy clause for Prisma
+function buildOrderByClause(sortBy?: string, sortOrder?: 'asc' | 'desc'): any {
+  const order = sortOrder || 'desc';
+  
+  console.log('🔍 buildOrderByClause called with:', { sortBy, sortOrder, order });
+  
+  switch (sortBy) {
+    case 'pickupPlanAt':
+      console.log('🔍 Sorting by pickupPlanAt:', order);
+      return { pickupPlanAt: order };
+    case 'returnPlanAt':
+      console.log('🔍 Sorting by returnPlanAt:', order);
+      return { returnPlanAt: order };
+    case 'status':
+      console.log('🔍 Sorting by status:', order);
+      return { status: order };
+    case 'createdAt':
+    default:
+      console.log('🔍 Sorting by createdAt (default):', order);
+      return { createdAt: order };
+  }
 }
 
 // Search orders with filters
@@ -290,7 +385,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
   try {
     console.log('🔍 searchOrders called with filters:', JSON.stringify(filters, null, 2));
     
-    const { limit = 20, offset = 0, ...searchFilters } = filters;
+    const { limit = 20, offset = 0, sortBy, sortOrder, ...searchFilters } = filters;
 
     const where: any = {};
 
@@ -369,7 +464,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<{
           },
           // user removed
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: buildOrderByClause(sortBy, sortOrder),
         take: limit,
         skip: offset,
       }),
