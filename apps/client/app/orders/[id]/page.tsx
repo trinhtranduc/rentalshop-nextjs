@@ -18,20 +18,20 @@ export default function OrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const orderNumber = params.orderNumber as string;
+  const orderId = params.id as string;
   
-  // Extract numeric part from order number (e.g., "2110" from "ORD-2110")
-  const numericOrderNumber = orderNumber.replace(/^ORD-/, '');
+  // Extract numeric part from order ID (e.g., "2110" from "ORD-2110")
+  const numericOrderId = orderId.replace(/^ORD-/, '');
 
   useEffect(() => {
-    if (!orderNumber) return;
+    if (!orderId) return;
 
     const fetchOrderDetails = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderNumber}`);
+        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderId}`);
 
         if (result.success) {
           setOrder(result.data);
@@ -47,11 +47,11 @@ export default function OrderDetailPage() {
     };
 
     fetchOrderDetails();
-  }, [orderNumber]);
+  }, [orderId]);
 
   const handleEditOrder = () => {
     // Navigate to edit page or open edit dialog
-    router.push(`/orders/${numericOrderNumber}/edit`);
+    router.push(`/orders/${numericOrderId}/edit`);
   };
 
   const handleCancelOrder = async () => {

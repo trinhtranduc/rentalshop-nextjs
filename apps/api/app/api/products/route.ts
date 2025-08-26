@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       ...result,
       products: result.products?.map(product => ({
         ...product,
-        id: product.publicId, // Use public ID as the main id field
+        id: product.publicId, // Return publicId as "id" to frontend
         // Keep internal ID as internalId if needed for database operations
         internalId: product.id
       }))

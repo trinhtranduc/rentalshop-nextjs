@@ -3,14 +3,14 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { cn } from '../../lib/utils';
-import type { CustomerInput } from '@rentalshop/database';
+import type { CustomerInput } from '@rentalshop/types';
 
 // Form-specific interface with string date for easier form handling
 interface CustomerFormData {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: string;
+  phone: string; // Make phone required to match CustomerInput
   address?: string;
   city?: string;
   state?: string;
@@ -28,6 +28,7 @@ interface CustomerFormProps {
   loading?: boolean;
   title?: string;
   submitText?: string;
+  errorMessage?: string; // Add error message prop for API errors
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({
@@ -36,7 +37,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   onCancel,
   loading = false,
   title = 'Customer Information',
-  submitText = 'Save Customer'
+  submitText = 'Save Customer',
+  errorMessage
 }) => {
   const [formData, setFormData] = useState<CustomerFormData>({
     firstName: '',
@@ -81,7 +83,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       newErrors.email = 'Invalid email format';
     }
 
-    if (formData.phone && !formData.phone.trim()) {
+    if (!formData.phone || !formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     }
 
@@ -100,6 +102,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       // Convert form data to database format
       const customerInput: CustomerInput = {
         ...formData,
+        phone: formData.phone.trim(), // Ensure phone is trimmed string
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined
       };
       onSubmit(customerInput);
@@ -117,6 +120,12 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
   return (
     <div className="w-full space-y-6">
+      {errorMessage && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {errorMessage}</span>
+        </div>
+      )}
       {/* Personal Information */}
       <Card className="w-full border border-gray-200 shadow-sm">
         <div className="p-6">

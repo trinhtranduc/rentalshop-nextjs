@@ -608,7 +608,7 @@ async function getUsers(
 
   // Transform the response to expose publicId as "id" to the client
   const transformedUsers = users.map((user: any) => ({
-    id: user.publicId, // Client sees publicId as "id"
+            id: user.publicId, // Return publicId as "id" to frontend
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
@@ -618,14 +618,14 @@ async function getUsers(
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     merchant: user.merchant ? {
-      id: user.merchant.publicId, // Client sees merchant publicId as "id"
+                id: user.merchant.publicId, // Return merchant publicId as "id" to frontend
       name: user.merchant.name,
     } : undefined,
     outlet: user.outlet ? {
-      id: user.outlet.publicId, // Client sees outlet publicId as "id"
+                id: user.outlet.publicId, // Return outlet publicId as "id" to frontend
       name: user.outlet.name,
       merchant: user.outlet.merchant ? {
-        id: user.outlet.merchant.publicId, // Client sees merchant publicId as "id"
+                  id: user.outlet.merchant.publicId, // Return merchant publicId as "id" to frontend
         name: user.outlet.merchant.name,
       } : undefined,
     } : undefined,

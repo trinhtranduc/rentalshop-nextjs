@@ -15,8 +15,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CreateOrderForm } from '@rentalshop/ui';
-import { Loader2 } from 'lucide-react';
+import { CreateOrderForm, FormSkeleton, PageWrapper, PageContent } from '@rentalshop/ui';
 import { 
   ordersApi, 
   customersApi, 
@@ -238,29 +237,35 @@ export default function EditOrderPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading order details...</p>
-        </div>
-      </div>
+      <PageWrapper>
+        <PageContent>
+          <div className="mb-6">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <FormSkeleton />
+        </PageContent>
+      </PageWrapper>
     );
   }
 
   // Show loading state while fetching form data
   if (!merchantId) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading merchant information...</p>
-          <p className="text-sm text-gray-500">Waiting for order details to load</p>
-          <div className="mt-4 text-xs text-gray-400">
-            <div>Merchant ID: {merchantId || 'Not set'}</div>
-            <div>Order loaded: {order ? 'Yes' : 'No'}</div>
+      <PageWrapper>
+        <PageContent>
+          <div className="mb-6">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
-        </div>
-      </div>
+          <div className="space-y-4">
+            <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <FormSkeleton />
+        </PageContent>
+      </PageWrapper>
     );
   }
 
@@ -269,22 +274,25 @@ export default function EditOrderPage() {
   
   if (!hasMinimalData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading form data...</p>
-          <p className="text-sm text-gray-500">Fetching customers, products, and outlets</p>
-          <div className="mt-4 text-xs text-gray-400">
-            <div>Merchant ID: {merchantId}</div>
-            <div>Customers: {customers.length}</div>
-            <div>Products: {products.length}</div>
-            <div>Outlets: {outlets.length}</div>
-            <div>Categories: {categories.length}</div>
+      <PageWrapper>
+        <PageContent>
+          <div className="mb-6">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
-          <div className="mt-2 text-xs text-gray-300">
-            <div>Check browser console for detailed logs</div>
+          <div className="space-y-4 mb-6">
+            <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+            </div>
           </div>
-          <div className="mt-4">
+          <FormSkeleton />
+          <div className="mt-6 text-center">
             <button 
               onClick={() => window.location.reload()} 
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
@@ -292,8 +300,8 @@ export default function EditOrderPage() {
               Retry Loading
             </button>
           </div>
-        </div>
-      </div>
+        </PageContent>
+      </PageWrapper>
     );
   }
 
@@ -362,18 +370,22 @@ export default function EditOrderPage() {
   }
 
   return (
-    <CreateOrderForm
-      isEditMode={true}
-      initialOrder={order}
-      orderNumber={order.orderNumber}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      loading={actionLoading}
-      customers={customers}
-      products={products}
-      outlets={outlets}
-      categories={categories}
-      merchantId={merchantId}
-    />
+    <PageWrapper>
+      <PageContent>
+        <CreateOrderForm
+          isEditMode={true}
+          initialOrder={order}
+          orderNumber={order.orderNumber}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          loading={actionLoading}
+          customers={customers}
+          products={products}
+          outlets={outlets}
+          categories={categories}
+          merchantId={merchantId}
+        />
+      </PageContent>
+    </PageWrapper>
   );
 }

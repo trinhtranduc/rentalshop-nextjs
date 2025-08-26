@@ -33,19 +33,19 @@ export function CustomerActions({
       switch (action) {
         case 'view':
           // Navigate to customer detail page
-          if (customer.publicId) {
-            router.push(`/customers/${customer.publicId}`);
+          if (customer.id) {
+            router.push(`/customers/${customer.id}`);
           } else {
-            console.error('Customer missing publicId for navigation:', customer);
+            console.error('Customer missing id for navigation:', customer);
           }
           break;
           
         case 'edit':
           // Navigate to customer edit page
-          if (customer.publicId) {
-            router.push(`/customers/${customer.publicId}/edit`);
+          if (customer.id) {
+            router.push(`/customers/${customer.id}/edit`);
           } else {
-            console.error('Customer missing publicId for navigation:', customer);
+            console.error('Customer missing id for navigation:', customer);
           }
           break;
           
@@ -57,11 +57,11 @@ export function CustomerActions({
     const handleViewOrdersAction = (event: CustomEvent) => {
       const { customerId, customer } = event.detail;
       
-      if (customer && customer.publicId) {
+      if (customer && customer.id) {
         // Navigate to customer orders page
-        router.push(`/customers/${customer.publicId}/orders`);
+        router.push(`/customers/${customer.id}/orders`);
       } else if (onViewOrders) {
-        // Fallback to callback if no publicId
+        // Fallback to callback if no id
         onViewOrders(customerId);
       }
     };

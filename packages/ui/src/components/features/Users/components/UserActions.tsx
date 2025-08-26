@@ -39,7 +39,7 @@ export function UserActions({
         setIsViewDialogOpen(true);
       } else if (action === 'edit' && user) {
         console.log('🔍 UserActions: Handling edit action for user:', user);
-        console.log('🔍 User publicId:', user.publicId, 'type:', typeof user.publicId);
+        console.log('🔍 User id:', user.id, 'type:', typeof user.id);
         console.log('🔍 Full user object:', user);
         // Handle edit action by navigating to edit page
         handleAction('edit', user);
@@ -82,27 +82,27 @@ export function UserActions({
   };
 
   const handleAction = (action: string, user: User) => {
-    console.log('🔍 UserActions: Action triggered:', { action, userId: user.id, publicId: user.publicId });
+    console.log('🔍 UserActions: Action triggered:', { action, userId: user.id });
     
     switch (action) {
       case 'edit':
         // Navigate to user page where editing can be done inline
-        console.log('🔍 UserActions: Edit action - checking publicId:', { 
-          publicId: user.publicId, 
-          type: typeof user.publicId, 
-          isValid: user.publicId && typeof user.publicId === 'number' 
+        console.log('🔍 UserActions: Edit action - checking id:', { 
+          id: user.id, 
+          type: typeof user.id, 
+          isValid: user.id && typeof user.id === 'number' 
         });
         
-        if (user.publicId && typeof user.publicId === 'number') {
-          const formattedPublicId = formatPublicId('USER', user.publicId);
-          console.log('🔍 UserActions: Navigating to user page:', formattedPublicId);
-          console.log('🔍 Full URL:', `/users/${formattedPublicId}`);
-          router.push(`/users/${formattedPublicId}`);
+        if (user.id && typeof user.id === 'number') {
+          const formattedId = formatPublicId('USER', user.id);
+          console.log('🔍 UserActions: Navigating to user page:', formattedId);
+          console.log('🔍 Full URL:', `/users/${formattedId}`);
+          router.push(`/users/${formattedId}`);
         } else {
-          console.error('❌ UserActions: No valid public ID available for user:', user);
+          console.error('❌ UserActions: No valid id available for user:', user);
           console.error('❌ User data:', user);
           // Show error message to user
-          onError?.('Cannot edit user: Missing or invalid public ID');
+          onError?.('Cannot edit user: Missing or invalid id');
         }
         break;
         

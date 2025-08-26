@@ -10,7 +10,7 @@ import {
 } from '@rentalshop/database';
 import { customersQuerySchema, customerCreateSchema, customerUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
-import type { CustomerFilters, CustomerInput, CustomerUpdateInput, CustomerSearchFilter } from '@rentalshop/database';
+import type { CustomerFilters, CustomerInput, CustomerUpdateInput, CustomerSearchFilter } from '@rentalshop/types';
 import { searchRateLimiter } from '../../../lib/middleware/rateLimit';
 import { PrismaClient } from '@prisma/client';
 
@@ -153,6 +153,39 @@ export async function GET(request: NextRequest) {
         // Search customers
         const result = await searchCustomers(filters);
         console.log('Search result:', JSON.stringify(result, null, 2));
+        
+        // Transform search results: internal id → public id as "id"
+        if (result.success && result.data?.customers) {
+          const transformedResult = {
+            ...result,
+            data: {
+              ...result.data,
+              customers: result.data.customers.map(customer => ({
+                id: customer.publicId,                    // Return publicId as "id" to frontend
+                firstName: customer.firstName,
+                lastName: customer.lastName,
+                email: customer.email,
+                phone: customer.phone,
+                address: customer.address,
+                city: customer.city,
+                state: customer.state,
+                zipCode: customer.zipCode,
+                country: customer.country,
+                dateOfBirth: customer.dateOfBirth,
+                idNumber: customer.idNumber,
+                idType: customer.idType,
+                notes: customer.notes,
+                isActive: customer.isActive,
+                createdAt: customer.createdAt,
+                updatedAt: customer.updatedAt,
+                merchant: customer.merchant,
+                // DO NOT include customer.id (internal CUID)
+              }))
+            }
+          };
+          return NextResponse.json(transformedResult);
+        }
+        
         return NextResponse.json(result);
       } catch (error) {
         console.error('Error in searchCustomers:', error);
@@ -212,7 +245,33 @@ export async function GET(request: NextRequest) {
       // Get customers
       const result = await getCustomers(filters, page, limit);
 
-      const bodyString = JSON.stringify({ success: true, data: result });
+      // Transform response: internal id → public id as "id"
+      const transformedResult = {
+        ...result,
+        customers: result.customers.map(customer => ({
+          id: customer.publicId,                    // Return publicId as "id" to frontend
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address,
+          city: customer.city,
+          state: customer.state,
+          zipCode: customer.zipCode,
+          country: customer.country,
+          dateOfBirth: customer.dateOfBirth,
+          idNumber: customer.idNumber,
+          idType: customer.idType,
+          notes: customer.notes,
+          isActive: customer.isActive,
+          createdAt: customer.createdAt,
+          updatedAt: customer.updatedAt,
+          merchant: customer.merchant,
+          // DO NOT include customer.id (internal CUID)
+        }))
+      };
+
+      const bodyString = JSON.stringify({ success: true, data: transformedResult });
       const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
       const ifNoneMatch = request.headers.get('if-none-match');
 
@@ -275,17 +334,22 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
+    console.log('🔍 Received customer creation request:', JSON.stringify(body, null, 2));
+    
     const parsedBody = customerCreateSchema.safeParse(body);
     if (!parsedBody.success) {
+      console.error('❌ Validation failed:', parsedBody.error.flatten());
       return NextResponse.json({ success: false, message: 'Invalid payload', error: parsedBody.error.flatten() }, { status: 400 });
     }
+    
+    console.log('✅ Validation passed');
 
     const payload = parsedBody.data;
 
     const customerData: CustomerInput = {
       firstName: payload.firstName.trim(),
       lastName: payload.lastName.trim(),
-      email: payload.email.toLowerCase().trim(),
+      email: payload.email && payload.email.trim() ? payload.email.toLowerCase().trim() : undefined,
       phone: payload.phone.trim(),
       merchantId: payload.merchantId,
       address: payload.address?.trim(),
@@ -300,7 +364,11 @@ export async function POST(request: NextRequest) {
     };
 
     // Create customer
+    console.log('🔍 Creating customer with data:', JSON.stringify(customerData, null, 2));
+    
     const customer = await createCustomer(customerData);
+    
+    console.log('✅ Customer created successfully:', customer);
 
     return NextResponse.json({
       success: true,
@@ -310,6 +378,32 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating customer:', error);
+    
+    // Handle duplicate phone/email errors specifically
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint failed') || error.message.includes('UNIQUE constraint failed')) {
+        if (error.message.includes('phone')) {
+          return NextResponse.json(
+            { 
+              success: false, 
+              message: 'A customer with this phone number already exists',
+              error: 'DUPLICATE_PHONE'
+            },
+            { status: 409 }
+          );
+        } else if (error.message.includes('email')) {
+          return NextResponse.json(
+            { 
+              success: false, 
+              message: 'A customer with this email address already exists',
+              error: 'DUPLICATE_EMAIL'
+            },
+            { status: 409 }
+          );
+        }
+      }
+    }
+    
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

@@ -5,12 +5,12 @@ import { prisma } from '@rentalshop/database';
 import { productUpdateSchema } from '@rentalshop/utils';
 
 /**
- * GET /api/products/[productId]
+ * GET /api/products/[id]
  * Get product by ID
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { productId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Verify authentication
@@ -30,8 +30,8 @@ export async function GET(
       );
     }
 
-    const { productId } = params;
-    console.log('🔍 GET /api/products/[productId] - Looking for product with ID:', productId);
+    const { id } = params;
+    console.log('🔍 GET /api/products/[id] - Looking for product with ID:', id);
 
     // Get user scope to check merchant access
     const { merchantId } = getUserScope(user as any);
@@ -43,12 +43,12 @@ export async function GET(
     }
 
     // Check if the ID is numeric (public ID) or alphanumeric (internal ID)
-    const isPublicId = /^\d+$/.test(productId);
+    const isPublicId = /^\d+$/.test(id);
     
     // Find product by ID and ensure it belongs to the user's merchant
     const product = await prisma.product.findFirst({
       where: {
-        ...(isPublicId ? { publicId: parseInt(productId) } : { id: productId }),
+        ...(isPublicId ? { publicId: parseInt(id) } : { id: id }),
         merchantId: merchantId
       },
       include: {
@@ -78,7 +78,7 @@ export async function GET(
     });
 
     if (!product) {
-      console.log('❌ Product not found in database for ID:', productId);
+      console.log('❌ Product not found in database for ID:', id);
       return NextResponse.json(
         { success: false, message: 'Product not found' },
         { status: 404 }
@@ -89,7 +89,7 @@ export async function GET(
 
     // Transform the data to match the expected format
     const transformedProduct = {
-      id: product.publicId, // Use public ID as the main id field
+              id: product.publicId, // Return publicId as "id" to frontend
       name: product.name,
       description: product.description,
       barcode: product.barcode,
@@ -258,7 +258,7 @@ export async function PUT(
 
     // Transform the updated product data
     const transformedProduct = {
-      id: updatedProduct.publicId, // Use public ID as the main id field
+              id: updatedProduct.publicId, // Return publicId as "id" to frontend
       name: updatedProduct.name,
       description: updatedProduct.description,
       barcode: updatedProduct.barcode,

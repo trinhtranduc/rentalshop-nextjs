@@ -3,8 +3,7 @@
 // ============================================================================
 
 export interface Outlet {
-  id: string;
-  publicId: string;
+  id: number;        // This represents the publicId from database
   name: string;
   address: string;
   city: string;

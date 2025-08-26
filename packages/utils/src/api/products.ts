@@ -137,33 +137,6 @@ export const productsApi = {
   }
 };
 
-// Additional functions needed for the new pages
-export const getCategories = async (): Promise<Category[]> => {
-  const response = await authenticatedFetch('/api/categories');
-  const result = await parseApiResponse<Category[]>(response);
-  return result.data || [];
-};
 
-export const getOutlets = async (merchantId?: string): Promise<Outlet[]> => {
-  const params = new URLSearchParams();
-  if (merchantId) {
-    params.append('merchantId', merchantId);
-  }
-  
-  const response = await authenticatedFetch(`/api/outlets?${params.toString()}`);
-  const result = await parseApiResponse<Outlet[]>(response);
-  return result.data || [];
-};
 
-// Type definitions for the additional functions
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  isActive: boolean;
-}
 
-export interface Outlet {
-  id: string;
-  name: string;
-}

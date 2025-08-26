@@ -70,15 +70,13 @@ export type RentalInput = z.infer<typeof rentalSchema>;
 
 // Customer validation schemas
 export const customerCreateSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.union([
-    z.string().email('Invalid email address'),
-    z.literal('')
-  ]).optional().default(''),
+  firstName: z.string().min(1, 'First name is required').trim(),
+  lastName: z.string().min(1, 'Last name is required').trim(),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
   phone: z.string()
     .min(8, 'Phone number must be at least 8 characters')
-    .regex(/^[0-9+\-\s()]+$/, 'Phone number contains invalid characters'),
+    .regex(/^[0-9+\-\s()]+$/, 'Phone number contains invalid characters')
+    .trim(),
   merchantId: z.string().min(1, 'Merchant is required'),
   address: z.string().optional(),
   city: z.string().optional(),
@@ -117,7 +115,7 @@ export const customersQuerySchema = z.object({
 // ============================================================================
 
 const orderTypeEnum = z.enum(['RENT', 'SALE', 'RENT_TO_OWN']);
-const orderStatusEnum = z.enum(['PENDING', 'CONFIRMED', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'OVERDUE', 'DAMAGED']);
+const orderStatusEnum = z.enum(['PENDING', 'CONFIRMED', 'WAITING', 'PICKUPED', 'RETURNED', 'CANCELLED', 'ACTIVE', 'COMPLETED', 'OVERDUE', 'DAMAGED']);
 
 export const ordersQuerySchema = z.object({
   q: z.string().optional(),
@@ -154,15 +152,25 @@ export const orderCreateSchema = z.object({
   outletId: z.string().min(1),
   pickupPlanAt: z.coerce.date().optional(),
   returnPlanAt: z.coerce.date().optional(),
+  rentalDuration: z.coerce.number().int().positive().optional(),
   subtotal: z.coerce.number().nonnegative().default(0),
   taxAmount: z.coerce.number().nonnegative().default(0),
   discountAmount: z.coerce.number().nonnegative().default(0),
   totalAmount: z.coerce.number().nonnegative().default(0),
   depositAmount: z.coerce.number().nonnegative().default(0),
+  securityDeposit: z.coerce.number().nonnegative().optional(),
+  damageFee: z.coerce.number().nonnegative().optional(),
+  lateFee: z.coerce.number().nonnegative().optional(),
+  collateralType: z.string().optional(),
+  collateralDetails: z.string().optional(),
   notes: z.string().optional(),
+  pickupNotes: z.string().optional(),
+  returnNotes: z.string().optional(),
+  damageNotes: z.string().optional(),
   customerName: z.string().optional(),
   customerPhone: z.string().optional(),
   customerEmail: z.string().email().optional(),
+  isReadyToDeliver: z.boolean().optional(),
   orderItems: z.array(orderItemSchema).min(1),
 });
 

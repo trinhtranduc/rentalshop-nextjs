@@ -6,12 +6,12 @@ import { findUserByPublicId } from '@rentalshop/database';
 
 
 /**
- * GET /api/users/[publicId]
- * Get user by public ID (Admin only)
+ * GET /api/users/[id]
+ * Get user by ID (Admin only)
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { publicId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Verify authentication
@@ -69,13 +69,13 @@ export async function GET(
 
     console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
 
-    const { publicId } = params;
-    console.log('🔍 GET /api/users/[publicId] - Looking for user with public ID:', publicId);
+    const { id } = params;
+    console.log('🔍 GET /api/users/[id] - Looking for user with ID:', id);
 
-    // Validate public ID format (should be numeric)
-    const numericId = parseInt(publicId);
+    // Validate ID format (should be numeric)
+    const numericId = parseInt(id);
     if (isNaN(numericId) || numericId <= 0) {
-      console.log('❌ Invalid public ID format:', publicId);
+      console.log('❌ Invalid ID format:', id);
       return NextResponse.json(
         { success: false, message: 'Invalid user ID format' },
         { status: 400 }
@@ -84,13 +84,13 @@ export async function GET(
 
     console.log('🔍 Looking for user with numeric ID:', numericId);
 
-    // Check if user exists by public ID
+    // Check if user exists by ID
     const user = await findUserByPublicId(numericId);
 
     console.log('🔍 Database query result:', user);
 
     if (!user) {
-      console.log('❌ User not found in database for public ID:', publicId);
+      console.log('❌ User not found in database for ID:', id);
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: 404 }
@@ -126,7 +126,7 @@ export async function GET(
 
     // Transform the data to match the expected format
     const transformedUser = {
-      id: (user as any).publicId, // Client sees publicId as "id"
+              id: (user as any).publicId, // Return publicId as "id" to frontend
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown',
       email: user.email,
       phone: user.phone || '',

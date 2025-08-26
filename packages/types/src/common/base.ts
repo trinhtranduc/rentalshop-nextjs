@@ -3,8 +3,7 @@
 // ============================================================================
 
 export interface BaseEntity {
-  id: string;
-  publicId: string;
+  id: number;        // This represents the publicId from database
   createdAt: Date;
   updatedAt: Date;
 }

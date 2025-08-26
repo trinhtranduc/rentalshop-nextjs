@@ -1,4 +1,4 @@
-import { authenticatedFetch, parseApiResponse, createApiUrl } from '../common';
+import { authenticatedFetch, parseApiResponse, createApiUrl, isAuthenticated } from '../common';
 import type { ApiResponse } from '../common';
 
 // ============================================================================
@@ -70,12 +70,10 @@ export const handleApiResponse = async (response: Response) => {
   return data;
 };
 
-export const isAuthenticated = (): boolean => {
-  return !!(typeof window !== 'undefined' && localStorage.getItem('authToken'));
-};
+// isAuthenticated is now exported from ../common to avoid conflicts
 
 export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
-  const response = await fetch('/api/auth/login', {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -39,7 +39,7 @@ import {
 import type { 
   ProductInput, 
   ProductUpdateInput
-} from '@rentalshop/database';
+} from '@rentalshop/types';
 
 // Define Category interface locally since it's not exported from database
 interface Category {

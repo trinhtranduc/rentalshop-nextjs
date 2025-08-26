@@ -28,10 +28,10 @@ import { useToasts } from '@rentalshop/ui';
 export default function UserPage() {
   const router = useRouter();
   const params = useParams();
-  const publicId = params.publicId as string;
+  const userId = params.id as string;
   
   console.log('🔍 UserPage: Component rendered with params:', params);
-  console.log('🔍 UserPage: Public ID extracted:', publicId);
+  console.log('🔍 UserPage: User ID extracted:', userId);
   
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,20 +51,20 @@ export default function UserPage() {
       try {
         setIsLoading(true);
         
-        console.log('🔍 UserPage: Fetching user with public ID:', publicId);
+        console.log('🔍 UserPage: Fetching user with ID:', userId);
         
-        // Validate public ID format (should be numeric)
-        const numericId = parseInt(publicId);
+        // Validate ID format (should be numeric)
+        const numericId = parseInt(userId);
         if (isNaN(numericId) || numericId <= 0) {
-          console.error('❌ UserPage: Invalid public ID format:', publicId);
+          console.error('❌ UserPage: Invalid ID format:', userId);
           setUser(null);
           return;
         }
         
-        console.log('🔍 UserPage: Making API call to /api/users/' + publicId);
+        console.log('🔍 UserPage: Making API call to /api/users/' + userId);
         
-        // Use the real API to fetch user data by public ID
-        const response = await usersApi.getUserByPublicId(publicId);
+        // Use the real API to fetch user data by ID
+        const response = await usersApi.getUserByPublicId(userId);
         
         console.log('🔍 UserPage: API response received:', response);
         
@@ -85,17 +85,17 @@ export default function UserPage() {
       }
     };
 
-    if (publicId) {
+    if (userId) {
       fetchUser();
     }
-  }, [publicId]);
+  }, [userId]);
 
   // Refresh user data after updates
   const refreshUserData = async () => {
-    if (!publicId) return;
+    if (!userId) return;
     
     try {
-      const response = await usersApi.getUserByPublicId(publicId);
+      const response = await usersApi.getUserByPublicId(userId);
       if (response.success && response.data) {
         setUser(response.data);
       }
