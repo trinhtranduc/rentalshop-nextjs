@@ -25,8 +25,8 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
-  // Use publicId for dropdown management since internal IDs are not exposed
-  const getDropdownId = (user: User) => user.publicId?.toString() || user.id;
+  // Use id for dropdown management (which represents the publicId from database)
+  const getDropdownId = (user: User) => user.id?.toString() || '';
 
   // Close dropdown when clicking outside
   useEffect(() => {

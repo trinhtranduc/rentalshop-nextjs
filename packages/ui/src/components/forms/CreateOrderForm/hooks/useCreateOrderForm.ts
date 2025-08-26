@@ -1,0 +1,316 @@
+/**
+ * Custom hook for managing CreateOrderForm state and logic
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+import { useToasts } from '@rentalshop/ui';
+import { customersApi, handleApiError } from '@rentalshop/utils';
+import { BUSINESS, VALIDATION } from '@rentalshop/constants';
+import type { 
+  OrderFormData, 
+  OrderItemFormData, 
+  ValidationErrors,
+  CreateOrderFormProps 
+} from '../types';
+
+export const useCreateOrderForm = (props: CreateOrderFormProps) => {
+  const {
+    outlets = [],
+    isEditMode = false,
+    initialOrder,
+    merchantId
+  } = props;
+
+  // Form state
+  const [formData, setFormData] = useState<OrderFormData>(() => {
+    // Initialize with existing order data if in edit mode
+    if (isEditMode && initialOrder) {
+      return {
+        orderType: initialOrder.orderType || 'RENT',
+        customerId: initialOrder.customerId || '',
+        outletId: initialOrder.outletId || outlets[0]?.id || '',
+        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
+        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        subtotal: initialOrder.subtotal || 0,
+        taxAmount: initialOrder.taxAmount || 0,
+        discountType: 'amount',
+        discountValue: BUSINESS.DEFAULT_DISCOUNT,
+        discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
+        depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
+        securityDeposit: initialOrder.securityDeposit || 0,
+        lateFee: initialOrder.lateFee || 0,
+        damageFee: initialOrder.damageFee || 0,
+        totalAmount: initialOrder.totalAmount || 0,
+        notes: initialOrder.notes || '',
+        orderItems: [],
+      };
+    }
+    
+    // Default values for create mode
+    return {
+      orderType: 'RENT',
+      customerId: '',
+      outletId: outlets[0]?.id || '',
+      pickupPlanAt: '',
+      returnPlanAt: '',
+      subtotal: 0,
+      taxAmount: 0,
+      discountType: 'amount',
+      discountValue: BUSINESS.DEFAULT_DISCOUNT,
+      discountAmount: BUSINESS.DEFAULT_DISCOUNT,
+      depositAmount: BUSINESS.DEFAULT_DEPOSIT,
+      securityDeposit: 0,
+      lateFee: 0,
+      damageFee: 0,
+      totalAmount: 0,
+      notes: '',
+      orderItems: [],
+    };
+  });
+
+  const [orderItems, setOrderItems] = useState<OrderItemFormData[]>(() => {
+    // Initialize with existing order items if in edit mode
+    if (isEditMode && initialOrder?.orderItems) {
+      return initialOrder.orderItems.map((item: any) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        deposit: item.deposit || 0,
+        notes: item.notes || '',
+      }));
+    }
+    return [];
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOrderPreview, setShowOrderPreview] = useState(false);
+
+  // Toast notifications
+  const { showSuccess, showError } = useToasts();
+
+  // Calculate totals when order items change
+  useEffect(() => {
+    const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+    const discountAmount = formData.discountType === 'percentage' 
+      ? (subtotal * formData.discountValue / 100)
+      : formData.discountValue;
+    const totalAmount = subtotal - discountAmount;
+    
+    setFormData(prev => ({
+      ...prev,
+      subtotal,
+      discountAmount,
+      totalAmount
+    }));
+  }, [orderItems, formData.discountType, formData.discountValue]);
+
+  // Calculate deposit amount for rent orders
+  useEffect(() => {
+    if (formData.orderType === 'RENT') {
+      const totalDeposit = orderItems.reduce((sum, item) => sum + item.deposit, 0);
+      setFormData(prev => ({
+        ...prev,
+        depositAmount: totalDeposit,
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        depositAmount: 0,
+      }));
+    }
+  }, [orderItems, formData.orderType]);
+
+  // Initialize form data when initialOrder changes (for edit mode)
+  useEffect(() => {
+    if (isEditMode && initialOrder) {
+      // Update form data with initial order values
+      setFormData(prev => ({
+        ...prev,
+        orderType: initialOrder.orderType || 'RENT',
+        customerId: initialOrder.customerId || '',
+        outletId: initialOrder.outletId || outlets[0]?.id || '',
+        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
+        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        subtotal: initialOrder.subtotal || 0,
+        taxAmount: initialOrder.taxAmount || 0,
+        discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
+        depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
+        securityDeposit: initialOrder.securityDeposit || 0,
+        lateFee: initialOrder.lateFee || 0,
+        damageFee: initialOrder.damageFee || 0,
+        totalAmount: initialOrder.totalAmount || 0,
+        notes: initialOrder.notes || '',
+      }));
+
+      // Update order items
+      if (initialOrder.orderItems) {
+        const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          deposit: item.deposit || 0,
+          notes: item.notes || '',
+        }));
+        setOrderItems(initialOrderItems);
+      }
+    }
+  }, [isEditMode, initialOrder, outlets]);
+
+  // Add product to order
+  const addProductToOrder = useCallback((product: any) => {
+    const productIdString = String(product.id);
+    const existingItem = orderItems.find(item => item.productId === productIdString);
+    
+    if (existingItem) {
+      // Update quantity if product already exists
+      const updatedItems = orderItems.map(item =>
+        item.productId === productIdString
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      );
+      setOrderItems(updatedItems);
+    } else {
+      // Add new product
+      const rentPrice = product.rentPrice ?? 0;
+      const deposit = product.deposit ?? 0;
+      
+      const newItem: OrderItemFormData = {
+        productId: String(product.id),
+        quantity: BUSINESS.DEFAULT_QUANTITY,
+        unitPrice: formData.orderType === 'RENT' ? rentPrice : rentPrice,
+        deposit: deposit,
+        notes: '',
+      };
+      setOrderItems([...orderItems, newItem]);
+    }
+  }, [orderItems, formData.orderType]);
+
+  // Remove product from order
+  const removeProductFromOrder = useCallback((productId: string) => {
+    setOrderItems(orderItems.filter(item => item.productId !== productId));
+  }, [orderItems]);
+
+  // Update order item
+  const updateOrderItem = useCallback((productId: string, field: keyof OrderItemFormData, value: string | number) => {
+    const updatedItems = orderItems.map(item => {
+      if (item.productId === productId) {
+        return { ...item, [field]: value };
+      }
+      return item;
+    });
+    setOrderItems(updatedItems);
+  }, [orderItems]);
+
+  // Calculate rental days
+  const calculateRentalDays = useCallback((startDate: string, endDate: string): number => {
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }, []);
+
+  // Update rental dates and recalculate prices
+  const updateRentalDates = useCallback((startDate: string, endDate: string) => {
+    setFormData(prev => ({
+      ...prev,
+      pickupPlanAt: startDate,
+      returnPlanAt: endDate,
+    }));
+
+    // Update order items with new dates and recalculate prices
+    const days = calculateRentalDays(startDate, endDate);
+    const updatedItems = orderItems.map(item => ({
+      ...item,
+      startDate,
+      endDate,
+      daysRented: days,
+      totalPrice: item.unitPrice * days * item.quantity,
+    }));
+    setOrderItems(updatedItems);
+  }, [orderItems, calculateRentalDays]);
+
+  // Handle preview button click
+  const handlePreviewClick = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    setShowOrderPreview(true);
+  }, []);
+
+  // Handle order confirmation from preview
+  const handleOrderConfirm = useCallback(async () => {
+    setShowOrderPreview(false);
+    // Create a mock event for handleSubmit
+    const mockEvent = { preventDefault: () => {} } as React.FormEvent;
+    await handleSubmit(mockEvent);
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Prepare API payload
+      const apiPayload = {
+        orderType: formData.orderType,
+        customerId: formData.customerId,
+        outletId: formData.outletId,
+        pickupPlanAt: formData.pickupPlanAt ? new Date(formData.pickupPlanAt).toISOString() : undefined,
+        returnPlanAt: formData.returnPlanAt ? new Date(formData.returnPlanAt).toISOString() : undefined,
+        subtotal: formData.subtotal,
+        taxAmount: formData.taxAmount,
+        discountAmount: formData.discountAmount,
+        depositAmount: formData.depositAmount,
+        securityDeposit: formData.securityDeposit,
+        lateFee: formData.lateFee,
+        damageFee: formData.damageFee,
+        totalAmount: formData.totalAmount,
+        notes: formData.notes,
+        orderItems: orderItems.map(item => ({
+          productId: String(item.productId),
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          deposit: item.deposit,
+          notes: item.notes,
+        }))
+      };
+      
+      // Add order ID for edit mode
+      if (isEditMode && initialOrder?.id) {
+        (apiPayload as any).id = initialOrder.id;
+      }
+      
+      props.onSubmit?.(apiPayload as any);
+    } catch (error) {
+      console.error('Error submitting order:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [formData, orderItems, isEditMode, initialOrder, props, isSubmitting]);
+
+  return {
+    // State
+    formData,
+    setFormData,
+    orderItems,
+    setOrderItems,
+    isSubmitting,
+    showOrderPreview,
+    setShowOrderPreview,
+    
+    // Actions
+    addProductToOrder,
+    removeProductFromOrder,
+    updateOrderItem,
+    updateRentalDates,
+    handlePreviewClick,
+    handleOrderConfirm,
+    handleSubmit,
+    
+    // Utilities
+    calculateRentalDays,
+  };
+};

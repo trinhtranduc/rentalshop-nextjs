@@ -16,9 +16,9 @@ import { ProductDetail } from '@rentalshop/ui';
 import { Edit, ArrowLeft, Package, BarChart3 } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 import { 
-  getProductById, 
-  getCategories, 
-  getOutlets 
+  productsApi, 
+  categoriesApi, 
+  outletsApi
 } from '@rentalshop/utils';
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/ui';
 
@@ -33,7 +33,7 @@ export default function ProductViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const productId = params.productId as string;
+  const productId = params.id as string;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,17 +42,21 @@ export default function ProductViewPage() {
         setError(null);
 
         // Fetch product details
-        const productResponse = await getProductById(productId);
+        const productResponse = await productsApi.getProductById(productId);
         setProduct(productResponse.data);
 
         // Fetch categories and outlets for the form
         const [categoriesData, outletsData] = await Promise.all([
-          getCategories(),
-          getOutlets()
+          categoriesApi.getCategories(),
+          outletsApi.getOutlets()
         ]);
         
-        setCategories(categoriesData);
-        setOutlets(outletsData);
+        if (categoriesData.success) {
+          setCategories(categoriesData.data || []);
+        }
+        if (outletsData.success) {
+          setOutlets(outletsData.data?.outlets || []);
+        }
 
       } catch (err) {
         console.error('Error fetching product:', err);

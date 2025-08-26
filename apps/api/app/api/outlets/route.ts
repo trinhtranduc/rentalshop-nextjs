@@ -59,7 +59,13 @@ export async function GET(request: NextRequest) {
     const [outlets, total] = await Promise.all([
       prisma.outlet.findMany({
         where,
-        select: { id: true, name: true, address: true, description: true },
+        select: { 
+          id: true,           // Internal ID (for database operations)
+          publicId: true,     // Public ID (to expose as "id")
+          name: true, 
+          address: true, 
+          description: true 
+        },
         orderBy: { name: 'asc' },
         skip,
         take: q.limit,
@@ -67,8 +73,17 @@ export async function GET(request: NextRequest) {
       prisma.outlet.count({ where }),
     ]);
 
+    // Transform response: internal id → public id as "id"
+    const transformedOutlets = outlets.map(outlet => ({
+              id: outlet.publicId,                    // Return publicId as "id" to frontend
+      name: outlet.name,
+      address: outlet.address,
+      description: outlet.description,
+      // DO NOT include outlet.id (internal CUID)
+    }));
+
     const totalPages = Math.ceil(total / q.limit);
-    const payload = { success: true, data: { outlets, total, page: q.page, totalPages } };
+    const payload = { success: true, data: { outlets: transformedOutlets, total, page: q.page, totalPages } };
     const bodyString = JSON.stringify(payload);
     const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');

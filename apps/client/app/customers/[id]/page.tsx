@@ -24,17 +24,17 @@ import {
   X
 } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
-import type { Customer } from '@rentalshop/ui';
+import type { Customer } from '@rentalshop/types';
 import type { EditCustomerFormRef } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
 
 export default function CustomerPage() {
   const router = useRouter();
   const params = useParams();
-  const publicId = params.publicId as string;
+  const customerId = params.id as string;
   
   console.log('🔍 CustomerPage: Component rendered with params:', params);
-  console.log('🔍 CustomerPage: Public ID extracted:', publicId);
+  console.log('🔍 CustomerPage: Customer ID extracted:', customerId);
   
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,20 +56,20 @@ export default function CustomerPage() {
       try {
         setIsLoading(true);
         
-        console.log('🔍 CustomerPage: Fetching customer with public ID:', publicId);
+        console.log('🔍 CustomerPage: Fetching customer with ID:', customerId);
         
-        // Validate public ID format (should be numeric)
-        const numericId = parseInt(publicId);
+        // Validate ID format (should be numeric)
+        const numericId = parseInt(customerId);
         if (isNaN(numericId) || numericId <= 0) {
-          console.error('❌ CustomerPage: Invalid public ID format:', publicId);
+          console.error('❌ CustomerPage: Invalid ID format:', customerId);
           setCustomer(null);
           return;
         }
         
-        console.log('🔍 CustomerPage: Making API call to /api/customers/' + publicId);
+        console.log('🔍 CustomerPage: Making API call to /api/customers/' + customerId);
         
-        // Use the real API to fetch customer data by public ID
-        const response = await customersApi.getCustomerByPublicId(publicId);
+        // Use the real API to fetch customer data by ID
+        const response = await customersApi.getCustomerByPublicId(customerId);
         
         console.log('🔍 CustomerPage: API response received:', response);
         
@@ -90,18 +90,18 @@ export default function CustomerPage() {
       }
     };
 
-    if (publicId) {
+    if (customerId) {
       fetchCustomer();
     }
-  }, [publicId]);
+  }, [customerId]);
 
   // Refresh customer data after updates
   const refreshCustomerData = async () => {
-    if (!publicId) return;
+    if (!customerId) return;
     
     try {
       setIsLoading(true);
-      const response = await customersApi.getCustomerByPublicId(publicId);
+      const response = await customersApi.getCustomerByPublicId(customerId);
       
       if (response.success && response.data) {
         setCustomer(response.data);
@@ -298,7 +298,7 @@ export default function CustomerPage() {
                 <span>Edit Customer</span>
               </Button>
               <Button
-                onClick={() => router.push(`/customers/${publicId}/orders`)}
+                onClick={() => router.push(`/customers/${customerId}/orders`)}
                 variant="outline"
                 className="flex items-center space-x-2"
               >

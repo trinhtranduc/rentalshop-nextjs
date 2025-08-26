@@ -220,7 +220,7 @@ export function CustomerTable({
                         {customer.firstName} {customer.lastName}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        ID: {customer.publicId}
+                        ID: {customer.id}
                       </div>
                     </div>
                   </TableCell>

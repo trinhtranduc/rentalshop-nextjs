@@ -17,10 +17,9 @@ import { ProductEdit } from '@rentalshop/ui';
 import { ArrowLeft, Package } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 import { 
-  getProductById, 
-  updateProduct,
-  getCategories, 
-  getOutlets 
+  productsApi,
+  categoriesApi, 
+  outletsApi
 } from "@rentalshop/utils";
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/ui';
 import type { ProductInput } from '@rentalshop/database';
@@ -45,17 +44,21 @@ export default function ProductEditPage() {
         setError(null);
 
         // Fetch product details
-        const productResponse = await getProductById(productId);
+        const productResponse = await productsApi.getProductById(productId);
         setProduct(productResponse.data);
 
         // Fetch categories and outlets for the form
         const [categoriesData, outletsData] = await Promise.all([
-          getCategories(),
-          getOutlets()
+          categoriesApi.getCategories(),
+          outletsApi.getOutlets()
         ]);
         
-        setCategories(categoriesData);
-        setOutlets(outletsData);
+        if (categoriesData.success) {
+          setCategories(categoriesData.data || []);
+        }
+        if (outletsData.success) {
+          setOutlets(outletsData.data?.outlets || []);
+        }
 
       } catch (err) {
         console.error('Error fetching product:', err);
@@ -73,7 +76,7 @@ export default function ProductEditPage() {
   const handleSave = async (data: ProductInput) => {
     try {
       // Call the update API
-      await updateProduct(productId, data);
+      await productsApi.updateProduct(productId, data);
       
       // Redirect to the product view page
       router.push(`/products/${productId}`);

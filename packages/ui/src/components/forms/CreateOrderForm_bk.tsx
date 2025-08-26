@@ -61,9 +61,14 @@ import {
   TableHead,
   TableRow,
   TableCell,
-  ProductAvailabilityAsyncDisplay
+  ProductAvailabilityAsyncDisplay,
+  Skeleton,
+  useToasts,
+  ToastContainer
 } from '@rentalshop/ui';
-import { formatCurrency, productsApi, customersApi } from '@rentalshop/utils';
+import { AddCustomerForm } from '../features/Customers/components/AddCustomerForm';
+import { OrderPreviewForm } from './OrderPreviewForm';
+import { formatCurrency, productsApi, customersApi, handleApiError } from '@rentalshop/utils';
 import { useProductAvailability } from '@rentalshop/hooks';
 import { PAGINATION, SEARCH, VALIDATION, BUSINESS } from '@rentalshop/constants';
 
@@ -90,7 +95,6 @@ import {
   Table as TableIcon,
   Smartphone,
   ChevronDown,
-  Loader2,
   Info
 } from 'lucide-react';
 import type { 
@@ -103,12 +107,8 @@ interface OrderItemFormData {
   productId: string;
   quantity: number;
   unitPrice: number;
-  totalPrice: number;
   deposit: number;
   notes: string;
-  startDate?: string;
-  endDate?: string;
-  daysRented?: number;
 }
 
 interface OrderFormData {
@@ -118,15 +118,16 @@ interface OrderFormData {
   pickupPlanAt?: string;
   returnPlanAt?: string;
   subtotal: number;
+  taxAmount: number;
   discountType: 'amount' | 'percentage';
   discountValue: number;
   discountAmount: number;
   depositAmount: number;
+  securityDeposit: number;
+  lateFee: number;
+  damageFee: number;
   totalAmount: number;
   notes: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
   orderItems: OrderItemFormData[];
 }
 
@@ -141,7 +142,7 @@ interface ValidationErrors {
 interface CreateOrderFormProps {
   customers?: CustomerSearchResult[];
   products?: ProductWithStock[];
-  outlets?: Array<{ id: string; name: string }>;
+  outlets?: Array<{ id: string; name: string; merchantId?: string }>;
   categories?: Array<{ id: string; name: string }>;
   onSubmit?: (data: OrderInput) => void;
   onCancel?: () => void;
@@ -180,15 +181,16 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
         returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
         subtotal: initialOrder.subtotal || 0,
+        taxAmount: initialOrder.taxAmount || 0,
         discountType: 'amount',
         discountValue: BUSINESS.DEFAULT_DISCOUNT,
         discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
         depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
+        securityDeposit: initialOrder.securityDeposit || 0,
+        lateFee: initialOrder.lateFee || 0,
+        damageFee: initialOrder.damageFee || 0,
         totalAmount: initialOrder.totalAmount || 0,
         notes: initialOrder.notes || '',
-        customerName: initialOrder.customerName || '',
-        customerPhone: initialOrder.customerPhone || '',
-        customerEmail: initialOrder.customerEmail || '',
         orderItems: [],
       };
     }
@@ -201,15 +203,16 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
       pickupPlanAt: '',
       returnPlanAt: '',
       subtotal: 0,
+      taxAmount: 0,
       discountType: 'amount',
       discountValue: BUSINESS.DEFAULT_DISCOUNT,
       discountAmount: BUSINESS.DEFAULT_DISCOUNT,
       depositAmount: BUSINESS.DEFAULT_DEPOSIT,
+      securityDeposit: 0,
+      lateFee: 0,
+      damageFee: 0,
       totalAmount: 0,
       notes: '',
-      customerName: '',
-      customerPhone: '',
-      customerEmail: '',
       orderItems: [],
     };
   });
@@ -221,13 +224,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
         deposit: item.deposit || 0,
         notes: item.notes || '',
-        startDate: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : undefined,
-        endDate: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : undefined,
-        daysRented: initialOrder.pickupPlanAt && initialOrder.returnPlanAt ? 
-          Math.ceil((new Date(initialOrder.returnPlanAt).getTime() - new Date(initialOrder.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : undefined,
       }));
     }
     return [];
@@ -269,9 +267,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
   const [showManualCustomerInput, setShowManualCustomerInput] = useState(false);
   const [showOrderPreview, setShowOrderPreview] = useState(false);
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false); // Add loading state for customer creation
   
   // Product availability hook
   const { calculateAvailability } = useProductAvailability();
+  
+  // Toast notifications
+  const { toasts, showSuccess, showError, showInfo, removeToast } = useToasts();
 
   // Create a custom getProductAvailabilityStatus function
   const getProductAvailabilityStatus = async (product: ProductWithStock, startDate?: string, endDate?: string, requestedQuantity: number = BUSINESS.DEFAULT_QUANTITY) => {
@@ -481,20 +483,20 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
           const stock = outletStock?.stock ?? 0;
           const totalStock = stock; // Use outlet stock instead of totalStock
           
-          return {
-            value: product.id,
-            label: product.name,
-            image: product.image || product.imageUrl, // Support both image and imageUrl fields
-            subtitle: product.barcode ? `Barcode: ${product.barcode}` : 'No Barcode',
-            details: [
-              `$${(product.rentPrice || 0).toFixed(2)}`,
-              `Deposit: $${(product.deposit || 0).toFixed(2)}`,
-              `Available: ${available}`,
-              `Total Stock: ${totalStock}`,
-              product.category?.name || 'No Category'
-            ].filter(Boolean), // Remove empty values
-            type: 'product' as const
-          };
+                  return {
+          value: String(product.publicId), // Use publicId instead of internal id
+          label: product.name,
+          image: product.image || product.imageUrl, // Support both image and imageUrl fields
+          subtitle: product.barcode ? `Barcode: ${product.barcode}` : 'No Barcode',
+          details: [
+            `$${(product.rentPrice || 0).toFixed(2)}`,
+            `Deposit: $${(product.deposit || 0).toFixed(2)}`,
+            `Available: ${available}`,
+            `Total Stock: ${totalStock}`,
+            product.category?.name || 'No Category'
+          ].filter(Boolean), // Remove empty values
+          type: 'product' as const
+        };
         });
       }
       return [];
@@ -509,12 +511,61 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   // Handle adding new customer
   const handleAddNewCustomer = async (customerData: any) => {
     try {
-      // Get merchant ID from props or fallback to first outlet
-      const currentMerchantId = merchantId || outlets[0]?.id;
+      // Get merchant ID from props or fallback to first outlet's merchant ID
+      const currentMerchantId = merchantId || outlets[0]?.merchantId;
       
       if (!currentMerchantId) {
         console.error('No merchant ID available');
-        return;
+        throw new Error('Merchant ID is required to create a customer. Please ensure the form has access to merchant information.');
+      }
+      
+      // Check for duplicate phone number before creating
+      try {
+        // Normalize phone number for comparison (remove spaces, dashes, parentheses, +)
+        const normalizedPhone = customerData.phone.replace(/[\s\-\(\)\+]/g, '');
+        console.log('🔍 Checking for duplicate phone:', customerData.phone, 'Normalized:', normalizedPhone);
+        
+        // First, check in the already loaded search results for immediate feedback
+        const localDuplicate = customerSearchResults.find(customer => {
+          if (customer.phone) {
+            const existingNormalizedPhone = customer.phone.replace(/[\s\-\(\)\+]/g, '');
+            return normalizedPhone === existingNormalizedPhone;
+          }
+          return false;
+        });
+        
+        if (localDuplicate) {
+          throw new Error(`A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`);
+        }
+        
+        // Then check with the API for a more comprehensive check
+        const duplicateCheck = await customersApi.getCustomerByPhone(customerData.phone);
+        console.log('🔍 Duplicate check response:', duplicateCheck);
+        
+        // Check if there are existing customers with the same phone
+        if (duplicateCheck.success && duplicateCheck.data) {
+          // The API might return customers array or a single customer
+          const existingCustomers = duplicateCheck.data.customers || duplicateCheck.data.customer || [];
+          const customersArray = Array.isArray(existingCustomers) ? existingCustomers : [existingCustomers];
+          
+          // Check each existing customer for phone number match (with normalization)
+          for (const existingCustomer of customersArray) {
+            if (existingCustomer.phone) {
+              const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
+              if (normalizedPhone === existingNormalizedPhone) {
+                // Found duplicate phone number
+                throw new Error(`A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`);
+              }
+            }
+          }
+        }
+        console.log('✅ No duplicate phone number found, proceeding with customer creation');
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('already exists')) {
+          throw error; // Re-throw duplicate error
+        }
+        // If it's not a duplicate error, continue with creation
+        console.log('Phone number check completed, proceeding with customer creation');
       }
       
       const result = await customersApi.createCustomer({
@@ -533,17 +584,38 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         setFormData(prev => ({
           ...prev,
           customerId: newCustomer.id,
-          customerName: `${newCustomer.firstName} ${newCustomer.lastName}`,
-          customerPhone: newCustomer.phone,
-          customerEmail: newCustomer.email || '',
         }));
         setSelectedCustomer(newCustomer);
         
         // Close dialog
         setShowAddCustomerDialog(false);
+        
+        // Show success message
+        showSuccess("Customer Created", `Customer "${newCustomer.firstName} ${newCustomer.lastName}" has been created and selected.`);
+      } else {
+        // Handle API error response
+        const errorMessage = result.message || 'Failed to create customer';
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Error creating customer:', error);
+      
+      // Check if it's a duplicate phone error from the API
+      if (error instanceof Error) {
+        if (error.message.includes('DUPLICATE_PHONE') || error.message.includes('already exists')) {
+          // Show duplicate phone error
+          showError("Duplicate Phone Number", "A customer with this phone number already exists. Please use a different phone number or search for the existing customer.");
+          return; // Don't re-throw, just show the error
+        }
+      }
+      
+      // Handle unauthorized errors by redirecting to login
+      try {
+        handleApiError(error);
+      } catch (handledError) {
+        // If handleApiError doesn't redirect, show generic error
+        showError("Error", error instanceof Error ? error.message : 'Failed to create customer');
+      }
     }
   };
 
@@ -563,7 +635,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
 
   // Calculate totals when order items change
   useEffect(() => {
-    const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const discountAmount = formData.discountType === 'percentage' 
       ? (subtotal * formData.discountValue / 100)
       : formData.discountValue;
@@ -599,9 +671,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
       setFormData(prev => ({
         ...prev,
         customerId: selectedCustomer.id,
-        customerName: `${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
-        customerPhone: selectedCustomer.phone,
-        customerEmail: selectedCustomer.email || '',
       }));
     }
   }, [selectedCustomer]);
@@ -618,13 +687,14 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
         returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
         subtotal: initialOrder.subtotal || 0,
+        taxAmount: initialOrder.taxAmount || 0,
         discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
         depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
+        securityDeposit: initialOrder.securityDeposit || 0,
+        lateFee: initialOrder.lateFee || 0,
+        damageFee: initialOrder.damageFee || 0,
         totalAmount: initialOrder.totalAmount || 0,
         notes: initialOrder.notes || '',
-        customerName: initialOrder.customerName || '',
-        customerPhone: initialOrder.customerPhone || '',
-        customerEmail: initialOrder.customerEmail || '',
       }));
 
       // Update order items
@@ -633,13 +703,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
           productId: item.productId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
           deposit: item.deposit || 0,
           notes: item.notes || '',
-          startDate: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : undefined,
-          endDate: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : undefined,
-          daysRented: initialOrder.pickupPlanAt && initialOrder.returnPlanAt ? 
-            Math.ceil((new Date(initialOrder.returnPlanAt).getTime() - new Date(initialOrder.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : undefined,
         }));
         setOrderItems(initialOrderItems);
       }
@@ -685,13 +750,14 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
 
   // Add product to order
   const addProductToOrder = (product: ProductWithStock) => {
-    const existingItem = orderItems.find(item => item.productId === product.id);
+    const productIdString = String(product.id); // Convert to string for consistent comparison
+    const existingItem = orderItems.find(item => item.productId === productIdString);
     
     if (existingItem) {
       // Update quantity if product already exists
       const updatedItems = orderItems.map(item =>
-        item.productId === product.id
-          ? { ...item, quantity: item.quantity + 1, totalPrice: (item.quantity + 1) * item.unitPrice }
+        item.productId === productIdString
+          ? { ...item, quantity: item.quantity + 1 }
           : item
       );
       setOrderItems(updatedItems);
@@ -710,14 +776,11 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
       });
       
       const newItem: OrderItemFormData = {
-        productId: product.id,
+        productId: String(product.id), // Convert to string to match interface type
         quantity: BUSINESS.DEFAULT_QUANTITY,
         unitPrice: formData.orderType === 'RENT' ? rentPrice : rentPrice, // Use rentPrice as fallback
-        totalPrice: formData.orderType === 'RENT' ? rentPrice : rentPrice,
         deposit: deposit,
         notes: '',
-        startDate: formData.orderType === 'RENT' ? formData.pickupPlanAt : undefined,
-        endDate: formData.orderType === 'RENT' ? formData.returnPlanAt : undefined,
       };
       setOrderItems([...orderItems, newItem]);
     }
@@ -736,7 +799,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         
         // Recalculate total price if quantity or unit price changes
         if (field === 'quantity' || field === 'unitPrice') {
-          updatedItem.totalPrice = updatedItem.quantity * updatedItem.unitPrice;
+          // totalPrice is calculated dynamically
         }
         
         return updatedItem;
@@ -826,39 +889,37 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      const orderData: OrderInput = {
-        orderType: formData.orderType as any,
-        customerId: formData.customerId || undefined,
+      // Prepare API payload
+      const apiPayload = {
+        orderType: formData.orderType,
+        customerId: formData.customerId,
         outletId: formData.outletId,
-        pickupPlanAt: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
-        returnPlanAt: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined,
+        pickupPlanAt: formData.pickupPlanAt ? new Date(formData.pickupPlanAt).toISOString() : undefined,
+        returnPlanAt: formData.returnPlanAt ? new Date(formData.returnPlanAt).toISOString() : undefined,
         subtotal: formData.subtotal,
+        taxAmount: formData.taxAmount,
         discountAmount: formData.discountAmount,
         depositAmount: formData.depositAmount,
+        securityDeposit: formData.securityDeposit,
+        lateFee: formData.lateFee,
+        damageFee: formData.damageFee,
         totalAmount: formData.totalAmount,
         notes: formData.notes,
-        customerName: formData.customerName || undefined,
-        customerPhone: formData.customerPhone || undefined,
-        customerEmail: formData.customerEmail || undefined,
         orderItems: orderItems.map(item => ({
-          productId: item.productId,
+          productId: String(item.productId), // Convert to string to match API schema
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
           deposit: item.deposit,
           notes: item.notes,
-          startDate: item.startDate ? new Date(item.startDate) : undefined,
-          endDate: item.endDate ? new Date(item.endDate) : undefined,
-          daysRented: item.daysRented,
         }))
       };
       
       // Add order ID for edit mode
       if (isEditMode && initialOrder?.id) {
-        orderData.id = initialOrder.id;
+        (apiPayload as any).id = initialOrder.id;
       }
       
-      onSubmit?.(orderData);
+      onSubmit?.(apiPayload as OrderInput);
     } catch (error) {
       console.error('Error submitting order:', error);
     } finally {
@@ -868,7 +929,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
 
   const isFormValid = () => {
     const hasProducts = orderItems.length > 0;
-    const hasCustomer = formData.customerId || formData.customerName || formData.customerPhone;
+            const hasCustomer = formData.customerId;
     
     if (formData.orderType === 'RENT') {
       return hasProducts && hasCustomer && formData.pickupPlanAt && formData.returnPlanAt;
@@ -929,7 +990,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                     />
                     {isLoadingProducts && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <Loader2 className="w-4 h-4 animate-spin text-text-secondary" />
+                        <Skeleton className="w-4 h-4 rounded-full" />
                       </div>
                     )}
                   </div>
@@ -959,10 +1020,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                           <p className="text-sm text-gray-500 mb-4 max-w-sm mx-auto">
                             Search for products above to add them to your order. You can search by name, barcode, or description.
                           </p>
-                          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 bg-gray-50 px-3 py-2 rounded-full border border-gray-200">
-                            <Search className="w-4 h-4" />
-                            <span>Please search for products</span>
-                          </div>
                         </div>
                       ) : (
                         /* Product List */
@@ -1108,7 +1165,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                               {/* Summary */}
                               <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
                                 <div className="text-sm text-gray-600">
-                                  Total: {item.quantity} × ${item.unitPrice.toFixed(2)} = ${item.totalPrice.toFixed(2)}
+                                  Total: {item.quantity} × ${item.unitPrice.toFixed(2)} = ${(item.quantity * item.unitPrice).toFixed(2)}
                                 </div>
                                 <div className="text-sm text-gray-600">
                                   Deposit: ${item.deposit.toFixed(2)}
@@ -1170,7 +1227,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                       <input
                         type="text"
                         placeholder="Search customers by name or phone..."
-                        value={searchQuery}
+                        value={selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName} - ${selectedCustomer.phone}` : searchQuery}
 
                         onFocus={() => {
                           // Show search results when focused if there's a query
@@ -1178,213 +1235,189 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
                             searchCustomers(searchQuery);
                           }
                         }}
-                        onInput={(e) => {
-                          const query = e.currentTarget.value;
-                          setSearchQuery(query);
-                          if (query.trim()) {
-                            searchCustomers(query);
-                          } else {
-                            setCustomerSearchResults([]);
-                            // Clear selected customer when search is cleared
+                        onChange={(e) => {
+                          const query = e.target.value;
+                          
+                          // If user is typing and there's a selected customer, clear the selection
+                          if (selectedCustomer && query !== `${selectedCustomer.firstName} ${selectedCustomer.lastName} - ${selectedCustomer.phone}`) {
                             setSelectedCustomer(null);
                             setFormData(prev => ({
                               ...prev,
                               customerId: '',
-                              customerName: '',
-                              customerPhone: '',
-                              customerEmail: ''
                             }));
                           }
-                        }}
-                        className="h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0 hover:border-gray-400"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (searchQuery.trim()) {
-                            searchCustomers(searchQuery);
+                          
+                          setSearchQuery(query);
+                          
+                          if (query.trim()) {
+                            searchCustomers(query);
+                          } else {
+                            setCustomerSearchResults([]);
                           }
                         }}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
-                      >
-                        <Search className="w-4 h-4" />
-                      </button>
+                        className={`h-11 w-full rounded-lg border pl-4 pr-12 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0 ${
+                          selectedCustomer 
+                            ? 'border-green-500 bg-green-50 text-green-900 font-medium' 
+                            : 'border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:border-blue-500 focus:ring-blue-100'
+                        }`}
+                      />
+                      {selectedCustomer ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCustomer(null);
+                            setSearchQuery('');
+                            setFormData(prev => ({
+                              ...prev,
+                              customerId: '',
+                            }));
+                          }}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150"
+                          title="Clear selected customer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (searchQuery.trim()) {
+                              searchCustomers(searchQuery);
+                            }
+                          }}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+                        >
+                          <Search className="w-4 h-4" />
+                        </button>
+                      )}
                       
                       {/* Search Results Dropdown */}
-                      {customerSearchResults.length > 0 && searchQuery.trim() && (
+                      {!selectedCustomer && (customerSearchResults.length > 0 || searchQuery.trim()) && (
                         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-                          {customerSearchResults.map((customer) => (
-                            <button
-                              key={customer.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCustomer(customer);
-                                setFormData(prev => ({
-                                  ...prev,
-                                  customerId: customer.id,
-                                  customerName: `${customer.firstName} ${customer.lastName}`,
-                                  customerPhone: customer.phone,
-                                  customerEmail: customer.email || ''
-                                }));
-                                setSearchQuery(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
-                                setCustomerSearchResults([]);
-                              }}
-                              className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                            >
-                              <div className="font-medium text-gray-900">
-                                {customer.firstName} {customer.lastName}
+                          {/* Add New Customer Button - Always at Top */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAddCustomerDialog(true);
+                              setCustomerSearchResults([]);
+                            }}
+                            className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 bg-blue-50/50 text-blue-700 font-medium"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Plus className="w-4 h-4" />
+                              <span>Add New Customer</span>
+                            </div>
+                            {searchQuery.trim() && (
+                              <div className="text-xs text-blue-600 mt-1">
+                                Create customer: "{searchQuery}"
                               </div>
-                              <div className="text-sm text-gray-600">{customer.phone}</div>
-                            </button>
-                          ))}
+                            )}
+                          </button>
+
+                          {/* Customer Results */}
+                          {customerSearchResults.length > 0 ? (
+                            <>
+                              {customerSearchResults.map((customer) => (
+                                <button
+                                  key={customer.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCustomer(customer);
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      customerId: customer.id,
+                                    }));
+                                    setSearchQuery(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
+                                    setCustomerSearchResults([]);
+                                  }}
+                                  className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                                >
+                                  <div className="font-medium text-gray-900">
+                                    {customer.firstName} {customer.lastName}
+                                  </div>
+                                  <div className="text-sm text-gray-600">{customer.phone}</div>
+                                </button>
+                              ))}
+                            </>
+                          ) : (
+                            /* No Results - Show Message */
+                            <div className="p-4 text-center">
+                              <div className="text-sm text-gray-500">
+                                No customers found for "{searchQuery}"
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                Use the "Add New Customer" button above to create one
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                     {isLoadingCustomers && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <Loader2 className="w-4 h-4 animate-spin text-text-secondary" />
+                        <Skeleton className="w-4 h-4 rounded-full" />
                       </div>
                     )}
                   </div>
-                  
-                  {/* Selected Customer Display */}
-                  {selectedCustomer && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-900">Selected Customer</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedCustomer(null);
-                            setFormData(prev => ({
-                              ...prev,
-                              customerId: '',
-                              customerName: '',
-                              customerPhone: '',
-                              customerEmail: ''
-                            }));
-                          }}
-                          className="text-blue-600 hover:text-blue-700 text-sm"
-                        >
-                          Change
-                        </button>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <div className="text-sm font-medium text-blue-900">
-                          {selectedCustomer.firstName} {selectedCustomer.lastName}
-                        </div>
-                        <div className="text-xs text-blue-700">
-                          Phone: {selectedCustomer.phone}
-                        </div>
-                        {selectedCustomer.email && (
-                          <div className="text-xs text-blue-700">
-                            Email: {selectedCustomer.email}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
 
-                  {/* Manual Customer Input - Collapsible */}
-                  <div className="mt-4">
-                      {/* Toggle Button */}
-                      <button
-                        type="button"
-                        onClick={() => setShowManualCustomerInput(!showManualCustomerInput)}
-                        className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-md transition-colors duration-150"
-                      >
-                        {showManualCustomerInput ? (
-                          <ChevronDown className="w-4 h-4" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
-                        )}
-                        <span>Or enter customer details manually</span>
-                      </button>
-                      
-                      {/* Collapsible Input Fields */}
-                      {showManualCustomerInput && (
-                        <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Customer Name
-                              </label>
-                              <Input
-                                value={formData.customerName}
-                                onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
-                                placeholder="Enter customer name"
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Phone Number
-                              </label>
-                              <Input
-                                value={formData.customerPhone}
-                                onChange={(e) => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
-                                placeholder="Enter phone number"
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Email (Optional)
-                              </label>
-                              <Input
-                                type="email"
-                                value={formData.customerEmail}
-                                onChange={(e) => setFormData(prev => ({ ...prev, customerEmail: e.target.value }))}
-                                placeholder="Enter email address"
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
                 </div>
 
                 {/* Order Type Toggle - Full Width */}
                 <div className="space-y-2 w-full">
-                  <label className="text-sm font-medium text-text-primary">Order Type</label>
+                  <label className="text-sm font-medium text-text-primary">
+                    Order Type
+                    {isEditMode && (
+                      <span className="ml-2 text-xs text-gray-500 font-normal">
+                        (Cannot be changed when editing)
+                      </span>
+                    )}
+                  </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
+                      disabled={isEditMode}
                       onClick={() => {
-                        setFormData(prev => ({ ...prev, orderType: 'RENT' }));
+                        if (!isEditMode) {
+                          setFormData(prev => ({ ...prev, orderType: 'RENT' }));
+                        }
                       }}
                       className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
                         formData.orderType === 'RENT' 
                           ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
                           : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
+                      } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       Rent
                     </button>
                     <button
                       type="button"
+                      disabled={isEditMode}
                       onClick={() => {
-                        setFormData(prev => ({ 
-                          ...prev, 
-                          orderType: 'SALE',
-                          pickupPlanAt: '', 
-                          returnPlanAt: '',
-                          depositAmount: 0 
-                        }));
+                        if (!isEditMode) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            orderType: 'SALE',
+                            pickupPlanAt: '', 
+                            returnPlanAt: '',
+                            depositAmount: 0 
+                          }));
+                        }
                       }}
                       className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
                         formData.orderType === 'SALE' 
                           ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
                           : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
+                      } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       Sale
                     </button>
                   </div>
+                  {isEditMode && (
+                    <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded border">
+                      <Info className="w-3 h-3 inline mr-1" />
+                      Order type cannot be changed after creation to maintain data integrity and business rules.
+                    </div>
+                  )}
                 </div>
 
                 {/* Deposit Amount - Full Width - Only for RENT orders */}
@@ -1535,13 +1568,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
 
                       {/* Customer Required */}
                       <div className="flex items-center gap-2">
-                        {formData.customerId || formData.customerName || formData.customerPhone ? (
+                        {formData.customerId ? (
                           <CheckCircle className="w-4 h-4 text-green-600" />
                         ) : (
                           <XCircle className="w-4 h-4 text-red-500" />
                         )}
-                        <span className={formData.customerId || formData.customerName || formData.customerPhone ? 'text-green-700' : 'text-red-600'}>
-                          {formData.customerId || formData.customerName || formData.customerPhone ? '✓' : '✗'} Customer information required
+                        <span className={formData.customerId ? 'text-green-700' : 'text-red-600'}>
+                          {formData.customerId ? '✓' : '✗'} Customer information required
                         </span>
                       </div>
 
@@ -1603,7 +1636,183 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
         </div>
       </div>
 
-      {/* Order Preview Dialog - Removed, using direct confirmation instead */}
+      {/* Customer Creation Dialog */}
+      <Dialog open={showAddCustomerDialog} onOpenChange={setShowAddCustomerDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              {isCreatingCustomer ? 'Creating Customer...' : 'Add New Customer'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <AddCustomerForm
+              onSave={async (customerData) => {
+                console.log('🚀 AddCustomerForm onSave called with:', customerData);
+                
+                try {
+                  setIsCreatingCustomer(true); // Start loading
+                  
+                  // Get merchant ID from props or fallback to first outlet's merchant ID
+                  const currentMerchantId = merchantId || outlets[0]?.merchantId;
+                  
+                  if (!currentMerchantId) {
+                    console.error('❌ No merchant ID available');
+                    throw new Error('Merchant ID is required to create a customer. Please ensure the form has access to merchant information.');
+                  }
+                  
+                  console.log('📞 Calling API with merchant ID:', currentMerchantId);
+                  
+                  const result = await customersApi.createCustomer({
+                    ...customerData,
+                    merchantId: currentMerchantId,
+                    isActive: true
+                  });
+                  
+                  console.log('📡 API response:', result);
+                  
+                  if (result.success && result.data) {
+                    const newCustomer = result.data;
+                    
+                    console.log('✅ Customer created successfully:', newCustomer);
+                    
+                    // Validate that the customer data has required fields
+                    if (!newCustomer.id || !newCustomer.firstName || !newCustomer.lastName || !newCustomer.phone) {
+                      console.error('❌ Customer data missing required fields:', newCustomer);
+                      throw new Error('Customer created but data is incomplete. Please try again.');
+                    }
+                    
+                    // Auto-select the new customer
+                    setSelectedCustomer(newCustomer);
+                    console.log('✅ Selected customer set:', newCustomer);
+                    
+                    // Update form data with customer information
+                    setFormData(prev => ({
+                      ...prev,
+                      customerId: newCustomer.id,
+                    }));
+                    console.log('✅ Form data updated with customer info');
+                    
+                    // Update search query to show selected customer
+                    const customerDisplayName = `${newCustomer.firstName} ${newCustomer.lastName} - ${newCustomer.phone}`;
+                    setSearchQuery(customerDisplayName);
+                    console.log('✅ Search query updated:', customerDisplayName);
+                    
+                    // Clear search results
+                    setCustomerSearchResults([]);
+                    console.log('✅ Search results cleared');
+                    
+                    // Close dialog
+                    console.log('🔒 Closing dialog...');
+                    setShowAddCustomerDialog(false);
+                    
+                    console.log('✅ Dialog closed');
+                    
+                    // Show success message
+                    showSuccess("Customer Created", `Customer "${newCustomer.firstName} ${newCustomer.lastName}" has been created and selected.`);
+                  } else {
+                    // Handle API error response
+                    const errorMessage = result.error || 'Failed to create customer';
+                    throw new Error(errorMessage);
+                  }
+                } catch (error) {
+                  console.error('❌ Error creating customer:', error);
+                  
+                  // Check if it's a duplicate phone error from the API
+                  if (error instanceof Error) {
+                    if (error.message.includes('DUPLICATE_PHONE') || error.message.includes('already exists')) {
+                      // Show duplicate phone error
+                      showError("Duplicate Phone Number", "A customer with this phone number already exists. Please use a different phone number or search for the existing customer.");
+                      return; // Don't re-throw, just show the error
+                    }
+                    
+                    // Check for network or connection errors
+                    if (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Failed to fetch')) {
+                      showError("Network Error", "Unable to connect to the server. Please check your internet connection and try again.");
+                      return;
+                    }
+                    
+                    // Check for validation errors
+                    if (error.message.includes('validation') || error.message.includes('invalid')) {
+                      showError("Validation Error", error.message);
+                      return;
+                    }
+                  }
+                  
+                  // Handle unauthorized errors by redirecting to login
+                  try {
+                    handleApiError(error);
+                  } catch (handledError) {
+                    // If handleApiError doesn't redirect, show generic error
+                    showError("Error", error instanceof Error ? error.message : 'Failed to create customer');
+                  }
+                } finally {
+                  setIsCreatingCustomer(false); // Stop loading regardless of outcome
+                }
+              }}
+              onCancel={() => {
+                console.log('🚫 AddCustomerForm onCancel called');
+                setShowAddCustomerDialog(false);
+              }}
+              isSubmitting={isCreatingCustomer} // Pass loading state to form
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Preview Dialog */}
+      <Dialog open={showOrderPreview} onOpenChange={setShowOrderPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <ShoppingCart className="w-6 h-6 text-blue-600" />
+              Order Preview
+            </DialogTitle>
+          </DialogHeader>
+          
+          <OrderPreviewForm
+            orderData={{
+              orderType: formData.orderType,
+              customerId: formData.customerId,
+              customerName: selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}` : undefined,
+              customerPhone: selectedCustomer?.phone,
+              customerEmail: selectedCustomer?.email,
+              outletId: formData.outletId,
+              outletName: outlets.find(o => o.id === formData.outletId)?.name,
+              pickupPlanAt: formData.pickupPlanAt,
+              returnPlanAt: formData.returnPlanAt,
+              subtotal: formData.subtotal,
+              taxAmount: formData.taxAmount,
+              discountAmount: formData.discountAmount,
+              totalAmount: formData.totalAmount,
+              depositAmount: formData.depositAmount,
+              securityDeposit: formData.securityDeposit,
+              lateFee: formData.lateFee,
+              damageFee: formData.damageFee,
+              notes: formData.notes,
+              orderItems: orderItems.map(item => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                totalPrice: item.quantity * item.unitPrice,
+                deposit: item.deposit,
+                notes: item.notes
+              }))
+            }}
+            products={products}
+            onConfirm={handleOrderConfirm}
+            onEdit={() => setShowOrderPreview(false)}
+            loading={loading}
+            confirmText={isEditMode ? 'Update Order' : 'Confirm & Create Order'}
+            editText="Back to Edit"
+            title="Order Preview"
+            subtitle="Review your order details before confirming"
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Toast Container for notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 };

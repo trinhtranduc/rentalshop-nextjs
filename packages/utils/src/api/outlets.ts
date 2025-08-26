@@ -1,18 +1,26 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
-import type { ApiResponse } from "../common";
+import type { ApiResponse } from '../common';
 
-/**
- * Outlets API Client - Outlet Management Operations
- * 
- * This file handles all outlet operations:
- * - Fetching outlets with filters
- * - Outlet CRUD operations
- * - Outlet inventory management
- * - Outlet statistics and analytics
- */
+export interface Outlet {
+  id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+  merchantId: string;
+  merchant?: {
+    id: string;
+    name: string;
+  };
+}
 
 export interface OutletsResponse {
-  outlets: any[];
+  outlets: Outlet[];
   total: number;
   page?: number;
   totalPages?: number;
@@ -21,8 +29,9 @@ export interface OutletsResponse {
 
 export interface OutletFilters {
   search?: string;
-  shopId?: string;
   merchantId?: string;
+  city?: string;
+  state?: string;
   isActive?: boolean;
   page?: number;
   limit?: number;
@@ -31,7 +40,7 @@ export interface OutletFilters {
 }
 
 /**
- * Outlets API client for authenticated outlet operations
+ * Outlets API client for outlet management operations
  */
 export const outletsApi = {
   /**
@@ -48,46 +57,47 @@ export const outletsApi = {
       });
     }
 
-    console.log('🔍 getOutlets called with filters:', filters);
-    console.log('📡 API endpoint:', `/api/outlets?${params.toString()}`);
-    
     const response = await authenticatedFetch(`/api/outlets?${params.toString()}`);
-    console.log('📡 Raw API response:', response);
-    
-    const result = await parseApiResponse<OutletsResponse>(response);
-    console.log('✅ Processed API response:', result);
-    
-    return result;
+    return await parseApiResponse<OutletsResponse>(response);
   },
 
   /**
    * Get outlet by ID
    */
-  async getOutletById(outletId: string): Promise<ApiResponse<any>> {
+  async getOutletById(outletId: string): Promise<ApiResponse<Outlet>> {
     const response = await authenticatedFetch(`/api/outlets/${outletId}`);
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Outlet>(response);
+  },
+
+  /**
+   * Get outlets by merchant ID
+   */
+  async getOutletsByMerchant(merchantId: string): Promise<ApiResponse<Outlet[]>> {
+    const response = await authenticatedFetch(`/api/outlets?merchantId=${merchantId}`);
+    const result = await parseApiResponse<Outlet[]>(response);
+    return result;
   },
 
   /**
    * Create a new outlet
    */
-  async createOutlet(outletData: any): Promise<ApiResponse<any>> {
+  async createOutlet(outletData: Partial<Outlet>): Promise<ApiResponse<Outlet>> {
     const response = await authenticatedFetch('/api/outlets', {
       method: 'POST',
       body: JSON.stringify(outletData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Outlet>(response);
   },
 
   /**
    * Update an existing outlet
    */
-  async updateOutlet(outletId: string, outletData: Partial<any>): Promise<ApiResponse<any>> {
+  async updateOutlet(outletId: string, outletData: Partial<Outlet>): Promise<ApiResponse<Outlet>> {
     const response = await authenticatedFetch(`/api/outlets/${outletId}`, {
       method: 'PUT',
       body: JSON.stringify(outletData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Outlet>(response);
   },
 
   /**
@@ -101,79 +111,11 @@ export const outletsApi = {
   },
 
   /**
-   * Get outlet inventory
-   */
-  async getOutletInventory(outletId: string, filters?: {
-    search?: string;
-    categoryId?: string;
-    available?: boolean;
-    limit?: number;
-  }): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await authenticatedFetch(`/api/outlets/${outletId}/inventory?${params.toString()}`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get outlet orders
-   */
-  async getOutletOrders(outletId: string, filters?: {
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-    limit?: number;
-  }): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await authenticatedFetch(`/api/outlets/${outletId}/orders?${params.toString()}`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
    * Get outlet statistics
    */
   async getOutletStats(outletId?: string): Promise<ApiResponse<any>> {
     const endpoint = outletId ? `/api/outlets/${outletId}/stats` : '/api/outlets/stats';
     const response = await authenticatedFetch(endpoint);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get outlet analytics
-   */
-  async getOutletAnalytics(outletId: string, filters?: {
-    startDate?: string;
-    endDate?: string;
-    metric?: string;
-  }): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await authenticatedFetch(`/api/outlets/${outletId}/analytics?${params.toString()}`);
     return await parseApiResponse<any>(response);
   }
 };

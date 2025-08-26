@@ -3,8 +3,7 @@
 // ============================================================================
 
 export interface Product {
-  id: string;
-  publicId: string;
+  id: number;        // This represents the publicId from database
   name: string;
   description?: string;
   barcode?: string;

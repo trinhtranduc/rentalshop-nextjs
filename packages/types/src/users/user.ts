@@ -5,8 +5,7 @@
 import { UserRole } from '../auth/roles';
 
 export interface User {
-  id: string;
-  publicId: string;
+  id: number;        // This represents the publicId from database
   firstName: string;
   lastName: string;
   name: string; // Computed field: firstName + lastName

@@ -9,8 +9,7 @@ export type OrderType = 'RENT' | 'SALE' | 'RENT_TO_OWN';
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'WAITING' | 'PICKUPED' | 'RETURNED' | 'CANCELLED' | 'ACTIVE' | 'COMPLETED' | 'OVERDUE' | 'DAMAGED';
 
 export interface Order {
-  id: string;
-  publicId: number;
+  id: number;        // This represents the publicId from database
   orderNumber: string;
   orderType: OrderType;
   status: OrderStatus;
@@ -305,7 +304,6 @@ export interface OrderData extends Order {
     merchantId: string;
     merchant: {
       id: string;
-      publicId: number;
       name: string;
       description?: string;
     };
@@ -318,7 +316,6 @@ export interface OrderData extends Order {
   merchantId?: string;
   merchant?: {
     id: string;
-    publicId: number;
     name: string;
     description?: string;
   };

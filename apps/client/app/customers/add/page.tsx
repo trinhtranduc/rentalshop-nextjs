@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AddCustomerForm, CustomerPageHeader, ToastContainer } from '@rentalshop/ui';
 import { customersApi } from "@rentalshop/utils";
 import { useAuth } from '@rentalshop/hooks';
-import type { CustomerInput } from '@rentalshop/database';
+import type { CustomerInput } from '@rentalshop/types';
 import type { CustomerCreateInput } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
 
@@ -58,6 +58,9 @@ export default function AddCustomerPage() {
         }, 1500);
       } else {
         console.error('❌ AddCustomerPage: API error:', response.error);
+        console.log('🔍 AddCustomerPage: Full API response:', response);
+        console.log('🔍 AddCustomerPage: Response error field:', response.error);
+        console.log('🔍 AddCustomerPage: Response errorCode field:', (response as any).errorCode);
         throw new Error(response.error || 'Failed to create customer');
       }
       

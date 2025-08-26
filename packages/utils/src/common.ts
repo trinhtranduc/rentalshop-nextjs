@@ -80,6 +80,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
+  errorCode?: string; // Add error code field for specific error handling
 }
 
 /**
@@ -115,6 +116,14 @@ export const authenticatedFetch = async (
 ): Promise<Response> => {
   // Get token from localStorage or other storage
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  
+  // Check if user is authenticated before making the request
+  if (!token && typeof window !== 'undefined') {
+    console.log('🔒 No auth token found, redirecting to login');
+    localStorage.removeItem('authToken');
+    window.location.href = '/login';
+    throw new Error('Authentication required');
+  }
   
   // Set default headers using API constants
   const headers: Record<string, string> = {
@@ -178,18 +187,53 @@ export const authenticatedFetch = async (
  */
 export const parseApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   if (!response.ok) {
+    console.log('🔍 parseApiResponse: Response not OK, status:', response.status);
+    console.log('🔍 parseApiResponse: Response statusText:', response.statusText);
+    
+    // Handle unauthorized responses by redirecting to login
+    if (response.status === API.STATUS.UNAUTHORIZED) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
+      }
+      throw new Error('Unauthorized access - redirecting to login');
+    }
+    
     const errorText = await response.text();
+    console.log('🔍 parseApiResponse: Error response text:', errorText);
+    
     try {
       const errorData = JSON.parse(errorText);
-      return {
+      console.log('🔍 parseApiResponse: Parsed error data:', errorData);
+      
+      // Handle structured error responses that include both message and error code
+      if (errorData.success === false && errorData.message && errorData.error) {
+        console.log('🔍 parseApiResponse: Structured error response detected');
+        const result = {
+          success: false,
+          error: errorData.message, // Use the user-friendly message
+          errorCode: errorData.error, // Preserve the error code for specific handling
+        };
+        console.log('🔍 parseApiResponse: Returning structured error:', result);
+        return result;
+      }
+      
+      // Handle legacy error responses
+      console.log('🔍 parseApiResponse: Legacy error response detected');
+      const result = {
         success: false,
         error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
       };
+      console.log('🔍 parseApiResponse: Returning legacy error:', result);
+      return result;
     } catch {
-      return {
+      console.log('🔍 parseApiResponse: Failed to parse error JSON, using fallback');
+      const result = {
         success: false,
         error: `HTTP ${response.status}: ${response.statusText}`,
       };
+      console.log('🔍 parseApiResponse: Returning fallback error:', result);
+      return result;
     }
   }
 
@@ -235,5 +279,50 @@ export const executeWithDataRefresh = async <T>(
   } catch (error) {
     console.error('Operation failed:', error);
     throw error;
+  }
+};
+
+/**
+ * Handle API errors and redirect to login if unauthorized
+ */
+export const handleApiError = (error: any, redirectToLogin: boolean = true) => {
+  console.error('API Error:', error);
+  
+  // Check if it's an unauthorized error
+  if (error?.message?.includes('Unauthorized') || 
+      error?.error === 'Unauthorized' ||
+      error?.status === 401) {
+    
+    if (redirectToLogin && typeof window !== 'undefined') {
+      console.log('🔄 Redirecting to login due to unauthorized access');
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+      return;
+    }
+  }
+  
+  // Re-throw the error for other handling
+  throw error;
+};
+
+/**
+ * Check if user is authenticated
+ */
+export const isAuthenticated = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  const token = localStorage.getItem('authToken');
+  return !!token;
+};
+
+/**
+ * Redirect to login if not authenticated
+ */
+export const requireAuth = (): void => {
+  if (!isAuthenticated()) {
+    if (typeof window !== 'undefined') {
+      console.log('🔒 User not authenticated, redirecting to login');
+      window.location.href = '/login';
+    }
   }
 }; 

@@ -3,8 +3,7 @@
 // ============================================================================
 
 export interface Customer {
-  id: string;
-  publicId: number;
+  id: number;        // This represents the publicId from database
   firstName: string;
   lastName: string;
   email?: string;
@@ -88,8 +87,7 @@ export interface CustomerFilters {
 }
 
 export interface CustomerSearchResult {
-  id: string;
-  publicId: number;
+  id: number;        // This represents the publicId from database
   firstName: string;
   lastName: string;
   email: string;
@@ -122,7 +120,7 @@ export interface CustomerWithMerchant extends Customer {
 }
 
 // Note: Customer interface already extends the base Customer type
-// which includes publicId as number and merchantId as string
+// which includes id as number (representing publicId) and merchantId as string
 
 export interface CustomerSearchFilter {
   q?: string;

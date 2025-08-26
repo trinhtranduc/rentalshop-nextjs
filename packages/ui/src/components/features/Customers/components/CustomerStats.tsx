@@ -68,7 +68,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
                     {formatCurrency(customer.totalSpent)}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Customer ID: {customer.customer.publicId}
+                    Customer ID: {customer.customer.id}
                   </div>
                 </div>
               </div>

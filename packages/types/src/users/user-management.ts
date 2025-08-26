@@ -9,7 +9,7 @@ export interface UserManagement {
   updateUser(id: string, input: UserUpdateInput): Promise<User>;
   deleteUser(id: string): Promise<boolean>;
   getUserById(id: string): Promise<User | null>;
-  getUserByPublicId(publicId: string): Promise<User | null>;
+  getUserById(id: number): Promise<User | null>;
   getUserByEmail(email: string): Promise<User | null>;
   listUsers(filters?: any): Promise<User[]>;
   searchUsers(query: string, filters?: any): Promise<User[]>;

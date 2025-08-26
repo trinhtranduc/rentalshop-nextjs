@@ -5,8 +5,7 @@
 import { UserRole } from './roles';
 
 export interface AuthUser {
-  id: string;
-  publicId: string;
+  id: number;        // This represents the publicId from database
   email: string;
   name: string;
   role: UserRole;

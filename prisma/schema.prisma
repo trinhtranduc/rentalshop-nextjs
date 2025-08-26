@@ -137,7 +137,7 @@ model Customer {
   publicId    Int       @unique
   firstName   String
   lastName    String
-  email       String
+  email       String?
   phone       String
   address     String?
   city        String?
@@ -155,9 +155,9 @@ model Customer {
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   orders      Order[]
 
+  @@unique([merchantId, phone])
+  @@unique([merchantId, email], map: "unique_merchant_email") // Only applies when email is not null
   @@index([merchantId, firstName, lastName])
-  @@index([merchantId, phone])
-  @@index([email])
   @@index([publicId])
 }
 

@@ -28,16 +28,25 @@ export async function GET(request: NextRequest) {
     const categories = await prisma.category.findMany({
       where: { isActive: true },
       select: {
-        id: true,
+        id: true,           // Internal ID (for database operations)
+        publicId: true,     // Public ID (to expose as "id")
         name: true,
         description: true
       },
       orderBy: { name: 'asc' }
     });
 
+    // Transform response: internal id → public id as "id"
+    const transformedCategories = categories.map(category => ({
+              id: category.publicId,                    // Return publicId as "id" to frontend
+      name: category.name,
+      description: category.description,
+      // DO NOT include category.id (internal CUID)
+    }));
+
     return NextResponse.json({
       success: true,
-      data: categories
+      data: transformedCategories
     });
   } catch (error) {
     console.error('Error fetching categories:', error);

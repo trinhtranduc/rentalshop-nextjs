@@ -1,4 +1,5 @@
-import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../common';
+import { authenticatedFetch, parseApiResponse } from '../common';
+import type { ApiResponse } from '../common';
 
 /**
  * Customers API Client - Customer Management Operations

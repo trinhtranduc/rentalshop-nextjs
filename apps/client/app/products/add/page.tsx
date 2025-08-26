@@ -10,9 +10,9 @@ import {
 } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 import { 
-  createProduct,
-  getCategories, 
-  getOutlets 
+  productsApi,
+  categoriesApi,
+  outletsApi
 } from '@rentalshop/utils';
 import type { Category, Outlet } from '@rentalshop/ui';
 import type { ProductInput } from '@rentalshop/database';
@@ -35,15 +35,19 @@ export default function ProductAddPage() {
 
         // Fetch categories and outlets for the form
         const [categoriesData, outletsData] = await Promise.all([
-          getCategories(),
-          getOutlets(user?.merchant?.id)
+          categoriesApi.getCategories(),
+          outletsApi.getOutlets({ merchantId: user?.merchant?.id })
         ]);
         
         console.log('📊 Fetched categories:', categoriesData);
         console.log('🏪 Fetched outlets:', outletsData);
         
-        setCategories(categoriesData);
-        setOutlets(outletsData);
+        if (categoriesData.success) {
+          setCategories(categoriesData.data || []);
+        }
+        if (outletsData.success) {
+          setOutlets(outletsData.data?.outlets || []);
+        }
 
       } catch (err) {
         console.error('Error fetching form data:', err);
@@ -59,7 +63,7 @@ export default function ProductAddPage() {
   const handleSave = async (data: ProductInput) => {
     try {
       // Call the create API
-      const response = await createProduct(data);
+      const response = await productsApi.createProduct(data);
       
       // Redirect to the new product view page
       router.push(`/products/${response.data.id}`);

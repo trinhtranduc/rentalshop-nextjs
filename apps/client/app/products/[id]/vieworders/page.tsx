@@ -21,7 +21,9 @@ import {
 import { ArrowLeft, Package } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 import { 
-  getProductById
+  productsApi,
+  categoriesApi,
+  outletsApi
 } from "@rentalshop/utils";
 import type { ProductWithDetails } from '@rentalshop/ui';
 
@@ -43,7 +45,7 @@ export default function ProductOrdersPage() {
         setError(null);
 
         // Fetch product details
-        const productResponse = await getProductById(productId);
+        const productResponse = await productsApi.getProductById(productId);
         setProduct(productResponse.data);
 
       } catch (err) {
