@@ -5,8 +5,13 @@
 import { OrderItemInput, OrderItemWithProduct } from './order-items';
 import type { Payment } from './payments';
 
-export type OrderType = 'RENT' | 'SALE' | 'RENT_TO_OWN';
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'WAITING' | 'PICKUPED' | 'RETURNED' | 'CANCELLED' | 'ACTIVE' | 'COMPLETED' | 'OVERDUE' | 'DAMAGED';
+// Simplified order types: only RENT and SALE
+export type OrderType = 'RENT' | 'SALE';
+
+// Order statuses based on order type:
+// RENT: BOOKED (mới cục), ACTIVE (đang thuê), RETURNED (đã trả), CANCELLED (hủy)
+// SALE: COMPLETED và CANCELLED
+export type OrderStatus = 'BOOKED' | 'ACTIVE' | 'RETURNED' | 'COMPLETED' | 'CANCELLED';
 
 export interface Order {
   id: string;           // Database CUID (internal use)

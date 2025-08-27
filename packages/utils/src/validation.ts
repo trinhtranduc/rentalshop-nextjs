@@ -111,8 +111,13 @@ export const customersQuerySchema = z.object({
 // Orders validation schemas
 // ============================================================================
 
-const orderTypeEnum = z.enum(['RENT', 'SALE', 'RENT_TO_OWN']);
-const orderStatusEnum = z.enum(['PENDING', 'CONFIRMED', 'WAITING', 'PICKUPED', 'RETURNED', 'CANCELLED', 'ACTIVE', 'COMPLETED', 'OVERDUE', 'DAMAGED']);
+// Simplified order types: only RENT and SALE
+const orderTypeEnum = z.enum(['RENT', 'SALE']);
+
+// Order statuses based on order type:
+// RENT: BOOKED (mới cục), ACTIVE (đang thuê), RETURNED (đã trả), CANCELLED (hủy)
+// SALE: COMPLETED và CANCELLED
+const orderStatusEnum = z.enum(['BOOKED', 'ACTIVE', 'RETURNED', 'COMPLETED', 'CANCELLED']);
 
 export const ordersQuerySchema = z.object({
   q: z.string().optional(),

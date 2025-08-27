@@ -166,7 +166,7 @@ model Order {
   publicId          Int         @unique
   orderNumber       String      @unique
   orderType         String
-  status            String      @default("PENDING")
+  status            String      @default("BOOKED")
   totalAmount       Float
   depositAmount     Float       @default(0)
   securityDeposit   Float       @default(0)

@@ -609,7 +609,7 @@ async function main() {
       i % 2 === 0 ? outlet1.id : outlet2.id,
       pick(m1Customers).id,
       [pick(m1ProductIds), pick(m1ProductIds)],
-      'CONFIRMED',
+      'BOOKED',
       {
         pickupPlanAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
         returnPlanAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
@@ -684,7 +684,7 @@ async function main() {
       i % 2 === 0 ? outlet1.id : outlet2.id,
       pick(m1Customers).id,
       [pick(m1ProductIds)],
-      i % 2 === 0 ? 'COMPLETED' : 'CONFIRMED'
+      i % 2 === 0 ? 'COMPLETED' : 'BOOKED'
     );
   }
 

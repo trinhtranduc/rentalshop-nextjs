@@ -107,8 +107,8 @@ export function OrderTable({
   const getStatusBadge = (status: string) => {
     const variants = {
       PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      CONFIRMED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      BOOKED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-blue-200',
       COMPLETED: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
       CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
       RETURNED: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
