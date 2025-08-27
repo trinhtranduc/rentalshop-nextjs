@@ -915,7 +915,7 @@ export async function cancelOrder(publicId: number, userId: number, reason?: str
 export async function getOverdueRentals(outletId?: number): Promise<any[]> {
   const where: any = {
     orderType: 'RENT',
-    status: { in: ['ACTIVE', 'CONFIRMED'] },
+    status: { in: ['ACTIVE', 'BOOKED'] },
     returnPlanAt: { lt: new Date() }
   };
 

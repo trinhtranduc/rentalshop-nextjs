@@ -70,7 +70,7 @@ export function useProductAvailability() {
       if (order.orderType !== 'RENT') return false;
       
       // Check if order is active (not completed/cancelled)
-      const activeStatuses = ['PENDING', 'CONFIRMED', 'PICKUP', 'ACTIVE'];
+      const activeStatuses = ['PENDING', 'BOOKED', 'PICKUP', 'ACTIVE'];
       if (!activeStatuses.includes(order.status)) return false;
       
       // Check if order items contain this product

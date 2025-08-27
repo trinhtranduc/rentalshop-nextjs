@@ -415,7 +415,7 @@ export default function CustomerOrdersPage() {
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               order.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
                               order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                              order.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                              order.status === 'BOOKED' ? 'bg-blue-100 text-blue-800' :
                               order.status === 'COMPLETED' ? 'bg-purple-100 text-purple-800' :
                               order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
                               order.status === 'WAITING' ? 'bg-orange-100 text-orange-800' :

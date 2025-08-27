@@ -13,6 +13,7 @@ import { UI } from './ui';
 import { BUSINESS } from './business';
 import { ENVIRONMENT } from './environment';
 import { API } from './api';
+import * as ORDERS from './orders';
 
 // Export all constant modules
 export * from './pagination';
@@ -22,6 +23,7 @@ export * from './ui';
 export * from './business';
 export * from './environment';
 export * from './api';
+export * from './orders';
 
 // Explicit API export to fix import issues
 export { API } from './api';
@@ -35,6 +37,7 @@ export const CONSTANTS = {
   BUSINESS,
   ENVIRONMENT,
   API,
+  ORDERS,
 } as const;
 
 // Re-export the main constants object

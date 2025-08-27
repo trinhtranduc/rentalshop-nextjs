@@ -40,7 +40,7 @@ export default function CalendarPage() {
         startDate: startOfMonth.toISOString(),
         endDate: endOfMonth.toISOString(),
         orderType: 'RENT',
-        status: ['CONFIRMED', 'ACTIVE'],
+        status: ['BOOKED', 'ACTIVE'],
         limit: 100
       });
       
