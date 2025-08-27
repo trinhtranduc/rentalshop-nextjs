@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 
 interface TopCustomer {
-  id: string;
+  id: number;
   name: string;
   email: string;
   phone: string;

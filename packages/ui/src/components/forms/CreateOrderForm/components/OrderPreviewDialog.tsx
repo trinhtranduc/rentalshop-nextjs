@@ -22,11 +22,11 @@ interface OrderPreviewDialogProps {
   onOpenChange: (open: boolean) => void;
   orderData: {
     orderType: OrderFormData['orderType'];
-    customerId: string;
+    customerId: number;
     customerName?: string;
     customerPhone?: string;
     customerEmail?: string;
-    outletId: string;
+    outletId: number;
     outletName?: string;
     pickupPlanAt?: string;
     returnPlanAt?: string;
@@ -40,7 +40,7 @@ interface OrderPreviewDialogProps {
     damageFee: number;
     notes: string;
     orderItems: Array<{
-      productId: string;
+      productId: number;
       quantity: number;
       unitPrice: number;
       totalPrice: number;

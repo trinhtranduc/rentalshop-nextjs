@@ -35,44 +35,12 @@ import {
 import { formatCurrency, formatDate } from '../../../../lib';
 import { ProductsLoading } from './ProductsLoading';
 import { 
-  OrderHeader,
   OrderFilters,
   OrderTable,
-  OrderListActions,
-  OrderStats,
   OrderPagination
 } from '../../Orders/components';
-import type { OrderData, OrderFilters } from '../../Orders/types';
-
-interface OrderItem {
-  id: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  orderId: string;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  customer: {
-    firstName: string;
-    lastName: string;
-    phone: string;
-    email?: string;
-  };
-  status: 'PENDING' | 'CONFIRMED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-  orderType: 'RENT' | 'SALE' | 'RENT_TO_OWN';
-  totalAmount: number;
-  depositAmount: number;
-  pickupPlanAt?: Date;
-  returnPlanAt?: Date;
-  pickedUpAt?: Date;
-  returnedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  orderItems: OrderItem[];
-}
+import { ordersApi } from '@rentalshop/utils';
+import type { OrderWithDetails, OrderFilters as OrderFiltersType } from '@rentalshop/types';
 
 interface ProductOrdersViewProps {
   productId: string;
@@ -95,123 +63,55 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
   showHeader = true,
   inventoryData
 }) => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   
   // Initialize filters
-  const [filters, setFilters] = useState<OrderFilters>({
+  const [filters, setFilters] = useState<OrderFiltersType>({
     search: '',
-    status: '',
-    orderType: '',
-    outlet: '',
-    dateRange: {
-      start: '',
-      end: ''
-    },
+    status: undefined,
+    orderType: undefined,
+    outletId: undefined,
+    customerId: undefined,
+    startDate: undefined,
+    endDate: undefined,
+    limit: 20,
+    offset: 0,
     sortBy: 'createdAt',
     sortOrder: 'desc'
   });
 
-  // Mock data for demonstration - replace with actual API call
+  // TODO: Implement real API call to fetch orders for this product
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchProductOrders = async () => {
       try {
         setLoading(true);
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Filter by productId to get orders for this specific product
+        const response = await ordersApi.getOrders({ 
+          productId: parseInt(productId), // Convert string to number for API
+          limit: filters.limit,
+          offset: (currentPage - 1) * (filters.limit || 20)
+        });
         
-        // Mock data - replace with actual API call
-        const mockOrders: Order[] = [
-          {
-            id: '1',
-            orderNumber: 'ORD-001',
-            customer: {
-              firstName: 'John',
-              lastName: 'Doe',
-              phone: '+1234567890',
-              email: 'john@example.com'
-            },
-            status: 'ACTIVE',
-            orderType: 'RENT',
-            totalAmount: 150.00,
-            depositAmount: 50.00,
-            pickupPlanAt: new Date('2024-01-15'),
-            returnPlanAt: new Date('2024-01-20'),
-            pickedUpAt: new Date('2024-01-15'),
-            createdAt: new Date('2024-01-10'),
-            updatedAt: new Date('2024-01-15'),
-            orderItems: [{
-              id: '1',
-              quantity: 1,
-              unitPrice: 150.00,
-              totalPrice: 150.00,
-              orderId: '1'
-            }]
-          },
-          {
-            id: '2',
-            orderNumber: 'ORD-002',
-            customer: {
-              firstName: 'Jane',
-              lastName: 'Smith',
-              phone: '+1234567891',
-              email: 'jane@example.com'
-            },
-            status: 'COMPLETED',
-            orderType: 'SALE',
-            totalAmount: 300.00,
-            depositAmount: 0,
-            createdAt: new Date('2024-01-05'),
-            updatedAt: new Date('2024-01-12'),
-            orderItems: [{
-              id: '2',
-              quantity: 2,
-              unitPrice: 150.00,
-              totalPrice: 300.00,
-              orderId: '2'
-            }]
-          },
-          {
-            id: '3',
-            orderNumber: 'ORD-003',
-            customer: {
-              firstName: 'Mike',
-              lastName: 'Johnson',
-              phone: '+1234567892'
-            },
-            status: 'PENDING',
-            orderType: 'RENT',
-            totalAmount: 75.00,
-            depositAmount: 25.00,
-            pickupPlanAt: new Date('2024-01-25'),
-            returnPlanAt: new Date('2024-01-30'),
-            createdAt: new Date('2024-01-20'),
-            updatedAt: new Date('2024-01-20'),
-            orderItems: [{
-              id: '3',
-              quantity: 1,
-              unitPrice: 75.00,
-              totalPrice: 75.00,
-              orderId: '3'
-            }]
-          }
-        ];
-        
-        setOrders(mockOrders);
-        setTotalPages(1);
+        if (response.data) {
+          setOrders(response.data.orders || []);
+          setTotalPages(Math.ceil((response.data.total || 0) / (filters.limit || 20)));
+        } else {
+          setOrders([]);
+          setTotalPages(1);
+        }
       } catch (err) {
-        setError('Failed to fetch orders');
-        console.error('Error fetching orders:', err);
+        setError('Failed to fetch product orders');
+        console.error('Error fetching product orders:', err);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchOrders();
-  }, [productId]);
+    fetchProductOrders();
+  }, [productId, currentPage, filters.limit, filters.offset]);
 
   // Calculate overview statistics
   const overview = {
@@ -226,33 +126,33 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     pendingOrders: orders.filter(order => order.status === 'PENDING').length
   };
 
-  // Transform orders to match OrderData interface
-  const orderData: OrderData = {
+  // Transform orders to match the expected format for OrderTable
+  const orderData = {
     orders: orders.map(order => ({
-      id: order.id,
+      id: order.id, // Use the id from OrderWithDetails
       orderNumber: order.orderNumber,
       orderType: order.orderType,
       status: order.status,
-      customerId: order.customer.email || '',
-      customerName: `${order.customer.firstName} ${order.customer.lastName}`,
-      customerPhone: order.customer.phone,
-      outletId: '',
-      outletName: '',
+      customerId: typeof order.customer?.id === 'number' ? order.customer.id : 0,
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
+      customerPhone: order.customer?.phone || 'No phone',
+      outletId: typeof order.outlet.id === 'number' ? order.outlet.id : 0,
+      outletName: order.outlet.name,
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
-      pickupPlanAt: order.pickupPlanAt?.toISOString(),
-      returnPlanAt: order.returnPlanAt?.toISOString(),
-      pickedUpAt: order.pickedUpAt?.toISOString(),
-      returnedAt: order.returnedAt?.toISOString(),
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
-      orderItems: [],
-      payments: []
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      orderItems: order.orderItems,
+      payments: order.payments
     })),
     total: orders.length,
     currentPage,
     totalPages,
-    limit: 10,
+    limit: filters.limit || 20,
     stats: {
       totalOrders: overview.totalOrders,
       pendingOrders: overview.pendingOrders,
@@ -267,7 +167,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     }
   };
 
-  const handleFiltersChange = (newFilters: OrderFilters) => {
+  const handleFiltersChange = (newFilters: OrderFiltersType) => {
     setFilters(newFilters);
     setCurrentPage(1);
   };
@@ -280,10 +180,14 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
   const handleClearFilters = () => {
     setFilters({
       search: '',
-      status: '',
-      orderType: '',
-      outlet: '',
-      dateRange: { start: '', end: '' },
+      status: undefined,
+      orderType: undefined,
+      outletId: undefined,
+      customerId: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      limit: 20,
+      offset: 0,
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });
@@ -292,7 +196,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
 
   const handleOrderAction = (action: string, orderId: string) => {
     console.log('Order action:', action, orderId);
-    // Implement order actions here
+    // TODO: Implement order actions here
   };
 
   const handlePageChange = (page: number) => {
@@ -303,9 +207,45 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     const newSortOrder = filters.sortBy === column && filters.sortOrder === 'asc' ? 'desc' : 'asc';
     setFilters(prev => ({
       ...prev,
-      sortBy: column as any,
+      sortBy: column,
       sortOrder: newSortOrder
     }));
+  };
+
+  const handleRefresh = () => {
+    setCurrentPage(1);
+    setError(null);
+    // Trigger a new fetch
+    const fetchProductOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await ordersApi.getOrders({ 
+          search: productName, // Search by product name instead of productId
+          limit: filters.limit,
+          offset: 0
+        });
+        
+        if (response.data) {
+          setOrders(response.data.orders || []);
+          setTotalPages(Math.ceil((response.data.total || 0) / (filters.limit || 20)));
+        } else {
+          setOrders([]);
+          setTotalPages(1);
+        }
+      } catch (err) {
+        setError('Failed to fetch product orders');
+        console.error('Error refreshing product orders:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProductOrders();
+  };
+
+  const handleExport = () => {
+    // TODO: Implement export functionality
+    console.log('Export orders for product:', productId);
+    // This could export to CSV, PDF, or other formats
   };
 
   if (loading) {
@@ -347,11 +287,11 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
               <p className="text-gray-600">View and manage all orders for this product</p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleExport}>
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button onClick={() => window.location.reload()}>
+              <Button onClick={handleRefresh}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>

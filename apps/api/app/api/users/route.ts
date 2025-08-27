@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     console.log('🔍 User email:', user.email);
 
     // Initialize userScope outside try block
-    let userScope: { merchantId?: string; outletId?: string } = {};
+    let userScope: { merchantId?: number; outletId?: number } = {};
 
     try {
       // Check authorization based on user role
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
     const p = parsed.data;
     
     // Get merchant ID from the authenticated user
-    let merchantId: string | undefined;
+    let merchantId: number | undefined;
     if (user.merchantId) {
       merchantId = user.merchantId;
     } else if (user.role === 'ADMIN') {
@@ -372,7 +372,7 @@ export async function PUT(request: NextRequest) {
 
     // Check authorization based on user role
     let canAccess = false;
-    let userScope: { merchantId?: string; outletId?: string } = {};
+    let userScope: { merchantId?: number; outletId?: number } = {};
 
     // Normalize role for comparison (handle case sensitivity)
     const normalizedRole = currentUser.role?.toUpperCase() || '';
@@ -502,7 +502,7 @@ export async function PUT(request: NextRequest) {
 async function getUsers(
   filters: UserFilters = {},
   options: UserListOptions = {},
-  userScope: { merchantId?: string; outletId?: string } = {}
+  userScope: { merchantId?: number; outletId?: number } = {}
 ) {
   const { prisma } = await import('@rentalshop/database');
   

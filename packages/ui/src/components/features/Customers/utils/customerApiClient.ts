@@ -143,7 +143,7 @@ export class CustomerApiClient {
   /**
    * Get a specific customer by ID
    */
-  async getCustomerById(customerId: string): Promise<CustomerApiResponse<any>> {
+  async getCustomerById(customerId: number): Promise<CustomerApiResponse<any>> {
     return this.request(`/api/customers?customerId=${customerId}`);
   }
 
@@ -151,7 +151,7 @@ export class CustomerApiClient {
    * Update a customer
    */
   async updateCustomer(
-    customerId: string, 
+    customerId: number, 
     updateData: CustomerUpdateInput
   ): Promise<CustomerApiResponse<any>> {
     return this.request(`/api/customers?customerId=${customerId}`, {
@@ -163,7 +163,7 @@ export class CustomerApiClient {
   /**
    * Delete a customer (soft delete)
    */
-  async deleteCustomer(customerId: string): Promise<CustomerApiResponse<void>> {
+  async deleteCustomer(customerId: number): Promise<CustomerApiResponse<void>> {
     return this.request(`/api/customers?customerId=${customerId}`, {
       method: 'DELETE'
     });

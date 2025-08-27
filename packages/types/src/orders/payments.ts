@@ -8,19 +8,19 @@ export type PaymentType = 'DEPOSIT' | 'SECURITY_DEPOSIT' | 'RENTAL_FEE' | 'DAMAG
 export type CollateralType = 'CASH' | 'ID_CARD' | 'PASSPORT' | 'DRIVERS_LICENSE' | 'OTHER';
 
 export interface Payment {
-  id: string;
-  orderId: string;
+  id: number;
+  orderId: number;
   amount: number;
   method: PaymentMethod;
   status: PaymentStatus;
-  transactionId?: string;
+  transactionId?: number;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface PaymentInput {
-  orderId: string;
+  orderId: number;
   amount: number;
   method: PaymentMethod;
   type: PaymentType;

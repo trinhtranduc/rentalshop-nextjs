@@ -227,7 +227,7 @@ export default function OrdersPage() {
     }
   }, [orders, router]);
 
-  const handlePickup = useCallback(async (orderId: string) => {
+  const handlePickup = useCallback(async (orderId: number) => {
     try {
       const response = await authenticatedFetch(`/api/orders?orderId=${orderId}`, {
         method: 'PUT',
@@ -248,7 +248,7 @@ export default function OrdersPage() {
     }
   }, [fetchOrders, fetchStats]);
 
-  const handleReturn = useCallback(async (orderId: string) => {
+  const handleReturn = useCallback(async (orderId: number) => {
     try {
       const response = await authenticatedFetch(`/api/orders?orderId=${orderId}`, {
         method: 'PUT',
@@ -269,7 +269,7 @@ export default function OrdersPage() {
     }
   }, [fetchOrders, fetchStats]);
 
-  const handleCancel = useCallback(async (orderId: string) => {
+  const handleCancel = useCallback(async (orderId: number) => {
     if (!confirm('Are you sure you want to cancel this order?')) return;
 
     try {

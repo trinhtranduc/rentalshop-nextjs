@@ -6,9 +6,9 @@ import { User, UserCreateInput, UserUpdateInput } from './user';
 
 export interface UserManagement {
   createUser(input: UserCreateInput): Promise<User>;
-  updateUser(id: string, input: UserUpdateInput): Promise<User>;
-  deleteUser(id: string): Promise<boolean>;
-  getUserById(id: string): Promise<User | null>;
+  updateUser(id: number, input: UserUpdateInput): Promise<User>;
+  deleteUser(id: number): Promise<boolean>;
+  getUserById(id: number): Promise<User | null>;
   getUserById(id: number): Promise<User | null>;
   getUserByEmail(email: string): Promise<User | null>;
   listUsers(filters?: any): Promise<User[]>;

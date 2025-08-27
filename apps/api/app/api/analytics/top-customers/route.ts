@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
           where: { id: item.customerId! },
           select: {
             id: true,
+            publicId: true, // Include publicId to use as the external ID
             firstName: true,
             lastName: true,
             email: true,
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
         });
 
         return {
-          id: item.customerId,
+          id: customer?.publicId || 0, // Use publicId (number) as the external ID
           name: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
           email: customer?.email || '',
           phone: customer?.phone || '',

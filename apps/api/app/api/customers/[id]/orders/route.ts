@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { getUserScope } from '@rentalshop/auth';
-import { getCustomerById } from '@rentalshop/database';
+import { getCustomerByPublicId } from '@rentalshop/database';
 
 /**
  * GET /api/customers/[id]/orders
@@ -31,12 +31,30 @@ export async function GET(
       );
     }
 
+    // Check if the ID is numeric (public ID)
+    if (!/^\d+$/.test(params.id)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid customer ID format' },
+        { status: 400 }
+      );
+    }
+
+    const customerId = parseInt(params.id);
+
     // Get merchantId from user
-    const userMerchantId = getUserScope(user as any).merchantId;
+    const userScope = getUserScope(user as any);
+    const userMerchantId = userScope.merchantId;
     console.log('User merchant ID:', userMerchantId);
 
-    // Verify customer exists and belongs to user's merchant
-    const customer = await getCustomerById(params.id);
+    if (!userMerchantId) {
+      return NextResponse.json(
+        { success: false, message: 'User not associated with any merchant' },
+        { status: 403 }
+      );
+    }
+
+    // Verify customer exists and belongs to user's merchant using new dual ID system
+    const customer = await getCustomerByPublicId(customerId, userMerchantId);
     
     if (!customer) {
       return NextResponse.json(
@@ -45,12 +63,8 @@ export async function GET(
       );
     }
 
-    if (customer.merchantId !== userMerchantId) {
-      return NextResponse.json(
-        { success: false, message: 'Access denied' },
-        { status: 403 }
-      );
-    }
+    // No need to check merchant access since getCustomerByPublicId already filters by merchant
+    // The customer returned is guaranteed to belong to the user's merchant
 
     // Get query parameters for filtering orders
     const { searchParams } = new URL(request.url);
@@ -61,16 +75,57 @@ export async function GET(
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    // For now, return a placeholder response
-    // TODO: Implement actual order fetching logic
-    const orders = [];
-    const total = 0;
-    const totalPages = 0;
+    // Get customer orders from the database
+    // The customer object already includes orders from getCustomerByPublicId
+    const customerOrders = customer.orders || [];
+    
+    // Apply filters if provided
+    let filteredOrders = customerOrders;
+    
+    if (status) {
+      filteredOrders = filteredOrders.filter(order => order.status === status);
+    }
+    
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredOrders = filteredOrders.filter(order => 
+        order.orderNumber.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply sorting
+    filteredOrders.sort((a, b) => {
+      const aValue = a[sortBy as keyof typeof a];
+      const bValue = b[sortBy as keyof typeof b];
+      
+      if (sortOrder === 'desc') {
+        return bValue > aValue ? 1 : -1;
+      } else {
+        return aValue > bValue ? 1 : -1;
+      }
+    });
+    
+    // Apply pagination
+    const total = filteredOrders.length;
+    const totalPages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+    
+    // Transform orders to use publicId as id for frontend
+    const transformedOrders = paginatedOrders.map(order => ({
+      id: order.publicId, // Frontend expects 'id' to be the publicId
+      publicId: order.publicId, // Keep publicId for backward compatibility
+      orderNumber: order.orderNumber,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      createdAt: order.createdAt
+    }));
 
     return NextResponse.json({
       success: true,
       data: {
-        orders,
+        orders: transformedOrders,
         total,
         page,
         totalPages,

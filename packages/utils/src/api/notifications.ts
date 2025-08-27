@@ -80,7 +80,7 @@ export const notificationsApi = {
   /**
    * Mark notification as read
    */
-  async markAsRead(notificationId: string): Promise<ApiResponse<{ message: string }>> {
+  async markAsRead(notificationId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/notifications/${notificationId}/read`, {
       method: 'PUT',
     });
@@ -90,7 +90,7 @@ export const notificationsApi = {
   /**
    * Mark notification as unread
    */
-  async markAsUnread(notificationId: string): Promise<ApiResponse<{ message: string }>> {
+  async markAsUnread(notificationId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/notifications/${notificationId}/unread`, {
       method: 'PUT',
     });
@@ -110,7 +110,7 @@ export const notificationsApi = {
   /**
    * Delete a notification
    */
-  async deleteNotification(notificationId: string): Promise<ApiResponse<{ message: string }>> {
+  async deleteNotification(notificationId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/notifications/${notificationId}`, {
       method: 'DELETE',
     });
@@ -152,7 +152,7 @@ export const notificationsApi = {
   async registerDevice(deviceData: {
     token: string;
     platform: 'web' | 'ios' | 'android';
-    deviceId?: string;
+    deviceId?: number;
   }): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch('/api/notifications/register-device', {
       method: 'POST',
@@ -164,7 +164,7 @@ export const notificationsApi = {
   /**
    * Unregister device for push notifications
    */
-  async unregisterDevice(deviceId: string): Promise<ApiResponse<{ message: string }>> {
+  async unregisterDevice(deviceId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/notifications/unregister-device/${deviceId}`, {
       method: 'DELETE',
     });

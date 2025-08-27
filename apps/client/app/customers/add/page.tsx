@@ -80,7 +80,7 @@ export default function AddCustomerPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
             <div className="text-gray-600 text-lg font-medium">
               Loading...
@@ -95,7 +95,7 @@ export default function AddCustomerPage() {
   if (!merchantId) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
             <div className="text-red-600 text-lg font-medium">
               Unable to create customer. Please log in again.
@@ -114,7 +114,7 @@ export default function AddCustomerPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <CustomerPageHeader
           title="Add New Customer"

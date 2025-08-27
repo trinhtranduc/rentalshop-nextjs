@@ -23,13 +23,13 @@ interface ProductsProps {
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
   onViewModeChange: (mode: 'grid' | 'table') => void;
-  onProductAction: (action: string, productId: string) => void;
+  onProductAction: (action: string, productId: number) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
   // Enhanced props for product management
   categories?: Category[];
   outlets?: Outlet[];
-  merchantId?: string;
+  merchantId?: number;
   onProductCreated?: (product: ProductWithDetails) => void;
   onProductUpdated?: (product: ProductWithDetails) => void;
   onError?: (error: string) => void;

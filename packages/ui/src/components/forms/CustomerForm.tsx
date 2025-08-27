@@ -18,7 +18,7 @@ interface CustomerFormData {
   country?: string;
   dateOfBirth?: string; // String for form input
   notes?: string;
-  merchantId: string;
+  merchantId: number;
 }
 
 interface CustomerFormProps {

@@ -14,7 +14,7 @@ export interface RegisterData {
 }
 
 export interface AuthUser {
-  id: string;
+  id: number;
   email: string;
   firstName: string;
   lastName: string;
@@ -22,12 +22,12 @@ export interface AuthUser {
   role: string;
   phone?: string;
   merchant?: {
-    id: string;
+    id: number;
     name: string;
     description?: string;
   };
   outlet?: {
-    id: string;
+    id: number;
     name: string;
     address?: string;
   };

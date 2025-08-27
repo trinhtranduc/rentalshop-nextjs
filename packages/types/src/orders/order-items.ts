@@ -3,9 +3,10 @@
 // ============================================================================
 
 export interface OrderItem {
-  id: string;
-  orderId: string;
-  productId: string;
+  id: string;           // Database CUID (internal use)
+  publicId: number;     // Public numeric ID (external use)
+  orderId: string;      // Database CUID
+  productId: string;    // Database CUID
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -14,7 +15,7 @@ export interface OrderItem {
 }
 
 export interface OrderItemInput {
-  productId: string;
+  productId: number;    // Frontend sends publicId (number)
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -28,7 +29,8 @@ export interface OrderItemInput {
 
 export interface OrderItemWithProduct extends Omit<OrderItem, 'createdAt' | 'updatedAt'> {
   product: {
-    id: string;
+    id: string;         // Database CUID (internal use)
+    publicId: number;   // Public numeric ID (external use)
     name: string;
     barcode?: string;
     description?: string;

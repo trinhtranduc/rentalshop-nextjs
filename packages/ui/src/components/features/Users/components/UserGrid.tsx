@@ -5,7 +5,7 @@ import type { User } from '@rentalshop/types';
 
 interface UserGridProps {
   users: User[];
-  onUserAction: (action: string, userId: string) => void;
+  onUserAction: (action: string, userId: number) => void;
 }
 
 export function UserGrid({ users, onUserAction }: UserGridProps) {

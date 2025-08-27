@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { 
-  getProducts, 
-  type ProductSearchFilter
+  searchProducts
 } from '@rentalshop/database';
+import type { ProductSearchFilter } from '@rentalshop/types';
 
 /**
  * GET /api/mobile/products
@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
     // Parse filters
     const filters: ProductSearchFilter = {};
     
-    // Filter parameters
-    if (searchParams.get('outletId')) filters.outletId = searchParams.get('outletId')!;
-    if (searchParams.get('categoryId')) filters.categoryId = searchParams.get('categoryId')!;
+    // Filter parameters - convert to numbers for dual ID system
+    if (searchParams.get('outletId')) filters.outletId = parseInt(searchParams.get('outletId')!);
+    if (searchParams.get('categoryId')) filters.categoryId = parseInt(searchParams.get('categoryId')!);
     if (searchParams.get('search')) filters.search = searchParams.get('search')!;
     
     // Pagination parameters (optimized for mobile)
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // Default mobile-optimized settings
     if (!filters.limit) filters.limit = 20; // Smaller batch size for mobile
 
-    const result = await getProducts(filters);
+    const result = await searchProducts(filters);
 
     // Transform data for mobile optimization
     const mobileProducts = result.products.map((product: any) => ({
@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
         products: mobileProducts,
         total: result.total,
         page: result.page,
-        totalPages: result.totalPages,
-        hasMore: result.page < result.totalPages,
+        totalPages: Math.ceil(result.total / result.limit),
+        hasMore: result.hasMore,
       },
     });
   } catch (error) {

@@ -2,7 +2,7 @@ import { authenticatedFetch, parseApiResponse } from '../common';
 import type { ApiResponse } from '../common';
 
 export interface Outlet {
-  id: string;
+  id: number;
   name: string;
   address?: string;
   city?: string;
@@ -12,9 +12,9 @@ export interface Outlet {
   phone?: string;
   email?: string;
   isActive: boolean;
-  merchantId: string;
+  merchantId: number;
   merchant?: {
-    id: string;
+    id: number;
     name: string;
   };
 }
@@ -29,7 +29,7 @@ export interface OutletsResponse {
 
 export interface OutletFilters {
   search?: string;
-  merchantId?: string;
+  merchantId?: number;
   city?: string;
   state?: string;
   isActive?: boolean;
@@ -64,7 +64,7 @@ export const outletsApi = {
   /**
    * Get outlet by ID
    */
-  async getOutletById(outletId: string): Promise<ApiResponse<Outlet>> {
+  async getOutletById(outletId: number): Promise<ApiResponse<Outlet>> {
     const response = await authenticatedFetch(`/api/outlets/${outletId}`);
     return await parseApiResponse<Outlet>(response);
   },
@@ -72,7 +72,7 @@ export const outletsApi = {
   /**
    * Get outlets by merchant ID
    */
-  async getOutletsByMerchant(merchantId: string): Promise<ApiResponse<Outlet[]>> {
+  async getOutletsByMerchant(merchantId: number): Promise<ApiResponse<Outlet[]>> {
     const response = await authenticatedFetch(`/api/outlets?merchantId=${merchantId}`);
     const result = await parseApiResponse<Outlet[]>(response);
     return result;
@@ -92,7 +92,7 @@ export const outletsApi = {
   /**
    * Update an existing outlet
    */
-  async updateOutlet(outletId: string, outletData: Partial<Outlet>): Promise<ApiResponse<Outlet>> {
+  async updateOutlet(outletId: number, outletData: Partial<Outlet>): Promise<ApiResponse<Outlet>> {
     const response = await authenticatedFetch(`/api/outlets/${outletId}`, {
       method: 'PUT',
       body: JSON.stringify(outletData),
@@ -103,7 +103,7 @@ export const outletsApi = {
   /**
    * Delete an outlet
    */
-  async deleteOutlet(outletId: string): Promise<ApiResponse<any>> {
+  async deleteOutlet(outletId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/outlets/${outletId}`, {
       method: 'DELETE',
     });
@@ -113,7 +113,7 @@ export const outletsApi = {
   /**
    * Get outlet statistics
    */
-  async getOutletStats(outletId?: string): Promise<ApiResponse<any>> {
+  async getOutletStats(outletId?: number): Promise<ApiResponse<any>> {
     const endpoint = outletId ? `/api/outlets/${outletId}/stats` : '/api/outlets/stats';
     const response = await authenticatedFetch(endpoint);
     return await parseApiResponse<any>(response);

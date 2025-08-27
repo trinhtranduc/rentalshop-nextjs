@@ -4,7 +4,7 @@
  */
 
 interface JWTPayload {
-  userId: string;
+  userId: number;
   email: string;
   role: string;
   iat: number;

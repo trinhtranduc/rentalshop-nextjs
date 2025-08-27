@@ -15,15 +15,15 @@ interface CustomersProps {
   onFiltersChange: (filters: CustomerFilters & { sortBy?: string; sortOrder?: 'asc' | 'desc' }) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
-  onCustomerAction: (action: string, customerId?: string) => void;
+  onCustomerAction: (action: string, customerId?: number) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
-  merchantId: string;
+  merchantId: number;
   onCustomerCreated?: (customer: Customer) => void;
   onCustomerUpdated?: (customer: Customer) => void;
   onError?: (error: string) => void;
-  onViewOrders?: (customerId: string) => void;
-  onDeleteCustomer?: (customerId: string) => void;
+  onViewOrders?: (customerId: number) => void;
+  onDeleteCustomer?: (customerId: number) => void;
 }
 
 export function Customers({ 

@@ -5,7 +5,7 @@
 import { UserRole } from './roles';
 
 export interface Permission {
-  id: string;
+  id: number;
   name: string;
   description: string;
   resource: string;
@@ -17,8 +17,8 @@ export interface PermissionCheck {
   userRole: UserRole;
   resource: string;
   action: string;
-  merchantId?: string;
-  outletId?: string;
+  merchantId?: number;
+  outletId?: number;
 }
 
 export interface PermissionResult {

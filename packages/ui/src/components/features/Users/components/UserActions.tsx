@@ -7,7 +7,7 @@ import type { User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { formatPublicId } from '@rentalshop/utils';
 
 interface UserActionsProps {
-  onAction: (action: string, userId: string) => void;
+  onAction: (action: string, userId: number) => void;
   onUserCreated?: (user: UserCreateInput | UserUpdateInput) => void;
   onUserUpdated?: (user: User) => void;
   onError?: (error: string) => void;

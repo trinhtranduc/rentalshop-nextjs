@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 
 interface ListItem {
-  id: string;
+  id: number;
   title: string;
   subtitle?: string;
   value?: string | number;

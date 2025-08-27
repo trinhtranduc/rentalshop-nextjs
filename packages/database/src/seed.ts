@@ -511,9 +511,9 @@ async function main() {
 
   const makeOrderInput = (
     orderType: OrderType,
-    outletId: string,
-    customerId: string | undefined,
-    productIds: string[],
+    outletId: number,
+    customerId: number | undefined,
+    productIds: number[],
     priceLookup: Record<string, { rentPrice: number; salePrice?: number; deposit: number }>,
     schedule?: { pickupPlanAt?: Date; returnPlanAt?: Date }
   ): OrderInput => {
@@ -562,9 +562,9 @@ async function main() {
   // Helper to create and then optionally update status/timestamps
   const createOrderWithStatus = async (
     orderType: OrderType,
-    outletId: string,
-    customerId: string | undefined,
-    productIds: string[],
+    outletId: number,
+    customerId: number | undefined,
+    productIds: number[],
     status: OrderStatus,
     schedule?: { pickupPlanAt?: Date; returnPlanAt?: Date; pickedUpAt?: Date; returnedAt?: Date }
   ) => {

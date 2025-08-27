@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 
 interface ProductData {
-  id: string;
+  id: number;
   name: string;
   rentPrice: number;
   category: string;

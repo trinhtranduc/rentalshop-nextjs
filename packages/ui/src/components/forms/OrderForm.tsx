@@ -29,7 +29,7 @@ interface OrderFormProps {
   initialData?: Partial<OrderInput>;
   customers?: CustomerSearchResult[];
   products?: ProductWithStock[];
-  outlets?: Array<{ id: string; name: string }>;
+  outlets?: Array<{ id: number; name: string }>;
   onSubmit: (data: OrderInput) => void;
   onCancel: () => void;
   loading?: boolean;
@@ -37,7 +37,7 @@ interface OrderFormProps {
 }
 
 interface OrderItemFormData {
-  productId: string;
+  productId: number;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -259,13 +259,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Khách hàng</label>
           <SearchableSelect
-            value={selectedCustomer?.id || ''}
-            onChange={(val: string) => {
+            value={selectedCustomer?.id || undefined}
+            onChange={(val: number) => {
               const customer = customers.find(c => c.id === val);
               setSelectedCustomer(customer || null);
             }}
             options={customers.map((c) => ({
-              value: c.id,
+              value: String(c.id),
               label: `${c.firstName} ${c.lastName} - ${c.phone}`,
             }))}
             placeholder="Chọn khách hàng hoặc để trống cho khách vãng lai"

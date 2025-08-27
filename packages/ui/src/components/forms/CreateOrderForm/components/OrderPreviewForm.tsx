@@ -64,11 +64,11 @@ import {
 
 export interface OrderPreviewData {
   orderType: 'RENT' | 'SALE' | 'RENT_TO_OWN';
-  customerId?: string;
+  customerId?: number;
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
-  outletId: string;
+  outletId: number;
   outletName?: string;
   pickupPlanAt?: string;
   returnPlanAt?: string;
@@ -82,7 +82,7 @@ export interface OrderPreviewData {
   lateFee?: number;
   notes?: string;
   orderItems: Array<{
-    productId: string;
+    productId: number;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -92,7 +92,7 @@ export interface OrderPreviewData {
 }
 
 export interface ProductInfo {
-  id: string;
+  id: number;
   name: string;
   barcode?: string;
   description?: string;

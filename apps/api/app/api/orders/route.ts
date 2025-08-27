@@ -5,7 +5,7 @@ import {
   createOrder, 
   searchOrders, 
   getOrderStats,
-  getOrderById,
+  getOrderByPublicId,
   updateOrder,
   cancelOrder
 } from '@rentalshop/database';
@@ -70,27 +70,64 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-                    include: {
-              orderItems: {
-                where: {
-                  productId: productId
-                },
-                include: {
-                  product: {
-                    select: {
-                      id: true,
-                      publicId: true,
-                      name: true
-                    }
-                  }
+        include: {
+          customer: {
+            select: {
+              id: true,
+              publicId: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true
+            }
+          },
+          outlet: {
+            select: {
+              id: true,
+              publicId: true,
+              name: true
+            }
+          },
+          orderItems: {
+            where: {
+              productId: productId
+            },
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  publicId: true,
+                  name: true
                 }
               }
-            },
+            }
+          },
+          payments: {
+            select: {
+              id: true,
+              amount: true,
+              method: true,
+              status: true,
+              createdAt: true
+            }
+          }
+        },
         orderBy: {
           createdAt: 'desc'
         },
         take: limit,
         skip: offset
+      });
+
+      // Get total count for pagination
+      const total = await prisma.order.count({
+        where: {
+          orderItems: {
+            some: {
+              productId: productId
+            }
+          }
+        }
       });
 
       return NextResponse.json({
@@ -101,15 +138,47 @@ export async function GET(request: NextRequest) {
             orderNumber: order.orderNumber,
             orderType: order.orderType,
             status: order.status,
+            totalAmount: order.totalAmount,
+            depositAmount: order.depositAmount,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
             pickupPlanAt: order.pickupPlanAt,
             returnPlanAt: order.returnPlanAt,
+            pickedUpAt: order.pickedUpAt,
+            returnedAt: order.returnedAt,
+            isReadyToDeliver: order.isReadyToDeliver,
+            customer: order.customer ? {
+              id: order.customer.publicId,         // Use publicId for customer
+              firstName: order.customer.firstName,
+              lastName: order.customer.lastName,
+              phone: order.customer.phone,
+              email: order.customer.email
+            } : null,
+            outlet: {
+              id: order.outlet.publicId,           // Use publicId for outlet
+              name: order.outlet.name
+            },
             orderItems: order.orderItems.map(item => ({
-              productId: item.product.publicId,    // Product public ID
+              id: 0,                              // Placeholder for compatibility
+              orderId: order.publicId,            // Use publicId for order
+              productId: item.product.publicId,   // Product public ID
               quantity: item.quantity,
-              name: item.product.name
+              unitPrice: 0,                       // Placeholder for compatibility
+              totalPrice: 0                       // Placeholder for compatibility
+            })),
+            payments: order.payments.map(payment => ({
+              id: 0,                              // Placeholder for compatibility
+              orderId: order.publicId,            // Use publicId for order
+              amount: payment.amount,
+              method: payment.method,
+              status: payment.status,
+              createdAt: payment.createdAt
             }))
-            // DO NOT include order.id (internal CUID)
-          }))
+          })),
+          total,
+          limit,
+          offset,
+          totalPages: Math.ceil(total / limit)
         }
       });
     }
@@ -130,18 +199,73 @@ export async function GET(request: NextRequest) {
     };
 
     // Use the searchOrders function for proper filtering and pagination
-    const result = await searchOrders(searchFilters);
+    const result = await searchOrders(searchFilters, getUserScope(user as any));
+    
+    // Transform the result to use publicId as id and remove internal CUIDs
+    const transformedOrders = result.data.orders.map((order: any) => ({
+      id: order.publicId,                    // Use publicId as id
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      isReadyToDeliver: order.isReadyToDeliver,
+      customer: order.customer ? {
+        id: order.customer.publicId,         // Use publicId as id
+        firstName: order.customer.firstName,
+        lastName: order.customer.lastName,
+        email: order.customer.email,
+        phone: order.customer.phone,
+      } : null,
+      outlet: {
+        id: order.outlet.publicId,           // Use publicId as id
+        name: order.outlet.name,
+        address: order.outlet.address,
+        merchantId: order.outlet.merchant.publicId, // Use publicId as id
+        merchant: {
+          id: order.outlet.merchant.publicId,       // Use publicId as id
+          name: order.outlet.merchant.name,
+        },
+      },
+      orderItems: order.orderItems.map((item: any) => ({
+        id: item.publicId || 0,              // Use publicId as id (fallback to 0 if not available)
+        productId: item.product.publicId,    // Use publicId as id
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        product: {
+          id: item.product.publicId,         // Use publicId as id
+          name: item.product.name,
+          description: item.product.description,
+          images: item.product.images,
+          barcode: item.product.barcode,
+        },
+      })),
+      payments: order.payments?.map((payment: any) => ({
+        id: payment.publicId || 0,           // Use publicId as id (fallback to 0 if not available)
+        amount: payment.amount,
+        method: payment.method,
+        status: payment.status,
+        createdAt: payment.createdAt,
+      })) || [],
+    }));
     
     // Calculate total pages for frontend pagination
-    const totalPages = Math.ceil(result.total / limit);
+    const totalPages = Math.ceil(result.data.total / limit);
 
     return NextResponse.json({
       success: true,
       data: {
-        orders: result.orders,
-        total: result.total,
+        orders: transformedOrders,
+        total: result.data.total,
         totalPages,
-        hasMore: result.hasMore,
+        hasMore: result.data.hasMore,
         currentPage: Math.floor(offset / limit) + 1
       }
     });
@@ -295,14 +419,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    if (orderInput.depositAmount && orderInput.depositAmount > orderInput.totalAmount) {
-      return NextResponse.json({
-        success: false,
-        message: 'Deposit amount cannot exceed total amount',
-        error: 'INVALID_DEPOSIT'
-      }, { status: 400 });
-    }
-
     // Validate additional financial fields
     if (orderInput.securityDeposit && orderInput.securityDeposit < 0) {
       return NextResponse.json({
@@ -355,14 +471,6 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
 
-      if (item.totalPrice < 0) {
-        return NextResponse.json({
-          success: false,
-          message: `Total price for product ${item.productId} cannot be negative`,
-          error: 'INVALID_TOTAL_PRICE'
-        }, { status: 400 });
-      }
-
       if (item.deposit && item.deposit < 0) {
         return NextResponse.json({
           success: false,
@@ -371,14 +479,9 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
 
-      // Validate that total price matches quantity * unit price
-      const calculatedTotalPrice = item.quantity * item.unitPrice;
-      if (Math.abs(item.totalPrice - calculatedTotalPrice) > 0.01) { // Allow for small floating point differences
-        return NextResponse.json({
-          success: false,
-          message: `Total price for product ${item.productId} (${item.totalPrice}) does not match quantity (${item.quantity}) × unit price (${item.unitPrice}) = ${calculatedTotalPrice}`,
-          error: 'PRICE_CALCULATION_MISMATCH'
-        }, { status: 400 });
+      // Calculate total price on server side if not provided
+      if (!item.totalPrice) {
+        item.totalPrice = item.quantity * item.unitPrice;
       }
     }
 
@@ -415,11 +518,26 @@ export async function POST(request: NextRequest) {
     if (userScope.merchantId) {
       // For MERCHANT role, verify the outlet belongs to their merchant
       const outlet = await prisma.outlet.findUnique({
-        where: { id: orderInput.outletId },
+        where: { publicId: orderInput.outletId }, // Use publicId instead of id
         select: { merchantId: true }
       });
       
-      if (!outlet || outlet.merchantId !== userScope.merchantId) {
+      if (!outlet) {
+        return NextResponse.json({
+          success: false,
+          message: 'Outlet not found',
+          error: 'OUTLET_NOT_FOUND'
+        }, { status: 400 });
+      }
+      
+      // Since userScope.merchantId is a number (publicId) and outlet.merchantId is a string (CUID),
+      // we need to find the merchant by publicId to compare
+      const userMerchant = await prisma.merchant.findUnique({
+        where: { publicId: userScope.merchantId },
+        select: { id: true }
+      });
+      
+      if (!userMerchant || outlet.merchantId !== userMerchant.id) {
         return NextResponse.json({
           success: false,
           message: 'You can only create orders for outlets in your merchant organization',
@@ -430,8 +548,10 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 User authorization validated for outlet:', orderInput.outletId);
 
+    console.log('🔍 Business validation passed, calling createOrder function...');
+
     // Create the order
-    const order = await createOrder(orderInput, user.id);
+    const order = await createOrder(orderInput, user.publicId);
     
     console.log('✅ Order created successfully:', {
       orderId: order.id,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
-import { getOrderStats, getOverdueRentals, type OrderSearchResult } from '@rentalshop/database';
+import { verifyTokenSimple, getUserScope } from '@rentalshop/auth';
+import { getOrderStats, getOverdueRentals } from '@rentalshop/database';
+import type { OrderSearchResult } from '@rentalshop/types';
 
 // GET /api/orders/stats - Get order statistics
 export async function GET(request: NextRequest) {
@@ -24,10 +25,13 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
-    const outletId = searchParams.get('outletId') || undefined;
+    const outletId = searchParams.get('outletId') ? parseInt(searchParams.get('outletId')!) : undefined;
 
-    // Get order statistics
-    const stats = await getOrderStats(outletId);
+    // Get user scope for proper authorization
+    const userScope = getUserScope(user as any);
+
+    // Get order statistics with proper user scope
+    const stats = await getOrderStats(userScope);
 
     // Get overdue rentals if requested
     const includeOverdue = searchParams.get('includeOverdue') === 'true';

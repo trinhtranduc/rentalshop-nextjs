@@ -25,8 +25,8 @@ interface CreateOrderFormProps {
   // Data props
   customers?: CustomerSearchResult[];
   products?: ProductWithStock[];
-  outlets?: Array<{ id: string; name: string }>;
-  categories?: Array<{ id: string; name: string }>;
+  outlets?: Array<{ id: number; name: string }>;
+  categories?: Array<{ id: number; name: string }>;
   
   // Event handlers
   onSubmit?: (data: OrderInput) => void;
@@ -37,7 +37,7 @@ interface CreateOrderFormProps {
   layout?: 'stacked' | 'split';
   
   // Business props
-  merchantId?: string;
+  merchantId?: number;
   
   // Edit mode props
   isEditMode?: boolean;

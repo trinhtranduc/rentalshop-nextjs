@@ -21,8 +21,8 @@ const { customersApi } = await import('@rentalshop/utils');
 
 // Extend the Customer type for this page
 interface ExtendedCustomer {
-  id: string;
-  publicId: number; // Change to number to match Customer type
+  id: number;           // ✅ Use number (publicId) to match dual ID system
+  publicId: number;     // ✅ Keep for compatibility
   firstName: string;
   lastName: string;
   email: string;
@@ -38,7 +38,7 @@ interface ExtendedCustomer {
   notes?: string;
   isActive: boolean;
   merchant: {
-    id: string;
+    id: number;         // ✅ Use number (publicId) to match dual ID system
     name: string;
   };
   createdAt?: string;
@@ -330,7 +330,7 @@ export default function CustomersPage() {
     // Don't call fetchCustomers directly - let the search effect handle it
   }, []);
 
-  const handleCustomerAction = useCallback(async (action: string, customerId?: string) => {
+  const handleCustomerAction = useCallback(async (action: string, customerId?: number) => {
     if (!customerId) {
       console.warn('Customer action called without customerId');
       return;
@@ -389,7 +389,7 @@ export default function CustomersPage() {
   }, [customers, router, fetchCustomers]);
 
   // Handle customer deletion - show confirmation dialog first
-  const handleDeleteCustomer = useCallback((customerId: string) => {
+  const handleDeleteCustomer = useCallback((customerId: number) => {
     const customer = customers.find(c => c.id === customerId);
     if (customer) {
       setCustomerToDelete(customer);
@@ -622,7 +622,7 @@ export default function CustomersPage() {
           onCustomerAction={handleCustomerAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
-          merchantId={user?.merchantId || ''}
+          merchantId={typeof user?.merchantId === 'string' ? parseInt(user.merchantId) || 0 : user?.merchantId || 0}
           onDeleteCustomer={handleDeleteCustomer}
         />
 

@@ -18,7 +18,7 @@ import { Eye, EyeOff } from 'lucide-react';
 interface ChangePasswordDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
+  userId: number;
   userName: string;
   onSuccess?: () => void;
   onError?: (error: string) => void;

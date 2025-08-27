@@ -218,29 +218,29 @@ interface BaseFilters {
 }
 
 interface CustomerFilters extends BaseFilters {
-  outletId?: string;
-  merchantId?: string;
+  outletId?: number;
+  merchantId?: number;
   isActive?: boolean;
 }
 
 interface ProductFilters extends BaseFilters {
-  categoryId?: string;
-  outletId?: string;
-  merchantId?: string;
+  categoryId?: number;
+  outletId?: number;
+  merchantId?: number;
   minPrice?: number;
   maxPrice?: number;
   available?: boolean;
 }
 
 interface OutletFilters extends BaseFilters {
-  shopId?: string;
-  merchantId?: string;
+  shopId?: number;
+  merchantId?: number;
   isActive?: boolean;
 }
 
 interface CategoryFilters extends BaseFilters {
-  parentId?: string;
-  merchantId?: string;
+  parentId?: number;
+  merchantId?: number;
   isActive?: boolean;
 }
 ```

@@ -9,12 +9,13 @@ export type OrderType = 'RENT' | 'SALE' | 'RENT_TO_OWN';
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'WAITING' | 'PICKUPED' | 'RETURNED' | 'CANCELLED' | 'ACTIVE' | 'COMPLETED' | 'OVERDUE' | 'DAMAGED';
 
 export interface Order {
-  id: number;        // This represents the publicId from database
+  id: string;           // Database CUID (internal use)
+  publicId: number;     // Public numeric ID (external use)
   orderNumber: string;
   orderType: OrderType;
   status: OrderStatus;
-  customerId?: string;
-  outletId: string;
+  customerId?: string;  // Database CUID
+  outletId: string;     // Database CUID
   totalAmount: number;
   depositAmount: number;
   pickupPlanAt?: Date;
@@ -35,8 +36,8 @@ export interface Order {
 
 export interface OrderCreateInput {
   orderType: OrderType;
-  customerId?: string;
-  outletId: string;
+  customerId?: number;  // Frontend sends publicId (number)
+  outletId: number;     // Frontend sends publicId (number)
   totalAmount: number;
   depositAmount?: number;
   pickupPlanAt?: Date;
@@ -84,8 +85,9 @@ export interface OrderUpdateInput {
 export interface OrderFilters {
   status?: OrderStatus | OrderStatus[]; // Support both single status and array of statuses
   orderType?: OrderType;
-  outletId?: string;
-  customerId?: string;
+  outletId?: number;
+  customerId?: number;
+  productId?: number; // Filter orders by specific product
   startDate?: Date | string; // Support both Date objects and string dates for API calls
   endDate?: Date | string;   // Support both Date objects and string dates for API calls
   search?: string;
@@ -109,8 +111,8 @@ export interface OrderFilters {
 // Additional order types for database operations
 export interface OrderInput {
   orderType: OrderType;
-  customerId?: string;
-  outletId: string;
+  customerId?: number;
+  outletId: number;
   pickupPlanAt?: Date;
   returnPlanAt?: Date;
   rentalDuration?: number;
@@ -160,7 +162,8 @@ export interface OrderUpdateInput {
 }
 
 export interface OrderSearchResult {
-  id: string;
+  id: string;           // Database CUID (internal use)
+  publicId: number;     // Public numeric ID (external use)
   orderNumber: string;
   orderType: OrderType;
   status: OrderStatus;
@@ -174,14 +177,16 @@ export interface OrderSearchResult {
   returnedAt: Date | null;
   isReadyToDeliver: boolean;
   customer: {
-    id: string;
+    id: string;         // Database CUID (internal use)
+    publicId: number;   // Public numeric ID (external use)
     firstName: string;
     lastName: string;
     email: string | null;
     phone: string;
   } | null;
   outlet: {
-    id: string;
+    id: string;         // Database CUID (internal use)
+    publicId: number;   // Public numeric ID (external use)
     name: string;
   };
 }
@@ -189,33 +194,36 @@ export interface OrderSearchResult {
 // Extended order types for search and API responses
 export interface OrderWithDetails extends Order {
   customer: {
-    id: string;
+    id: string;         // Database CUID (internal use)
+    publicId: number;   // Public numeric ID (external use)
     firstName: string;
     lastName: string;
     email: string | null;
     phone: string;
   } | null;
   outlet: {
-    id: string;
+    id: string;         // Database CUID (internal use)
+    publicId: number;   // Public numeric ID (external use)
     name: string;
     address: string | null;
-    merchantId: string;
+    merchantId: string; // Database CUID
     merchant: {
-      id: string;
+      id: string;       // Database CUID (internal use)
+      publicId: number; // Public numeric ID (external use)
       name: string;
     };
   };
   orderItems: OrderItemWithProduct[];
   payments: Payment[];
   // Add merchantId for backward compatibility with database package
-  merchantId: string;
+  merchantId: string;   // Database CUID
 }
 
 export interface OrderSearchFilter {
   q?: string;
-  outletId?: string;
-  customerId?: string;
-  userId?: string;
+  outletId?: number;    // API queries use publicId (number)
+  customerId?: number;  // API queries use publicId (number)
+  userId?: number;      // API queries use publicId (number)
   orderType?: OrderType;
   status?: OrderStatus;
   startDate?: Date;
@@ -244,7 +252,7 @@ export interface OrderSearchResponse {
 
 // Order statistics and history types
 export interface OrderHistoryInput {
-  orderId: string;
+  orderId: number;
   action: string;
   field?: string;
   oldValue?: string;
@@ -298,12 +306,12 @@ export interface OrderData extends Order {
     phone: string;
   };
   outlet?: {
-    id: string;
+    id: number;
     name: string;
     address: string;
     merchantId: string;
     merchant: {
-      id: string;
+      id: number;
       name: string;
       description?: string;
     };
@@ -313,9 +321,9 @@ export interface OrderData extends Order {
   customerPhone?: string;
   outletName?: string;
   // Direct merchant access for convenience
-  merchantId?: string;
+  merchantId?: number;
   merchant?: {
-    id: string;
+    id: number;
     name: string;
     description?: string;
   };
@@ -333,8 +341,8 @@ export interface OrdersData {
 
 export interface OrderDetailData extends OrderData {
   orderItems: Array<{
-    id: string;
-    productId: string;
+    id: number;
+    productId: number;
     productName: string;
     quantity: number;
     unitPrice: number;

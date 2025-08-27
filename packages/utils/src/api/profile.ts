@@ -13,7 +13,7 @@ import type { ApiResponse } from "../common";
  */
 
 export interface ProfileData {
-  id: string;
+  id: number;
   email: string;
   firstName: string;
   lastName: string;

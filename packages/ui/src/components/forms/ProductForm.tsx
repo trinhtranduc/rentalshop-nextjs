@@ -43,7 +43,7 @@ import type {
 
 // Define Category interface locally since it's not exported from database
 interface Category {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   isActive: boolean;
@@ -53,7 +53,7 @@ interface ProductFormData {
   name: string;
   description: string;
   barcode: string;
-  categoryId: string;
+  categoryId: number;
   rentPrice: number;
   salePrice: number;
   deposit: number;
@@ -61,7 +61,7 @@ interface ProductFormData {
   images: string[];
   isActive: boolean;
   outletStock: Array<{
-    outletId: string;
+    outletId: number;
     stock: number;
   }>;
   sku: string;
@@ -70,15 +70,16 @@ interface ProductFormData {
 interface ProductFormProps {
   initialData?: Partial<ProductFormData>;
   categories: Category[];
-  outlets: Array<{ id: string; name: string }>;
+  outlets: Array<{ id: number; name: string }>;
   onSubmit: (data: ProductInput) => void;
   onCancel?: () => void;
   loading?: boolean;
   title?: string;
   submitText?: string | React.ReactNode;
   mode?: 'create' | 'edit';
-  merchantId?: string; // Add merchantId prop
+  merchantId?: number; // Add merchantId prop
   hideHeader?: boolean; // Hide header when used in dialog
+  hideSubmitButton?: boolean; // Hide submit button when using external action buttons
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -92,13 +93,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   submitText = 'Save Product',
   mode = 'create',
   merchantId = '',
-  hideHeader = false
+  hideHeader = false,
+  hideSubmitButton = false
 }) => {
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
     barcode: '',
-    categoryId: '',
+    categoryId: 0,
     rentPrice: 0,
     salePrice: 0,
     deposit: 0,
@@ -253,7 +255,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   };
 
-  const updateOutletStock = (outletId: string, field: 'stock', value: number) => {
+  const updateOutletStock = (outletId: number, field: 'stock', value: number) => {
     setFormData(prev => ({
       ...prev,
       outletStock: prev.outletStock.map(item =>
@@ -648,25 +650,27 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
 
         {/* Action Buttons */}
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={isSubmitting || !validateForm()}
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                {submitText}
-              </>
-            )}
-          </Button>
-        </div>
+        {!hideSubmitButton && (
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={isSubmitting || !validateForm()}
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {submitText}
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   );

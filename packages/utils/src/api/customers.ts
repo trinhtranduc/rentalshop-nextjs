@@ -22,8 +22,8 @@ export interface CustomersResponse {
 
 export interface CustomerFilters {
   search?: string;
-  outletId?: string;
-  merchantId?: string;
+  outletId?: number;
+  merchantId?: number;
   isActive?: boolean;
   page?: number;
   limit?: number;
@@ -64,7 +64,7 @@ export const customersApi = {
   /**
    * Get customer by ID
    */
-  async getCustomerById(customerId: string): Promise<ApiResponse<any>> {
+  async getCustomerById(customerId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/customers/${customerId}`);
     return await parseApiResponse<any>(response);
   },
@@ -90,7 +90,7 @@ export const customersApi = {
   /**
    * Get customer by public ID
    */
-  async getCustomerByPublicId(publicId: string): Promise<ApiResponse<any>> {
+  async getCustomerByPublicId(publicId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/customers/${publicId}`);
     return await parseApiResponse<any>(response);
   },
@@ -109,7 +109,7 @@ export const customersApi = {
   /**
    * Update an existing customer
    */
-  async updateCustomer(customerId: string, customerData: Partial<any>): Promise<ApiResponse<any>> {
+  async updateCustomer(customerId: number, customerData: Partial<any>): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/customers/${customerId}`, {
       method: 'PUT',
       body: JSON.stringify(customerData),
@@ -120,7 +120,7 @@ export const customersApi = {
   /**
    * Delete a customer
    */
-  async deleteCustomer(customerId: string): Promise<ApiResponse<any>> {
+  async deleteCustomer(customerId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/customers/${customerId}`, {
       method: 'DELETE',
     });
@@ -130,7 +130,7 @@ export const customersApi = {
   /**
    * Get customer order history
    */
-  async getCustomerOrders(customerId: string, filters?: {
+  async getCustomerOrders(customerId: number, filters?: {
     startDate?: string;
     endDate?: string;
     status?: string;

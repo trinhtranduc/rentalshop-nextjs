@@ -30,8 +30,8 @@ interface ProductsSectionProps {
   orderItems: OrderItemFormData[];
   products: ProductWithStock[];
   onAddProduct: (product: ProductWithStock) => void;
-  onRemoveProduct: (productId: string) => void;
-  onUpdateOrderItem: (productId: string, field: keyof OrderItemFormData, value: string | number) => void;
+  onRemoveProduct: (productId: number) => void;
+  onUpdateOrderItem: (productId: number, field: keyof OrderItemFormData, value: string | number) => void;
   onSearchProducts: (query: string) => Promise<any[]>;
   isLoadingProducts: boolean;
   orderType: 'RENT' | 'SALE';
@@ -61,8 +61,8 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
           <div className="relative">
             <SearchableSelect
               placeholder="Search products by name, barcode or description..."
-              value=""
-              onChange={(productId: string) => {
+              value={undefined}
+              onChange={(productId: number) => {
                 // Find the product and add it to order
                 const product = products.find(p => p.id === productId);
                 if (product) {
@@ -136,8 +136,8 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 interface OrderItemCardProps {
   item: OrderItemFormData;
   product?: ProductWithStock;
-  onRemove: (productId: string) => void;
-  onUpdate: (productId: string, field: keyof OrderItemFormData, value: string | number) => void;
+  onRemove: (productId: number) => void;
+  onUpdate: (productId: number, field: keyof OrderItemFormData, value: string | number) => void;
   orderType: 'RENT' | 'SALE';
   pickupDate?: string;
   returnDate?: string;

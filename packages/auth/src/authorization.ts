@@ -24,9 +24,10 @@ export function assertAnyRole(user: Pick<AuthUser, 'role'>, allowed: Role[]): vo
   }
 }
 
-export function getUserScope(user: Partial<AuthUser>): { merchantId?: string; outletId?: string } {
-  const merchantId = (user as any)?.merchant?.id as string | undefined;
-  const outletId = (user as any)?.outlet?.id as string | undefined;
+export function getUserScope(user: Partial<AuthUser>): { merchantId?: number; outletId?: number } {
+  // The user object from database includes merchant and outlet relations with publicId
+  const merchantId = (user as any)?.merchant?.publicId as number | undefined;
+  const outletId = (user as any)?.outlet?.publicId as number | undefined;
   return { merchantId, outletId };
 }
 
@@ -94,7 +95,7 @@ export function canAccessUserManagement(user: Pick<AuthUser, 'role'>): boolean {
  */
 export function getUserManagementScope(user: Partial<AuthUser>): { 
   canAccess: boolean; 
-  scope: { merchantId?: string; outletId?: string } 
+  scope: { merchantId?: number; outletId?: number } 
 } {
   const normalizedRole = normalizeRole(user.role);
   
@@ -112,15 +113,15 @@ export function getUserManagementScope(user: Partial<AuthUser>): {
     case 'MERCHANT':
       return { 
         canAccess: true, 
-        scope: { merchantId: user.merchant?.id }
+        scope: { merchantId: (user as any)?.merchant?.publicId }  // Use type assertion for database relations
       };
       
     case 'OUTLET_ADMIN':
       return { 
         canAccess: true, 
         scope: { 
-          merchantId: user.merchant?.id, 
-          outletId: user.outlet?.id 
+          merchantId: (user as any)?.merchant?.publicId,  // Use type assertion for database relations
+          outletId: (user as any)?.outlet?.publicId       // Use type assertion for database relations
         }
       };
       

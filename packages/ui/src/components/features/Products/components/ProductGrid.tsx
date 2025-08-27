@@ -6,11 +6,11 @@ import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
 interface ProductGridProps {
   products: Product[];
-  onProductAction: (action: string, productId: string) => void;
+  onProductAction: (action: string, productId: number) => void;
   // New props for enhanced functionality
   categories?: Category[];
   outlets?: Outlet[];
-  merchantId?: string;
+  merchantId?: number;
   onProductCreated?: (product: ProductWithDetails) => void;
   onProductUpdated?: (product: ProductWithDetails) => void;
   onError?: (error: string) => void;

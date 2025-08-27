@@ -1,8 +1,147 @@
-# 🏪 Rental Shop Next.js Monorepo
+# Rental Shop Next.js Monorepo
 
-A modern, consolidated monorepo for rental shop management with shared packages and role-based access control.
+A comprehensive rental shop management system built with Next.js, featuring a monorepo architecture with shared packages for authentication, database operations, UI components, and business logic.
 
-## 🚀 **QUICK START**
+## 🏗️ Architecture Overview
+
+This monorepo follows a **dual ID system** for optimal security and usability:
+
+### 🔐 **Dual ID Strategy: CUIDs Internally, Numbers Externally**
+
+Our system implements a **dual ID approach** that provides both security and usability:
+
+#### **System Architecture**
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Frontend   │    │     API     │    │  Database   │    │   Types     │
+│  (Numbers)  │◄──►│ (Transform) │◄──►│  (CUIDs)   │    │ (Interface) │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+#### **Database Layer (Secure)**
+- **Primary Keys**: Use CUIDs (`String @id @default(cuid())`) for security
+- **Public IDs**: Maintain `publicId Int @unique` for user-friendly operations
+- **Relationships**: All foreign keys use CUIDs internally
+
+#### **API Layer (Transform)**
+- **Input**: Frontend sends `publicId` (numbers) for all operations
+- **Processing**: API converts `publicId` to CUID for database operations
+- **Output**: API returns `publicId` (numbers) to frontend
+
+#### **Frontend Layer (User-Friendly)**
+- **Display**: Always works with numbers (`outletId: 123`)
+- **Forms**: Send numbers for all ID fields
+- **URLs**: Use numbers for routing (`/outlets/123`)
+
+#### **Complete Data Flow Example**
+
+**Scenario: Create Order for Outlet 123, Customer 456**
+
+```typescript
+// 1️⃣ FRONTEND SENDS (Numbers)
+POST /api/orders
+{
+  "outletId": 123,
+  "customerId": 456,
+  "productId": 789
+}
+
+// 2️⃣ API RECEIVES (Numbers)
+const input: OrderCreateInput = {
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  productId: 789        // Number
+};
+
+// 3️⃣ API TRANSFORMS (Numbers → CUIDs)
+const outlet = await prisma.outlet.findUnique({
+  where: { publicId: 123 }  // Find by number
+});
+// Result: { id: "clx123abc", publicId: 123 }
+
+const customer = await prisma.customer.findUnique({
+  where: { publicId: 456 }  // Find by number
+});
+// Result: { id: "dme456def", publicId: 456 }
+
+// 4️⃣ DATABASE OPERATIONS (CUIDs)
+const order = await prisma.order.create({
+  data: {
+    outletId: "clx123abc",    // Use CUID
+    customerId: "dme456def",  // Use CUID
+    // ... other fields
+  }
+});
+// Result: { id: "fgh789ghi", publicId: 999 }
+
+// 5️⃣ API TRANSFORMS (CUIDs → Numbers)
+return {
+  id: 999,              // publicId (number)
+  outletId: 123,        // publicId (number)
+  customerId: 456,      // publicId (number)
+  orderNumber: "2025-001"
+};
+
+// 6️⃣ FRONTEND RECEIVES (Numbers)
+const response = {
+  id: 999,              // Number
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  orderNumber: "2025-001"
+};
+```
+
+#### **Implementation Rules**
+
+**Frontend Rules:**
+```typescript
+// ✅ ALWAYS use numbers
+const outletId = 123;
+const customerId = 456;
+
+// ❌ NEVER use CUIDs
+const outletId = "clx123abc";  // Wrong!
+```
+
+**API Rules:**
+```typescript
+// ✅ Convert numbers to CUIDs for database
+const outlet = await prisma.outlet.findUnique({
+  where: { publicId: input.outletId }
+});
+
+// ✅ Use CUIDs for database operations
+await prisma.order.create({
+  data: { outletId: outlet.id }
+});
+
+// ✅ Return numbers to frontend
+return { id: order.publicId };
+```
+
+**Database Rules:**
+```typescript
+// ✅ Always use CUIDs for relationships
+model Order {
+  outletId String  // CUID, not number
+  customerId String // CUID, not number
+}
+
+// ✅ Include publicId for external access
+model Outlet {
+  id String @id @default(cuid())      // CUID for relationships
+  publicId Int @unique                // Number for external use
+}
+```
+
+#### **Benefits of This Approach**
+- ✅ **Security**: CUIDs prevent enumeration attacks
+- ✅ **Usability**: Numbers are easy to work with
+- ✅ **Performance**: No complex ID transformations
+- ✅ **Standards**: Follows industry best practices
+- ✅ **Scalability**: Works across distributed systems
+
+## 🚀 Quick Start
 
 ### **Prerequisites**
 - Node.js 18+ 
@@ -307,187 +446,4 @@ After starting development:
 ### **📁 `/features` - Business Logic Components**
 - **Purpose**: Complete business features with API integration
 - **Characteristics**: API calls, business logic, combines multiple components
-- **Examples**: `Products/`, `Customers/`, `Orders/`, `Users/`, `Dashboard/`
-- **When to use**: Business operations, data management, complex features
-
-### **📁 `/layout` - Layout Components**
-- **Purpose**: Page structure and navigation
-- **Characteristics**: Layout logic, navigation, no business domain knowledge
-- **Examples**: Navigation bars, sidebars, page wrappers
-- **When to use**: Page structure, navigation, layout management
-
-## 📦 **PACKAGE USAGE**
-
-### **UI Components**
-```typescript
-import { Button, Card, Input, Select } from '@rentalshop/ui';
-import { LoginForm, CustomerForm } from '@rentalshop/ui';
-import { Users, Products, Orders } from '@rentalshop/ui';
-```
-
-### **Authentication**
-```typescript
-import { useAuth, loginUser, logoutUser } from '@rentalshop/auth';
-import { hasAnyRole, canManageUsers } from '@rentalshop/auth';
-```
-
-### **API Client**
-```typescript
-import { 
-  getProducts, 
-  createCustomer, 
-  searchOrders 
-} from '@rentalshop/utils';
-```
-
-### **Database**
-```typescript
-import { prisma } from '@rentalshop/database';
-```
-
-### **Types**
-```typescript
-import type { User, Product, Order } from '@rentalshop/types';
-```
-
-## 🔐 **USER ROLE SYSTEM**
-
-### **Four-Tier Role Hierarchy**:
-1. **ADMIN** - System-wide access (no merchant/outlet restrictions)
-2. **MERCHANT** - Organization-wide access (merchant only, no outlet)
-3. **OUTLET_ADMIN** - Full outlet access (merchant + outlet)
-4. **OUTLET_STAFF** - Limited outlet access (merchant + outlet)
-
-### **Authorization Functions**:
-```typescript
-import { 
-  hasAnyRole, 
-  assertAnyRole, 
-  isMerchantLevel, 
-  isOutletTeam,
-  canManageUsers,
-  canManageOutlets,
-  canManageProducts 
-} from '@rentalshop/auth';
-```
-
-## 🔧 **DEVELOPMENT RULES**
-
-### **DRY Principles**:
-- ✅ Use shared packages for all common functionality
-- ✅ Never duplicate configurations across packages
-- ✅ Use centralized imports (`@rentalshop/ui`, `@rentalshop/auth`, etc.)
-- ❌ Don't create app-specific versions of shared components
-
-### **Component Organization**:
-- **`/forms`** - Pure form components (NO business logic, NO API calls)
-- **`/features`** - Business logic components (API calls, business operations)
-
-### **Authorization**:
-- ✅ Always check user permissions before sensitive operations
-- ✅ Use proper role-based access control functions
-- ✅ Validate user scope (merchant/outlet restrictions)
-
-## 📊 **PERFORMANCE OPTIMIZATION**
-
-### **Database**:
-- ✅ Proper indexing on frequently queried fields
-- ✅ Composite indexes for complex queries
-- ✅ Pagination for large datasets
-- ❌ No N+1 queries
-
-### **Bundle**:
-- ✅ Tree shaking with specific imports
-- ✅ External dependencies configuration
-- ✅ Minimal bundle sizes
-
-## 🚨 **SECURITY**
-
-### **Authentication**:
-- ✅ JWT-based authentication
-- ✅ Role-based access control
-- ✅ Scope validation (merchant/outlet isolation)
-
-### **Input Validation**:
-- ✅ Zod schemas for all inputs
-- ✅ Database constraints
-- ✅ Role assignment validation
-
-## 🐛 **TROUBLESHOOTING**
-
-### **Common Issues**
-
-**1. Types not found**
-```bash
-# Rebuild types package
-cd packages/types && yarn build
-
-# Reinstall dependencies
-cd ../.. && yarn install
-```
-
-**2. Build errors**
-```bash
-# Clean and rebuild
-yarn clean
-yarn build:packages
-```
-
-**3. Database connection issues**
-```bash
-# Check environment variables
-cat .env.local
-
-# Test database connection
-yarn db:studio
-```
-
-**4. Port conflicts**
-```bash
-# Kill processes on ports
-lsof -ti:3000 | xargs kill -9
-lsof -ti:3001 | xargs kill -9
-lsof -ti:3002 | xargs kill -9
-```
-
-### **Development Tips**
-- Always run `yarn build:packages` after making changes to shared packages
-- Use `yarn type-check` to catch type errors early
-- Check the console for detailed error messages
-- Use the database studio to verify data
-
-## 🎉 **ACHIEVEMENTS**
-
-### **✅ What's Working Perfectly**
-1. **Monorepo Structure** - Textbook example of Next.js monorepo organization
-2. **Component Architecture** - Perfect separation of forms, features, and UI components
-3. **Authorization System** - Four-tier role hierarchy properly implemented
-4. **Package Organization** - All shared packages properly consolidated
-5. **DRY Principles** - No code duplication across packages
-6. **Type Safety** - Full TypeScript support with centralized types
-7. **Performance** - Optimized bundles and database queries
-8. **Security** - Proper role-based access control and input validation
-
-### **🏆 Best Practices Implemented**
-- Centralized UI component library (`@rentalshop/ui`)
-- Shared authentication system (`@rentalshop/auth`)
-- Centralized database utilities (`@rentalshop/database`)
-- Shared type definitions (`@rentalshop/types`)
-- Centralized utilities and API clients (`@rentalshop/utils`)
-- Business logic hooks (`@rentalshop/hooks`)
-- Proper component organization (forms, features, ui)
-- Role-based access control with four-tier hierarchy
-- Database performance optimization with proper indexing
-- Consistent error handling and validation
-
-## 🤝 **CONTRIBUTING**
-
-1. Follow the DRY principles
-2. Use shared packages for common functionality
-3. Implement proper authorization
-4. Follow TypeScript best practices
-5. Test your changes thoroughly
-
-## 📄 **LICENSE**
-
-This project is licensed under the MIT License.
+- **Examples**: `Products/`, `Customers/`, `

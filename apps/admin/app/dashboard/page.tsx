@@ -36,7 +36,7 @@ interface OrderData {
 }
 
 interface TopProduct {
-  id: string;
+  id: number;
   name: string;
   rentPrice: number;
   category: string;
@@ -46,7 +46,7 @@ interface TopProduct {
 }
 
 interface TopCustomer {
-  id: string;
+  id: number;
   name: string;
   email: string;
   phone: string;
@@ -56,7 +56,7 @@ interface TopCustomer {
 }
 
 interface RecentOrder {
-  id: string;
+  id: number;
   orderNumber: string;
   customerName: string;
   customerPhone: string;

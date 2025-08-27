@@ -3,8 +3,8 @@
 // ============================================================================
 
 export interface InventoryItem {
-  productId: string;
-  outletId: string;
+  productId: number;
+  outletId: number;
   stock: number;
   available: number;
   reserved: number;
@@ -14,8 +14,8 @@ export interface InventoryItem {
 }
 
 export interface InventoryUpdate {
-  productId: string;
-  outletId: string;
+  productId: number;
+  outletId: number;
   quantity: number;
   type: 'IN' | 'OUT' | 'ADJUSTMENT';
   reason: string;
@@ -23,8 +23,8 @@ export interface InventoryUpdate {
 }
 
 export interface InventoryAlert {
-  productId: string;
-  outletId: string;
+  productId: number;
+  outletId: number;
   type: 'LOW_STOCK' | 'OUT_OF_STOCK' | 'OVERSTOCK';
   message: string;
   severity: 'LOW' | 'MEDIUM' | 'HIGH';

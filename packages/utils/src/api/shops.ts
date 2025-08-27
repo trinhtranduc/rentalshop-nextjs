@@ -61,7 +61,7 @@ export const shopsApi = {
   /**
    * Get shop by ID
    */
-  async getShopById(shopId: string): Promise<ApiResponse<any>> {
+  async getShopById(shopId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/shops/${shopId}`);
     return await parseApiResponse<any>(response);
   },
@@ -80,7 +80,7 @@ export const shopsApi = {
   /**
    * Update an existing shop
    */
-  async updateShop(shopId: string, shopData: Partial<any>): Promise<ApiResponse<any>> {
+  async updateShop(shopId: number, shopData: Partial<any>): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/shops/${shopId}`, {
       method: 'PUT',
       body: JSON.stringify(shopData),
@@ -91,7 +91,7 @@ export const shopsApi = {
   /**
    * Delete a shop
    */
-  async deleteShop(shopId: string): Promise<ApiResponse<any>> {
+  async deleteShop(shopId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/shops/${shopId}`, {
       method: 'DELETE',
     });
@@ -101,7 +101,7 @@ export const shopsApi = {
   /**
    * Get shop outlets
    */
-  async getShopOutlets(shopId: string): Promise<ApiResponse<any>> {
+  async getShopOutlets(shopId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/shops/${shopId}/outlets`);
     return await parseApiResponse<any>(response);
   },
@@ -109,7 +109,7 @@ export const shopsApi = {
   /**
    * Get shop statistics
    */
-  async getShopStats(shopId?: string): Promise<ApiResponse<any>> {
+  async getShopStats(shopId?: number): Promise<ApiResponse<any>> {
     const endpoint = shopId ? `/api/shops/${shopId}/stats` : '/api/shops/stats';
     const response = await authenticatedFetch(endpoint);
     return await parseApiResponse<any>(response);
@@ -118,7 +118,7 @@ export const shopsApi = {
   /**
    * Get shop analytics
    */
-  async getShopAnalytics(shopId: string, filters?: {
+  async getShopAnalytics(shopId: number, filters?: {
     startDate?: string;
     endDate?: string;
     metric?: string;

@@ -9,8 +9,8 @@ export interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
-  merchantId?: string;
-  outletId?: string;
+  merchantId?: number;
+  outletId?: number;
   isActive: boolean;
   lastLoginAt?: Date;
   createdAt: Date;
@@ -34,8 +34,8 @@ export interface RegisterData {
   password: string;
   phone: string;
   role: UserRole;
-  merchantId?: string;
-  outletId?: string;
+  merchantId?: number;
+  outletId?: number;
 }
 
 export interface PasswordReset {

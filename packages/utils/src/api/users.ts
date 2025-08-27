@@ -71,7 +71,7 @@ export const usersApi = {
   /**
    * Get user by ID
    */
-  async getUserById(userId: string): Promise<ApiResponse<User>> {
+  async getUserById(userId: number): Promise<ApiResponse<User>> {
     const response = await authenticatedFetch(`/api/users/${userId}`);
     return await parseApiResponse<User>(response);
   },
@@ -79,7 +79,7 @@ export const usersApi = {
   /**
    * Get user by public ID (for public URLs)
    */
-  async getUserByPublicId(publicId: string): Promise<ApiResponse<User>> {
+  async getUserByPublicId(publicId: number): Promise<ApiResponse<User>> {
     const response = await authenticatedFetch(`/api/users/${publicId}`);
     return await parseApiResponse<User>(response);
   },
@@ -99,7 +99,7 @@ export const usersApi = {
    * Update an existing user
    * Note: The API expects the request body can only update users within their scope
    */
-  async updateUser(userId: string, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
+  async updateUser(userId: number, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
     // Include the publicId in the request body as required by the API
     const requestBody = {
       publicId: userId,
@@ -116,7 +116,7 @@ export const usersApi = {
   /**
    * Update user by public ID
    */
-  async updateUserByPublicId(publicId: string, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
+  async updateUserByPublicId(publicId: number, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
     // Include the publicId in the request body as required by the API
     const requestBody = {
       publicId,
@@ -134,7 +134,7 @@ export const usersApi = {
    * Update a user and automatically refresh the user list
    * This handles database consistency delays automatically
    */
-  async updateUserAndRefresh(userId: string, userData: Partial<UserUpdateInput>, filters?: any): Promise<{
+  async updateUserAndRefresh(userId: number, userData: Partial<UserUpdateInput>, filters?: any): Promise<{
     updated: User;
     refreshed: UsersResponse;
   }> {
@@ -179,7 +179,7 @@ export const usersApi = {
   /**
    * Deactivate a user
    */
-  async deactivateUser(userId: string): Promise<ApiResponse<{ message: string }>> {
+  async deactivateUser(userId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/users/${userId}`, {
       method: 'PATCH',
       body: JSON.stringify({ action: 'deactivate' }),
@@ -190,7 +190,7 @@ export const usersApi = {
   /**
    * Deactivate user by public ID
    */
-  async deactivateUserByPublicId(publicId: string): Promise<ApiResponse<{ message: string }>> {
+  async deactivateUserByPublicId(publicId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/users/${publicId}`, {
       method: 'PATCH',
       body: JSON.stringify({ action: 'deactivate' }),
@@ -201,7 +201,7 @@ export const usersApi = {
   /**
    * Activate a user
    */
-  async activateUser(userId: string): Promise<ApiResponse<{ message: string }>> {
+  async activateUser(userId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/users/${userId}`, {
       method: 'PATCH',
       body: JSON.stringify({ action: 'activate' }),
@@ -212,7 +212,7 @@ export const usersApi = {
   /**
    * Activate user by public ID
    */
-  async activateUserByPublicId(publicId: string): Promise<ApiResponse<{ message: string }>> {
+  async activateUserByPublicId(publicId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/users/${publicId}`, {
       method: 'PATCH',
       body: JSON.stringify({ action: 'activate' }),
@@ -223,7 +223,7 @@ export const usersApi = {
   /**
    * Delete a user
    */
-  async deleteUser(userId: string): Promise<ApiResponse<{ message: string }>> {
+  async deleteUser(userId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/users/${userId}`, {
       method: 'DELETE',
     });
@@ -233,7 +233,7 @@ export const usersApi = {
   /**
    * Delete user by public ID
    */
-  async deleteUserByPublicId(publicId: string): Promise<ApiResponse<{ message: string }>> {
+  async deleteUserByPublicId(publicId: number): Promise<ApiResponse<{ message: string }>> {
     const response = await authenticatedFetch(`/api/users/${publicId}`, {
       method: 'DELETE',
     });
@@ -243,7 +243,7 @@ export const usersApi = {
   /**
    * Change user password
    */
-  async changePassword(userId: string, passwordData: {
+  async changePassword(userId: number, passwordData: {
     currentPassword?: string;
     newPassword: string;
     confirmPassword: string;
@@ -258,7 +258,7 @@ export const usersApi = {
   /**
    * Change password by public ID
    */
-  async changePasswordByPublicId(publicId: string, passwordData: {
+  async changePasswordByPublicId(publicId: number, passwordData: {
     currentPassword?: string;
     newPassword: string;
     confirmPassword: string;

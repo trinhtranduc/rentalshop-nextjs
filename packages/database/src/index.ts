@@ -1,28 +1,97 @@
-// Database package exports
-export * from './client';
+// ============================================================================
+// DATABASE PACKAGE EXPORTS - DUAL ID SYSTEM
+// ============================================================================
 
-// Database operations
-export * from './product';
-export * from './customer';
-export * from './order';
-export * from './utils';
-export * from './seed';
+// Database client
+export { prisma } from './client';
 
-// Database-specific types only
-export type {
-  PhoneNumber,
-} from './types';
-
-// Utility functions
+// Dual ID utility functions (RECOMMENDED)
 export {
-  createPhoneNumber
-} from './types';
-
-// User management functions (explicitly export to ensure they're available)
-export {
-  findUserByEmail,
-  findUserById,
+  // Entity lookup functions
+  findOutletByPublicId,
+  findCustomerByPublicId,
+  findProductByPublicId,
   findUserByPublicId,
+  findMerchantByPublicId,
+  findCategoryByPublicId,
+  findOrderByPublicId,
+  
+  // Public ID generation functions
+  generateNextUserPublicId,
+  generateNextMerchantPublicId,
+  generateNextOutletPublicId,
+  generateNextProductPublicId,
+  generateNextCustomerPublicId,
+  generateNextCategoryPublicId,
+  generateNextOrderPublicId,
+  
+  // Utility functions
+  checkDatabaseConnection,
+  
+  // ID conversion functions
+  convertOutletPublicIdToDatabaseId,
+  convertCustomerPublicIdToDatabaseId,
+  convertProductPublicIdToDatabaseId,
+  convertUserPublicIdToDatabaseId,
+  convertMerchantPublicIdToDatabaseId,
+  convertCategoryPublicIdToDatabaseId,
+  convertOrderPublicIdToDatabaseId,
+} from './utils';
+
+// Dual ID order functions (RECOMMENDED)
+export {
+  getOrderByPublicId,
+  getOrderByNumber,
+  createOrder,
+  updateOrder,
+  searchOrders,
+  getOrderStats,
+  cancelOrder,
+  getOverdueRentals,
+} from './order';
+
+// Dual ID customer functions (RECOMMENDED)
+export {
+  getCustomerByPublicId,
+  getCustomerByEmail,
+  getCustomerByPhone,
+  createCustomer,
+  updateCustomer,
+  searchCustomers,
+  getCustomersByMerchant,
+  customerExistsByEmail,
+  customerExistsByPhone,
+} from './customer';
+
+// Dual ID product functions (RECOMMENDED)
+export {
+  getProductByPublicId,
+  getProductByBarcode,
+  searchProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getProductsByMerchant,
+  getProductsByCategory,
+  updateProductStock,
+} from './product';
+
+// Dual ID user functions (RECOMMENDED)
+export {
+  findUserById,
   createUser,
-  updateUser
-} from './utils'; 
+  updateUser,
+  getUsersByMerchant,
+  getUsersByOutlet,
+} from './user';
+
+// ============================================================================
+// LEGACY FUNCTIONS - DEPRECATED
+// ============================================================================
+// These are kept for backward compatibility but should not be used in new code
+// Use the new dual ID functions above instead
+
+// export * from './utils';
+// export * from './order';
+// export * from './customer';
+// export * from './product'; 

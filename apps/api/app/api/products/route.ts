@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
-import { getProducts, createProduct, updateProduct, deleteProduct } from '@rentalshop/database';
+import { searchProducts, createProduct, updateProduct, deleteProduct } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, productUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { searchRateLimiter } from '../../../lib/middleware/rateLimit';
@@ -67,9 +67,9 @@ export async function GET(request: NextRequest) {
     console.log('Merchant ID from scope:', merchantId);
     
     const filters = {
-      merchantId,
-      outletId,
-      categoryId,
+      merchantId: merchantId ? parseInt(merchantId) : undefined,
+      outletId: outletId ? parseInt(outletId) : undefined,
+      categoryId: categoryId ? parseInt(categoryId) : undefined,
       search,
       page,
       limit,
@@ -78,24 +78,22 @@ export async function GET(request: NextRequest) {
     
     console.log('Final filters:', filters);
 
-    console.log('Calling getProducts...');
-    const result = await getProducts(filters);
-    console.log('getProducts result:', { 
+    console.log('Calling searchProducts...');
+    const result = await searchProducts(filters);
+    console.log('searchProducts result:', { 
       productCount: result.products?.length || 0, 
       total: result.total, 
       page: result.page, 
-      totalPages: result.totalPages 
+      hasMore: result.hasMore 
     });
 
-    // Transform the response to use public ID as the main id field
+    // Transform the result to match the expected API response format
     const transformedResult = {
-      ...result,
-      products: result.products?.map(product => ({
-        ...product,
-        id: product.publicId, // Return publicId as "id" to frontend
-        // Keep internal ID as internalId if needed for database operations
-        internalId: product.id
-      }))
+      products: result.products,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: Math.ceil(result.total / result.limit)
     };
 
     // Caching headers (ETag and short-lived private cache)
@@ -191,16 +189,16 @@ export async function POST(request: NextRequest) {
     const merchantId = (user as any).merchant?.id as string;
     const userOutletId = (user as any).outlet?.id as string | undefined;
 
-    const outletStock: Array<{ outletId: string; stock: number }> = (parsed.data.outletStock || []).map(os => ({
-      outletId: os.outletId,
+    const outletStock: Array<{ outletId: number; stock: number }> = (parsed.data.outletStock || []).map(os => ({
+      outletId: parseInt(os.outletId), // Convert to number
       stock: os.stock,
     }));
 
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
 
     const productData = {
-      merchantId,
-      categoryId: parsed.data.categoryId,
+      merchantId: parseInt(merchantId), // Convert to number
+      categoryId: parseInt(parsed.data.categoryId), // Convert to number
       name: parsed.data.name,
       description: parsed.data.description,
       totalStock,
@@ -269,6 +267,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Convert productId to number and validate
+    const productIdNumber = parseInt(productId);
+    if (isNaN(productIdNumber) || productIdNumber <= 0) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid product ID format' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const parsed = productUpdateSchema.safeParse(body);
     if (!parsed.success) {
@@ -282,7 +289,7 @@ export async function PUT(request: NextRequest) {
       ...(normalizedSalePrice !== undefined ? { salePrice: normalizedSalePrice } : {}),
     };
 
-    const product = await updateProduct(productId, updateData);
+    const product = await updateProduct(productIdNumber, updateData);
 
     return NextResponse.json({
       success: true,
@@ -340,7 +347,16 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await deleteProduct(productId);
+    // Convert productId to number and validate
+    const productIdNumber = parseInt(productId);
+    if (isNaN(productIdNumber) || productIdNumber <= 0) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid product ID format' },
+        { status: 400 }
+      );
+    }
+
+    await deleteProduct(productIdNumber);
 
     return NextResponse.json({
       success: true,

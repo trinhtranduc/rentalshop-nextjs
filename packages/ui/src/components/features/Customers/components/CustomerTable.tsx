@@ -15,11 +15,11 @@ import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Eye, Trash2 } from 'lu
 
 interface CustomerTableProps {
   customers: Customer[];
-  onCustomerAction: (action: string, customerId: string) => void;
+  onCustomerAction: (action: string, customerId: number) => void;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
-  onDeleteCustomer?: (customerId: string) => void;
+  onDeleteCustomer?: (customerId: number) => void;
 }
 
 // Move SortableHeader outside to prevent recreation on each render
@@ -97,7 +97,7 @@ export function CustomerTable({
   onSort,
   onDeleteCustomer
 }: CustomerTableProps) {
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Debug logging
@@ -121,12 +121,12 @@ export function CustomerTable({
 
 
 
-  const handleDeleteCustomer = (customerId: string) => {
+  const handleDeleteCustomer = (customerId: number) => {
     onDeleteCustomer?.(customerId);
     setOpenDropdownId(null);
   };
 
-  const toggleDropdown = (customerId: string) => {
+  const toggleDropdown = (customerId: number) => {
     setOpenDropdownId(openDropdownId === customerId ? null : customerId);
   };
 

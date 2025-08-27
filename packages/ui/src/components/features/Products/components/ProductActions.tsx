@@ -5,10 +5,10 @@ import { Card, CardContent } from '../../../ui/card';
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
 interface ProductActionsProps {
-  onAction: (action: string, productId?: string) => void;
+  onAction: (action: string, productId?: number) => void;
   categories: Category[];
   outlets: Outlet[];
-  merchantId: string;
+  merchantId: number;
   onProductCreated?: (product: ProductWithDetails) => void;
   onProductUpdated?: (product: ProductWithDetails) => void;
   onError?: (error: string) => void;

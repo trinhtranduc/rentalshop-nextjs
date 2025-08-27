@@ -28,6 +28,212 @@
 - ✅ Use consistent naming conventions (PascalCase for interfaces)
 - ❌ Don't redefine types in multiple places
 
+## 🔐 **ID Strategy & Database Design**
+
+### **Dual ID System: CUIDs Internally, Numbers Externally**
+
+Our system implements a **dual ID approach** that provides both security and usability:
+
+#### **System Architecture**
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Frontend   │    │     API     │    │  Database   │    │   Types     │
+│  (Numbers)  │◄──►│ (Transform) │◄──►│  (CUIDs)   │    │ (Interface) │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+#### **Database Layer (Secure)**
+- **Primary Keys**: Use CUIDs (`String @id @default(cuid())`) for security
+- **Public IDs**: Maintain `publicId Int @unique` for user-friendly operations
+- **Relationships**: All foreign keys use CUIDs internally
+
+#### **API Layer (Transform)**
+- **Input**: Frontend sends `publicId` (numbers) for all operations
+- **Processing**: API converts `publicId` to CUID for database operations
+- **Output**: API returns `publicId` (numbers) to frontend
+
+#### **Frontend Layer (User-Friendly)**
+- **Display**: Always works with numbers (`outletId: 123`)
+- **Forms**: Send numbers for all ID fields
+- **URLs**: Use numbers for routing (`/outlets/123`)
+
+#### **Complete Data Flow Example**
+
+**Scenario: Create Order for Outlet 123, Customer 456**
+
+```typescript
+// 1️⃣ FRONTEND SENDS (Numbers)
+POST /api/orders
+{
+  "outletId": 123,
+  "customerId": 456,
+  "productId": 789
+}
+
+// 2️⃣ API RECEIVES (Numbers)
+const input: OrderCreateInput = {
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  productId: 789        // Number
+};
+
+// 3️⃣ API TRANSFORMS (Numbers → CUIDs)
+const outlet = await prisma.outlet.findUnique({
+  where: { publicId: 123 }  // Find by number
+});
+// Result: { id: "clx123abc", publicId: 123 }
+
+const customer = await prisma.customer.findUnique({
+  where: { publicId: 456 }  // Find by number
+});
+// Result: { id: "dme456def", publicId: 456 }
+
+// 4️⃣ DATABASE OPERATIONS (CUIDs)
+const order = await prisma.order.create({
+  data: {
+    outletId: "clx123abc",    // Use CUID
+    customerId: "dme456def",  // Use CUID
+    // ... other fields
+  }
+});
+// Result: { id: "fgh789ghi", publicId: 999 }
+
+// 5️⃣ API TRANSFORMS (CUIDs → Numbers)
+return {
+  id: 999,              // publicId (number)
+  outletId: 123,        // publicId (number)
+  customerId: 456,      // publicId (number)
+  orderNumber: "2025-001"
+};
+
+// 6️⃣ FRONTEND RECEIVES (Numbers)
+const response = {
+  id: 999,              // Number
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  orderNumber: "2025-001"
+};
+```
+
+#### **ID Handling Rules**
+
+**Frontend Rules:**
+```typescript
+// ✅ ALWAYS use numbers
+const outletId = 123;
+const customerId = 456;
+
+// ❌ NEVER use CUIDs
+const outletId = "clx123abc";  // Wrong!
+```
+
+**API Rules:**
+```typescript
+// ✅ Convert numbers to CUIDs for database
+const outlet = await prisma.outlet.findUnique({
+  where: { publicId: input.outletId }
+});
+
+// ✅ Use CUIDs for database operations
+await prisma.order.create({
+  data: { outletId: outlet.id }
+});
+
+// ✅ Return numbers to frontend
+return { id: order.publicId };
+```
+
+**Database Rules:**
+```typescript
+// ✅ Always use CUIDs for relationships
+model Order {
+  outletId String  // CUID, not number
+  customerId String // CUID, not number
+}
+
+// ✅ Include publicId for external access
+model Outlet {
+  id String @id @default(cuid())      // CUID for relationships
+  publicId Int @unique                // Number for external use
+}
+```
+
+#### **Type Definitions for IDs**
+
+**Input Types (Numbers):**
+```typescript
+// ✅ Frontend sends numbers
+export interface OrderCreateInput {
+  outletId: number;     // 123 (publicId)
+  customerId?: number;  // 456 (publicId)
+  productId: number;    // 789 (publicId)
+}
+```
+
+**Database Types (CUIDs):**
+```typescript
+// ✅ Database uses CUIDs
+export interface Order {
+  id: string;           // "fgh789ghi" (CUID)
+  publicId: number;     // 999 (publicId)
+  outletId: string;     // "clx123abc" (CUID)
+  customerId?: string;  // "dme456def" (CUID)
+}
+```
+
+**Response Types (Numbers):**
+```typescript
+// ✅ API returns numbers
+export interface OrderResponse {
+  id: number;           // 999 (publicId)
+  outletId: number;     // 123 (publicId)
+  customerId?: number;  // 456 (publicId)
+}
+```
+
+#### **Database Functions**
+
+```typescript
+// ✅ GOOD: Convert publicId to CUID before database operations
+export async function createOrder(input: OrderCreateInput) {
+  // Find outlet by publicId
+  const outlet = await prisma.outlet.findUnique({
+    where: { publicId: input.outletId }
+  });
+  
+  // Use CUID for database operations
+  const order = await prisma.order.create({
+    data: { outletId: outlet.id } // CUID for security
+  });
+  
+  // Return publicId to frontend
+  return { ...order, outletId: outlet.publicId };
+}
+
+// ❌ BAD: Don't use publicId directly in database operations
+export async function createOrder(input: OrderCreateInput) {
+  const order = await prisma.order.create({
+    data: { outletId: input.outletId } // Wrong! Should be CUID
+  });
+}
+```
+
+#### **Key Benefits of This Approach**
+- ✅ **Security**: CUIDs prevent enumeration attacks
+- ✅ **Usability**: Numbers are easy to work with
+- ✅ **Performance**: No complex ID transformations
+- ✅ **Standards**: Follows industry best practices
+- ✅ **Scalability**: Works across distributed systems
+
+#### **Implementation Checklist**
+- [ ] **Frontend**: Always use numbers (publicIds)
+- [ ] **API**: Convert numbers to CUIDs for database operations
+- [ ] **Database**: Use CUIDs for all relationships and primary keys
+- [ ] **Types**: Define separate interfaces for input (numbers) and database (CUIDs)
+- [ ] **Transformation**: Create helper functions to convert between ID types
+- [ ] **Validation**: Ensure all inputs are numbers before processing
+- [ ] **Response**: Always return numbers (publicIds) to frontend
+
 ## 🔐 **User Role System & Authorization**
 
 ### **Four-Tier Role Hierarchy**
@@ -961,7 +1167,7 @@ const prisma = new PrismaClient();
 // ✅ GOOD: Centralized types with proper authorization considerations
 // packages/database/src/types.ts
 export interface OrderSearchFilter {
-  outletId?: string;
+  outletId?: number;
   status?: OrderStatus;
   startDate?: Date;
   endDate?: Date;
@@ -972,9 +1178,9 @@ export interface OrderSearchFilter {
 
 // ✅ GOOD: Index-aware query types
 export interface ProductSearchFilter {
-  outletId?: string;
+  outletId?: number;
   available?: boolean;
-  categoryId?: string;
+  categoryId?: number;
   search?: string; // For indexed name/barcode search
   limit?: number;
   offset?: number;
@@ -986,13 +1192,13 @@ export interface UserCreateInput {
   email: string;
   phone: string;
   role: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
-  merchantId?: string; // Required for MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
-  outletId?: string; // Required for OUTLET_ADMIN and OUTLET_STAFF
+  merchantId?: number; // Required for MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+  outletId?: number; // Required for OUTLET_ADMIN and OUTLET_STAFF
 }
 
 // ❌ BAD: Redefine types
 interface Order {
-  id: string;
+  id: number;
   orderNumber: string;
   // ... duplicated definition
 }

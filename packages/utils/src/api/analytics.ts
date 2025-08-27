@@ -45,7 +45,7 @@ export interface CustomerAnalytics {
 
 export interface ProductAnalytics {
   period: string;
-  productId: string;
+  productId: number;
   productName: string;
   orders: number;
   revenue: number;
@@ -62,8 +62,8 @@ export const analyticsApi = {
   async getDashboardStats(filters?: {
     startDate?: string;
     endDate?: string;
-    outletId?: string;
-    shopId?: string;
+    outletId?: number;
+    shopId?: number;
   }): Promise<ApiResponse<DashboardStats>> {
     const params = new URLSearchParams();
     
@@ -94,8 +94,8 @@ export const analyticsApi = {
     startDate: string;
     endDate: string;
     period: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    outletId?: string;
-    shopId?: string;
+    outletId?: number;
+    shopId?: number;
   }): Promise<ApiResponse<RevenueAnalytics[]>> {
     const params = new URLSearchParams();
     
@@ -117,8 +117,8 @@ export const analyticsApi = {
     endDate: string;
     period: 'daily' | 'weekly' | 'monthly' | 'yearly';
     status?: string;
-    outletId?: string;
-    shopId?: string;
+    outletId?: number;
+    shopId?: number;
   }): Promise<ApiResponse<OrderAnalytics[]>> {
     const params = new URLSearchParams();
     
@@ -139,8 +139,8 @@ export const analyticsApi = {
     startDate: string;
     endDate: string;
     period: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    outletId?: string;
-    shopId?: string;
+    outletId?: number;
+    shopId?: number;
   }): Promise<ApiResponse<CustomerAnalytics[]>> {
     const params = new URLSearchParams();
     
@@ -161,8 +161,8 @@ export const analyticsApi = {
     startDate: string;
     endDate: string;
     limit?: number;
-    outletId?: string;
-    shopId?: string;
+    outletId?: number;
+    shopId?: number;
   }): Promise<ApiResponse<ProductAnalytics[]>> {
     const params = new URLSearchParams();
     
@@ -183,8 +183,8 @@ export const analyticsApi = {
     startDate: string;
     endDate: string;
     limit?: number;
-    outletId?: string;
-    shopId?: string;
+    outletId?: number;
+    shopId?: number;
   }): Promise<ApiResponse<any[]>> {
     const params = new URLSearchParams();
     
@@ -203,8 +203,8 @@ export const analyticsApi = {
    */
   async getRecentOrders(filters: {
     limit?: number;
-    outletId?: string;
-    shopId?: string;
+    outletId?: number;
+    shopId?: number;
   }): Promise<ApiResponse<any[]>> {
     const params = new URLSearchParams();
     
@@ -227,8 +227,8 @@ export const analyticsApi = {
     startDate: string;
     endDate: string;
     period: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    outletId?: string;
-    shopId?: string;
+    outletId?: number;
+    shopId?: number;
   }): Promise<ApiResponse<any[]>> {
     const params = new URLSearchParams();
     

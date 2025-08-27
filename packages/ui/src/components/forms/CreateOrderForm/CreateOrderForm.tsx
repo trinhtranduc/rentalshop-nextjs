@@ -108,19 +108,21 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(() => {
     // Initialize with existing customer if in edit mode
     if (isEditMode && initialOrder?.customer) {
-              return {
-          id: initialOrder.customerId || '',
-          publicId: parseInt(initialOrder.customerId) || 0, // Required by CustomerSearchResult type
-          firstName: initialOrder.customer.firstName,
-          lastName: initialOrder.customer.lastName,
-          phone: initialOrder.customer.phone,
-          email: initialOrder.customer.email || '',
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          merchantId: '',
-          merchant: { id: '', name: '' }
-        };
+      return {
+        id: parseInt(initialOrder.customerId) || 0,
+        firstName: initialOrder.customer.firstName,
+        lastName: initialOrder.customer.lastName,
+        phone: initialOrder.customer.phone,
+        email: initialOrder.customer.email || '',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        merchantId: parseInt(initialOrder.customer.merchantId) || 0,
+        merchant: { 
+          id: parseInt(initialOrder.customer.merchantId) || 0, 
+          name: initialOrder.customer.merchant?.name || '' 
+        }
+      };
     }
     return null;
   });
@@ -257,51 +259,59 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   // Handle adding new customer
   const handleAddNewCustomer = useCallback(async (customerData: any) => {
     try {
+      console.log('🔍 handleAddNewCustomer: Starting customer creation...');
+      
       // Get merchant ID from props or fallback to first outlet's merchant ID
       const currentMerchantId = merchantId || outlets[0]?.merchantId;
       
       if (!currentMerchantId) {
-        throw new Error('Merchant ID is required to create a customer. Please ensure the form has access to merchant information.');
+        const errorMsg = 'Merchant ID is required to create a customer. Please ensure the form has access to merchant information.';
+        showError("Error", errorMsg);
+        throw new Error(errorMsg);
       }
       
+      console.log('🔍 handleAddNewCustomer: Merchant ID found:', currentMerchantId);
+      
       // Check for duplicate phone number before creating
-      try {
-        const normalizedPhone = customerData.phone.replace(/[\s\-\(\)\+]/g, '');
-        
-        // First, check in the already loaded search results for immediate feedback
-        const localDuplicate = customerSearchResults.find(customer => {
-          if (customer.phone) {
-            const existingNormalizedPhone = customer.phone.replace(/[\s\-\(\)\+]/g, '');
-            return normalizedPhone === existingNormalizedPhone;
-          }
-          return false;
-        });
-        
-        if (localDuplicate) {
-          throw new Error(`A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`);
+      const normalizedPhone = customerData.phone.replace(/[\s\-\(\)\+]/g, '');
+      
+      // First, check in the already loaded search results for immediate feedback
+      const localDuplicate = customerSearchResults.find(customer => {
+        if (customer.phone) {
+          const existingNormalizedPhone = customer.phone.replace(/[\s\-\(\)\+]/g, '');
+          return normalizedPhone === existingNormalizedPhone;
         }
+        return false;
+      });
+      
+      if (localDuplicate) {
+        const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`;
+        showError("Duplicate Customer", errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      console.log('🔍 handleAddNewCustomer: No local duplicates found, checking API...');
+      
+      // Then check with the API for a more comprehensive check
+      const duplicateCheck = await customersApi.getCustomerByPhone(customerData.phone);
+      
+      if (duplicateCheck.success && duplicateCheck.data) {
+        const existingCustomers = duplicateCheck.data.customers || duplicateCheck.data.customer || [];
+        const customersArray = Array.isArray(existingCustomers) ? existingCustomers : [existingCustomers];
         
-        // Then check with the API for a more comprehensive check
-        const duplicateCheck = await customersApi.getCustomerByPhone(customerData.phone);
-        
-        if (duplicateCheck.success && duplicateCheck.data) {
-          const existingCustomers = duplicateCheck.data.customers || duplicateCheck.data.customer || [];
-          const customersArray = Array.isArray(existingCustomers) ? existingCustomers : [existingCustomers];
-          
-          for (const existingCustomer of customersArray) {
-            if (existingCustomer.phone) {
-              const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
-              if (normalizedPhone === existingNormalizedPhone) {
-                throw new Error(`A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`);
-              }
+        for (const existingCustomer of customersArray) {
+          if (existingCustomer.phone) {
+            const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
+            if (normalizedPhone === existingNormalizedPhone) {
+              const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`;
+              showError("Duplicate Customer", errorMsg);
+              throw new Error(errorMsg);
             }
           }
         }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('already exists')) {
-          throw error;
-        }
       }
+      
+      console.log('🔍 handleAddNewCustomer: No API duplicates found, creating customer...');
       
       const result = await customersApi.createCustomer({
         ...customerData,
@@ -309,8 +319,16 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         isActive: true
       });
       
-      if (result.success && result.data?.customer) {
-        const newCustomer = result.data.customer;
+      console.log('🔍 handleAddNewCustomer: API response:', result);
+      console.log('🔍 handleAddNewCustomer: result.success:', result.success);
+      console.log('🔍 handleAddNewCustomer: result.data:', result.data);
+      console.log('🔍 handleAddNewCustomer: result.data?.customer:', result.data?.customer);
+      
+      if (result.success && result.data && (result.data.customer || result.data.firstName)) {
+        // The customer data might be directly in result.data or nested under result.data.customer
+        const newCustomer = result.data.customer || result.data;
+        
+        console.log('🔍 handleAddNewCustomer: Customer created successfully:', newCustomer);
         
         // Add to search results
         setCustomerResults([newCustomer, ...customerSearchResults]);
@@ -318,46 +336,55 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         // Auto-select the new customer
         setFormData(prev => ({
           ...prev,
-          customerId: newCustomer.id,
+          customerId: Number(newCustomer.id),
         }));
         setSelectedCustomer(newCustomer);
         
-        // Close dialog
-        setShowAddCustomerDialog(false);
+        // Update search query to show the new customer
+        setSearchQuery(`${newCustomer.firstName} ${newCustomer.lastName} - ${newCustomer.phone}`);
         
         // Show success message
         showSuccess("Customer Created", `Customer "${newCustomer.firstName} ${newCustomer.lastName}" has been created and selected.`);
+        
+        console.log('🔍 handleAddNewCustomer: Function completed successfully');
       } else {
-        const errorMessage = result.message || 'Failed to create customer';
+        // Extract error message from API response
+        const errorMessage = result.message || result.error || 'Failed to create customer';
+        console.error('❌ handleAddNewCustomer: API error:', errorMessage);
+        console.error('❌ handleAddNewCustomer: Full result:', result);
+        showError("Error", errorMessage);
         throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error('Error creating customer:', error);
-      
-      if (error instanceof Error) {
-        if (error.message.includes('DUPLICATE_PHONE') || error.message.includes('already exists')) {
-          showError("Duplicate Phone Number", "A customer with this phone number already exists. Please use a different phone number or search for the existing customer.");
-          return;
-        }
-      }
-      
-      try {
-        handleApiError(error);
-      } catch (handledError) {
-        showError("Error", error instanceof Error ? error.message : 'Failed to create customer');
-      }
+      console.error('❌ handleAddNewCustomer: Error occurred:', error);
+      // Re-throw the error so the dialog stays open
+      throw error;
     }
   }, [merchantId, outlets, customerSearchResults, setCustomerResults, setFormData, showSuccess, showError]);
 
-  // Update customer info when customer is selected
-  useEffect(() => {
-    if (selectedCustomer) {
-      setFormData(prev => ({
-        ...prev,
-        customerId: selectedCustomer.id,
-      }));
-    }
-  }, [selectedCustomer, setFormData]);
+  // Handle customer selection
+  const handleCustomerSelect = useCallback((customer: CustomerSearchResult) => {
+    console.log('🔍 handleCustomerSelect: Customer selected:', customer);
+    console.log('🔍 handleCustomerSelect: Customer ID:', customer.id);
+    console.log('🔍 handleCustomerSelect: Customer ID type:', typeof customer.id);
+    console.log('🔍 handleCustomerSelect: Full customer object keys:', Object.keys(customer));
+    console.log('🔍 handleCustomerSelect: Customer publicId:', (customer as any).publicId);
+    console.log('🔍 handleCustomerSelect: Customer _id:', (customer as any)._id);
+    
+    // Try to find the ID field
+    const customerId = customer.id || (customer as any).publicId || (customer as any)._id;
+    console.log('🔍 handleCustomerSelect: Resolved customer ID:', customerId);
+    
+    setSelectedCustomer(customer);
+    // Update form data with the customer's numeric ID
+    setFormData(prev => {
+      console.log('🔍 handleCustomerSelect: Previous formData:', prev);
+      const newFormData = { ...prev, customerId: customerId };
+      console.log('🔍 handleCustomerSelect: New formData:', newFormData);
+      return newFormData;
+    });
+    setSearchQuery(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
+  }, []);
 
   // Initialize form data when initialOrder changes (for edit mode)
   useEffect(() => {
@@ -365,7 +392,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       // Update selected customer and search query
       if (initialOrder.customer) {
         const customer = {
-          id: initialOrder.customerId || '',
+          id: parseInt(initialOrder.customerId) || 0,
           publicId: parseInt(initialOrder.customerId) || 0, // Required by CustomerSearchResult type
           firstName: initialOrder.customer.firstName,
           lastName: initialOrder.customer.lastName,
@@ -374,8 +401,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
-          merchantId: '',
-          merchant: { id: '', name: '' }
+          merchantId: parseInt(initialOrder.customer.merchantId) || 0,
+          merchant: { id: parseInt(initialOrder.customer.merchantId) || 0, name: '' }
         };
         setSelectedCustomer(customer);
         setSearchQuery(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
@@ -438,11 +465,11 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               isLoadingCustomers={isLoadingCustomers}
               isEditMode={isEditMode}
               onFormDataChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
-              onCustomerSelect={setSelectedCustomer}
+              onCustomerSelect={handleCustomerSelect}
               onCustomerClear={() => {
                 setSelectedCustomer(null);
                 setSearchQuery('');
-                setFormData(prev => ({ ...prev, customerId: '' }));
+                setFormData(prev => ({ ...prev, customerId: undefined }));
               }}
               onSearchQueryChange={setSearchQuery}
               onCustomerSearch={searchCustomers}

@@ -43,10 +43,7 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
   // Use external isSubmitting if provided, otherwise use internal state
   const isSubmitting = externalIsSubmitting !== undefined ? externalIsSubmitting : internalIsSubmitting;
 
-  console.log('🔍 AddCustomerForm: Component rendered');
-
   const handleInputChange = (field: string, value: string) => {
-    console.log('🔍 AddCustomerForm: Input changed:', { field, value });
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear field-specific error when user starts typing
@@ -106,10 +103,7 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔍 AddCustomerForm: Form submitted');
-    
     if (!validateForm()) {
-      console.log('❌ AddCustomerForm: Validation failed');
       return;
     }
 
@@ -117,25 +111,12 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
       setInternalIsSubmitting(true);
       setErrorMessage(null);
       
-      console.log('🔍 AddCustomerForm: Calling onSave with data:', formData);
-      
       await onSave(formData);
       
-      console.log('✅ AddCustomerForm: Customer saved successfully');
-      
     } catch (error) {
-      console.error('❌ AddCustomerForm: Error saving customer:', error);
-      console.log('🔍 AddCustomerForm: Error object type:', typeof error);
-      console.log('🔍 AddCustomerForm: Error object:', error);
-      
       let errorMessage = 'An unexpected error occurred';
       
       if (error instanceof Error) {
-        console.log('🔍 AddCustomerForm: Error is Error instance');
-        console.log('🔍 AddCustomerForm: Error message:', error.message);
-        console.log('🔍 AddCustomerForm: Error name:', error.name);
-        console.log('🔍 AddCustomerForm: Error stack:', error.stack);
-        
         // Handle specific error messages from API responses
         if (error.message.includes('already exists')) {
           errorMessage = error.message;
@@ -149,11 +130,9 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
           errorMessage = error.message;
         }
       } else {
-        console.log('🔍 AddCustomerForm: Error is not Error instance');
-        console.log('🔍 AddCustomerForm: Error value:', error);
+        errorMessage = 'An unexpected error occurred';
       }
       
-      console.log('🔍 AddCustomerForm: Final error message to display:', errorMessage);
       setErrorMessage(errorMessage);
     } finally {
       setInternalIsSubmitting(false);
@@ -168,13 +147,6 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Error Message */}
-      {errorMessage && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800">{errorMessage}</p>
-        </div>
-      )}
-
       {/* Personal Information */}
       <Card>
         <CardContent className="pt-6">
@@ -245,12 +217,6 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
               <p className="text-xs text-gray-500">
                 Format: numbers, +, -, spaces, parentheses. Min 8 characters.
               </p>
-              {errorMessage && errorMessage.includes('already exists') && (
-                <div className="text-xs text-red-600 mt-1 space-y-1">
-                  <p>💡 Tip: Try searching for the existing customer instead of creating a new one.</p>
-                  <p>🔍 You can search by name or phone number in the customer search field above.</p>
-                </div>
-              )}
               {errorMessage && errorMessage.includes('Merchant ID is required') && (
                 <div className="text-xs text-red-600 mt-1 space-y-1">
                   <p>⚠️  System Error: Merchant ID is missing.</p>
@@ -342,19 +308,6 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
       </Card>
       {/* Form Actions */}
       <div className="flex justify-end space-x-3">
-        {/* Test button for debugging - remove in production */}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            console.log('🧪 Testing error handling...');
-            setErrorMessage('A customer with this phone number already exists');
-          }}
-          className="mr-auto"
-        >
-          🧪 Test Error
-        </Button>
-        
         <Button
           type="button"
           variant="outline"
