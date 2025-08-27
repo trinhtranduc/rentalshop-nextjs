@@ -29,7 +29,7 @@ export default function CreateOrderPage() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [customers, setCustomers] = useState<CustomerSearchResult[]>([]);
   const [products, setProducts] = useState<ProductWithStock[]>([]);
-  const [outlets, setOutlets] = useState<Array<{ id: string; name: string }>>([]);
+  const [outlets, setOutlets] = useState<Array<{ id: number; name: string; merchantId?: number }>>([]);
 
   // Get merchant ID from user context
   const merchantId = user?.merchant?.id;
@@ -41,37 +41,48 @@ export default function CreateOrderPage() {
       try {
         setLoading(true);
 
+        console.log('🔍 Fetching data for merchant ID:', merchantId);
+
         const [customersRes, productsRes, outletsRes] = await Promise.all([
-          customersApi.getCustomers({ 
-            page: 1, 
-            limit: 50, 
-            isActive: true,
-            merchantId: merchantId || undefined
-          }),
-          productsApi.getProducts({ 
-            page: 1, 
-            limit: 100,
-            merchantId: merchantId || undefined
-          }),
-          outletsApi.getOutlets({ 
-            merchantId: merchantId || undefined
-          }),
+          // Call customers API directly with merchantId filter
+          fetch(`/api/customers?merchantId=${merchantId}&isActive=true&limit=50`).then(res => res.json()),
+          // Call products API directly with merchantId filter  
+          fetch(`/api/products?merchantId=${merchantId}&isActive=true&limit=100`).then(res => res.json()),
+          // Use getOutletsByMerchant for merchant-specific outlets
+          outletsApi.getOutletsByMerchant(Number(merchantId)),
         ]);
 
         if (customersRes.success) {
+          // API returns { success: true, data: { customers: CustomerSearchResult[] } }
           setCustomers(customersRes.data?.customers || []);
         } else {
           console.error('Failed to fetch customers:', customersRes.error);
         }
 
         if (productsRes.success) {
+          // API returns { success: true, data: { products: ProductWithStock[] } }
           setProducts(productsRes.data?.products || []);
         } else {
           console.error('Failed to fetch products:', productsRes.error);
         }
 
         if (outletsRes.success) {
-          const mapped = (outletsRes.data?.outlets || []).map((o: any) => ({ id: o.id, name: o.name }));
+          console.log('🔍 Raw outlets response:', outletsRes.data);
+          console.log('🔍 Raw outlets array:', outletsRes.data?.outlets);
+          
+          // outletsRes.data is now OutletsResponse with nested outlets array
+          const outletsArray = outletsRes.data?.outlets || [];
+          
+          // Map outlets using publicId (numeric ID) for frontend, not internal CUID
+          const mapped = outletsArray.map((o: any) => ({ 
+            id: o.publicId, // Use publicId (number) for frontend, not internal CUID
+            name: o.name,
+            merchantId: o.merchantId || o.merchant?.id
+          }));
+          
+          console.log('🔍 Mapped outlets for frontend:', mapped);
+          console.log('🔍 Outlet IDs being sent:', mapped.map(o => o.id));
+          
           setOutlets(mapped);
         } else {
           console.error('Failed to fetch outlets:', outletsRes.error);
@@ -138,7 +149,7 @@ export default function CreateOrderPage() {
             outlets={outlets}
             loading={submitting}
             layout="split"
-            merchantId={merchantId?.toString()}
+            merchantId={Number(merchantId)}
           />
         )}
       </PageContent>

@@ -181,7 +181,6 @@ export function ProductTable({
                 <SortableHeader column="rentPrice" sortable={false}>Price</SortableHeader>
                 <SortableHeader column="available" sortable={false}>Stock</SortableHeader>
                 <SortableHeader column="status" sortable={false}>Status</SortableHeader>
-                <SortableHeader column="outletName" sortable={false}>Outlet</SortableHeader>
                 <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Created At</SortableHeader>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -242,10 +241,6 @@ export function ProductTable({
                   
                   <TableCell>
                     {getStatusBadge(product.status)}
-                  </TableCell>
-                  
-                  <TableCell>
-                    <span className="text-sm">{product.outletName}</span>
                   </TableCell>
                   
                   <TableCell>

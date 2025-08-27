@@ -30,7 +30,7 @@ export default function OrdersPage() {
     search: '',
     status: undefined,
     orderType: undefined,
-    outlet: '',
+    outletId: undefined,
     dateRange: {
       start: '',
       end: ''
@@ -60,7 +60,7 @@ export default function OrdersPage() {
         ...(searchQuery && { q: searchQuery }),
         ...(filters.orderType && { orderType: filters.orderType }),
         ...(filters.status && { status: filters.status }),
-        ...(filters.outlet && filters.outlet !== 'all' && { outletId: filters.outlet }),
+        ...(filters.outletId && { outletId: filters.outletId.toString() }),
         ...(filters.sortBy && { sortBy: filters.sortBy }),
         ...(filters.sortOrder && { sortOrder: filters.sortOrder })
       });
@@ -122,7 +122,7 @@ export default function OrdersPage() {
         setIsInitialLoad(false);
       }
     }
-  }, [currentPage, searchQuery, filters.orderType, filters.status, filters.outlet, filters.sortBy, filters.sortOrder, isInitialLoad]); // Remove setCurrentPage, setOrders, setTotalPages, setLoading, setIsSearching, hasInitializedRef dependencies
+  }, [currentPage, searchQuery, filters.orderType, filters.status, filters.outletId, filters.sortBy, filters.sortOrder, isInitialLoad]); // Remove setCurrentPage, setOrders, setTotalPages, setLoading, setIsSearching, hasInitializedRef dependencies
 
   const fetchStats = useCallback(async () => {
     try {
@@ -150,7 +150,7 @@ export default function OrdersPage() {
     if (hasInitializedRef.current) {
       fetchOrders();
     }
-  }, [searchQuery, currentPage, filters.orderType, filters.status, filters.outlet, filters.sortBy, filters.sortOrder]); // Remove fetchOrders dependency
+  }, [searchQuery, currentPage, filters.orderType, filters.status, filters.outletId, filters.sortBy, filters.sortOrder]); // Remove fetchOrders dependency
 
   // Effect for stats updates
   useEffect(() => {

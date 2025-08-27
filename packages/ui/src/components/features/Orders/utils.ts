@@ -1,14 +1,14 @@
 import { Order, OrderFilters, OrderData, OrderStats, OrderDetailData, SettingsForm } from '@rentalshop/types';
 
-export const filterOrders = (orders: Order[], filters: OrderFilters): Order[] => {
+export const filterOrders = (orders: OrderData[], filters: OrderFilters): OrderData[] => {
   return orders.filter(order => {
     // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       const matchesSearch = 
         order.orderNumber.toLowerCase().includes(searchLower) ||
-        order.customerName.toLowerCase().includes(searchLower) ||
-        order.customerPhone.toLowerCase().includes(searchLower);
+        (order.customerName?.toLowerCase().includes(searchLower) || false) ||
+        (order.customerPhone?.toLowerCase().includes(searchLower) || false);
       
       if (!matchesSearch) return false;
     }
@@ -24,7 +24,7 @@ export const filterOrders = (orders: Order[], filters: OrderFilters): Order[] =>
     }
     
     // Outlet filter
-    if (filters.outlet && order.outletId !== filters.outlet) {
+    if (filters.outletId && order.outlet?.id !== filters.outletId) {
       return false;
     }
     

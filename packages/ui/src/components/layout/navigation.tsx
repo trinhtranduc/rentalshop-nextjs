@@ -12,7 +12,9 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Tag
+  Tag,
+  ShoppingCart,
+  Building2
 } from 'lucide-react'
 import { Button } from '@rentalshop/ui'
 
@@ -46,10 +48,10 @@ export function Navigation({
   const adminNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/users', label: 'Users', icon: Users },
-    { href: '/shops', label: 'Shops', icon: Store },
+    { href: '/outlets', label: 'Outlets', icon: Building2 },
     { href: '/products', label: 'Products', icon: Store },
     { href: '/categories', label: 'Categories', icon: Tag },
-    { href: '/orders', label: 'Orders', icon: Store },
+    { href: '/orders', label: 'Orders', icon: ShoppingCart },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]
 

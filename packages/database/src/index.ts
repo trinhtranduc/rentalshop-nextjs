@@ -76,9 +76,20 @@ export {
   updateProductStock,
 } from './product';
 
+// Dual ID outlet functions (RECOMMENDED)
+export {
+  getOutletByPublicId,
+  searchOutlets,
+  createOutlet,
+  updateOutlet,
+  deleteOutlet,
+  getOutletsByMerchant,
+} from './outlet';
+
 // Dual ID user functions (RECOMMENDED)
 export {
   findUserById,
+  getUserByPublicId,
   createUser,
   updateUser,
   getUsersByMerchant,

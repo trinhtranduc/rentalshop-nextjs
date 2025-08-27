@@ -84,59 +84,62 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     sortOrder: 'desc'
   });
 
-  // TODO: Implement real API call to fetch orders for this product
+  // Fetch orders for this specific product
   useEffect(() => {
     const fetchProductOrders = async () => {
       try {
         setLoading(true);
-        // Filter by productId to get orders for this specific product
-        const response = await ordersApi.getOrders({ 
-          productId: parseInt(productId), // Convert string to number for API
-          limit: filters.limit,
-          offset: (currentPage - 1) * (filters.limit || 20)
-        });
+        // Use the dedicated method to get orders for this specific product
+        const response = await ordersApi.getOrdersByProduct(parseInt(productId));
         
-        if (response.data) {
-          setOrders(response.data.orders || []);
-          setTotalPages(Math.ceil((response.data.total || 0) / (filters.limit || 20)));
+        console.log('🔍 ProductOrdersView: API Response:', response);
+        
+        if (response.success && response.data) {
+          // Ensure response.data is an array
+          const ordersData = Array.isArray(response.data) ? response.data : [];
+          console.log('🔍 ProductOrdersView: Setting orders:', ordersData);
+          setOrders(ordersData);
+          setTotalPages(1); // Since we're getting all orders for the product
         } else {
+          console.log('🔍 ProductOrdersView: No data or unsuccessful response');
           setOrders([]);
           setTotalPages(1);
         }
       } catch (err) {
+        console.error('❌ ProductOrdersView: Error fetching product orders:', err);
         setError('Failed to fetch product orders');
-        console.error('Error fetching product orders:', err);
+        setOrders([]); // Ensure orders is always an array
       } finally {
         setLoading(false);
       }
     };
     fetchProductOrders();
-  }, [productId, currentPage, filters.limit, filters.offset]);
+  }, [productId]);
 
-  // Calculate overview statistics
+  // Calculate overview statistics with safety checks
   const overview = {
-    totalOrders: orders.length,
-    totalQuantity: orders.reduce((sum, order) => 
-      sum + order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-    ),
-    totalSales: orders.reduce((sum, order) => sum + order.totalAmount, 0),
-    totalDeposits: orders.reduce((sum, order) => sum + order.depositAmount, 0),
-    activeRentals: orders.filter(order => order.status === 'ACTIVE').length,
-    completedOrders: orders.filter(order => order.status === 'COMPLETED').length,
-    pendingOrders: orders.filter(order => order.status === 'PENDING').length
+    totalOrders: Array.isArray(orders) ? orders.length : 0,
+    totalQuantity: Array.isArray(orders) ? orders.reduce((sum, order) => 
+      sum + (order.orderItems?.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) || 0), 0
+    ) : 0,
+    totalSales: Array.isArray(orders) ? orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0) : 0,
+    totalDeposits: Array.isArray(orders) ? orders.reduce((sum, order) => sum + (order.depositAmount || 0), 0) : 0,
+    activeRentals: Array.isArray(orders) ? orders.filter(order => order.status === 'ACTIVE').length : 0,
+    completedOrders: Array.isArray(orders) ? orders.filter(order => order.status === 'COMPLETED').length : 0,
+    pendingOrders: Array.isArray(orders) ? orders.filter(order => order.status === 'PENDING').length : 0
   };
 
-  // Transform orders to match the expected format for OrderTable
+  // Transform orders to match the expected format for OrderTable with safety checks
   const orderData = {
-    orders: orders.map(order => ({
-      id: order.id, // Use the id from OrderWithDetails
+    orders: Array.isArray(orders) ? orders.map(order => ({
+      id: order.publicId, // Use publicId for frontend display
       orderNumber: order.orderNumber,
       orderType: order.orderType,
       status: order.status,
-      customerId: typeof order.customer?.id === 'number' ? order.customer.id : 0,
+      customerId: order.customer?.publicId || 0,
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
       customerPhone: order.customer?.phone || 'No phone',
-      outletId: typeof order.outlet.id === 'number' ? order.outlet.id : 0,
+      outletId: order.outlet.publicId,
       outletName: order.outlet.name,
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
@@ -148,8 +151,8 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
       updatedAt: order.updatedAt,
       orderItems: order.orderItems,
       payments: order.payments
-    })),
-    total: orders.length,
+    })) : [],
+    total: Array.isArray(orders) ? orders.length : 0,
     currentPage,
     totalPages,
     limit: filters.limit || 20,
@@ -219,15 +222,11 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     const fetchProductOrders = async () => {
       try {
         setLoading(true);
-        const response = await ordersApi.getOrders({ 
-          search: productName, // Search by product name instead of productId
-          limit: filters.limit,
-          offset: 0
-        });
+        const response = await ordersApi.getOrdersByProduct(parseInt(productId));
         
-        if (response.data) {
-          setOrders(response.data.orders || []);
-          setTotalPages(Math.ceil((response.data.total || 0) / (filters.limit || 20)));
+        if (response.success && response.data) {
+          setOrders(response.data);
+          setTotalPages(1);
         } else {
           setOrders([]);
           setTotalPages(1);

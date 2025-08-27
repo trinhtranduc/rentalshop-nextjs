@@ -22,18 +22,20 @@ import {
   Key
 } from 'lucide-react';
 import { usersApi } from "@rentalshop/utils";
+import { useAuth } from '@rentalshop/hooks';
 import type { User, UserUpdateInput } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
 
 export default function UserPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const userId = params.id as string;
   
   console.log('🔍 UserPage: Component rendered with params:', params);
   console.log('🔍 UserPage: User ID extracted:', userId);
   
-  const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -57,20 +59,20 @@ export default function UserPage() {
         const numericId = parseInt(userId);
         if (isNaN(numericId) || numericId <= 0) {
           console.error('❌ UserPage: Invalid ID format:', userId);
-          setUser(null);
+          setUserData(null);
           return;
         }
         
         console.log('🔍 UserPage: Making API call to /api/users/' + userId);
         
         // Use the real API to fetch user data by ID
-        const response = await usersApi.getUserByPublicId(userId);
+        const response = await usersApi.getUserByPublicId(numericId);
         
         console.log('🔍 UserPage: API response received:', response);
         
         if (response.success && response.data) {
           console.log('✅ UserPage: User fetched successfully:', response.data);
-          setUser(response.data);
+          setUserData(response.data);
         } else {
           console.error('❌ UserPage: API error:', response.error);
           throw new Error(response.error || 'Failed to fetch user');
@@ -79,7 +81,7 @@ export default function UserPage() {
       } catch (error) {
         console.error('❌ UserPage: Error fetching user:', error);
         // Show error state
-        setUser(null);
+        setUserData(null);
       } finally {
         setIsLoading(false);
       }

@@ -88,11 +88,11 @@ const products = await productsApi.getProducts({
 // Get product by ID
 const product = await productsApi.getProductById('product-id');
 
-// Get product by public ID
-const product = await productsApi.getProductByPublicId(123);
+// Get product by public ID (requires merchantId for security)
+const product = await productsApi.getProductByPublicId(123, merchantId);
 
-// Get product by barcode
-const product = await productsApi.getProductByBarcode('123456789');
+// Get product by barcode (requires merchantId for security)
+const product = await productsApi.getProductByBarcode('123456789', merchantId);
 
 // Check product availability
 const availability = await productsApi.checkAvailability('product-id');

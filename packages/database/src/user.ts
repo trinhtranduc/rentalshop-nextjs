@@ -38,6 +38,31 @@ export async function findUserById(id: string) {
   });
 }
 
+/**
+ * Get user by public ID - follows dual ID system
+ */
+export async function getUserByPublicId(publicId: number) {
+  return await prisma.user.findUnique({
+    where: { publicId },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      outlet: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+  });
+}
+
 // ============================================================================
 // USER CREATION FUNCTIONS
 // ============================================================================

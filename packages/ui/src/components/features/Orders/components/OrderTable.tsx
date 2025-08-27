@@ -3,11 +3,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@rentalshop/ui';
 import { Badge } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
-import { Order } from '@rentalshop/types';
+import { OrderData } from '@rentalshop/types';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface OrderTableProps {
-  orders: Order[];
+  orders: OrderData[];
   onOrderAction: (action: string, orderId: string) => void;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -143,8 +143,10 @@ export function OrderTable({
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date | undefined) => {
+    if (!dateString) return 'N/A';
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -168,6 +170,9 @@ export function OrderTable({
                 </SortableHeader>
                 <SortableHeader column="customerName" sortable={false}>
                   Customer
+                </SortableHeader>
+                <SortableHeader column="outletName" sortable={false}>
+                  Outlet
                 </SortableHeader>
                 <SortableHeader column="orderType" sortable={false}>
                   Type
@@ -213,6 +218,14 @@ export function OrderTable({
                   </TableCell>
                   
                   <TableCell>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {order.outletName}
+                      </div>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
                     {getOrderTypeBadge(order.orderType)}
                   </TableCell>
                   
@@ -233,19 +246,19 @@ export function OrderTable({
                   
                   <TableCell>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {order.pickupPlanAt ? formatDate(order.pickupPlanAt) : 'N/A'}
+                      {formatDate(order.pickupPlanAt)}
                     </div>
                   </TableCell>
                   
                   <TableCell>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {order.returnPlanAt ? formatDate(order.returnPlanAt) : 'N/A'}
+                      {formatDate(order.returnPlanAt)}
                     </div>
                   </TableCell>
                   
                   <TableCell>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {order.createdAt ? formatDate(order.createdAt) : 'N/A'}
+                      {formatDate(order.createdAt)}
                     </div>
                   </TableCell>
                   

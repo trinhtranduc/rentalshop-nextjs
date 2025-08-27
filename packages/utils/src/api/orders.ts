@@ -44,11 +44,28 @@ export const ordersApi = {
     const params = new URLSearchParams();
     
     if (filters.search) params.append('search', filters.search);
-    if (filters.status) params.append('status', filters.status);
+    if (filters.status) {
+      // Handle both single status and array of statuses
+      if (Array.isArray(filters.status)) {
+        filters.status.forEach(status => params.append('status', status));
+      } else {
+        params.append('status', filters.status);
+      }
+    }
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.customerId) params.append('customerId', filters.customerId.toString());
-    if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
-    if (filters.endDate) params.append('endDate', filters.endDate.toISOString());
+    if (filters.productId) params.append('productId', filters.productId.toString());
+    
+    // Handle date fields - convert to ISO string if it's a Date object
+    if (filters.startDate) {
+      const startDate = filters.startDate instanceof Date ? filters.startDate.toISOString() : filters.startDate;
+      params.append('startDate', startDate);
+    }
+    if (filters.endDate) {
+      const endDate = filters.endDate instanceof Date ? filters.endDate.toISOString() : filters.endDate;
+      params.append('endDate', endDate);
+    }
+    
     if (filters.orderType) params.append('orderType', filters.orderType);
     
     const response = await authenticatedFetch(`${apiUrls.orders.list}?${params.toString()}`);
@@ -60,6 +77,14 @@ export const ordersApi = {
    */
   async getOrder(orderId: number): Promise<ApiResponse<Order>> {
     const response = await authenticatedFetch(apiUrls.orders.update(orderId));
+    return await parseApiResponse<Order>(response);
+  },
+
+  /**
+   * Get order by order number (e.g., "ORD-2110")
+   */
+  async getOrderByNumber(orderNumber: string): Promise<ApiResponse<Order>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/orders/by-number/${orderNumber}`);
     return await parseApiResponse<Order>(response);
   },
 
@@ -108,6 +133,14 @@ export const ordersApi = {
    */
   async getOrdersByOutlet(outletId: number): Promise<ApiResponse<Order[]>> {
     const response = await authenticatedFetch(`${apiUrls.orders.list}?outletId=${outletId}`);
+    return await parseApiResponse<Order[]>(response);
+  },
+
+  /**
+   * Get orders by product ID
+   */
+  async getOrdersByProduct(productId: number): Promise<ApiResponse<Order[]>> {
+    const response = await authenticatedFetch(`${apiUrls.orders.list}?productId=${productId}`);
     return await parseApiResponse<Order[]>(response);
   },
 

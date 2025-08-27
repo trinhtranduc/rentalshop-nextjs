@@ -48,10 +48,10 @@ export interface ProductUpdateInput {
 }
 
 export interface ProductFilters {
-  outletId?: number;    // Changed from string to number
   merchantId?: number;  // Changed from string to number
   categoryId?: number;  // Changed from string to number
   available?: boolean;
+  status?: 'all' | 'active' | 'inactive';  // Added missing status property
   search?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -89,7 +89,6 @@ export interface ProductWithStock extends Product {
 
 export interface ProductSearchFilter {
   merchantId?: number;  // Changed from string to number
-  outletId?: number;    // Changed from string to number
   categoryId?: number;  // Changed from string to number
   search?: string;
   page?: number;

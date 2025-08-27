@@ -297,6 +297,82 @@ Our system implements a **four-tier role hierarchy** designed for multi-tenant r
 - **OUTLET_ADMIN**: Must be assigned to both a merchant and a specific outlet
 - **OUTLET_STAFF**: Must be assigned to both a merchant and a specific outlet
 
+### **🔒 Role-Based Data Access Control (SECURITY FIRST)**
+
+**CRITICAL SECURITY PRINCIPLE: All role-based filtering must be implemented at the backend/database level, NEVER on the frontend.**
+
+#### **Why Frontend Filtering is a Security Vulnerability:**
+- ❌ **Hackers can bypass frontend restrictions** by modifying API calls
+- ❌ **Frontend code can be inspected** and manipulated by users
+- ❌ **API endpoints without proper backend filtering** expose all data
+- ✅ **Backend filtering is secure** and cannot be bypassed
+
+#### **Secure Implementation Pattern:**
+```typescript
+// ❌ WRONG: Frontend filtering (Security Hole)
+if (user.role === 'OUTLET_STAFF') {
+  apiFilters.outletId = user.outletId; // Hackers can remove this!
+}
+
+// ✅ CORRECT: Backend filtering (Secure)
+// Frontend sends minimal data, backend handles all access control
+const apiFilters = { customerId: 22 }; // Only essential data
+// Backend automatically filters based on user's JWT token and role
+```
+
+#### **Role-Based Data Access Rules:**
+
+**Customer Orders Access:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: Can only see orders from their specific outlet
+- **MERCHANT**: Can see orders from all their outlets
+- **ADMIN**: Can see all orders across all merchants
+
+**Implementation in Backend API:**
+```typescript
+// ✅ SECURE: Backend handles role-based filtering
+export async function getCustomerOrders(customerId: number, user: AuthUser) {
+  const userScope = getUserScope(user);
+  
+  // Build where clause based on user role
+  const where: any = { customerId };
+  
+  if (userScope.outletId) {
+    // Outlet users restricted to their outlet
+    where.outletId = userScope.outletId;
+  } else if (userScope.merchantId) {
+    // Merchant users restricted to their merchant
+    where.merchantId = userScope.merchantId;
+  }
+  // Admin users have no restrictions
+  
+  return await prisma.order.findMany({ where });
+}
+```
+
+#### **Frontend Implementation (SECURE):**
+```typescript
+// ✅ SECURE: Frontend sends minimal data, backend handles security
+const fetchCustomerOrders = async () => {
+  // Only send essential data - backend handles all role-based filtering
+  const apiFilters = {
+    customerId: customer.id,
+    limit: 10,
+    offset: (currentPage - 1) * 10
+  };
+  
+  // Backend automatically filters based on user's JWT token and role
+  const response = await ordersApi.searchOrders(apiFilters);
+  
+  // Response is automatically scoped to user's permissions
+  setOrders(response.data || []);
+};
+
+// ❌ WRONG: Never implement role-based filtering on frontend
+// if (user.role === 'OUTLET_STAFF') {
+//   apiFilters.outletId = user.outletId; // SECURITY HOLE!
+// }
+```
+
 ### **Authorization Functions**
 
 ```typescript
@@ -1503,6 +1579,18 @@ Before submitting any authorization changes, ensure:
 - [ ] **Admin Override**: System admins have appropriate access
 - [ ] **Audit Logging**: All authorization decisions are logged
 - [ ] **Testing**: Authorization logic thoroughly tested
+
+### **🔒 Security Checklist (CRITICAL)**
+
+Before submitting any code, ensure these security requirements are met:
+
+- [ ] **NO FRONTEND ROLE-BASED FILTERING** - All filtering must be backend-only
+- [ ] **Backend API endpoints** implement proper role-based access control
+- [ ] **Database queries** automatically filter by user scope (merchantId/outletId)
+- [ ] **JWT tokens** are properly validated on every API call
+- [ ] **User scope** is extracted from JWT and enforced in database queries
+- [ ] **No sensitive data** is exposed through frontend filtering
+- [ ] **API responses** are automatically scoped to user's role and permissions
 
 ### **Review Checklist**
 

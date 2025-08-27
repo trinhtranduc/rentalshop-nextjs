@@ -24,18 +24,11 @@ import {
 } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
 import { ordersApi } from "@rentalshop/utils";
+import { useAuth } from '@rentalshop/hooks';
 import type { Customer, OrderStatus, OrderFilters as OrderFiltersType } from '@rentalshop/types';
 
-// Simplified Order interface for this page
-interface Order {
-  id: number;
-  orderNumber: string;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-  pickupPlanAt?: string;
-  returnPlanAt?: string;
-}
+// Use the Order type from the types package to match API response
+import type { Order } from '@rentalshop/types';
 
 interface CustomerOrdersData {
   orders: Order[];
@@ -48,6 +41,7 @@ interface CustomerOrdersData {
 export default function CustomerOrdersPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const publicId = params.id as string; // Fix: use params.id instead of params.publicId
   
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -135,35 +129,32 @@ export default function CustomerOrdersPage() {
         
         console.log('🔍 CustomerOrdersPage: Fetching orders for customer:', customer.id);
         
-        // Build API parameters for customer orders
+        // SECURITY: All filtering must be done at the backend/database level
+        // Frontend only sends the customer ID - backend handles role-based access control
         const apiFilters = {
           customerId: customer.id, // Filter orders by this specific customer
           limit: 10,
-          offset: (currentPage - 1) * 10,
-          ...(filters.status !== undefined && { status: filters.status }),
-          ...(filters.orderType !== undefined && { orderType: filters.orderType }),
-          ...(filters.outlet && { outlet: filters.outlet }),
-          ...(filters.dateRange.start && filters.dateRange.end && {
-            startDate: filters.dateRange.start,
-            endDate: filters.dateRange.end
-          }),
-          ...(filters.search && { q: filters.search }), // Use 'q' for search to match API
-          sortBy: filters.sortBy,
-          sortOrder: filters.sortOrder
+          offset: (currentPage - 1) * 10
         };
+
+        // SECURITY: User role and outlet restrictions are handled by the backend API
+        // The backend will automatically filter based on user's role and scope
+        console.log('🔒 CustomerOrdersPage: Sending minimal filters to backend - backend handles security');
+        console.log('🔒 CustomerOrdersPage: User role:', user?.role);
+        console.log('🔒 CustomerOrdersPage: User outlet ID:', user?.outletId);
 
         console.log('🔍 CustomerOrdersPage: API filters:', apiFilters);
         console.log('🔍 CustomerOrdersPage: API endpoint will be:', `/api/orders?customerId=${customer.id}&limit=10&offset=${(currentPage - 1) * 10}${filters.status !== undefined ? `&status=${filters.status}` : ''}${filters.orderType !== undefined ? `&orderType=${filters.orderType}` : ''}${filters.outlet ? `&outlet=${filters.outlet}` : ''}${filters.dateRange.start && filters.dateRange.end ? `&startDate=${filters.dateRange.start}&endDate=${filters.dateRange.end}` : ''}${filters.search ? `&q=${filters.search}` : ''}&sortBy=${filters.sortBy}&sortOrder=${filters.sortOrder}`);
 
-        const response = await ordersApi.getOrders(apiFilters);
+        const response = await ordersApi.searchOrders(apiFilters);
         
         if (response.success && response.data) {
           console.log('✅ CustomerOrdersPage: Orders fetched successfully:', response.data);
-          console.log('🔍 CustomerOrdersPage: Orders data:', response.data.orders);
-          console.log('🔍 CustomerOrdersPage: Setting orders state with:', response.data.orders?.length || 0, 'orders');
-          setOrders(response.data.orders || []);
-          setTotalOrders(response.data.total || 0);
-          setTotalPages(response.data.totalPages || 1);
+          console.log('🔍 CustomerOrdersPage: Orders data:', response.data);
+          console.log('🔍 CustomerOrdersPage: Setting orders state with:', response.data?.length || 0, 'orders');
+          setOrders(response.data || []);
+          setTotalOrders(response.data?.length || 0);
+          setTotalPages(Math.ceil((response.data?.length || 0) / 10));
         } else {
           console.error('❌ CustomerOrdersPage: API error:', response.error);
           setOrders([]);
@@ -184,20 +175,10 @@ export default function CustomerOrdersPage() {
     if (customer) {
       fetchOrders();
     }
-  }, [customer, currentPage, filters]);
+  }, [customer, currentPage]); // Removed filters dependency since we removed frontend filtering
 
-  // Handle filters change
-  const handleFiltersChange = (newFilters: Partial<OrderFiltersType>) => {
-    console.log('🔍 CustomerOrdersPage: Filters changing from:', filters, 'to:', { ...filters, ...newFilters });
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setCurrentPage(1); // Reset to first page when filters change
-  };
-
-  // Handle search change
-  const handleSearchChange = (searchValue: string) => {
-    setFilters(prev => ({ ...prev, search: searchValue }));
-    setCurrentPage(1); // Reset to first page when search changes
-  };
+  // SECURITY: Frontend filtering removed - all filtering is handled securely by backend
+  // This prevents security vulnerabilities where hackers could bypass filters
 
   // Handle clear filters
   const handleClearFilters = () => {

@@ -25,3 +25,64 @@ export interface SoftDelete {
   deletedAt?: Date;
   isDeleted: boolean;
 }
+
+// ============================================================================
+// PROFILE TYPES
+// ============================================================================
+
+export interface ProfileUpdateInput {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+}
+
+// ============================================================================
+// SHOP TYPES
+// ============================================================================
+
+export interface Shop {
+  id: number;
+  name: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  isActive: boolean;
+  merchantId: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ShopCreateInput {
+  name: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  merchantId: number;
+}
+
+export interface ShopUpdateInput {
+  name?: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+}

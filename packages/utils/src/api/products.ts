@@ -45,7 +45,6 @@ export const productsApi = {
     
     if (filters.search) params.append('search', filters.search);
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
-    if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.status) params.append('status', filters.status);
     if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
@@ -58,8 +57,15 @@ export const productsApi = {
    * Get product by ID
    */
   async getProduct(productId: number): Promise<ApiResponse<Product>> {
-    const response = await authenticatedFetch(apiUrls.products.update(productId));
+    const response = await authenticatedFetch(`${apiUrls.base}/api/products/${productId}`);
     return await parseApiResponse<Product>(response);
+  },
+
+  /**
+   * Get product by ID (alias for getProduct for backward compatibility)
+   */
+  async getProductById(productId: number): Promise<ApiResponse<Product>> {
+    return this.getProduct(productId);
   },
 
   /**

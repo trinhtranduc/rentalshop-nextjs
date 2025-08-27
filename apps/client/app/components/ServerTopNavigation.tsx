@@ -7,7 +7,7 @@ import {
   Package, 
   Users, 
   User, 
-  StoreIcon, 
+  Building2, 
   Calendar,
   Tag,
   Settings,
@@ -41,7 +41,7 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
     },
     { href: '/customers', label: 'Customers', icon: Users },
     { href: '/users', label: 'Users', icon: User },
-    { href: '/shops', label: 'Shops', icon: StoreIcon },
+    { href: '/outlets', label: 'Outlets', icon: Building2 },
     { href: '/calendar', label: 'Calendar', icon: Calendar },
   ];
 
@@ -99,7 +99,7 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
-                <StoreIcon className="w-5 h-5 text-white" />
+                <Building2 className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">RentalShop</h1>
@@ -193,17 +193,6 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
 
           {/* Right side - Settings only */}
           <div className="flex items-center space-x-4">
-            {/* Test Navigation Button */}
-            <button
-              onClick={() => {
-                console.log('🔄 Test button clicked - navigating to /categories');
-                navigateTo('/categories');
-              }}
-              className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              Test Nav
-            </button>
-            
             <button
               onClick={() => handleTabClick('/settings')}
               onMouseEnter={() => prefetchRoute('/settings')}

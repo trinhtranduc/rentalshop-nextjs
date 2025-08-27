@@ -58,6 +58,7 @@ export interface UserFilters {
   merchantId?: string;
   outletId?: string;
   isActive?: boolean;
+  status?: 'all' | 'active' | 'inactive';  // Added missing status property
   search?: string;
 }
 

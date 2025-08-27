@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     const filters: ProductSearchFilter = {};
     
     // Filter parameters - convert to numbers for dual ID system
-    if (searchParams.get('outletId')) filters.outletId = parseInt(searchParams.get('outletId')!);
     if (searchParams.get('categoryId')) filters.categoryId = parseInt(searchParams.get('categoryId')!);
     if (searchParams.get('search')) filters.search = searchParams.get('search')!;
     

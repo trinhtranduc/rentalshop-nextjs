@@ -2,7 +2,7 @@
  * Custom hook for managing CreateOrderForm state and logic
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToasts } from '@rentalshop/ui';
 import { customersApi, handleApiError } from '@rentalshop/utils';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
@@ -82,6 +82,14 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     return [];
   });
 
+  // Use a ref to track the current orderItems state to avoid stale closures
+  const orderItemsRef = useRef<OrderItemFormData[]>(orderItems);
+  
+  // Update the ref whenever orderItems state changes
+  useEffect(() => {
+    orderItemsRef.current = orderItems;
+  }, [orderItems]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOrderPreview, setShowOrderPreview] = useState(false);
 
@@ -90,6 +98,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
   // Calculate totals when order items change
   useEffect(() => {
+    console.log('🔍 orderItems changed, recalculating totals. New orderItems:', orderItems);
+    console.log('🔍 orderItems length:', orderItems?.length);
+    
     const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const discountAmount = formData.discountType === 'percentage' 
       ? (subtotal * formData.discountValue / 100)
@@ -158,19 +169,25 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
   // Add product to order
   const addProductToOrder = useCallback((product: any) => {
+    console.log('🔍 addProductToOrder called with product:', product);
+    console.log('🔍 Current orderItems before adding:', orderItems);
+    
     const productIdNumber = product.id;
     const existingItem = orderItems.find(item => item.productId === productIdNumber);
     
     if (existingItem) {
       // Update quantity if product already exists
+      console.log('🔍 Product already exists, updating quantity');
       const updatedItems = orderItems.map(item =>
         item.productId === productIdNumber
           ? { ...item, quantity: item.quantity + 1 }
           : item
       );
+      console.log('🔍 Updated items:', updatedItems);
       setOrderItems(updatedItems);
     } else {
       // Add new product
+      console.log('🔍 Adding new product to order');
       const rentPrice = product.rentPrice ?? 0;
       const deposit = product.deposit ?? 0;
       
@@ -181,7 +198,10 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         deposit: deposit,
         notes: '',
       };
-      setOrderItems([...orderItems, newItem]);
+      console.log('🔍 New item to add:', newItem);
+      const newOrderItems = [...orderItems, newItem];
+      console.log('🔍 New orderItems array:', newOrderItems);
+      setOrderItems(newOrderItems);
     }
   }, [orderItems, formData.orderType]);
 
@@ -236,26 +256,31 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     setShowOrderPreview(true);
   }, []);
 
-  // Handle order confirmation from preview
-  const handleOrderConfirm = useCallback(async () => {
-    setShowOrderPreview(false);
-    // Create a mock event for handleSubmit
-    const mockEvent = { preventDefault: () => {} } as React.FormEvent;
-    await handleSubmit(mockEvent);
-  }, []);
-
   // Handle form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔍 handleSubmit called');
+    
+    // Use the ref to get the latest orderItems state to avoid stale closure issues
+    const currentOrderItems = orderItemsRef.current;
+    console.log('🔍 Current orderItems from ref:', currentOrderItems);
+    console.log('🔍 Current orderItems length:', currentOrderItems?.length);
+    console.log('🔍 orderItems type:', typeof currentOrderItems);
+    console.log('🔍 orderItems array check:', Array.isArray(currentOrderItems));
+    
     if (isSubmitting) return;
     
     // Validate that we have order items
-    if (!orderItems || orderItems.length === 0) {
+    if (!currentOrderItems || currentOrderItems.length === 0) {
+      console.error('❌ No order items found!');
+      console.error('❌ currentOrderItems:', currentOrderItems);
+      console.error('❌ currentOrderItems.length:', currentOrderItems?.length);
       // This should be handled by the parent component with toast
       throw new Error('Please add at least one product to the order before submitting.');
     }
     
+    console.log('✅ Order items validation passed');
     setIsSubmitting(true);
     
     try {
@@ -275,7 +300,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         damageFee: formData.damageFee,
         totalAmount: formData.totalAmount,
         notes: formData.notes,
-        orderItems: orderItems.map(item => ({
+        orderItems: currentOrderItems.map(item => ({
           productId: item.productId, // Send as number
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -283,6 +308,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           notes: item.notes,
         }))
       };
+      
+      console.log('🔍 Final API payload:', apiPayload);
+      console.log('🔍 orderItems in payload:', apiPayload.orderItems);
       
       // Add order ID for edit mode
       if (isEditMode && initialOrder?.id) {
@@ -298,7 +326,19 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, orderItems, isEditMode, initialOrder, props, isSubmitting]);
+  }, [formData, isEditMode, initialOrder, props, isSubmitting]);
+
+  // Handle order confirmation from preview
+  const handleOrderConfirm = useCallback(async () => {
+    console.log('🔍 handleOrderConfirm called');
+    console.log('🔍 Current orderItems in handleOrderConfirm:', orderItems);
+    console.log('🔍 orderItems length in handleOrderConfirm:', orderItems?.length);
+    
+    setShowOrderPreview(false);
+    // Create a mock event for handleSubmit
+    const mockEvent = { preventDefault: () => {} } as React.FormEvent;
+    await handleSubmit(mockEvent);
+  }, [orderItems, handleSubmit]);
 
   return {
     // State

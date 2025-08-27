@@ -55,6 +55,7 @@ model Outlet {
   publicId    Int           @unique
   name        String
   address     String?
+  phone       String?
   description String?
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
