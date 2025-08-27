@@ -1,139 +1,135 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
+import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../common';
-
-/**
- * Products API Client - Product Management Operations
- * 
- * This file handles all product operations:
- * - Fetching products with filters
- * - Product CRUD operations
- * - Product availability checks
- * - Product search and categorization
- */
+import type { Product, ProductCreateInput, ProductUpdateInput, ProductFilters } from '@rentalshop/types';
 
 export interface ProductsResponse {
-  products: any[];
+  products: Product[];
   total: number;
-  page?: number;
-  totalPages?: number;
-  limit?: number;
-}
-
-export interface ProductFilters {
-  search?: string;
-  categoryId?: number;
-  outletId?: number;
-  merchantId?: number;
-  minPrice?: number;
-  maxPrice?: number;
-  available?: boolean;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 /**
- * Products API client for authenticated product operations
+ * Products API client for product management operations
  */
 export const productsApi = {
   /**
-   * Get all products with optional filters and pagination
+   * Get all products
    */
-  async getProducts(filters?: ProductFilters): Promise<ApiResponse<ProductsResponse>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    console.log('🔍 getProducts called with filters:', filters);
-    console.log('📡 API endpoint:', `/api/products?${params.toString()}`);
-    
-    const response = await authenticatedFetch(`/api/products?${params.toString()}`);
-    console.log('📡 Raw API response:', response);
-    
-    const result = await parseApiResponse<ProductsResponse>(response);
-    console.log('✅ Processed API response:', result);
-    
+  async getProducts(): Promise<ApiResponse<Product[]>> {
+    const response = await authenticatedFetch(apiUrls.products.list);
+    const result = await parseApiResponse<Product[]>(response);
     return result;
   },
 
   /**
-   * Get product by ID (supports both public ID and internal ID)
+   * Get products with pagination
    */
-  async getProductById(productId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/products/${productId}`);
-    return await parseApiResponse<any>(response);
+  async getProductsPaginated(page: number = 1, limit: number = 50): Promise<ApiResponse<ProductsResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.products.list}?${params.toString()}`);
+    return await parseApiResponse<ProductsResponse>(response);
   },
 
   /**
-   * Get product by public ID (numeric ID like 1, 2, 3)
+   * Search products with filters
    */
-  async getProductByPublicId(publicId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/products/${publicId}`);
-    return await parseApiResponse<any>(response);
+  async searchProducts(filters: ProductFilters): Promise<ApiResponse<Product[]>> {
+    const params = new URLSearchParams();
+    
+    if (filters.search) params.append('search', filters.search);
+    if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.status) params.append('status', filters.status);
+    if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
+    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+    
+    const response = await authenticatedFetch(`${apiUrls.products.list}?${params.toString()}`);
+    return await parseApiResponse<Product[]>(response);
   },
 
   /**
-   * Get product by barcode
+   * Get product by ID
    */
-  async getProductByBarcode(barcode: string): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams({ barcode });
-    const response = await authenticatedFetch(`/api/products?${params.toString()}`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Check product availability
-   */
-  async checkAvailability(productId: number): Promise<ApiResponse<{ isAvailable: boolean; stock: number; renting: number }>> {
-    const response = await authenticatedFetch(`/api/products/${productId}/availability`);
-    return await parseApiResponse<{ isAvailable: boolean; stock: number; renting: number }>(response);
+  async getProduct(productId: number): Promise<ApiResponse<Product>> {
+    const response = await authenticatedFetch(apiUrls.products.update(productId));
+    return await parseApiResponse<Product>(response);
   },
 
   /**
    * Create a new product
    */
-  async createProduct(productData: any): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/products', {
+  async createProduct(productData: ProductCreateInput): Promise<ApiResponse<Product>> {
+    const response = await authenticatedFetch(apiUrls.products.create, {
       method: 'POST',
       body: JSON.stringify(productData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Product>(response);
   },
 
   /**
    * Update an existing product
    */
-  async updateProduct(productId: number, productData: Partial<any>): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/products/${productId}`, {
+  async updateProduct(productId: number, productData: ProductUpdateInput): Promise<ApiResponse<Product>> {
+    const response = await authenticatedFetch(apiUrls.products.update(productId), {
       method: 'PUT',
       body: JSON.stringify(productData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Product>(response);
   },
 
   /**
    * Delete a product
    */
-  async deleteProduct(productId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/products/${productId}`, {
+  async deleteProduct(productId: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(apiUrls.products.delete(productId), {
       method: 'DELETE',
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<void>(response);
   },
 
   /**
-   * Get product statistics
+   * Get products by category
    */
-  async getProductStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/products/stats');
-    return await parseApiResponse<any>(response);
+  async getProductsByCategory(categoryId: number): Promise<ApiResponse<Product[]>> {
+    const response = await authenticatedFetch(`${apiUrls.products.list}?categoryId=${categoryId}`);
+    return await parseApiResponse<Product[]>(response);
+  },
+
+  /**
+   * Get products by outlet
+   */
+  async getProductsByOutlet(outletId: number): Promise<ApiResponse<Product[]>> {
+    const response = await authenticatedFetch(`${apiUrls.products.list}?outletId=${outletId}`);
+    return await parseApiResponse<Product[]>(response);
+  },
+
+  /**
+   * Update product stock
+   */
+  async updateProductStock(productId: number, stock: number): Promise<ApiResponse<Product>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/products/${productId}/stock`, {
+      method: 'PATCH',
+      body: JSON.stringify({ stock }),
+    });
+    return await parseApiResponse<Product>(response);
+  },
+
+  /**
+   * Bulk update products
+   */
+  async bulkUpdateProducts(updates: Array<{ id: number; data: Partial<ProductUpdateInput> }>): Promise<ApiResponse<Product[]>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/products/bulk-update`, {
+      method: 'PATCH',
+      body: JSON.stringify({ updates }),
+    });
+    return await parseApiResponse<Product[]>(response);
   }
 };
 

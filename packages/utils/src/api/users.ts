@@ -1,86 +1,63 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
-import type { AuthUser } from '@rentalshop/auth';
-import { executeWithDataRefresh } from '@rentalshop/utils';
-import type { ApiResponse } from "../common";
-
-// Define user types based on AuthUser to avoid JSX import issues
-type User = AuthUser;
-type UserCreateInput = Omit<AuthUser, 'id'> & { password: string };
-type UserUpdateInput = Partial<Omit<AuthUser, 'id'>>;
-
-/**
- * Users API Client - User Management Operations
- * 
- * This file handles all user management operations:
- * - CRUD operations (create, read, update, delete)
- * - User status management (activate, deactivate)
- * - Password management
- * - Bulk operations with automatic refresh
- * 
- * Imports shared types from client.ts to avoid duplication
- */
+import { apiUrls } from '../config/api';
+import type { ApiResponse } from '../common';
+import type { User, UserCreateInput, UserUpdateInput, UserFilters } from '@rentalshop/types';
 
 export interface UsersResponse {
   users: User[];
   total: number;
   page: number;
+  limit: number;
   totalPages: number;
 }
 
 /**
- * Users API client for authenticated user management operations
+ * Users API client for user management operations
  */
 export const usersApi = {
   /**
-   * Get all users with optional filters and pagination
+   * Get all users
    */
-  async getUsers(filters?: {
-    search?: string;
-    role?: string;
-    isActive?: boolean;
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: string;
-  }): Promise<ApiResponse<UsersResponse>> {
-    const queryParams = new URLSearchParams();
-    
-    if (filters?.search) queryParams.append('search', filters.search);
-    if (filters?.role) queryParams.append('role', filters.role);
-    if (filters?.isActive !== undefined) queryParams.append('isActive', filters.isActive.toString());
-    if (filters?.page) queryParams.append('page', filters.page.toString());
-    if (filters?.limit) queryParams.append('limit', filters.limit.toString());
-    if (filters?.sortBy) queryParams.append('sortBy', filters.sortBy);
-    if (filters?.sortOrder) queryParams.append('sortOrder', filters.sortOrder);
-    
-    // Add cache busting parameter to prevent stale data
-    queryParams.append('_t', Date.now().toString());
-    
-    console.log('🔄 getUsers called with filters:', filters);
-    console.log('📡 API endpoint:', `/api/users?${queryParams.toString()}`);
-    
-    const response = await authenticatedFetch(`/api/users?${queryParams.toString()}`);
-    console.log('📡 Raw API response:', response);
-    
-    const result = await parseApiResponse<UsersResponse>(response);
-    console.log('✅ Processed API response:', result);
-    
+  async getUsers(): Promise<ApiResponse<User[]>> {
+    const response = await authenticatedFetch(apiUrls.users.list);
+    const result = await parseApiResponse<User[]>(response);
     return result;
+  },
+
+  /**
+   * Get users with pagination
+   */
+  async getUsersPaginated(page: number = 1, limit: number = 50): Promise<ApiResponse<UsersResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.users.list}?${params.toString()}`);
+    return await parseApiResponse<UsersResponse>(response);
+  },
+
+  /**
+   * Search users with filters
+   */
+  async searchUsers(filters: UserFilters): Promise<ApiResponse<User[]>> {
+    const params = new URLSearchParams();
+    
+    if (filters.search) params.append('search', filters.search);
+    if (filters.role) params.append('role', filters.role);
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.status) params.append('status', filters.status);
+    
+    const response = await authenticatedFetch(`${apiUrls.users.list}?${params.toString()}`);
+    return await parseApiResponse<User[]>(response);
   },
 
   /**
    * Get user by ID
    */
-  async getUserById(userId: number): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`/api/users/${userId}`);
-    return await parseApiResponse<User>(response);
-  },
-
-  /**
-   * Get user by public ID (for public URLs)
-   */
-  async getUserByPublicId(publicId: number): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`/api/users/${publicId}`);
+  async getUser(userId: number): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(apiUrls.users.update(userId));
     return await parseApiResponse<User>(response);
   },
 
@@ -88,7 +65,7 @@ export const usersApi = {
    * Create a new user
    */
   async createUser(userData: UserCreateInput): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch('/api/users', {
+    const response = await authenticatedFetch(apiUrls.users.create, {
       method: 'POST',
       body: JSON.stringify(userData),
     });
@@ -97,177 +74,106 @@ export const usersApi = {
 
   /**
    * Update an existing user
-   * Note: The API expects the request body can only update users within their scope
    */
-  async updateUser(userId: number, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
-    // Include the publicId in the request body as required by the API
-    const requestBody = {
-      publicId: userId,
-      ...userData
-    };
-    
-    const response = await authenticatedFetch('/api/users', {
+  async updateUser(userId: number, userData: UserUpdateInput): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(apiUrls.users.update(userId), {
       method: 'PUT',
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(userData),
     });
     return await parseApiResponse<User>(response);
-  },
-
-  /**
-   * Update user by public ID
-   */
-  async updateUserByPublicId(publicId: number, userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
-    // Include the publicId in the request body as required by the API
-    const requestBody = {
-      publicId,
-      ...userData
-    };
-    
-    const response = await authenticatedFetch('/api/users', {
-      method: 'PUT',
-      body: JSON.stringify(requestBody),
-    });
-    return await parseApiResponse<User>(response);
-  },
-
-  /**
-   * Update a user and automatically refresh the user list
-   * This handles database consistency delays automatically
-   */
-  async updateUserAndRefresh(userId: number, userData: Partial<UserUpdateInput>, filters?: any): Promise<{
-    updated: User;
-    refreshed: UsersResponse;
-  }> {
-    console.log('🔄 updateUserAndRefresh called with:', { userId, userData, filters });
-    
-    try {
-      // Step 1: Update the user
-      console.log('📡 Step 1: Updating user...');
-      const updateResult = await this.updateUser(userId, userData);
-      console.log('✅ Update result:', updateResult);
-      
-      if (!updateResult.success || !updateResult.data) {
-        throw new Error(`Update failed: ${updateResult.error || 'Unknown error'}`);
-      }
-      
-      // Step 2: Wait a bit for database consistency
-      console.log('⏳ Step 2: Waiting 2 seconds for database consistency...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Step 3: Refresh the user list
-      console.log('📡 Step 3: Refreshing user list...');
-      const refreshResult = await this.getUsers(filters);
-      console.log('✅ Refresh result:', refreshResult);
-      
-      if (!refreshResult.success || !refreshResult.data) {
-        throw new Error(`Refresh failed: ${refreshResult.error || 'Unknown error'}`);
-      }
-      
-      const finalResult = {
-        updated: updateResult.data,
-        refreshed: refreshResult.data
-      };
-      
-      console.log('✅ Final result:', finalResult);
-      return finalResult;
-    } catch (error) {
-      console.error('❌ Error in updateUserAndRefresh:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Deactivate a user
-   */
-  async deactivateUser(userId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${userId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ action: 'deactivate' }),
-    });
-    return await parseApiResponse<{ message: string }>(response);
-  },
-
-  /**
-   * Deactivate user by public ID
-   */
-  async deactivateUserByPublicId(publicId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${publicId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ action: 'deactivate' }),
-    });
-    return await parseApiResponse<{ message: string }>(response);
-  },
-
-  /**
-   * Activate a user
-   */
-  async activateUser(userId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${userId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ action: 'activate' }),
-    });
-    return await parseApiResponse<{ message: string }>(response);
-  },
-
-  /**
-   * Activate user by public ID
-   */
-  async activateUserByPublicId(publicId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${publicId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ action: 'activate' }),
-    });
-    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
    * Delete a user
    */
-  async deleteUser(userId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${userId}`, {
+  async deleteUser(userId: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(apiUrls.users.delete(userId), {
       method: 'DELETE',
     });
-    return await parseApiResponse<{ message: string }>(response);
+    return await parseApiResponse<void>(response);
   },
 
   /**
-   * Delete user by public ID
+   * Get users by merchant
    */
-  async deleteUserByPublicId(publicId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${publicId}`, {
-      method: 'DELETE',
-    });
-    return await parseApiResponse<{ message: string }>(response);
+  async getUsersByMerchant(merchantId: number): Promise<ApiResponse<User[]>> {
+    const response = await authenticatedFetch(`${apiUrls.users.list}?merchantId=${merchantId}`);
+    return await parseApiResponse<User[]>(response);
   },
 
   /**
-   * Change user password
+   * Get users by outlet
    */
-  async changePassword(userId: number, passwordData: {
-    currentPassword?: string;
-    newPassword: string;
-    confirmPassword: string;
-  }): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${userId}/change-password`, {
+  async getUsersByOutlet(outletId: number): Promise<ApiResponse<User[]>> {
+    const response = await authenticatedFetch(`${apiUrls.users.list}?outletId=${outletId}`);
+    return await parseApiResponse<User[]>(response);
+  },
+
+  /**
+   * Get users by role
+   */
+  async getUsersByRole(role: string): Promise<ApiResponse<User[]>> {
+    const response = await authenticatedFetch(`${apiUrls.users.list}?role=${role}`);
+    return await parseApiResponse<User[]>(response);
+  },
+
+  /**
+   * Update user role
+   */
+  async updateUserRole(userId: number, role: string): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${userId}/role`, {
       method: 'PATCH',
-      body: JSON.stringify(passwordData),
+      body: JSON.stringify({ role }),
     });
-    return await parseApiResponse<{ message: string }>(response);
+    return await parseApiResponse<User>(response);
   },
 
   /**
-   * Change password by public ID
+   * Update user status
    */
-  async changePasswordByPublicId(publicId: number, passwordData: {
-    currentPassword?: string;
-    newPassword: string;
-    confirmPassword: string;
-  }): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`/api/users/${publicId}/change-password`, {
+  async updateUserStatus(userId: number, status: string): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${userId}/status`, {
       method: 'PATCH',
-      body: JSON.stringify(passwordData),
+      body: JSON.stringify({ status }),
     });
-    return await parseApiResponse<{ message: string }>(response);
+    return await parseApiResponse<User>(response);
   },
 
+  /**
+   * Assign user to outlet
+   */
+  async assignUserToOutlet(userId: number, outletId: number): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${userId}/assign-outlet`, {
+      method: 'PATCH',
+      body: JSON.stringify({ outletId }),
+    });
+    return await parseApiResponse<User>(response);
+  },
+
+  /**
+   * Get user statistics
+   */
+  async getUserStats(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/stats`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get current user profile
+   */
+  async getCurrentUser(): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/me`);
+    return await parseApiResponse<User>(response);
+  },
+
+  /**
+   * Update current user profile
+   */
+  async updateCurrentUser(userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/me`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+    return await parseApiResponse<User>(response);
+  }
 };

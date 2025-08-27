@@ -11,7 +11,8 @@ import {
   Menu, 
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Tag
 } from 'lucide-react'
 import { Button } from '@rentalshop/ui'
 
@@ -47,6 +48,7 @@ export function Navigation({
     { href: '/users', label: 'Users', icon: Users },
     { href: '/shops', label: 'Shops', icon: Store },
     { href: '/products', label: 'Products', icon: Store },
+    { href: '/categories', label: 'Categories', icon: Tag },
     { href: '/orders', label: 'Orders', icon: Store },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]

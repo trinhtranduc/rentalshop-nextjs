@@ -13,7 +13,8 @@ import {
   Search,
   Bell,
   ShoppingCart,
-  Package
+  Package,
+  Tag
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -54,6 +55,7 @@ export function TopNavigation({
     { href: '/users', label: 'Users', icon: Users },
     { href: '/shops', label: 'Shops', icon: Store },
     { href: '/products', label: 'Products', icon: Package },
+    { href: '/categories', label: 'Categories', icon: Tag },
     { href: '/orders', label: 'Orders', icon: ShoppingCart },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]

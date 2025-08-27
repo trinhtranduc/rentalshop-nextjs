@@ -1,161 +1,132 @@
-import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../common';
-import type { OrderFilters } from '@rentalshop/types';
-
-/**
- * Orders API Client - Order Management Operations
- * 
- * This file handles all order operations:
- * - Fetching orders with filters
- * - Calendar-specific order queries
- * - Order status management
- * - Order details and history
- */
+import { authenticatedFetch, parseApiResponse } from '../common';
+import { apiUrls } from '../config/api';
+import type { ApiResponse } from '../common';
+import type { Order, OrderCreateInput, OrderUpdateInput, OrderFilters } from '@rentalshop/types';
 
 export interface OrdersResponse {
-  orders: any[];
+  orders: Order[];
   total: number;
-  page?: number;
-  totalPages?: number;
-  limit?: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 /**
- * Orders API client for authenticated order operations
+ * Orders API client for order management operations
  */
 export const ordersApi = {
   /**
-   * Get orders with optional filters and pagination
+   * Get all orders
    */
-  async getOrders(filters?: OrderFilters): Promise<ApiResponse<OrdersResponse>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          if (Array.isArray(value)) {
-            // Handle array values (like status)
-            value.forEach(v => params.append(key, v));
-          } else {
-            params.append(key, value.toString());
-          }
-        }
-      });
-    }
-
-    console.log('🔍 getOrders called with filters:', filters);
-    console.log('📡 API endpoint:', `/api/orders?${params.toString()}`);
-    
-    const response = await authenticatedFetch(`/api/orders?${params.toString()}`);
-    console.log('📡 Raw API response:', response);
-    
-    const result = await parseApiResponse<OrdersResponse>(response);
-    console.log('✅ Processed API response:', result);
-    
+  async getOrders(): Promise<ApiResponse<Order[]>> {
+    const response = await authenticatedFetch(apiUrls.orders.list);
+    const result = await parseApiResponse<Order[]>(response);
     return result;
   },
 
   /**
-   * Get orders for calendar view (monthly pickup/return data)
+   * Get orders with pagination
    */
-  async getCalendarOrders(filters: {
-    startDate: string;
-    endDate: string;
-    orderType?: string;
-    status?: string | string[];
-    limit?: number;
-  }): Promise<ApiResponse<OrdersResponse>> {
+  async getOrdersPaginated(page: number = 1, limit: number = 50): Promise<ApiResponse<OrdersResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.orders.list}?${params.toString()}`);
+    return await parseApiResponse<OrdersResponse>(response);
+  },
+
+  /**
+   * Search orders with filters
+   */
+  async searchOrders(filters: OrderFilters): Promise<ApiResponse<Order[]>> {
     const params = new URLSearchParams();
     
-    // Required parameters
-    params.append('startDate', filters.startDate);
-    params.append('endDate', filters.endDate);
-    
-    // Optional parameters
+    if (filters.search) params.append('search', filters.search);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.customerId) params.append('customerId', filters.customerId.toString());
+    if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
+    if (filters.endDate) params.append('endDate', filters.endDate.toISOString());
     if (filters.orderType) params.append('orderType', filters.orderType);
-    if (filters.limit) params.append('limit', filters.limit.toString());
     
-    // Handle status array
-    if (filters.status) {
-      if (Array.isArray(filters.status)) {
-        filters.status.forEach(s => params.append('status', s));
-      } else {
-        params.append('status', filters.status);
-      }
-    }
-
-    console.log('📅 getCalendarOrders called with filters:', filters);
-    console.log('📡 API endpoint:', `/api/orders?${params.toString()}`);
-    
-    const response = await authenticatedFetch(`/api/orders?${params.toString()}`);
-    console.log('📡 Raw calendar API response:', response);
-    
-    const result = await parseApiResponse<OrdersResponse>(response);
-    console.log('✅ Processed calendar API response:', result);
-    
-    return result;
+    const response = await authenticatedFetch(`${apiUrls.orders.list}?${params.toString()}`);
+    return await parseApiResponse<Order[]>(response);
   },
 
   /**
    * Get order by ID
    */
-  async getOrderById(orderId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/orders/${orderId}`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get order by order number (e.g., "ORD-2110")
-   */
-  async getOrderByNumber(orderNumber: string): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/orders/by-number/${orderNumber}`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get order details with full information (customer, products, outlet, etc.)
-   */
-  async getOrderDetails(orderId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/orders/${orderId}?include=details`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Update an existing order
-   */
-  async updateOrder(orderId: number, orderData: any): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/orders/${orderId}`, {
-      method: 'PUT',
-      body: JSON.stringify(orderData),
-    });
-    return await parseApiResponse<any>(response);
+  async getOrder(orderId: number): Promise<ApiResponse<Order>> {
+    const response = await authenticatedFetch(apiUrls.orders.update(orderId));
+    return await parseApiResponse<Order>(response);
   },
 
   /**
    * Create a new order
    */
-  async createOrder(orderData: any): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/orders', {
+  async createOrder(orderData: OrderCreateInput): Promise<ApiResponse<Order>> {
+    const response = await authenticatedFetch(apiUrls.orders.create, {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Order>(response);
+  },
+
+  /**
+   * Update an existing order
+   */
+  async updateOrder(orderId: number, orderData: OrderUpdateInput): Promise<ApiResponse<Order>> {
+    const response = await authenticatedFetch(apiUrls.orders.update(orderId), {
+      method: 'PUT',
+      body: JSON.stringify(orderData),
+    });
+    return await parseApiResponse<Order>(response);
   },
 
   /**
    * Delete an order
    */
-  async deleteOrder(orderId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/orders/${orderId}`, {
+  async deleteOrder(orderId: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(apiUrls.orders.delete(orderId), {
       method: 'DELETE',
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<void>(response);
+  },
+
+  /**
+   * Get orders by customer
+   */
+  async getOrdersByCustomer(customerId: number): Promise<ApiResponse<Order[]>> {
+    const response = await authenticatedFetch(`${apiUrls.orders.list}?customerId=${customerId}`);
+    return await parseApiResponse<Order[]>(response);
+  },
+
+  /**
+   * Get orders by outlet
+   */
+  async getOrdersByOutlet(outletId: number): Promise<ApiResponse<Order[]>> {
+    const response = await authenticatedFetch(`${apiUrls.orders.list}?outletId=${outletId}`);
+    return await parseApiResponse<Order[]>(response);
+  },
+
+  /**
+   * Update order status
+   */
+  async updateOrderStatus(orderId: number, status: string): Promise<ApiResponse<Order>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+    return await parseApiResponse<Order>(response);
   },
 
   /**
    * Get order statistics
    */
   async getOrderStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/orders/stats');
+    const response = await authenticatedFetch(`${apiUrls.base}/api/orders/stats`);
     return await parseApiResponse<any>(response);
   }
 };

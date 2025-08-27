@@ -1,144 +1,108 @@
-import { authenticatedFetch, parseApiResponse, createApiUrl, isAuthenticated } from '../common';
+import { authenticatedFetch, parseApiResponse } from '../common';
+import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../common';
+import type { User, LoginCredentials, RegisterData } from '@rentalshop/types';
 
-// ============================================================================
-// AUTH STORAGE (Browser-only)
-// ============================================================================
-
-export interface StoredUser {
-  id: number;
-  email: string;
-  name?: string;
-  role?: string;
-  [key: string]: any;
-}
-
-export const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('authToken');
-};
-
-export const getStoredUser = (): StoredUser | null => {
-  if (typeof window === 'undefined') return null;
-  const userStr = localStorage.getItem('user');
-  return userStr ? (JSON.parse(userStr) as StoredUser) : null;
-};
-
-export const storeAuthData = (token: string, user: StoredUser): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('authToken', token);
-  localStorage.setItem('user', JSON.stringify(user));
-};
-
-export const clearAuthData = (): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
-};
-
-// ============================================================================
-// AUTH API FUNCTIONS
-// ============================================================================
-
+// Local type definitions for missing types
 export interface AuthResponse {
-  success: boolean;
-  data: {
-    token: string;
-    user: StoredUser;
-  };
-  message?: string;
+  token: string;
+  user: User;
 }
 
-export const handleApiResponse = async (response: Response) => {
-  if (response.status === 401) {
-    clearAuthData();
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-    throw new Error('Authentication required');
-  }
-
-  // Parse the response data first
-  const data = await response.json().catch(() => ({}));
-  
-  if (!response.ok) {
-    // For error responses, throw an error with the API's error message
-    const errorMessage = data.error || data.message || `HTTP error! status: ${response.status}`;
-    throw new Error(errorMessage);
-  }
-
-  return data;
-};
-
-// isAuthenticated is now exported from ../common to avoid conflicts
-
-export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password }),
-  });
-
-  const data = await response.json();
-
-  if (data.success && data.data?.token) {
-    storeAuthData(data.data.token, data.data.user);
-  }
-
-  return data;
-};
-
-export const logoutUser = (): void => {
-  clearAuthData();
-  if (typeof window !== 'undefined') {
-    window.location.href = '/login';
-  }
-};
-
-export const verifyTokenWithServer = async (): Promise<boolean> => {
-  try {
-    const token = getAuthToken();
-    if (!token) return false;
-
-    const response = await fetch(createApiUrl('/api/auth/verify'), {
-      method: 'GET',
-      headers: { 
-        'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json' 
-      }
+/**
+ * Authentication API client
+ */
+export const authApi = {
+  /**
+   * Login user
+   */
+  async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
+    const response = await fetch(apiUrls.auth.login, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
     });
+    return await parseApiResponse<AuthResponse>(response);
+  },
 
-    if (response.status === 401) {
-      clearAuthData();
-      return false;
-    }
+  /**
+   * Register new user
+   */
+  async register(userData: RegisterData): Promise<ApiResponse<AuthResponse>> {
+    const response = await fetch(apiUrls.auth.register, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+    return await parseApiResponse<AuthResponse>(response);
+  },
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data?.success && data?.data?.user) {
-        const existingToken = getAuthToken();
-        if (existingToken) {
-          storeAuthData(existingToken, data.data.user);
-        }
-      }
-      return data.success === true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error verifying token:', error);
-    return isAuthenticated();
-  }
-};
+  /**
+   * Verify authentication token
+   */
+  async verifyToken(): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(apiUrls.auth.verify);
+    return await parseApiResponse<User>(response);
+  },
 
-export const getCurrentUser = async (): Promise<StoredUser | null> => {
-  try {
-    const response = await authenticatedFetch('/api/auth/me');
-    const data = await handleApiResponse(response);
-    return data.success ? data.data : null;
-  } catch (error) {
-    console.error('Failed to get current user:', error);
-    return null;
+  /**
+   * Refresh authentication token
+   */
+  async refreshToken(): Promise<ApiResponse<{ token: string }>> {
+    const response = await authenticatedFetch(apiUrls.auth.refresh);
+    return await parseApiResponse<{ token: string }>(response);
+  },
+
+  /**
+   * Logout user
+   */
+  async logout(): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(apiUrls.auth.logout, {
+      method: 'POST',
+    });
+    return await parseApiResponse<void>(response);
+  },
+
+  /**
+   * Request password reset
+   */
+  async requestPasswordReset(email: string): Promise<ApiResponse<void>> {
+    const response = await fetch(`${apiUrls.base}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    return await parseApiResponse<void>(response);
+  },
+
+  /**
+   * Reset password with token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<ApiResponse<void>> {
+    const response = await fetch(`${apiUrls.base}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token, newPassword }),
+    });
+    return await parseApiResponse<void>(response);
+  },
+
+  /**
+   * Change password (authenticated)
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/auth/change-password`, {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    return await parseApiResponse<void>(response);
   }
 };

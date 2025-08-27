@@ -1,10 +1,11 @@
 // ============================================================================
-// API CONFIGURATION
+// COMPREHENSIVE API CONFIGURATION
 // ============================================================================
 
 import { Environment } from './environment';
 
 export interface ApiConfig {
+  // Server-side configuration
   database: {
     url: string;
     type: 'sqlite' | 'postgresql';
@@ -37,22 +38,93 @@ export interface ApiConfig {
   };
 }
 
-function getApiEnvironment(): Environment {
-  // Prefer explicit app-level env when provided
-  const appEnv = (process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV) as Environment | undefined;
-  if (appEnv === 'local' || appEnv === 'development' || appEnv === 'production') {
-    return appEnv;
+// Client-side API URL configuration
+export interface ApiUrls {
+  base: string;
+  auth: {
+    login: string;
+    register: string;
+    verify: string;
+    refresh: string;
+    logout: string;
+  };
+  categories: {
+    list: string;
+    create: string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+  };
+  products: {
+    list: string;
+    create: string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+  };
+  orders: {
+    list: string;
+    create: string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+  };
+  customers: {
+    list: string;
+    create: string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+  };
+  users: {
+    list: string;
+    create: string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+  };
+}
+
+/**
+ * Get the current environment
+ */
+function getEnvironment(): Environment {
+  // Check for explicit environment variable first
+  const explicitEnv = process.env.NEXT_PUBLIC_APP_ENV || process.env.APP_ENV;
+  if (explicitEnv === 'local' || explicitEnv === 'development' || explicitEnv === 'production') {
+    return explicitEnv;
   }
 
   // Fallback to NODE_ENV
-  const nodeEnv = process.env.NODE_ENV; // Typed as 'development' | 'production' | 'test'
-  if (nodeEnv === 'production') return 'production';
-  // Treat both 'development' and 'test' as development by default
-  return 'development';
+  if (process.env.NODE_ENV === 'production') {
+    return 'production';
+  }
+
+  // Default to local for development
+  return 'local';
 }
 
+/**
+ * Get API base URL for current environment
+ */
+function getApiBaseUrlInternal(): string {
+  const env = getEnvironment();
+  
+  switch (env) {
+    case 'local':
+      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    
+    case 'development':
+      return process.env.NEXT_PUBLIC_API_URL || 'https://api.dev.rentalshop.com';
+    
+    case 'production':
+      return process.env.NEXT_PUBLIC_API_URL || 'https://api.rentalshop.com';
+    
+    default:
+      return 'http://localhost:3002';
+  }
+}
+
+/**
+ * Get server-side API configuration
+ */
 function getApiConfig(): ApiConfig {
-  const environment = getApiEnvironment();
+  const environment = getEnvironment();
   
   // Base configuration
   const baseConfig: Partial<ApiConfig> = {
@@ -199,19 +271,84 @@ function getApiConfig(): ApiConfig {
   }
 }
 
+/**
+ * Create client-side API URLs configuration
+ */
+function createApiUrls(): ApiUrls {
+  const base = getApiBaseUrlInternal();
+  
+  return {
+    base,
+    auth: {
+      login: `${base}/api/auth/login`,
+      register: `${base}/api/auth/register`,
+      verify: `${base}/api/auth/verify`,
+      refresh: `${base}/api/auth/refresh`,
+      logout: `${base}/api/auth/logout`,
+    },
+    categories: {
+      list: `${base}/api/categories`,
+      create: `${base}/api/categories`,
+      update: (id: number) => `${base}/api/categories/${id}`,
+      delete: (id: number) => `${base}/api/categories/${id}`,
+    },
+    products: {
+      list: `${base}/api/products`,
+      create: `${base}/api/products`,
+      update: (id: number) => `${base}/api/products/${id}`,
+      delete: (id: number) => `${base}/api/products/${id}`,
+    },
+    orders: {
+      list: `${base}/api/orders`,
+      create: `${base}/api/orders`,
+      update: (id: number) => `${base}/api/orders/${id}`,
+      delete: (id: number) => `${base}/api/orders/${id}`,
+    },
+    customers: {
+      list: `${base}/api/customers`,
+      create: `${base}/api/customers`,
+      update: (id: number) => `${base}/api/customers/${id}`,
+      delete: (id: number) => `${base}/api/customers/${id}`,
+    },
+    users: {
+      list: `${base}/api/users`,
+      create: `${base}/api/users`,
+      update: (id: number) => `${base}/api/users/${id}`,
+      delete: (id: number) => `${base}/api/users/${id}`,
+    },
+  };
+}
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+// Server-side configuration (for API server)
 export const apiConfig = getApiConfig();
-export const apiEnvironment = getApiEnvironment();
+export const apiEnvironment = getEnvironment();
 
-// Helper functions
-export const isApiLocal = () => apiEnvironment === 'local';
-export const isApiDevelopment = () => apiEnvironment === 'development';
-export const isApiProduction = () => apiEnvironment === 'production';
+// Client-side configuration (for client apps)
+export const apiUrls = createApiUrls();
 
+// Environment helpers
+export const getCurrentEnvironment = (): Environment => getEnvironment();
+export const isLocal = (): boolean => getEnvironment() === 'local';
+export const isDevelopment = (): boolean => getEnvironment() === 'development';
+export const isProduction = (): boolean => getEnvironment() === 'production';
+
+// API base URL helpers
+export const getApiBaseUrl = (): string => getApiBaseUrlInternal();
+
+// Helper function to build custom API endpoints
+export const buildApiUrl = (endpoint: string): string => {
+  const base = getApiBaseUrl();
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  return `${base}/${cleanEndpoint}`;
+};
+
+// Legacy exports for backward compatibility
 export const getApiDatabaseUrl = () => apiConfig.database.url;
 export const getApiJwtSecret = () => apiConfig.auth.jwtSecret;
 export const getApiCorsOrigins = () => apiConfig.cors.origins;
-
-// Add missing getApiUrl function
-export const getApiUrl = () => apiConfig.urls.api;
 
 

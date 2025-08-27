@@ -10,7 +10,8 @@ import {
   Search,
   Bell,
   ShoppingCart,
-  Package
+  Package,
+  Tag
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'

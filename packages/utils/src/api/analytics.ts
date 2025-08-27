@@ -1,244 +1,172 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
-import type { ApiResponse } from "../common";
+import { apiUrls } from '../config/api';
+import type { ApiResponse } from '../common';
 
-/**
- * Analytics API Client - Analytics and Reporting Operations
- * 
- * This file handles all analytics operations:
- * - Dashboard statistics
- * - Sales and revenue analytics
- * - Order analytics
- * - Customer analytics
- * - Product analytics
- */
-
-export interface DashboardStats {
-  totalOrders: number;
-  totalRevenue: number;
-  totalCustomers: number;
-  totalProducts: number;
-  activeOrders: number;
-  pendingOrders: number;
-  completedOrders: number;
+export interface AnalyticsFilters {
+  startDate?: string;
+  endDate?: string;
+  outletId?: number;
+  merchantId?: number;
+  groupBy?: 'day' | 'week' | 'month' | 'year';
 }
 
-export interface RevenueAnalytics {
-  period: string;
+export interface RevenueData {
+  date: string;
   revenue: number;
   orders: number;
   averageOrderValue: number;
 }
 
-export interface OrderAnalytics {
-  period: string;
-  orders: number;
-  revenue: number;
-  status: string;
-}
-
-export interface CustomerAnalytics {
-  period: string;
-  newCustomers: number;
-  returningCustomers: number;
-  totalCustomers: number;
-}
-
 export interface ProductAnalytics {
-  period: string;
   productId: number;
   productName: string;
-  orders: number;
-  revenue: number;
+  totalRentals: number;
+  totalRevenue: number;
+  averageRentalDuration: number;
   popularity: number;
 }
 
+export interface CustomerAnalytics {
+  customerId: number;
+  customerName: string;
+  totalOrders: number;
+  totalSpent: number;
+  averageOrderValue: number;
+  lastOrderDate: string;
+}
+
 /**
- * Analytics API client for authenticated analytics operations
+ * Analytics API client for business intelligence and reporting
  */
 export const analyticsApi = {
   /**
-   * Get dashboard statistics
-   */
-  async getDashboardStats(filters?: {
-    startDate?: string;
-    endDate?: string;
-    outletId?: number;
-    shopId?: number;
-  }): Promise<ApiResponse<DashboardStats>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    console.log('📊 getDashboardStats called with filters:', filters);
-    console.log('📡 API endpoint:', `/api/analytics/dashboard?${params.toString()}`);
-    
-    const response = await authenticatedFetch(`/api/analytics/dashboard?${params.toString()}`);
-    console.log('📡 Raw API response:', response);
-    
-    const result = await parseApiResponse<DashboardStats>(response);
-    console.log('✅ Processed API response:', result);
-    
-    return result;
-  },
-
-  /**
    * Get revenue analytics
    */
-  async getRevenueAnalytics(filters: {
-    startDate: string;
-    endDate: string;
-    period: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    outletId?: number;
-    shopId?: number;
-  }): Promise<ApiResponse<RevenueAnalytics[]>> {
+  async getRevenueAnalytics(filters: AnalyticsFilters): Promise<ApiResponse<RevenueData[]>> {
     const params = new URLSearchParams();
     
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.append(key, value.toString());
-      }
-    });
-
-    const response = await authenticatedFetch(`/api/analytics/revenue?${params.toString()}`);
-    return await parseApiResponse<RevenueAnalytics[]>(response);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.groupBy) params.append('groupBy', filters.groupBy);
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/revenue?${params.toString()}`);
+    return await parseApiResponse<RevenueData[]>(response);
   },
 
   /**
    * Get order analytics
    */
-  async getOrderAnalytics(filters: {
-    startDate: string;
-    endDate: string;
-    period: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    status?: string;
-    outletId?: number;
-    shopId?: number;
-  }): Promise<ApiResponse<OrderAnalytics[]>> {
+  async getOrderAnalytics(filters: AnalyticsFilters): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.append(key, value.toString());
-      }
-    });
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.groupBy) params.append('groupBy', filters.groupBy);
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/orders?${params.toString()}`);
+    return await parseApiResponse<any>(response);
+  },
 
-    const response = await authenticatedFetch(`/api/analytics/orders?${params.toString()}`);
-    return await parseApiResponse<OrderAnalytics[]>(response);
+  /**
+   * Get product analytics
+   */
+  async getProductAnalytics(filters: AnalyticsFilters): Promise<ApiResponse<ProductAnalytics[]>> {
+    const params = new URLSearchParams();
+    
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/products?${params.toString()}`);
+    return await parseApiResponse<ProductAnalytics[]>(response);
   },
 
   /**
    * Get customer analytics
    */
-  async getCustomerAnalytics(filters: {
-    startDate: string;
-    endDate: string;
-    period: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    outletId?: number;
-    shopId?: number;
-  }): Promise<ApiResponse<CustomerAnalytics[]>> {
+  async getCustomerAnalytics(filters: AnalyticsFilters): Promise<ApiResponse<CustomerAnalytics[]>> {
     const params = new URLSearchParams();
     
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.append(key, value.toString());
-      }
-    });
-
-    const response = await authenticatedFetch(`/api/analytics/customers?${params.toString()}`);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/customers?${params.toString()}`);
     return await parseApiResponse<CustomerAnalytics[]>(response);
   },
 
   /**
-   * Get top products analytics
+   * Get inventory analytics
    */
-  async getTopProducts(filters: {
-    startDate: string;
-    endDate: string;
-    limit?: number;
-    outletId?: number;
-    shopId?: number;
-  }): Promise<ApiResponse<ProductAnalytics[]>> {
+  async getInventoryAnalytics(filters: AnalyticsFilters): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.append(key, value.toString());
-      }
-    });
-
-    const response = await authenticatedFetch(`/api/analytics/top-products?${params.toString()}`);
-    return await parseApiResponse<ProductAnalytics[]>(response);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/inventory?${params.toString()}`);
+    return await parseApiResponse<any>(response);
   },
 
   /**
-   * Get top customers analytics
+   * Get dashboard summary
    */
-  async getTopCustomers(filters: {
-    startDate: string;
-    endDate: string;
-    limit?: number;
-    outletId?: number;
-    shopId?: number;
-  }): Promise<ApiResponse<any[]>> {
-    const params = new URLSearchParams();
-    
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.append(key, value.toString());
-      }
-    });
-
-    const response = await authenticatedFetch(`/api/analytics/top-customers?${params.toString()}`);
-    return await parseApiResponse<any[]>(response);
+  async getDashboardSummary(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/dashboard`);
+    return await parseApiResponse<any>(response);
   },
 
   /**
-   * Get recent orders analytics
+   * Get outlet performance comparison
    */
-  async getRecentOrders(filters: {
-    limit?: number;
-    outletId?: number;
-    shopId?: number;
-  }): Promise<ApiResponse<any[]>> {
+  async getOutletPerformance(filters: AnalyticsFilters): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await authenticatedFetch(`/api/analytics/recent-orders?${params.toString()}`);
-    return await parseApiResponse<any[]>(response);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/outlet-performance?${params.toString()}`);
+    return await parseApiResponse<any>(response);
   },
 
   /**
-   * Get income analytics
+   * Get seasonal trends
    */
-  async getIncomeAnalytics(filters: {
-    startDate: string;
-    endDate: string;
-    period: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    outletId?: number;
-    shopId?: number;
-  }): Promise<ApiResponse<any[]>> {
+  async getSeasonalTrends(filters: AnalyticsFilters): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.append(key, value.toString());
-      }
-    });
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/seasonal-trends?${params.toString()}`);
+    return await parseApiResponse<any>(response);
+  },
 
-    const response = await authenticatedFetch(`/api/analytics/income?${params.toString()}`);
-    return await parseApiResponse<any[]>(response);
+  /**
+   * Export analytics data
+   */
+  async exportAnalytics(filters: AnalyticsFilters, format: 'csv' | 'excel' = 'csv'): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.groupBy) params.append('groupBy', filters.groupBy);
+    params.append('format', format);
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/export?${params.toString()}`);
+    return await parseApiResponse<any>(response);
   }
 };

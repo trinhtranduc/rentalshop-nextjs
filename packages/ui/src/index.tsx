@@ -17,6 +17,7 @@ export * from './components/features/Customers';
 export * from './components/features/Orders';
 export * from './components/features/Calendars';
 export * from './components/features/Users';
+export * from './components/features/Categories';
 // TODO: Uncomment when component files are created
 export * from './components/features/OrderDetail';
 export * from './components/features/Shops';

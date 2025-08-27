@@ -35,8 +35,8 @@ export const verifyTokenWithServer = async (): Promise<boolean> => {
     const token = (await import('@rentalshop/utils')).getAuthToken();
     if (!token) return false;
 
-    const { createApiUrl } = await import('@rentalshop/utils');
-    const response = await fetch(createApiUrl('/api/auth/verify'), {
+    const { apiUrls } = await import('@rentalshop/utils');
+    const response = await fetch(apiUrls.auth.verify, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
@@ -75,8 +75,11 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
   try {
     console.log('🔐 loginUser called with:', { email });
     
-    console.log('🌐 Making request to API: /api/auth/login');
-    const response = await fetch(`/api/auth/login`, {
+    // Use centralized API URL configuration
+    const { apiUrls } = await import('@rentalshop/utils');
+    console.log('🌐 Making request to API:', apiUrls.auth.login);
+    
+    const response = await fetch(apiUrls.auth.login, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

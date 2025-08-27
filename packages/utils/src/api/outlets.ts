@@ -1,42 +1,14 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
+import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../common';
-
-export interface Outlet {
-  id: number;
-  name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-  phone?: string;
-  email?: string;
-  isActive: boolean;
-  merchantId: number;
-  merchant?: {
-    id: number;
-    name: string;
-  };
-}
+import type { Outlet, OutletCreateInput, OutletUpdateInput } from '@rentalshop/types';
 
 export interface OutletsResponse {
   outlets: Outlet[];
   total: number;
-  page?: number;
-  totalPages?: number;
-  limit?: number;
-}
-
-export interface OutletFilters {
-  search?: string;
-  merchantId?: number;
-  city?: string;
-  state?: string;
-  isActive?: boolean;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 /**
@@ -44,45 +16,40 @@ export interface OutletFilters {
  */
 export const outletsApi = {
   /**
-   * Get all outlets with optional filters and pagination
+   * Get all outlets
    */
-  async getOutlets(filters?: OutletFilters): Promise<ApiResponse<OutletsResponse>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
+  async getOutlets(): Promise<ApiResponse<Outlet[]>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets`);
+    const result = await parseApiResponse<Outlet[]>(response);
+    return result;
+  },
 
-    const response = await authenticatedFetch(`/api/outlets?${params.toString()}`);
+  /**
+   * Get outlets with pagination
+   */
+  async getOutletsPaginated(page: number = 1, limit: number = 50): Promise<ApiResponse<OutletsResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?${params.toString()}`);
     return await parseApiResponse<OutletsResponse>(response);
   },
 
   /**
    * Get outlet by ID
    */
-  async getOutletById(outletId: number): Promise<ApiResponse<Outlet>> {
-    const response = await authenticatedFetch(`/api/outlets/${outletId}`);
+  async getOutlet(outletId: number): Promise<ApiResponse<Outlet>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets/${outletId}`);
     return await parseApiResponse<Outlet>(response);
-  },
-
-  /**
-   * Get outlets by merchant ID
-   */
-  async getOutletsByMerchant(merchantId: number): Promise<ApiResponse<Outlet[]>> {
-    const response = await authenticatedFetch(`/api/outlets?merchantId=${merchantId}`);
-    const result = await parseApiResponse<Outlet[]>(response);
-    return result;
   },
 
   /**
    * Create a new outlet
    */
-  async createOutlet(outletData: Partial<Outlet>): Promise<ApiResponse<Outlet>> {
-    const response = await authenticatedFetch('/api/outlets', {
+  async createOutlet(outletData: OutletCreateInput): Promise<ApiResponse<Outlet>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets`, {
       method: 'POST',
       body: JSON.stringify(outletData),
     });
@@ -92,8 +59,8 @@ export const outletsApi = {
   /**
    * Update an existing outlet
    */
-  async updateOutlet(outletId: number, outletData: Partial<Outlet>): Promise<ApiResponse<Outlet>> {
-    const response = await authenticatedFetch(`/api/outlets/${outletId}`, {
+  async updateOutlet(outletId: number, outletData: OutletUpdateInput): Promise<ApiResponse<Outlet>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets/${outletId}`, {
       method: 'PUT',
       body: JSON.stringify(outletData),
     });
@@ -103,19 +70,34 @@ export const outletsApi = {
   /**
    * Delete an outlet
    */
-  async deleteOutlet(outletId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/outlets/${outletId}`, {
+  async deleteOutlet(outletId: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets/${outletId}`, {
       method: 'DELETE',
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<void>(response);
+  },
+
+  /**
+   * Get outlets by shop
+   */
+  async getOutletsByShop(shopId: number): Promise<ApiResponse<Outlet[]>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?shopId=${shopId}`);
+    return await parseApiResponse<Outlet[]>(response);
+  },
+
+  /**
+   * Get outlets by merchant
+   */
+  async getOutletsByMerchant(merchantId: number): Promise<ApiResponse<Outlet[]>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?merchantId=${merchantId}`);
+    return await parseApiResponse<Outlet[]>(response);
   },
 
   /**
    * Get outlet statistics
    */
-  async getOutletStats(outletId?: number): Promise<ApiResponse<any>> {
-    const endpoint = outletId ? `/api/outlets/${outletId}/stats` : '/api/outlets/stats';
-    const response = await authenticatedFetch(endpoint);
+  async getOutletStats(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets/stats`);
     return await parseApiResponse<any>(response);
   }
 };

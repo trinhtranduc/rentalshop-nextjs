@@ -1,23 +1,24 @@
-// Core utilities
-export * from './common';
-export * from './date';
-export * from './validation';
+// ============================================================================
+// UTILS PACKAGE EXPORTS
+// ============================================================================
 
-// Public ID utilities
-export * from './publicId';
+// API utilities
+export * from './api';
+
+// Common utilities
+export * from './common';
 
 // Configuration
 export * from './config';
 
-// Domain-specific API clients (exported separately to avoid circular dependency)
-export * from './api/auth';
-export * from './api/products';
-export * from './api/customers';
-export * from './api/orders';
-export * from './api/outlets';
-export * from './api/analytics';
-export * from './api/categories';
-export * from './api/notifications';
-export * from './api/profile';
-export * from './api/shops';
-export * from './api/users'; 
+// Date utilities
+export * from './date';
+
+// Validation utilities
+export * from './validation';
+
+// Error handling
+export * from './errors';
+
+// Public ID utilities
+export * from './publicId'; 

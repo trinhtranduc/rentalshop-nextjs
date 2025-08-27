@@ -177,7 +177,7 @@ export interface AppSuccessResponse<T = any> {
   message?: string;
 }
 
-export type ApiResponse<T = any> = AppSuccessResponse<T> | AppErrorResponse;
+// ApiResponse moved to common.ts to avoid conflicts
 
 // ============================================================================
 // ERROR CLASSES
@@ -360,34 +360,7 @@ export const normalizeError = (error: unknown): AppErrorResponse => {
   };
 };
 
-/**
- * Handle API errors consistently
- */
-export const handleApiError = (error: unknown) => {
-  console.error('API Error:', error);
-  
-  if (error instanceof AppError) {
-    return error.toResponse();
-  }
-
-  if (error instanceof Error && error.name === 'ZodError') {
-    return {
-      success: false,
-      error: 'Validation error',
-      code: 'VALIDATION_ERROR',
-      details: error.message,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  return {
-    success: false,
-    error: 'Internal server error',
-    code: 'INTERNAL_SERVER_ERROR',
-    details: error instanceof Error ? error.message : 'Unknown error',
-    timestamp: new Date().toISOString(),
-  };
-};
+// handleApiError moved to common.ts to avoid conflicts
 
 // ============================================================================
 // HTTP STATUS CODE MAPPING
