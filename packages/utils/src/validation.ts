@@ -44,7 +44,6 @@ export const productUpdateSchema = z.object({
 
 export const productsQuerySchema = z.object({
   search: z.string().optional(),
-  outletId: z.coerce.number().int().positive().optional(), // Changed from string to number
   categoryId: z.coerce.number().int().positive().optional(), // Changed from string to number
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -263,7 +262,7 @@ export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 // Outlets validation schemas
 // ============================================================================
 export const outletsQuerySchema = z.object({
-  merchantId: z.string().optional(),
+  merchantId: z.coerce.number().int().positive().optional(), // Changed from string to number
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;
     if (v === undefined) return undefined;
@@ -274,4 +273,21 @@ export const outletsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 
+export const outletCreateSchema = z.object({
+  name: z.string().min(1, 'Outlet name is required'),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export const outletUpdateSchema = z.object({
+  name: z.string().min(1, 'Outlet name is required').optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  description: z.string().optional(),
+  isActive: z.boolean().optional(),
+});
+
 export type OutletsQuery = z.infer<typeof outletsQuerySchema>;
+export type OutletCreateInput = z.infer<typeof outletCreateSchema>;
+export type OutletUpdateInput = z.infer<typeof outletUpdateSchema>;

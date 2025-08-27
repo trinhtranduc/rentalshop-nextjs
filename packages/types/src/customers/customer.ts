@@ -80,6 +80,8 @@ export interface CustomerFilters {
   country?: string;
   idType?: 'passport' | 'drivers_license' | 'national_id' | 'other';
   isActive?: boolean;
+  phone?: string;      // Added missing phone property
+  email?: string;      // Added missing email property
   // Additional filter options for UI components
   status?: 'active' | 'inactive' | 'blocked';
   sortBy?: string;

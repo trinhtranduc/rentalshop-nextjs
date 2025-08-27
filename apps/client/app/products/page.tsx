@@ -18,14 +18,13 @@ import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 
 
-// Import types from the Products feature
+// Import types from the shared packages
 import { 
-  ProductData, 
-  ProductFilters as ProductFiltersType,
-  ProductWithDetails,
-  Category,
-  Outlet
-} from '../../../../packages/ui/src/components/features/Products/types';
+  Product,
+  ProductWithStock,
+  ProductFilters,
+  Category
+} from '@rentalshop/types';
 
 // Extend the Product type for this page
 interface ExtendedProduct {
@@ -57,6 +56,31 @@ interface ExtendedProduct {
   }>;
 }
 
+// Local interface for page-specific data structure
+interface ProductPageData {
+  products: Array<{
+    id: string;
+    name: string;
+    description: string;
+    barcode?: string;
+    category: string;
+    rentPrice: number;
+    deposit: number;
+    stock: number;
+    renting: number;
+    available: number;
+    outletId: string;
+    outletName: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  limit: number;
+}
+
 export default function ProductsPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -72,10 +96,9 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   
   // Initialize filters
-  const [filters, setFilters] = useState<ProductFiltersType>({
+  const [filters, setFilters] = useState<ProductPageFilters>({
     search: '',
     category: 'all',
-    outlet: 'all',
     status: 'all',
     inStock: false,
     sortBy: 'name',
@@ -103,7 +126,6 @@ export default function ProductsPage() {
         limit: '10',
         ...(searchQuery && { search: searchQuery }),
         ...(filters.category && { category: filters.category }),
-        ...(filters.outlet && { outlet: filters.outlet }),
         ...(filters.status && { status: filters.status }),
         ...(filters.inStock && { inStock: 'true' }),
         sortBy: filters.sortBy,
@@ -153,7 +175,7 @@ export default function ProductsPage() {
         setIsInitialLoad(false);
       }
     }
-  }, [currentPage, searchQuery, filters.category, filters.outlet, filters.status, filters.inStock, filters.sortBy, filters.sortOrder, setProducts, setTotalProducts, setTotalPages, setLoading, setIsSearching, isInitialLoad, hasInitializedRef]);
+  }, [currentPage, searchQuery, filters.category, filters.status, filters.inStock, filters.sortBy, filters.sortOrder, setProducts, setTotalProducts, setTotalPages, setLoading, setIsSearching, isInitialLoad, hasInitializedRef]);
 
 
 
@@ -169,7 +191,7 @@ export default function ProductsPage() {
     if (hasInitializedRef.current) {
       fetchProducts();
     }
-  }, [searchQuery, currentPage, filters.category, filters.outlet, filters.status, filters.inStock, filters.sortBy, filters.sortOrder]); // Remove fetchProducts dependency
+  }, [searchQuery, currentPage, filters.category, filters.status, filters.inStock, filters.sortBy, filters.sortOrder]); // Remove fetchProducts dependency
 
   // Separate handler for search changes - only updates search state
   const handleSearchChange = useCallback((searchValue: string) => {
@@ -178,10 +200,10 @@ export default function ProductsPage() {
   }, []);
 
   // Handler for other filter changes - only reloads table data
-  const handleFiltersChange = useCallback((newFilters: ProductFiltersType) => {
+  const handleFiltersChange = useCallback((newFilters: ProductPageFilters) => {
     // Check if the filters actually changed to prevent unnecessary updates
     const hasChanged = Object.keys(newFilters).some(key => 
-      newFilters[key as keyof ProductFiltersType] !== filters[key as keyof ProductFiltersType]
+      newFilters[key as keyof ProductPageFilters] !== filters[key as keyof ProductPageFilters]
     );
     
     if (hasChanged) {
@@ -195,7 +217,6 @@ export default function ProductsPage() {
     setFilters({
       search: '',
       category: 'all',
-      outlet: 'all',
       status: 'all',
       inStock: false,
       sortBy: 'name',
@@ -279,7 +300,7 @@ export default function ProductsPage() {
 
 
   // Transform data for the Products component - memoized to prevent unnecessary re-renders
-  const productData: ProductData = useMemo(() => ({
+  const productData: ProductWithStock[] = useMemo(() => ({
     products: products.map(product => ({
       id: product.id.toString(), // Use the ID from the API (now public ID)
       name: product.name,

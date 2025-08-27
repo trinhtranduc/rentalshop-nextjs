@@ -28,6 +28,9 @@ export const loginUserClient = authApi.login;
 export const logoutUserClient = authApi.logout;
 export const getCurrentUserClient = getCurrentUser;
 
+// Export types
+export type { AuthResponse } from '@rentalshop/utils';
+
 export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
   const { isAuthenticated } = await import('@rentalshop/utils');
   if (!isAuthenticated()) return false;

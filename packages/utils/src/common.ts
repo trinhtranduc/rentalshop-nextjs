@@ -100,7 +100,7 @@ export const createApiUrl = (endpoint: string): string => {
   if (cleanEndpoint.startsWith('api/')) {
     // Use centralized API URL configuration
     try {
-      const { apiUrls } = require('./config/api-urls');
+      const { apiUrls } = require('./config/api');
       return `${apiUrls.base}/${cleanEndpoint}`;
     } catch {
       // Fallback to environment variable if centralized config not available

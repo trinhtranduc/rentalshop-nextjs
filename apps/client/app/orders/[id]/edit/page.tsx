@@ -42,24 +42,25 @@ export default function EditOrderPage() {
   const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
   const [merchantId, setMerchantId] = useState<string>('');
 
-  const orderNumber = params.orderNumber as string;
+  const orderId = params.id as string;
   
-  // Extract numeric part from order number (e.g., "2110" from "ORD-2110")
-  const numericOrderNumber = orderNumber.replace(/^ORD-/, '');
+  // Extract numeric part from order ID (e.g., "123" from "123" or "ORD-123")
+  // Add null check to prevent error when orderId is undefined during initial render
+  const numericOrderId = orderId ? orderId.replace(/^ORD-/, '') : '';
 
   useEffect(() => {
-    if (!orderNumber) return;
+    if (!orderId || !numericOrderId) return;
 
     const fetchOrderDetails = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderNumber}`);
+        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderId}`);
 
-        if (result.success) {
+        if (result.success && result.data) {
           console.log('Order data received:', result.data);
-          setOrder(result.data);
+          setOrder(result.data as OrderDetailData);
           
           // Extract merchant ID from order
           let foundMerchantId = null;
@@ -75,7 +76,7 @@ export default function EditOrderPage() {
           }
           
           if (foundMerchantId) {
-            setMerchantId(foundMerchantId);
+            setMerchantId(foundMerchantId.toString());
           } else {
             console.error('No merchantId found in order data');
             console.log('Order structure:', JSON.stringify(result.data, null, 2));
@@ -83,7 +84,7 @@ export default function EditOrderPage() {
             // Fallback to user's merchant ID
             if (user?.merchant?.id) {
               console.log('Using fallback merchant ID from user context:', user.merchant.id);
-              setMerchantId(user.merchant.id);
+              setMerchantId(user.merchant.id.toString());
             } else {
               console.error('No merchant ID available from user context either');
             }
@@ -100,7 +101,7 @@ export default function EditOrderPage() {
     };
 
     fetchOrderDetails();
-  }, [orderNumber, numericOrderNumber]);
+  }, [orderId, numericOrderId]);
 
   // Fetch additional data needed for the form
   useEffect(() => {

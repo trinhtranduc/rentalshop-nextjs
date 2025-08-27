@@ -3,19 +3,20 @@
 import { useState } from 'react'
 import { 
   Home, 
-  Store, 
+  Package, 
   Users, 
   Settings, 
-  User, 
-  LogOut, 
-  Menu, 
-  X,
+  Tag, 
+  ShoppingCart,
+  Store,
+  Building2,
   Search,
   Bell,
-  ShoppingCart,
-  Package,
-  Tag
-} from 'lucide-react'
+  User,
+  LogOut,
+  X,
+  Menu
+} from 'lucide-react';
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
@@ -53,7 +54,7 @@ export function TopNavigation({
   const adminNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/users', label: 'Users', icon: Users },
-    { href: '/shops', label: 'Shops', icon: Store },
+    { href: '/outlets', label: 'Outlets', icon: Building2 },
     { href: '/products', label: 'Products', icon: Package },
     { href: '/categories', label: 'Categories', icon: Tag },
     { href: '/orders', label: 'Orders', icon: ShoppingCart },

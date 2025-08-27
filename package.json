@@ -17,7 +17,10 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "db:seed": "node scripts/reset-and-seed-database-simple.js",
+    "db:seed:full": "node scripts/reset-and-seed-database.js",
+    "db:reset": "npx prisma db push --force-reset && node scripts/reset-and-seed-database-simple.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

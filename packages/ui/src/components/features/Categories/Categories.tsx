@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { CategoryHeader } from './components/CategoryHeader';
-import { CategoryFilters } from './components/CategoryFilters';
+import { CategoryFilters as CategoryFiltersComponent } from './components/CategoryFilters';
 import { CategoryActions } from './components/CategoryActions';
 import { CategoryGrid } from './components/CategoryGrid';
 import { CategoryTable } from './components/CategoryTable';
@@ -152,7 +152,7 @@ export const Categories: React.FC<CategoriesProps> = ({
       />
 
       {/* Category Filters */}
-      <CategoryFilters
+      <CategoryFiltersComponent
         filters={filters}
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}

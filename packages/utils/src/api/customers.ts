@@ -62,6 +62,14 @@ export const customersApi = {
   },
 
   /**
+   * Get customer by public ID (number)
+   */
+  async getCustomerByPublicId(publicId: number): Promise<ApiResponse<Customer>> {
+    const response = await authenticatedFetch(apiUrls.customers.update(publicId));
+    return await parseApiResponse<Customer>(response);
+  },
+
+  /**
    * Create a new customer
    */
   async createCustomer(customerData: CustomerCreateInput): Promise<ApiResponse<Customer>> {

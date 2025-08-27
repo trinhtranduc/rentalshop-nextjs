@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { getProductByPublicId } from '@rentalshop/database';
+import { getUserScope, assertAnyRole } from '@rentalshop/auth';
 
 /**
  * GET /api/products/[id]
@@ -41,8 +42,19 @@ export async function GET(
 
     const publicId = parseInt(id);
     
-    // Get product using the database function that handles dual ID system
-    const product = await getProductByPublicId(publicId);
+    // Get user scope for merchant isolation
+    const userScope = getUserScope(user as any);
+    const userMerchantId = userScope.merchantId;
+    
+    if (!userMerchantId) {
+      return NextResponse.json(
+        { success: false, message: 'User must be associated with a merchant' },
+        { status: 400 }
+      );
+    }
+    
+    // Get product using the secure database function that enforces merchant isolation
+    const product = await getProductByPublicId(publicId, userMerchantId);
 
     if (!product) {
       console.log('❌ Product not found in database for publicId:', publicId);
@@ -121,8 +133,29 @@ export async function PUT(
     const user = await verifyTokenSimple(token);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Invalid token' },
+        { success: false, message: 'Access token required' },
         { status: 401 }
+      );
+    }
+
+    // Authorization: Only merchant-level roles can update products
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
+    } catch {
+      return NextResponse.json(
+        { success: false, message: 'Forbidden: Insufficient permissions to update products' },
+        { status: 403 }
+      );
+    }
+
+    // Get user scope for merchant isolation
+    const userScope = getUserScope(user as any);
+    const userMerchantId = userScope.merchantId;
+    
+    if (!userMerchantId) {
+      return NextResponse.json(
+        { success: false, message: 'User must be associated with a merchant' },
+        { status: 400 }
       );
     }
 
@@ -178,8 +211,29 @@ export async function DELETE(
     const user = await verifyTokenSimple(token);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Invalid token' },
+        { success: false, message: 'Access token required' },
         { status: 401 }
+      );
+    }
+
+    // Authorization: Only merchant-level roles can delete products
+    try {
+      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
+    } catch {
+      return NextResponse.json(
+        { success: false, message: 'Forbidden: Insufficient permissions to delete products' },
+        { status: 403 }
+      );
+    }
+
+    // Get user scope for merchant isolation
+    const userScope = getUserScope(user as any);
+    const userMerchantId = userScope.merchantId;
+    
+    if (!userMerchantId) {
+      return NextResponse.json(
+        { success: false, message: 'User must be associated with a merchant' },
+        { status: 400 }
       );
     }
 

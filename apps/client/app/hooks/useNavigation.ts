@@ -24,7 +24,7 @@ export function useNavigation() {
 
   // Prefetch all main routes on mount
   useEffect(() => {
-    const mainRoutes = ['/dashboard', '/orders', '/products', '/customers', '/users', '/shops', '/settings']
+    const mainRoutes = ['/dashboard', '/orders', '/products', '/customers', '/users', '/outlets', '/settings']
     mainRoutes.forEach(route => {
       if (route !== pathname) {
         prefetchRoute(route)

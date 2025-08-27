@@ -15,10 +15,24 @@ import type { ProductSearchFilter } from '@rentalshop/types';
 
 /**
  * Get product by publicId (number) - follows dual ID system
+ * SECURITY: Enforces merchant isolation to prevent cross-tenant access
  */
-export async function getProductByPublicId(publicId: number) {
-  return await prisma.product.findUnique({
-    where: { publicId },
+export async function getProductByPublicId(publicId: number, merchantId: number) {
+  // Find merchant by publicId to get the CUID
+  const merchant = await prisma.merchant.findUnique({
+    where: { publicId: merchantId },
+    select: { id: true }
+  });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with publicId ${merchantId} not found`);
+  }
+
+  return await prisma.product.findFirst({
+    where: { 
+      publicId,
+      merchantId: merchant.id // Use CUID for merchant isolation
+    },
     include: {
       merchant: {
         select: {
@@ -55,10 +69,24 @@ export async function getProductByPublicId(publicId: number) {
 
 /**
  * Get product by barcode - follows dual ID system
+ * SECURITY: Enforces merchant isolation to prevent cross-tenant access
  */
-export async function getProductByBarcode(barcode: string) {
-  return await prisma.product.findUnique({
-    where: { barcode },
+export async function getProductByBarcode(barcode: string, merchantId: number) {
+  // Find merchant by publicId to get the CUID
+  const merchant = await prisma.merchant.findUnique({
+    where: { publicId: merchantId },
+    select: { id: true }
+  });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with publicId ${merchantId} not found`);
+  }
+
+  return await prisma.product.findFirst({
+    where: { 
+      barcode,
+      merchantId: merchant.id // Use CUID for merchant isolation
+    },
     include: {
       merchant: {
         select: {
@@ -89,7 +117,6 @@ export async function getProductByBarcode(barcode: string) {
 export async function searchProducts(filters: ProductSearchFilter) {
   const {
     merchantId,
-    outletId,
     categoryId,
     search,
     page = 1,
@@ -134,24 +161,6 @@ export async function searchProducts(filters: ProductSearchFilter) {
       { description: { contains: search } },
       { barcode: { equals: search } }
     ];
-  }
-
-  // If outletId is specified, only show products that have stock at that outlet
-  if (outletId) {
-    // Find outlet by publicId
-    const outlet = await prisma.outlet.findUnique({
-      where: { publicId: outletId },
-      select: { id: true }
-    });
-    
-    if (outlet) {
-      where.outletStock = {
-        some: {
-          outletId: outlet.id, // Use CUID
-          stock: { gt: 0 }
-        }
-      };
-    }
   }
 
   const [products, total] = await Promise.all([

@@ -62,6 +62,14 @@ export const usersApi = {
   },
 
   /**
+   * Get user by public ID (number)
+   */
+  async getUserByPublicId(publicId: number): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(apiUrls.users.update(publicId));
+    return await parseApiResponse<User>(response);
+  },
+
+  /**
    * Create a new user
    */
   async createUser(userData: UserCreateInput): Promise<ApiResponse<User>> {

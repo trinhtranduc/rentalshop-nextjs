@@ -18,9 +18,9 @@ export const outletsApi = {
   /**
    * Get all outlets
    */
-  async getOutlets(): Promise<ApiResponse<Outlet[]>> {
+  async getOutlets(): Promise<ApiResponse<OutletsResponse>> {
     const response = await authenticatedFetch(`${apiUrls.base}/api/outlets`);
-    const result = await parseApiResponse<Outlet[]>(response);
+    const result = await parseApiResponse<OutletsResponse>(response);
     return result;
   },
 
@@ -60,7 +60,7 @@ export const outletsApi = {
    * Update an existing outlet
    */
   async updateOutlet(outletId: number, outletData: OutletUpdateInput): Promise<ApiResponse<Outlet>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets/${outletId}`, {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?outletId=${outletId}`, {
       method: 'PUT',
       body: JSON.stringify(outletData),
     });
@@ -71,7 +71,7 @@ export const outletsApi = {
    * Delete an outlet
    */
   async deleteOutlet(outletId: number): Promise<ApiResponse<void>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets/${outletId}`, {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?outletId=${outletId}`, {
       method: 'DELETE',
     });
     return await parseApiResponse<void>(response);
@@ -80,17 +80,17 @@ export const outletsApi = {
   /**
    * Get outlets by shop
    */
-  async getOutletsByShop(shopId: number): Promise<ApiResponse<Outlet[]>> {
+  async getOutletsByShop(shopId: number): Promise<ApiResponse<OutletsResponse>> {
     const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?shopId=${shopId}`);
-    return await parseApiResponse<Outlet[]>(response);
+    return await parseApiResponse<OutletsResponse>(response);
   },
 
   /**
    * Get outlets by merchant
    */
-  async getOutletsByMerchant(merchantId: number): Promise<ApiResponse<Outlet[]>> {
+  async getOutletsByMerchant(merchantId: number): Promise<ApiResponse<OutletsResponse>> {
     const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?merchantId=${merchantId}`);
-    return await parseApiResponse<Outlet[]>(response);
+    return await parseApiResponse<OutletsResponse>(response);
   },
 
   /**

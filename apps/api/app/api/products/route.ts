@@ -60,15 +60,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid query', error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { page, limit, search, outletId, categoryId } = parsed.data;
-    console.log('Parsed filters:', { page, limit, search, outletId, categoryId });
+    const { page, limit, search, categoryId } = parsed.data;
+    console.log('Parsed filters:', { page, limit, search, categoryId });
 
     const { merchantId } = getUserScope(user as any);
     console.log('Merchant ID from scope:', merchantId);
     
     const filters = {
       merchantId: merchantId ? parseInt(merchantId) : undefined,
-      outletId: outletId ? parseInt(outletId) : undefined,
       categoryId: categoryId ? parseInt(categoryId) : undefined,
       search,
       page,

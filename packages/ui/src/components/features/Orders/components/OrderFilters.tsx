@@ -1,10 +1,25 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Input } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
 import { useThrottledSearch } from '@rentalshop/hooks';
+import { outletsApi } from '@rentalshop/utils';
+
+// Define constants locally to avoid import issues
+const ORDER_TYPES = {
+  RENT: 'RENT',
+  SALE: 'SALE'
+} as const;
+
+const ORDER_STATUSES = {
+  BOOKED: 'BOOKED',
+  ACTIVE: 'ACTIVE',
+  RETURNED: 'RETURNED',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+} as const;
 
 interface OrderFiltersProps {
   filters: OrderFiltersType;
@@ -13,7 +28,42 @@ interface OrderFiltersProps {
   onClearFilters?: () => void;
 }
 
+interface Outlet {
+  id: number;
+  name: string;
+}
+
 export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: OrderFiltersProps) {
+  // State for dynamic filter options
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
+  const [loadingOutlets, setLoadingOutlets] = useState(false);
+  const [outletError, setOutletError] = useState<string | null>(null);
+
+  // Fetch outlets on component mount
+  useEffect(() => {
+    const fetchOutlets = async () => {
+      try {
+        setLoadingOutlets(true);
+        setOutletError(null);
+        const result = await outletsApi.getOutlets();
+        if (result.success && result.data?.outlets) {
+          setOutlets(result.data.outlets);
+        } else {
+          setOutletError('Failed to load outlets');
+          setOutlets([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch outlets:', error);
+        setOutletError('Failed to load outlets');
+        setOutlets([]);
+      } finally {
+        setLoadingOutlets(false);
+      }
+    };
+
+    fetchOutlets();
+  }, []);
+
   // Stabilize the onSearch callback to prevent hook recreation
   const stableOnSearch = useCallback((searchQuery: string) => {
     onSearchChange(searchQuery);
@@ -38,6 +88,23 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
       });
     }
   };
+
+  // Memoize order type options
+  const orderTypeOptions = useMemo(() => [
+    { value: 'all', label: 'All Types' },
+    { value: ORDER_TYPES.RENT, label: 'Rental' },
+    { value: ORDER_TYPES.SALE, label: 'Sale' }
+  ], []);
+
+  // Memoize status options
+  const statusOptions = useMemo(() => [
+    { value: 'all', label: 'All Status' },
+    { value: ORDER_STATUSES.BOOKED, label: 'Booked' },
+    { value: ORDER_STATUSES.ACTIVE, label: 'Active' },
+    { value: ORDER_STATUSES.RETURNED, label: 'Returned' },
+    { value: ORDER_STATUSES.COMPLETED, label: 'Completed' },
+    { value: ORDER_STATUSES.CANCELLED, label: 'Cancelled' }
+  ], []);
 
   return (
     <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 backdrop-blur-sm">
@@ -83,18 +150,19 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Status
               </label>
-              <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}>
+              <Select 
+                value={Array.isArray(filters.status) ? filters.status[0] || 'all' : (filters.status || 'all')} 
+                onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}
+              >
                 <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="font-medium">All Status</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="COMPLETED">Completed</SelectItem>
-                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                  <SelectItem value="RETURNED">Returned</SelectItem>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className={option.value === 'all' ? 'font-medium' : ''}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -109,10 +177,11 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="font-medium">All Types</SelectItem>
-                  <SelectItem value="RENT">Rental</SelectItem>
-                  <SelectItem value="SALE">Sale</SelectItem>
-                  <SelectItem value="RENT_TO_OWN">Rent to Own</SelectItem>
+                  {orderTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className={option.value === 'all' ? 'font-medium' : ''}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -122,17 +191,37 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Outlet
               </label>
-              <Select value={filters.outlet || 'all'} onValueChange={(value) => handleFilterChange('outlet', value === 'all' ? '' : value)}>
+              <Select value={filters.outletId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('outletId', value === 'all' ? undefined : parseInt(value))}>
                 <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
-                  <SelectValue placeholder="All Outlets" />
+                  <SelectValue placeholder={loadingOutlets ? "Loading..." : "All Outlets"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="font-medium">All Outlets</SelectItem>
-                  <SelectItem value="main">Main Store</SelectItem>
-                  <SelectItem value="branch1">Branch 1</SelectItem>
-                  <SelectItem value="branch2">Branch 2</SelectItem>
+                  {loadingOutlets ? (
+                    <SelectItem value="loading" disabled>Loading outlets...</SelectItem>
+                  ) : outletError ? (
+                    <SelectItem value="error" disabled className="text-red-500">Error loading outlets</SelectItem>
+                  ) : outlets.length === 0 ? (
+                    <SelectItem value="none" disabled className="text-gray-500">No outlets available</SelectItem>
+                  ) : (
+                    outlets.map((outlet) => (
+                      <SelectItem key={outlet.id} value={outlet.id.toString()}>
+                        {outlet.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {outletError && (
+                <p className="text-xs text-red-500 dark:text-red-400">
+                  {outletError}
+                </p>
+              )}
+              {!loadingOutlets && !outletError && outlets.length === 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  No outlets available for your role
+                </p>
+              )}
             </div>
           </div>
         </div>

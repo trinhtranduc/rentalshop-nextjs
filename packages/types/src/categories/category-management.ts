@@ -4,6 +4,9 @@
 
 import type { Category, CategoryFilters } from './category';
 
+// Re-export the core types for convenience
+export type { Category, CategoryFilters };
+
 export interface CategoryData {
   categories: Category[];
   currentPage: number;

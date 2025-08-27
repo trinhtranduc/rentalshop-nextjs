@@ -24,6 +24,7 @@ import {
   X
 } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
+import { useAuth } from '@rentalshop/hooks';
 import type { Customer } from '@rentalshop/types';
 import type { EditCustomerFormRef } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
@@ -31,6 +32,7 @@ import { useToasts } from '@rentalshop/ui';
 export default function CustomerPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const customerId = params.id as string;
   
   console.log('🔍 CustomerPage: Component rendered with params:', params);
@@ -69,7 +71,7 @@ export default function CustomerPage() {
         console.log('🔍 CustomerPage: Making API call to /api/customers/' + customerId);
         
         // Use the real API to fetch customer data by ID
-        const response = await customersApi.getCustomerByPublicId(customerId);
+        const response = await customersApi.getCustomerByPublicId(numericId);
         
         console.log('🔍 CustomerPage: API response received:', response);
         
@@ -101,7 +103,10 @@ export default function CustomerPage() {
     
     try {
       setIsLoading(true);
-      const response = await customersApi.getCustomerByPublicId(customerId);
+      const numericId = parseInt(customerId);
+      if (isNaN(numericId) || numericId <= 0) return;
+      
+      const response = await customersApi.getCustomerByPublicId(numericId);
       
       if (response.success && response.data) {
         setCustomer(response.data);

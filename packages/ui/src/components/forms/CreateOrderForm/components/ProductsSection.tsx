@@ -63,10 +63,16 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               placeholder="Search products by name, barcode or description..."
               value={undefined}
               onChange={(productId: number) => {
+                console.log('🔍 SearchableSelect onChange called with productId:', productId);
+                console.log('🔍 Available products:', products);
                 // Find the product and add it to order
                 const product = products.find(p => p.id === productId);
+                console.log('🔍 Found product:', product);
                 if (product) {
+                  console.log('🔍 Calling onAddProduct with product:', product);
                   onAddProduct(product);
+                } else {
+                  console.error('❌ Product not found for ID:', productId);
                 }
               }}
               onSearch={onSearchProducts}

@@ -6,6 +6,21 @@ A comprehensive rental shop management system built with Next.js, featuring a mo
 
 This monorepo follows a **dual ID system** for optimal security and usability:
 
+## 🔒 Security-First Design
+
+**CRITICAL: All role-based access control is implemented at the backend/database level, NEVER on the frontend.**
+
+### **Why This Matters:**
+- **Frontend filtering is a security vulnerability** - hackers can bypass restrictions
+- **Backend filtering is secure** - cannot be manipulated by users
+- **JWT tokens contain user scope** - automatically enforced in all database queries
+- **API responses are pre-filtered** - users only see data they're authorized to access
+
+### **Role-Based Data Access:**
+- **OUTLET users**: Automatically restricted to their specific outlet
+- **MERCHANT users**: Can access data from all their outlets
+- **ADMIN users**: Full system access across all merchants
+
 ### 🔐 **Dual ID Strategy: CUIDs Internally, Numbers Externally**
 
 Our system implements a **dual ID approach** that provides both security and usability:
