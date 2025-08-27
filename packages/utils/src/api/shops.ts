@@ -1,139 +1,95 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
-import type { ApiResponse } from "../common";
-
-/**
- * Shops API Client - Shop Management Operations
- * 
- * This file handles all shop operations:
- * - Fetching shops with filters
- * - Shop CRUD operations
- * - Shop outlet management
- * - Shop statistics and analytics
- */
+import { apiUrls } from '../config/api';
+import type { ApiResponse } from '../common';
+import type { Shop, ShopCreateInput, ShopUpdateInput } from '@rentalshop/types';
 
 export interface ShopsResponse {
-  shops: any[];
+  shops: Shop[];
   total: number;
-  page?: number;
-  totalPages?: number;
-  limit?: number;
-}
-
-export interface ShopFilters {
-  search?: string;
-  isActive?: boolean;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 /**
- * Shops API client for authenticated shop operations
+ * Shops API client for shop management operations
  */
 export const shopsApi = {
   /**
-   * Get all shops with optional filters and pagination
+   * Get all shops
    */
-  async getShops(filters?: ShopFilters): Promise<ApiResponse<ShopsResponse>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    console.log('🔍 getShops called with filters:', filters);
-    console.log('📡 API endpoint:', `/api/shops?${params.toString()}`);
-    
-    const response = await authenticatedFetch(`/api/shops?${params.toString()}`);
-    console.log('📡 Raw API response:', response);
-    
-    const result = await parseApiResponse<any>(response);
-    console.log('✅ Processed API response:', result);
-    
+  async getShops(): Promise<ApiResponse<Shop[]>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/shops`);
+    const result = await parseApiResponse<Shop[]>(response);
     return result;
+  },
+
+  /**
+   * Get shops with pagination
+   */
+  async getShopsPaginated(page: number = 1, limit: number = 50): Promise<ApiResponse<ShopsResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/shops?${params.toString()}`);
+    return await parseApiResponse<ShopsResponse>(response);
   },
 
   /**
    * Get shop by ID
    */
-  async getShopById(shopId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/shops/${shopId}`);
-    return await parseApiResponse<any>(response);
+  async getShop(shopId: number): Promise<ApiResponse<Shop>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/shops/${shopId}`);
+    return await parseApiResponse<Shop>(response);
   },
 
   /**
    * Create a new shop
    */
-  async createShop(shopData: any): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/shops', {
+  async createShop(shopData: ShopCreateInput): Promise<ApiResponse<Shop>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/shops`, {
       method: 'POST',
       body: JSON.stringify(shopData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Shop>(response);
   },
 
   /**
    * Update an existing shop
    */
-  async updateShop(shopId: number, shopData: Partial<any>): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/shops/${shopId}`, {
+  async updateShop(shopId: number, shopData: ShopUpdateInput): Promise<ApiResponse<Shop>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/shops/${shopId}`, {
       method: 'PUT',
       body: JSON.stringify(shopData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Shop>(response);
   },
 
   /**
    * Delete a shop
    */
-  async deleteShop(shopId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/shops/${shopId}`, {
+  async deleteShop(shopId: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/shops/${shopId}`, {
       method: 'DELETE',
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<void>(response);
   },
 
   /**
-   * Get shop outlets
+   * Get shops by merchant
    */
-  async getShopOutlets(shopId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/shops/${shopId}/outlets`);
-    return await parseApiResponse<any>(response);
+  async getShopsByMerchant(merchantId: number): Promise<ApiResponse<Shop[]>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/shops?merchantId=${merchantId}`);
+    return await parseApiResponse<Shop[]>(response);
   },
 
   /**
    * Get shop statistics
    */
-  async getShopStats(shopId?: number): Promise<ApiResponse<any>> {
-    const endpoint = shopId ? `/api/shops/${shopId}/stats` : '/api/shops/stats';
-    const response = await authenticatedFetch(endpoint);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get shop analytics
-   */
-  async getShopAnalytics(shopId: number, filters?: {
-    startDate?: string;
-    endDate?: string;
-    metric?: string;
-  }): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await authenticatedFetch(`/api/shops/${shopId}/analytics?${params.toString()}`);
+  async getShopStats(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/shops/stats`);
     return await parseApiResponse<any>(response);
   }
 };

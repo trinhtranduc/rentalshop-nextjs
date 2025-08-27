@@ -23,5 +23,8 @@ export * from './merchants';
 // Outlet types
 export * from './outlets';
 
+// Category types
+export * from './categories';
+
 // Common types
 export * from './common';

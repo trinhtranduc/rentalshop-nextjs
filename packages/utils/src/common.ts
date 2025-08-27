@@ -1,4 +1,5 @@
 import CONSTANTS from '@rentalshop/constants';
+import type { User, LoginCredentials } from '@rentalshop/types';
 
 const API = CONSTANTS.API;
 
@@ -97,9 +98,15 @@ export const createApiUrl = (endpoint: string): string => {
   
   // For relative endpoints, construct full URL
   if (cleanEndpoint.startsWith('api/')) {
-    // Use environment-specific API URL
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
-    return `${baseUrl}/${cleanEndpoint}`;
+    // Use centralized API URL configuration
+    try {
+      const { apiUrls } = require('./config/api-urls');
+      return `${apiUrls.base}/${cleanEndpoint}`;
+    } catch {
+      // Fallback to environment variable if centralized config not available
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      return `${baseUrl}/${cleanEndpoint}`;
+    }
   }
   
   // Default to relative API path
@@ -325,4 +332,98 @@ export const requireAuth = (): void => {
       window.location.href = '/login';
     }
   }
+};
+
+// ============================================================================
+// AUTHENTICATION STORAGE UTILITIES (NON-DUPLICATE)
+// ============================================================================
+
+export interface StoredUser {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  merchantId?: number;
+  outletId?: number;
+  token: string;
+  expiresAt: number;
+}
+
+/**
+ * Get stored authentication token
+ */
+export const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('authToken');
+};
+
+/**
+ * Get stored user data
+ */
+export const getStoredUser = (): StoredUser | null => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const userData = localStorage.getItem('userData');
+    if (!userData) return null;
+    
+    const user = JSON.parse(userData) as StoredUser;
+    
+    // Check if token is expired
+    if (user.expiresAt && Date.now() > user.expiresAt) {
+      clearAuthData();
+      return null;
+    }
+    
+    return user;
+  } catch (error) {
+    console.error('Failed to parse stored user data:', error);
+    clearAuthData();
+    return null;
+  }
+};
+
+/**
+ * Store authentication data
+ */
+export const storeAuthData = (token: string, user: User): void => {
+  if (typeof window === 'undefined') return;
+  
+  const storedUser: StoredUser = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    merchantId: user.merchantId ? Number(user.merchantId) : undefined,
+    outletId: user.outletId ? Number(user.outletId) : undefined,
+    token,
+    expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+  };
+  
+  localStorage.setItem('authToken', token);
+  localStorage.setItem('userData', JSON.stringify(storedUser));
+};
+
+/**
+ * Clear authentication data
+ */
+export const clearAuthData = (): void => {
+  if (typeof window === 'undefined') return;
+  
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('userData');
+};
+
+/**
+ * Get current authenticated user
+ */
+export const getCurrentUser = (): StoredUser | null => {
+  return getStoredUser();
+};
+
+/**
+ * Handle API response with proper error handling
+ */
+export const handleApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
+  return await parseApiResponse<T>(response);
 }; 

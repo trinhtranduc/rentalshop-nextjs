@@ -1,160 +1,127 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
+import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../common';
-
-/**
- * Customers API Client - Customer Management Operations
- * 
- * This file handles all customer operations:
- * - Fetching customers with filters
- * - Customer CRUD operations
- * - Customer search and history
- * - Customer order tracking
- */
+import type { Customer, CustomerCreateInput, CustomerUpdateInput, CustomerFilters } from '@rentalshop/types';
 
 export interface CustomersResponse {
-  customers: any[];
+  customers: Customer[];
   total: number;
-  page?: number;
-  totalPages?: number;
-  limit?: number;
-  hasMore?: boolean;
-}
-
-export interface CustomerFilters {
-  search?: string;
-  outletId?: number;
-  merchantId?: number;
-  isActive?: boolean;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 /**
- * Customers API client for authenticated customer operations
+ * Customers API client for customer management operations
  */
 export const customersApi = {
   /**
-   * Get all customers with optional filters and pagination
+   * Get all customers
    */
-  async getCustomers(filters?: CustomerFilters): Promise<ApiResponse<CustomersResponse>> {
+  async getCustomers(): Promise<ApiResponse<Customer[]>> {
+    const response = await authenticatedFetch(apiUrls.customers.list);
+    const result = await parseApiResponse<Customer[]>(response);
+    return result;
+  },
+
+  /**
+   * Get customers with pagination
+   */
+  async getCustomersPaginated(page: number = 1, limit: number = 50): Promise<ApiResponse<CustomersResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
+    return await parseApiResponse<CustomersResponse>(response);
+  },
+
+  /**
+   * Search customers with filters
+   */
+  async searchCustomers(filters: CustomerFilters): Promise<ApiResponse<Customer[]>> {
     const params = new URLSearchParams();
     
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    console.log('🔍 getCustomers called with filters:', filters);
-    console.log('📡 API endpoint:', `/api/customers?${params.toString()}`);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.status) params.append('status', filters.status);
+    if (filters.phone) params.append('phone', filters.phone);
+    if (filters.email) params.append('email', filters.email);
     
-    const response = await authenticatedFetch(`/api/customers?${params.toString()}`);
-    console.log('📡 Raw API response:', response);
-    
-    const result = await parseApiResponse<CustomersResponse>(response);
-    console.log('✅ Processed API response:', result);
-    
-    return result;
+    const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
+    return await parseApiResponse<Customer[]>(response);
   },
 
   /**
    * Get customer by ID
    */
-  async getCustomerById(customerId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/customers/${customerId}`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get customer by phone number
-   */
-  async getCustomerByPhone(phone: string): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams({ phone });
-    const response = await authenticatedFetch(`/api/customers?${params.toString()}`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get customer by email
-   */
-  async getCustomerByEmail(email: string): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams({ email });
-    const response = await authenticatedFetch(`/api/customers?${params.toString()}`);
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get customer by public ID
-   */
-  async getCustomerByPublicId(publicId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/customers/${publicId}`);
-    return await parseApiResponse<any>(response);
+  async getCustomer(customerId: number): Promise<ApiResponse<Customer>> {
+    const response = await authenticatedFetch(apiUrls.customers.update(customerId));
+    return await parseApiResponse<Customer>(response);
   },
 
   /**
    * Create a new customer
    */
-  async createCustomer(customerData: any): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/customers', {
+  async createCustomer(customerData: CustomerCreateInput): Promise<ApiResponse<Customer>> {
+    const response = await authenticatedFetch(apiUrls.customers.create, {
       method: 'POST',
       body: JSON.stringify(customerData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Customer>(response);
   },
 
   /**
    * Update an existing customer
    */
-  async updateCustomer(customerId: number, customerData: Partial<any>): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/customers/${customerId}`, {
+  async updateCustomer(customerId: number, customerData: CustomerUpdateInput): Promise<ApiResponse<Customer>> {
+    const response = await authenticatedFetch(apiUrls.customers.update(customerId), {
       method: 'PUT',
       body: JSON.stringify(customerData),
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<Customer>(response);
   },
 
   /**
    * Delete a customer
    */
-  async deleteCustomer(customerId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/customers/${customerId}`, {
+  async deleteCustomer(customerId: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(apiUrls.customers.delete(customerId), {
       method: 'DELETE',
     });
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<void>(response);
   },
 
   /**
-   * Get customer order history
+   * Get customers by outlet
    */
-  async getCustomerOrders(customerId: number, filters?: {
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-    limit?: number;
-  }): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
+  async getCustomersByOutlet(outletId: number): Promise<ApiResponse<Customer[]>> {
+    const response = await authenticatedFetch(`${apiUrls.customers.list}?outletId=${outletId}`);
+    return await parseApiResponse<Customer[]>(response);
+  },
 
-    const response = await authenticatedFetch(`/api/customers/${customerId}/orders?${params.toString()}`);
-    return await parseApiResponse<any>(response);
+  /**
+   * Get customer by phone number
+   */
+  async getCustomerByPhone(phone: string): Promise<ApiResponse<Customer | null>> {
+    const response = await authenticatedFetch(`${apiUrls.customers.list}?phone=${phone}`);
+    return await parseApiResponse<Customer | null>(response);
+  },
+
+  /**
+   * Get customer by email
+   */
+  async getCustomerByEmail(email: string): Promise<ApiResponse<Customer | null>> {
+    const response = await authenticatedFetch(`${apiUrls.customers.list}?email=${email}`);
+    return await parseApiResponse<Customer | null>(response);
   },
 
   /**
    * Get customer statistics
    */
   async getCustomerStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/customers/stats');
+    const response = await authenticatedFetch(`${apiUrls.base}/api/customers/stats`);
     return await parseApiResponse<any>(response);
   }
 };

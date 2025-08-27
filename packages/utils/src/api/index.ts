@@ -5,6 +5,7 @@
 // Core API utilities are exported from the main utils package
 
 // Domain-specific API clients
+export * from './auth';
 export * from './products';
 export * from './customers';
 export * from './orders';

@@ -1,12 +1,6 @@
-import { authenticatedFetch, parseApiResponse } from '../common';
-import type { ApiResponse } from '../common';
-
-export interface Category {
-  id: number;
-  name: string;
-  description?: string;
-  isActive: boolean;
-}
+import { authenticatedFetch, parseApiResponse, ApiResponse } from '../common';
+import { apiUrls } from '../config/api';
+import type { Category } from '@rentalshop/types';
 
 export interface CategoriesResponse {
   categories: Category[];
@@ -21,7 +15,7 @@ export const categoriesApi = {
    * Get all categories
    */
   async getCategories(): Promise<ApiResponse<Category[]>> {
-    const response = await authenticatedFetch('/api/categories');
+    const response = await authenticatedFetch(apiUrls.categories.list);
     const result = await parseApiResponse<Category[]>(response);
     return result;
   },
@@ -35,7 +29,7 @@ export const categoriesApi = {
       limit: limit.toString()
     });
     
-    const response = await authenticatedFetch(`/api/categories?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.categories.list}?${params.toString()}`);
     return await parseApiResponse<CategoriesResponse>(response);
   },
 
@@ -43,7 +37,7 @@ export const categoriesApi = {
    * Create a new category
    */
   async createCategory(categoryData: Partial<Category>): Promise<ApiResponse<Category>> {
-    const response = await authenticatedFetch('/api/categories', {
+    const response = await authenticatedFetch(apiUrls.categories.create, {
       method: 'POST',
       body: JSON.stringify(categoryData),
     });
@@ -54,7 +48,7 @@ export const categoriesApi = {
    * Update an existing category
    */
   async updateCategory(categoryId: number, categoryData: Partial<Category>): Promise<ApiResponse<Category>> {
-    const response = await authenticatedFetch(`/api/categories/${categoryId}`, {
+    const response = await authenticatedFetch(apiUrls.categories.update(categoryId), {
       method: 'PUT',
       body: JSON.stringify(categoryData),
     });
@@ -65,7 +59,7 @@ export const categoriesApi = {
    * Delete a category
    */
   async deleteCategory(categoryId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`/api/categories/${categoryId}`, {
+    const response = await authenticatedFetch(apiUrls.categories.delete(categoryId), {
       method: 'DELETE',
     });
     return await parseApiResponse<any>(response);

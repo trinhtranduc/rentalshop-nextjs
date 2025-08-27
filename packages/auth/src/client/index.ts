@@ -2,7 +2,7 @@
  * Authentication utilities for client app (reusing shared package)
  */
 
-// Re-export all auth functions from utils
+// Import storage utilities from utils
 export {
   getAuthToken,
   getStoredUser,
@@ -11,21 +11,31 @@ export {
   authenticatedFetch,
   handleApiResponse,
   isAuthenticated,
-  loginUser,
-  logoutUser,
-  verifyTokenWithServer,
   getCurrentUser,
   type StoredUser,
-  type AuthResponse,
 } from '@rentalshop/utils';
 
+// Import authentication functions from utils auth API
+import { authApi, getCurrentUser } from '@rentalshop/utils';
+
+// Re-export auth API functions with simpler names
+export const loginUser = authApi.login;
+export const logoutUser = authApi.logout;
+export const verifyTokenWithServer = authApi.verifyToken;
+
 // Client-specific aliases for compatibility
-export { loginUser as loginUserClient } from '@rentalshop/utils';
-export { logoutUser as logoutUserClient } from '@rentalshop/utils';
-export { getCurrentUser as getCurrentUserClient } from '@rentalshop/utils';
+export const loginUserClient = authApi.login;
+export const logoutUserClient = authApi.logout;
+export const getCurrentUserClient = getCurrentUser;
 
 export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
-  const { isAuthenticated, verifyTokenWithServer } = await import('@rentalshop/utils');
+  const { isAuthenticated } = await import('@rentalshop/utils');
   if (!isAuthenticated()) return false;
-  return await verifyTokenWithServer();
+  
+  try {
+    const result = await authApi.verifyToken();
+    return result.success === true;
+  } catch (error) {
+    return false;
+  }
 }; 

@@ -3,14 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, 
+  ShoppingCart, 
   Package, 
   Users, 
-  ShoppingCart, 
-  Settings, 
-  Store,
-  User,
-  StoreIcon,
-  Calendar
+  User, 
+  StoreIcon, 
+  Calendar,
+  Tag,
+  Settings,
+  ChevronDown
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 
@@ -23,14 +24,24 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPage);
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/orders', label: 'Orders', icon: ShoppingCart },
-    { href: '/products', label: 'Products', icon: Package },
+    { 
+      href: '/products', 
+      label: 'Products', 
+      icon: Package,
+      submenu: [
+        { href: '/products', label: 'All Products', icon: Package },
+        { href: '/categories', label: 'Categories', icon: Tag },
+        { href: '/products/add', label: 'Add Product', icon: Package },
+      ]
+    },
     { href: '/customers', label: 'Customers', icon: Users },
     { href: '/users', label: 'Users', icon: User },
-    { href: '/shops', label: 'Shops', icon: Store },
+    { href: '/shops', label: 'Shops', icon: StoreIcon },
     { href: '/calendar', label: 'Calendar', icon: Calendar },
   ];
 
@@ -39,9 +50,28 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
     setLocalCurrentPage(currentPage);
   }, [currentPage]);
 
+  // Close submenu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      const isClickingNavItem = target.closest('.nav-item');
+      const isClickingSubmenu = target.closest('[data-submenu]');
+      
+      if (openSubmenu && !isClickingNavItem && !isClickingSubmenu) {
+        console.log('🔄 Click outside detected, closing submenu');
+        setOpenSubmenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openSubmenu]);
+
   const isActive = (href: string) => localCurrentPage === href;
 
   const handleTabClick = (href: string) => {
+    console.log('🔄 handleTabClick called with:', href);
+    
     // Immediately update local state for instant visual feedback
     setLocalCurrentPage(href);
     
@@ -52,6 +82,7 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
     setTimeout(() => setClickedTab(null), 200);
     
     // Navigate
+    console.log('🔄 Calling navigateTo with:', href);
     navigateTo(href);
   };
 
@@ -82,39 +113,103 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
               const Icon = item.icon;
               const active = isActive(item.href);
               const isHovered = hoveredTab === item.href;
+              const hasSubmenu = item.submenu && item.submenu.length > 0;
+              const isSubmenuOpen = openSubmenu === item.href;
               
               return (
-                <button
-                  key={item.href}
-                  onClick={() => handleTabClick(item.href)}
-                  onMouseEnter={() => handleTabHover(item.href)}
-                  onMouseLeave={() => setHoveredTab(null)}
-                  className={`nav-item text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-150 ease-out relative ${
-                    active 
-                      ? 'text-blue-600 bg-blue-50 shadow-sm' 
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                  } ${isHovered ? 'scale-105' : ''} ${clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
-                >
-                  <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
-                  {item.label}
+                <div key={item.href} className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (hasSubmenu) {
+                        console.log('🔄 Products menu clicked, toggling submenu');
+                        setOpenSubmenu(isSubmenuOpen ? null : item.href);
+                      } else {
+                        console.log('🔄 Regular menu item clicked:', item.href);
+                        handleTabClick(item.href);
+                      }
+                    }}
+                    onMouseEnter={() => setHoveredTab(item.href)}
+                    onMouseLeave={() => setHoveredTab(null)}
+                    className={`nav-item text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-150 ease-out relative ${
+                      active 
+                        ? 'text-blue-600 bg-blue-50 shadow-sm' 
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                    } ${isHovered ? 'scale-105' : ''} ${clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
+                  >
+                    <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+                    {item.label}
+                    {hasSubmenu && (
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSubmenuOpen ? 'rotate-180' : ''}`} />
+                    )}
+                    
+                    {/* Hover effect */}
+                    {isHovered && !active && (
+                      <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
+                    )}
+                  </button>
                   
-                  {/* Hover effect */}
-                  {isHovered && !active && (
-                    <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
+                  {/* Submenu Dropdown */}
+                  {hasSubmenu && isSubmenuOpen && (
+                    <div 
+                      className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                      data-submenu="true"
+                    >
+                      <div className="py-1">
+                        {item.submenu.map((subItem) => {
+                          const SubIcon = subItem.icon;
+                          const isSubActive = currentPage === subItem.href;
+                          
+                          return (
+                            <button
+                              key={subItem.href}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('🔄 Submenu item clicked:', subItem.href);
+                                handleTabClick(subItem.href);
+                                // Add small delay before closing submenu to ensure navigation processes
+                                setTimeout(() => {
+                                  setOpenSubmenu(null);
+                                }, 100);
+                              }}
+                              className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors ${
+                                isSubActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                              }`}
+                            >
+                              <SubIcon className="w-4 h-4" />
+                              {subItem.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </nav>
 
           {/* Right side - Settings only */}
           <div className="flex items-center space-x-4">
+            {/* Test Navigation Button */}
+            <button
+              onClick={() => {
+                console.log('🔄 Test button clicked - navigating to /categories');
+                navigateTo('/categories');
+              }}
+              className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Test Nav
+            </button>
+            
             <button
               onClick={() => handleTabClick('/settings')}
               onMouseEnter={() => prefetchRoute('/settings')}
               className={`nav-item text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-50 transition-all duration-150 ${
                 currentPage === '/settings' ? 'text-blue-600 bg-blue-50 shadow-sm' : ''
-              } ${clickedTab === '/settings' ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
+              } ${clickedTab === '/settings' ? 'scale-95 bg-red-100 shadow-md' : ''}`}
             >
               <Settings className="w-4 h-4" />
               Settings

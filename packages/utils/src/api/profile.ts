@@ -1,136 +1,44 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
-import type { ApiResponse } from "../common";
+import { apiUrls } from '../config/api';
+import type { ApiResponse } from '../common';
+import type { User, ProfileUpdateInput } from '@rentalshop/types';
 
 /**
- * Profile API Client - User Profile Management Operations
- * 
- * This file handles all profile operations:
- * - Get current user profile
- * - Update profile information
- * - Change password
- * - Profile preferences
- * - User settings
- */
-
-export interface ProfileData {
-  id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ProfileUpdateInput {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-}
-
-export interface PasswordChangeInput {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
-/**
- * Profile API client for authenticated profile operations
+ * Profile API client for user profile management
  */
 export const profileApi = {
   /**
    * Get current user profile
    */
-  async getProfile(): Promise<ApiResponse<ProfileData>> {
-    console.log('👤 getProfile called');
-    
-    const response = await authenticatedFetch('/api/users/profile');
-    console.log('📡 Raw profile API response:', response);
-    
-    const result = await parseApiResponse<any>(response);
-    console.log('✅ Processed profile API response:', result);
-    
-    return result;
+  async getProfile(): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile`);
+    return await parseApiResponse<User>(response);
   },
 
   /**
    * Update current user profile
    */
-  async updateProfile(profileData: ProfileUpdateInput): Promise<ApiResponse<ProfileData>> {
-    console.log('✏️ updateProfile called with:', profileData);
-    
-    const response = await authenticatedFetch('/api/users/profile', {
+  async updateProfile(profileData: ProfileUpdateInput): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile`, {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });
-    
-    console.log('📡 Raw update profile API response:', response);
-    const result = await parseApiResponse<any>(response);
-    console.log('✅ Processed update profile API response:', result);
-    
-    return result;
+    return await parseApiResponse<User>(response);
   },
 
   /**
    * Change current user password
    */
-  async changePassword(passwordData: PasswordChangeInput): Promise<ApiResponse<{ message: string }>> {
-    console.log('🔐 changePassword called');
-    
-    const response = await authenticatedFetch('/api/users/profile/change-password', {
-      method: 'POST',
+  async changePassword(passwordData: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<ApiResponse<{ message: string }>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/change-password`, {
+      method: 'PATCH',
       body: JSON.stringify(passwordData),
     });
-    
-    console.log('📡 Raw change password API response:', response);
-    const result = await parseApiResponse<any>(response);
-    console.log('✅ Processed change password API response:', result);
-    
-    return result;
-  },
-
-  /**
-   * Get user preferences/settings
-   */
-  async getUserPreferences(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/users/profile/preferences');
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Update user preferences/settings
-   */
-  async updateUserPreferences(preferences: any): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/users/profile/preferences', {
-      method: 'PUT',
-      body: JSON.stringify(preferences),
-    });
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Get user activity/logs
-   */
-  async getUserActivity(filters?: {
-    startDate?: string;
-    endDate?: string;
-    action?: string;
-    limit?: number;
-  }): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await authenticatedFetch(`/api/users/profile/activity?${params.toString()}`);
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ message: string }>(response);
   },
 
   /**
@@ -139,23 +47,87 @@ export const profileApi = {
   async uploadProfilePicture(file: File): Promise<ApiResponse<{ imageUrl: string }>> {
     const formData = new FormData();
     formData.append('profilePicture', file);
-    
-    const response = await authenticatedFetch('/api/users/profile/picture', {
+
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/upload-picture`, {
       method: 'POST',
       body: formData,
+      // Don't set Content-Type header for FormData
     });
-    
-    return await parseApiResponse<any>(response);
+    return await parseApiResponse<{ imageUrl: string }>(response);
   },
 
   /**
    * Delete profile picture
    */
   async deleteProfilePicture(): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch('/api/users/profile/picture', {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/delete-picture`, {
       method: 'DELETE',
     });
-    
+    return await parseApiResponse<{ message: string }>(response);
+  },
+
+  /**
+   * Get user preferences
+   */
+  async getPreferences(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/preferences`);
     return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Update user preferences
+   */
+  async updatePreferences(preferences: any): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/preferences`, {
+      method: 'PUT',
+      body: JSON.stringify(preferences),
+    });
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get user activity log
+   */
+  async getActivityLog(page: number = 1, limit: number = 20): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/activity-log?${params.toString()}`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get user notifications
+   */
+  async getNotifications(page: number = 1, limit: number = 20): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/notifications?${params.toString()}`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Mark notification as read
+   */
+  async markNotificationAsRead(notificationId: number): Promise<ApiResponse<{ message: string }>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/notifications/${notificationId}/read`, {
+      method: 'PATCH',
+    });
+    return await parseApiResponse<{ message: string }>(response);
+  },
+
+  /**
+   * Mark all notifications as read
+   */
+  async markAllNotificationsAsRead(): Promise<ApiResponse<{ message: string }>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/notifications/mark-all-read`, {
+      method: 'PATCH',
+    });
+    return await parseApiResponse<{ message: string }>(response);
   }
 };
