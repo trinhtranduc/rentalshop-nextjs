@@ -17,11 +17,11 @@ import type { User } from '@rentalshop/types';
 
 interface UserTableProps {
   users: User[];
-  onUserAction: (action: string, userId: string) => void;
+  onUserAction: (action: string, userId: number) => void;
 }
 
 export function UserTable({ users, onUserAction }: UserTableProps) {
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
@@ -43,12 +43,12 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdownId]);
 
-  const handleDropdownToggle = (userId: string) => {
+  const handleDropdownToggle = (userId: number) => {
     console.log('🔍 Dropdown toggle:', { userId, currentOpen: openDropdownId, willOpen: openDropdownId !== userId });
     setOpenDropdownId(openDropdownId === userId ? null : userId);
   };
 
-  const handleUserAction = (action: string, userId: string) => {
+  const handleUserAction = (action: string, userId: number) => {
     const user = users.find(u => u.id === userId);
     console.log('🔍 UserTable: handleUserAction called:', { action, userId, user });
     

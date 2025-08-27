@@ -12,7 +12,7 @@ interface CustomerOrdersDialogProps {
 }
 
 interface CustomerOrder {
-  id: string;
+  id: number;
   orderNumber: string;
   orderType: 'RENT' | 'SALE' | 'RENT_TO_OWN';
   status: string;
@@ -41,7 +41,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
     }
   }, [open, customer]);
 
-  const fetchCustomerOrders = async (customerId: string) => {
+  const fetchCustomerOrders = async (customerId: number) => {
     setLoading(true);
     setError(null);
     
@@ -49,7 +49,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
       // Mock data for now - replace with actual API call
       const mockOrders: CustomerOrder[] = [
         {
-          id: '1',
+          id: 1,
           orderNumber: '1',
           orderType: 'RENT',
           status: 'ACTIVE',
@@ -63,7 +63,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
           outletName: 'Downtown Store'
         },
         {
-          id: '2',
+          id: 2,
           orderNumber: '2',
           orderType: 'SALE',
           status: 'COMPLETED',
@@ -77,7 +77,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
           outletName: 'Downtown Store'
         },
         {
-          id: '3',
+          id: 3,
           orderNumber: '3',
           orderType: 'RENT',
           status: 'OVERDUE',

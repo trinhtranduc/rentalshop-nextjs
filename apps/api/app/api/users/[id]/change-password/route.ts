@@ -11,7 +11,7 @@ import { findUserByPublicId } from '@rentalshop/database';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { publicId: string } }
+  { params }: { params: { publicId: number } }
 ) {
   try {
     console.log('🔐 PATCH /api/users/[publicId]/change-password - Changing password for user:', params.publicId);

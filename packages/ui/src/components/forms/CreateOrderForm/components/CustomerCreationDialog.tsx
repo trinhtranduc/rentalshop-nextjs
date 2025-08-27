@@ -9,14 +9,14 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@rentalshop/ui';
-// import { AddCustomerForm } from '../../features/Customers/components/AddCustomerForm';
-import type { CustomerSearchResult } from '../types';
+import { AddCustomerForm } from '../../../features/Customers/components/AddCustomerForm';
+import type { CustomerCreateInput, CustomerSearchResult } from '@rentalshop/types';
 
 interface CustomerCreationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCustomerCreated: (customer: CustomerSearchResult) => void;
-  merchantId?: string;
+  onCustomerCreated: (customerData: CustomerCreateInput) => void;
+  merchantId?: number;
 }
 
 export const CustomerCreationDialog: React.FC<CustomerCreationDialogProps> = ({
@@ -29,17 +29,18 @@ export const CustomerCreationDialog: React.FC<CustomerCreationDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            {isCreatingCustomer ? 'Creating Customer...' : 'Add New Customer'}
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0">
+        <DialogHeader className="px-6 py-4 border-b border-gray-200">
+          <DialogTitle className="text-xl font-semibold text-gray-900">
+            Add New Customer
           </DialogTitle>
         </DialogHeader>
         
-        <div className="py-4">
-          {/* <AddCustomerForm
-            onSave={async (customerData) => {
+        <div className="p-6">
+          <AddCustomerForm
+            onSave={async (customerData: CustomerCreateInput) => {
               try {
+                console.log('🔍 CustomerCreationDialog: Starting customer creation...');
                 setIsCreatingCustomer(true);
                 
                 // Get merchant ID from props
@@ -47,36 +48,25 @@ export const CustomerCreationDialog: React.FC<CustomerCreationDialogProps> = ({
                   throw new Error('Merchant ID is required to create a customer. Please ensure the form has access to merchant information.');
                 }
                 
-                // Create customer with merchant ID
-                const result = await fetch('/api/customers', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    ...customerData,
-                    merchantId,
-                    isActive: true
-                  }),
-                });
-
-                if (!result.ok) {
-                  const errorData = await result.json();
-                  throw new Error(errorData.message || 'Failed to create customer');
-                }
-
-                const newCustomer = await result.json();
+                console.log('🔍 CustomerCreationDialog: Calling onCustomerCreated...');
+                // Call the parent callback to create the customer
+                // The parent will handle the API call and show toasts
+                await onCustomerCreated(customerData);
                 
-                // Call the callback with the new customer
-                onCustomerCreated(newCustomer.data.customer);
-                
-                // Close dialog
+                console.log('🔍 CustomerCreationDialog: Customer created successfully, closing dialog...');
+                // If we reach here, the customer was created successfully
+                // Close dialog on success
                 onOpenChange(false);
                 
               } catch (error) {
-                console.error('Error creating customer:', error);
+                console.error('❌ CustomerCreationDialog: Error occurred:', error);
+                // Don't close the dialog on error - let the user fix the issue
+                // The error will be displayed in the AddCustomerForm
+                setIsCreatingCustomer(false);
+                // Re-throw the error so the AddCustomerForm can handle it
                 throw error;
               } finally {
+                console.log('🔍 CustomerCreationDialog: Finally block executed');
                 setIsCreatingCustomer(false);
               }
             }}
@@ -84,7 +74,7 @@ export const CustomerCreationDialog: React.FC<CustomerCreationDialogProps> = ({
               onOpenChange(false);
             }}
             isSubmitting={isCreatingCustomer}
-          /> */}
+          />
         </div>
       </DialogContent>
     </Dialog>

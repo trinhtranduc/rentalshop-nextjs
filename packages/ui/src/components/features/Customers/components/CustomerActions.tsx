@@ -5,12 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import { Plus, Users, Filter } from 'lucide-react';
 
 interface CustomerActionsProps {
-  onAction: (action: string, customerId: string) => void;
-  merchantId: string;
+  onAction: (action: string, customerId: number) => void;
+  merchantId: number;
   onCustomerCreated?: (customer: any) => void;
   onCustomerUpdated?: (customer: any) => void;
   onError?: (error: string) => void;
-  onViewOrders?: (customerId: string) => void;
+  onViewOrders?: (customerId: number) => void;
 }
 
 export function CustomerActions({ 

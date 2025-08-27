@@ -5,7 +5,7 @@ import type { User } from '@rentalshop/types';
 
 interface UserCardProps {
   user: User;
-  onUserAction: (action: string, userId: string) => void;
+  onUserAction: (action: string, userId: number) => void;
 }
 
 export function UserCard({ user, onUserAction }: UserCardProps) {

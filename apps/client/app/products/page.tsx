@@ -29,7 +29,7 @@ import {
 
 // Extend the Product type for this page
 interface ExtendedProduct {
-  id: string | number; // Now contains the public ID from API
+  id: number; // Now contains the public ID from API
   name: string;
   description?: string;
   totalStock: number;
@@ -38,20 +38,20 @@ interface ExtendedProduct {
   deposit: number;
   images?: string;
   category: {
-    id: string;
+    id: number;
     name: string;
   };
   merchant: {
-    id: string;
+    id: number;
     name: string;
   };
   outletStock: Array<{
-    id: string;
+    id: number;
     stock: number;
     available: number;
     renting: number;
     outlet: {
-      id: string;
+      id: number;
       name: string;
     };
   }>;
@@ -212,7 +212,7 @@ export default function ProductsPage() {
 
 
 
-  const handleProductAction = useCallback(async (action: string, productId: string) => {
+  const handleProductAction = useCallback(async (action: string, productId: number) => {
     switch (action) {
       case 'edit':
         // Navigate to edit page using public ID

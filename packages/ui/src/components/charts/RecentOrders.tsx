@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 
 interface RecentOrder {
-  id: string;
+  id: number;
   orderNumber: string;
   customerName: string;
   customerPhone: string;

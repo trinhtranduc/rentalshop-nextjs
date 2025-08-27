@@ -15,7 +15,7 @@ export type {
 };
 
 export interface OrderItemFormData {
-  productId: string;
+  productId: number;
   quantity: number;
   unitPrice: number;
   deposit: number;
@@ -24,8 +24,8 @@ export interface OrderItemFormData {
 
 export interface OrderFormData {
   orderType: 'RENT' | 'SALE';
-  customerId: string;
-  outletId: string;
+  customerId?: number;  // Optional until customer is selected
+  outletId?: number;    // Optional until outlet is selected
   pickupPlanAt?: string;
   returnPlanAt?: string;
   subtotal: number;
@@ -43,7 +43,8 @@ export interface OrderFormData {
 }
 
 export interface ValidationErrors {
-  customerId?: string;
+  customerId?: string;  // Changed from number to string for error messages
+  outletId?: string;    // Added for outlet validation
   orderItems?: string;
   pickupPlanAt?: string;
   returnPlanAt?: string;
@@ -53,13 +54,13 @@ export interface ValidationErrors {
 export interface CreateOrderFormProps {
   customers?: CustomerSearchResult[];
   products?: ProductWithStock[];
-  outlets?: Array<{ id: string; name: string; merchantId?: string }>;
-  categories?: Array<{ id: string; name: string }>;
+  outlets?: Array<{ id: number; name: string; merchantId?: number }>;
+  categories?: Array<{ id: number; name: string }>;
   onSubmit?: (data: OrderInput) => void;
   onCancel?: () => void;
   loading?: boolean;
   layout?: 'stacked' | 'split';
-  merchantId?: string;
+  merchantId?: number;
   // Edit mode props
   isEditMode?: boolean;
   initialOrder?: any; // Order data for editing

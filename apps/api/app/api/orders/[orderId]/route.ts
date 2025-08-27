@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from '@rentalshop/auth';
-import { getOrderById, getOrderByNumber, updateOrder, cancelOrder } from '@rentalshop/database';
+import { getOrderByPublicId, getOrderByNumber, updateOrder, cancelOrder } from '@rentalshop/database';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { orderUpdateSchema } from '@rentalshop/utils';
-import type { OrderUpdateInput } from '@rentalshop/database';
+import type { OrderUpdateInput } from '@rentalshop/types';
 
 /**
  * GET /api/orders/[orderId]
@@ -51,11 +51,17 @@ export async function GET(
     // Get user scope for authorization
     const userScope = getUserScope(user as any);
     
-    // Try to find order by ID first, then by order number
-    let order = await getOrderById(orderId);
+    // Determine if orderId is a publicId (number) or order number (string)
+    let order = null;
     
+    // Check if orderId is a number (publicId)
+    if (/^\d+$/.test(orderId)) {
+      const publicId = parseInt(orderId);
+      order = await getOrderByPublicId(publicId);
+    }
+    
+    // If not found by publicId, try by order number
     if (!order) {
-      // If not found by ID, try by order number
       order = await getOrderByNumber(orderId);
     }
 
@@ -67,7 +73,7 @@ export async function GET(
     }
 
     // Authorization: Users can only view orders from their own outlet or if they're admin/merchant
-    if (userScope.outletId && order.outlet.id !== userScope.outletId) {
+    if (userScope.outletId && order.outlet.publicId !== userScope.outletId) {
       // Check if user has admin or merchant role
       try {
         assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
@@ -157,7 +163,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: { orderId: number } }
 ) {
   try {
     // Verify authentication
@@ -226,12 +232,18 @@ export async function PUT(
       // Additional settings fields
       ...(updateData.bailAmount !== undefined && { bailAmount: updateData.bailAmount }),
       ...(updateData.material !== undefined && { material: updateData.material }),
-      // Order items management
-      ...(updateData.orderItems !== undefined && { orderItems: updateData.orderItems }),
+      // Order items management - convert productId from number to string for database
+      ...(updateData.orderItems !== undefined && { 
+        orderItems: updateData.orderItems.map(item => ({
+          ...item,
+          productId: item.productId.toString(), // Convert number to string for database
+          totalPrice: item.totalPrice || 0, // Ensure totalPrice is always defined
+        }))
+      }),
     };
 
-    // Update the order
-    const updatedOrder = await updateOrder(orderId, updateInput, user.id);
+    // Update the order - convert user.id (CUID) to publicId (number)
+    const updatedOrder = await updateOrder(orderId, updateInput, user.publicId);
 
     if (!updatedOrder) {
       return NextResponse.json(
@@ -260,7 +272,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: { orderId: number } }
 ) {
   try {
     // Verify authentication
@@ -300,8 +312,8 @@ export async function DELETE(
     const body = await request.json();
     const reason = body?.reason || 'Order cancelled by user';
 
-    // Cancel the order
-    const cancelledOrder = await cancelOrder(orderId, user.id, reason);
+    // Cancel the order - convert user.id (CUID) to publicId (number)
+    const cancelledOrder = await cancelOrder(orderId, user.publicId, reason);
 
     if (!cancelledOrder) {
       return NextResponse.json(

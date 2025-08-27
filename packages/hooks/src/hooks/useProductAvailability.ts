@@ -7,7 +7,7 @@ import { useCallback } from 'react';
 // ============================================================================
 
 export interface Product {
-  id: string;
+  id: number;
   name: string;
   stock: number;
   renting: number;
@@ -15,13 +15,13 @@ export interface Product {
 }
 
 export interface Order {
-  id: string;
+  id: number;
   orderType: string;
   status: string;
   pickupPlanAt: string;
   returnPlanAt: string;
   orderItems: Array<{
-    productId: string;
+    productId: number;
     quantity: number;
     name: string;
   }>;

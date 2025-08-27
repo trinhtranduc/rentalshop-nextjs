@@ -9,11 +9,11 @@ export interface BaseEntity {
 }
 
 export interface BaseEntityWithMerchant extends BaseEntity {
-  merchantId: string;
+  merchantId: number;
 }
 
 export interface BaseEntityWithOutlet extends BaseEntityWithMerchant {
-  outletId: string;
+  outletId: number;
 }
 
 export interface Timestamp {

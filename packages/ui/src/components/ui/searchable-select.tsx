@@ -15,8 +15,8 @@ export interface SearchableOption {
 }
 
 export interface SearchableSelectProps {
-  value?: string;
-  onChange?: (value: string) => void;
+  value?: number;
+  onChange?: (value: number) => void;
   options?: SearchableOption[]; // Make optional since it's not needed when onSearch is provided
   placeholder?: string;
   searchPlaceholder?: string;
@@ -101,7 +101,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     return filtered || [];
   }, [query, internalOptions, onSearch, options]);
 
-  const selected = internalOptions.find((o) => o.value === value);
+  const selected = internalOptions.find((o) => o.value === String(value));
 
   // Keep selected label in input for better UX
   const displayValue = selected?.label || query;
@@ -113,16 +113,24 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       if (!el) return;
       if (open && !el.contains(e.target as Node)) {
         setOpen(false);
-        // Don't clear query here - let search results persist
       }
     };
+
     document.addEventListener('mousedown', handler);
     document.addEventListener('touchstart', handler);
+
     return () => {
       document.removeEventListener('mousedown', handler);
       document.removeEventListener('touchstart', handler);
     };
   }, [open]);
+
+  const handleSelect = (option: SearchableOption) => {
+    onChange?.(parseInt(option.value));
+    setOpen(false);
+    // Clear the query so user can easily search for another item
+    setQuery('');
+  };
 
   return (
     <div className={cn('relative', className)} ref={rootRef}>
@@ -238,21 +246,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 )}
                 
                 {/* Options with custom rendering based on type */}
-                {filtered.map((opt) => (
-                  <button
-                    type="button"
-                    key={opt.value}
-                    onClick={() => {
-                      onChange?.(opt.value);
-                      setOpen(false);
-                      // Keep the query for better UX - user can see what they selected
-                      // setQuery(''); // Removed this line
-                    }}
-                    className={cn(
-                      'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out',
-                      value === opt.value && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                    )}
-                  >
+                {filtered.map((opt) => {
+                  return (
+                    <button
+                      type="button"
+                      key={opt.value}
+                      onClick={() => {
+                        handleSelect(opt);
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out',
+                        value === parseInt(opt.value) && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                      )}
+                    >
                     {/* Icon or Image based on type */}
                     {opt.type === 'product' && opt.image ? (
                       // Product with image
@@ -318,7 +324,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     </div>
                     
                     {/* Selection indicator */}
-                    {value === opt.value && (
+                    {value === parseInt(opt.value) && (
                       <div className="flex-shrink-0 w-5 h-5 text-blue-600">
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -326,7 +332,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                       </div>
                     )}
                   </button>
-                ))}
+                );
+              })}
               </>
             )}
           </div>

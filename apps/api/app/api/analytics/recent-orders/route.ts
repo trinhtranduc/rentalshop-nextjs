@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         : null;
 
       return {
-        id: order.id,
+        id: order.publicId, // Use publicId (number) as the external ID
         orderNumber: order.orderNumber,
         customerName,
         customerPhone,

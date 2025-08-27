@@ -11,7 +11,7 @@ import { findUserByPublicId } from '@rentalshop/database';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: number } }
 ) {
   try {
     // Verify authentication
@@ -33,7 +33,7 @@ export async function GET(
 
     // Check authorization based on user role
     let canAccess = false;
-    let userScope: { merchantId?: string; outletId?: string } = {};
+    let userScope: { merchantId?: number; outletId?: number } = {};
 
     if (currentUser.role === 'ADMIN') {
       // Admin can see all users system-wide
@@ -186,7 +186,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { publicId: string } }
+  { params }: { params: { publicId: number } }
 ) {
   try {
     // Verify authentication
@@ -208,7 +208,7 @@ export async function PATCH(
 
     // Check authorization based on user role
     let canAccess = false;
-    let userScope: { merchantId?: string; outletId?: string } = {};
+    let userScope: { merchantId?: number; outletId?: number } = {};
 
     // Normalize role for comparison (handle case sensitivity)
     const normalizedRole = currentUser.role?.toUpperCase() || '';
@@ -357,7 +357,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { publicId: string } }
+  { params }: { params: { publicId: number } }
 ) {
   try {
     // Verify authentication
@@ -379,7 +379,7 @@ export async function DELETE(
 
     // Check authorization based on user role
     let canAccess = false;
-    let userScope: { merchantId?: string; outletId?: string } = {};
+    let userScope: { merchantId?: number; outletId?: number } = {};
 
     // Normalize role for comparison (handle case sensitivity)
     const normalizedRole = currentUser.role?.toUpperCase() || '';

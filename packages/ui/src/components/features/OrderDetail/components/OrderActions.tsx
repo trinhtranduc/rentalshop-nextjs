@@ -7,8 +7,8 @@ interface OrderActionsProps {
   order: OrderDetailData;
   settingsForm: SettingsForm;
   onCancel?: (order: OrderDetailData) => void;
-  onPickup?: (orderId: string, data: any) => void;
-  onReturn?: (orderId: string, data: any) => void;
+  onPickup?: (orderId: number, data: any) => void;
+  onReturn?: (orderId: number, data: any) => void;
 }
 
 export const OrderActions: React.FC<OrderActionsProps> = ({ 

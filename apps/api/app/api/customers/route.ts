@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { 
-  getCustomers, 
   createCustomer, 
-  getCustomerById, 
+  getCustomerByPublicId, 
   updateCustomer, 
   searchCustomers
 } from '@rentalshop/database';
@@ -55,16 +54,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get merchantId from user
+    // Get merchantId from user and convert to number
     const userMerchantId = getUserScope(user as any).merchantId;
-    console.log('User merchant ID:', userMerchantId);
+    const userMerchantIdNumber = userMerchantId ? parseInt(userMerchantId) : undefined;
+    console.log('User merchant ID:', userMerchantIdNumber);
 
     const { searchParams } = new URL(request.url);
     
     // Handle specific customer lookup
     const customerId = searchParams.get('customerId');
     if (customerId) {
-      const customer = await getCustomerById(customerId);
+      const customerIdNumber = parseInt(customerId);
+      if (isNaN(customerIdNumber)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid customer ID format' },
+          { status: 400 }
+        );
+      }
+      
+      const customer = await getCustomerByPublicId(customerIdNumber, userMerchantIdNumber);
       if (!customer) {
         return NextResponse.json(
           { success: false, message: 'Customer not found' },
@@ -123,9 +131,9 @@ export async function GET(request: NextRequest) {
 
       // Use user's merchantId if not provided in params
       if (merchantId) {
-        filters.merchantId = merchantId;
-      } else if (userMerchantId) {
-        filters.merchantId = userMerchantId;
+        filters.merchantId = parseInt(merchantId);
+      } else if (userMerchantIdNumber) {
+        filters.merchantId = userMerchantIdNumber;
       }
 
       if (isActive !== null && isActive !== undefined) {
@@ -154,38 +162,7 @@ export async function GET(request: NextRequest) {
         const result = await searchCustomers(filters);
         console.log('Search result:', JSON.stringify(result, null, 2));
         
-        // Transform search results: internal id → public id as "id"
-        if (result.success && result.data?.customers) {
-          const transformedResult = {
-            ...result,
-            data: {
-              ...result.data,
-              customers: result.data.customers.map(customer => ({
-                id: customer.publicId,                    // Return publicId as "id" to frontend
-                firstName: customer.firstName,
-                lastName: customer.lastName,
-                email: customer.email,
-                phone: customer.phone,
-                address: customer.address,
-                city: customer.city,
-                state: customer.state,
-                zipCode: customer.zipCode,
-                country: customer.country,
-                dateOfBirth: customer.dateOfBirth,
-                idNumber: customer.idNumber,
-                idType: customer.idType,
-                notes: customer.notes,
-                isActive: customer.isActive,
-                createdAt: customer.createdAt,
-                updatedAt: customer.updatedAt,
-                merchant: customer.merchant,
-                // DO NOT include customer.id (internal CUID)
-              }))
-            }
-          };
-          return NextResponse.json(transformedResult);
-        }
-        
+        // Database layer already handles transformation, return result directly
         return NextResponse.json(result);
       } catch (error) {
         console.error('Error in searchCustomers:', error);
@@ -211,8 +188,8 @@ export async function GET(request: NextRequest) {
     // Use user's merchantId if not provided in params
     if (merchantId) {
       filters.merchantId = merchantId;
-    } else if (userMerchantId) {
-      filters.merchantId = userMerchantId;
+    } else if (userMerchantIdNumber) {
+      filters.merchantId = userMerchantIdNumber;
     }
 
     if (isActive !== undefined) {
@@ -242,36 +219,27 @@ export async function GET(request: NextRequest) {
     try {
       // Authorization: ADMIN, MERCHANT, OUTLET team can read
       assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
-      // Get customers
-      const result = await getCustomers(filters, page, limit);
+      // Get customers using new dual ID system
+      const result = await searchCustomers(filters);
 
-      // Transform response: internal id → public id as "id"
-      const transformedResult = {
-        ...result,
-        customers: result.customers.map(customer => ({
-          id: customer.publicId,                    // Return publicId as "id" to frontend
-          firstName: customer.firstName,
-          lastName: customer.lastName,
-          email: customer.email,
-          phone: customer.phone,
-          address: customer.address,
-          city: customer.city,
-          state: customer.state,
-          zipCode: customer.zipCode,
-          country: customer.country,
-          dateOfBirth: customer.dateOfBirth,
-          idNumber: customer.idNumber,
-          idType: customer.idType,
-          notes: customer.notes,
-          isActive: customer.isActive,
-          createdAt: customer.createdAt,
-          updatedAt: customer.updatedAt,
-          merchant: customer.merchant,
-          // DO NOT include customer.id (internal CUID)
-        }))
-      };
+      // The searchCustomers function returns the correct format
+      // Transform the response to ensure publicId is properly exposed
+      const transformedCustomers = result.data.customers.map(customer => ({
+        ...customer,
+        publicId: customer.id, // Ensure publicId is available for backward compatibility
+        // id is already set to customer.publicId by the database function
+      }));
 
-      const bodyString = JSON.stringify({ success: true, data: transformedResult });
+      const bodyString = JSON.stringify({ 
+        success: true, 
+        data: {
+          customers: transformedCustomers,
+          total: result.data.total,
+          limit: result.data.limit,
+          offset: result.data.offset,
+          hasMore: result.data.hasMore
+        }
+      });
       const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
       const ifNoneMatch = request.headers.get('if-none-match');
 
@@ -434,6 +402,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Get merchantId from user
+    const userMerchantId = getUserScope(user as any).merchantId;
+    if (!userMerchantId) {
+      return NextResponse.json(
+        { success: false, message: 'User not associated with any merchant' },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get('customerId');
     
@@ -444,8 +421,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check if customer exists
-    const existingCustomer = await getCustomerById(customerId);
+    // Check if customer exists using new dual ID system
+    const existingCustomer = await getCustomerByPublicId(parseInt(customerId), userMerchantId);
     if (!existingCustomer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found' },
@@ -473,14 +450,13 @@ export async function PUT(request: NextRequest) {
       ...(payload.zipCode !== undefined && { zipCode: payload.zipCode?.trim() }),
       ...(payload.country !== undefined && { country: payload.country?.trim() }),
       ...(payload.dateOfBirth !== undefined && { dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : undefined }),
-      ...(payload.idNumber !== undefined && { idNumber: payload.idNumber?.trim() }),
-      ...(payload.idType !== undefined && { idType: payload.idType }),
+      ...(payload.idNumber !== undefined && { idType: payload.idType }),
       ...(payload.notes !== undefined && { notes: payload.notes?.trim() }),
       ...(payload.isActive !== undefined && { isActive: payload.isActive }),
     };
 
-    // Update customer
-    const customer = await updateCustomer(customerId, updateData);
+    // Update customer using new dual ID system
+    const customer = await updateCustomer(parseInt(customerId), updateData);
 
     return NextResponse.json({
       success: true,
@@ -520,6 +496,15 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Get merchantId from user
+    const userMerchantId = getUserScope(user as any).merchantId;
+    if (!userMerchantId) {
+      return NextResponse.json(
+        { success: false, message: 'User not associated with any merchant' },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get('customerId');
     
@@ -530,8 +515,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Check if customer exists
-    const existingCustomer = await getCustomerById(customerId);
+    // Check if customer exists using new dual ID system
+    const existingCustomer = await getCustomerByPublicId(parseInt(customerId), userMerchantId);
     if (!existingCustomer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found' },
@@ -542,7 +527,7 @@ export async function DELETE(request: NextRequest) {
     // Check if customer has active orders or other dependencies
     const hasActiveOrders = await prisma.order.findFirst({
       where: { 
-        customerId: customerId
+        customerId: existingCustomer.id // Use the CUID from the found customer
       }
     });
 
@@ -553,9 +538,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete customer from database
+    // Delete customer from database using CUID
     await prisma.customer.delete({
-      where: { id: customerId }
+      where: { id: existingCustomer.id }
     });
 
     return NextResponse.json({

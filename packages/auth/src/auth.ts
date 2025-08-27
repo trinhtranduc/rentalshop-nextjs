@@ -4,7 +4,7 @@ import { generateToken } from './jwt';
 import type { LoginCredentials, RegisterData, AuthResponse } from './types';
 
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  const user = await (prisma as any).user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { email: credentials.email },
     include: {
       merchant: true,
@@ -26,24 +26,30 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
   }
 
   const token = generateToken({
-    userId: user.id,
+    userId: user.id, // Use internal ID (string) for JWT token
     email: user.email,
     role: user.role,
   });
 
-  const u = user as any;
-
   return {
     user: {
-      id: u.id,
-      email: u.email,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      name: `${u.firstName} ${u.lastName}`,
-      role: u.role,
-      phone: u.phone || undefined,
-      merchant: u.merchant || undefined,
-      outlet: u.outlet || undefined,
+      id: user.publicId, // Return publicId as "id" to frontend (number)
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: `${user.firstName} ${user.lastName}`,
+      role: user.role,
+      phone: user.phone || undefined,
+      merchant: user.merchant ? {
+        id: user.merchant.publicId, // Return merchant publicId as "id" to frontend (number)
+        name: user.merchant.name,
+        description: user.merchant.description || undefined,
+      } : undefined,
+      outlet: user.outlet ? {
+        id: user.outlet.publicId, // Return outlet publicId as "id" to frontend (number)
+        name: user.outlet.name,
+        address: user.outlet.address || undefined,
+      } : undefined,
       
     },
     token,
@@ -61,33 +67,36 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
 
   const hashedPassword = await hashPassword(data.password);
 
+  // Generate a unique publicId for the new user
+  const publicId = Math.floor(Math.random() * 1000000) + 100000; // 6-digit number
+
   const user = await prisma.user.create({
     data: {
+      publicId, // Set the generated publicId
       email: data.email,
       password: hashedPassword,
       firstName: data.firstName || data.name?.split(' ')[0] || '',
       lastName: data.lastName || data.name?.split(' ').slice(1).join(' ') || '',
       phone: data.phone,
-      role: data.role || 'USER',
-    } as any,
+      role: data.role || 'OUTLET_STAFF',
+    },
   });
 
   const token = generateToken({
-    userId: user.id,
+    userId: user.id, // Use internal ID (string) for JWT token
     email: user.email,
     role: user.role,
   });
 
-  const nu = user as any;
   return {
     user: {
-      id: nu.id,
-      email: nu.email,
-      firstName: nu.firstName,
-      lastName: nu.lastName,
-      name: `${nu.firstName} ${nu.lastName}`,
-      role: nu.role,
-      phone: nu.phone || undefined,
+      id: user.publicId, // Return publicId as "id" to frontend (number)
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: `${user.firstName} ${user.lastName}`,
+      role: user.role,
+      phone: user.phone || undefined,
     },
     token,
   };

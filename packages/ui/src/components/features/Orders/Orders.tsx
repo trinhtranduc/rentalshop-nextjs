@@ -15,7 +15,7 @@ interface OrdersProps {
   onFiltersChange: (filters: OrderFilters) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
-  onOrderAction: (action: string, orderId: string) => void;
+  onOrderAction: (action: string, orderId: number) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
 }

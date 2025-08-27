@@ -2,13 +2,13 @@ import React from 'react';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 export interface OrderItem {
-  productId: string;
+  productId: number;
   productName: string;
   quantity: number;
 }
 
 export interface ProductAvailabilityData {
-  [productId: string]: {
+  [productId: number]: {
     status: 'available' | 'unavailable' | 'unknown';
     available: number;
     storage: number;

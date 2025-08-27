@@ -27,8 +27,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     if (isEditMode && initialOrder) {
       return {
         orderType: initialOrder.orderType || 'RENT',
-        customerId: initialOrder.customerId || '',
-        outletId: initialOrder.outletId || outlets[0]?.id || '',
+        customerId: parseInt(initialOrder.customerId) || undefined,
+        outletId: initialOrder.outletId || outlets[0]?.id || undefined,
         pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
         returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
         subtotal: initialOrder.subtotal || 0,
@@ -49,8 +49,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     // Default values for create mode
     return {
       orderType: 'RENT',
-      customerId: '',
-      outletId: outlets[0]?.id || '',
+      customerId: undefined,
+      outletId: outlets[0]?.id || undefined,
       pickupPlanAt: '',
       returnPlanAt: '',
       subtotal: 0,
@@ -72,7 +72,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     // Initialize with existing order items if in edit mode
     if (isEditMode && initialOrder?.orderItems) {
       return initialOrder.orderItems.map((item: any) => ({
-        productId: item.productId,
+        productId: parseInt(item.productId) || 0,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         deposit: item.deposit || 0,
@@ -145,7 +145,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       // Update order items
       if (initialOrder.orderItems) {
         const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => ({
-          productId: item.productId,
+          productId: parseInt(item.productId) || 0,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           deposit: item.deposit || 0,
@@ -158,13 +158,13 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
   // Add product to order
   const addProductToOrder = useCallback((product: any) => {
-    const productIdString = String(product.id);
-    const existingItem = orderItems.find(item => item.productId === productIdString);
+    const productIdNumber = product.id;
+    const existingItem = orderItems.find(item => item.productId === productIdNumber);
     
     if (existingItem) {
       // Update quantity if product already exists
       const updatedItems = orderItems.map(item =>
-        item.productId === productIdString
+        item.productId === productIdNumber
           ? { ...item, quantity: item.quantity + 1 }
           : item
       );
@@ -175,7 +175,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       const deposit = product.deposit ?? 0;
       
       const newItem: OrderItemFormData = {
-        productId: String(product.id),
+        productId: productIdNumber,
         quantity: BUSINESS.DEFAULT_QUANTITY,
         unitPrice: formData.orderType === 'RENT' ? rentPrice : rentPrice,
         deposit: deposit,
@@ -186,12 +186,12 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   }, [orderItems, formData.orderType]);
 
   // Remove product from order
-  const removeProductFromOrder = useCallback((productId: string) => {
+  const removeProductFromOrder = useCallback((productId: number) => {
     setOrderItems(orderItems.filter(item => item.productId !== productId));
   }, [orderItems]);
 
   // Update order item
-  const updateOrderItem = useCallback((productId: string, field: keyof OrderItemFormData, value: string | number) => {
+  const updateOrderItem = useCallback((productId: number, field: keyof OrderItemFormData, value: string | number) => {
     const updatedItems = orderItems.map(item => {
       if (item.productId === productId) {
         return { ...item, [field]: value };
@@ -250,14 +250,20 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     
     if (isSubmitting) return;
     
+    // Validate that we have order items
+    if (!orderItems || orderItems.length === 0) {
+      // This should be handled by the parent component with toast
+      throw new Error('Please add at least one product to the order before submitting.');
+    }
+    
     setIsSubmitting(true);
     
     try {
-      // Prepare API payload
+      // Prepare API payload with proper types (send numeric IDs directly)
       const apiPayload = {
         orderType: formData.orderType,
-        customerId: formData.customerId,
-        outletId: formData.outletId,
+        customerId: formData.customerId, // Send as number
+        outletId: formData.outletId, // Send as number
         pickupPlanAt: formData.pickupPlanAt ? new Date(formData.pickupPlanAt).toISOString() : undefined,
         returnPlanAt: formData.returnPlanAt ? new Date(formData.returnPlanAt).toISOString() : undefined,
         subtotal: formData.subtotal,
@@ -270,7 +276,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         totalAmount: formData.totalAmount,
         notes: formData.notes,
         orderItems: orderItems.map(item => ({
-          productId: String(item.productId),
+          productId: item.productId, // Send as number
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           deposit: item.deposit,
@@ -283,9 +289,12 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         (apiPayload as any).id = initialOrder.id;
       }
       
+      console.log('🔍 Submitting order with payload:', apiPayload);
       props.onSubmit?.(apiPayload as any);
     } catch (error) {
       console.error('Error submitting order:', error);
+      // Re-throw the error so the parent can handle it with toast
+      throw error;
     } finally {
       setIsSubmitting(false);
     }

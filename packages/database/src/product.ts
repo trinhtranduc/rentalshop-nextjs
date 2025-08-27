@@ -1,448 +1,585 @@
+// ============================================================================
+// NEW: CORRECT DUAL ID PRODUCT FUNCTIONS
+// ============================================================================
+// This file contains only the correct product functions that follow the dual ID system:
+// - Input: publicId (number)
+// - Database: queries by publicId, uses CUIDs for relationships
+// - Return: includes both id (CUID) and publicId (number)
+
 import { prisma } from './client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 
-export interface ProductWithStock {
-  id: string;
-  name: string;
-  description?: string;
-  barcode?: string;
-  totalStock: number;
-  rentPrice: number;
-  salePrice?: number;
-  deposit: number;
-  images?: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  category: {
-    id: string;
-    name: string;
-  };
-  merchant: {
-    id: string;
-    name: string;
-  };
-  outletStock: Array<{
-    id: string;
-    stock: number;
-    available: number;
-    renting: number;
-    outlet: {
-      id: string;
-      name: string;
-    };
-  }>;
+// ============================================================================
+// PRODUCT LOOKUP FUNCTIONS (BY PUBLIC ID)
+// ============================================================================
+
+/**
+ * Get product by publicId (number) - follows dual ID system
+ */
+export async function getProductByPublicId(publicId: number) {
+  return await prisma.product.findUnique({
+    where: { publicId },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      outletStock: {
+        select: {
+          id: true,
+          stock: true,
+          available: true,
+          renting: true,
+          outlet: {
+            select: {
+              id: true,
+              publicId: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
 }
 
-export const getProducts = async (filters: ProductSearchFilter) => {
-  try {
-    const {
-      merchantId,
-      outletId,
-      categoryId,
-      search,
-      page = 1,
-      limit = 20,
-      isActive = true
-    } = filters;
+/**
+ * Get product by barcode - follows dual ID system
+ */
+export async function getProductByBarcode(barcode: string) {
+  return await prisma.product.findUnique({
+    where: { barcode },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+  });
+}
 
-    const skip = (page - 1) * limit;
+// ============================================================================
+// PRODUCT SEARCH FUNCTIONS
+// ============================================================================
 
-    // Build where clause
-    const where: any = {
-      isActive,
-      ...(merchantId && { merchantId }),
-      ...(categoryId && { categoryId }),
-      ...(search && {
-        OR: [
-          { name: { contains: search } },        // SQLite compatible - case sensitive
-          { description: { contains: search } }, // SQLite compatible - case sensitive
-          { barcode: { equals: search } }        // Exact match for barcode
-        ]
-      })
-    };
+/**
+ * Search products - follows dual ID system
+ * Input: publicIds (numbers), Output: publicIds (numbers)
+ */
+export async function searchProducts(filters: ProductSearchFilter) {
+  const {
+    merchantId,
+    outletId,
+    categoryId,
+    search,
+    page = 1,
+    limit = 20,
+    isActive = true
+  } = filters;
 
-    // If outletId is specified, only show products that have stock at that outlet
-    if (outletId) {
+  const skip = (page - 1) * limit;
+
+  // Build where clause
+  const where: any = {
+    isActive,
+  };
+
+  if (merchantId) {
+    // Find merchant by publicId
+    const merchant = await prisma.merchant.findUnique({
+      where: { publicId: merchantId },
+      select: { id: true }
+    });
+    
+    if (merchant) {
+      where.merchantId = merchant.id; // Use CUID
+    }
+  }
+
+  if (categoryId) {
+    // Find category by publicId
+    const category = await prisma.category.findUnique({
+      where: { publicId: categoryId },
+      select: { id: true }
+    });
+    
+    if (category) {
+      where.categoryId = category.id; // Use CUID
+    }
+  }
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search } },
+      { description: { contains: search } },
+      { barcode: { equals: search } }
+    ];
+  }
+
+  // If outletId is specified, only show products that have stock at that outlet
+  if (outletId) {
+    // Find outlet by publicId
+    const outlet = await prisma.outlet.findUnique({
+      where: { publicId: outletId },
+      select: { id: true }
+    });
+    
+    if (outlet) {
       where.outletStock = {
         some: {
-          outletId,
+          outletId: outlet.id, // Use CUID
           stock: { gt: 0 }
         }
       };
     }
+  }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        select: {
-          id: true, // Keep internal ID for database operations
-          publicId: true, // Include public ID
-          name: true,
-          description: true,
-          barcode: true,
-          totalStock: true,
-          rentPrice: true,
-          salePrice: true,
-          deposit: true,
-          images: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-          category: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          merchant: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          outletStock: {
-            include: {
-              outlet: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            },
-            ...(outletId && { where: { outletId } })
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        publicId: true,
+        name: true,
+        description: true,
+        barcode: true,
+        totalStock: true,
+        rentPrice: true,
+        salePrice: true,
+        deposit: true,
+        images: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true
           }
         },
-        orderBy: { name: 'asc' },
-        skip,
-        take: limit
-      }),
-      prisma.product.count({ where })
-    ]);
+        merchant: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true
+          }
+        },
+        outletStock: {
+          select: {
+            id: true,
+            stock: true,
+            available: true,
+            renting: true,
+            outlet: {
+              select: {
+                id: true,
+                publicId: true,
+                name: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: skip
+    }),
+    prisma.product.count({ where })
+  ]);
 
-    const totalPages = Math.ceil(total / limit);
+  // Transform to match expected types
+  const transformedProducts = products.map(product => ({
+    id: product.publicId, // Return publicId (number) for external use
+    publicId: product.publicId,
+    name: product.name,
+    description: product.description,
+    barcode: product.barcode,
+    totalStock: product.totalStock,
+    rentPrice: product.rentPrice,
+    salePrice: product.salePrice,
+    deposit: product.deposit,
+    images: product.images,
+    isActive: product.isActive,
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+    category: {
+      id: product.category.publicId, // Return publicId (number)
+      publicId: product.category.publicId,
+      name: product.category.name,
+    },
+    merchant: {
+      id: product.merchant.publicId, // Return publicId (number)
+      publicId: product.merchant.publicId,
+      name: product.merchant.name,
+    },
+    outletStock: product.outletStock.map(stock => ({
+      id: stock.id, // Keep CUID for internal use
+      stock: stock.stock,
+      available: stock.available,
+      renting: stock.renting,
+      outlet: {
+        id: stock.outlet.publicId, // Return publicId (number)
+        publicId: stock.outlet.publicId,
+        name: stock.outlet.name,
+      },
+    })),
+  }));
 
-    return {
-      products,
-      total,
-      page,
-      totalPages
-    };
-  } catch (error) {
-    console.error('Error in getProducts:', error);
-    throw new Error(`Failed to fetch products: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  return {
+    products: transformedProducts,
+    total,
+    page,
+    limit,
+    hasMore: skip + limit < total,
+  };
+}
+
+// ============================================================================
+// PRODUCT CREATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Create new product - follows dual ID system
+ * Input: publicIds (numbers), Output: publicId (number)
+ */
+export async function createProduct(input: any): Promise<any> {
+  // Find merchant by publicId
+  const merchant = await prisma.merchant.findUnique({
+    where: { publicId: input.merchantId }
+  });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with publicId ${input.merchantId} not found`);
   }
-};
 
-export const getProductById = async (id: string) => {
-  try {
-    // Check if the ID is numeric (public ID) or alphanumeric (internal ID)
-    const isPublicId = /^\d+$/.test(id);
+  // Find category by publicId if provided
+  let category = null;
+  if (input.categoryId) {
+    category = await prisma.category.findUnique({
+      where: { publicId: input.categoryId }
+    });
     
-    if (isPublicId) {
-      // Search by public ID
-      return await prisma.product.findUnique({
-        where: { publicId: parseInt(id) },
-        include: {
-          category: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          merchant: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          outletStock: {
-            include: {
-              outlet: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          }
-        }
-      });
-    } else {
-      // Search by internal ID
-      return await prisma.product.findUnique({
-        where: { id },
-        include: {
-          category: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          merchant: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          outletStock: {
-            include: {
-              outlet: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          }
-        }
-      });
+    if (!category) {
+      throw new Error(`Category with publicId ${input.categoryId} not found`);
     }
-  } catch (error) {
-    console.error('Error in getProductById:', error);
-    throw new Error(`Failed to fetch product: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
-};
 
-export const getProductByPublicId = async (publicId: number) => {
-  try {
-    return await prisma.product.findUnique({
-      where: { publicId },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        merchant: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        outletStock: {
-          include: {
-            outlet: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error in getProductByPublicId:', error);
-    throw new Error(`Failed to fetch product: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  // Generate next product publicId
+  const lastProduct = await prisma.product.findFirst({
+    orderBy: { publicId: 'desc' },
+    select: { publicId: true }
+  });
+  const nextPublicId = (lastProduct?.publicId || 0) + 1;
+
+  // Create product
+  const productData: any = {
+    publicId: nextPublicId,
+    name: input.name,
+    description: input.description,
+    barcode: input.barcode,
+    totalStock: input.totalStock || 0,
+    rentPrice: input.rentPrice,
+    salePrice: input.salePrice,
+    deposit: input.deposit || 0,
+    images: input.images,
+    isActive: input.isActive ?? true,
+    merchantId: merchant.id, // Use CUID
+  };
+
+  // Only add categoryId if category is provided
+  if (category) {
+    productData.categoryId = category.id;
   }
-};
 
-export const createProduct = async (data: {
-  merchantId: string;
-  categoryId: string;
-  name: string;
-  description?: string;
-  barcode?: string;
-  totalStock: number;
-  rentPrice: number;
-  salePrice?: number;
-  deposit: number;
-  images?: string;
-  outletStock?: Array<{
-    outletId: string;
-    stock: number;
-  }>;
-}) => {
-  try {
-    const { outletStock, ...productData } = data;
-
-    // Generate the next public ID for the product
-    const lastProduct = await prisma.product.findFirst({
-      orderBy: { publicId: 'desc' },
-      select: { publicId: true }
-    });
-    const nextPublicId = (lastProduct?.publicId || 0) + 1;
-
-    return await prisma.product.create({
-      data: {
-        ...productData,
-        publicId: nextPublicId,
-        outletStock: {
-          create: outletStock?.map(os => ({
-            outletId: os.outletId,
-            stock: os.stock,
-            available: os.stock,
-            renting: 0
-          })) || []
-        }
+  const product = await prisma.product.create({
+    data: productData,
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
       },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true
-          }
+      category: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
         },
-        merchant: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        outletStock: {
-          include: {
-            outlet: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error in createProduct:', error);
-    throw new Error(`Failed to create product: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
-
-export const updateProduct = async (
-  id: string,
-  data: {
-    categoryId?: string;
-    name?: string;
-    description?: string;
-    barcode?: string;
-    totalStock?: number;
-    rentPrice?: number;
-    salePrice?: number;
-    deposit?: number;
-    images?: string;
-    isActive?: boolean;
-  }
-) => {
-  try {
-    const { salePrice, ...rest } = data;
-    const normalizedSalePrice: number | undefined = salePrice == null ? undefined : salePrice;
-    const updateData = {
-      ...rest,
-      ...(normalizedSalePrice !== undefined ? { salePrice: normalizedSalePrice } : {}),
-    };
-
-    return await prisma.product.update({
-      where: { id },
-      data: updateData,
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        merchant: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        outletStock: {
-          include: {
-            outlet: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error in updateProduct:', error);
-    throw new Error(`Failed to update product: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
-
-export const deleteProduct = async (id: string) => {
-  try {
-    return await prisma.product.delete({
-      where: { id }
-    });
-  } catch (error) {
-    console.error('Error in deleteProduct:', error);
-    throw new Error(`Failed to delete product: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
-
-export const updateOutletStock = async (
-  productId: string,
-  outletId: string,
-  data: {
-    stock?: number;
-    available?: number;
-    renting?: number;
-  }
-) => {
-  try {
-    return await prisma.outletStock.upsert({
-      where: {
-        productId_outletId: {
-          productId,
-          outletId
-        }
       },
-      update: data,
-      create: {
-        productId,
-        outletId,
-        stock: data.stock || 0,
-        available: data.available || data.stock || 0,
-        renting: data.renting || 0
-      }
-    });
-  } catch (error) {
-    console.error('Error in updateOutletStock:', error);
-    throw new Error(`Failed to update outlet stock: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
+    },
+  });
 
-export const getProductStockSummary = async (merchantId: string) => {
-  try {
-    const products = await prisma.product.findMany({
-      where: { merchantId, isActive: true },
-      include: {
-        outletStock: {
-          include: {
-            outlet: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
-        }
-      }
-    });
+  return product;
+}
 
-    return products.map(product => ({
-      id: product.id,
-      name: product.name,
-      totalStock: product.totalStock,
-      totalAvailable: product.outletStock.reduce((sum, os) => sum + os.available, 0),
-      totalRenting: product.outletStock.reduce((sum, os) => sum + os.renting, 0),
-      outlets: product.outletStock.map((os) => ({
-        outletId: os.outlet.id,
-        outletName: os.outlet.name,
-        stock: os.stock,
-        available: os.available,
-        renting: os.renting
-      }))
-    }));
-  } catch (error) {
-    console.error('Error in getProductStockSummary:', error);
-    throw new Error(`Failed to fetch product stock summary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+// ============================================================================
+// PRODUCT UPDATE FUNCTIONS
+// ============================================================================
+
+/**
+ * Update product - follows dual ID system
+ * Input: publicId (number), Output: publicId (number)
+ */
+export async function updateProduct(
+  publicId: number,
+  input: any
+): Promise<any> {
+  // Find product by publicId
+  const existingProduct = await prisma.product.findUnique({
+    where: { publicId }
+  });
+
+  if (!existingProduct) {
+    throw new Error(`Product with publicId ${publicId} not found`);
   }
-}; 
+
+  // Update product
+  const updatedProduct = await prisma.product.update({
+    where: { publicId },
+    data: {
+      name: input.name,
+      description: input.description,
+      barcode: input.barcode,
+      totalStock: input.totalStock,
+      rentPrice: input.rentPrice,
+      salePrice: input.salePrice,
+      deposit: input.deposit,
+      images: input.images,
+      isActive: input.isActive,
+    },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  return updatedProduct;
+}
+
+// ============================================================================
+// PRODUCT UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Get products by merchant - follows dual ID system
+ */
+export async function getProductsByMerchant(merchantId: number) {
+  // Find merchant by publicId
+  const merchant = await prisma.merchant.findUnique({
+    where: { publicId: merchantId },
+    select: { id: true }
+  });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with publicId ${merchantId} not found`);
+  }
+
+  return await prisma.product.findMany({
+    where: { merchantId: merchant.id }, // Use CUID
+    include: {
+      category: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+/**
+ * Get products by category - follows dual ID system
+ */
+export async function getProductsByCategory(categoryId: number) {
+  // Find category by publicId
+  const category = await prisma.category.findUnique({
+    where: { publicId: categoryId },
+    select: { id: true }
+  });
+  
+  if (!category) {
+    throw new Error(`Category with publicId ${categoryId} not found`);
+  }
+
+  return await prisma.product.findMany({
+    where: { categoryId: category.id }, // Use CUID
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+/**
+ * Update product stock - follows dual ID system
+ */
+export async function updateProductStock(
+  productId: number,
+  outletId: number,
+  stockChange: number
+): Promise<any> {
+  // Find product by publicId
+  const product = await prisma.product.findUnique({
+    where: { publicId: productId },
+    select: { id: true }
+  });
+  
+  if (!product) {
+    throw new Error(`Product with publicId ${productId} not found`);
+  }
+
+  // Find outlet by publicId
+  const outlet = await prisma.outlet.findUnique({
+    where: { publicId: outletId },
+    select: { id: true }
+  });
+  
+  if (!outlet) {
+    throw new Error(`Outlet with publicId ${outletId} not found`);
+  }
+
+  // Update or create outlet stock
+  const outletStock = await prisma.outletStock.upsert({
+    where: {
+      productId_outletId: {
+        productId: product.id, // Use CUID
+        outletId: outlet.id, // Use CUID
+      },
+    },
+    update: {
+      stock: { increment: stockChange },
+      available: { increment: stockChange },
+    },
+    create: {
+      productId: product.id, // Use CUID
+      outletId: outlet.id, // Use CUID
+      stock: stockChange,
+      available: stockChange,
+      renting: 0,
+    },
+  });
+
+  return outletStock;
+}
+
+/**
+ * Delete product - follows dual ID system
+ * Input: publicId (number), Output: deleted product data
+ */
+export async function deleteProduct(publicId: number): Promise<any> {
+  // Find product by publicId
+  const product = await prisma.product.findUnique({
+    where: { publicId },
+    include: {
+      category: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+  });
+  
+  if (!product) {
+    throw new Error(`Product with publicId ${publicId} not found`);
+  }
+
+  // Delete the product (this will cascade to outletStock due to Prisma schema)
+  const deletedProduct = await prisma.product.delete({
+    where: { publicId },
+    include: {
+      category: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  // Transform to match expected types
+  return {
+    id: deletedProduct.publicId,
+    publicId: deletedProduct.publicId,
+    name: deletedProduct.name,
+    description: deletedProduct.description,
+    barcode: deletedProduct.barcode,
+    totalStock: deletedProduct.totalStock,
+    rentPrice: deletedProduct.rentPrice,
+    salePrice: deletedProduct.salePrice,
+    deposit: deletedProduct.deposit,
+    images: deletedProduct.images,
+    isActive: deletedProduct.isActive,
+    createdAt: deletedProduct.createdAt,
+    updatedAt: deletedProduct.updatedAt,
+    category: {
+      id: deletedProduct.category.publicId,
+      publicId: deletedProduct.category.publicId,
+      name: deletedProduct.category.name,
+    },
+    merchant: {
+      id: deletedProduct.merchant.publicId,
+      publicId: deletedProduct.merchant.publicId,
+      name: deletedProduct.merchant.name,
+    },
+  };
+}

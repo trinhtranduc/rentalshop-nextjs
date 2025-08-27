@@ -29,8 +29,12 @@ export const useOrderValidation = () => {
   ): boolean => {
     const errors: ValidationErrors = {};
 
-    if (!formData.customerId) {
+    if (!formData.customerId || formData.customerId <= 0) {
       errors.customerId = 'Customer selection is required';
+    }
+
+    if (!formData.outletId || formData.outletId <= 0) {
+      errors.outletId = 'Outlet selection is required';
     }
 
     if (orderItems.length === 0) {
@@ -68,12 +72,13 @@ export const useOrderValidation = () => {
     orderItems: OrderItemFormData[]
   ): boolean => {
     const hasProducts = orderItems.length > 0;
-    const hasCustomer = formData.customerId;
+    const hasCustomer = Boolean(formData.customerId && formData.customerId > 0);
+    const hasOutlet = Boolean(formData.outletId && formData.outletId > 0);
     
     if (formData.orderType === 'RENT') {
-      return hasProducts && hasCustomer && formData.pickupPlanAt && formData.returnPlanAt;
+      return hasProducts && hasCustomer && hasOutlet && Boolean(formData.pickupPlanAt) && Boolean(formData.returnPlanAt);
     } else {
-      return hasProducts && hasCustomer;
+      return hasProducts && hasCustomer && hasOutlet;
     }
   }, []);
 

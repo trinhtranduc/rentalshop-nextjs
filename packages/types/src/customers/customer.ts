@@ -18,8 +18,8 @@ export interface Customer {
   idType?: 'passport' | 'drivers_license' | 'national_id' | 'other';
   notes?: string;
   isActive: boolean;
-  merchantId: string;
-  outletId?: string;
+  merchantId: number;  // Changed from string to number
+  outletId?: number;   // Changed from string to number
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,13 +68,13 @@ export interface CustomerInput {
   idNumber?: string;
   idType?: 'passport' | 'drivers_license' | 'national_id' | 'other';
   notes?: string;
-  merchantId: string;
+  merchantId: number;  // Changed from string to number
 }
 
 export interface CustomerFilters {
   search?: string;
-  merchantId?: string;
-  outletId?: string;
+  merchantId?: number;  // Changed from string to number
+  outletId?: number;   // Changed from string to number
   city?: string;
   state?: string;
   country?: string;
@@ -104,9 +104,9 @@ export interface CustomerSearchResult {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
-  merchantId: string;
+  merchantId: number;  // Changed from string to number
   merchant: {
-    id: string;
+    id: number;        // Changed from string to number
     name: string;
   };
 }
@@ -114,7 +114,7 @@ export interface CustomerSearchResult {
 // Extended customer types for search and API responses
 export interface CustomerWithMerchant extends Customer {
   merchant: {
-    id: string;
+    id: number;        // Changed from string to number
     name: string;
   };
 }
@@ -124,7 +124,7 @@ export interface CustomerWithMerchant extends Customer {
 
 export interface CustomerSearchFilter {
   q?: string;
-  merchantId?: string;
+  merchantId?: number;  // Changed from string to number
   isActive?: boolean;
   city?: string;
   state?: string;

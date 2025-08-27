@@ -36,7 +36,7 @@ export default function ProductOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const productId = params.productId as string;
+  const productId = params.id as string;
 
   useEffect(() => {
     const fetchData = async () => {

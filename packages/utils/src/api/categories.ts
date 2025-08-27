@@ -2,7 +2,7 @@ import { authenticatedFetch, parseApiResponse } from '../common';
 import type { ApiResponse } from '../common';
 
 export interface Category {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   isActive: boolean;
@@ -53,7 +53,7 @@ export const categoriesApi = {
   /**
    * Update an existing category
    */
-  async updateCategory(categoryId: string, categoryData: Partial<Category>): Promise<ApiResponse<Category>> {
+  async updateCategory(categoryId: number, categoryData: Partial<Category>): Promise<ApiResponse<Category>> {
     const response = await authenticatedFetch(`/api/categories/${categoryId}`, {
       method: 'PUT',
       body: JSON.stringify(categoryData),
@@ -64,7 +64,7 @@ export const categoriesApi = {
   /**
    * Delete a category
    */
-  async deleteCategory(categoryId: string): Promise<ApiResponse<any>> {
+  async deleteCategory(categoryId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/categories/${categoryId}`, {
       method: 'DELETE',
     });

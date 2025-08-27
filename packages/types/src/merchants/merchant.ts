@@ -13,7 +13,7 @@ export interface Merchant {
   zipCode: string;
   country: string;
   businessType: string;
-  taxId?: string;
+  taxId?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,7 +28,7 @@ export interface MerchantCreateInput {
   zipCode: string;
   country: string;
   businessType: string;
-  taxId?: string;
+  taxId?: number;
 }
 
 export interface MerchantUpdateInput {
@@ -41,5 +41,5 @@ export interface MerchantUpdateInput {
   zipCode?: string;
   country?: string;
   businessType?: string;
-  taxId?: string;
+  taxId?: number;
 }

@@ -6,9 +6,9 @@ import { Order, OrderCreateInput, OrderUpdateInput } from './order';
 
 export interface OrderManagement {
   createOrder(input: OrderCreateInput): Promise<Order>;
-  updateOrder(id: string, input: OrderUpdateInput): Promise<Order>;
-  deleteOrder(id: string): Promise<void>;
-  getOrder(id: string): Promise<Order | null>;
+  updateOrder(id: number, input: OrderUpdateInput): Promise<Order>;
+  deleteOrder(id: number): Promise<void>;
+  getOrder(id: number): Promise<Order | null>;
   getOrders(filters?: any): Promise<Order[]>;
 }
 

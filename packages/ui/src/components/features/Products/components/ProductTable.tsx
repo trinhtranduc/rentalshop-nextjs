@@ -8,7 +8,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface ProductTableProps {
   products: Product[];
-  onProductAction: (action: string, productId: string) => void;
+  onProductAction: (action: string, productId: number) => void;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;

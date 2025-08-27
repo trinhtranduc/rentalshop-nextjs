@@ -21,9 +21,9 @@ export interface ProductsResponse {
 
 export interface ProductFilters {
   search?: string;
-  categoryId?: string;
-  outletId?: string;
-  merchantId?: string;
+  categoryId?: number;
+  outletId?: number;
+  merchantId?: number;
   minPrice?: number;
   maxPrice?: number;
   available?: boolean;
@@ -66,7 +66,7 @@ export const productsApi = {
   /**
    * Get product by ID (supports both public ID and internal ID)
    */
-  async getProductById(productId: string): Promise<ApiResponse<any>> {
+  async getProductById(productId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/products/${productId}`);
     return await parseApiResponse<any>(response);
   },
@@ -91,7 +91,7 @@ export const productsApi = {
   /**
    * Check product availability
    */
-  async checkAvailability(productId: string): Promise<ApiResponse<{ isAvailable: boolean; stock: number; renting: number }>> {
+  async checkAvailability(productId: number): Promise<ApiResponse<{ isAvailable: boolean; stock: number; renting: number }>> {
     const response = await authenticatedFetch(`/api/products/${productId}/availability`);
     return await parseApiResponse<{ isAvailable: boolean; stock: number; renting: number }>(response);
   },
@@ -110,7 +110,7 @@ export const productsApi = {
   /**
    * Update an existing product
    */
-  async updateProduct(productId: string, productData: Partial<any>): Promise<ApiResponse<any>> {
+  async updateProduct(productId: number, productData: Partial<any>): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/products/${productId}`, {
       method: 'PUT',
       body: JSON.stringify(productData),
@@ -121,7 +121,7 @@ export const productsApi = {
   /**
    * Delete a product
    */
-  async deleteProduct(productId: string): Promise<ApiResponse<any>> {
+  async deleteProduct(productId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/products/${productId}`, {
       method: 'DELETE',
     });

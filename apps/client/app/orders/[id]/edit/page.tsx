@@ -38,8 +38,8 @@ export default function EditOrderPage() {
   // Additional state for form data
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [outlets, setOutlets] = useState<Array<{ id: string; name: string }>>([]);
-  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [outlets, setOutlets] = useState<Array<{ id: number; name: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
   const [merchantId, setMerchantId] = useState<string>('');
 
   const orderNumber = params.orderNumber as string;

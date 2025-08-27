@@ -5,7 +5,7 @@ import { prisma } from '@rentalshop/database';
 const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SECRET_LOCAL || 'local-jwt-secret-key-change-this';
 
 export interface JWTPayload {
-  userId: string;
+  userId: string;  // Changed from number to string - this should be the internal database ID
   email: string;
   role: string;
 }
@@ -22,7 +22,7 @@ export const verifyTokenSimple = async (token: string) => {
   try {
     const payload = verifyToken(token);
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
+      where: { id: payload.userId }, // Now payload.userId is string, matching Prisma's expected type
       include: {
         merchant: true,
         outlet: true,

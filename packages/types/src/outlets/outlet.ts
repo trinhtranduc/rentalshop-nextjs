@@ -12,7 +12,7 @@ export interface Outlet {
   country: string;
   phone: string;
   email?: string;
-  merchantId: string;
+  merchantId: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

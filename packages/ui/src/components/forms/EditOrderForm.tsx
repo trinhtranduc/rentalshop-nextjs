@@ -21,13 +21,13 @@ interface EditOrderFormProps {
   order: OrderDetailData;
   customers?: any[];
   products?: any[];
-  outlets?: Array<{ id: string; name: string }>;
-  categories?: Array<{ id: string; name: string }>;
+  outlets?: Array<{ id: number; name: string }>;
+  categories?: Array<{ id: number; name: string }>;
   onSubmit?: (data: OrderInput) => void;
   onCancel?: () => void;
   loading?: boolean;
   layout?: 'stacked' | 'split';
-  merchantId?: string;
+  merchantId?: number;
 }
 
 export const EditOrderForm: React.FC<EditOrderFormProps> = (props) => {

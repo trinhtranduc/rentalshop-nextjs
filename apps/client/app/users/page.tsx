@@ -70,19 +70,18 @@ export default function UsersPage() {
     console.log('🔍 transformUsersForComponent called with:', apiUsers.length, 'users');
     
     const transformed = apiUsers.map(user => {
-      // Ensure we have a valid string publicId
-      let publicId = user.publicId;
-      console.log('🔍 Processing user:', { id: user.id, publicId, publicIdType: typeof publicId });
+      // Ensure we have a valid number id (which represents publicId)
+      let userId = user.id;
+      console.log('🔍 Processing user:', { id: user.id, publicId: user.publicId, idType: typeof userId });
       
-      if (!publicId || typeof publicId !== 'string') {
-        console.warn('⚠️ User missing publicId or invalid type:', { userId: user.id, publicId, type: typeof publicId });
-        // Don't use user.id as fallback since it's not a string
-        publicId = '';
+      if (!userId || typeof userId !== 'number') {
+        console.warn('⚠️ User missing id or invalid type:', { userId: user.id, publicId: user.publicId, type: typeof userId });
+        // Don't use user.publicId as fallback since it's not a number
+        userId = 0;
       }
       
       const transformedUser: User = {
-        id: user.id,
-        publicId: publicId, // Use the validated publicId
+        id: userId, // Use the validated id (which represents publicId)
         name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         email: user.email,
         phone: user.phone,
@@ -102,7 +101,7 @@ export default function UsersPage() {
         outlet: user.outlet
       };
       
-      console.log('🔍 Transformed user:', { id: transformedUser.id, publicId: transformedUser.publicId });
+      console.log('🔍 Transformed user:', { id: transformedUser.id, originalPublicId: user.publicId });
       return transformedUser;
     });
     
@@ -507,21 +506,28 @@ export default function UsersPage() {
 
   const handleUserAction = useCallback(async (action: string, userId: string) => {
     try {
+      // Convert userId to number for API calls
+      const userIdNumber = parseInt(userId);
+      if (isNaN(userIdNumber)) {
+        console.error('Invalid user ID:', userId);
+        return;
+      }
+
       switch (action) {
         case 'view':
-          console.log('View user:', userId);
+          console.log('View user:', userIdNumber);
           // Navigate to user details page
-          window.location.href = `/users/${userId}`;
+          window.location.href = `/users/${userIdNumber}`;
           break;
         case 'edit':
-          console.log('Edit user:', userId);
+          console.log('Edit user:', userIdNumber);
           // Navigate to user page where editing can be done inline
-          window.location.href = `/users/${userId}`;
+          window.location.href = `/users/${userIdNumber}`;
           break;
         case 'delete':
           try {
-            console.log('🗑️ Deleting user:', userId);
-            const deleteResponse = await usersApi.deleteUser(userId);
+            console.log('🗑️ Deleting user:', userIdNumber);
+            const deleteResponse = await usersApi.deleteUser(userIdNumber);
             if (deleteResponse.success) {
               console.log('✅ User deleted successfully, refreshing user list...');
               // Refresh the user list manually
@@ -536,7 +542,7 @@ export default function UsersPage() {
           break;
         case 'activate':
           try {
-            const activateResponse = await usersApi.activateUser(userId);
+            const activateResponse = await usersApi.activateUser(userIdNumber);
             if (activateResponse.success) {
               console.log('✅ User activated successfully, refreshing user list...');
               // Refresh the user list manually
@@ -551,7 +557,7 @@ export default function UsersPage() {
           break;
         case 'deactivate':
           try {
-            const deactivateResponse = await usersApi.deactivateUser(userId);
+            const deactivateResponse = await usersApi.deactivateUser(userIdNumber);
             if (deactivateResponse.success) {
               console.log('✅ User deactivated successfully, refreshing user list...');
               // Refresh the user list manually
@@ -569,12 +575,12 @@ export default function UsersPage() {
           // Add operation is handled by handleUserCreated, no need to reload here
           break;
         case 'edit':
-          console.log('Edit user:', userId);
+          console.log('Edit user:', userIdNumber);
           // Edit operation is handled by handleUserUpdated, no need to reload here
           break;
 
         default:
-          console.log('Unknown action:', action, userId);
+          console.log('Unknown action:', action, userIdNumber);
       }
     } catch (error) {
       console.error('Error performing user action:', error);

@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
           where: { id: item.productId },
           select: {
             id: true,
+            publicId: true, // Include publicId to use as the external ID
             name: true,
             rentPrice: true,
             images: true,
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
         });
 
         return {
-          id: item.productId,
+          id: product?.publicId || 0, // Use publicId (number) as the external ID
           name: product?.name || 'Unknown Product',
           rentPrice: product?.rentPrice || 0,
           category: product?.category?.name || 'Uncategorized',

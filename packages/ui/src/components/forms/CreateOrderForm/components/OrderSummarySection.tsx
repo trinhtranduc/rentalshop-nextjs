@@ -99,13 +99,13 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
 
             {/* Customer Required */}
             <div className="flex items-center gap-2">
-              {formData.customerId ? (
+              {formData.customerId && formData.customerId > 0 ? (
                 <CheckCircle className="w-4 h-4 text-green-600" />
               ) : (
                 <XCircle className="w-4 h-4 text-red-500" />
               )}
-              <span className={formData.customerId ? 'text-green-700' : 'text-red-600'}>
-                {formData.customerId ? '✓' : '✗'} Customer information required
+              <span className={formData.customerId && formData.customerId > 0 ? 'text-green-700' : 'text-red-600'}>
+                {formData.customerId && formData.customerId > 0 ? '✓' : '✗'} Customer information required
               </span>
             </div>
 
@@ -125,13 +125,13 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
 
             {/* Outlet Required */}
             <div className="flex items-center gap-2">
-              {formData.outletId ? (
+              {formData.outletId && formData.outletId > 0 ? (
                 <CheckCircle className="w-4 h-4 text-green-600" />
               ) : (
                 <XCircle className="w-4 h-4 text-red-500" />
               )}
-              <span className={formData.outletId ? 'text-green-700' : 'text-red-600'}>
-                {formData.outletId ? '✓' : '✗'} Outlet selection required
+              <span className={formData.outletId && formData.outletId > 0 ? 'text-green-700' : 'text-red-600'}>
+                {formData.outletId && formData.outletId > 0 ? '✓' : '✗'} Outlet selection required
               </span>
             </div>
           </div>

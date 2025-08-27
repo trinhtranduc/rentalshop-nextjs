@@ -7,9 +7,9 @@ export interface Product {
   name: string;
   description?: string;
   barcode?: string;
-  categoryId?: string;
-  outletId: string;
-  merchantId: string;
+  categoryId: number;  // Changed from string to number
+  outletId: number;    // Changed from string to number
+  merchantId: number;  // Changed from string to number
   rentPrice: number;
   deposit: number;
   stock: number;
@@ -25,8 +25,8 @@ export interface ProductCreateInput {
   name: string;
   description?: string;
   barcode?: string;
-  categoryId?: string;
-  outletId: string;
+  categoryId: number;  // Changed from string to number
+  outletId: number;    // Changed from string to number
   rentPrice: number;
   deposit: number;
   stock: number;
@@ -37,7 +37,7 @@ export interface ProductUpdateInput {
   name?: string;
   description?: string;
   barcode?: string;
-  categoryId?: string;
+  categoryId?: number;  // Changed from string to number
   rentPrice?: number;
   deposit?: number;
   stock?: number;
@@ -48,9 +48,9 @@ export interface ProductUpdateInput {
 }
 
 export interface ProductFilters {
-  outletId?: string;
-  merchantId?: string;
-  categoryId?: string;
+  outletId?: number;    // Changed from string to number
+  merchantId?: number;  // Changed from string to number
+  categoryId?: number;  // Changed from string to number
   available?: boolean;
   search?: string;
   minPrice?: number;
@@ -68,29 +68,29 @@ export interface ProductSearchResult {
 // Extended product types for search and API responses
 export interface ProductWithStock extends Product {
   category: {
-    id: string;
+    id: number;        // Changed from string to number
     name: string;
   };
   merchant: {
-    id: string;
+    id: number;        // Changed from string to number
     name: string;
   };
   outletStock: Array<{
-    id: string;
+    id: number;        // Changed from string to number
     stock: number;
     available: number;
     renting: number;
     outlet: {
-      id: string;
+      id: number;      // Changed from string to number
       name: string;
     };
   }>;
 }
 
 export interface ProductSearchFilter {
-  merchantId?: string;
-  outletId?: string;
-  categoryId?: string;
+  merchantId?: number;  // Changed from string to number
+  outletId?: number;    // Changed from string to number
+  categoryId?: number;  // Changed from string to number
   search?: string;
   page?: number;
   limit?: number;
@@ -110,8 +110,8 @@ export interface ProductSearchResponse {
 
 // Additional product types for database operations
 export interface ProductInput {
-  merchantId: string;
-  categoryId: string;
+  merchantId: number;   // Changed from string to number
+  categoryId: number;   // Changed from string to number
   name: string;
   description?: string;
   barcode?: string;
@@ -121,16 +121,14 @@ export interface ProductInput {
   deposit: number;
   images?: string[];
   outletStock?: Array<{
-    outletId: string;
+    outletId: number;   // Changed from string to number
     stock: number;
   }>;
 }
 
-
-
 export interface OutletStockInput {
-  productId: string;
-  outletId: string;
+  productId: number;    // Changed from string to number
+  outletId: number;     // Changed from string to number
   stock: number;
   available?: number;
   renting?: number;

@@ -60,7 +60,7 @@ interface OrderData {
 }
 
 interface TopProduct {
-  id: string;
+  id: number;
   name: string;
   category: string;
   rentalCount: number;
@@ -70,7 +70,7 @@ interface TopProduct {
 }
 
 interface TopCustomer {
-  id: string;
+  id: number;
   name: string;
   location: string;
   rentalCount: number;
@@ -80,7 +80,7 @@ interface TopCustomer {
 }
 
 interface RecentOrder {
-  id: string;
+  id: number;
   orderNumber: string;
   customerName: string;
   amount: number;

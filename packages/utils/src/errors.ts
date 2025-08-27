@@ -248,21 +248,21 @@ export class ForbiddenError extends AppError {
  * Create user-related errors
  */
 export const createUserError = {
-  duplicateEmail: (email: string, merchantId?: string) => 
+  duplicateEmail: (email: string, merchantId?: number) => 
     new DuplicateError(
       `User with email '${email}' already exists${merchantId ? ' in this merchant organization' : ''}`,
       USER_ERROR_CODES.DUPLICATE_EMAIL,
       `Email: ${email}, Merchant: ${merchantId || 'N/A'}`
     ),
     
-  duplicatePhone: (phone: string, merchantId?: string) => 
+  duplicatePhone: (phone: string, merchantId?: number) => 
     new DuplicateError(
       `User with phone '${phone}' already exists${merchantId ? ' in this merchant organization' : ''}`,
       USER_ERROR_CODES.DUPLICATE_PHONE,
       `Phone: ${phone}, Merchant: ${merchantId || 'N/A'}`
     ),
     
-  notFound: (userId: string) => 
+  notFound: (userId: number) => 
     new NotFoundError(
       `User with ID '${userId}' not found`,
       USER_ERROR_CODES.USER_NOT_FOUND,
@@ -280,21 +280,21 @@ export const createUserError = {
  * Create customer-related errors
  */
 export const createCustomerError = {
-  duplicateEmail: (email: string, merchantId?: string) => 
+  duplicateEmail: (email: string, merchantId?: number) => 
     new DuplicateError(
       `Customer with email '${email}' already exists${merchantId ? ' in this merchant organization' : ''}`,
       CUSTOMER_ERROR_CODES.DUPLICATE_CUSTOMER_EMAIL,
       `Email: ${email}, Merchant: ${merchantId || 'N/A'}`
     ),
     
-  duplicatePhone: (phone: string, merchantId?: string) => 
+  duplicatePhone: (phone: string, merchantId?: number) => 
     new DuplicateError(
       `Customer with phone '${phone}' already exists${merchantId ? ' in this merchant organization' : ''}`,
       CUSTOMER_ERROR_CODES.DUPLICATE_CUSTOMER_PHONE,
       `Phone: ${phone}, Merchant: ${merchantId || 'N/A'}`
     ),
     
-  notFound: (customerId: string) => 
+  notFound: (customerId: number) => 
     new NotFoundError(
       `Customer with ID '${customerId}' not found`,
       CUSTOMER_ERROR_CODES.CUSTOMER_NOT_FOUND,
@@ -313,14 +313,14 @@ export const createProductError = {
       `Barcode: ${barcode}`
     ),
     
-  notFound: (productId: string) => 
+  notFound: (productId: number) => 
     new NotFoundError(
       `Product with ID '${productId}' not found`,
       PRODUCT_ERROR_CODES.PRODUCT_NOT_FOUND,
       `Product ID: ${productId}`
     ),
     
-  insufficientStock: (productId: string, requested: number, available: number) => 
+  insufficientStock: (productId: number, requested: number, available: number) => 
     new AppError(
       `Insufficient stock for product. Requested: ${requested}, Available: ${available}`,
       PRODUCT_ERROR_CODES.INSUFFICIENT_STOCK,

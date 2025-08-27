@@ -67,7 +67,7 @@ export class UserApiClient {
     return this.request<UserApiResponse>(endpoint);
   }
 
-  async getUserById(userId: string): Promise<UserApiResponse> {
+  async getUserById(userId: number): Promise<UserApiResponse> {
     return this.request<UserApiResponse>(`/users/${userId}`);
   }
 
@@ -78,35 +78,35 @@ export class UserApiClient {
     });
   }
 
-  async updateUser(userId: string, userData: Partial<User>): Promise<UserApiResponse> {
+  async updateUser(userId: number, userData: Partial<User>): Promise<UserApiResponse> {
     return this.request<UserApiResponse>(`/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
   }
 
-  async deactivateUser(userId: string): Promise<UserApiResponse> {
+  async deactivateUser(userId: number): Promise<UserApiResponse> {
     return this.request<UserApiResponse>(`/users/${userId}/deactivate`, {
       method: 'PATCH',
       body: JSON.stringify({ isActive: false }),
     });
   }
 
-  async activateUser(userId: string): Promise<UserApiResponse> {
+  async activateUser(userId: number): Promise<UserApiResponse> {
     return this.request<UserApiResponse>(`/users/${userId}/activate`, {
       method: 'PATCH',
       body: JSON.stringify({ isActive: true }),
     });
   }
 
-  async changePassword(userId: string, newPassword: string): Promise<UserApiResponse> {
+  async changePassword(userId: number, newPassword: string): Promise<UserApiResponse> {
     return this.request<UserApiResponse>(`/users/${userId}/change-password`, {
       method: 'PATCH',
       body: JSON.stringify({ newPassword }),
     });
   }
 
-  async deleteUser(userId: string): Promise<UserApiResponse> {
+  async deleteUser(userId: number): Promise<UserApiResponse> {
     return this.request<UserApiResponse>(`/users/${userId}`, {
       method: 'DELETE',
     });

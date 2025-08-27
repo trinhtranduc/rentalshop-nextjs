@@ -6,7 +6,7 @@ import { cn } from '../../../../lib/cn';
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
 export interface ProductCardProps {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   stock: number;
@@ -22,16 +22,16 @@ export interface ProductCardProps {
   outlet: {
     name: string;
   };
-  onRent?: (productId: string) => void;
-  onView?: (productId: string) => void;
-  onEdit?: (productId: string) => void;
-  onDelete?: (productId: string) => void;
+  onRent?: (productId: number) => void;
+  onView?: (productId: number) => void;
+  onEdit?: (productId: number) => void;
+  onDelete?: (productId: number) => void;
   variant?: 'client' | 'admin' | 'mobile';
   className?: string;
   // New props for enhanced functionality
   categories?: Category[];
   outlets?: Outlet[];
-  merchantId?: string;
+  merchantId?: number;
   onProductUpdated?: (product: ProductWithDetails) => void;
   onError?: (error: string) => void;
 }

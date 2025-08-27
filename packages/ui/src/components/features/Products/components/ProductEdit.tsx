@@ -10,15 +10,15 @@ import {
 } from '../../../ui';
 import { useToasts } from '../../../ui/toast';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-// import { ProductForm } from '../../../forms/ProductForm';
-import type { ProductInput, ProductUpdateInput } from '@rentalshop/database';
-import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
+import { ProductForm } from '../../../forms/ProductForm';
+import type { ProductInput } from '@rentalshop/types';
+import type { ProductWithStock, Outlet } from '@rentalshop/types';
 
 interface ProductEditFormProps {
-  product: ProductWithDetails;
-  categories: Category[];
+  product: ProductWithStock;
+  categories: Array<{ id: number; name: string; isActive?: boolean }>;
   outlets: Outlet[];
-  merchantId: string;
+  merchantId: number;
   onSave: (data: ProductInput) => Promise<void>;
   onCancel: () => void;
   onBack?: () => void;
@@ -43,15 +43,26 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     barcode: product.barcode || '',
     categoryId: product.categoryId,
     rentPrice: product.rentPrice,
-    salePrice: product.salePrice || 0,
+    salePrice: 0, // ProductWithStock doesn't have salePrice
     deposit: product.deposit,
-    totalStock: product.totalStock,
-    images: product.images ? [product.images] : [],
+    totalStock: product.stock, // Use stock instead of totalStock
+    images: (() => {
+      console.log('🔍 ProductEdit - product.images:', product.images);
+      console.log('🔍 ProductEdit - typeof product.images:', typeof product.images);
+      console.log('🔍 ProductEdit - Array.isArray(product.images):', Array.isArray(product.images));
+      return Array.isArray(product.images) ? product.images : []; // Ensure images is always an array
+    })(),
     isActive: product.isActive,
-    outletStock: product.outletStock.map(os => ({
-      outletId: os.outletId,
-      stock: os.stock
-    })),
+    outletStock: (() => {
+      console.log('🔍 ProductEdit - product.outletStock:', product.outletStock);
+      return product.outletStock.map(os => {
+        console.log('🔍 ProductEdit - outletStock item:', os);
+        return {
+          outletId: os.outlet?.id || os.id || 0, // Use outlet.id if available, fallback to os.id or 0
+          stock: os.stock || 0
+        };
+      }).filter(os => os.outletId > 0); // Filter out invalid outlet entries
+    })(),
     sku: product.barcode || ''
   };
 
@@ -101,7 +112,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
           <CardTitle>Product Information</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* <ProductForm
+          <ProductForm
             initialData={initialFormData}
             categories={categories}
             outlets={outlets}
@@ -111,18 +122,8 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
             mode="edit"
             merchantId={merchantId}
             hideHeader={true}
-            submitText={isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Update Product
-              </>
-            )}
-          /> */}
+            hideSubmitButton={true}
+          />
         </CardContent>
       </Card>
 

@@ -98,7 +98,7 @@ export const ordersApi = {
   /**
    * Get order by ID
    */
-  async getOrderById(orderId: string): Promise<ApiResponse<any>> {
+  async getOrderById(orderId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/orders/${orderId}`);
     return await parseApiResponse<any>(response);
   },
@@ -114,7 +114,7 @@ export const ordersApi = {
   /**
    * Get order details with full information (customer, products, outlet, etc.)
    */
-  async getOrderDetails(orderId: string): Promise<ApiResponse<any>> {
+  async getOrderDetails(orderId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/orders/${orderId}?include=details`);
     return await parseApiResponse<any>(response);
   },
@@ -122,7 +122,7 @@ export const ordersApi = {
   /**
    * Update an existing order
    */
-  async updateOrder(orderId: string, orderData: any): Promise<ApiResponse<any>> {
+  async updateOrder(orderId: number, orderData: any): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/orders/${orderId}`, {
       method: 'PUT',
       body: JSON.stringify(orderData),
@@ -144,7 +144,7 @@ export const ordersApi = {
   /**
    * Delete an order
    */
-  async deleteOrder(orderId: string): Promise<ApiResponse<any>> {
+  async deleteOrder(orderId: number): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`/api/orders/${orderId}`, {
       method: 'DELETE',
     });

@@ -33,7 +33,7 @@ import type {
 
 interface OrderInfoSectionProps {
   formData: OrderFormData;
-  outlets: Array<{ id: string; name: string; merchantId?: string }>;
+  outlets: Array<{ id: number; name: string; merchantId?: number }>;
   selectedCustomer: CustomerSearchResult | null;
   searchQuery: string;
   customerSearchResults: CustomerSearchResult[];

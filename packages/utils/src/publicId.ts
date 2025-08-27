@@ -35,11 +35,11 @@ export function formatPublicId(entityType: EntityType, numericId: number): strin
  * @param publicId - The numeric ID as string
  * @returns The numeric ID or null if invalid
  */
-export function parsePublicId(publicId: string): number | null {
+export function parsePublicId(publicId: number): number | null {
   try {
-    const numericId = parseInt(publicId, 10);
-    if (isNaN(numericId) || numericId < 1) return null;
-    return numericId;
+    // Since publicId is already a number, just validate it
+    if (isNaN(publicId) || publicId < 1) return null;
+    return publicId;
   } catch {
     return null;
   }
@@ -50,10 +50,10 @@ export function parsePublicId(publicId: string): number | null {
  * @param publicId - The numeric ID as string
  * @returns The entity type (defaults to USER for compatibility) or null if invalid
  */
-export function getEntityTypeFromPublicId(publicId: string): EntityType | null {
+export function getEntityTypeFromPublicId(publicId: number): EntityType | null {
   try {
-    const numericId = parseInt(publicId, 10);
-    if (isNaN(numericId) || numericId < 1) return null;
+    // Since publicId is already a number, just validate it
+    if (isNaN(publicId) || publicId < 1) return null;
     return 'USER'; // Default to USER for compatibility
   } catch {
     return null;
@@ -66,7 +66,7 @@ export function getEntityTypeFromPublicId(publicId: string): EntityType | null {
  * @param expectedType - The expected entity type (kept for compatibility)
  * @returns True if valid, false otherwise
  */
-export function validatePublicId(publicId: string, expectedType: EntityType): boolean {
+export function validatePublicId(publicId: number, expectedType: EntityType): boolean {
   const numericId = parsePublicId(publicId);
   return numericId !== null && numericId > 0;
 }
@@ -87,7 +87,7 @@ export function getNextPublicId(entityType: EntityType, currentMaxId: number): n
  * @param publicId - The numeric ID as string
  * @returns Object with entity type and numeric ID
  */
-export function getPublicIdInfo(publicId: string): { entityType: EntityType; numericId: number } | null {
+export function getPublicIdInfo(publicId: number): { entityType: EntityType; numericId: number } | null {
   const numericId = parsePublicId(publicId);
   
   if (!numericId) return null;

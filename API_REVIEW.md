@@ -13,7 +13,7 @@ The Product API provides comprehensive CRUD operations for managing rental produ
 ### Product Model
 ```typescript
 interface Product {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   stock: number;           // Total available stock
@@ -23,8 +23,8 @@ interface Product {
   salePrice?: number;      // Optional sale price
   deposit: number;         // Security deposit
   images: string[];        // Array of image URLs
-  categoryId: string;
-  outletId: string;
+  categoryId: number;
+  outletId: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
