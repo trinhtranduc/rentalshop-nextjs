@@ -126,9 +126,9 @@ export async function GET(
           description: 'Order created'
         },
         ...(order.status !== 'PENDING' ? [{
-          status: 'CONFIRMED',
+          status: 'BOOKED',
           timestamp: order.updatedAt,
-          description: 'Order confirmed'
+                      description: 'Order booked'
         }] : []),
         ...(order.pickedUpAt ? [{
           status: 'ACTIVE',

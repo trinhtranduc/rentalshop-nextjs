@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       // Count total orders
       prisma.order.count({
         where: { 
-          status: { in: ['CONFIRMED', 'ACTIVE', 'COMPLETED'] }
+          status: { in: ['BOOKED', 'ACTIVE', 'COMPLETED'] }
         }
       }),
       
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       // Get future income (pending orders)
       prisma.order.aggregate({
         where: {
-          status: { in: ['CONFIRMED', 'ACTIVE'] }
+          status: { in: ['BOOKED', 'ACTIVE'] }
         },
         _sum: {
           totalAmount: true

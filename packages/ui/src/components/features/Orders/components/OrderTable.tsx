@@ -1,10 +1,18 @@
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
-import { Badge } from '@rentalshop/ui';
-import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui';
+import { Button } from '../../../ui';
+import { Badge } from '../../../ui';
+import { Card, CardHeader, CardTitle, CardContent } from '../../../ui';
 import { OrderData } from '@rentalshop/types';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+// Local constants for order status colors (same pattern as order types)
+const ORDER_STATUS_COLORS = {
+  BOOKED: 'bg-red-100 text-red-800',
+  ACTIVE: 'bg-[#f19920] text-white', // Orange background, white text for contrast
+  RETURNED: 'bg-[#0F9347] text-white', // Green background, white text for contrast
+  COMPLETED: 'bg-gray-100 text-gray-800',
+  CANCELLED: 'bg-[#b22222] text-white' // Dark red background, white text for contrast
+} as const;
 
 interface OrderTableProps {
   orders: OrderData[];
@@ -88,6 +96,10 @@ export function OrderTable({
   sortOrder = 'desc',
   onSort
 }: OrderTableProps) {
+  // Debug logging to see what data we're receiving
+  console.log('OrderTable: Received orders data:', orders.map(o => ({ id: o.id, status: o.status, orderNumber: o.orderNumber })));
+  console.log('OrderTable: Local ORDER_STATUS_COLORS:', ORDER_STATUS_COLORS);
+  
   if (orders.length === 0) {
     return (
       <Card className="shadow-sm border-gray-200 dark:border-gray-700">
@@ -104,18 +116,41 @@ export function OrderTable({
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      BOOKED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-blue-200',
-      COMPLETED: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-      CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      RETURNED: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-    };
-    
+    const getStatusBadge = (status: string) => {
+    // Debug logging to see what status values we're receiving
+    if (!status || typeof status !== 'string') {
+      console.warn('OrderTable: Invalid status value:', status);
+      return (
+        <Badge variant="outline" className="bg-gray-100 text-gray-800">
+          {status || 'UNKNOWN'}
+        </Badge>
+      );
+    }
+
+    // Safety check for ORDER_STATUS_COLORS
+    if (!ORDER_STATUS_COLORS) {
+      console.error('OrderTable: ORDER_STATUS_COLORS is undefined! This should not happen.');
+      return (
+        <Badge variant="outline" className="bg-red-100 text-red-800">
+          {status}
+        </Badge>
+      );
+    }
+
+    // Check if status exists in our constants
+    if (!(status in ORDER_STATUS_COLORS)) {
+      console.warn('OrderTable: Unknown status value:', status, 'Available statuses:', Object.keys(ORDER_STATUS_COLORS));
+      // Map old statuses to new ones
+      if (status === 'CONFIRMED') {
+        console.log('OrderTable: Mapping CONFIRMED to BOOKED');
+        status = 'BOOKED';
+      }
+    }
+
+    const colors = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
+    console.log('OrderTable: Status:', status, 'Colors:', colors, 'Available keys:', Object.keys(ORDER_STATUS_COLORS));
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants]}>
+      <Badge variant="default" className={colors}>
         {status}
       </Badge>
     );
@@ -129,7 +164,7 @@ export function OrderTable({
     };
     
     return (
-      <Badge variant="outline" className={variants[type as keyof typeof variants]}>
+      <Badge variant="default" className={variants[type as keyof typeof variants]}>
         {type.replace('_', ' ')}
       </Badge>
     );

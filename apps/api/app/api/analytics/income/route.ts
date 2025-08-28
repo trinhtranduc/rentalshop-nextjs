@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       // Get future income (pending orders with future return dates)
       const futureIncome = await prisma.order.aggregate({
         where: {
-          status: { in: ['CONFIRMED', 'ACTIVE'] },
+          status: { in: ['BOOKED', 'ACTIVE'] },
           returnPlanAt: {
             gte: startOfMonth,
             lte: endOfMonth
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
             gte: startOfMonth,
             lte: endOfMonth
           },
-          status: { in: ['CONFIRMED', 'ACTIVE', 'COMPLETED'] }
+          status: { in: ['BOOKED', 'ACTIVE', 'COMPLETED'] }
         }
       });
 

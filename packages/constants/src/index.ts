@@ -25,6 +25,16 @@ export * from './environment';
 export * from './api';
 export * from './orders';
 
+// Explicit exports for critical constants
+export { 
+  ORDER_STATUS_COLORS,
+  ORDER_TYPE_COLORS,
+  ORDER_STATUSES,
+  ORDER_TYPES,
+  ORDER_STATUS_LABELS,
+  ORDER_TYPE_LABELS
+} from './orders';
+
 // Explicit API export to fix import issues
 export { API } from './api';
 

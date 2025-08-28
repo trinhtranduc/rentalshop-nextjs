@@ -572,7 +572,7 @@ CREATE INDEX idx_customers_merchant_search ON customers(merchant_id, first_name,
 const orders = await prisma.order.findMany({
   where: {
     outletId: outletId,
-    status: { in: ['ACTIVE', 'CONFIRMED'] },
+    status: { in: ['ACTIVE'] },
     returnPlanAt: { lt: new Date() }
   },
   include: {

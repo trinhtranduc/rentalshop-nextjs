@@ -131,8 +131,8 @@ function generateProductData(index, categories) {
 
 // Helper function to generate random order data
 function generateOrderData(index, customers, products, outlet) {
-  const orderTypes = ['RENT', 'SALE', 'RENT_TO_OWN'];
-  const statuses = ['PENDING', 'CONFIRMED', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
+  const orderTypes = ['RENT', 'SALE'];
+  const statuses = ['BOOKED', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
   
   const orderType = orderTypes[index % orderTypes.length];
   const status = statuses[index % statuses.length];

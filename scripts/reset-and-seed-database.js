@@ -58,8 +58,8 @@ const PRODUCT_CATEGORIES = [
   'Party Supplies', 'Sports Equipment', 'Camping Gear', 'Office Equipment', 'Medical Devices'
 ];
 
-const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
-const ORDER_TYPES = ['RENT', 'SALE', 'RENT_TO_OWN'];
+const ORDER_STATUSES = ['BOOKED', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
+const ORDER_TYPES = ['RENT', 'SALE'];
 
 async function resetDatabase() {
   console.log('🗑️  Resetting database...');

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         createdAt: {
           gte: thirtyDaysAgo
         },
-        status: { in: ['CONFIRMED', 'ACTIVE', 'COMPLETED'] }
+        status: { in: ['BOOKED', 'ACTIVE', 'COMPLETED'] }
       },
       _count: {
         customerId: true
