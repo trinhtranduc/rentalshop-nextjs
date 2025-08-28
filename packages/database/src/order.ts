@@ -83,28 +83,47 @@ export async function getOrderByPublicId(publicId: number): Promise<OrderWithDet
 
   if (!order) return null;
 
+  // Type assertion to handle included relations
+  const orderWithRelations = order as any;
+
   // Transform the data to match OrderWithDetails interface
-  // The database already returns the correct structure, just ensure proper typing
   const transformedOrder = {
     ...order,
+    // Map IDs to publicIds for frontend compatibility
+    outletId: orderWithRelations.outlet?.publicId, // Frontend expects publicId (number)
+    customerId: orderWithRelations.customer?.publicId, // Frontend expects publicId (number)
     // Add merchantId for backward compatibility with database package
-    merchantId: order.outlet.merchantId,
-    // Transform orderItems to include publicId (using a placeholder since database doesn't have it)
-    orderItems: order.orderItems.map(item => ({
-      ...item,
-      publicId: 0, // Placeholder since OrderItem doesn't have publicId in database
+    merchantId: orderWithRelations.outlet?.merchantId,
+    // Transform orderItems to unified OrderItemFormData format
+    orderItems: orderWithRelations.orderItems.map((item: any) => ({
+      id: item.id, // Keep database CUID for existing items
+      productId: item.product.publicId, // Frontend uses publicId (number)
+      product: {
+        id: item.product.publicId, // Frontend uses publicId (number)
+        publicId: item.product.publicId, // Keep publicId for reference
+        name: item.product.name,
+        description: item.product.description,
+        images: item.product.images,
+        barcode: item.product.barcode,
+        rentPrice: 0, // Will be populated from product data
+        deposit: 0, // Will be populated from product data
+      },
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      rentalDays: item.rentalDays || 0,
+      deposit: 0, // Will be populated from product data
+      notes: item.notes || '',
     })),
     // Transform payments to match Payment interface (database returns CUIDs, interface expects numbers)
-    payments: order.payments.map(payment => ({
+    payments: orderWithRelations.payments.map((payment: any) => ({
       ...payment,
       id: 0, // Placeholder since Payment interface expects number but database returns string
       orderId: 0, // Placeholder since Payment interface expects number but database returns string
     })),
-    // The database query already includes all necessary fields with correct types
-    // No need for placeholder transformations
   };
 
-  return transformedOrder as unknown as OrderWithDetails;
+  return transformedOrder as any; // Type assertion to handle the transformed structure
 }
 
 /**
@@ -170,22 +189,44 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
 
   if (!order) return null;
 
+  // Type assertion to handle included relations
+  const orderWithRelations = order as any;
+
   // Transform the data to match OrderWithDetails interface
   const transformedOrder = {
     ...order,
-    merchantId: order.outlet.merchantId,
-    orderItems: order.orderItems.map(item => ({
-      ...item,
-      publicId: 0, // Placeholder since OrderItem doesn't have publicId in database
+    // Map IDs to publicIds for frontend compatibility
+    outletId: orderWithRelations.outlet?.publicId, // Frontend expects publicId (number)
+    customerId: orderWithRelations.customer?.publicId, // Frontend expects publicId (number)
+    merchantId: orderWithRelations.outlet?.merchantId,
+    orderItems: orderWithRelations.orderItems.map((item: any) => ({
+      id: item.id, // Keep database CUID for existing items
+      productId: item.product.publicId, // Frontend uses publicId (number)
+      product: {
+        id: item.product.publicId, // Frontend uses publicId (number)
+        publicId: item.product.publicId, // Keep publicId for reference
+        name: item.product.name,
+        description: item.product.description,
+        images: item.product.images,
+        barcode: item.product.barcode,
+        rentPrice: 0, // Will be populated from product data
+        deposit: 0, // Will be populated from product data
+      },
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      rentalDays: item.rentalDays || 0,
+      deposit: 0, // Will be populated from product data
+      notes: item.notes || '',
     })),
-    payments: order.payments.map(payment => ({
+    payments: orderWithRelations.payments.map((payment: any) => ({
       ...payment,
       id: 0, // Placeholder since Payment interface expects number but database returns string
       orderId: 0, // Placeholder since Payment interface expects number but database returns string
     })),
   };
 
-  return transformedOrder as OrderWithDetails;
+  return transformedOrder as any; // Type assertion to handle the transformed structure
 }
 
 // ============================================================================
@@ -439,14 +480,39 @@ export async function createOrder(
   });
 
   // Return the created order with all details
+  // The transaction returns the completeOrder with all relations
+  // We need to transform it to match the expected interface
+  if (!result) {
+    throw new Error('Failed to create order');
+  }
+
+  // Type assertion since we know the transaction returns the complete order
+  const completeOrder = result as any;
+  
   const transformedResult = {
-    ...result,
-    merchantId: result.outlet.merchantId,
-    orderItems: result.orderItems.map(item => ({
-      ...item,
-      publicId: 0, // Placeholder since OrderItem doesn't have publicId in database
+    ...completeOrder,
+    merchantId: completeOrder.outlet.merchantId,
+    orderItems: completeOrder.orderItems.map((item: any) => ({
+      id: item.id, // Keep database CUID for existing items
+      publicId: 0, // TODO: Add publicId to OrderItem model if needed
+      orderId: item.orderId, // Keep database CUID
+      productId: item.productId, // Keep database CUID
+      product: {
+        id: item.product.id, // Keep database CUID
+        publicId: item.product.publicId, // Keep publicId for reference
+        name: item.product.name,
+        description: item.product.description,
+        images: item.product.images,
+        barcode: item.product.barcode,
+      },
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      rentalDays: item.rentalDays || 0,
+      deposit: item.deposit || 0,
+      notes: item.notes || '',
     })),
-    payments: result.payments.map(payment => ({
+    payments: completeOrder.payments.map((payment: any) => ({
       ...payment,
       id: 0, // Placeholder since Payment interface expects number but database returns string
       orderId: 0, // Placeholder since Payment interface expects number but database returns string
@@ -459,6 +525,8 @@ export async function createOrder(
 // ============================================================================
 // ORDER UPDATE FUNCTIONS
 // ============================================================================
+
+
 
 /**
  * Update order - follows dual ID system
@@ -489,19 +557,41 @@ export async function updateOrder(
     throw new Error(`User with publicId ${userId} not found`);
   }
 
-  // Update order
+  // Update order - only update fields that exist in Prisma schema
   const updatedOrder = await prisma.order.update({
     where: { publicId },
     data: {
       status: input.status,
+      // Use nested updates for relationships
+      ...(input.customerId && {
+        customer: {
+          connect: { publicId: input.customerId }
+        }
+      }),
+      ...(input.outletId && {
+        outlet: {
+          connect: { publicId: input.outletId }
+        }
+      }),
+      pickupPlanAt: input.pickupPlanAt,
+      returnPlanAt: input.returnPlanAt,
+      pickedUpAt: input.pickedUpAt,
+      returnedAt: input.returnedAt,
+      rentalDuration: input.rentalDuration,
+      discountType: input.discountType,
+      discountValue: input.discountValue,
+      discountAmount: input.discountAmount,
       totalAmount: input.totalAmount,
       depositAmount: input.depositAmount,
       securityDeposit: input.securityDeposit,
       damageFee: input.damageFee,
       lateFee: input.lateFee,
-      pickupPlanAt: input.pickupPlanAt,
-      returnPlanAt: input.returnPlanAt,
+      collateralType: input.collateralType,
+      collateralDetails: input.collateralDetails,
       notes: input.notes,
+      pickupNotes: input.pickupNotes,
+      returnNotes: input.returnNotes,
+      damageNotes: input.damageNotes,
       isReadyToDeliver: input.isReadyToDeliver,
     },
     include: {
@@ -559,14 +649,123 @@ export async function updateOrder(
     },
   });
 
+  // Handle order items update if provided
+  if (input.orderItems) {
+    // Delete existing order items
+    await prisma.orderItem.deleteMany({
+      where: { orderId: updatedOrder.id }
+    });
+
+    // Create new order items
+    for (const item of input.orderItems) {
+      // Find product by publicId first
+      const product = await prisma.product.findUnique({
+        where: { publicId: parseInt(item.productId.toString()) }
+      });
+      if (!product) {
+        throw new Error(`Product with publicId ${item.productId} not found`);
+      }
+
+      await prisma.orderItem.create({
+        data: {
+          orderId: updatedOrder.id, // Use CUID
+          productId: product.id, // Use CUID
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice || 0,
+          deposit: item.deposit || 0,
+          notes: item.notes || '',
+        }
+      });
+    }
+  }
+
+  // Fetch the updated order with all relations
+  const finalOrder = await prisma.order.findUnique({
+    where: { publicId },
+    include: {
+      customer: {
+        select: {
+          id: true,
+          publicId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+        },
+      },
+      outlet: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+          address: true,
+          merchantId: true,
+          merchant: {
+            select: {
+              id: true,
+              publicId: true,
+              name: true,
+            },
+          },
+        },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          publicId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+        },
+      },
+      orderItems: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              publicId: true,
+              name: true,
+              description: true,
+              images: true,
+              barcode: true,
+            },
+          },
+        },
+      },
+      payments: true,
+    },
+  });
+
+  if (!finalOrder) {
+    throw new Error('Failed to fetch updated order');
+  }
+
   return {
-    ...updatedOrder,
-    merchantId: updatedOrder.outlet.merchantId,
-    orderItems: updatedOrder.orderItems.map(item => ({
-      ...item,
-      publicId: 0, // Placeholder since OrderItem doesn't have publicId in database
+    ...finalOrder,
+    merchantId: finalOrder.outlet.merchantId,
+    orderItems: finalOrder.orderItems.map(item => ({
+      id: item.id, // Keep database CUID for existing items
+      publicId: 0, // TODO: Add publicId to OrderItem model if needed
+      orderId: item.orderId, // Keep database CUID
+      productId: item.productId, // Keep database CUID
+      product: {
+        id: item.product.id, // Keep database CUID
+        publicId: item.product.publicId, // Keep publicId for reference
+        name: item.product.name,
+        description: item.product.description,
+        images: item.product.images,
+        barcode: item.product.barcode,
+      },
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      rentalDays: item.rentalDays || 0,
+      deposit: item.deposit || 0,
+      notes: item.notes || '',
     })),
-    payments: updatedOrder.payments.map(payment => ({
+    payments: finalOrder.payments.map(payment => ({
       ...payment,
       id: 0, // Placeholder since Payment interface expects number but database returns string
       orderId: 0, // Placeholder since Payment interface expects number but database returns string
@@ -1013,8 +1212,24 @@ export async function cancelOrder(publicId: number, userId: number, reason?: str
     id: updatedOrder.publicId, // Return publicId as "id" for frontend
     merchantId: updatedOrder.outlet.merchantId,
     orderItems: updatedOrder.orderItems.map(item => ({
-      ...item,
-      publicId: 0, // Placeholder since OrderItem doesn't have publicId in database
+      id: item.id, // Keep database CUID for existing items
+      productId: item.product.publicId, // Frontend uses publicId (number)
+      product: {
+        id: item.product.publicId, // Frontend uses publicId (number)
+        publicId: item.product.publicId, // Keep publicId for reference
+        name: item.product.name,
+        description: item.product.description,
+        images: item.product.images,
+        barcode: item.product.barcode,
+        rentPrice: 0, // Will be populated from product data
+        deposit: 0, // Will be populated from product data
+      },
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      rentalDays: item.rentalDays || 0,
+      deposit: 0, // Will be populated from product data
+      notes: item.notes || '',
     })),
     payments: updatedOrder.payments.map(payment => ({
       ...payment,
@@ -1118,6 +1333,10 @@ export async function getOverdueRentals(outletId?: number): Promise<any[]> {
       product: {
         id: item.product.publicId,         // Use publicId as id
         name: item.product.name,
+        // Map product.id (CUID) to productId for frontend compatibility
+        productId: item.product.publicId, // Frontend uses publicId (number)
+        // Map product.publicId to product.publicId for frontend display
+        publicId: item.product.publicId, // Keep publicId for reference
       },
     })),
   }));

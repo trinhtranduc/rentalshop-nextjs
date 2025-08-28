@@ -72,10 +72,23 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     // Initialize with existing order items if in edit mode
     if (isEditMode && initialOrder?.orderItems) {
       return initialOrder.orderItems.map((item: any) => ({
-        productId: parseInt(item.productId) || 0,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        deposit: item.deposit || 0,
+        id: item.id, // Keep database CUID for existing items
+        productId: item.productId || 0, // Frontend uses publicId (number)
+        product: {
+          id: item.product?.id || item.productId || 0, // Frontend uses publicId (number)
+          publicId: item.product?.publicId || item.productId || 0, // Keep publicId for reference
+          name: item.product?.name || 'Unknown Product',
+          description: item.product?.description || '',
+          images: item.product?.images || null,
+          barcode: item.product?.barcode || '',
+          rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
+          deposit: item.deposit ?? 0,
+        },
+        quantity: item.quantity || 1,
+        unitPrice: item.unitPrice || 0,
+        totalPrice: item.totalPrice || 0,
+        rentalDays: item.rentalDays || 0,
+        deposit: item.deposit ?? 0,
         notes: item.notes || '',
       }));
     }
@@ -118,7 +131,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   // Calculate deposit amount for rent orders
   useEffect(() => {
     if (formData.orderType === 'RENT') {
-      const totalDeposit = orderItems.reduce((sum, item) => sum + item.deposit, 0);
+      const totalDeposit = orderItems.reduce((sum, item) => sum + (item.deposit ?? 0), 0);
       setFormData(prev => ({
         ...prev,
         depositAmount: totalDeposit,
@@ -156,10 +169,23 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       // Update order items
       if (initialOrder.orderItems) {
         const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => ({
-          productId: parseInt(item.productId) || 0,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          deposit: item.deposit || 0,
+          id: item.id, // Keep database CUID for existing items
+          productId: item.productId || 0, // Frontend uses publicId (number)
+          product: {
+            id: item.product?.id || item.productId || 0, // Frontend uses publicId (number)
+            publicId: item.product?.publicId || item.productId || 0, // Keep publicId for reference
+            name: item.product?.name || 'Unknown Product',
+            description: item.product?.description || '',
+            images: item.product?.images || null,
+            barcode: item.product?.barcode || '',
+            rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
+            deposit: item.deposit ?? 0,
+          },
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || 0,
+          totalPrice: item.totalPrice || 0,
+          rentalDays: item.rentalDays || 0,
+          deposit: item.deposit ?? 0,
           notes: item.notes || '',
         }));
         setOrderItems(initialOrderItems);
@@ -193,8 +219,19 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       
       const newItem: OrderItemFormData = {
         productId: productIdNumber,
+        product: {
+          id: productIdNumber,
+          publicId: productIdNumber,
+          name: product.name || 'Unknown Product',
+          description: product.description || '',
+          images: product.images || null,
+          barcode: product.barcode || '',
+          rentPrice: rentPrice,
+          deposit: deposit,
+        },
         quantity: BUSINESS.DEFAULT_QUANTITY,
         unitPrice: formData.orderType === 'RENT' ? rentPrice : rentPrice,
+        totalPrice: (formData.orderType === 'RENT' ? rentPrice : rentPrice) * BUSINESS.DEFAULT_QUANTITY,
         deposit: deposit,
         notes: '',
       };
@@ -306,8 +343,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           productId: item.productId, // Send as number
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          deposit: item.deposit,
-          notes: item.notes,
+          deposit: item.deposit ?? 0,
+          notes: item.notes || '',
         }))
       };
       
@@ -342,6 +379,76 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     await handleSubmit(mockEvent);
   }, [orderItems, handleSubmit]);
 
+  // Reset form to initial state
+  const resetForm = useCallback(() => {
+    if (isEditMode && initialOrder) {
+      // Reset to initial order data for edit mode
+      setFormData({
+        orderType: initialOrder.orderType || 'RENT',
+        customerId: parseInt(initialOrder.customerId) || undefined,
+        outletId: initialOrder.outletId || outlets[0]?.id || undefined,
+        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
+        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        subtotal: initialOrder.subtotal || 0,
+        taxAmount: initialOrder.taxAmount || 0,
+        discountType: 'amount',
+        discountValue: BUSINESS.DEFAULT_DISCOUNT,
+        discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
+        depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
+        securityDeposit: initialOrder.securityDeposit || 0,
+        lateFee: initialOrder.lateFee || 0,
+        damageFee: initialOrder.damageFee || 0,
+        totalAmount: initialOrder.totalAmount || 0,
+        notes: initialOrder.notes || '',
+        orderItems: [],
+      });
+      
+      setOrderItems(initialOrder.orderItems.map((item: any) => ({
+        id: item.id,
+        productId: item.productId || 0,
+        product: {
+          id: item.product?.id || item.productId || 0,
+          publicId: item.product?.publicId || item.productId || 0,
+          name: item.product?.name || 'Unknown Product',
+          description: item.product?.description || '',
+          images: item.product?.images || null,
+          barcode: item.product?.barcode || '',
+          rentPrice: item.unitPrice || 0,
+          deposit: item.deposit ?? 0,
+        },
+        quantity: item.quantity || 1,
+        unitPrice: item.unitPrice || 0,
+        totalPrice: item.totalPrice || 0,
+        rentalDays: item.rentalDays || 0,
+        deposit: item.deposit ?? 0,
+        notes: item.notes || '',
+      })));
+    } else {
+      // Reset to default values for create mode
+      setFormData({
+        orderType: 'RENT',
+        customerId: undefined,
+        outletId: outlets[0]?.id || undefined,
+        pickupPlanAt: '',
+        returnPlanAt: '',
+        subtotal: 0,
+        taxAmount: 0,
+        discountType: 'amount',
+        discountValue: BUSINESS.DEFAULT_DISCOUNT,
+        discountAmount: BUSINESS.DEFAULT_DISCOUNT,
+        depositAmount: BUSINESS.DEFAULT_DEPOSIT,
+        securityDeposit: 0,
+        lateFee: 0,
+        damageFee: 0,
+        totalAmount: 0,
+        notes: '',
+        orderItems: [],
+      });
+      
+      setOrderItems([]);
+    }
+  }, [isEditMode, initialOrder, outlets]);
+
   return {
     // State
     formData,
@@ -360,6 +467,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     handlePreviewClick,
     handleOrderConfirm,
     handleSubmit,
+    resetForm,
     
     // Utilities
     calculateRentalDays,

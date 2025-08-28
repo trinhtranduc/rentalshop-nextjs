@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CreateOrderForm, FormSkeleton, PageWrapper, PageContent } from '@rentalshop/ui';
+import { CreateOrderForm, FormSkeleton, PageWrapper, PageContent, useToasts, ToastContainer } from '@rentalshop/ui';
 import { 
   ordersApi, 
   customersApi, 
@@ -24,13 +24,13 @@ import {
   categoriesApi 
 } from '@rentalshop/utils';
 import { useAuth } from '@rentalshop/hooks';
-import type { OrderDetailData } from '@rentalshop/types';
+import type { OrderWithDetails } from '@rentalshop/types';
 
 export default function EditOrderPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [order, setOrder] = useState<OrderDetailData | null>(null);
+  const [order, setOrder] = useState<OrderWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -41,12 +41,19 @@ export default function EditOrderPage() {
   const [outlets, setOutlets] = useState<Array<{ id: number; name: string }>>([]);
   const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
   const [merchantId, setMerchantId] = useState<string>('');
+  const [resetForm, setResetForm] = useState<(() => void) | null>(null);
+
+  // Toast notifications
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
 
   const orderId = params.id as string;
   
   // Extract numeric part from order ID (e.g., "123" from "123" or "ORD-123")
   // Add null check to prevent error when orderId is undefined during initial render
   const numericOrderId = orderId ? orderId.replace(/^ORD-/, '') : '';
+  
+  // Extract numeric order number from order data for navigation
+  const numericOrderNumber = order?.orderNumber ? order.orderNumber.replace(/^ORD-/, '') : numericOrderId;
 
   useEffect(() => {
     if (!orderId || !numericOrderId) return;
@@ -59,35 +66,31 @@ export default function EditOrderPage() {
         const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderId}`);
 
         if (result.success && result.data) {
-          console.log('Order data received:', result.data);
-          setOrder(result.data as OrderDetailData);
+          setOrder(result.data as OrderWithDetails);
           
-          // Extract merchant ID from order
-          let foundMerchantId = null;
-          if (result.data.merchantId) {
-            foundMerchantId = result.data.merchantId;
-            console.log('Found merchantId in order:', foundMerchantId);
-          } else if (result.data.outlet?.merchantId) {
-            foundMerchantId = result.data.outlet.merchantId;
-            console.log('Found merchantId in order.outlet:', foundMerchantId);
-          } else if (result.data.outlet?.merchant?.id) {
-            foundMerchantId = result.data.outlet.merchant.id;
-            console.log('Found merchantId in order.outlet.merchant:', foundMerchantId);
+          // Extract merchant publicId from order - API expects publicId (number), not database CUID (string)
+          let foundMerchantPublicId = null;
+          const orderData = result.data as any; // Use any to handle the API response structure
+          
+          // Priority order for finding merchant publicId:
+          // 1. outlet.merchant.publicId (this is what we need for API calls)
+          // 2. Fallback to user's merchant publicId
+          if (orderData.outlet?.merchant?.publicId) {
+            foundMerchantPublicId = orderData.outlet.merchant.publicId;
+          } else {
+            // Fallback to user's merchant publicId
+            // Note: user.merchant.id is actually the publicId (number) from auth.ts
+            if (user?.merchant?.id) {
+              foundMerchantPublicId = user.merchant.id as number;
+            } else {
+              foundMerchantPublicId = null;
+            }
           }
           
-          if (foundMerchantId) {
-            setMerchantId(foundMerchantId.toString());
+          if (foundMerchantPublicId && typeof foundMerchantPublicId === 'number') {
+            setMerchantId(foundMerchantPublicId.toString());
           } else {
-            console.error('No merchantId found in order data');
-            console.log('Order structure:', JSON.stringify(result.data, null, 2));
-            
-            // Fallback to user's merchant ID
-            if (user?.merchant?.id) {
-              console.log('Using fallback merchant ID from user context:', user.merchant.id);
-              setMerchantId(user.merchant.id.toString());
-            } else {
-              console.error('No merchant ID available from user context either');
-            }
+            setMerchantId('');
           }
         } else {
           setError(result.error || 'Failed to fetch order details');
@@ -106,97 +109,156 @@ export default function EditOrderPage() {
   // Fetch additional data needed for the form
   useEffect(() => {
     if (!merchantId) {
-      console.log('No merchantId available, skipping form data fetch');
       return;
     }
 
-    console.log('Fetching form data for merchantId:', merchantId);
+    // Prevent multiple fetches
+    let isMounted = true;
+
+    // Clear data arrays when merchant changes to refresh inventory
+    // The form will use initialOrder to preserve selected items
+    setCustomers([]);
+    setProducts([]);
+    setOutlets([]);
+    setCategories([]);
 
     const fetchFormData = async () => {
       try {
-        console.log('Starting to fetch form data...');
-        
-        // Fetch customers
-        const customersResult = await customersApi.getCustomers({ 
-          merchantId, 
-          limit: 100 
-        });
-        console.log('Customers result:', customersResult);
-        if (customersResult.success && customersResult.data?.customers) {
-          setCustomers(customersResult.data.customers);
-          console.log('Set customers:', customersResult.data.customers.length);
+        // Fetch customers - get all and filter by merchant
+        const customersResult = await customersApi.getCustomers();
+        if (customersResult.success && customersResult.data) {
+          // Handle both possible API response structures:
+          // 1. { data: { customers: [...] } } - paginated response
+          // 2. { data: [...] } - direct array response
+          let customersArray;
+          const data = customersResult.data as any; // Type assertion to handle different response structures
+          
+          if (data.customers && Array.isArray(data.customers)) {
+            customersArray = data.customers;
+          } else if (Array.isArray(data)) {
+            customersArray = data;
+          } else {
+            customersArray = [];
+          }
+          
+          if (isMounted) {
+            setCustomers(customersArray);
+          }
         } else {
-          console.error('Failed to fetch customers:', customersResult.error);
-          // Set empty array as fallback
-          setCustomers([]);
+          // Don't clear if we already have data
+          if (customers.length === 0) {
+            setCustomers([]);
+          }
         }
 
-        // Fetch products
-        const productsResult = await productsApi.getProducts({ 
-          merchantId, 
-          limit: 100 
-        });
-        console.log('Products result:', productsResult);
-        if (productsResult.success && productsResult.data?.products) {
-          setProducts(productsResult.data.products);
-          console.log('Set products:', productsResult.data.products.length);
-        } else {
-          console.error('Failed to fetch products:', productsResult.error);
-        }
 
-        // Fetch outlets
-        const outletsResult = await outletsApi.getOutlets({ 
-          merchantId 
-        });
-        console.log('Outlets result:', outletsResult);
+
+        // Fetch outlets by merchant
+        const outletsResult = await outletsApi.getOutletsByMerchant(Number(merchantId));
         if (outletsResult.success && outletsResult.data?.outlets) {
           const mappedOutlets = outletsResult.data.outlets.map((outlet: any) => ({
-            id: outlet.id,
+            id: outlet.id, // API already returns publicId as 'id'
             name: outlet.name
           }));
           setOutlets(mappedOutlets);
-          console.log('Set outlets:', mappedOutlets.length);
         } else {
-          console.error('Failed to fetch outlets:', outletsResult.error);
+          // Clear outlets when merchant changes to refresh data
+          setOutlets([]);
         }
 
-        // Fetch categories
-        const categoriesResult = await categoriesApi.getCategories({ 
-          merchantId 
-        });
-        console.log('Categories result:', categoriesResult);
-        if (categoriesResult.success && categoriesResult.data?.categories) {
-          const mappedCategories = categoriesResult.data.categories.map((category: any) => ({
-            id: category.id,
+        // Fetch categories - get all and filter by merchant if needed
+        const categoriesResult = await categoriesApi.getCategories();
+        if (categoriesResult.success && categoriesResult.data) {
+          // Handle both possible API response structures:
+          // 1. { data: { categories: [...] } } - paginated response
+          // 2. { data: [...] } - direct array response
+          let categoriesArray;
+          const data = categoriesResult.data as any; // Type assertion to handle different response structures
+          
+          if (data.categories && Array.isArray(data.categories)) {
+            categoriesArray = data.categories;
+          } else if (Array.isArray(data)) {
+            categoriesArray = data;
+          } else {
+            categoriesArray = [];
+          }
+          
+          const mappedCategories = categoriesArray.map((category: any) => ({
+            id: category.id, // API should return publicId as 'id'
             name: category.name
           }));
           setCategories(mappedCategories);
-          console.log('Set categories:', mappedCategories.length);
         } else {
-          console.error('Failed to fetch categories:', categoriesResult.error);
+          // Clear categories when merchant changes to refresh data
+          setCategories([]);
         }
-        
-        console.log('Form data fetch completed');
       } catch (err) {
         console.error('Error fetching form data:', err);
         // Don't show error for form data, just log it
       }
     };
 
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      console.warn('Form data fetch timeout - forcing completion');
-      // Set empty arrays to prevent infinite loading
-      if (customers.length === 0) setCustomers([]);
-      if (products.length === 0) setProducts([]);
-      if (outlets.length === 0) setOutlets([]);
-      if (categories.length === 0) setCategories([]);
-    }, 10000); // 10 second timeout
-
     fetchFormData();
 
-    return () => clearTimeout(timeoutId);
-  }, [merchantId, customers.length, products.length, outlets.length, categories.length]);
+    return () => {
+      isMounted = false;
+    };
+  }, [merchantId]); // Only depend on merchantId to prevent infinite re-renders
+
+  // Fetch products when outlet changes to get outlet-specific inventory
+  useEffect(() => {
+    if (!merchantId || !order?.outletId) {
+      return;
+    }
+
+    // Prevent multiple fetches
+    let isMounted = true;
+
+    const fetchOutletProducts = async () => {
+      try {
+        // Fetch products for the specific outlet to get accurate inventory
+        const productsResult = await productsApi.getProducts();
+        if (productsResult.success && productsResult.data) {
+          // Handle both possible API response structures:
+          // 1. { data: { products: [...] } } - paginated response
+          // 2. { data: [...] } - direct array response
+          let productsArray;
+          const data = productsResult.data as any; // Type assertion to handle different response structures
+          
+          if (data.products && Array.isArray(data.products)) {
+            productsArray = data.products;
+          } else if (Array.isArray(data)) {
+            productsArray = data;
+          } else {
+            productsArray = [];
+          }
+          
+          // In edit mode, show all products for the merchant to preserve selections
+          // But prioritize products from the current outlet for accurate inventory
+          const outletProducts = productsArray;
+          
+          if (isMounted) {
+            setProducts(outletProducts);
+          }
+        } else {
+          if (isMounted) {
+            setProducts([]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching outlet products:', err);
+        if (isMounted) {
+          setProducts([]);
+        }
+      }
+    };
+
+    fetchOutletProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [merchantId, order?.outletId]); // Depend on both merchantId and outletId
 
   const handleSubmit = async (orderData: any) => {
     if (!order) return;
@@ -204,29 +266,31 @@ export default function EditOrderPage() {
     try {
       setActionLoading(true);
 
-      // Ensure we have the order ID for the update
-      const orderId = order.id;
-      if (!orderId) {
-        throw new Error('Order ID not found');
+      // Ensure we have the order publicId for the update
+      const orderPublicId = order.publicId;
+      if (!orderPublicId) {
+        throw new Error('Order publicId not found');
       }
 
       // Add the order ID to the update data
       const updateData = {
         ...orderData,
-        id: orderId
+        id: orderPublicId
       };
 
-      const result = await ordersApi.updateOrder(orderId, updateData);
+      const result = await ordersApi.updateOrder(orderPublicId, updateData);
 
       if (result.success) {
-        // Redirect to order details page after successful update
-        router.push(`/orders/${numericOrderNumber}`);
+        // Show success message
+        showSuccess('Order updated successfully!');
+        // Navigate back to orders list after successful update
+        router.push('/orders');
       } else {
         throw new Error(result.error || 'Failed to update order');
       }
     } catch (err) {
       console.error('Error updating order:', err);
-      alert('Failed to update order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      showError('Failed to update order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -234,6 +298,10 @@ export default function EditOrderPage() {
 
   const handleCancel = () => {
     router.push(`/orders/${numericOrderNumber}`);
+  };
+
+  const handleFormReady = (resetFormFn: () => void) => {
+    setResetForm(() => resetFormFn);
   };
 
   if (loading) {
@@ -271,7 +339,8 @@ export default function EditOrderPage() {
   }
 
   // Show loading state while fetching form data, but be more lenient
-  const hasMinimalData = customers.length > 0 && products.length > 0 && outlets.length > 0;
+  // Only require merchantId and order to be present - form can work with empty arrays
+  const hasMinimalData = merchantId && order;
   
   if (!hasMinimalData) {
     return (
@@ -373,6 +442,7 @@ export default function EditOrderPage() {
   return (
     <PageWrapper>
       <PageContent>
+        <ToastContainer toasts={toasts} onClose={removeToast} />
         <CreateOrderForm
           isEditMode={true}
           initialOrder={order}
@@ -384,7 +454,8 @@ export default function EditOrderPage() {
           products={products}
           outlets={outlets}
           categories={categories}
-          merchantId={merchantId}
+          merchantId={Number(merchantId)}
+          onFormReady={handleFormReady}
         />
       </PageContent>
     </PageWrapper>
