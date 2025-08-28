@@ -7,19 +7,8 @@ import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
 import { useThrottledSearch } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
 
-// Define constants locally to avoid import issues
-const ORDER_TYPES = {
-  RENT: 'RENT',
-  SALE: 'SALE'
-} as const;
-
-const ORDER_STATUSES = {
-  BOOKED: 'BOOKED',
-  ACTIVE: 'ACTIVE',
-  RETURNED: 'RETURNED',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED'
-} as const;
+// Import constants from centralized package
+import { ORDER_TYPES, ORDER_STATUSES } from '@rentalshop/constants';
 
 interface OrderFiltersProps {
   filters: OrderFiltersType;
@@ -99,8 +88,8 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
   // Memoize status options
   const statusOptions = useMemo(() => [
     { value: 'all', label: 'All Status' },
-    { value: ORDER_STATUSES.BOOKED, label: 'Booked' },
-    { value: ORDER_STATUSES.ACTIVE, label: 'Active' },
+    { value: ORDER_STATUSES.RESERVED, label: 'Reserved' },
+    { value: ORDER_STATUSES.PICKUPED, label: 'Pickuped' },
     { value: ORDER_STATUSES.RETURNED, label: 'Returned' },
     { value: ORDER_STATUSES.COMPLETED, label: 'Completed' },
     { value: ORDER_STATUSES.CANCELLED, label: 'Cancelled' }

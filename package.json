@@ -20,12 +20,19 @@
     "test": "turbo run test",
     "db:seed": "node scripts/reset-and-seed-database-simple.js",
     "db:seed:full": "node scripts/reset-and-seed-database.js",
-    "db:reset": "npx prisma db push --force-reset && node scripts/reset-and-seed-database-simple.js"
+    "db:reset": "npx prisma db push --force-reset && node scripts/reset-and-seed-database-simple.js",
+    "db:reset-orders": "node scripts/reset-orders-2025.js",
+    "db:regenerate-system": "node scripts/regenerate-entire-system-2025.js",
+    "db:update-order-numbers": "node scripts/update-order-numbers.js",
+    "db:add-discount-fields": "node scripts/add-discount-fields.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "turbo": "^1.10.0",
     "typescript": "^5.0.0"
   },
-  "packageManager": "yarn@1.22.0"
+  "packageManager": "yarn@1.22.0",
+  "dependencies": {
+    "bcryptjs": "^3.0.2"
+  }
 }

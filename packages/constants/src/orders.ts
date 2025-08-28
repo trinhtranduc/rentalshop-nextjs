@@ -7,8 +7,8 @@
 // ============================================================================
 export const ORDER_STATUSES = {
   // RENT order statuses
-  BOOKED: 'BOOKED',       // mới cục (new order) - Most professional
-  ACTIVE: 'ACTIVE',       // đang thuê (currently renting)
+  RESERVED: 'RESERVED',   // mới cục (new order) - Most professional
+  PICKUPED: 'PICKUPED',   // đang thuê (currently renting)
   RETURNED: 'RETURNED',   // đã trả (returned)
   
   // SALE order statuses
@@ -34,8 +34,8 @@ export type OrderType = typeof ORDER_TYPES[keyof typeof ORDER_TYPES];
 // ORDER STATUS COLORS - CENTRALIZED COLOR SYSTEM
 // ============================================================================
 export const ORDER_STATUS_COLORS = {
-  BOOKED: 'bg-red-100 text-red-800',
-  ACTIVE: 'bg-[#f19920] text-white',
+  RESERVED: 'bg-red-100 text-red-800',
+  PICKUPED: 'bg-[#f19920] text-white',
   RETURNED: 'bg-[#0F9347] text-white',
   COMPLETED: 'bg-gray-100 text-gray-800',
   CANCELLED: 'bg-[#b22222] text-white'
@@ -53,8 +53,8 @@ export const ORDER_TYPE_COLORS = {
 // ORDER STATUS ICONS
 // ============================================================================
 export const ORDER_STATUS_ICONS = {
-  BOOKED: '📋',
-  ACTIVE: '⏳',
+  RESERVED: '📋',
+  PICKUPED: '⏳',
   RETURNED: '✅',
   COMPLETED: '🎉',
   CANCELLED: '❌'
@@ -72,8 +72,8 @@ export const ORDER_TYPE_ICONS = {
 // ORDER STATUS LABELS (Vietnamese)
 // ============================================================================
 export const ORDER_STATUS_LABELS = {
-  BOOKED: 'Mới cục',
-  ACTIVE: 'Đang thuê',
+  RESERVED: 'Mới cọc',
+  PICKUPED: 'Đang thuê',
   RETURNED: 'Đã trả',
   COMPLETED: 'Hoàn thành',
   CANCELLED: 'Hủy'

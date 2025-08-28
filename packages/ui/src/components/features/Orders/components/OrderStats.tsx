@@ -22,10 +22,10 @@ export function OrderStats({ stats }: OrderStatsProps) {
     if (total === 0) return [];
     
     return [
-      { label: 'Pending', count: stats.pendingOrders, percentage: (stats.pendingOrders / total) * 100, color: 'bg-yellow-500' },
-      { label: 'Active', count: stats.activeOrders, percentage: (stats.activeOrders / total) * 100, color: 'bg-blue-500' },
+      { label: 'Reserved', count: stats.pendingOrders, percentage: (stats.pendingOrders / total) * 100, color: 'bg-red-500' },
+      { label: 'Pickuped', count: stats.activeOrders, percentage: (stats.activeOrders / total) * 100, color: 'bg-orange-500' },
       { label: 'Completed', count: stats.completedOrders, percentage: (stats.completedOrders / total) * 100, color: 'bg-green-500' },
-      { label: 'Cancelled', count: stats.cancelledOrders, percentage: (stats.cancelledOrders / total) * 100, color: 'bg-red-500' }
+      { label: 'Cancelled', count: stats.cancelledOrders, percentage: (stats.cancelledOrders / total) * 100, color: 'bg-red-700' }
     ];
   };
 
@@ -132,15 +132,15 @@ export function OrderStats({ stats }: OrderStatsProps) {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Active Orders</span>
-                <span className="font-medium text-blue-600 dark:text-blue-400">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Pickuped Orders</span>
+                <span className="font-medium text-orange-600 dark:text-orange-400">
                   {stats.activeOrders}
                 </span>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Pending Orders</span>
-                <span className="font-medium text-yellow-600 dark:text-yellow-400">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Reserved Orders</span>
+                <span className="font-medium text-red-600 dark:text-red-400">
                   {stats.pendingOrders}
                 </span>
               </div>
@@ -157,11 +157,11 @@ export function OrderStats({ stats }: OrderStatsProps) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {stats.totalOrders > 0 ? ((stats.activeOrders / stats.totalOrders) * 100).toFixed(1) : 0}%
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Active Order Rate
+                Pickuped Order Rate
               </div>
             </div>
             

@@ -1,88 +1,132 @@
-// Simple script to verify orders with new BOOKED status
+/**
+ * Verify Orders Script - Check current order state after reset
+ * 
+ * This script will show you the current state of your orders
+ * after the reset and regeneration process.
+ * 
+ * Run with: node scripts/verify-orders.js
+ */
+
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
 async function verifyOrders() {
   try {
-    console.log('🔍 Verifying orders with new BOOKED status...\n');
-
-    // Get all orders
-    const orders = await prisma.order.findMany({
-      include: {
-        customer: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
-        },
-        outlet: {
-          select: {
-            name: true
-          }
-        },
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                name: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: {
-        publicId: 'asc'
-      }
+    console.log('🔍 Verifying current order state...\n');
+    
+    // Count total orders
+    const totalOrders = await prisma.order.count();
+    console.log(`📊 Total Orders: ${totalOrders}`);
+    
+    // Count by order type
+    const ordersByType = await prisma.order.groupBy({
+      by: ['orderType'],
+      _count: { orderType: true }
     });
-
-    if (orders.length === 0) {
-      console.log('❌ No orders found in database');
-      return;
+    
+    console.log('\n📋 Orders by Type:');
+    ordersByType.forEach(group => {
+      console.log(`  ${group.orderType}: ${group._count.orderType}`);
+    });
+    
+    // Count by status
+    const ordersByStatus = await prisma.order.groupBy({
+      by: ['status'],
+      _count: { status: true }
+    });
+    
+    console.log('\n📈 Orders by Status:');
+    ordersByStatus.forEach(group => {
+      console.log(`  ${group.status}: ${group._count.status}`);
+    });
+    
+    // Count by outlet
+    const ordersByOutlet = await prisma.order.groupBy({
+      by: ['outletId'],
+      _count: { outletId: true }
+    });
+    
+    console.log('\n🏪 Orders by Outlet:');
+    for (const group of ordersByOutlet) {
+      const outlet = await prisma.outlet.findUnique({
+        where: { id: group.outletId },
+        select: { name: true, merchant: { select: { name: true } } }
+      });
+      console.log(`  ${outlet.merchant.name} - ${outlet.name}: ${group._count.outletId}`);
     }
-
-    console.log(`📊 Found ${orders.length} orders:\n`);
-
-    orders.forEach((order, index) => {
-      console.log(`${index + 1}. Order #${order.publicId}: ${order.orderNumber}`);
-      console.log(`   Type: ${order.orderType}`);
-      console.log(`   Status: ${order.status}`);
-      console.log(`   Customer: ${order.customer?.firstName} ${order.customer?.lastName}`);
-      console.log(`   Outlet: ${order.outlet?.name}`);
-      console.log(`   Amount: $${order.totalAmount}`);
-      console.log(`   Items: ${order.orderItems.length}`);
-      
-      if (order.pickupPlanAt) {
-        console.log(`   Pickup: ${order.pickupPlanAt.toLocaleDateString()}`);
-      }
-      if (order.returnPlanAt) {
-        console.log(`   Return: ${order.returnPlanAt.toLocaleDateString()}`);
-      }
-      if (order.pickedUpAt) {
-        console.log(`   Picked up: ${order.pickedUpAt.toLocaleDateString()}`);
-      }
-      
+    
+    // Show sample orders
+    console.log('\n📝 Sample Orders (first 10):');
+    const sampleOrders = await prisma.order.findMany({
+      take: 10,
+      include: {
+        customer: { select: { firstName: true, lastName: true } },
+        outlet: { select: { name: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    sampleOrders.forEach((order, index) => {
+      console.log(`  ${index + 1}. ${order.orderNumber} - ${order.orderType} - ${order.status}`);
+      console.log(`     Customer: ${order.customer?.firstName} ${order.customer?.lastName}`);
+      console.log(`     Outlet: ${order.outlet.name}`);
+      console.log(`     Amount: $${order.totalAmount}`);
+      console.log(`     Created: ${order.createdAt.toLocaleDateString()}`);
       console.log('');
     });
-
-    // Check status distribution
-    const statusCounts = {};
-    orders.forEach(order => {
-      statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
+    
+    // Check order items
+    const totalOrderItems = await prisma.orderItem.count();
+    console.log(`📦 Total Order Items: ${totalOrderItems}`);
+    
+    // Check payments
+    const totalPayments = await prisma.payment.count();
+    console.log(`💳 Total Payments: ${totalPayments}`);
+    
+    // Verify order status flow logic
+    console.log('\n✅ Order Status Flow Verification:');
+    
+    // Check RENT orders with invalid statuses
+    const invalidRentOrders = await prisma.order.findMany({
+      where: {
+        orderType: 'RENT',
+        status: { in: ['COMPLETED'] } // RENT orders shouldn't have COMPLETED status
+      }
     });
-
-    console.log('📈 Status Distribution:');
-    Object.entries(statusCounts).forEach(([status, count]) => {
-      console.log(`   ${status}: ${count} orders`);
+    
+    if (invalidRentOrders.length === 0) {
+      console.log('  ✅ RENT orders have valid statuses only');
+    } else {
+      console.log(`  ❌ Found ${invalidRentOrders.length} RENT orders with invalid statuses`);
+    }
+    
+    // Check SALE orders with invalid statuses
+    const invalidSaleOrders = await prisma.order.findMany({
+      where: {
+        orderType: 'SALE',
+        status: { in: ['ACTIVE', 'RETURNED'] } // SALE orders shouldn't have these statuses
+      }
     });
-
-    console.log('\n✅ Order verification completed!');
-
+    
+    if (invalidSaleOrders.length === 0) {
+      console.log('  ✅ SALE orders have valid statuses only');
+    } else {
+      console.log(`  ❌ Found ${invalidSaleOrders.length} SALE orders with invalid statuses`);
+    }
+    
+    console.log('\n🎉 Order verification completed successfully!');
+    
   } catch (error) {
-    console.error('❌ Error verifying orders:', error);
+    console.error('❌ Error during verification:', error);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-verifyOrders();
+// Run the verification
+if (require.main === module) {
+  verifyOrders();
+}
+
+module.exports = { verifyOrders };

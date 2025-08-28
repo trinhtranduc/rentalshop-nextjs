@@ -25,6 +25,7 @@ interface NavigationProps {
   allowCollapse?: boolean
   onCollapseToggle?: () => void
   isCollapsed?: boolean
+  userRole?: string // Add user role for filtering navigation
 }
 
 export function Navigation({ 
@@ -33,7 +34,8 @@ export function Navigation({
   hideSidebar = false,
   allowCollapse = true,
   onCollapseToggle,
-  isCollapsed = false
+  isCollapsed = false,
+  userRole
 }: NavigationProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -55,7 +57,21 @@ export function Navigation({
     { href: '/settings', label: 'Settings', icon: Settings },
   ]
 
-  const navItems = variant === 'admin' ? adminNavItems : clientNavItems
+  // Filter nav items based on user role
+  const filterNavItemsByRole = (items: typeof adminNavItems, userRole?: string) => {
+    if (!userRole) return items;
+    
+    // Hide outlets tab for outlet-level users
+    if (userRole === 'OUTLET_ADMIN' || userRole === 'OUTLET_STAFF') {
+      return items.filter(item => item.href !== '/outlets');
+    }
+    
+    return items;
+  };
+
+  const navItems = variant === 'admin' 
+    ? filterNavItemsByRole(adminNavItems, userRole) 
+    : clientNavItems
 
   return (
     <nav className="bg-nav-background text-nav-tint shadow-sm">

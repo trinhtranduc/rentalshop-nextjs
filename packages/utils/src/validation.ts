@@ -114,9 +114,9 @@ export const customersQuerySchema = z.object({
 const orderTypeEnum = z.enum(['RENT', 'SALE']);
 
 // Order statuses based on order type:
-// RENT: BOOKED (mới cục), ACTIVE (đang thuê), RETURNED (đã trả), CANCELLED (hủy)
+// RENT: RESERVED (mới cục), PICKUPED (đang thuê), RETURNED (đã trả), CANCELLED (hủy)
 // SALE: COMPLETED và CANCELLED
-const orderStatusEnum = z.enum(['BOOKED', 'ACTIVE', 'RETURNED', 'COMPLETED', 'CANCELLED']);
+const orderStatusEnum = z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']);
 
 export const ordersQuerySchema = z.object({
   q: z.string().optional(),
@@ -156,6 +156,8 @@ export const orderCreateSchema = z.object({
   rentalDuration: z.coerce.number().int().positive().optional(),
   subtotal: z.coerce.number().nonnegative().default(0),
   taxAmount: z.coerce.number().nonnegative().default(0),
+  discountType: z.enum(['amount', 'percentage']).optional(),
+  discountValue: z.coerce.number().nonnegative().default(0),
   discountAmount: z.coerce.number().nonnegative().default(0),
   totalAmount: z.coerce.number().nonnegative().default(0),
   depositAmount: z.coerce.number().nonnegative().default(0),
@@ -184,6 +186,8 @@ export const orderUpdateSchema = z.object({
   rentalDuration: z.coerce.number().int().positive().optional(),
   subtotal: z.coerce.number().nonnegative().optional(),
   taxAmount: z.coerce.number().nonnegative().optional(),
+  discountType: z.enum(['amount', 'percentage']).optional(),
+  discountValue: z.coerce.number().nonnegative().optional(),
   discountAmount: z.coerce.number().nonnegative().optional(),
   totalAmount: z.coerce.number().nonnegative().optional(),
   depositAmount: z.coerce.number().nonnegative().optional(),

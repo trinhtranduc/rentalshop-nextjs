@@ -46,8 +46,8 @@ export function OrdersList({
                 #{order.orderNumber}
               </h4>
               <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                order.status === 'BOOKED' ? 'bg-red-100 text-red-800' :
-                order.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                order.status === 'RESERVED' ? 'bg-red-100 text-red-800' :
+                order.status === 'PICKUPED' ? 'bg-green-100 text-green-800' :
                 'bg-gray-100 text-gray-800'
               }`}>
                 {order.status}

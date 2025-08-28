@@ -5,14 +5,7 @@ import { Badge } from '../../../ui';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui';
 import { OrderData } from '@rentalshop/types';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-// Local constants for order status colors (same pattern as order types)
-const ORDER_STATUS_COLORS = {
-  BOOKED: 'bg-red-100 text-red-800',
-  ACTIVE: 'bg-[#f19920] text-white', // Orange background, white text for contrast
-  RETURNED: 'bg-[#0F9347] text-white', // Green background, white text for contrast
-  COMPLETED: 'bg-gray-100 text-gray-800',
-  CANCELLED: 'bg-[#b22222] text-white' // Dark red background, white text for contrast
-} as const;
+import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
 
 interface OrderTableProps {
   orders: OrderData[];
@@ -98,7 +91,9 @@ export function OrderTable({
 }: OrderTableProps) {
   // Debug logging to see what data we're receiving
   console.log('OrderTable: Received orders data:', orders.map(o => ({ id: o.id, status: o.status, orderNumber: o.orderNumber })));
-  console.log('OrderTable: Local ORDER_STATUS_COLORS:', ORDER_STATUS_COLORS);
+  console.log('🔍 DEBUG: ORDER_STATUS_COLORS imported:', ORDER_STATUS_COLORS);
+  console.log('🔍 DEBUG: ORDER_STATUS_COLORS keys:', Object.keys(ORDER_STATUS_COLORS));
+  console.log('🔍 DEBUG: ORDER_STATUS_COLORS values:', Object.values(ORDER_STATUS_COLORS));
   
   if (orders.length === 0) {
     return (
@@ -137,18 +132,14 @@ export function OrderTable({
       );
     }
 
-    // Check if status exists in our constants
-    if (!(status in ORDER_STATUS_COLORS)) {
-      console.warn('OrderTable: Unknown status value:', status, 'Available statuses:', Object.keys(ORDER_STATUS_COLORS));
-      // Map old statuses to new ones
-      if (status === 'CONFIRMED') {
-        console.log('OrderTable: Mapping CONFIRMED to BOOKED');
-        status = 'BOOKED';
-      }
-    }
-
     const colors = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
-    console.log('OrderTable: Status:', status, 'Colors:', colors, 'Available keys:', Object.keys(ORDER_STATUS_COLORS));
+    
+    // Debug: Log what we're getting for each status
+    console.log(`🔍 Status Badge Debug - Status: "${status}"`);
+    console.log(`🔍 Available keys in ORDER_STATUS_COLORS:`, Object.keys(ORDER_STATUS_COLORS));
+    console.log(`🔍 Has status "${status}" in ORDER_STATUS_COLORS:`, status in ORDER_STATUS_COLORS);
+    console.log(`🔍 Colors for "${status}":`, colors);
+    
     return (
       <Badge variant="default" className={colors}>
         {status}
@@ -160,7 +151,6 @@ export function OrderTable({
     const variants = {
       RENT: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       SALE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      RENT_TO_OWN: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
     };
     
     return (

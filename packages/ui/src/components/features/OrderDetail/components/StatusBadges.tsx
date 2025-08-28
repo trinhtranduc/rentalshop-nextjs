@@ -19,11 +19,9 @@ const getStatusColor = (status: string) => {
 
 const getStatusIcon = (status: string) => {
   switch (status.toUpperCase()) {
-    case 'PENDING':
-      return <Clock className="w-4 h-4" />;
-    case 'BOOKED':
+    case 'RESERVED':
       return <CheckCircle className="w-4 h-4" />;
-    case 'ACTIVE':
+    case 'PICKUPED':
       return <Package className="w-4 h-4" />;
     case 'COMPLETED':
       return <CheckCircle className="w-4 h-4" />;
@@ -31,8 +29,6 @@ const getStatusIcon = (status: string) => {
       return <XCircle className="w-4 h-4" />;
     case 'RETURNED':
       return <CheckCircle className="w-4 h-4" />;
-    case 'OVERDUE':
-      return <Clock className="w-4 h-4" />;
     default:
       return <Clock className="w-4 h-4" />;
   }
@@ -40,7 +36,7 @@ const getStatusIcon = (status: string) => {
 
 export const StatusBadges: React.FC<StatusBadgesProps> = ({ order }) => {
   // Calculate overdue status from order dates
-  const isOverdue = order.status === 'ACTIVE' && order.returnPlanAt && new Date() > new Date(order.returnPlanAt);
+  const isOverdue = order.status === 'PICKUPED' && order.returnPlanAt && new Date() > new Date(order.returnPlanAt);
   const daysOverdue = isOverdue && order.returnPlanAt 
     ? Math.ceil((new Date().getTime() - new Date(order.returnPlanAt).getTime()) / (1000 * 60 * 60 * 24))
     : 0;

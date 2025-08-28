@@ -23,6 +23,7 @@ model User {
   outletId   String?
   outlet     Outlet?   @relation(fields: [outletId], references: [id])
   merchant   Merchant? @relation(fields: [merchantId], references: [id])
+  createdOrders Order[] // Orders created by this user
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -167,12 +168,15 @@ model Order {
   publicId          Int         @unique
   orderNumber       String      @unique
   orderType         String
-  status            String      @default("BOOKED")
+  status            String      @default("RESERVED")
   totalAmount       Float
   depositAmount     Float       @default(0)
   securityDeposit   Float       @default(0)
   damageFee         Float       @default(0)
   lateFee           Float       @default(0)
+  discountType      String?     // 'amount' or 'percentage'
+  discountValue     Float       @default(0)
+  discountAmount    Float       @default(0)
   pickupPlanAt      DateTime?
   returnPlanAt      DateTime?
   pickedUpAt        DateTime?
@@ -189,8 +193,10 @@ model Order {
   updatedAt         DateTime    @updatedAt
   outletId          String
   customerId        String?
+  createdById       String      // Who created this order
   customer          Customer?   @relation(fields: [customerId], references: [id])
   outlet            Outlet      @relation(fields: [outletId], references: [id])
+  createdBy         User        @relation(fields: [createdById], references: [id])
   orderItems        OrderItem[]
   payments          Payment[]
 
