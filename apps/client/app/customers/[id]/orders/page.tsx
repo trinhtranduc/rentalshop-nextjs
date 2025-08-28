@@ -394,14 +394,14 @@ export default function CustomerOrdersPage() {
                           </td>
                           <td className="p-4 align-middle">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              order.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                              order.status === 'ACTIVE' ? 'bg-[#f19920] text-white' :
                               order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                              order.status === 'BOOKED' ? 'bg-blue-100 text-blue-800' :
+                              order.status === 'BOOKED' ? 'bg-red-100 text-red-800' :
                               order.status === 'COMPLETED' ? 'bg-purple-100 text-purple-800' :
-                              order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                              order.status === 'CANCELLED' ? 'bg-[#b22222] text-white' :
                               order.status === 'WAITING' ? 'bg-orange-100 text-orange-800' :
                               order.status === 'PICKUPED' ? 'bg-indigo-100 text-indigo-800' :
-                              order.status === 'RETURNED' ? 'bg-teal-100 text-teal-800' :
+                              order.status === 'RETURNED' ? 'bg-[#0F9347] text-white' :
                               order.status === 'OVERDUE' ? 'bg-pink-100 text-pink-800' :
                               order.status === 'DAMAGED' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'

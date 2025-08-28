@@ -14,8 +14,8 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Order statuses and types
-const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'OVERDUE'];
-const ORDER_TYPES = ['RENT', 'SALE', 'RENT_TO_OWN'];
+const ORDER_STATUSES = ['BOOKED', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'OVERDUE'];
+const ORDER_TYPES = ['RENT', 'SALE'];
 
 // Helper function to get random item from array
 function getRandomItem(array) {

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import { Badge } from '../../../ui/badge';
 import type { CustomerWithMerchant } from '@rentalshop/database';
 import { Package, Calendar, DollarSign, User, MapPin, Clock } from 'lucide-react';
+import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
 
 interface CustomerOrdersDialogProps {
   open: boolean;
@@ -102,16 +103,9 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      COMPLETED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      OVERDUE: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      CANCELLED: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-    };
-    
+    const colors = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || variants.PENDING}>
+      <Badge variant="outline" className={colors}>
         {status}
       </Badge>
     );

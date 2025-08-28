@@ -190,8 +190,8 @@ export async function GET(request: NextRequest) {
       ...(q && { q }),
       ...(orderType && { orderType: orderType as OrderType }),
       ...(status && { status: status as OrderStatus }),
-      ...(outletId && { outletId }),
-      ...(customerId && { customerId }),
+      ...(outletId && { outletId: parseInt(outletId) }), // Convert string to number
+      ...(customerId && { customerId: parseInt(customerId) }), // Convert string to number
       ...(startDate && { startDate: new Date(startDate) }),
       ...(endDate && { endDate: new Date(endDate) }),
       ...(sortBy && { sortBy }),
@@ -337,7 +337,7 @@ export async function POST(request: NextRequest) {
     const orderInput: OrderInput = {
       orderType: p.orderType,
       customerId: p.customerId,
-      outletId: p.outletId,
+      outletId: parseInt(p.outletId.toString()), // Convert string to number for Prisma
       pickupPlanAt: p.pickupPlanAt,
       returnPlanAt: p.returnPlanAt,
       rentalDuration: p.rentalDuration,
@@ -518,7 +518,7 @@ export async function POST(request: NextRequest) {
     if (userScope.merchantId) {
       // For MERCHANT role, verify the outlet belongs to their merchant
       const outlet = await prisma.outlet.findUnique({
-        where: { publicId: orderInput.outletId }, // Use publicId instead of id
+        where: { publicId: orderInput.outletId }, // Now outletId is already a number
         select: { merchantId: true }
       });
       
@@ -715,7 +715,7 @@ export async function PUT(request: NextRequest) {
     };
 
     // Update the order
-    const updatedOrder = await updateOrder(orderId, updateInput, user.id);
+    const updatedOrder = await updateOrder(parseInt(orderId), updateInput, user.id);
 
     return NextResponse.json({
       success: true,
@@ -774,7 +774,7 @@ export async function DELETE(request: NextRequest) {
     const reason = body.reason || 'Order cancelled by user';
 
     // Cancel the order
-    const cancelledOrder = await cancelOrder(orderId, user.id, reason);
+    const cancelledOrder = await cancelOrder(parseInt(orderId), user.id, reason);
 
     return NextResponse.json({
       success: true,

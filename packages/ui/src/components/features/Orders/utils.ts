@@ -1,4 +1,5 @@
 import { Order, OrderFilters, OrderData, OrderStats, OrderDetailData, SettingsForm } from '@rentalshop/types';
+import * as CONSTANTS from '@rentalshop/constants';
 
 export const filterOrders = (orders: OrderData[], filters: OrderFilters): OrderData[] => {
   return orders.filter(order => {
@@ -155,27 +156,11 @@ export const formatDate = (dateString: string): string => {
 };
 
 export const getOrderStatusColor = (status: string): string => {
-  const colors = {
-    PENDING: 'text-yellow-600 dark:text-yellow-400',
-    BOOKED: 'text-blue-600 dark:text-blue-400',
-    ACTIVE: 'text-green-600 dark:text-green-400',
-    COMPLETED: 'text-gray-600 dark:text-gray-400',
-    CANCELLED: 'text-red-600 dark:text-red-400',
-    RETURNED: 'text-purple-600 dark:text-purple-400'
-  };
-  return colors[status as keyof typeof colors] || colors.PENDING;
+  return ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'text-gray-600';
 };
 
 export const getOrderStatusBadge = (status: string): string => {
-  const badges = {
-    PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    BOOKED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    COMPLETED: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-    CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    RETURNED: 'bg-purple-100 text-purple-800 dark:bg-green-900 dark:text-purple-200'
-  };
-  return badges[status as keyof typeof badges] || badges.PENDING;
+  return ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
 };
 
 export const getOrderTypeBadge = (type: string): string => {
