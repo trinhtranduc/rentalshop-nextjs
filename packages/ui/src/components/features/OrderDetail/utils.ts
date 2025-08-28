@@ -20,9 +20,9 @@ export const calculateCollectionAmount = (order: OrderData, settingsForm: Settin
   }
   
   switch (order.status) {
-    case 'BOOKED':
+    case 'RESERVED':
       return order.depositAmount;
-    case 'ACTIVE':
+    case 'PICKUPED':
       return order.totalAmount - order.depositAmount;
     case 'RETURNED':
       return 0;
@@ -37,9 +37,9 @@ export const getCollectionTitle = (order: OrderData): string => {
   }
   
   switch (order.status) {
-    case 'BOOKED':
+    case 'RESERVED':
       return 'Collect from customer';
-    case 'ACTIVE':
+    case 'PICKUPED':
       return 'Collect rental fee';
     case 'RETURNED':
       return 'No collection';

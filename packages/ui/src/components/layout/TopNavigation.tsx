@@ -29,6 +29,7 @@ interface TopNavigationProps {
   onSearch?: (query: string) => void
   onLogout?: () => void
   onProfileClick?: () => void
+  userRole?: string // Add user role for filtering navigation
 }
 
 export function TopNavigation({ 
@@ -38,7 +39,8 @@ export function TopNavigation({
   cartItemsCount = 0,
   onSearch,
   onLogout,
-  onProfileClick
+  onProfileClick,
+  userRole
 }: TopNavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -61,7 +63,21 @@ export function TopNavigation({
     { href: '/settings', label: 'Settings', icon: Settings },
   ]
 
-  const navItems = variant === 'admin' ? adminNavItems : clientNavItems
+  // Filter nav items based on user role
+  const filterNavItemsByRole = (items: typeof adminNavItems, userRole?: string) => {
+    if (!userRole) return items;
+    
+    // Hide outlets tab for outlet-level users
+    if (userRole === 'OUTLET_ADMIN' || userRole === 'OUTLET_STAFF') {
+      return items.filter(item => item.href !== '/outlets');
+    }
+    
+    return items;
+  };
+
+  const navItems = variant === 'admin' 
+    ? filterNavItemsByRole(adminNavItems, userRole) 
+    : clientNavItems
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

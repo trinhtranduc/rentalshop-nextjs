@@ -1,6 +1,73 @@
 # Cursor Rules for Rental Shop Next.js Monorepo
 
-## 🎯 DRY Principles & Best Practices
+## 🚀 **Quick System Setup**
+
+### **Complete System Regeneration (Recommended)**
+```bash
+# Regenerate entire system with fresh data
+yarn db:regenerate-system
+```
+
+This creates:
+- ✅ 2 merchants (each with 1 merchant account)
+- ✅ 4 outlets (2 per merchant)
+- ✅ 8 users (1 admin + 1 staff per outlet)
+- ✅ 60 customers (30 per merchant)
+- ✅ 60 products (30 per merchant)
+- ✅ 120 orders (30 per outlet)
+
+### **Alternative Commands**
+```bash
+yarn db:reset          # Reset and seed database
+yarn db:seed           # Just seed (without reset)
+yarn db:reset-orders   # Reset only orders
+```
+
+## 🔑 **Default Login Credentials**
+
+After running `yarn db:regenerate-system`:
+
+**Merchant Accounts:**
+- `merchant1@example.com` / `merchant123`
+- `merchant2@example.com` / `merchant123`
+
+**Outlet Admins:**
+- `admin.outlet1@example.com` / `admin123`
+- `admin.outlet2@example.com` / `admin123`
+- `admin.outlet3@example.com` / `admin123`
+- `admin.outlet4@example.com` / `admin123`
+
+**Outlet Staff:**
+- `staff.outlet1@example.com` / `staff123`
+- `staff.outlet2@example.com` / `staff123`
+- `staff.outlet3@example.com` / `staff123`
+- `staff.outlet4@example.com` / `staff123`
+
+## 📋 **Updated Order System (2025)**
+
+### **Order Types (Simplified)**
+- **RENT**: Equipment rental orders
+- **SALE**: Direct purchase orders
+
+### **Order Statuses**
+- **RESERVED**: New order, scheduled for pickup
+- **PICKUPED**: Currently being rented (RENT only)
+- **RETURNED**: Rental completed (RENT only)
+- **COMPLETED**: Sale finalized (SALE only)
+- **CANCELLED**: Order cancelled (both types)
+
+### **Order Numbering**
+- **Clean format**: `ORD-001-0001` (no order type prefix)
+- **Structure**: `ORD-{outletId}-{sequence}`
+- **Example**: `ORD-001-0001`, `ORD-002-0001`, etc.
+
+### **Order Status Flow**
+```
+RENT Orders: RESERVED → PICKUPED → RETURNED (or CANCELLED)
+SALE Orders: RESERVED → COMPLETED (or CANCELLED)
+```
+
+## 🎯 **DRY Principles & Best Practices**
 
 ### **ALWAYS FOLLOW DRY (Don't Repeat Yourself)**
 
@@ -103,7 +170,7 @@ return {
   id: 999,              // publicId (number)
   outletId: 123,        // publicId (number)
   customerId: 456,      // publicId (number)
-  orderNumber: "2025-001"
+  orderNumber: "ORD-001-0001"
 };
 
 // 6️⃣ FRONTEND RECEIVES (Numbers)
@@ -111,7 +178,7 @@ const response = {
   id: 999,              // Number
   outletId: 123,        // Number
   customerId: 456,      // Number
-  orderNumber: "2025-001"
+  orderNumber: "ORD-001-0001"
 };
 ```
 

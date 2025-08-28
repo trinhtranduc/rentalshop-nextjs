@@ -81,17 +81,25 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             Outlet <span className="text-red-500">*</span>
           </label>
           <Select
-            value={formData.outletId}
+            value={formData.outletId ? String(formData.outletId) : undefined}
             onValueChange={(value: string) => {
-              onFormDataChange('outletId', value);
+              console.log('🔍 Outlet selection changed:', { 
+                previousValue: formData.outletId, 
+                newValue: value,
+                convertedValue: value ? parseInt(value, 10) : undefined,
+                outlets: outlets
+              });
+              // Convert string back to number for form data
+              const outletId = value ? parseInt(value, 10) : undefined;
+              onFormDataChange('outletId', outletId);
             }}
           >
             <SelectTrigger variant="filled" className="w-full">
               <SelectValue placeholder="Select outlet..." />
             </SelectTrigger>
             <SelectContent>
-              {outlets.map((outlet) => (
-                <SelectItem key={outlet.id} value={outlet.id}>
+              {outlets.map(outlet => (
+                <SelectItem key={outlet.id} value={String(outlet.id)}>
                   {outlet.name}
                 </SelectItem>
               ))}

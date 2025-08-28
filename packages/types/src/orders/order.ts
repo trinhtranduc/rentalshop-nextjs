@@ -9,9 +9,9 @@ import type { Payment } from './payments';
 export type OrderType = 'RENT' | 'SALE';
 
 // Order statuses based on order type:
-// RENT: BOOKED (mới cục), ACTIVE (đang thuê), RETURNED (đã trả), CANCELLED (hủy)
+// RENT: RESERVED (mới cục), PICKUPED (đang thuê), RETURNED (đã trả), CANCELLED (hủy)
 // SALE: COMPLETED và CANCELLED
-export type OrderStatus = 'BOOKED' | 'ACTIVE' | 'RETURNED' | 'COMPLETED' | 'CANCELLED';
+export type OrderStatus = 'RESERVED' | 'PICKUPED' | 'RETURNED' | 'COMPLETED' | 'CANCELLED';
 
 export interface Order {
   id: string;           // Database CUID (internal use)
@@ -21,6 +21,7 @@ export interface Order {
   status: OrderStatus;
   customerId?: string;  // Database CUID
   outletId: string;     // Database CUID
+  createdById: string;  // Database CUID of user who created the order
   totalAmount: number;
   depositAmount: number;
   pickupPlanAt?: Date;
@@ -37,6 +38,10 @@ export interface Order {
   collateralType?: string;
   collateralDetails?: string;
   notes?: string;
+  // Discount properties
+  discountType?: 'amount' | 'percentage';
+  discountValue?: number;
+  discountAmount?: number;
 }
 
 export interface OrderCreateInput {
@@ -59,6 +64,8 @@ export interface OrderUpdateInput {
   rentalDuration?: number;
   subtotal?: number;
   taxAmount?: number;
+  discountType?: 'amount' | 'percentage';
+  discountValue?: number;
   discountAmount?: number;
   totalAmount?: number;
   depositAmount?: number;
@@ -123,6 +130,8 @@ export interface OrderInput {
   rentalDuration?: number;
   subtotal: number;
   taxAmount?: number;
+  discountType?: 'amount' | 'percentage';
+  discountValue?: number;
   discountAmount?: number;
   totalAmount: number;
   depositAmount?: number;
@@ -151,6 +160,8 @@ export interface OrderUpdateInput {
   rentalDuration?: number;
   subtotal?: number;
   taxAmount?: number;
+  discountType?: 'amount' | 'percentage';
+  discountValue?: number;
   discountAmount?: number;
   totalAmount?: number;
   depositAmount?: number;
@@ -220,6 +231,15 @@ export interface OrderWithDetails extends Order {
   };
   orderItems: OrderItemWithProduct[];
   payments: Payment[];
+  // Creator information
+  createdBy: {
+    id: string;         // Database CUID
+    publicId: number;   // Public numeric ID
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+  } | null;
   // Add merchantId for backward compatibility with database package
   merchantId: string;   // Database CUID
 }
@@ -348,17 +368,37 @@ export interface OrderDetailData extends OrderData {
   orderItems: Array<{
     id: number;
     productId: number;
-    productName: string;
+    product: {
+      id: string;
+      name: string;
+      description?: string;
+      images?: string | null;
+      barcode?: string;
+    };
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    notes?: string;
   }>;
+  // Creator information
+  createdBy?: {
+    id: string;
+    publicId: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+  };
   // Additional properties for order details
   damageFee?: number;
   securityDeposit?: number;
   collateralType?: string;
   collateralDetails?: string;
   notes?: string;
+  // Discount properties
+  discountType?: 'amount' | 'percentage';
+  discountValue?: number;
+  discountAmount?: number;
 }
 
 export interface OrderDetailProps {

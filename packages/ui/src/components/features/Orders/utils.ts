@@ -156,11 +156,11 @@ export const formatDate = (dateString: string): string => {
 };
 
 export const getOrderStatusColor = (status: string): string => {
-  return ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'text-gray-600';
+  return CONSTANTS.ORDER_STATUS_COLORS[status as keyof typeof CONSTANTS.ORDER_STATUS_COLORS] || 'text-gray-600';
 };
 
 export const getOrderStatusBadge = (status: string): string => {
-  return ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
+  return CONSTANTS.ORDER_STATUS_COLORS[status as keyof typeof CONSTANTS.ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
 };
 
 export const getOrderTypeBadge = (type: string): string => {
@@ -207,7 +207,7 @@ export const calculateOrderTotal = (orderItems: any[]): number => {
 };
 
 export const isOrderOverdue = (order: Order): boolean => {
-  if (order.status !== 'ACTIVE' || !order.returnPlanAt) return false;
+  if (order.status !== 'PICKUPED' || !order.returnPlanAt) return false;
   
   const returnDate = new Date(order.returnPlanAt);
   const now = new Date();
@@ -215,7 +215,7 @@ export const isOrderOverdue = (order: Order): boolean => {
 };
 
 export const getDaysUntilReturn = (order: Order): number | null => {
-  if (order.status !== 'ACTIVE' || !order.returnPlanAt) return null;
+  if (order.status !== 'PICKUPED' || !order.returnPlanAt) return null;
   
   const returnDate = new Date(order.returnPlanAt);
   const now = new Date();
@@ -229,7 +229,7 @@ export const calculateCollectionAmount = (order: OrderDetailData, settingsForm: 
   if (order.orderType === 'RENT') {
     if (order.status === 'RESERVED') {
       return settingsForm.bailAmount || 0;
-    } else if (order.status === 'PICKUP') {
+    } else if (order.status === 'PICKUPED') {
       return (settingsForm.bailAmount || 0) - (settingsForm.damageFee || 0);
     }
   }
@@ -240,7 +240,7 @@ export const getCollectionTitle = (order: OrderDetailData): string => {
   if (order.orderType === 'RENT') {
     if (order.status === 'RESERVED') {
       return 'Bail Amount';
-    } else if (order.status === 'PICKUP') {
+    } else if (order.status === 'PICKUPED') {
       return 'Collection Amount';
     }
   }

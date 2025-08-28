@@ -1,8 +1,38 @@
-import React, { useState } from 'react';
-import { TrendingUp, Package, DollarSign, User, MapPin, Info, Settings, Save, Edit, X, RotateCcw, Printer } from 'lucide-react';
-import { OrderDetailProps, SettingsForm } from '@rentalshop/types';
-import { Button, Card, CardHeader, CardTitle, CardContent, Input, Label, Textarea, Badge, useToasts, ToastContainer, Skeleton, CardSkeleton } from '@rentalshop/ui';
-import { formatCurrency } from '@rentalshop/utils';
+import React, { useState, useEffect } from 'react';
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent,
+  Button,
+  Badge,
+  Input,
+  Label,
+  Textarea,
+  Skeleton
+} from '@rentalshop/ui';
+import { 
+  Info, 
+  Package, 
+  DollarSign, 
+  Settings, 
+  Edit3, 
+  Save, 
+  X,
+  Calendar,
+  User,
+  MapPin,
+  Phone,
+  Mail,
+  RotateCcw,
+  Printer,
+  Edit
+} from 'lucide-react';
+import { formatCurrency } from '@rentalshop/ui';
+import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
+import type { OrderDetailData, OrderDetailProps, SettingsForm } from '@rentalshop/types';
+import { useToasts } from '@rentalshop/ui';
+import { ToastContainer } from '@rentalshop/ui';
 
 // Skeleton component for OrderDetail
 const OrderDetailSkeleton: React.FC = () => {
@@ -317,12 +347,15 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                   {order.orderType === 'RENT' ? 'RENT' : 'SALE'}
                 </Badge>
               </div>
-              {/* Deposit Status */}
-              {order.orderType === 'RENT' && order.depositAmount > 0 && (
-                <Badge className="bg-green-100 text-green-800 border-green-200">
-                  DEPOSITED
+              {/* Order Status */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Status:</span>
+                <Badge 
+                  className={ORDER_STATUS_COLORS[order.status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800'}
+                >
+                  {order.status}
                 </Badge>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -357,6 +390,22 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                       <span className="text-sm text-gray-600">Phone:</span>
                       <span className="text-sm font-medium">{order.customer?.phone || 'N/A'}</span>
                     </div>
+                    {order.createdBy && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Created By:</span>
+                        <span className="text-sm font-medium text-blue-600">
+                          {order.createdBy.firstName} {order.createdBy.lastName} ({order.createdBy.role})
+                        </span>
+                      </div>
+                    )}
+                    {order.createdBy && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Creator Email:</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          {order.createdBy.email}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right Column */}
@@ -424,14 +473,19 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                           {/* Product Info */}
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-gray-900 text-sm">
-                              {item.productName || 'Unknown Product'}
+                              {item.product?.name || 'Unknown Product'}
                             </div>
                             <div className="text-xs text-gray-500">
-                              # ID: {item.productId || 'N/A'}
+                              {item.product?.barcode ? `Barcode: ${item.product.barcode}` : 'No barcode'}
                             </div>
                             <div className="text-xs text-gray-600">
                               {formatCurrency(item.unitPrice)} x {item.quantity}
                             </div>
+                            {item.notes && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Notes: {item.notes}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -459,11 +513,17 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                   <span className="font-medium">{formatCurrency(order.totalAmount || 0)}</span>
                 </div>
 
-                {/* Discount */}
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Discount:</span>
-                  <span className="font-medium">-{formatCurrency(0)}</span>
-                </div>
+                {/* Discount Display */}
+                {order.discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>
+                      Discount {order.discountType === 'percentage' && order.discountValue 
+                        ? `(${order.discountValue}%)` 
+                        : '(amount)'}:
+                    </span>
+                    <span className="font-medium">-{formatCurrency(order.discountAmount)}</span>
+                  </div>
+                )}
 
                 {/* Deposit */}
                 {order.orderType === 'RENT' && order.depositAmount > 0 && (

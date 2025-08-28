@@ -53,7 +53,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
           id: 1,
           orderNumber: '1',
           orderType: 'RENT',
-          status: 'ACTIVE',
+          status: 'PICKUPED',
           totalAmount: 150.00,
           depositAmount: 50.00,
           pickupPlanAt: new Date('2024-01-15'),
@@ -81,7 +81,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
           id: 3,
           orderNumber: '3',
           orderType: 'RENT',
-          status: 'OVERDUE',
+          status: 'PICKUPED',
           totalAmount: 200.00,
           depositAmount: 75.00,
           pickupPlanAt: new Date('2024-01-08'),
@@ -240,7 +240,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
                           <h3 className="font-semibold text-lg">#{order.orderNumber}</h3>
                           {getStatusBadge(order.status)}
                           {getOrderTypeBadge(order.orderType)}
-                          {order.status === 'OVERDUE' && order.returnPlanAt && (
+                          {order.status === 'PICKUPED' && order.returnPlanAt && new Date() > order.returnPlanAt && (
                             <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
                               {getDaysOverdue(order.returnPlanAt)} days overdue
                             </Badge>

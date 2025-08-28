@@ -40,7 +40,7 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Active Orders
+              Pickuped Orders
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -48,7 +48,7 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
               {stats.activeOrders.toLocaleString()}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Currently active
+              Currently pickuped
             </p>
           </CardContent>
         </Card>

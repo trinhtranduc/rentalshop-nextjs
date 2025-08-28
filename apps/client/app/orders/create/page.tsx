@@ -73,9 +73,22 @@ export default function CreateOrderPage() {
           // outletsRes.data is now OutletsResponse with nested outlets array
           const outletsArray = outletsRes.data?.outlets || [];
           
-          // Map outlets using publicId (numeric ID) for frontend, not internal CUID
+          // Debug: Log each outlet object structure
+          outletsArray.forEach((outlet: any, index: number) => {
+            console.log(`🔍 Outlet ${index}:`, {
+              id: outlet.id,
+              publicId: outlet.publicId,
+              name: outlet.name,
+              merchantId: outlet.merchantId,
+              merchant: outlet.merchant,
+              fullObject: outlet
+            });
+          });
+          
+          // The API already returns outlets with id field (which is the publicId)
+          // No need to remap - use the data as-is
           const mapped = outletsArray.map((o: any) => ({ 
-            id: o.publicId, // Use publicId (number) for frontend, not internal CUID
+            id: o.id, // Use the id field that's already provided by the API
             name: o.name,
             merchantId: o.merchantId || o.merchant?.id
           }));

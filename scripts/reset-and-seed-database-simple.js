@@ -66,7 +66,7 @@ const PRODUCT_CATEGORIES = [
   'Party Supplies', 'Sports Equipment', 'Camping Gear', 'Office Equipment', 'Medical Devices'
 ];
 
-const ORDER_STATUSES = ['BOOKED', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
+const ORDER_STATUSES = ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED'];
 const ORDER_TYPES = ['RENT', 'SALE'];
 
 async function resetDatabase() {

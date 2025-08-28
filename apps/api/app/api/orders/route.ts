@@ -216,6 +216,10 @@ export async function GET(request: NextRequest) {
       pickedUpAt: order.pickedUpAt,
       returnedAt: order.returnedAt,
       isReadyToDeliver: order.isReadyToDeliver,
+      // Discount fields
+      discountType: order.discountType,
+      discountValue: order.discountValue,
+      discountAmount: order.discountAmount,
       customer: order.customer ? {
         id: order.customer.publicId,         // Use publicId as id
         firstName: order.customer.firstName,
@@ -233,6 +237,14 @@ export async function GET(request: NextRequest) {
           name: order.outlet.merchant.name,
         },
       },
+      // Creator information
+      createdBy: order.createdBy ? {
+        id: order.createdBy.publicId,        // Use publicId as id
+        firstName: order.createdBy.firstName,
+        lastName: order.createdBy.lastName,
+        email: order.createdBy.email,
+        role: order.createdBy.role,
+      } : null,
       orderItems: order.orderItems.map((item: any) => ({
         id: item.publicId || 0,              // Use publicId as id (fallback to 0 if not available)
         productId: item.product.publicId,    // Use publicId as id
@@ -343,6 +355,8 @@ export async function POST(request: NextRequest) {
       rentalDuration: p.rentalDuration,
       subtotal: p.subtotal,
       taxAmount: p.taxAmount,
+      discountType: p.discountType,
+      discountValue: p.discountValue,
       discountAmount: p.discountAmount,
       totalAmount: p.totalAmount,
       depositAmount: p.depositAmount,
@@ -363,7 +377,7 @@ export async function POST(request: NextRequest) {
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
+        totalPrice: item.totalPrice || (item.quantity * item.unitPrice), // Ensure totalPrice is always defined
         deposit: item.deposit,
         notes: item.notes,
         startDate: item.startDate,
@@ -715,7 +729,7 @@ export async function PUT(request: NextRequest) {
     };
 
     // Update the order
-    const updatedOrder = await updateOrder(parseInt(orderId), updateInput, user.id);
+    const updatedOrder = await updateOrder(parseInt(orderId), updateInput, user.publicId);
 
     return NextResponse.json({
       success: true,
@@ -774,7 +788,7 @@ export async function DELETE(request: NextRequest) {
     const reason = body.reason || 'Order cancelled by user';
 
     // Cancel the order
-    const cancelledOrder = await cancelOrder(parseInt(orderId), user.id, reason);
+    const cancelledOrder = await cancelOrder(parseInt(orderId), user.publicId, reason);
 
     return NextResponse.json({
       success: true,

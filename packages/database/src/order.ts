@@ -53,6 +53,16 @@ export async function getOrderByPublicId(publicId: number): Promise<OrderWithDet
           },
         },
       },
+      createdBy: {
+        select: {
+          id: true,
+          publicId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+        },
+      },
       orderItems: {
         include: {
           product: {
@@ -128,6 +138,16 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
               name: true,
             },
           },
+        },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          publicId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
         },
       },
       orderItems: {
@@ -216,8 +236,16 @@ export async function createOrder(
     });
     const nextPublicId = (lastOrder?.publicId || 0) + 1;
 
-    // Generate order number
-    const orderNumber = `ORD-${Date.now()}-${nextPublicId}`;
+    // Generate order number: ORD-{outletId}-{sequence}
+    // Get next sequence for this specific outlet
+    const lastOrderInOutlet = await tx.order.findFirst({
+      where: { outletId: outlet.id },
+      orderBy: { publicId: 'desc' },
+      select: { publicId: true }
+    });
+    
+    const nextSequence = (lastOrderInOutlet?.publicId || 0) + 1;
+    const orderNumber = `ORD-${outlet.publicId.toString().padStart(3, '0')}-${nextSequence.toString().padStart(4, '0')}`;
 
     // Create order
     const order = await tx.order.create({
@@ -225,14 +253,18 @@ export async function createOrder(
         publicId: nextPublicId,
         orderNumber: orderNumber,
         orderType: input.orderType,
-        status: 'PENDING',
+        status: 'RESERVED',
         outletId: outlet.id, // Use CUID
         customerId: customer?.id || null, // Use CUID
+        createdById: user.id, // Use CUID of user who created the order
         totalAmount: input.totalAmount,
         depositAmount: input.depositAmount || 0,
         securityDeposit: input.securityDeposit || 0,
         damageFee: input.damageFee || 0,
         lateFee: input.lateFee || 0,
+        discountType: input.discountType || 'amount',
+        discountValue: input.discountValue || 0,
+        discountAmount: input.discountAmount || 0,
         pickupPlanAt: input.pickupPlanAt,
         returnPlanAt: input.returnPlanAt,
         notes: input.notes,
@@ -263,6 +295,16 @@ export async function createOrder(
                 name: true,
               },
             },
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            publicId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
           },
         },
         orderItems: {
@@ -335,7 +377,65 @@ export async function createOrder(
       }
     }
 
-    return order;
+    // Fetch the complete order with all items and relationships
+    const completeOrder = await tx.order.findUnique({
+      where: { id: order.id },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            publicId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        outlet: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+            address: true,
+            merchantId: true,
+            merchant: {
+              select: {
+                id: true,
+                publicId: true,
+                name: true,
+              },
+            },
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            publicId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+          },
+        },
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                publicId: true,
+                name: true,
+                description: true,
+                images: true,
+                barcode: true,
+              },
+            },
+          },
+        },
+        payments: true,
+      },
+    });
+
+    return completeOrder;
   });
 
   // Return the created order with all details
@@ -429,6 +529,16 @@ export async function updateOrder(
               name: true,
             },
           },
+        },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          publicId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
         },
       },
       orderItems: {
@@ -592,30 +702,40 @@ export async function searchOrders(
             address: true,
             merchantId: true,
             merchant: {
-              select: {
-                id: true,
-                publicId: true,
-                name: true,
-              },
+            select: {
+              id: true,
+              publicId: true,
+              name: true,
             },
           },
         },
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                publicId: true,
-                name: true,
-                description: true,
-                images: true,
-                barcode: true,
-              },
-            },
-          },
-        },
-        payments: true,
       },
+      createdBy: {
+        select: {
+          id: true,
+          publicId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+        },
+      },
+      orderItems: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              publicId: true,
+              name: true,
+              description: true,
+              images: true,
+              barcode: true,
+            },
+          },
+        },
+      },
+      payments: true,
+    },
       orderBy: { createdAt: 'desc' },
       take: limit,
       skip: offset,
@@ -915,7 +1035,7 @@ export async function cancelOrder(publicId: number, userId: number, reason?: str
 export async function getOverdueRentals(outletId?: number): Promise<any[]> {
   const where: any = {
     orderType: 'RENT',
-    status: { in: ['ACTIVE', 'BOOKED'] },
+    status: { in: ['RESERVED', 'PICKUPED'] },
     returnPlanAt: { lt: new Date() }
   };
 

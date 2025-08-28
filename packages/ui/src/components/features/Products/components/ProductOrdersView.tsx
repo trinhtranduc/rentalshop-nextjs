@@ -124,9 +124,9 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     ) : 0,
     totalSales: Array.isArray(orders) ? orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0) : 0,
     totalDeposits: Array.isArray(orders) ? orders.reduce((sum, order) => sum + (order.depositAmount || 0), 0) : 0,
-    activeRentals: Array.isArray(orders) ? orders.filter(order => order.status === 'ACTIVE').length : 0,
+    activeRentals: Array.isArray(orders) ? orders.filter(order => order.status === 'PICKUPED').length : 0,
     completedOrders: Array.isArray(orders) ? orders.filter(order => order.status === 'COMPLETED').length : 0,
-    pendingOrders: Array.isArray(orders) ? orders.filter(order => order.status === 'PENDING').length : 0
+    pendingOrders: Array.isArray(orders) ? orders.filter(order => order.status === 'RESERVED').length : 0
   };
 
   // Transform orders to match the expected format for OrderTable with safety checks
@@ -384,8 +384,8 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">Pending Orders</p>
-                  <p className="text-xl font-bold text-orange-600">{overview.pendingOrders}</p>
+                                  <p className="text-sm text-gray-600 mb-1">Reserved Orders</p>
+                <p className="text-xl font-bold text-red-600">{overview.pendingOrders}</p>
                 </div>
               </CardContent>
             </Card>

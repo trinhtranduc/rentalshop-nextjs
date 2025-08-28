@@ -72,6 +72,15 @@ export async function GET(
       );
     }
 
+    // Debug logging to see what we're getting from the database
+    console.log('🔍 API Debug - Order from database:');
+    console.log('Order keys:', Object.keys(order));
+    console.log('Has createdBy:', !!order.createdBy);
+    console.log('Has createdById:', !!order.createdById);
+    if (order.createdBy) {
+      console.log('createdBy data:', order.createdBy);
+    }
+
     // Authorization: Users can only view orders from their own outlet or if they're admin/merchant
     if (userScope.outletId && order.outlet.publicId !== userScope.outletId) {
       // Check if user has admin or merchant role
@@ -95,8 +104,8 @@ export async function GET(
       customerContact: order.customer?.phone || order.customer?.email || 'No contact info',
       totalItems: order.orderItems.reduce((sum, item) => sum + item.quantity, 0),
       isRental: order.orderType === 'RENT',
-      isOverdue: order.status === 'ACTIVE' && order.returnPlanAt && new Date() > order.returnPlanAt,
-      daysOverdue: order.status === 'ACTIVE' && order.returnPlanAt 
+      isOverdue: order.status === 'PICKUPED' && order.returnPlanAt && new Date() > order.returnPlanAt,
+      daysOverdue: order.status === 'PICKUPED' && order.returnPlanAt 
         ? Math.max(0, Math.ceil((new Date().getTime() - order.returnPlanAt.getTime()) / (1000 * 60 * 60 * 24)))
         : 0,
       // Calculate rental duration for rental orders
@@ -121,17 +130,17 @@ export async function GET(
       // Status timeline (simplified - in a real app you might want a separate history table)
       statusTimeline: [
         {
-          status: 'PENDING',
+          status: 'RESERVED',
           timestamp: order.createdAt,
           description: 'Order created'
         },
-        ...(order.status !== 'PENDING' ? [{
-          status: 'BOOKED',
+        ...(order.status !== 'RESERVED' ? [{
+          status: 'RESERVED',
           timestamp: order.updatedAt,
-                      description: 'Order booked'
+                      description: 'Order reserved'
         }] : []),
         ...(order.pickedUpAt ? [{
-          status: 'ACTIVE',
+          status: 'PICKUPED',
           timestamp: order.pickedUpAt,
           description: 'Items picked up'
         }] : []),
@@ -142,6 +151,14 @@ export async function GET(
         }] : [])
       ].filter(item => item.timestamp)
     };
+
+    // Debug logging for final response
+    console.log('🔍 API Debug - Final response:');
+    console.log('Response keys:', Object.keys(orderDetail));
+    console.log('Has createdBy in response:', !!orderDetail.createdBy);
+    if (orderDetail.createdBy) {
+      console.log('createdBy in response:', orderDetail.createdBy);
+    }
 
     return NextResponse.json({
       success: true,
