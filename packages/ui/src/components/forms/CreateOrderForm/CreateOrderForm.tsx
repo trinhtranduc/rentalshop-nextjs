@@ -73,6 +73,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     isEditMode = false,
     initialOrder,
     orderNumber,
+    onFormReady,
   } = props;
 
   // Custom hooks for state management
@@ -91,6 +92,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     handlePreviewClick,
     handleOrderConfirm,
     handleSubmit,
+    resetForm,
     calculateRentalDays,
   } = useCreateOrderForm(props);
 
@@ -137,6 +139,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     }
     return '';
   });
+
+  // Expose resetForm function to parent component
+  useEffect(() => {
+    if (onFormReady) {
+      onFormReady(resetForm);
+    }
+  }, [onFormReady, resetForm]);
 
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
 

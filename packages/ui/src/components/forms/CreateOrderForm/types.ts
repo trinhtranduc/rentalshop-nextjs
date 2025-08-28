@@ -14,12 +14,36 @@ export type {
   ProductWithStock 
 };
 
+// Local interface that matches the unified OrderItemFormData structure
 export interface OrderItemFormData {
-  productId: number;
+  // For existing items (edit mode)
+  id?: string;          // Database CUID (only present when editing existing items)
+  
+  // Product information
+  productId: number;    // Frontend uses publicId (number) for product selection
+  product: {
+    id: number;         // Frontend uses publicId (number) for display
+    publicId: number;   // Keep publicId for reference
+    name: string;
+    description?: string;
+    images?: string[] | null;
+    barcode?: string;
+    rentPrice?: number;
+    deposit?: number;
+  };
+  
+  // Order item details
   quantity: number;
   unitPrice: number;
-  deposit: number;
-  notes: string;
+  totalPrice: number;
+  rentalDays?: number;
+  deposit?: number;
+  notes?: string;
+  
+  // Rental-specific fields
+  startDate?: string;   // ISO date string for form inputs
+  endDate?: string;     // ISO date string for form inputs
+  daysRented?: number;
 }
 
 export interface OrderFormData {
@@ -65,6 +89,8 @@ export interface CreateOrderFormProps {
   isEditMode?: boolean;
   initialOrder?: any; // Order data for editing
   orderNumber?: string; // Order number for display in edit mode
+  // Form control props
+  onFormReady?: (resetForm: () => void) => void;
 }
 
 export interface ProductAvailabilityStatus {

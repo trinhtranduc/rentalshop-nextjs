@@ -180,7 +180,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { orderId: number } }
+  { params }: { params: { orderId: string } }
 ) {
   try {
     // Verify authentication
@@ -226,13 +226,15 @@ export async function PUT(
     const updateData = parsed.data;
     const updateInput: OrderUpdateInput = {
       ...(updateData.status !== undefined && { status: updateData.status as any }),
+      ...(updateData.customerId !== undefined && { customerId: updateData.customerId }),
+      ...(updateData.outletId !== undefined && { outletId: updateData.outletId }),
       ...(updateData.pickupPlanAt !== undefined && { pickupPlanAt: updateData.pickupPlanAt }),
       ...(updateData.returnPlanAt !== undefined && { returnPlanAt: updateData.returnPlanAt }),
       ...(updateData.pickedUpAt !== undefined && { pickedUpAt: updateData.pickedUpAt }),
       ...(updateData.returnedAt !== undefined && { returnedAt: updateData.returnedAt }),
       ...(updateData.rentalDuration !== undefined && { rentalDuration: updateData.rentalDuration }),
-      ...(updateData.subtotal !== undefined && { subtotal: updateData.subtotal }),
-      ...(updateData.taxAmount !== undefined && { taxAmount: updateData.taxAmount }),
+      ...(updateData.discountType !== undefined && { discountType: updateData.discountType }),
+      ...(updateData.discountValue !== undefined && { discountValue: updateData.discountValue }),
       ...(updateData.discountAmount !== undefined && { discountAmount: updateData.discountAmount }),
       ...(updateData.totalAmount !== undefined && { totalAmount: updateData.totalAmount }),
       ...(updateData.depositAmount !== undefined && { depositAmount: updateData.depositAmount }),
@@ -246,9 +248,6 @@ export async function PUT(
       ...(updateData.returnNotes !== undefined && { returnNotes: updateData.returnNotes }),
       ...(updateData.damageNotes !== undefined && { damageNotes: updateData.damageNotes }),
       ...(updateData.isReadyToDeliver !== undefined && { isReadyToDeliver: updateData.isReadyToDeliver }),
-      // Additional settings fields
-      ...(updateData.bailAmount !== undefined && { bailAmount: updateData.bailAmount }),
-      ...(updateData.material !== undefined && { material: updateData.material }),
       // Order items management - convert productId from number to string for database
       ...(updateData.orderItems !== undefined && { 
         orderItems: updateData.orderItems.map(item => ({
@@ -259,8 +258,16 @@ export async function PUT(
       }),
     };
 
-    // Update the order - convert user.id (CUID) to publicId (number)
-    const updatedOrder = await updateOrder(orderId, updateInput, user.publicId);
+    // Update the order - convert orderId string to number and user.id (CUID) to publicId (number)
+    const orderPublicId = parseInt(orderId);
+    if (isNaN(orderPublicId)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid order ID format' },
+        { status: 400 }
+      );
+    }
+    
+    const updatedOrder = await updateOrder(orderPublicId, updateInput, user.publicId);
 
     if (!updatedOrder) {
       return NextResponse.json(
@@ -289,7 +296,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orderId: number } }
+  { params }: { params: { orderId: string } }
 ) {
   try {
     // Verify authentication
@@ -329,8 +336,16 @@ export async function DELETE(
     const body = await request.json();
     const reason = body?.reason || 'Order cancelled by user';
 
-    // Cancel the order - convert user.id (CUID) to publicId (number)
-    const cancelledOrder = await cancelOrder(orderId, user.publicId, reason);
+    // Cancel the order - convert orderId string to number and user.id (CUID) to publicId (number)
+    const orderPublicId = parseInt(orderId);
+    if (isNaN(orderPublicId)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid order ID format' },
+        { status: 400 }
+      );
+    }
+    
+    const cancelledOrder = await cancelOrder(orderPublicId, user.publicId, reason);
 
     if (!cancelledOrder) {
       return NextResponse.json(

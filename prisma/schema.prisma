@@ -213,6 +213,7 @@ model OrderItem {
   quantity   Int     @default(1)
   unitPrice  Float
   totalPrice Float
+  deposit    Float   @default(0)
   orderId    String
   productId  String
   notes      String?

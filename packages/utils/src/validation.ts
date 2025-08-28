@@ -147,20 +147,28 @@ const orderItemSchema = z.object({
   daysRented: z.coerce.number().int().nonnegative().optional(),
 });
 
-export const orderCreateSchema = z.object({
+
+
+// Base order schema for both create and update
+const baseOrderSchema = z.object({
+  // Optional fields for updates (backend generates if missing)
+  orderId: z.coerce.number().int().positive().optional(),
+  orderNumber: z.string().optional(),
+  
+  // Core order fields
   orderType: orderTypeEnum,
-  customerId: z.coerce.number().int().positive().optional(), // Changed from string to number
-  outletId: z.coerce.number().int().positive(), // Changed from string to number
+  customerId: z.coerce.number().int().positive().optional(),
+  outletId: z.coerce.number().int().positive(),
   pickupPlanAt: z.coerce.date().optional(),
   returnPlanAt: z.coerce.date().optional(),
   rentalDuration: z.coerce.number().int().positive().optional(),
-  subtotal: z.coerce.number().nonnegative().default(0),
-  taxAmount: z.coerce.number().nonnegative().default(0),
+  subtotal: z.coerce.number().nonnegative(),
+  taxAmount: z.coerce.number().nonnegative().optional(),
   discountType: z.enum(['amount', 'percentage']).optional(),
-  discountValue: z.coerce.number().nonnegative().default(0),
-  discountAmount: z.coerce.number().nonnegative().default(0),
-  totalAmount: z.coerce.number().nonnegative().default(0),
-  depositAmount: z.coerce.number().nonnegative().default(0),
+  discountValue: z.coerce.number().nonnegative().optional(),
+  discountAmount: z.coerce.number().nonnegative().optional(),
+  totalAmount: z.coerce.number().nonnegative(),
+  depositAmount: z.coerce.number().nonnegative().optional(),
   securityDeposit: z.coerce.number().nonnegative().optional(),
   damageFee: z.coerce.number().nonnegative().optional(),
   lateFee: z.coerce.number().nonnegative().optional(),
@@ -174,46 +182,18 @@ export const orderCreateSchema = z.object({
   customerPhone: z.string().optional(),
   customerEmail: z.string().email().optional(),
   isReadyToDeliver: z.boolean().optional(),
-  orderItems: z.array(orderItemSchema).min(1),
+  
+  // Order items management
+  orderItems: z.array(orderItemSchema),
 });
 
-export const orderUpdateSchema = z.object({
+export const orderCreateSchema = baseOrderSchema;
+
+export const orderUpdateSchema = baseOrderSchema.partial().extend({
+  // Update-specific fields (not present in create)
   status: orderStatusEnum.optional(),
-  pickupPlanAt: z.coerce.date().optional(),
-  returnPlanAt: z.coerce.date().optional(),
   pickedUpAt: z.coerce.date().optional(),
   returnedAt: z.coerce.date().optional(),
-  rentalDuration: z.coerce.number().int().positive().optional(),
-  subtotal: z.coerce.number().nonnegative().optional(),
-  taxAmount: z.coerce.number().nonnegative().optional(),
-  discountType: z.enum(['amount', 'percentage']).optional(),
-  discountValue: z.coerce.number().nonnegative().optional(),
-  discountAmount: z.coerce.number().nonnegative().optional(),
-  totalAmount: z.coerce.number().nonnegative().optional(),
-  depositAmount: z.coerce.number().nonnegative().optional(),
-  securityDeposit: z.coerce.number().nonnegative().optional(),
-  damageFee: z.coerce.number().nonnegative().optional(),
-  lateFee: z.coerce.number().nonnegative().optional(),
-  collateralType: z.string().optional(),
-  collateralDetails: z.string().optional(),
-  notes: z.string().optional(),
-  pickupNotes: z.string().optional(),
-  returnNotes: z.string().optional(),
-  damageNotes: z.string().optional(),
-  isReadyToDeliver: z.boolean().optional(),
-  // Additional settings fields
-  bailAmount: z.coerce.number().nonnegative().optional(),
-  material: z.string().optional(),
-  // Order items management
-  orderItems: z.array(z.object({
-    id: z.string().optional(),
-    productId: z.coerce.number().int().positive(), // Changed from string to number
-    quantity: z.coerce.number().int().positive(),
-    unitPrice: z.coerce.number().nonnegative(),
-    totalPrice: z.coerce.number().nonnegative().optional(), // Made optional since server calculates it
-    deposit: z.coerce.number().nonnegative().optional(),
-    notes: z.string().optional(),
-  })).optional(),
 });
 
 export type OrdersQuery = z.infer<typeof ordersQuerySchema>;

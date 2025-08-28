@@ -9,7 +9,9 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  useToasts,
+  ToastContainer
 } from '@rentalshop/ui';
 import { CreateOrderForm } from '@rentalshop/ui';
 import type { CustomerSearchResult, ProductWithStock, OrderInput } from '@rentalshop/types';
@@ -30,6 +32,10 @@ export default function CreateOrderPage() {
   const [customers, setCustomers] = useState<CustomerSearchResult[]>([]);
   const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [outlets, setOutlets] = useState<Array<{ id: number; name: string; merchantId?: number }>>([]);
+  const [resetForm, setResetForm] = useState<(() => void) | null>(null);
+
+  // Toast notifications
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
 
   // Get merchant ID from user context
   const merchantId = user?.merchant?.id;
@@ -115,13 +121,16 @@ export default function CreateOrderPage() {
       setSubmitting(true);
       const result = await ordersApi.createOrder(orderData);
       if (result.success) {
+        // Show success message
+        showSuccess('Order created successfully!');
+        // Navigate back to orders list after successful creation
         router.push('/orders');
       } else {
         throw new Error(result.error || 'Failed to create order');
       }
     } catch (error) {
       console.error('Create order failed:', error);
-      alert((error as Error).message || 'Create order failed');
+      showError('Create order failed', (error as Error).message || 'Create order failed');
     } finally {
       setSubmitting(false);
     }
@@ -129,6 +138,10 @@ export default function CreateOrderPage() {
 
   const handleCancel = () => {
     router.push('/orders');
+  };
+
+  const handleFormReady = (resetFormFn: () => void) => {
+    setResetForm(() => resetFormFn);
   };
 
   if (!merchantId) {
@@ -149,6 +162,7 @@ export default function CreateOrderPage() {
   return (
     <PageWrapper>
       <PageContent>
+        <ToastContainer toasts={toasts} onClose={removeToast} />
         {loading ? (
           <Card>
             <CardContent className="p-8 text-center text-gray-600">Loading data...</CardContent>
@@ -163,6 +177,7 @@ export default function CreateOrderPage() {
             loading={submitting}
             layout="split"
             merchantId={Number(merchantId)}
+            onFormReady={handleFormReady}
           />
         )}
       </PageContent>

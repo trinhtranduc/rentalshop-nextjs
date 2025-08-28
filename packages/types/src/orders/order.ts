@@ -55,44 +55,7 @@ export interface OrderCreateInput {
   orderItems: OrderItemInput[];
 }
 
-export interface OrderUpdateInput {
-  status?: OrderStatus;
-  pickupPlanAt?: Date;
-  returnPlanAt?: Date;
-  pickedUpAt?: Date;
-  returnedAt?: Date;
-  rentalDuration?: number;
-  subtotal?: number;
-  taxAmount?: number;
-  discountType?: 'amount' | 'percentage';
-  discountValue?: number;
-  discountAmount?: number;
-  totalAmount?: number;
-  depositAmount?: number;
-  securityDeposit?: number;
-  damageFee?: number;
-  lateFee?: number;
-  collateralType?: string;
-  collateralDetails?: string;
-  notes?: string;
-  pickupNotes?: string;
-  returnNotes?: string;
-  damageNotes?: string;
-  isReadyToDeliver?: boolean;
-  // Additional settings fields
-  bailAmount?: number;
-  material?: string;
-  // Order items management
-  orderItems?: Array<{
-    id?: string;
-    productId: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-    deposit?: number;
-    notes?: string;
-  }>;
-}
+
 
 export interface OrderFilters {
   status?: OrderStatus | OrderStatus[]; // Support both single status and array of statuses
@@ -120,8 +83,13 @@ export interface OrderFilters {
   dateRange?: { start: string; end: string };
 }
 
-// Additional order types for database operations
+// Unified order input model for both creating and updating
 export interface OrderInput {
+  // Optional fields for updates (backend generates if missing)
+  orderId?: number;        // For updates - existing order publicId
+  orderNumber?: string;    // For updates - existing order number
+  
+  // Core order fields
   orderType: OrderType;
   customerId?: number;
   outletId: number;
@@ -148,34 +116,18 @@ export interface OrderInput {
   customerPhone?: string;
   customerEmail?: string;
   isReadyToDeliver?: boolean;
+  
+  // Order items
   orderItems: OrderItemInput[];
-}
-
-export interface OrderUpdateInput {
+  
+  // Update-specific fields (optional for create, required for update)
   status?: OrderStatus;
-  pickupPlanAt?: Date;
-  returnPlanAt?: Date;
   pickedUpAt?: Date;
   returnedAt?: Date;
-  rentalDuration?: number;
-  subtotal?: number;
-  taxAmount?: number;
-  discountType?: 'amount' | 'percentage';
-  discountValue?: number;
-  discountAmount?: number;
-  totalAmount?: number;
-  depositAmount?: number;
-  securityDeposit?: number;
-  damageFee?: number;
-  lateFee?: number;
-  collateralType?: string;
-  collateralDetails?: string;
-  notes?: string;
-  pickupNotes?: string;
-  returnNotes?: string;
-  damageNotes?: string;
-  isReadyToDeliver?: boolean;
 }
+
+// Keep OrderUpdateInput for backward compatibility, but it's now the same as OrderInput
+export type OrderUpdateInput = OrderInput;
 
 export interface OrderSearchResult {
   id: string;           // Database CUID (internal use)
