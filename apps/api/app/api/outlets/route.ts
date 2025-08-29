@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         ? (merchantId || undefined)  // Admin can see any merchant's outlets
         : userScope.merchantId,      // Non-admin users restricted to their merchant
       outletId: userScope.outletId,  // Add outletId filter for outlet-level users
-      isActive: isActive !== undefined ? Boolean(isActive) : true,
+      isActive: isActive !== undefined ? Boolean(isActive) : undefined, // Show all outlets by default
       search: search || undefined,
       page: page || 1,
       limit: limit || 20

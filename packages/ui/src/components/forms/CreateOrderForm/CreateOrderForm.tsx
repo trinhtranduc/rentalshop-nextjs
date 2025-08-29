@@ -513,11 +513,11 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         onOpenChange={setShowOrderPreview}
         orderData={{
           orderType: formData.orderType,
-          customerId: formData.customerId,
+          customerId: formData.customerId || 0,
           customerName: selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}` : undefined,
           customerPhone: selectedCustomer?.phone,
           customerEmail: selectedCustomer?.email,
-          outletId: formData.outletId,
+          outletId: formData.outletId || 0,
           outletName: outlets.find(o => o.id === formData.outletId)?.name,
           pickupPlanAt: formData.pickupPlanAt,
           returnPlanAt: formData.returnPlanAt,
@@ -530,14 +530,19 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           lateFee: formData.lateFee,
           damageFee: formData.damageFee,
           notes: formData.notes,
-          orderItems: orderItems.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.quantity * item.unitPrice,
-            deposit: item.deposit,
-            notes: item.notes
-          }))
+          orderItems: (() => {
+            console.log('🔍 Creating preview data - orderItems from state:', orderItems);
+            console.log('🔍 Creating preview data - orderItems length:', orderItems.length);
+            return orderItems.map(item => ({
+              productId: item.productId,
+              product: item.product, // Include the full product information
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.quantity * item.unitPrice,
+              deposit: item.deposit ?? 0, // Ensure deposit is always a number
+              notes: item.notes || ''
+            }));
+          })()
         }}
         products={products}
         onConfirm={handleOrderConfirm}

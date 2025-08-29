@@ -262,6 +262,7 @@ export const outletCreateSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   description: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).default('ACTIVE'),
 });
 
 export const outletUpdateSchema = z.object({
@@ -270,6 +271,7 @@ export const outletUpdateSchema = z.object({
   phone: z.string().optional(),
   description: z.string().optional(),
   isActive: z.boolean().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).optional(),
 });
 
 export type OutletsQuery = z.infer<typeof outletsQuerySchema>;

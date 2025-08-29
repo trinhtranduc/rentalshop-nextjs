@@ -69,6 +69,13 @@ export const Categories: React.FC<CategoriesProps> = ({
     setShowAddForm(true);
   }, []);
 
+  const handleViewCategory = useCallback((category: Category) => {
+    // Navigate to category view page or open view dialog
+    // For now, we'll just log the action - this can be updated based on your routing needs
+    console.log('Viewing category:', category);
+    // You can implement navigation here: router.push(`/categories/${category.id}`)
+  }, []);
+
   const handleDeleteCategory = useCallback((category: Category) => {
     setDeletingCategory(category);
   }, []);
@@ -205,7 +212,7 @@ export const Categories: React.FC<CategoriesProps> = ({
       ) : (
         <CategoryTable
           categories={sortedCategories}
-          onEditCategory={handleEditCategory}
+          onViewCategory={handleViewCategory}
           onDeleteCategory={handleDeleteCategory}
           sortField={sortField}
           sortOrder={sortOrder}

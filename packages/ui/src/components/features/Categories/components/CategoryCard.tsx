@@ -9,22 +9,22 @@ import {
   Button,
   Badge
 } from '../../../ui';
-import { Edit, Trash2, Tag, Calendar, MoreHorizontal } from 'lucide-react';
+import { Edit, Trash2, Tag, Calendar, MoreHorizontal, Eye } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
 
 interface CategoryCardProps {
   category: Category;
-  onEdit: (category: Category) => void;
+  onView: (category: Category) => void;
   onDelete: (category: Category) => void;
 }
 
 export const CategoryCard: React.FC<CategoryCardProps> = ({
   category,
-  onEdit,
+  onView,
   onDelete
 }) => {
-  const handleEdit = () => {
-    onEdit(category);
+  const handleView = () => {
+    onView(category);
   };
 
   const handleDelete = () => {
@@ -56,20 +56,22 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
           
           <div className="flex items-center space-x-1">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={handleEdit}
-              className="h-8 w-8 p-0 hover:bg-primary/10"
+              onClick={handleView}
+              className="h-8 px-3"
             >
-              <Edit className="h-4 w-4" />
+              <Eye className="h-4 w-4 mr-1" />
+              View
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleDelete}
-              className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+              className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
             </Button>
           </div>
         </div>

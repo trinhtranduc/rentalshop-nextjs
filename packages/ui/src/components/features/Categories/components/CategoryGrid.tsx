@@ -6,7 +6,7 @@ import type { Category } from '@rentalshop/types';
 
 interface CategoryGridProps {
   categories: Category[];
-  onEditCategory: (category: Category) => void;
+  onViewCategory: (category: Category) => void;
   onDeleteCategory: (category: Category) => void;
   sortField?: string;
   sortOrder?: 'asc' | 'desc';
@@ -15,7 +15,7 @@ interface CategoryGridProps {
 
 export const CategoryGrid: React.FC<CategoryGridProps> = ({
   categories,
-  onEditCategory,
+  onViewCategory,
   onDeleteCategory,
   sortField,
   sortOrder,
@@ -59,7 +59,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
           <CategoryCard
             key={category.id}
             category={category}
-            onEdit={onEditCategory}
+            onEdit={onViewCategory}
             onDelete={onDeleteCategory}
           />
         ))}

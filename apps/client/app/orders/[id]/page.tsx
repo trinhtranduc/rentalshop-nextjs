@@ -173,19 +173,29 @@ export default function OrderDetailPage() {
 
   const handleSaveSettings = async (data: {
     damageFee: number;
-    bailAmount: number;
-    material: string;
+    securityDeposit: number;
+    collateralType: string;
+    collateralDetails: string;
     notes: string;
   }) => {
+    if (!order) {
+      showError('Save Failed', 'Order not found');
+      return;
+    }
+
     try {
       setActionLoading(true);
 
-      const result = await ordersApi.updateOrder(order.id, {
+      // Only send the fields that need to be updated
+      const updateData = {
         damageFee: data.damageFee,
-        bailAmount: data.bailAmount,
-        material: data.material,
+        securityDeposit: data.securityDeposit,
+        collateralType: data.collateralType,
+        collateralDetails: data.collateralDetails,
         notes: data.notes
-      });
+      };
+
+      const result = await ordersApi.updateOrderSettings(order.publicId, updateData);
 
       if (result.success) {
         // Refresh the order data

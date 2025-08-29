@@ -180,6 +180,18 @@ export default function CustomerOrdersPage() {
   // SECURITY: Frontend filtering removed - all filtering is handled securely by backend
   // This prevents security vulnerabilities where hackers could bypass filters
 
+  // Handle search change
+  const handleSearchChange = (searchValue: string) => {
+    setFilters(prev => ({ ...prev, search: searchValue }));
+    setCurrentPage(1);
+  };
+
+  // Handle filters change
+  const handleFiltersChange = (newFilters: Partial<OrderFiltersType>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setCurrentPage(1);
+  };
+
   // Handle clear filters
   const handleClearFilters = () => {
     setFilters({
@@ -264,15 +276,7 @@ export default function CustomerOrdersPage() {
           subtitle="View and manage customer orders"
           onBack={() => router.push(`/customers/${publicId}`)}
           backText="Back to Customer"
-        >
-          <Button
-            onClick={() => router.push(`/orders/create?customerId=${customer.id}`)}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <ShoppingBag className="w-4 h-4 mr-2" />
-            Create Order
-          </Button>
-        </CustomerPageHeader>
+        />
 
         {/* Customer Summary Card */}
         <div className="mb-8">
@@ -280,9 +284,9 @@ export default function CustomerOrdersPage() {
             customer={customer}
             orderStats={{
               totalOrders: totalOrders,
-              totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
-              averageOrderValue: totalOrders > 0 ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / totalOrders : 0,
-              lastOrderDate: orders.length > 0 ? orders[0].createdAt : undefined
+              totalRevenue: Array.isArray(orders) ? orders.reduce((sum, order) => sum + order.totalAmount, 0) : 0,
+              averageOrderValue: totalOrders > 0 && Array.isArray(orders) ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / totalOrders : 0,
+              lastOrderDate: Array.isArray(orders) && orders.length > 0 ? orders[0].createdAt : undefined
             }}
           />
         </div>
@@ -387,23 +391,18 @@ export default function CustomerOrdersPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {orders.map((order) => (
+                      {Array.isArray(orders) && orders.map((order) => (
                         <tr key={order.id} className="hover:bg-gray-50">
                           <td className="p-4 align-middle text-sm font-medium text-gray-900">
                             {order.orderNumber}
                           </td>
                           <td className="p-4 align-middle">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              order.status === 'ACTIVE' ? 'bg-[#f19920] text-white' :
-                              order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                              order.status === 'BOOKED' ? 'bg-red-100 text-red-800' :
-                              order.status === 'COMPLETED' ? 'bg-purple-100 text-purple-800' :
-                              order.status === 'CANCELLED' ? 'bg-[#b22222] text-white' :
-                              order.status === 'WAITING' ? 'bg-orange-100 text-orange-800' :
+                              order.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
                               order.status === 'PICKUPED' ? 'bg-indigo-100 text-indigo-800' :
                               order.status === 'RETURNED' ? 'bg-[#0F9347] text-white' :
-                              order.status === 'OVERDUE' ? 'bg-pink-100 text-pink-800' :
-                              order.status === 'DAMAGED' ? 'bg-red-100 text-red-800' :
+                              order.status === 'COMPLETED' ? 'bg-purple-100 text-purple-800' :
+                              order.status === 'CANCELLED' ? 'bg-[#b22222] text-white' :
                               'bg-gray-100 text-gray-800'
                             }`}>
                               {order.status}
@@ -424,15 +423,9 @@ export default function CustomerOrdersPage() {
                           <td className="p-4 align-middle text-sm font-medium">
                             <button
                               onClick={() => handleOrderAction('view', order.id)}
-                              className="text-blue-600 hover:text-blue-900 mr-3"
+                              className="text-blue-600 hover:text-blue-900"
                             >
                               View
-                            </button>
-                            <button
-                              onClick={() => handleOrderAction('edit', order.id)}
-                              className="text-green-600 hover:text-green-900"
-                            >
-                              Edit
                             </button>
                           </td>
                         </tr>
@@ -443,7 +436,7 @@ export default function CustomerOrdersPage() {
               )}
                
                {/* No Orders State */}
-               {!isLoadingOrders && orders.length === 0 && (
+               {!isLoadingOrders && Array.isArray(orders) && orders.length === 0 && (
                  <div className="text-center py-12">
                    <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Found</h3>
@@ -453,13 +446,7 @@ export default function CustomerOrdersPage() {
                        : 'This customer hasn\'t placed any orders yet.'
                      }
                    </p>
-                   <Button
-                     onClick={() => router.push(`/orders/create?customerId=${customer.id}`)}
-                     className="bg-blue-600 hover:bg-blue-700 text-white"
-                   >
-                     <ShoppingBag className="w-4 h-4 mr-2" />
-                     Create First Order
-                   </Button>
+
                  </div>
                )}
              </CardContent>

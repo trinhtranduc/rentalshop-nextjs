@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '../../../ui/card';
 import { Button } from '../../../ui/button';
 import { cn } from '../../../../lib/cn';
+import { Eye, Edit } from 'lucide-react';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 

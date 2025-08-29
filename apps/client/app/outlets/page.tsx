@@ -24,7 +24,14 @@ import {
   DialogTrigger,
   Input,
   Label,
-  Textarea
+  Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  ToastContainer,
+  useToasts
 } from '@rentalshop/ui';
 import { 
   Plus, 
@@ -50,9 +57,12 @@ interface OutletFormData {
 export default function OutletsPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { toasts, showSuccess, showError, showWarning, showInfo, removeToast } = useToasts();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [outletToDisable, setOutletToDisable] = useState<Outlet | null>(null);
   const [editingOutlet, setEditingOutlet] = useState<Outlet | null>(null);
   const [formData, setFormData] = useState<OutletFormData>({
     name: '',
@@ -90,10 +100,12 @@ export default function OutletsPage() {
       } else {
         console.error('❌ Failed to fetch outlets:', result.error);
         setOutlets([]); // Ensure outlets is always an array
+        showError('Failed to fetch outlets', result.error || 'Unknown error occurred');
       }
     } catch (error) {
       console.error('💥 Error fetching outlets:', error);
       setOutlets([]); // Ensure outlets is always an array
+      showError('Error fetching outlets', 'An unexpected error occurred while loading outlets');
     } finally {
       setLoading(false);
     }
@@ -117,8 +129,9 @@ export default function OutletsPage() {
           setShowAddDialog(false);
           setEditingOutlet(null);
           resetForm();
+          showSuccess('Outlet updated successfully', `Outlet "${formData.name}" has been updated`);
         } else {
-          alert(result.error || 'Failed to update outlet');
+          showError('Failed to update outlet', result.error || 'Unknown error occurred');
         }
       } else {
         // Create new outlet
@@ -134,13 +147,14 @@ export default function OutletsPage() {
           await fetchOutlets();
           setShowAddDialog(false);
           resetForm();
+          showSuccess('Outlet created successfully', `Outlet "${formData.name}" has been created`);
         } else {
-          alert(result.error || 'Failed to create outlet');
+          showError('Failed to create outlet', result.error || 'Unknown error occurred');
         }
       }
     } catch (error) {
       console.error('Error saving outlet:', error);
-      alert('An error occurred while saving the outlet');
+      showError('Error saving outlet', 'An unexpected error occurred while saving the outlet');
     }
   };
 
@@ -155,21 +169,46 @@ export default function OutletsPage() {
     setShowAddDialog(true);
   };
 
-  const handleDelete = async (outlet: Outlet) => {
-    if (!confirm(`Are you sure you want to delete the outlet "${outlet.name}"?`)) {
+  const handleToggleStatus = async (outlet: Outlet) => {
+    // If outlet is ACTIVE (isActive: true), show confirmation dialog for disable
+    if (outlet.isActive) {
+      setOutletToDisable(outlet);
+      setShowDisableConfirm(true);
       return;
     }
-
+    
+    // If outlet is INACTIVE (isActive: false), enable directly (no confirmation needed)
     try {
-      const result = await outletsApi.deleteOutlet(outlet.id);
+      const result = await outletsApi.updateOutlet(outlet.id, { isActive: true });
       if (result.success) {
         await fetchOutlets();
+        showSuccess('Outlet enabled successfully', `Outlet "${outlet.name}" has been enabled`);
       } else {
-        alert(result.error || 'Failed to delete outlet');
+        showError('Failed to enable outlet', result.error || 'Unknown error occurred');
       }
     } catch (error) {
-      console.error('Error deleting outlet:', error);
-      alert('An error occurred while deleting the outlet');
+      console.error('Error enabling outlet:', error);
+      showError('Error enabling outlet', 'An unexpected error occurred while enabling the outlet');
+    }
+  };
+
+  const handleConfirmDisable = async () => {
+    if (!outletToDisable) return;
+    
+    try {
+      const result = await outletsApi.updateOutlet(outletToDisable.id, { isActive: false });
+      if (result.success) {
+        await fetchOutlets();
+        showSuccess('Outlet disabled successfully', `Outlet "${outletToDisable.name}" has been disabled`);
+      } else {
+        showError('Failed to disable outlet', result.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      console.error('Error disabling outlet:', error);
+      showError('Error disabling outlet', 'An unexpected error occurred while disabling the outlet');
+    } finally {
+      setShowDisableConfirm(false);
+      setOutletToDisable(null);
     }
   };
 
@@ -215,7 +254,7 @@ export default function OutletsPage() {
             <button 
               onClick={() => {
                 // TODO: Implement export functionality
-                alert('Export functionality coming soon!');
+                showInfo('Export functionality coming soon!', 'This feature is currently under development');
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
             >
@@ -295,7 +334,12 @@ export default function OutletsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={outlet.isActive ? "default" : "destructive"}>
+                          <Badge 
+                            variant={
+                              outlet.isActive ? "default" : 
+                              "secondary"
+                            }
+                          >
                             {outlet.isActive ? (
                               <CheckCircle className="w-3 h-3 mr-1" />
                             ) : (
@@ -319,13 +363,27 @@ export default function OutletsPage() {
                               Edit
                             </Button>
                             <Button
-                              variant="destructive"
+                              variant={outlet.isActive ? 'destructive' : 'default'}
                               size="sm"
-                              onClick={() => handleDelete(outlet)}
+                              onClick={() => handleToggleStatus(outlet)}
                               className="flex items-center gap-1"
+                              title={
+                                outlet.isActive 
+                                  ? 'Click to disable outlet' 
+                                  : 'Click to enable outlet'
+                              }
                             >
-                              <Trash2 className="w-3 h-3" />
-                              Delete
+                              {outlet.isActive ? (
+                                <>
+                                  <XCircle className="w-3 h-3" />
+                                  Disable
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="w-3 h-3" />
+                                  Enable
+                                </>
+                              )}
                             </Button>
                           </div>
                         </TableCell>
@@ -388,6 +446,8 @@ export default function OutletsPage() {
                 />
               </div>
               
+              {/* Status field removed - outlets are managed through enable/disable toggle */}
+              
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -417,7 +477,51 @@ export default function OutletsPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Disable Outlet Confirmation Dialog */}
+        <Dialog open={showDisableConfirm} onOpenChange={setShowDisableConfirm}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Disable Outlet</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                Are you sure you want to disable the outlet <strong>"{outletToDisable?.name}"</strong>?
+              </p>
+              <p className="text-sm text-gray-500">
+                This will:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Stop new orders from being created for this outlet</li>
+                  <li>Hide the outlet from active outlet lists</li>
+                  <li>Preserve all existing data and history</li>
+                  <li>Allow you to re-enable it later</li>
+                </ul>
+              </p>
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowDisableConfirm(false);
+                    setOutletToDisable(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleConfirmDisable}
+                >
+                  Disable Outlet
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </PageContent>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 }
+

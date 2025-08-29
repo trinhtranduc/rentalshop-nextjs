@@ -160,9 +160,100 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
   returnDate,
   getProductAvailabilityStatus
 }) => {
-  if (!product) return null;
+  // Use the product information stored in the item instead of the external product
+  // This ensures all order items are displayed even if the external products array is incomplete
+  const displayProduct = item.product || product;
+  
+  if (!displayProduct) {
+    // Fallback display when no product information is available
+    return (
+      <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="flex items-start gap-4 mb-3">
+          <div className="flex-shrink-0">
+            <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-200 flex items-center justify-center">
+              <Package className="w-8 h-8 text-gray-400" />
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900">
+                  Product ID: {item.productId}
+                </h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  Product information not available
+                </p>
+              </div>
+              <button
+                onClick={() => onRemove(item.productId)}
+                className="text-red-500 hover:text-red-700 p-1"
+                title="Remove product"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Input Fields */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Quantity
+            </label>
+            <input
+              type="number"
+              value={item.quantity}
+              onChange={(e) => onUpdate(item.productId, 'quantity', parseInt(e.target.value) || 1)}
+              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="1"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Unit Price
+            </label>
+            <input
+              type="number"
+              value={item.unitPrice}
+              onChange={(e) => onUpdate(item.productId, 'unitPrice', parseFloat(e.target.value) || 0)}
+              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              step="0.01"
+              min="0"
+            />
+          </div>
+        </div>
+        
+        {/* Notes */}
+        <div className="mb-3">
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Notes
+          </label>
+          <textarea
+            value={item.notes || ''}
+            onChange={(e) => onUpdate(item.productId, 'notes', e.target.value)}
+            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            rows={2}
+            placeholder="Add notes about this product..."
+          />
+        </div>
+        
+        {/* Summary */}
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-600">
+            Total: {item.quantity} × {item.unitPrice} ₫ = {item.quantity * item.unitPrice} ₫
+          </span>
+          {orderType === 'RENT' && (
+            <span className="text-gray-600">
+              Deposit: {item.deposit || 0} ₫
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-  const imageUrl = product.images?.[0];
+  const imageUrl = displayProduct.images?.[0];
 
   return (
     <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
@@ -174,7 +265,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
             <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
               <img 
                 src={imageUrl} 
-                alt={product.name || 'Product'}
+                alt={displayProduct.name || 'Product'}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   // Fallback to package icon if image fails to load
@@ -198,21 +289,23 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="font-medium text-gray-900">
-                {product.name || 'Unknown Product'}
+                {displayProduct.name || 'Unknown Product'}
               </div>
               <div className="text-sm text-gray-500">
-                {product.barcode || 'No Barcode'}
+                {displayProduct.barcode || 'No Barcode'}
               </div>
               {/* Availability Warning */}
               {orderType === 'RENT' && (
                 <div className="mt-2">
-                  <ProductAvailabilityAsyncDisplay 
-                    product={product}
-                    pickupDate={pickupDate}
-                    returnDate={returnDate}
-                    requestedQuantity={item.quantity}
-                    getProductAvailabilityStatus={getProductAvailabilityStatus}
-                  />
+                  {product && (
+                    <ProductAvailabilityAsyncDisplay 
+                      product={product}
+                      pickupDate={pickupDate}
+                      returnDate={returnDate}
+                      requestedQuantity={item.quantity || 1}
+                      getProductAvailabilityStatus={getProductAvailabilityStatus}
+                    />
+                  )}
                   {!pickupDate || !returnDate ? (
                     <div className="text-xs text-gray-500 mt-1">
                       Select rental dates to check availability

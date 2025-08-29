@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { 
   Table, 
   TableBody, 
@@ -7,12 +7,9 @@ import {
   TableHeader, 
   TableRow,
   Button,
-  Badge,
-  Card,
-  CardContent
+  Badge
 } from '@rentalshop/ui';
-import { ConfirmationDialog } from './ConfirmationDialog';
-import { Eye, Edit, UserCheck, UserX, MoreHorizontal } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import type { User } from '@rentalshop/types';
 
 interface UserTableProps {
@@ -21,50 +18,12 @@ interface UserTableProps {
 }
 
 export function UserTable({ users, onUserAction }: UserTableProps) {
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
-  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  
-  // Use id for dropdown management (which represents the publicId from database)
-  const getDropdownId = (user: User) => user.id?.toString() || '';
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdownId && dropdownRefs.current[openDropdownId]) {
-        const dropdownElement = dropdownRefs.current[openDropdownId];
-        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
-          setOpenDropdownId(null);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
-
-  const handleDropdownToggle = (userId: number) => {
-    console.log('🔍 Dropdown toggle:', { userId, currentOpen: openDropdownId, willOpen: openDropdownId !== userId });
-    setOpenDropdownId(openDropdownId === userId ? null : userId);
-  };
-
   const handleUserAction = (action: string, userId: number) => {
     const user = users.find(u => u.id === userId);
     console.log('🔍 UserTable: handleUserAction called:', { action, userId, user });
     
-    if (action === 'delete') {
-      if (user) {
-        setDeleteConfirmUser(user);
-        setOpenDropdownId(null);
-        return;
-      }
-    }
-    
-    // Call the parent onUserAction handler
+    // Call the parent onUserAction handler for all actions
     onUserAction(action, userId);
-    
-    // Close the dropdown after action
-    setOpenDropdownId(null);
   };
 
   const getRoleBadgeVariant = (role: string) => {
@@ -142,8 +101,8 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
 
   if (users.length === 0) {
     return (
-      <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-        <CardContent className="text-center py-12">
+      <div className="shadow-sm border-gray-200 dark:border-gray-700 rounded-lg border overflow-hidden">
+        <div className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <div className="text-4xl mb-4">👥</div>
             <h3 className="text-lg font-medium mb-2">No users found</h3>
@@ -151,8 +110,8 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
               Try adjusting your filters or add some users to get started.
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -167,7 +126,7 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
             <TableHead>Contact</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Joined</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            <TableHead className="w-24">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -233,80 +192,23 @@ export function UserTable({ users, onUserAction }: UserTableProps) {
               </TableCell>
               
               <TableCell>
-                <div className="relative" ref={(el) => { dropdownRefs.current[user.id] = el; }}>
+                <div className="flex items-center gap-2">
+                  {/* Direct View Button */}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={() => handleDropdownToggle(user.id)}
-                    className="h-8 w-8 p-0"
-                    title="Actions"
+                    onClick={() => handleUserAction('view', user.id)}
+                    className="h-8 px-3"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
                   </Button>
-                  
-                  {/* Dropdown Menu */}
-                  {openDropdownId === user.id && (
-                    <div 
-                      key={`dropdown-${user.id}`}
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 min-w-[12rem]" 
-                      style={{ zIndex: 1000 }}
-                    >
-                      <div className="py-1">
-                        <div 
-                          key={`view-${user.id}`}
-                          className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
-                          onClick={() => handleUserAction('view', user.id)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </div>
-                        <div className="-mx-1 my-1 h-px bg-gray-200 dark:bg-gray-600"></div>
-                        {user.isActive ? (
-                          <div 
-                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => handleUserAction('deactivate', user.id)}
-                          >
-                            <UserX className="mr-2 h-4 w-4" />
-                            Deactivate User
-                          </div>
-                        ) : (
-                          <div 
-                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => handleUserAction('activate', user.id)}
-                          >
-                            <UserCheck className="mr-2 h-4 w-4" />
-                            Activate User
-                          </div>
-                        )}
-
-                      </div>
-                    </div>
-                  )}
                 </div>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-      
-      {/* Delete Confirmation Dialog */}
-      {deleteConfirmUser && (
-        <ConfirmationDialog
-          open={!!deleteConfirmUser}
-          onOpenChange={(open) => !open && setDeleteConfirmUser(null)}
-          type="danger"
-          title="Delete User"
-          description={`Are you sure you want to delete user "${deleteConfirmUser?.name}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          onConfirm={() => {
-            if (deleteConfirmUser) {
-              onUserAction('delete', deleteConfirmUser.id);
-              setDeleteConfirmUser(null);
-            }
-          }}
-        />
-      )}
     </div>
   );
 }

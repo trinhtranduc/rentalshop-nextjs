@@ -11,12 +11,12 @@ import {
   Badge,
   Button
 } from '@rentalshop/ui';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Eye } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
 
 interface CategoryTableProps {
   categories: Category[];
-  onEditCategory: (category: Category) => void;
+  onViewCategory: (category: Category) => void;
   onDeleteCategory: (category: Category) => void;
   sortField?: string;
   sortOrder?: 'asc' | 'desc';
@@ -25,7 +25,7 @@ interface CategoryTableProps {
 
 export const CategoryTable: React.FC<CategoryTableProps> = ({
   categories,
-  onEditCategory,
+  onViewCategory,
   onDeleteCategory,
   sortField,
   sortOrder,
@@ -138,7 +138,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                 'Updated'
               )}
             </TableHead>
-            <TableHead className="w-24">Actions</TableHead>
+            <TableHead className="w-36">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -177,22 +177,27 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                 }
               </TableCell>
               <TableCell>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center gap-2">
+                  {/* View Button */}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={() => onEditCategory(category)}
-                    className="h-8 w-8 p-0 hover:bg-primary/10"
+                    onClick={() => onViewCategory(category)}
+                    className="h-8 px-3"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
                   </Button>
+                  
+                  {/* Delete Button */}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => onDeleteCategory(category)}
-                    className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+                    className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
                   </Button>
                 </div>
               </TableCell>

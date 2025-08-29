@@ -1,17 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui/table';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '../../../ui/dropdown-menu';
 import { Customer } from '@rentalshop/types';
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Eye, Trash2 } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Trash2 } from 'lucide-react';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -19,7 +12,6 @@ interface CustomerTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
-  onDeleteCustomer?: (customerId: number) => void;
 }
 
 // Move SortableHeader outside to prevent recreation on each render
@@ -94,12 +86,8 @@ export function CustomerTable({
   onCustomerAction, 
   sortBy = 'name', 
   sortOrder = 'asc',
-  onSort,
-  onDeleteCustomer
+  onSort
 }: CustomerTableProps) {
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
   // Debug logging
   console.log('🔍 CustomerTable received customers:', customers);
   console.log('🔍 CustomerTable customers length:', customers?.length);
@@ -114,36 +102,8 @@ export function CustomerTable({
     
     // Also call the original onCustomerAction for backward compatibility
     onCustomerAction(action, customer.id);
-    
-    // Close the dropdown after action
-    setOpenDropdownId(null);
   };
 
-
-
-  const handleDeleteCustomer = (customerId: number) => {
-    onDeleteCustomer?.(customerId);
-    setOpenDropdownId(null);
-  };
-
-  const toggleDropdown = (customerId: number) => {
-    setOpenDropdownId(openDropdownId === customerId ? null : customerId);
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdownId && dropdownRefs.current[openDropdownId]) {
-        const dropdownElement = dropdownRefs.current[openDropdownId];
-        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
-          setOpenDropdownId(null);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
 
   if (customers.length === 0) {
     return (
@@ -208,7 +168,7 @@ export function CustomerTable({
                 <SortableHeader column="contact" sortable={false}>Contact</SortableHeader>
                 <SortableHeader column="location" sortable={false}>Location</SortableHeader>
                 <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Created At</SortableHeader>
-                <TableHead className="w-20">Actions</TableHead>
+                <TableHead className="w-24">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -256,40 +216,17 @@ export function CustomerTable({
                   </TableCell>
                   
                   <TableCell>
-                    <div className="relative" ref={(el) => { dropdownRefs.current[customer.id] = el; }}>
+                    <div className="flex items-center gap-2">
+                      {/* View Button */}
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleDropdown(customer.id);
-                        }}
+                        onClick={() => triggerCustomerAction('view', customer)}
+                        className="h-8 px-3"
                       >
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
                       </Button>
-                      
-                      {openDropdownId === customer.id && (
-                        <div className="absolute right-0 top-full mt-1 z-50 min-w-[12rem] overflow-hidden rounded-md border bg-white dark:bg-gray-800 p-1 text-sm shadow-md">
-                          <div 
-                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
-                            onClick={() => triggerCustomerAction('view', customer)}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </div>
-
-                          <div className="-mx-1 my-1 h-px bg-gray-200 dark:bg-gray-600"></div>
-                          <div 
-                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => handleDeleteCustomer(customer.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Customer
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>

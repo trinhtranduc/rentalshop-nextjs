@@ -4,7 +4,7 @@ import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Product } from '@rentalshop/types';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Edit } from 'lucide-react';
 
 interface ProductTableProps {
   products: Product[];
@@ -104,20 +104,6 @@ export function ProductTable({
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-      out_of_stock: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-    };
-    
-    return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants]}>
-        {status.replace('_', ' ')}
-      </Badge>
-    );
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -182,7 +168,7 @@ export function ProductTable({
                 <SortableHeader column="available" sortable={false}>Stock</SortableHeader>
                 <SortableHeader column="status" sortable={false}>Status</SortableHeader>
                 <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Created At</SortableHeader>
-                <TableHead>Actions</TableHead>
+                <TableHead className="w-36">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -216,7 +202,7 @@ export function ProductTable({
                   </TableCell>
                   
                   <TableCell>
-                    <span className="capitalize">{product.category}</span>
+                    <span className="capitalize">{product.categoryId}</span>
                   </TableCell>
                   
                   <TableCell>
@@ -240,30 +226,42 @@ export function ProductTable({
                   </TableCell>
                   
                   <TableCell>
-                    {getStatusBadge(product.status)}
+                    <Badge 
+                      variant={product.isActive ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {product.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
                   </TableCell>
                   
                   <TableCell>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {product.createdAt ? formatDate(product.createdAt) : 'N/A'}
+                      {product.createdAt ? formatDate(product.createdAt.toString()) : 'N/A'}
                     </div>
                   </TableCell>
                   
                   <TableCell>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center gap-2">
+                      {/* View Button */}
                       <Button
-                        size="sm"
                         variant="outline"
-                        onClick={() => onProductAction('edit', product.id)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
                         size="sm"
-                        variant="outline"
                         onClick={() => onProductAction('view', product.id)}
+                        className="h-8 px-3"
                       >
+                        <Eye className="h-4 w-4 mr-1" />
                         View
+                      </Button>
+                      
+                      {/* Edit Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onProductAction('edit', product.id)}
+                        className="h-8 px-3"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
                       </Button>
                     </div>
                   </TableCell>

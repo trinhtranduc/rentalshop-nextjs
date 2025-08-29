@@ -24,7 +24,8 @@ import {
   categoriesApi 
 } from '@rentalshop/utils';
 import { useAuth } from '@rentalshop/hooks';
-import type { OrderWithDetails } from '@rentalshop/types';
+import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category } from '@rentalshop/types';
+import type { OrderInput } from '@rentalshop/types';
 
 export default function EditOrderPage() {
   const params = useParams();
@@ -39,9 +40,8 @@ export default function EditOrderPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [outlets, setOutlets] = useState<Array<{ id: number; name: string }>>([]);
-  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [merchantId, setMerchantId] = useState<string>('');
-  const [resetForm, setResetForm] = useState<(() => void) | null>(null);
 
   // Toast notifications
   const { toasts, showSuccess, showError, removeToast } = useToasts();
@@ -69,8 +69,8 @@ export default function EditOrderPage() {
           setOrder(result.data as OrderWithDetails);
           
           // Extract merchant publicId from order - API expects publicId (number), not database CUID (string)
-          let foundMerchantPublicId = null;
-          const orderData = result.data as any; // Use any to handle the API response structure
+          let foundMerchantPublicId: number | null = null;
+          const orderData = result.data as OrderWithDetails;
           
           // Priority order for finding merchant publicId:
           // 1. outlet.merchant.publicId (this is what we need for API calls)
@@ -130,10 +130,10 @@ export default function EditOrderPage() {
           // Handle both possible API response structures:
           // 1. { data: { customers: [...] } } - paginated response
           // 2. { data: [...] } - direct array response
-          let customersArray;
-          const data = customersResult.data as any; // Type assertion to handle different response structures
+          let customersArray: CustomerSearchResult[] = [];
+          const data = customersResult.data;
           
-          if (data.customers && Array.isArray(data.customers)) {
+          if (data && typeof data === 'object' && 'customers' in data && Array.isArray(data.customers)) {
             customersArray = data.customers;
           } else if (Array.isArray(data)) {
             customersArray = data;
@@ -156,7 +156,7 @@ export default function EditOrderPage() {
         // Fetch outlets by merchant
         const outletsResult = await outletsApi.getOutletsByMerchant(Number(merchantId));
         if (outletsResult.success && outletsResult.data?.outlets) {
-          const mappedOutlets = outletsResult.data.outlets.map((outlet: any) => ({
+          const mappedOutlets = outletsResult.data.outlets.map((outlet: { id: number; name: string }) => ({
             id: outlet.id, // API already returns publicId as 'id'
             name: outlet.name
           }));
@@ -172,10 +172,10 @@ export default function EditOrderPage() {
           // Handle both possible API response structures:
           // 1. { data: { categories: [...] } } - paginated response
           // 2. { data: [...] } - direct array response
-          let categoriesArray;
-          const data = categoriesResult.data as any; // Type assertion to handle different response structures
+          let categoriesArray: Category[] = [];
+          const data = categoriesResult.data;
           
-          if (data.categories && Array.isArray(data.categories)) {
+          if (data && typeof data === 'object' && 'categories' in data && Array.isArray(data.categories)) {
             categoriesArray = data.categories;
           } else if (Array.isArray(data)) {
             categoriesArray = data;
@@ -183,7 +183,7 @@ export default function EditOrderPage() {
             categoriesArray = [];
           }
           
-          const mappedCategories = categoriesArray.map((category: any) => ({
+          const mappedCategories = categoriesArray.map((category: Category) => ({
             id: category.id, // API should return publicId as 'id'
             name: category.name
           }));
@@ -222,10 +222,10 @@ export default function EditOrderPage() {
           // Handle both possible API response structures:
           // 1. { data: { products: [...] } } - paginated response
           // 2. { data: [...] } - direct array response
-          let productsArray;
-          const data = productsResult.data as any; // Type assertion to handle different response structures
+          let productsArray: ProductWithStock[] = [];
+          const data = productsResult.data;
           
-          if (data.products && Array.isArray(data.products)) {
+          if (data && typeof data === 'object' && 'products' in data && Array.isArray(data.products)) {
             productsArray = data.products;
           } else if (Array.isArray(data)) {
             productsArray = data;
@@ -238,7 +238,7 @@ export default function EditOrderPage() {
           const outletProducts = productsArray;
           
           if (isMounted) {
-            setProducts(outletProducts);
+            setProducts(productsArray);
           }
         } else {
           if (isMounted) {
@@ -260,7 +260,7 @@ export default function EditOrderPage() {
     };
   }, [merchantId, order?.outletId]); // Depend on both merchantId and outletId
 
-  const handleSubmit = async (orderData: any) => {
+  const handleSubmit = async (orderData: OrderInput) => {
     if (!order) return;
 
     try {
@@ -300,8 +300,8 @@ export default function EditOrderPage() {
     router.push(`/orders/${numericOrderNumber}`);
   };
 
-  const handleFormReady = (resetFormFn: () => void) => {
-    setResetForm(() => resetFormFn);
+  const handleFormReady = (_resetFormFn: () => void) => {
+    // Form is ready, but we don't need to store the reset function for now
   };
 
   if (loading) {
@@ -443,6 +443,24 @@ export default function EditOrderPage() {
     <PageWrapper>
       <PageContent>
         <ToastContainer toasts={toasts} onClose={removeToast} />
+        
+        {/* Header with Back Button */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push('/orders')}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Orders
+              </button>
+            </div>
+          </div>
+        </div>
+        
         <CreateOrderForm
           isEditMode={true}
           initialOrder={order}

@@ -33,8 +33,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
         subtotal: initialOrder.subtotal || 0,
         taxAmount: initialOrder.taxAmount || 0,
-        discountType: 'amount',
-        discountValue: BUSINESS.DEFAULT_DISCOUNT,
+        discountType: initialOrder.discountType || 'amount',
+        discountValue: initialOrder.discountValue || BUSINESS.DEFAULT_DISCOUNT,
         discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
         depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
         securityDeposit: initialOrder.securityDeposit || 0,
@@ -73,9 +73,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     if (isEditMode && initialOrder?.orderItems) {
       return initialOrder.orderItems.map((item: any) => ({
         id: item.id, // Keep database CUID for existing items
-        productId: item.productId || 0, // Frontend uses publicId (number)
+        productId: item.product?.publicId || item.productId || 0, // Frontend uses publicId (number)
         product: {
-          id: item.product?.id || item.productId || 0, // Frontend uses publicId (number)
+          id: item.product?.publicId || item.productId || 0, // Frontend uses publicId (number)
           publicId: item.product?.publicId || item.productId || 0, // Keep publicId for reference
           name: item.product?.name || 'Unknown Product',
           description: item.product?.description || '',
@@ -111,9 +111,6 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
   // Calculate totals when order items change
   useEffect(() => {
-    console.log('🔍 orderItems changed, recalculating totals. New orderItems:', orderItems);
-    console.log('🔍 orderItems length:', orderItems?.length);
-    
     const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const discountAmount = formData.discountType === 'percentage' 
       ? (subtotal * formData.discountValue / 100)
@@ -157,6 +154,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
         subtotal: initialOrder.subtotal || 0,
         taxAmount: initialOrder.taxAmount || 0,
+        discountType: initialOrder.discountType || 'amount',
+        discountValue: initialOrder.discountValue || BUSINESS.DEFAULT_DISCOUNT,
         discountAmount: initialOrder.discountAmount || BUSINESS.DEFAULT_DISCOUNT,
         depositAmount: initialOrder.depositAmount || BUSINESS.DEFAULT_DEPOSIT,
         securityDeposit: initialOrder.securityDeposit || 0,
@@ -170,9 +169,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       if (initialOrder.orderItems) {
         const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => ({
           id: item.id, // Keep database CUID for existing items
-          productId: item.productId || 0, // Frontend uses publicId (number)
+          productId: item.product?.publicId || item.productId || 0, // Frontend uses publicId (number)
           product: {
-            id: item.product?.id || item.productId || 0, // Frontend uses publicId (number)
+            id: item.product?.publicId || item.productId || 0, // Frontend uses publicId (number)
             publicId: item.product?.publicId || item.productId || 0, // Keep publicId for reference
             name: item.product?.name || 'Unknown Product',
             description: item.product?.description || '',
@@ -188,32 +187,36 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           deposit: item.deposit ?? 0,
           notes: item.notes || '',
         }));
+        
         setOrderItems(initialOrderItems);
+        
+        // Calculate deposit amount from order items after they're set
+        if (initialOrder.orderType === 'RENT') {
+          const totalDeposit = initialOrderItems.reduce((sum, item) => sum + (item.deposit ?? 0), 0);
+          setFormData(prev => ({
+            ...prev,
+            depositAmount: totalDeposit,
+          }));
+        }
       }
     }
   }, [isEditMode, initialOrder, outlets]);
 
   // Add product to order
   const addProductToOrder = useCallback((product: any) => {
-    console.log('🔍 addProductToOrder called with product:', product);
-    console.log('🔍 Current orderItems before adding:', orderItems);
-    
     const productIdNumber = product.id;
     const existingItem = orderItems.find(item => item.productId === productIdNumber);
     
     if (existingItem) {
       // Update quantity if product already exists
-      console.log('🔍 Product already exists, updating quantity');
       const updatedItems = orderItems.map(item =>
         item.productId === productIdNumber
           ? { ...item, quantity: item.quantity + 1 }
           : item
       );
-      console.log('🔍 Updated items:', updatedItems);
       setOrderItems(updatedItems);
     } else {
       // Add new product
-      console.log('🔍 Adding new product to order');
       const rentPrice = product.rentPrice ?? 0;
       const deposit = product.deposit ?? 0;
       
@@ -235,9 +238,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         deposit: deposit,
         notes: '',
       };
-      console.log('🔍 New item to add:', newItem);
       const newOrderItems = [...orderItems, newItem];
-      console.log('🔍 New orderItems array:', newOrderItems);
       setOrderItems(newOrderItems);
     }
   }, [orderItems, formData.orderType]);
@@ -290,34 +291,31 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   // Handle preview button click
   const handlePreviewClick = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔍 Preview clicked - Current orderItems:', orderItems);
+    console.log('🔍 Preview clicked - orderItems length:', orderItems.length);
+    console.log('🔍 Preview clicked - orderItems details:', orderItems.map(item => ({
+      productId: item.productId,
+      productName: item.product?.name,
+      quantity: item.quantity
+    })));
     setShowOrderPreview(true);
-  }, []);
+  }, [orderItems]);
 
   // Handle form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔍 handleSubmit called');
-    
     // Use the ref to get the latest orderItems state to avoid stale closure issues
     const currentOrderItems = orderItemsRef.current;
-    console.log('🔍 Current orderItems from ref:', currentOrderItems);
-    console.log('🔍 Current orderItems length:', currentOrderItems?.length);
-    console.log('🔍 orderItems type:', typeof currentOrderItems);
-    console.log('🔍 orderItems array check:', Array.isArray(currentOrderItems));
     
     if (isSubmitting) return;
     
     // Validate that we have order items
     if (!currentOrderItems || currentOrderItems.length === 0) {
-      console.error('❌ No order items found!');
-      console.error('❌ currentOrderItems:', currentOrderItems);
-      console.error('❌ currentOrderItems.length:', currentOrderItems?.length);
       // This should be handled by the parent component with toast
       throw new Error('Please add at least one product to the order before submitting.');
     }
     
-    console.log('✅ Order items validation passed');
     setIsSubmitting(true);
     
     try {
@@ -348,18 +346,13 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         }))
       };
       
-      console.log('🔍 Final API payload:', apiPayload);
-      console.log('🔍 orderItems in payload:', apiPayload.orderItems);
-      
       // Add order ID for edit mode
       if (isEditMode && initialOrder?.id) {
         (apiPayload as any).id = initialOrder.id;
       }
       
-      console.log('🔍 Submitting order with payload:', apiPayload);
       props.onSubmit?.(apiPayload as any);
     } catch (error) {
-      console.error('Error submitting order:', error);
       // Re-throw the error so the parent can handle it with toast
       throw error;
     } finally {
@@ -369,10 +362,6 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
   // Handle order confirmation from preview
   const handleOrderConfirm = useCallback(async () => {
-    console.log('🔍 handleOrderConfirm called');
-    console.log('🔍 Current orderItems in handleOrderConfirm:', orderItems);
-    console.log('🔍 orderItems length in handleOrderConfirm:', orderItems?.length);
-    
     setShowOrderPreview(false);
     // Create a mock event for handleSubmit
     const mockEvent = { preventDefault: () => {} } as React.FormEvent;

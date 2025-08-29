@@ -16,8 +16,9 @@ import {
 import { UserPlus } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 import { useToasts } from '@rentalshop/ui';
-import { PaginationResult, Customer, CustomerFilters } from '@rentalshop/types';
-const { customersApi } = await import('@rentalshop/utils');
+import { customersApi } from '@rentalshop/utils';
+import type { Customer, CustomerFilters, PaginationResult } from '@rentalshop/types';
+import type { CustomersResponse } from '@rentalshop/utils';
 
 // Extend the Customer type for this page
 interface ExtendedCustomer {
@@ -60,10 +61,6 @@ export default function CustomersPage() {
   // Caching state
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [cacheKey, setCacheKey] = useState<string>('');
-  
-  // Confirmation dialog state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<ExtendedCustomer | null>(null);
   
   // Initialize filters
   const [filters, setFilters] = useState<CustomerFilters>({
@@ -155,7 +152,19 @@ export default function CustomersPage() {
       }
 
       console.log('🔍 Fetching customers with filters:', apiFilters);
-      const response = await customersApi.getCustomers(apiFilters);
+      
+      let response;
+      if (searchQuery) {
+        // Use search endpoint for search queries
+        response = await customersApi.searchCustomers({
+          search: searchQuery,
+          status: filters.status
+        });
+      } else {
+        // Use paginated endpoint for regular listing
+        response = await customersApi.getCustomersPaginated(currentPage, 10);
+      }
+      
       console.log('📡 API Response:', response);
       console.log('📡 API Response.data:', response.data);
       console.log('📡 API Response.data.customers:', response.data?.customers);
@@ -165,55 +174,22 @@ export default function CustomersPage() {
       if (response.success && response.data) {
         console.log('📊 Raw response data structure:', response.data);
         
-        // Handle the nested API response structure
-        // API returns: { success: true, data: { customers: [...], total: 60, ... } }
+        // Handle the different API response structures
         let customers, total, totalPages;
         
-        // Check if data has the expected structure
-        if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-          // Nested structure: response.data.data.customers
-          const nestedData = (response.data as any).data;
-          customers = nestedData?.customers || [];
-          total = nestedData?.total || customers.length;
-          totalPages = nestedData?.totalPages || Math.ceil(total / 10);
-          
-          console.log('✅ Found nested data structure');
-        } else if (response.data && typeof response.data === 'object' && 'customers' in response.data) {
-          // Direct structure: response.data.customers
-          customers = (response.data as any).customers || [];
-          total = (response.data as any).total || customers.length;
-          totalPages = (response.data as any).totalPages || Math.ceil(total / 10);
-          
-          console.log('✅ Found direct data structure');
-        } else {
-          // Fallback: check for any array in the response
-          console.warn('⚠️ Unexpected response structure, searching for customer data...');
-          
-          // Try to find customers array in any nested object
-          const findCustomersArray = (obj: any): any[] | null => {
-            if (Array.isArray(obj)) {
-              // Check if this array contains customer-like objects
-              if (obj.length > 0 && obj[0]?.firstName && obj[0]?.lastName) {
-                return obj;
-              }
-            } else if (obj && typeof obj === 'object') {
-              for (const key in obj) {
-                const result = findCustomersArray(obj[key]);
-                if (result) return result;
-              }
-            }
-            return null;
-          };
-          
-          customers = findCustomersArray(response.data) || [];
+        if (searchQuery) {
+          // Search response: response.data is Customer[]
+          customers = response.data as Customer[];
           total = customers.length;
           totalPages = Math.ceil(total / 10);
-          
-          if (customers.length > 0) {
-            console.log('✅ Found customers array in nested structure');
-          } else {
-            console.error('❌ No customers array found in response');
-          }
+          console.log('✅ Found search response structure');
+        } else {
+          // Paginated response: response.data is CustomersResponse
+          const paginatedData = response.data as CustomersResponse;
+          customers = paginatedData.customers || [];
+          total = paginatedData.total || customers.length;
+          totalPages = paginatedData.totalPages || Math.ceil(total / 10);
+          console.log('✅ Found paginated response structure');
         }
         
         console.log('📊 Processed data:', { 
@@ -387,51 +363,6 @@ export default function CustomersPage() {
         console.log('Unknown action:', action);
     }
   }, [customers, router, fetchCustomers]);
-
-  // Handle customer deletion - show confirmation dialog first
-  const handleDeleteCustomer = useCallback((customerId: number) => {
-    const customer = customers.find(c => c.id === customerId);
-    if (customer) {
-      setCustomerToDelete(customer);
-      setShowDeleteConfirm(true);
-    }
-  }, [customers]);
-
-  // Handle confirmed customer deletion
-  const handleConfirmDelete = useCallback(async () => {
-    if (!customerToDelete) return;
-    
-    try {
-      console.log('🔍 CustomersPage: Deleting customer:', customerToDelete.id);
-      
-      // Call the delete API
-      const response = await customersApi.deleteCustomer(customerToDelete.id);
-      
-      if (response.success) {
-        console.log('✅ CustomersPage: Customer deleted successfully');
-        
-        // Remove the customer from the local state
-        setCustomers(prev => prev.filter(c => c.id !== customerToDelete.id));
-        setTotalCustomers(prev => prev - 1);
-        
-        // Show success toast
-        showSuccess('Customer Deleted', 'Customer has been deleted successfully!');
-      } else {
-        console.error('❌ CustomersPage: Failed to delete customer:', response.error);
-        // Show error toast
-        showError('Delete Failed', response.error || 'Failed to delete customer');
-      }
-      
-    } catch (error) {
-      console.error('❌ CustomersPage: Error deleting customer:', error);
-      // Show error toast
-      showError('Delete Error', error instanceof Error ? error.message : 'An unexpected error occurred while deleting the customer');
-    } finally {
-      // Close the confirmation dialog
-      setShowDeleteConfirm(false);
-      setCustomerToDelete(null);
-    }
-  }, [customerToDelete]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
@@ -623,23 +554,11 @@ export default function CustomersPage() {
           onPageChange={handlePageChange}
           onSort={handleSort}
           merchantId={typeof user?.merchantId === 'string' ? parseInt(user.merchantId) || 0 : user?.merchantId || 0}
-          onDeleteCustomer={handleDeleteCustomer}
         />
 
-        {/* Confirmation Dialog for Delete Customer */}
-        <ConfirmationDialog
-          open={showDeleteConfirm}
-          onOpenChange={setShowDeleteConfirm}
-          type="danger"
-          title="Delete Customer"
-          description={customerToDelete ? `Are you sure you want to delete ${customerToDelete.firstName} ${customerToDelete.lastName}? This action cannot be undone.` : ''}
-          confirmText="Delete Customer"
-          onConfirm={handleConfirmDelete}
-        />
+        {/* Toast Container for notifications */}
+        <ToastContainer toasts={toasts} onClose={removeToast} />
       </PageContent>
-      
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 } 

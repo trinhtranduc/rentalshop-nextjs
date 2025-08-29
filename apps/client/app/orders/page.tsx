@@ -219,9 +219,6 @@ export default function OrdersPage() {
         const orderForCancel = orders.find(o => o.orderNumber === orderNumber);
         if (orderForCancel) await handleCancel(orderForCancel.id);
         break;
-      case 'edit':
-        router.push(`/orders/${numericOrderNumber}/edit`);
-        break;
       default:
         console.log('Unknown action:', action);
     }

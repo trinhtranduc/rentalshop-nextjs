@@ -277,12 +277,6 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               Sale
             </button>
           </div>
-          {isEditMode && (
-            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded border">
-              <Info className="w-3 h-3 inline mr-1" />
-              Order type cannot be changed after creation to maintain data integrity and business rules.
-            </div>
-          )}
         </div>
 
         {/* Deposit Amount - Only for RENT orders */}
