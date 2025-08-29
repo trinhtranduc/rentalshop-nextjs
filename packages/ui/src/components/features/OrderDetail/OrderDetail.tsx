@@ -9,7 +9,12 @@ import {
   Input,
   Label,
   Textarea,
-  Skeleton
+  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@rentalshop/ui';
 import { 
   Info, 
@@ -26,13 +31,17 @@ import {
   Mail,
   RotateCcw,
   Printer,
-  Edit
+  Edit,
+  Calculator
 } from 'lucide-react';
 import { formatCurrency } from '@rentalshop/ui';
 import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
 import type { OrderDetailData, OrderDetailProps, SettingsForm } from '@rentalshop/types';
 import { useToasts } from '@rentalshop/ui';
 import { ToastContainer } from '@rentalshop/ui';
+import { CollectionReturnModal } from './components/CollectionReturnModal';
+import { calculateCollectionTotal } from './utils';
+import { ordersApi } from '@rentalshop/utils';
 
 // Skeleton component for OrderDetail
 const OrderDetailSkeleton: React.FC = () => {
@@ -200,10 +209,19 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   showActions = true
 }) => {
   const { toasts, showSuccess, showError, showInfo, removeToast } = useToasts();
+  
+  // Predefined collateral types
+  const COLLATERAL_TYPES = [
+    'ID Card',
+    'Driver License', 
+    'Passport',
+    'Other'
+  ];
+  
   const [settingsForm, setSettingsForm] = useState<SettingsForm>({
     damageFee: order.damageFee || 0,
     securityDeposit: order.securityDeposit || 0,
-    collateralType: order.collateralType || '',
+    collateralType: order.collateralType || 'Other',
     collateralDetails: order.collateralDetails || '',
     notes: order.notes || ''
   });
@@ -211,10 +229,155 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const [tempSettings, setTempSettings] = useState<SettingsForm>(settingsForm);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   
+  // Collection and Return Modal state
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  
+  // Loading states for actions
+  const [isPickupLoading, setIsPickupLoading] = useState(false);
+  const [isReturnLoading, setIsReturnLoading] = useState(false);
+  const [isCancelLoading, setIsCancelLoading] = useState(false);
+  
+  // Update settings when order changes
+  useEffect(() => {
+    if (order) {
+      const newSettings: SettingsForm = {
+        damageFee: order.damageFee || 0,
+        securityDeposit: order.securityDeposit || 0,
+        collateralType: order.collateralType || 'Other',
+        collateralDetails: order.collateralDetails || '',
+        notes: order.notes || ''
+      };
+      setSettingsForm(newSettings);
+      setTempSettings(newSettings);
+    }
+  }, [order]);
+  
   // Show skeleton loading when loading is true
   if (loading) {
     return <OrderDetailSkeleton />;
   }
+
+  // ============================================================================
+  // ORDER TYPE & STATUS LOGIC
+  // ============================================================================
+  
+  // Determine if order is RENT type
+  const isRentOrder = order.orderType === 'RENT';
+  
+  // Determine if order is SALE type
+  const isSaleOrder = order.orderType === 'SALE';
+  
+  // Get current order status
+  const currentStatus = order.status;
+  
+  // ============================================================================
+  // BUTTON VISIBILITY LOGIC
+  // ============================================================================
+  
+  // Cancel button visibility
+  const canCancel = onCancel && 
+    currentStatus !== 'PICKUPED' && 
+    currentStatus !== 'RETURNED' && 
+    currentStatus !== 'CANCELLED';
+  
+  // Edit button visibility - based on order type and status
+  const canEdit = onEdit && (
+    // RENT orders: can only edit when RESERVED
+    (isRentOrder && currentStatus === 'RESERVED') ||
+    // SALE orders: can only edit when COMPLETED
+    (isSaleOrder && currentStatus === 'COMPLETED')
+  );
+  
+  // Pickup button visibility (RENT orders only)
+  const canPickup = onPickup && 
+    isRentOrder && 
+    currentStatus === 'RESERVED';
+  
+  // Return button visibility (RENT orders only)
+  const canReturn = onReturn && 
+    isRentOrder && 
+    currentStatus === 'PICKUPED';
+  
+  // Print button visibility (always visible)
+  const canPrint = true;
+  
+  // ============================================================================
+  // FIELD ENABLEMENT LOGIC
+  // ============================================================================
+  
+  // Damage fee enablement logic
+  const isDamageFeeEnabled = () => {
+    if (isSaleOrder) return false; // SALE orders don't have damage fees
+    
+    if (isRentOrder) {
+      switch (currentStatus) {
+        case 'RESERVED':
+          return false; // Disable for reserved orders
+        case 'PICKUPED':
+        case 'RETURNED':
+          return true; // Enable for picked up and returned orders
+        default:
+          return false;
+      }
+    }
+    
+    return false;
+  };
+  
+  // Security deposit enablement logic
+  const isSecurityDepositEnabled = () => {
+    if (isSaleOrder) return false; // SALE orders don't have security deposits
+    
+    if (isRentOrder) {
+      switch (currentStatus) {
+        case 'RESERVED':
+        case 'PICKUPED':
+        case 'RETURNED':
+          return true; // Always enable for RENT orders
+        default:
+          return false;
+      }
+    }
+    
+    return false;
+  };
+  
+  // Collateral type enablement logic
+  const isCollateralTypeEnabled = () => {
+    if (isSaleOrder) return false; // SALE orders don't have collateral
+    
+    if (isRentOrder) {
+      switch (currentStatus) {
+        case 'RESERVED':
+        case 'PICKUPED':
+        case 'RETURNED':
+          return true; // Always enable for RENT orders
+        default:
+          return false;
+      }
+    }
+    
+    return false;
+  };
+  
+  // Collateral details enablement logic
+  const isCollateralDetailsEnabled = () => {
+    if (isSaleOrder) return false; // SALE orders don't have collateral
+    
+    if (isRentOrder) {
+      switch (currentStatus) {
+        case 'RESERVED':
+        case 'PICKUPED':
+        case 'RETURNED':
+          return true; // Always enable for RENT orders
+        default:
+          return false;
+      }
+    }
+    
+    return false;
+  };
 
   const handleSettingsChange = (updates: Partial<SettingsForm>) => {
     setTempSettings(prev => ({ ...prev, ...updates }));
@@ -259,37 +422,70 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     }
   };
 
-  const handlePickupOrder = () => {
-    if (onPickup) {
-      try {
-        onPickup(order.id);
-        // Success toast will be handled by the parent component after API call
-      } catch (error) {
-        showError('Pickup Failed', 'Failed to process order pickup. Please try again.');
+  const handlePickupOrder = async () => {
+    try {
+      setIsPickupLoading(true);
+      await ordersApi.pickupOrder(order.publicId);
+      showSuccess('Pickup Successful', 'Order pickup has been processed.');
+      onStatusChange && onStatusChange(order.id, 'PICKUPED');
+      setIsCollectionModalOpen(false); // Close modal after successful pickup
+      
+      // Trigger page refresh to update order data
+      if (typeof window !== 'undefined') {
+        window.location.reload();
       }
+    } catch (error) {
+      showError('Pickup Failed', 'Failed to process order pickup. Please try again.');
+    } finally {
+      setIsPickupLoading(false);
     }
   };
 
-  const handleReturnOrder = () => {
-    if (onReturn) {
-      try {
-        onReturn(order.id);
-        // Success toast will be handled by the parent component after API call
-      } catch (error) {
-        showError('Return Failed', 'Failed to process order return. Please try again.');
+  const handleReturnOrder = async () => {
+    try {
+      setIsReturnLoading(true);
+      await ordersApi.returnOrder(order.publicId);
+      showSuccess('Return Successful', 'Order return has been processed.');
+      onStatusChange && onStatusChange(order.id, 'RETURNED');
+      setIsReturnModalOpen(false); // Close modal after successful return
+      
+      // Trigger page refresh to update order data
+      if (typeof window !== 'undefined') {
+        window.location.reload();
       }
+    } catch (error) {
+      showError('Return Failed', 'Failed to process order return. Please try again.');
+    } finally {
+      setIsReturnLoading(false);
     }
   };
 
-  const handleCancelOrder = () => {
-    if (onCancel) {
-      try {
-        onCancel(order);
-        // Success toast will be handled by the parent component after API call
-      } catch (error) {
-        showError('Cancellation Failed', 'Failed to cancel order. Please try again.');
+  const handleCancelOrder = async () => {
+    try {
+      setIsCancelLoading(true);
+      await ordersApi.cancelOrder(order.publicId);
+      showSuccess('Cancellation Successful', 'Order has been cancelled.');
+      onStatusChange && onStatusChange(order.id, 'CANCELLED');
+      
+      // Trigger page refresh to update order data
+      if (typeof window !== 'undefined') {
+        window.location.reload();
       }
+    } catch (error) {
+      showError('Cancellation Failed', 'Failed to cancel order. Please try again.');
+    } finally {
+      setIsCancelLoading(false);
     }
+  };
+
+  // Open collection modal for pickup
+  const handlePickupClick = () => {
+    setIsCollectionModalOpen(true);
+  };
+
+  // Open return modal for return
+  const handleReturnClick = () => {
+    setIsReturnModalOpen(true);
   };
 
   const handleEditOrder = () => {
@@ -343,8 +539,13 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               {/* Order Type Badge */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Order Type:</span>
-                <Badge variant={order.orderType === 'RENT' ? 'default' : 'secondary'}>
-                  {order.orderType === 'RENT' ? 'RENT' : 'SALE'}
+                <Badge 
+                  className={order.orderType === 'RENT' 
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  }
+                >
+                  {order.orderType}
                 </Badge>
               </div>
               {/* Order Status */}
@@ -393,19 +594,12 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                     {order.createdBy && (
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Created By:</span>
-                        <span className="text-sm font-medium text-blue-600">
-                          {order.createdBy.firstName} {order.createdBy.lastName} ({order.createdBy.role})
+                        <span className="text-sm font-medium">
+                          {order.createdBy.firstName} {order.createdBy.lastName}
                         </span>
                       </div>
                     )}
-                    {order.createdBy && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Creator Email:</span>
-                        <span className="text-sm font-medium text-gray-700">
-                          {order.createdBy.email}
-                        </span>
-                      </div>
-                    )}
+                    
                   </div>
 
                   {/* Right Column */}
@@ -481,9 +675,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                             <div className="text-xs text-gray-600">
                               {formatCurrency(item.unitPrice)} x {item.quantity}
                             </div>
-                            {item.notes && (
+                            {(item as any).notes && (
                               <div className="text-xs text-gray-500 mt-1">
-                                Notes: {item.notes}
+                                Notes: {(item as any).notes || 'No notes'}
                               </div>
                             )}
                           </div>
@@ -514,14 +708,14 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                 </div>
 
                 {/* Discount Display */}
-                {order.discountAmount > 0 && (
+                {(order as any).discountAmount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>
-                      Discount {order.discountType === 'percentage' && order.discountValue 
-                        ? `(${order.discountValue}%)` 
+                      Discount {(order as any).discountType === 'percentage' && (order as any).discountValue 
+                        ? `(${(order as any).discountValue}%)` 
                         : '(amount)'}:
                     </span>
-                    <span className="font-medium">-{formatCurrency(order.discountAmount)}</span>
+                    <span className="font-medium">-{formatCurrency((order as any).discountAmount)}</span>
                   </div>
                 )}
 
@@ -538,6 +732,41 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                   <span>Grand Total:</span>
                   <span>{formatCurrency(order.totalAmount || 0)}</span>
                 </div>
+
+                {/* Collection Amount - Single field for RENT orders */}
+                {order.orderType === 'RENT' && (
+                  <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
+                    <span className="text-gray-600">Collection Amount:</span>
+                    <span className={`font-medium ${
+                      order.status === 'RESERVED' ? 'text-yellow-700' : 
+                      order.status === 'PICKUPED' ? 'text-blue-700' : 
+                      'text-gray-500'
+                    }`}>
+                      {order.status === 'RESERVED' ? (
+                        <span className="flex items-center gap-2">
+                          <span>{formatCurrency(calculateCollectionTotal(order, tempSettings))}</span>
+                          {tempSettings.collateralType && tempSettings.collateralType !== 'Other' && (
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                              + {tempSettings.collateralType}
+                            </span>
+                          )}
+                          {tempSettings.collateralType === 'Other' && tempSettings.collateralDetails && (
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                              + {tempSettings.collateralDetails}
+                            </span>
+                          )}
+                          {tempSettings.collateralType === 'Other' && !tempSettings.collateralDetails && (
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                              + Collateral
+                            </span>
+                          )}
+                        </span>
+                      ) : 
+                       order.status === 'PICKUPED' ? 'Already collected' : 
+                       'No collection needed'}
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -552,10 +781,13 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               <CardContent className="space-y-4">
                 {isEditingSettings ? (
                   <>
-                    {/* Damage Fee */}
+                    {/* Damage Fee - Conditionally enabled based on order type and status */}
                     <div>
                       <Label htmlFor="damageFee" className="text-sm font-medium text-gray-700">
                         Damage Fee
+                        {!isDamageFeeEnabled() && (
+                          <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
+                        )}
                       </Label>
                       <Input
                         id="damageFee"
@@ -566,13 +798,17 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                         onChange={(e) => handleSettingsChange({ damageFee: parseFloat(e.target.value) || 0 })}
                         className="mt-1"
                         placeholder="0"
+                        disabled={!isDamageFeeEnabled()}
                       />
                     </div>
 
-                    {/* Security Deposit */}
+                    {/* Security Deposit - Conditionally enabled based on order type and status */}
                     <div>
                       <Label htmlFor="securityDeposit" className="text-sm font-medium text-gray-700">
                         Security Deposit
+                        {!isSecurityDepositEnabled() && (
+                          <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
+                        )}
                       </Label>
                       <Input
                         id="securityDeposit"
@@ -583,28 +819,37 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                         onChange={(e) => handleSettingsChange({ securityDeposit: parseFloat(e.target.value) || 0 })}
                         className="mt-1"
                         placeholder="0"
+                        disabled={!isSecurityDepositEnabled()}
                       />
                     </div>
 
-                    {/* Collateral Type */}
+                    {/* Collateral Type - Conditionally enabled based on order type and status */}
                     <div>
                       <Label htmlFor="collateralType" className="text-sm font-medium text-gray-700">
                         Collateral Type
+                        {!isCollateralTypeEnabled() && (
+                          <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
+                        )}
                       </Label>
-                      <Input
-                        id="collateralType"
-                        type="text"
-                        value={tempSettings.collateralType || ''}
-                        onChange={(e) => handleSettingsChange({ collateralType: e.target.value })}
-                        className="mt-1"
-                        placeholder="Enter collateral type"
-                      />
+                      <Select onValueChange={(value) => handleSettingsChange({ collateralType: value })} value={tempSettings.collateralType || ''} onOpenChange={() => setIsEditingSettings(true)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select collateral type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COLLATERAL_TYPES.map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    {/* Collateral Details */}
+                    {/* Collateral Details - Conditionally enabled based on order type and status */}
                     <div>
                       <Label htmlFor="collateralDetails" className="text-sm font-medium text-gray-700">
                         Collateral Details
+                        {!isCollateralDetailsEnabled() && (
+                          <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
+                        )}
                       </Label>
                       <Input
                         id="collateralDetails"
@@ -613,6 +858,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                         onChange={(e) => handleSettingsChange({ collateralDetails: e.target.value })}
                         className="mt-1"
                         placeholder="Enter collateral details"
+                        disabled={!isCollateralDetailsEnabled()}
                       />
                     </div>
 
@@ -656,19 +902,39 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Damage Fee:</span>
-                        <span className="text-sm font-medium">{formatCurrency(settingsForm.damageFee || 0)}</span>
+                        <span className="text-sm font-medium">
+                          {isDamageFeeEnabled() 
+                            ? formatCurrency(settingsForm.damageFee || 0)
+                            : <span className="text-gray-400 italic">Disabled</span>
+                          }
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Security Deposit:</span>
-                        <span className="text-sm font-medium">{formatCurrency(settingsForm.securityDeposit || 0)}</span>
+                        <span className="text-sm font-medium">
+                          {isSecurityDepositEnabled() 
+                            ? formatCurrency(settingsForm.securityDeposit || 0)
+                            : <span className="text-gray-400 italic">Disabled</span>
+                          }
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Collateral Type:</span>
-                        <span className="text-sm font-medium">{settingsForm.collateralType || 'Not specified'}</span>
+                        <span className="text-sm font-medium">
+                          {isCollateralTypeEnabled() 
+                            ? (settingsForm.collateralType || 'Not specified')
+                            : <span className="text-gray-400 italic">Disabled</span>
+                          }
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Collateral Details:</span>
-                        <span className="text-sm font-medium">{settingsForm.collateralDetails || 'No details'}</span>
+                        <span className="text-sm font-medium">
+                          {isCollateralDetailsEnabled() 
+                            ? (settingsForm.collateralDetails || 'No details')
+                            : <span className="text-gray-400 italic">Disabled</span>
+                          }
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Notes:</span>
@@ -705,16 +971,15 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               <div className="flex justify-between items-center">
                 {/* Left side - Cancel button */}
                 <div>
-                  {onCancel && order.status !== 'PICKUPED' && 
-                   order.status !== 'RETURNED' && 
-                   order.status !== 'CANCELLED' && (
+                  {canCancel && (
                     <Button
                       variant="destructive"
                       onClick={handleCancelOrder}
                       className="px-6"
+                      disabled={isCancelLoading}
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Cancel Order
+                      {isCancelLoading ? 'Cancelling...' : 'Cancel Order'}
                     </Button>
                   )}
                 </div>
@@ -727,49 +992,71 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                       variant="outline"
                       onClick={handleEditOrderWithSettings}
                       className="px-4"
+                      disabled={!canEdit}
+                      title={
+                        !canEdit 
+                          ? isRentOrder 
+                            ? 'RENT orders can only be edited when status is RESERVED'
+                            : 'SALE orders can only be edited when status is COMPLETED'
+                          : 'Edit Order'
+                      }
                     >
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Order
                     </Button>
                   )}
 
-                  {/* Pickup Order */}
-                  {onPickup && order.orderType === 'RENT' && 
-                   order.status !== 'PICKUPED' && 
-                   order.status !== 'RETURNED' && 
-                   order.status !== 'CANCELLED' && (
+                  {/* Pickup Order - Only for RENT orders with RESERVED status */}
+                  {canPickup && (
                     <Button
                       variant="default"
-                      onClick={handlePickupOrder}
+                      onClick={handlePickupClick}
                       className="px-6"
+                      disabled={isPickupLoading}
                     >
                       <Package className="w-4 h-4 mr-2" />
-                      Pickup Order
+                      {isPickupLoading ? 'Picking up...' : 'Pickup Order'}
                     </Button>
                   )}
 
-                  {/* Return Order */}
-                  {onReturn && order.orderType === 'RENT' && 
-                   order.status === 'PICKUPED' && (
+                  {/* Return Order - Only for RENT orders with PICKUPED status */}
+                  {canReturn && (
                     <Button
                       variant="default"
-                      onClick={handleReturnOrder}
+                      onClick={handleReturnClick}
                       className="px-4"
+                      disabled={isReturnLoading}
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      Return Order
+                      {isReturnLoading ? 'Returning...' : 'Return Order'}
                     </Button>
                   )}
 
                   {/* Print Order - Always visible */}
-                  <Button
-                    variant="outline"
-                    onClick={handlePrintOrder}
-                    className="px-4"
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print Order
-                  </Button>
+                  {canPrint && (
+                    <Button
+                      variant="outline"
+                      onClick={handlePrintOrder}
+                      className="px-4"
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      Print Order
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Edit Rules Information */}
+              <div className="mt-3 text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-700 mb-1">Editing Rules:</p>
+                    <ul className="space-y-1 text-gray-600">
+                      <li>• <strong>RENT orders</strong>: Can only be edited when status is <span className="font-mono bg-blue-100 px-1 rounded">RESERVED</span></li>
+                      <li>• <strong>SALE orders</strong>: Can only be edited when status is <span className="font-mono bg-green-100 px-1 rounded">COMPLETED</span></li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -777,6 +1064,25 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         )}
       </div>
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      {/* Collection Modal */}
+      <CollectionReturnModal
+        isOpen={isCollectionModalOpen}
+        onClose={() => setIsCollectionModalOpen(false)}
+        order={order}
+        settingsForm={tempSettings}
+        mode="collection"
+        onConfirmPickup={handlePickupOrder}
+      />
+
+      {/* Return Modal */}
+      <CollectionReturnModal
+        isOpen={isReturnModalOpen}
+        onClose={() => setIsReturnModalOpen(false)}
+        order={order}
+        settingsForm={tempSettings}
+        mode="return"
+        onConfirmReturn={handleReturnOrder}
+      />
     </div>
   );
 };

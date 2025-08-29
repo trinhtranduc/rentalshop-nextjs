@@ -361,6 +361,7 @@ export interface OrderDetailProps {
   onPickup?: (orderId: string) => void;
   onReturn?: (orderId: string) => void;
   onSaveSettings?: (settings: SettingsForm) => void;
+  onRefresh?: () => void; // Callback to refresh page data
   loading?: boolean;
   showActions?: boolean;
 }

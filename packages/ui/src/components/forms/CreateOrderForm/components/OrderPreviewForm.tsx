@@ -83,6 +83,16 @@ export interface OrderPreviewData {
   notes?: string;
   orderItems: Array<{
     productId: number;
+    product?: {
+      id: number;
+      publicId: number;
+      name: string;
+      description?: string;
+      images?: string[] | null;
+      barcode?: string;
+      rentPrice?: number;
+      deposit?: number;
+    };
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -279,61 +289,75 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
               <p>No items added to this order</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Unit Price</TableHead>
-                  <TableHead>Total Price</TableHead>
-                  {orderData.orderType === 'RENT' && <TableHead>Deposit</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orderData.orderItems.map((item, index) => {
-                  const product = products.find(p => p.id === item.productId);
-                  return (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            {product?.image ? (
-                              <img 
-                                src={product.image} 
-                                alt={product.name}
-                                className="w-8 h-8 rounded object-cover"
-                              />
-                            ) : (
-                              <Package className="w-5 h-5 text-gray-600" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium">{product?.name || 'Unknown Product'}</div>
-                            <div className="text-sm text-gray-500">
-                              {product?.barcode || 'No barcode'}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{item.quantity}</Badge>
-                      </TableCell>
-                      <TableCell className="font-mono">
-                        {formatCurrency(item.unitPrice)}
-                      </TableCell>
-                      <TableCell className="font-mono font-medium">
-                        {formatCurrency(item.totalPrice)}
-                      </TableCell>
-                      {orderData.orderType === 'RENT' && (
-                        <TableCell className="font-mono">
-                          {formatCurrency(item.deposit || 0)}
-                        </TableCell>
-                      )}
+            <>
+              {console.log('🔍 OrderPreviewForm received orderItems:', orderData.orderItems)}
+              {console.log('🔍 OrderPreviewForm orderItems length:', orderData.orderItems.length)}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-gray-50 px-4 py-2 text-sm text-gray-600">
+                  Debug: Showing {orderData.orderItems.length} order items
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Unit Price</TableHead>
+                      <TableHead>Total Price</TableHead>
+                      {orderData.orderType === 'RENT' && <TableHead>Deposit</TableHead>}
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {orderData.orderItems.map((item, index) => {
+                      console.log(`🔍 Rendering order item ${index}:`, item);
+                      // Use the product information that's already stored in the orderItems
+                      // This ensures consistency between the cart and preview
+                      return (
+                        <TableRow key={index} className="border-b">
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                {item.product?.images && item.product.images.length > 0 ? (
+                                  <img 
+                                    src={item.product.images[0]} 
+                                    alt={item.product.name}
+                                    className="w-8 h-8 rounded object-cover"
+                                  />
+                                ) : (
+                                  <Package className="w-5 h-5 text-gray-600" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium">
+                                  {item.product?.name || `Product ID: ${item.productId}`}
+                                  <span className="text-xs text-blue-500 ml-2">(Item #{index + 1})</span>
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {item.product?.barcode || `Order item #${index + 1}`}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{item.quantity}</Badge>
+                          </TableCell>
+                          <TableCell className="font-mono">
+                            {formatCurrency(item.unitPrice)}
+                          </TableCell>
+                          <TableCell className="font-mono font-medium">
+                            {formatCurrency(item.totalPrice)}
+                          </TableCell>
+                          {orderData.orderType === 'RENT' && (
+                            <TableCell className="font-mono">
+                              {formatCurrency(item.deposit || 0)}
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

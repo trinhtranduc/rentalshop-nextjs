@@ -26,7 +26,38 @@ import type {
 export async function getOrderByPublicId(publicId: number): Promise<OrderWithDetails | null> {
   const order = await prisma.order.findUnique({
     where: { publicId },
-    include: {
+    select: {
+      // Include all basic order fields
+      id: true,
+      publicId: true,
+      orderNumber: true,
+      orderType: true,
+      status: true,
+      totalAmount: true,
+      depositAmount: true,
+      securityDeposit: true,
+      damageFee: true,
+      lateFee: true,
+      discountType: true,
+      discountValue: true,
+      discountAmount: true,
+      pickupPlanAt: true,
+      returnPlanAt: true,
+      pickedUpAt: true,
+      returnedAt: true,
+      rentalDuration: true,
+      isReadyToDeliver: true,
+      collateralType: true,
+      collateralDetails: true,
+      notes: true,
+      pickupNotes: true,
+      returnNotes: true,
+      damageNotes: true,
+      createdAt: true,
+      updatedAt: true,
+      outletId: true,
+      customerId: true,
+      createdById: true,
       customer: {
         select: {
           id: true,
@@ -105,14 +136,14 @@ export async function getOrderByPublicId(publicId: number): Promise<OrderWithDet
         description: item.product.description,
         images: item.product.images,
         barcode: item.product.barcode,
-        rentPrice: 0, // Will be populated from product data
-        deposit: 0, // Will be populated from product data
+        rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
+        deposit: item.deposit || 0, // Use actual deposit from database
       },
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalPrice: item.totalPrice,
       rentalDays: item.rentalDays || 0,
-      deposit: 0, // Will be populated from product data
+      deposit: item.deposit || 0, // Use actual deposit from database
       notes: item.notes || '',
     })),
     // Transform payments to match Payment interface (database returns CUIDs, interface expects numbers)
@@ -132,7 +163,38 @@ export async function getOrderByPublicId(publicId: number): Promise<OrderWithDet
 export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDetails | null> {
   const order = await prisma.order.findUnique({
     where: { orderNumber },
-    include: {
+    select: {
+      // Include all basic order fields
+      id: true,
+      publicId: true,
+      orderNumber: true,
+      orderType: true,
+      status: true,
+      totalAmount: true,
+      depositAmount: true,
+      securityDeposit: true,
+      damageFee: true,
+      lateFee: true,
+      discountType: true,
+      discountValue: true,
+      discountAmount: true,
+      pickupPlanAt: true,
+      returnPlanAt: true,
+      pickedUpAt: true,
+      returnedAt: true,
+      rentalDuration: true,
+      isReadyToDeliver: true,
+      collateralType: true,
+      collateralDetails: true,
+      notes: true,
+      pickupNotes: true,
+      returnNotes: true,
+      damageNotes: true,
+      createdAt: true,
+      updatedAt: true,
+      outletId: true,
+      customerId: true,
+      createdById: true,
       customer: {
         select: {
           id: true,
@@ -209,14 +271,14 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
         description: item.product.description,
         images: item.product.images,
         barcode: item.product.barcode,
-        rentPrice: 0, // Will be populated from product data
-        deposit: 0, // Will be populated from product data
+        rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
+        deposit: item.deposit || 0, // Use actual deposit from database
       },
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalPrice: item.totalPrice,
       rentalDays: item.rentalDays || 0,
-      deposit: 0, // Will be populated from product data
+      deposit: item.deposit || 0, // Use actual deposit from database
       notes: item.notes || '',
     })),
     payments: orderWithRelations.payments.map((payment: any) => ({

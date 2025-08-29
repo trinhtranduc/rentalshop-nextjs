@@ -7,7 +7,9 @@
  * 3. Create 2 outlets for each merchant
  * 4. Create 1 outlet admin and 1 outlet staff for each outlet
  * 5. Create 30 customers for each merchant
- * 6. Create 30 orders for each outlet
+ * 6. Create 25 orders for each outlet (20 RENT + 5 SALE)
+ *    - RENT orders: 5 RESERVED, 5 PICKUPED, 5 RETURNED, 5 CANCELLED
+ *    - SALE orders: 3 COMPLETED, 2 CANCELLED
  * 
  * Run with: node scripts/reset-and-seed-database-simple.js
  * 
@@ -113,17 +115,20 @@ async function createMerchantUsers(merchants) {
   const merchantUsers = [];
   let userId = 1;
   
-  for (const merchant of merchants) {
+  for (let i = 0; i < merchants.length; i++) {
+    const merchant = merchants[i];
+    const merchantNumber = i + 1;
+    
     // Create merchant account
     const merchantPassword = await hashPassword('merchant123');
     const merchantUser = await prisma.user.create({
       data: {
         publicId: userId++,
         firstName: 'Merchant',
-        lastName: merchant.name,
-        email: `merchant@${merchant.name.toLowerCase().replace(/\s+/g, '')}.com`,
+        lastName: `Merchant ${merchantNumber}`,
+        email: `merchant${merchantNumber}@example.com`,
         password: merchantPassword,
-        phone: `+1-555-${(merchant.publicId + 9000).toString().padStart(4, '0')}`, // Use 9000+ range for merchants
+        phone: `+1-555-${(merchantNumber + 9000).toString().padStart(4, '0')}`, // Use 9000+ range for merchants
         role: 'MERCHANT',
         merchantId: merchant.id,
         isActive: true
@@ -167,17 +172,20 @@ async function createUsers(outlets, merchantUsers) {
   const users = [];
   let userId = merchantUsers.length + 1; // Start after merchant users
   
-  for (const outlet of outlets) {
+  for (let i = 0; i < outlets.length; i++) {
+    const outlet = outlets[i];
+    const outletNumber = i + 1;
+    
     // Create outlet admin
     const adminPassword = await hashPassword('admin123');
     const admin = await prisma.user.create({
       data: {
         publicId: userId++,
         firstName: 'Admin',
-        lastName: outlet.name.split(' - ')[1],
-        email: `admin.${outlet.publicId}@${outlet.name.toLowerCase().replace(/\s+/g, '')}.com`,
+        lastName: `Outlet ${outletNumber}`,
+        email: `admin.outlet${outletNumber}@example.com`,
         password: adminPassword,
-        phone: `+1-555-${outlet.publicId.toString().padStart(4, '0')}`,
+        phone: `+1-555-${outletNumber.toString().padStart(4, '0')}`,
         role: 'OUTLET_ADMIN',
         merchantId: outlet.merchantId,
         outletId: outlet.id,
@@ -193,10 +201,10 @@ async function createUsers(outlets, merchantUsers) {
       data: {
         publicId: userId++,
         firstName: 'Staff',
-        lastName: outlet.name.split(' - ')[1],
-        email: `staff.${outlet.publicId}@${outlet.name.toLowerCase().replace(/\s+/g, '')}.com`,
+        lastName: `Outlet ${outletNumber}`,
+        email: `staff.outlet${outletNumber}@example.com`,
         password: staffPassword,
-        phone: `+1-555-${(outlet.publicId + 1000).toString().padStart(4, '0')}`,
+        phone: `+1-555-${(outletNumber + 1000).toString().padStart(4, '0')}`,
         role: 'OUTLET_STAFF',
         merchantId: outlet.merchantId,
         outletId: outlet.id,
@@ -316,7 +324,7 @@ async function createCustomers(merchants) {
   return customers;
 }
 
-async function createOrders(outlets, customers, products) {
+async function createOrders(outlets, customers, products, users) {
   console.log('📋 Creating orders...');
   
   const orders = [];
@@ -328,67 +336,151 @@ async function createOrders(outlets, customers, products) {
     // Get products for this merchant
     const outletProducts = products.filter(p => p.merchantId === outlet.merchantId);
     
-    for (let i = 0; i < 30; i++) {
-      const customer = outletCustomers[Math.floor(Math.random() * outletCustomers.length)];
-      const orderType = ORDER_TYPES[Math.floor(Math.random() * ORDER_TYPES.length)];
-      const status = ORDER_STATUSES[Math.floor(Math.random() * ORDER_STATUSES.length)];
-      
-      // Create order
-      const order = await prisma.order.create({
-        data: {
-          publicId: orderId++,
-          orderNumber: `ORD-${outlet.publicId.toString().padStart(3, '0')}-${(i + 1).toString().padStart(4, '0')}`,
-          orderType: orderType,
-          status: status,
-          outletId: outlet.id,
-          customerId: customer.id,
-          pickupPlanAt: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000), // Random date within 7 days
-          returnPlanAt: new Date(Date.now() + (7 + Math.random() * 14) * 24 * 60 * 60 * 1000), // Random date 7-21 days from now
-          totalAmount: 0,
-          depositAmount: 0,
-          securityDeposit: 0,
-          damageFee: 0,
-          lateFee: 0,
-          notes: `Order ${i + 1} for ${outlet.name}`
-        }
-      });
-      
-      // Create order items (1-3 items per order)
-      const numItems = Math.floor(Math.random() * 3) + 1;
-      let orderTotal = 0;
-      
-      for (let j = 0; j < numItems; j++) {
-        const product = outletProducts[Math.floor(Math.random() * outletProducts.length)];
-        const quantity = Math.floor(Math.random() * 3) + 1;
-        const unitPrice = orderType === 'RENT' ? product.rentPrice : product.salePrice;
-        const totalPrice = unitPrice * quantity;
+    // Create 20 RENT orders with appropriate statuses
+    const rentStatuses = ['RESERVED', 'PICKUPED', 'RETURNED', 'CANCELLED'];
+    const rentStatusCounts = { RESERVED: 5, PICKUPED: 5, RETURNED: 5, CANCELLED: 5 }; // 5 of each status
+    
+    for (const [status, count] of Object.entries(rentStatusCounts)) {
+      for (let i = 0; i < count; i++) {
+        const customer = outletCustomers[Math.floor(Math.random() * outletCustomers.length)];
         
-        await prisma.orderItem.create({
+        // Find a user for this outlet
+        const outletUser = users.find(user => user.outletId === outlet.id);
+        if (!outletUser) {
+          throw new Error(`No user found for outlet ${outlet.name}`);
+        }
+
+        // Create RENT order
+        const order = await prisma.order.create({
           data: {
-            orderId: order.id,
-            productId: product.id,
-            quantity: quantity,
-            unitPrice: unitPrice,
-            totalPrice: totalPrice,
-            notes: `Item ${j + 1} for order ${order.orderNumber}`
+            publicId: orderId++,
+            orderNumber: `ORD-${outlet.publicId.toString().padStart(3, '0')}-${(orders.length + 1).toString().padStart(4, '0')}`,
+            orderType: 'RENT',
+            status: status,
+            outletId: outlet.id,
+            customerId: customer.id,
+            createdById: outletUser.id,
+            pickupPlanAt: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000), // Random date within 7 days
+            returnPlanAt: new Date(Date.now() + (7 + Math.random() * 14) * 24 * 60 * 60 * 1000), // Random date 7-21 days from now
+            totalAmount: 0,
+            depositAmount: 0,
+            securityDeposit: 0,
+            damageFee: 0,
+            lateFee: 0,
+            notes: `RENT Order ${i + 1} (${status}) for ${outlet.name}`
           }
         });
         
-        orderTotal += totalPrice;
-      }
-      
-      // Update order totals
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          totalAmount: orderTotal,
-          depositAmount: orderType === 'RENT' ? Math.floor(orderTotal * 0.2) : 0 // 20% deposit for rentals
+        // Create order items (1-3 items per order)
+        const numItems = Math.floor(Math.random() * 3) + 1;
+        let orderTotal = 0;
+        
+        for (let j = 0; j < numItems; j++) {
+          const product = outletProducts[Math.floor(Math.random() * outletProducts.length)];
+          const quantity = Math.floor(Math.random() * 3) + 1;
+          const unitPrice = product.rentPrice;
+          const totalPrice = unitPrice * quantity;
+          
+          await prisma.orderItem.create({
+            data: {
+              orderId: order.id,
+              productId: product.id,
+              quantity: quantity,
+              unitPrice: unitPrice,
+              totalPrice: totalPrice,
+              notes: `Item ${j + 1} for RENT order ${order.orderNumber}`
+            }
+          });
+          
+          orderTotal += totalPrice;
         }
-      });
-      
-      orders.push(order);
+        
+        // Update order totals for RENT orders
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            totalAmount: orderTotal,
+            depositAmount: Math.floor(orderTotal * 0.2), // 20% deposit for rentals
+            securityDeposit: Math.floor(orderTotal * 0.1) // 10% security deposit
+          }
+        });
+        
+        orders.push(order);
+      }
     }
-    console.log(`✅ Created 30 orders for ${outlet.name}`);
+    
+    // Create 5 SALE orders with appropriate statuses
+    const saleStatuses = ['COMPLETED', 'CANCELLED'];
+    const saleStatusCounts = { COMPLETED: 3, CANCELLED: 2 }; // 3 completed, 2 cancelled
+    
+    for (const [status, count] of Object.entries(saleStatusCounts)) {
+      for (let i = 0; i < count; i++) {
+        const customer = outletCustomers[Math.floor(Math.random() * outletCustomers.length)];
+        
+        // Find a user for this outlet
+        const outletUser = users.find(user => user.outletId === outlet.id);
+        if (!outletUser) {
+          throw new Error(`No user found for outlet ${outlet.name}`);
+        }
+
+        // Create SALE order
+        const order = await prisma.order.create({
+          data: {
+            publicId: orderId++,
+            orderNumber: `ORD-${outlet.publicId.toString().padStart(3, '0')}-${(orders.length + 1).toString().padStart(4, '0')}`,
+            orderType: 'SALE',
+            status: status,
+            outletId: outlet.id,
+            customerId: customer.id,
+            createdById: outletUser.id,
+            totalAmount: 0,
+            depositAmount: 0,
+            securityDeposit: 0,
+            damageFee: 0,
+            lateFee: 0,
+            notes: `SALE Order ${i + 1} (${status}) for ${outlet.name}`
+          }
+        });
+        
+        // Create order items (1-3 items per order)
+        const numItems = Math.floor(Math.random() * 3) + 1;
+        let orderTotal = 0;
+        
+        for (let j = 0; j < numItems; j++) {
+          const product = outletProducts[Math.floor(Math.random() * outletProducts.length)];
+          const quantity = Math.floor(Math.random() * 3) + 1;
+          const unitPrice = product.salePrice || product.rentPrice; // Use sale price if available, fallback to rent price
+          const totalPrice = unitPrice * quantity;
+          
+          await prisma.orderItem.create({
+            data: {
+              orderId: order.id,
+              productId: product.id,
+              quantity: quantity,
+              unitPrice: unitPrice,
+              totalPrice: totalPrice,
+              notes: `Item ${j + 1} for SALE order ${order.orderNumber}`
+            }
+          });
+          
+          orderTotal += totalPrice;
+        }
+        
+        // Update order totals for SALE orders
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            totalAmount: orderTotal,
+            depositAmount: 0, // No deposit for sales
+            securityDeposit: 0 // No security deposit for sales
+          }
+        });
+        
+        orders.push(order);
+      }
+    }
+    
+    console.log(`✅ Created 25 orders for ${outlet.name} (20 RENT + 5 SALE)`);
   }
   
   return orders;
@@ -423,7 +515,7 @@ async function main() {
     const customers = await createCustomers(merchants);
     
     // Step 9: Create orders
-    const orders = await createOrders(outlets, customers, products);
+    const orders = await createOrders(outlets, customers, products, users);
     
     console.log('\n🎉 Database seeding completed successfully!');
     

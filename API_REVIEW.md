@@ -370,3 +370,71 @@ The database includes comprehensive seed data with:
 - ✅ Shared type definitions
 - ✅ Runtime validation
 - ✅ Compile-time error checking 
+
+### **Order Status Flow**
+```
+RENT Orders: RESERVED → PICKUPED → RETURNED (or CANCELLED)
+SALE Orders: RESERVED → COMPLETED (or CANCELLED)
+```
+
+### **🧮 Collection & Return Formulas**
+
+#### **Collection Logic (What to Collect)**
+
+**RENT Orders - RESERVED Status (Pickup)**
+When a customer picks up a rental order, collect:
+```
+Collection Amount = (Total Amount - Deposit Paid) + Security Deposit + Collateral
+
+Breakdown:
+├── Total Amount: Full rental cost
+├── Deposit Paid: Already paid (subtract)
+├── Security Deposit: Additional security amount
+└── Collateral: Physical items (ID, keys, etc.)
+
+Example:
+├── Total Amount: $100.00
+├── Deposit Paid: -$20.00 (already paid)
+├── Security Deposit: +$50.00
+├── Collateral: ID Card
+└── Collect from Customer: $130.00 + ID Card
+```
+
+**SALE Orders - RESERVED Status**
+For direct purchases, collect the full amount:
+```
+Collection Amount = Total Amount
+
+Example:
+├── Total Amount: $150.00
+└── Collect from Customer: $150.00
+```
+
+#### **Return Logic (What to Return)**
+
+**RENT Orders - PICKUPED Status (Return)**
+When a customer returns a rental order, return:
+```
+Return Amount = Security Deposit - Damage Fees + Collateral
+
+Breakdown:
+├── Security Deposit: Full amount collected
+├── Damage Fees: Any charges for damages (subtract)
+└── Collateral: Return physical items
+
+Example:
+├── Security Deposit: $50.00
+├── Damage Fees: -$10.00
+├── Collateral: ID Card
+└── Return to Customer: $40.00 + ID Card
+```
+
+**SALE Orders - No Return**
+Sale orders do not require returns.
+
+#### **Implementation Details**
+- **Collection Modal**: Shows when user presses "Pickup" button
+- **Return Modal**: Shows when user presses "Return" button  
+- **Settings Form**: Manages Security Deposit, Damage Fees, and Collateral details
+- **Real-time Calculation**: Updates automatically when settings change
+- **Visual Indicators**: Shows "+ Collateral" badge when collateral is involved 

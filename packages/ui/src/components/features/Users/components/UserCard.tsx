@@ -85,7 +85,7 @@ export function UserCard({ user, onUserAction }: UserCardProps) {
           
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar className="w-4 h-4" />
-            <span>Joined {formatDate(user.createdAt)}</span>
+            <span>Joined {formatDate(user.createdAt.toString())}</span>
           </div>
         </div>
 
@@ -93,22 +93,18 @@ export function UserCard({ user, onUserAction }: UserCardProps) {
         {user.merchant && (
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
             <Building className="w-4 h-4" />
-            <span>{user.merchant.companyName}</span>
+            <span>{user.merchant.name}</span>
           </div>
         )}
 
-        {/* Outlet Staff Info */}
-        {user.outletStaff && user.outletStaff.length > 0 && (
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Outlet Assignments:</h4>
-            <div className="space-y-1">
-              {user.outletStaff.map((staff) => (
-                <div key={staff.id} className="text-sm text-gray-600">
-                  <span className="font-medium">{staff.outlet.name}</span>
-                  <span className="text-gray-500"> - {staff.role}</span>
-                </div>
-              ))}
-            </div>
+        {/* Outlet Info */}
+        {user.outlet && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+            <Building className="w-4 h-4" />
+            <span>{user.outlet.name}</span>
+            {user.outlet.merchant && (
+              <span className="text-gray-500"> - {user.outlet.merchant.name}</span>
+            )}
           </div>
         )}
 
@@ -122,35 +118,6 @@ export function UserCard({ user, onUserAction }: UserCardProps) {
           >
             View
           </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onUserAction('edit', user.id)}
-            className="flex-1"
-          >
-            Edit
-          </Button>
-          
-          {user.isActive ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onUserAction('deactivate', user.id)}
-              className="flex-1"
-            >
-              Deactivate
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onUserAction('activate', user.id)}
-              className="flex-1"
-            >
-              Activate
-            </Button>
-          )}
         </div>
       </div>
     </Card>

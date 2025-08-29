@@ -4,7 +4,7 @@ import { Button } from '../../../ui';
 import { Badge } from '../../../ui';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui';
 import { OrderData } from '@rentalshop/types';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Eye } from 'lucide-react';
 import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
 
 interface OrderTableProps {
@@ -136,12 +136,16 @@ export function OrderTable({
     
     // Debug: Log what we're getting for each status
     console.log(`🔍 Status Badge Debug - Status: "${status}"`);
+    console.log(`🔍 Status type:`, typeof status);
+    console.log(`🔍 Status length:`, status.length);
+    console.log(`🔍 Status char codes:`, Array.from(status).map(c => c.charCodeAt(0)));
     console.log(`🔍 Available keys in ORDER_STATUS_COLORS:`, Object.keys(ORDER_STATUS_COLORS));
     console.log(`🔍 Has status "${status}" in ORDER_STATUS_COLORS:`, status in ORDER_STATUS_COLORS);
     console.log(`🔍 Colors for "${status}":`, colors);
+    console.log(`🔍 ORDER_STATUS_COLORS["PICKUPED"]:`, ORDER_STATUS_COLORS.PICKUPED);
     
     return (
-      <Badge variant="default" className={colors}>
+      <Badge className={colors}>
         {status}
       </Badge>
     );
@@ -217,7 +221,7 @@ export function OrderTable({
                 <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>
                   Created
                 </SortableHeader>
-                <TableHead className="px-4 py-3">Actions</TableHead>
+                <TableHead className="w-24">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -294,14 +298,7 @@ export function OrderTable({
                         variant="outline"
                         onClick={() => onOrderAction('view', order.orderNumber)}
                       >
-                        View
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onOrderAction('edit', order.orderNumber)}
-                      >
-                        Edit
+                        <Eye className="w-4 h-4 mr-1" /> View
                       </Button>
                     </div>
                   </TableCell>

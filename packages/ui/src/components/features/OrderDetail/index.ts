@@ -1,20 +1,13 @@
 // ============================================================================
-// ORDER DETAIL FEATURE COMPONENTS
+// ORDER DETAIL COMPONENTS
 // ============================================================================
-// TODO: Export OrderDetail component when OrderDetail.tsx is created
+
 export { OrderDetail } from './OrderDetail';
-
-// Export all components for easy access
-export * from './components';
-
-// Export utility functions
-export * from './utils';
+export { OrderSummary } from './components/OrderSummary';
+export { CollectionReturnModal } from './components/CollectionReturnModal';
 
 // ============================================================================
-// ORDER DETAIL TYPES
+// TYPES
 // ============================================================================
-export type { 
-  OrderData, 
-  OrderDetailProps,
-  SettingsForm
-} from '@rentalshop/types';
+
+export type { OrderDetailProps } from '@rentalshop/types';

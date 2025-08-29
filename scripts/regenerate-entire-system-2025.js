@@ -538,6 +538,7 @@ async function createOrders(outlets, customers, products, outletUsers) {
               quantity,
               unitPrice,
               totalPrice,
+              deposit: product.deposit || 0,
               rentalDays: rentalDuration,
               notes: `${product.name} - ${orderType}`
             }

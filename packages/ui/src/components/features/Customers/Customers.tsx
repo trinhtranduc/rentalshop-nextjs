@@ -23,7 +23,6 @@ interface CustomersProps {
   onCustomerUpdated?: (customer: Customer) => void;
   onError?: (error: string) => void;
   onViewOrders?: (customerId: number) => void;
-  onDeleteCustomer?: (customerId: number) => void;
 }
 
 export function Customers({ 
@@ -39,8 +38,7 @@ export function Customers({
   onCustomerCreated,
   onCustomerUpdated,
   onError,
-  onViewOrders,
-  onDeleteCustomer
+  onViewOrders
 }: CustomersProps) {
   return (
     <div className="space-y-6"> 
@@ -57,7 +55,6 @@ export function Customers({
         sortBy={filters.sortBy}
         sortOrder={filters.sortOrder}
         onSort={onSort}
-        onDeleteCustomer={onDeleteCustomer}
       />
       
       <CustomerPagination 

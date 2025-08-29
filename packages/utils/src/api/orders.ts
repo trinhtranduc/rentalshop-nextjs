@@ -156,10 +156,48 @@ export const ordersApi = {
   },
 
   /**
+   * Pickup order (change status to PICKUPED)
+   */
+  async pickupOrder(orderId: number): Promise<ApiResponse<Order>> {
+    return this.updateOrderStatus(orderId, 'PICKUPED');
+  },
+
+  /**
+   * Return order (change status to RETURNED)
+   */
+  async returnOrder(orderId: number): Promise<ApiResponse<Order>> {
+    return this.updateOrderStatus(orderId, 'RETURNED');
+  },
+
+  /**
+   * Cancel order (change status to CANCELLED)
+   */
+  async cancelOrder(orderId: number): Promise<ApiResponse<Order>> {
+    return this.updateOrderStatus(orderId, 'CANCELLED');
+  },
+
+  /**
+   * Update order settings (damage fee, security deposit, collateral, notes)
+   */
+  async updateOrderSettings(orderId: number, settings: {
+    damageFee?: number;
+    securityDeposit?: number;
+    collateralType?: string;
+    collateralDetails?: string;
+    notes?: string;
+  }): Promise<ApiResponse<Order>> {
+    const response = await authenticatedFetch(apiUrls.orders.update(orderId), {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    return await parseApiResponse<Order>(response);
+  },
+
+  /**
    * Get order statistics
    */
   async getOrderStats(): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`${apiUrls.base}/api/orders/stats`);
     return await parseApiResponse<any>(response);
-  }
+  },
 };
