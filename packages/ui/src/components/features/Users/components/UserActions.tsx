@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../ui/button';
-import { ConfirmationDialog } from './ConfirmationDialog';
+import { ConfirmationDialog } from '@rentalshop/ui';
 import { UserDetailDialog } from './UserDetailDialog';
 import type { User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { formatPublicId } from '@rentalshop/utils';

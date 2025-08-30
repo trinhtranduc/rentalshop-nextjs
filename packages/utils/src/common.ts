@@ -3,12 +3,7 @@ import type { User, LoginCredentials } from '@rentalshop/types';
 
 const API = CONSTANTS.API;
 
-export const formatCurrency = (amount: number, currency: string = 'VND'): string => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency,
-  }).format(amount);
-};
+// formatCurrency is now exported from ./currency.ts for centralized currency management
 
 export const formatPhoneNumber = (phone: string): string => {
   // Remove all non-digit characters

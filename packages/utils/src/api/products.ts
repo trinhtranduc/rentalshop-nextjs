@@ -1,7 +1,7 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../common';
-import type { Product, ProductCreateInput, ProductUpdateInput, ProductFilters } from '@rentalshop/types';
+import type { Product, ProductWithStock, ProductCreateInput, ProductUpdateInput, ProductFilters } from '@rentalshop/types';
 
 export interface ProductsResponse {
   products: Product[];
@@ -56,15 +56,15 @@ export const productsApi = {
   /**
    * Get product by ID
    */
-  async getProduct(productId: number): Promise<ApiResponse<Product>> {
+  async getProduct(productId: number): Promise<ApiResponse<ProductWithStock>> {
     const response = await authenticatedFetch(`${apiUrls.base}/api/products/${productId}`);
-    return await parseApiResponse<Product>(response);
+    return await parseApiResponse<ProductWithStock>(response);
   },
 
   /**
    * Get product by ID (alias for getProduct for backward compatibility)
    */
-  async getProductById(productId: number): Promise<ApiResponse<Product>> {
+  async getProductById(productId: number): Promise<ApiResponse<ProductWithStock>> {
     return this.getProduct(productId);
   },
 

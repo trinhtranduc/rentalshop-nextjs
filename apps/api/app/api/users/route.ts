@@ -647,4 +647,103 @@ async function getUsers(
     page,
     totalPages,
   };
+}
+
+/**
+ * DELETE /api/users
+ * Soft delete a user (Admin, Merchant, or Outlet Admin only)
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // Verify authentication
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Check authorization - only Admin, Merchant, or Outlet Admin can delete users
+    const normalizedRole = user.role?.toUpperCase() || '';
+    if (!['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'].includes(normalizedRole)) {
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions to delete users' },
+        { status: 403 }
+      );
+    }
+
+    // Get the user ID to delete from the request body
+    const body = await request.json();
+    const { userId } = body;
+
+    if (!userId || typeof userId !== 'number') {
+      return NextResponse.json(
+        { success: false, message: 'Valid user ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user is trying to delete themselves
+    if (user.publicId === userId) {
+      return NextResponse.json(
+        { success: false, message: 'You cannot delete your own account' },
+        { status: 400 }
+      );
+    }
+
+    // Import the soft delete function
+    const { softDeleteUser } = await import('@rentalshop/database');
+
+    // Soft delete the user
+    const deletedUser = await softDeleteUser(userId);
+
+    console.log('✅ User soft deleted successfully:', {
+      deletedUserId: userId,
+      deletedBy: user.publicId,
+      deletedUser: deletedUser.publicId
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'User deleted successfully',
+      data: {
+        id: deletedUser.publicId,
+        email: deletedUser.email,
+        isActive: deletedUser.isActive,
+        deletedAt: deletedUser.deletedAt
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error in DELETE /api/users:', error);
+
+    // Handle specific error cases
+    if (error.message.includes('not found')) {
+      return NextResponse.json(
+        { success: false, message: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    if (error.message.includes('already deleted')) {
+      return NextResponse.json(
+        { success: false, message: 'User is already deleted' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, message: 'Failed to delete user', error: error.message },
+      { status: 500 }
+    );
+  }
 } 

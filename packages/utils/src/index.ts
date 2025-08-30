@@ -11,6 +11,9 @@ export * from './common';
 // Configuration
 export * from './config';
 
+// Currency utilities
+export * from './currency';
+
 // Date utilities
 export * from './date';
 

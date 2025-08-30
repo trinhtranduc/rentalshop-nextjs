@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from '@rentalshop/auth';
-import { findUserById, updateUser } from '@rentalshop/database';
+import { findUserById, updateUser, prisma } from '@rentalshop/database';
 
 /**
  * GET /api/users/profile
@@ -77,11 +77,12 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     
     // Validate input
-    const { name, email, phone } = body;
+    const { firstName, lastName, email, phone } = body;
     
     // Only allow updating certain fields
     const updateData: any = {};
-    if (name && name.trim()) updateData.name = name.trim();
+    if (firstName && firstName.trim()) updateData.firstName = firstName.trim();
+    if (lastName && lastName.trim()) updateData.lastName = lastName.trim();
     if (email && email.trim()) updateData.email = email.toLowerCase().trim();
     if (phone !== undefined) updateData.phone = phone?.trim() || null;
 
@@ -95,8 +96,21 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update user profile
-    const updatedUser = await updateUser(user.id, updateData);
+    // Get user's publicId to use with updateUser function
+    const userWithPublicId = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { publicId: true }
+    });
+
+    if (!userWithPublicId) {
+      return NextResponse.json(
+        { success: false, message: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update user profile using publicId
+    const updatedUser = await updateUser(userWithPublicId.publicId, updateData);
 
     return NextResponse.json({
       success: true,

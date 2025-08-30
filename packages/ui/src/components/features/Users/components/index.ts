@@ -16,5 +16,5 @@ export { UserPageHeader } from './UserPageHeader';
 export { UserInfoCard } from './UserInfoCard';
 export { UserReadOnlyInfo } from './UserReadOnlyInfo';
 export { AccountManagementCard } from './AccountManagementCard';
-export { ConfirmationDialog } from './ConfirmationDialog';
+
 export { PasswordChangeDialog } from './PasswordChangeDialog';

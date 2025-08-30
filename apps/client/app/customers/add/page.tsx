@@ -2,12 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AddCustomerForm, CustomerPageHeader, ToastContainer } from '@rentalshop/ui';
+import { AddCustomerForm, CustomerPageHeader, ToastContainer, PageWrapper, PageHeader, PageContent, useToasts, ProductsLoading } from '@rentalshop/ui';
 import { customersApi } from "@rentalshop/utils";
 import { useAuth } from '@rentalshop/hooks';
-import type { CustomerInput } from '@rentalshop/types';
-import type { CustomerCreateInput } from '@rentalshop/ui';
-import { useToasts } from '@rentalshop/ui';
+import type { CustomerInput, CustomerCreateInput } from '@rentalshop/types';
 
 export default function AddCustomerPage() {
   const router = useRouter();
@@ -16,7 +14,7 @@ export default function AddCustomerPage() {
   const { toasts, showSuccess, removeToast } = useToasts();
 
   // Get merchantId from current user
-  const merchantId = user?.merchant?.id;
+  const merchantId = user?.merchant?.id ? Number(user.merchant.id) : undefined;
 
   const handleSave = async (customerData: CustomerCreateInput) => {
     try {
@@ -37,7 +35,7 @@ export default function AddCustomerPage() {
         state: customerData.state,
         zipCode: customerData.zipCode,
         country: customerData.country,
-        notes: `Status: ${customerData.status}, Level: ${customerData.membershipLevel}`,
+        notes: 'Customer created via admin interface',
         merchantId
       };
       
@@ -79,23 +77,19 @@ export default function AddCustomerPage() {
   // Show loading state while auth is being checked
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <div className="text-gray-600 text-lg font-medium">
-              Loading...
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageWrapper>
+        <PageContent>
+          <ProductsLoading />
+        </PageContent>
+      </PageWrapper>
     );
   }
 
   // Show error if no merchant ID after loading
   if (!merchantId) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <PageWrapper>
+        <PageContent>
           <div className="text-center py-12">
             <div className="text-red-600 text-lg font-medium">
               Unable to create customer. Please log in again.
@@ -107,34 +101,32 @@ export default function AddCustomerPage() {
               Back to Customers
             </button>
           </div>
-        </div>
-      </div>
+        </PageContent>
+      </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <PageWrapper>
+      <PageHeader>
         <CustomerPageHeader
           title="Add New Customer"
           subtitle="Create a new customer account with basic information"
           onBack={handleCancel}
           backText="Back to Customers"
         />
+      </PageHeader>
 
-        {/* Add Customer Form - Direct form without wrapper */}
-        <div className="mt-8">
-          <AddCustomerForm
-            onSave={handleSave}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-          />
-        </div>
-      </div>
+      <PageContent>
+        <AddCustomerForm
+          onSave={handleSave}
+          onCancel={handleCancel}
+          isSubmitting={isSubmitting}
+        />
+      </PageContent>
       
       {/* Toast Container for notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
-    </div>
+    </PageWrapper>
   );
 }

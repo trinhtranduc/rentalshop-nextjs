@@ -72,6 +72,12 @@ export interface ApiUrls {
     update: (id: number) => string;
     delete: (id: number) => string;
   };
+  outlets: {
+    list: string;
+    create: string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+  };
   users: {
     list: string;
     create: string;
@@ -310,6 +316,12 @@ function createApiUrls(): ApiUrls {
       update: (id: number) => `${base}/api/customers/${id}`,
       delete: (id: number) => `${base}/api/customers/${id}`,
     },
+    outlets: {
+      list: `${base}/api/outlets`,
+      create: `${base}/api/outlets`,
+      update: (id: number) => `${base}/api/outlets?outletId=${id}`,
+      delete: (id: number) => `${base}/api/outlets?outletId=${id}`,
+    },
     users: {
       list: `${base}/api/users`,
       create: `${base}/api/users`,
@@ -345,6 +357,9 @@ export const buildApiUrl = (endpoint: string): string => {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   return `${base}/${cleanEndpoint}`;
 };
+
+// Get the current API base URL (for swagger docs)
+export const getApiUrl = (): string => getApiBaseUrl();
 
 // Legacy exports for backward compatibility
 export const getApiDatabaseUrl = () => apiConfig.database.url;

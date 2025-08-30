@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { EditCustomerForm, CustomerPageHeader, ToastContainer } from '@rentalshop/ui';
+import { EditCustomerForm, CustomerPageHeader, ToastContainer, PageWrapper, PageHeader, PageContent } from '@rentalshop/ui';
 import { customersApi } from "@rentalshop/utils";
-import type { Customer, CustomerUpdateInput } from '@rentalshop/ui';
+import type { Customer, CustomerUpdateInput } from '@rentalshop/types';
 import { useToasts } from '@rentalshop/ui';
 
 export default function EditCustomerPage() {
@@ -36,7 +36,7 @@ export default function EditCustomerPage() {
         console.log('🔍 EditCustomerPage: Making API call to /api/customers/' + publicId);
         
         // Use the real API to fetch customer data by public ID
-        const response = await customersApi.getCustomerByPublicId(publicId);
+        const response = await customersApi.getCustomerByPublicId(numericId);
         
         console.log('🔍 EditCustomerPage: API response received:', response);
         
@@ -103,8 +103,8 @@ export default function EditCustomerPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <PageWrapper>
+        <PageContent>
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
@@ -114,16 +114,16 @@ export default function EditCustomerPage() {
               <div className="h-32 bg-gray-200 rounded"></div>
             </div>
           </div>
-        </div>
-      </div>
+        </PageContent>
+      </PageWrapper>
     );
   }
 
   // Error state
   if (!customer) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <PageWrapper>
+        <PageContent>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Customer Not Found</h1>
             <p className="text-gray-600 mb-6">The customer you're looking for doesn't exist or has been removed.</p>
@@ -134,35 +134,33 @@ export default function EditCustomerPage() {
               Back to Customers
             </button>
           </div>
-        </div>
-      </div>
+        </PageContent>
+      </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <PageWrapper>
+      <PageHeader>
         <CustomerPageHeader
           title={`Edit ${customer.firstName} ${customer.lastName}`}
           subtitle="Update customer information and contact details"
           onBack={handleCancel}
           backText="Back to Customer"
         />
+      </PageHeader>
 
-        {/* Edit Customer Form */}
-        <div className="mt-8">
-          <EditCustomerForm
-            customer={customer}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-          />
-        </div>
-      </div>
+      <PageContent>
+        <EditCustomerForm
+          customer={customer}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          isSubmitting={isSubmitting}
+        />
+      </PageContent>
       
       {/* Toast Container for notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
-    </div>
+    </PageWrapper>
   );
 }

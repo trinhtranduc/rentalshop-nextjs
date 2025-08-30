@@ -7,16 +7,16 @@ export interface Product {
   name: string;
   description?: string;
   barcode?: string;
-  categoryId: number;  // Changed from string to number
-  outletId: number;    // Changed from string to number
-  merchantId: number;  // Changed from string to number
+  categoryId: number;  // Required - every product must have a category
+  merchantId: number;  // Required - every product must belong to a merchant
   rentPrice: number;
+  salePrice?: number;  // Optional sale price for direct purchase
   deposit: number;
   stock: number;
   renting: number;
   available: number;
   isActive: boolean;
-  images?: string[];
+  images?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,12 +25,16 @@ export interface ProductCreateInput {
   name: string;
   description?: string;
   barcode?: string;
-  categoryId: number;  // Changed from string to number
-  outletId: number;    // Changed from string to number
+  categoryId: number;  // Required - every product must have a category
   rentPrice: number;
+  salePrice: number;
   deposit: number;
-  stock: number;
-  images?: string[];
+  totalStock: number;
+  images?: string;
+  outletStock: Array<{  // Required - every product must have outlet stock
+    outletId: number;
+    stock: number;
+  }>;
 }
 
 export interface ProductUpdateInput {
@@ -43,7 +47,7 @@ export interface ProductUpdateInput {
   stock?: number;
   totalStock?: number;
   salePrice?: number;
-  images?: string[];
+  images?: string;
   isActive?: boolean;
 }
 
@@ -68,21 +72,25 @@ export interface ProductSearchResult {
 // Extended product types for search and API responses
 export interface ProductWithStock extends Product {
   category: {
-    id: number;        // Changed from string to number
+    id: number;        // Required - every product must have a category
+    publicId: number;  // Database returns publicId
     name: string;
   };
   merchant: {
-    id: number;        // Changed from string to number
+    id: number;        // Required - every product must belong to a merchant
+    publicId: number;  // Database returns publicId
     name: string;
   };
   outletStock: Array<{
-    id: number;        // Changed from string to number
+    id: number;        // Required - every product must have outlet stock
     stock: number;
     available: number;
     renting: number;
     outlet: {
-      id: number;      // Changed from string to number
+      id: number;      // Required - every outlet stock must reference an outlet
+      publicId: number; // Database returns publicId
       name: string;
+      address?: string; // Outlet address for display
     };
   }>;
 }
@@ -109,8 +117,8 @@ export interface ProductSearchResponse {
 
 // Additional product types for database operations
 export interface ProductInput {
-  merchantId: number;   // Changed from string to number
-  categoryId: number;   // Changed from string to number
+  merchantId: number;   // Required - every product must belong to a merchant
+  categoryId: number;   // Required - every product must have a category
   name: string;
   description?: string;
   barcode?: string;
@@ -119,8 +127,8 @@ export interface ProductInput {
   salePrice?: number;
   deposit: number;
   images?: string[];
-  outletStock?: Array<{
-    outletId: number;   // Changed from string to number
+  outletStock: Array<{  // Required - every product must have outlet stock
+    outletId: number;   // Required - every outlet stock must reference an outlet
     stock: number;
   }>;
 }

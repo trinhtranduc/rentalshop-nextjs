@@ -164,9 +164,7 @@ export default function CreateOrderPage() {
       <PageContent>
         <ToastContainer toasts={toasts} onClose={removeToast} />
         {loading ? (
-          <Card>
-            <CardContent className="p-8 text-center text-gray-600">Loading data...</CardContent>
-          </Card>
+          <ProductsLoading />
         ) : (
           <CreateOrderForm
             onSubmit={handleSubmit}

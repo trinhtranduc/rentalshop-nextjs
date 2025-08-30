@@ -47,20 +47,4 @@ export function formatDateOnly(
   }).format(dateObj);
 }
 
-/**
- * Format a number as currency
- * @param amount - Amount to format
- * @param currency - Currency code (default: 'VND')
- * @param locale - Locale for formatting (default: 'vi-VN')
- * @returns Formatted currency string
- */
-export function formatCurrency(amount: number | null | undefined, currency: string = 'VND', locale: string = 'vi-VN'): string {
-  if (amount === null || amount === undefined || isNaN(amount)) return '₫0';
-  
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-} 
+// formatCurrency is now exported from @rentalshop/utils for centralized currency management 

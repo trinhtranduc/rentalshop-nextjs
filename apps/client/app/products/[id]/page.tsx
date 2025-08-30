@@ -9,31 +9,38 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  ConfirmationDialog,
+  useToasts,
+  ToastContainer
 } from '@rentalshop/ui';
 import { ProductDetail } from '@rentalshop/ui';
 
-import { Edit, ArrowLeft, Package, BarChart3 } from 'lucide-react';
+import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
+import { canManageProducts } from '@rentalshop/auth';
 import { 
   productsApi, 
   categoriesApi, 
   outletsApi
 } from '@rentalshop/utils';
-import type { ProductWithDetails, Category, Outlet } from '@rentalshop/ui';
+import type { ProductWithStock, Category, Outlet } from '@rentalshop/types';
 
 export default function ProductViewPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const { showSuccess, showError, toasts, removeToast } = useToasts();
   
-  const [product, setProduct] = useState<ProductWithDetails | null>(null);
+  const [product, setProduct] = useState<ProductWithStock | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const productId = params.id as string;
+  const productId = parseInt(params.id as string);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,7 +50,9 @@ export default function ProductViewPage() {
 
         // Fetch product details
         const productResponse = await productsApi.getProductById(productId);
-        setProduct(productResponse.data);
+        if (productResponse.data) {
+          setProduct(productResponse.data);
+        }
 
         // Fetch categories and outlets for the form
         const [categoriesData, outletsData] = await Promise.all([
@@ -73,6 +82,25 @@ export default function ProductViewPage() {
 
   const handleEdit = () => {
     router.push(`/products/${productId}/edit`);
+  };
+
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await productsApi.deleteProduct(productId);
+      showSuccess('Success', 'Product deleted successfully!');
+      router.push('/products');
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      showError('Error', 'Failed to delete product. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
   };
 
   const handleViewOrders = () => {
@@ -144,6 +172,25 @@ export default function ProductViewPage() {
               <Edit className="h-4 w-4 mr-2" />
               Edit Product
             </Button>
+            {user && canManageProducts(user) && (
+              <Button 
+                variant="destructive" 
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Product
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </PageHeader>
@@ -151,11 +198,27 @@ export default function ProductViewPage() {
         <ProductDetail
           product={product}
           onEdit={handleEdit}
-          showActions={false} // Actions are in the header
+          showActions={true} // Show actions to display create/update times and total stock
           isMerchantAccount={true} // Show merchant features
           className="max-w-7xl mx-auto"
         />
       </PageContent>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        type="danger"
+        title="Delete Product"
+        description={`Are you sure you want to delete "${product?.name}"? This action cannot be undone and will remove all associated data including inventory and order history.`}
+        confirmText="Delete Product"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+      />
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 }

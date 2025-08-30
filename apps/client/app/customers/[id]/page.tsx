@@ -8,7 +8,10 @@ import {
   CustomerPageHeader, 
   CustomerInfoCard, 
   ConfirmationDialog,
-  ToastContainer
+  ToastContainer,
+  PageWrapper,
+  PageHeader,
+  PageContent
 } from '@rentalshop/ui';
 import { 
   ArrowLeft,
@@ -192,10 +195,10 @@ export default function CustomerPage() {
     try {
       setIsUpdating(true);
       
-      const newStatus = customer.status === 'active' ? 'inactive' : 'active';
+      const newStatus = !customer.isActive;
       console.log('🔍 CustomerPage: Toggling customer status to:', newStatus);
       
-      const response = await customersApi.updateCustomer(customer.id, { status: newStatus });
+      const response = await customersApi.updateCustomer(customer.id, { isActive: newStatus });
       
       if (response.success) {
         console.log('✅ CustomerPage: Customer status updated successfully');
@@ -207,7 +210,7 @@ export default function CustomerPage() {
         setShowDeactivateConfirm(false);
         
         // Show success message
-        alert(`Customer ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
+        alert(`Customer ${newStatus ? 'activated' : 'deactivated'} successfully!`);
       } else {
         console.error('❌ CustomerPage: API error:', response.error);
         throw new Error(response.error || 'Failed to update customer status');
@@ -269,9 +272,8 @@ export default function CustomerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <PageWrapper>
+      <PageHeader>
         <CustomerPageHeader
           title={`${customer.firstName} ${customer.lastName}`}
           subtitle={showEditSection ? "Edit Customer Information" : "Customer Information & Management"}
@@ -321,7 +323,9 @@ export default function CustomerPage() {
             </div>
           )}
         </CustomerPageHeader>
+      </PageHeader>
 
+      <PageContent>
         {/* Customer Information - Show only when NOT editing */}
         {!showEditSection && (
           <CustomerInfoCard 
@@ -332,41 +336,39 @@ export default function CustomerPage() {
 
         {/* Edit Customer Section - Show only when editing */}
         {showEditSection && (
-          <div className="mt-6">
-            <EditCustomerForm
-              ref={editCustomerFormRef}
-              customer={customer}
-              onSave={handleCustomerUpdate}
-              onCancel={handleCancelEdit}
-              isSubmitting={isUpdating}
-            />
-          </div>
+          <EditCustomerForm
+            ref={editCustomerFormRef}
+            customer={customer}
+            onSave={handleCustomerUpdate}
+            onCancel={handleCancelEdit}
+            isSubmitting={isUpdating}
+          />
         )}
+      </PageContent>
 
-        {/* Confirmation Dialogs */}
-        <ConfirmationDialog
-          open={showDeleteConfirm}
-          onOpenChange={setShowDeleteConfirm}
-          type="danger"
-          title="Delete Customer"
-          description={`Are you sure you want to delete ${customer.firstName} ${customer.lastName}? This action cannot be undone.`}
-          confirmText="Delete Customer"
-          onConfirm={handleDeleteCustomer}
-        />
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        type="danger"
+        title="Delete Customer"
+        description={`Are you sure you want to delete ${customer.firstName} ${customer.lastName}? This action cannot be undone.`}
+        confirmText="Delete Customer"
+        onConfirm={handleDeleteCustomer}
+      />
 
-        <ConfirmationDialog
-          open={showDeactivateConfirm}
-          onOpenChange={setShowDeactivateConfirm}
-          type={customer.status === 'active' ? 'warning' : 'info'}
-          title={customer.status === 'active' ? 'Deactivate Customer' : 'Activate Customer'}
-          description={`Are you sure you want to ${customer.status === 'active' ? 'deactivate' : 'activate'} ${customer.firstName} ${customer.lastName}?`}
-          confirmText={customer.status === 'active' ? 'Deactivate' : 'Activate'}
-          onConfirm={handleToggleCustomerStatus}
-        />
-      </div>
+      <ConfirmationDialog
+        open={showDeactivateConfirm}
+        onOpenChange={setShowDeactivateConfirm}
+        type={customer.isActive ? 'warning' : 'info'}
+        title={customer.isActive ? 'Deactivate Customer' : 'Activate Customer'}
+        description={`Are you sure you want to ${customer.isActive ? 'deactivate' : 'activate'} ${customer.firstName} ${customer.lastName}?`}
+        confirmText={customer.isActive ? 'Deactivate' : 'Activate'}
+        onConfirm={handleToggleCustomerStatus}
+      />
       
       {/* Toast Container for notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
-    </div>
+    </PageWrapper>
   );
 }

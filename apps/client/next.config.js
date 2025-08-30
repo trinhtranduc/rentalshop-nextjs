@@ -4,7 +4,7 @@ const nextConfig = {
   experimental: {
     // Enable optimizations for better performance
     optimizeCss: true,
-    optimizePackageImports: ['@rentalshop/ui', '@rentalshop/utils'],
+    optimizePackageImports: ['@rentalshop/ui', '@rentalshop/utils', '@rentalshop/hooks'],
     // Enable modern JavaScript features for better performance
     modern: true,
     // Disable automatic timestamp parameters (_t) in development

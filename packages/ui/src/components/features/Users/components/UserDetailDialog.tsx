@@ -8,11 +8,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter
-} from '../../../ui/dialog';
-import { Button } from '../../../ui/button';
-import { Card, CardContent } from '../../../ui/card';
-import { Badge } from '../../../ui/badge';
-import { ConfirmationDialog } from './ConfirmationDialog';
+} from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui';
+import { Card, CardContent } from '@rentalshop/ui';
+import { ConfirmationDialog } from '@rentalshop/ui';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { userApiClient } from '../lib/UserApiClient';
 import { UserCheck, UserX, Key, AlertTriangle } from 'lucide-react';

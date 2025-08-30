@@ -18,6 +18,7 @@ export * from './components/features/Orders';
 export * from './components/features/Calendars';
 export * from './components/features/Users';
 export * from './components/features/Categories';
+
 // TODO: Uncomment when component files are created
 export * from './components/features/OrderDetail';
 export * from './components/features/Shops';
@@ -36,7 +37,7 @@ export * from './components/charts';
 // ============================================================================
 // CONTEXTS & HOOKS
 // ============================================================================
-export * from './hooks';
+// Note: Business logic hooks are imported directly from @rentalshop/hooks where needed
 
 // ============================================================================
 // UTILITIES
