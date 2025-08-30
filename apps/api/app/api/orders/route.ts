@@ -398,10 +398,10 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
       
-      if (orderInput.pickupPlanAt >= orderInput.returnPlanAt) {
+      if (orderInput.pickupPlanAt > orderInput.returnPlanAt) {
         return NextResponse.json({
           success: false,
-          message: 'Pickup date must be before return date',
+          message: 'Pickup date cannot be after return date',
           error: 'INVALID_DATE_RANGE'
         }, { status: 400 });
       }

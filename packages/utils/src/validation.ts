@@ -23,12 +23,14 @@ const outletStockItemSchema = z.object({
 export const productCreateSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().optional(),
+  barcode: z.string().optional(),
   rentPrice: z.number().nonnegative('Rent price must be non-negative'),
-  salePrice: z.number().nonnegative('Sale price must be non-negative').optional(),
+  salePrice: z.number().nonnegative('Sale price must be non-negative'),
   deposit: z.number().nonnegative('Deposit must be non-negative').default(0),
-  categoryId: z.coerce.number().int().positive('Category is required'), // Changed from string to number
+  categoryId: z.coerce.number().int().positive('Category is required'), // Required - every product must have a category
+  totalStock: z.number().int().min(0, 'Total stock must be non-negative'),
   images: z.string().optional(), // stored as JSON string upstream
-  outletStock: z.array(outletStockItemSchema).optional(),
+  outletStock: z.array(outletStockItemSchema).min(1, 'At least one outlet stock entry is required'), // Required - every product must have outlet stock
 });
 
 export const productUpdateSchema = z.object({

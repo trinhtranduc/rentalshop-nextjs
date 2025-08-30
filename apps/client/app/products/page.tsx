@@ -56,6 +56,15 @@ interface ExtendedProduct {
   }>;
 }
 
+// Local interface for page-specific filters
+interface ProductPageFilters {
+  search: string;
+  category: string;
+  inStock: boolean;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+}
+
 // Local interface for page-specific data structure
 interface ProductPageData {
   products: Array<{
@@ -99,7 +108,6 @@ export default function ProductsPage() {
   const [filters, setFilters] = useState<ProductPageFilters>({
     search: '',
     category: 'all',
-    status: 'all',
     inStock: false,
     sortBy: 'name',
     sortOrder: 'asc'
@@ -126,7 +134,7 @@ export default function ProductsPage() {
         limit: '10',
         ...(searchQuery && { search: searchQuery }),
         ...(filters.category && { category: filters.category }),
-        ...(filters.status && { status: filters.status }),
+
         ...(filters.inStock && { inStock: 'true' }),
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder
@@ -175,7 +183,7 @@ export default function ProductsPage() {
         setIsInitialLoad(false);
       }
     }
-  }, [currentPage, searchQuery, filters.category, filters.status, filters.inStock, filters.sortBy, filters.sortOrder, setProducts, setTotalProducts, setTotalPages, setLoading, setIsSearching, isInitialLoad, hasInitializedRef]);
+  }, [currentPage, searchQuery, filters.category, filters.inStock, filters.sortBy, filters.sortOrder, setProducts, setTotalProducts, setTotalPages, setLoading, setIsSearching, isInitialLoad, hasInitializedRef]);
 
 
 
@@ -191,7 +199,7 @@ export default function ProductsPage() {
     if (hasInitializedRef.current) {
       fetchProducts();
     }
-  }, [searchQuery, currentPage, filters.category, filters.status, filters.inStock, filters.sortBy, filters.sortOrder]); // Remove fetchProducts dependency
+  }, [searchQuery, currentPage, filters.category, filters.inStock, filters.sortBy, filters.sortOrder]); // Remove fetchProducts dependency
 
   // Separate handler for search changes - only updates search state
   const handleSearchChange = useCallback((searchValue: string) => {

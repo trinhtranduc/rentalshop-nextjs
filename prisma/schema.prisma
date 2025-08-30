@@ -17,6 +17,7 @@ model User {
   phone         String?
   role          String    @default("OUTLET_STAFF")
   isActive      Boolean   @default(true)
+  deletedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   merchantId    String?
@@ -31,6 +32,7 @@ model User {
   @@index([merchantId])
   @@index([outletId])
   @@index([publicId])
+  @@index([deletedAt])
 }
 
 model Merchant {

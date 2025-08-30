@@ -11,12 +11,11 @@ import {
 import { useToasts } from '../../../ui/toast';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
-import type { ProductInput } from '@rentalshop/types';
-import type { ProductWithStock, Outlet } from '@rentalshop/types';
+import type { ProductInput, ProductWithStock, Outlet, Category } from '@rentalshop/types';
 
 interface ProductEditFormProps {
   product: ProductWithStock;
-  categories: Array<{ id: number; name: string; isActive?: boolean }>;
+  categories: Category[];
   outlets: Outlet[];
   merchantId: number;
   onSave: (data: ProductInput) => Promise<void>;
@@ -36,16 +35,32 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showSuccess, showError } = useToasts();
 
+  // Debug: Log product data structure
+  useEffect(() => {
+    console.log('🔍 ProductEdit - product data:', product);
+    console.log('🔍 ProductEdit - product.category:', product.category);
+    console.log('🔍 ProductEdit - product.outletStock:', product.outletStock);
+    console.log('🔍 ProductEdit - outlets:', outlets);
+  }, [product, outlets]);
+
   // Transform product data to form format
   const initialFormData = {
     name: product.name,
     description: product.description || '',
     barcode: product.barcode || '',
-    categoryId: product.categoryId,
+    categoryId: product.category?.id || product.categoryId,
     rentPrice: product.rentPrice,
-    salePrice: 0, // ProductWithStock doesn't have salePrice
+    salePrice: (product as any).salePrice || 0, // Use actual salePrice if available, default to 0
     deposit: product.deposit,
-    totalStock: product.stock, // Use stock instead of totalStock
+    totalStock: (() => {
+      // Calculate total stock from all outlets (including those with 0 stock)
+      const total = outlets.reduce((sum, outlet) => {
+        const existingStock = product.outletStock.find(os => os.outlet?.id === outlet.id)?.stock || 0;
+        return sum + existingStock;
+      }, 0);
+      console.log('🔍 ProductEdit - calculated totalStock:', total, 'from all outlets:', outlets.length);
+      return total;
+    })(),
     images: (() => {
       console.log('🔍 ProductEdit - product.images:', product.images);
       console.log('🔍 ProductEdit - typeof product.images:', typeof product.images);
@@ -55,13 +70,30 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     isActive: product.isActive,
     outletStock: (() => {
       console.log('🔍 ProductEdit - product.outletStock:', product.outletStock);
-      return product.outletStock.map(os => {
-        console.log('🔍 ProductEdit - outletStock item:', os);
-        return {
-          outletId: os.outlet?.id || os.id || 0, // Use outlet.id if available, fallback to os.id or 0
-          stock: os.stock || 0
+      console.log('🔍 ProductEdit - available outlets:', outlets);
+      
+      // Create a map of existing outlet stock for quick lookup
+      const existingStockMap = new Map();
+      product.outletStock.forEach(os => {
+        const outletId = os.outlet?.id || 0;
+        if (outletId > 0) {
+          existingStockMap.set(outletId, os.stock || 0);
+        }
+      });
+      
+      // Create outlet stock entries for ALL outlets
+      const allOutletStock = outlets.map(outlet => {
+        const existingStock = existingStockMap.get(outlet.id) || 0;
+        const mapped = {
+          outletId: outlet.id,
+          stock: existingStock
         };
-      }).filter(os => os.outletId > 0); // Filter out invalid outlet entries
+        console.log(`🔍 ProductEdit - outlet ${outlet.name} (ID: ${outlet.id}): existing stock = ${existingStock}`);
+        return mapped;
+      });
+      
+      console.log('🔍 ProductEdit - final mapped outletStock (all outlets):', allOutletStock);
+      return allOutletStock;
     })(),
     sku: product.barcode || ''
   };
@@ -89,12 +121,6 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          {onBack && (
-            <Button variant="outline" size="sm" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          )}
           <div>
             <h1 className="text-2xl font-bold">Edit Product</h1>
             <p className="text-muted-foreground">
@@ -107,25 +133,18 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
 
 
       {/* Product Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProductForm
-            initialData={initialFormData}
-            categories={categories}
-            outlets={outlets}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            loading={isSubmitting}
-            mode="edit"
-            merchantId={merchantId}
-            hideHeader={true}
-            hideSubmitButton={true}
-          />
-        </CardContent>
-      </Card>
+      <ProductForm
+        initialData={initialFormData}
+        categories={categories}
+        outlets={outlets}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        loading={isSubmitting}
+        mode="edit"
+        merchantId={merchantId}
+        hideHeader={true}
+        hideSubmitButton={true}
+      />
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-2">

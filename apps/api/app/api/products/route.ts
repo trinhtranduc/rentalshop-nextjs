@@ -185,37 +185,58 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize input depending on role
-    const merchantId = (user as any).merchant?.id as string;
-    const userOutletId = (user as any).outlet?.id as string | undefined;
+    const merchantId = (user as any).merchant?.publicId as number;
+    const userOutletId = (user as any).outlet?.publicId as number | undefined;
 
-    const outletStock: Array<{ outletId: number; stock: number }> = (parsed.data.outletStock || []).map(os => ({
-      outletId: parseInt(os.outletId), // Convert to number
-      stock: os.stock,
+    console.log('🔍 Raw outletStock from request:', parsed.data.outletStock);
+    
+    // Validate that outletStock is provided (required)
+    if (!parsed.data.outletStock || !Array.isArray(parsed.data.outletStock) || parsed.data.outletStock.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Product must have at least one outlet stock entry' },
+        { status: 400 }
+      );
+    }
+    
+    const outletStock: Array<{ outletId: number; stock: number }> = parsed.data.outletStock.map(os => ({
+      outletId: os.outletId, // Already a number from validation
+      stock: os.stock || 0, // Default to 0 if no stock specified
     }));
+    
+    console.log('🔍 Processed outletStock:', outletStock);
 
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
+    console.log('🔍 Calculated totalStock:', totalStock);
 
     const productData = {
-      merchantId: parseInt(merchantId), // Convert to number
-      categoryId: parseInt(parsed.data.categoryId), // Convert to number
+      merchantId: merchantId, // Already a number (publicId)
+      categoryId: parsed.data.categoryId, // Already a number from validation
       name: parsed.data.name,
       description: parsed.data.description,
+      barcode: parsed.data.barcode,
       totalStock,
       rentPrice: parsed.data.rentPrice ?? 0,
       salePrice: parsed.data.salePrice ?? undefined,
       deposit: parsed.data.deposit ?? 0,
       images: parsed.data.images,
-      outletStock,
+      outletStock, // Include outlet stock data
     };
 
+    console.log('🔍 Creating product with data:', productData);
     const product = await createProduct(productData);
+    console.log('✅ Product created successfully:', product);
 
     return NextResponse.json({
       success: true,
       data: product
     });
   } catch (error) {
-    console.error('Error in POST /api/products:', error);
+    console.error('❌ Error in POST /api/products:', error);
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown error type'
+    });
     return NextResponse.json(
       { success: false, message: 'Failed to create product' },
       { status: 500 }

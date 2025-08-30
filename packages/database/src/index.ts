@@ -94,6 +94,8 @@ export {
   updateUser,
   getUsersByMerchant,
   getUsersByOutlet,
+  softDeleteUser,
+  restoreUser,
 } from './user';
 
 // ============================================================================

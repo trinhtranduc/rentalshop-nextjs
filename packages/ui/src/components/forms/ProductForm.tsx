@@ -1,26 +1,27 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Button,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Textarea,
-  Badge,
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent, 
+  Button, 
+  Input, 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue, 
+  Textarea, 
+  Badge, 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableRow, 
+  TableCell, 
+  NumericInput
 } from '../ui';
 import { formatCurrency } from '../../lib';
 import { 
@@ -34,7 +35,8 @@ import {
   XCircle,
   Upload,
   Image as ImageIcon,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import type { 
   ProductInput, 
@@ -70,16 +72,17 @@ interface ProductFormData {
 interface ProductFormProps {
   initialData?: Partial<ProductFormData>;
   categories: Category[];
-  outlets: Array<{ id: number; name: string }>;
+  outlets: Array<{ id: number; name: string; address?: string }>;
   onSubmit: (data: ProductInput) => void;
   onCancel?: () => void;
   loading?: boolean;
   title?: string;
   submitText?: string | React.ReactNode;
   mode?: 'create' | 'edit';
-  merchantId?: number; // Add merchantId prop
+  merchantId?: string | number; // Add merchantId prop
   hideHeader?: boolean; // Hide header when used in dialog
   hideSubmitButton?: boolean; // Hide submit button when using external action buttons
+  formId?: string; // Form ID for external submit buttons
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -94,7 +97,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   mode = 'create',
   merchantId = '',
   hideHeader = false,
-  hideSubmitButton = false
+  hideSubmitButton = false,
+  formId
 }) => {
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -112,27 +116,95 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     ...initialData
   });
 
+  
+
   const [errors, setValidationErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize outlet stock if not provided
+  // Debug: Log initial data changes
   useEffect(() => {
-    console.log('🔄 ProductForm useEffect - outlets:', outlets);
-    console.log('🔄 ProductForm useEffect - formData.outletStock:', formData.outletStock);
+    console.log('🔍 ProductForm - initialData changed:', initialData);
+    console.log('🔍 ProductForm - mode:', mode);
+    console.log('🔍 ProductForm - outlets:', outlets);
+    console.log('🔍 ProductForm - initialData.outletStock:', initialData.outletStock);
+    console.log('🔍 ProductForm - formData.outletStock:', formData.outletStock);
+    console.log('🔍 ProductForm - outlets.length:', outlets.length);
+    console.log('🔍 ProductForm - formData.outletStock.length:', formData.outletStock.length);
     
-    if (formData.outletStock.length === 0 && outlets.length > 0) {
-      console.log('✅ Initializing outlet stock for', outlets.length, 'outlets');
-      setFormData(prev => ({
-        ...prev,
-        outletStock: outlets.map(outlet => ({
-          outletId: outlet.id,
-          stock: 0,
-        }))
+    // Additional debugging for edit mode
+    if (mode === 'edit') {
+      console.log('🔍 ProductForm - EDIT MODE: Checking outlet stock coverage');
+      const outletIds = outlets.map(o => o.id);
+      const stockOutletIds = formData.outletStock.map(os => os.outletId);
+      console.log('🔍 ProductForm - All outlet IDs:', outletIds);
+      console.log('🔍 ProductForm - Stock outlet IDs:', stockOutletIds);
+      
+      const missingOutlets = outletIds.filter(id => !stockOutletIds.includes(id));
+      if (missingOutlets.length > 0) {
+        console.warn('🔍 ProductForm - WARNING: Missing outlet stock for outlets:', missingOutlets);
+      }
+    }
+  }, [initialData, mode, outlets, formData.outletStock]);
+
+  // Handle initialData changes and re-initialize form
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      console.log('🔍 ProductForm - Re-initializing form with new initialData:', initialData);
+      setFormData({
+        name: '',
+        description: '',
+        barcode: '',
+        categoryId: 0,
+        rentPrice: 0,
+        salePrice: 0,
+        deposit: 0,
+        totalStock: 0,
+        images: [],
+        isActive: true,
+        outletStock: [],
+        sku: '',
+        ...initialData
+      });
+    }
+  }, [initialData]);
+
+  // Initialize outlet stock and default category if not provided
+  useEffect(() => {
+    let updatedFormData = { ...formData };
+    
+    // Initialize outlet stock if not provided (only for new products, not edit mode)
+    if (mode === 'create' && formData.outletStock.length === 0 && outlets.length > 0) {
+      updatedFormData.outletStock = outlets.map(outlet => ({
+        outletId: outlet.id,
+        stock: 0,
       }));
     }
-  }, [outlets, formData.outletStock.length]);
+    
+    // Set default category if none selected and categories are available
+    if (!formData.categoryId && categories.length > 0) {
+      updatedFormData.categoryId = categories[0].id;
+    }
+    
+    // Auto-generate barcode if not provided (only for new products)
+    if (mode === 'create' && !formData.barcode) {
+      updatedFormData.barcode = generateBarcode();
+    }
+    
+    // Only update if there are changes
+    if (JSON.stringify(updatedFormData) !== JSON.stringify(formData)) {
+      setFormData(updatedFormData);
+    }
+  }, [outlets, categories, formData.outletStock.length, formData.categoryId, formData.barcode, mode]);
+
+  // Generate unique barcode
+  const generateBarcode = (): string => {
+    const timestamp = Date.now().toString().slice(-8); // Last 8 digits of timestamp
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${timestamp}${random}`; // RS = Rental Shop prefix
+  };
 
   // Auto-save functionality
   useEffect(() => {
@@ -174,15 +246,39 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
 
     if (formData.rentPrice <= 0) {
-      newErrors.rentPrice = 'Rent price must be greater than 0';
+      newErrors.rentPrice = 'Rent price is required and must be greater than 0';
+    }
+
+    if (formData.salePrice <= 0) {
+      newErrors.salePrice = 'Sale price is required and must be greater than 0';
     }
 
     if (formData.deposit < 0) {
-      newErrors.deposit = 'Deposit cannot be negative';
+      newErrors.deposit = 'Deposit is required and cannot be negative';
     }
 
-    if (formData.totalStock < 0) {
-      newErrors.totalStock = 'Total stock cannot be negative';
+    if (formData.totalStock <= 0) {
+      newErrors.totalStock = 'Total stock is required and must be greater than 0';
+    }
+
+    // Check if outlets are available
+    if (outlets.length === 0) {
+      newErrors.outletStock = 'No outlets available. Please contact your administrator to set up outlets.';
+      return false;
+    }
+
+    // Validate outlet stock - ensure outlet stock is provided
+    if (formData.outletStock.length === 0) {
+      newErrors.outletStock = 'Outlet stock is required. Please specify stock levels for at least one outlet.';
+      return false;
+    }
+
+    // Validate outlet stock - ensure all outlets have stock values
+    if (formData.outletStock.length > 0) {
+      const invalidOutletStock = formData.outletStock.find(item => item.stock < 0);
+      if (invalidOutletStock) {
+        newErrors.outletStock = 'Outlet stock values cannot be negative';
+      }
     }
 
     // Don't call setValidationErrors here - just return the errors
@@ -192,8 +288,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+
+    
     // Validate form and set errors if validation fails
     if (!validateForm()) {
+
       // Set validation errors here instead
       const newErrors: Partial<Record<keyof ProductFormData, string>> = {};
 
@@ -206,25 +305,45 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       }
 
       if (formData.rentPrice <= 0) {
-        newErrors.rentPrice = 'Rent price must be greater than 0';
+        newErrors.rentPrice = 'Rent price is required and must be greater than 0';
+      }
+
+      if (formData.salePrice <= 0) {
+        newErrors.salePrice = 'Sale price is required and must be greater than 0';
       }
 
       if (formData.deposit < 0) {
-        newErrors.deposit = 'Deposit cannot be negative';
+        newErrors.deposit = 'Deposit is required and cannot be negative';
       }
 
-      if (formData.totalStock < 0) {
-        newErrors.totalStock = 'Total stock cannot be negative';
+      if (formData.totalStock <= 0) {
+        newErrors.totalStock = 'Total stock is required and must be greater than 0';
       }
 
+      // Validate outlet stock - ensure outlet stock is provided
+      if (formData.outletStock.length === 0) {
+        newErrors.outletStock = 'Outlet stock is required. Please specify stock levels for at least one outlet.';
+        setValidationErrors(newErrors);
+        return;
+      }
+
+      // Validate outlet stock - ensure all outlets have stock values
+      if (formData.outletStock.length > 0) {
+        const invalidOutletStock = formData.outletStock.find(item => item.stock < 0);
+        if (invalidOutletStock) {
+          newErrors.outletStock = 'Outlet stock values cannot be negative';
+        }
+      }
 
 
       setValidationErrors(newErrors);
       return;
     }
+    
+
 
     const productData: ProductInput = {
-      merchantId: merchantId, // This should be passed from parent component
+      merchantId: typeof merchantId === 'string' ? parseInt(merchantId) || 0 : merchantId || 0,
       categoryId: formData.categoryId,
       name: formData.name,
       description: formData.description,
@@ -233,7 +352,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       rentPrice: formData.rentPrice,
       salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
       deposit: formData.deposit,
-      images: formData.images.join(','),
+      images: formData.images, // Keep as array for ProductInput
       outletStock: formData.outletStock,
     };
 
@@ -241,9 +360,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
+    // Handle type conversion for specific fields
+    let processedValue = value;
+    
+    if (field === 'categoryId') {
+      // Convert string to number for categoryId
+      processedValue = parseInt(value) || 0;
+    } else if (field === 'rentPrice' || field === 'salePrice' || field === 'deposit') {
+      // Ensure numeric fields are numbers
+      processedValue = parseFloat(value) || 0;
+    } else if (field === 'totalStock') {
+      // Ensure stock is a number
+      processedValue = parseInt(value) || 0;
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: processedValue
     }));
 
     // Clear validation error for this field
@@ -254,6 +387,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       }));
     }
   };
+
+
 
   const updateOutletStock = (outletId: number, field: 'stock', value: number) => {
     setFormData(prev => ({
@@ -270,18 +405,39 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
     
+    // Check if adding more files would exceed the 2 image limit
+    if (formData.images.length >= 2) {
+      return; // Already at maximum
+    }
+    
     Array.from(files).forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string;
-          setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, imageUrl]
-          }));
-        };
-        reader.readAsDataURL(file);
+      // Stop if we've reached the 2 image limit
+      if (formData.images.length >= 2) {
+        return;
       }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        return;
+      }
+      
+      // Validate file size (2MB limit - more reasonable for web)
+      if (file.size > 2 * 1024 * 1024) {
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string;
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, imageUrl]
+        }));
+      };
+      reader.onerror = () => {
+        // Silently handle file reading errors
+      };
+      reader.readAsDataURL(file);
     });
   };
 
@@ -302,15 +458,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+    const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0] && formData.images.length < 2) {
       handleImageUpload(e.dataTransfer.files);
     }
-  }, []);
+  }, [formData.images.length]);
 
   const getProductStatus = () => {
     if (formData.totalStock === 0) return { status: 'Out of Stock', variant: 'destructive' as const };
@@ -360,13 +516,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Information */}
+      <form id={formId} onSubmit={handleSubmit} className="space-y-6">
+        {/* Product Information */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="w-5 h-5" />
-              Basic Information
+              Product Information
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -395,25 +551,39 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-primary">Barcode</label>
-                <Input
-                  value={formData.barcode}
-                  onChange={(e) => handleInputChange('barcode', e.target.value)}
-                  placeholder="Enter barcode (optional)"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={formData.barcode}
+                    onChange={(e) => handleInputChange('barcode', e.target.value)}
+                    placeholder="Enter barcode (optional)"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleInputChange('barcode', generateBarcode())}
+                    title="Generate new barcode"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-primary">Category *</label>
                 <Select
-                  value={formData.categoryId}
-                  onValueChange={(value) => handleInputChange('categoryId', value)}
+                  value={formData.categoryId.toString()}
+                  onValueChange={(value) => {
+                    handleInputChange('categoryId', value);
+                  }}
                 >
                   <SelectTrigger className={errors.categoryId ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
+                      <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}
                       </SelectItem>
                     ))}
@@ -428,7 +598,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <Textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Enter product description"
+                placeholder="Enter product description (optional)"
                 rows={3}
               />
             </div>
@@ -446,71 +616,59 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Rent Price *</label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={formData.rentPrice}
-                    onChange={(e) => handleInputChange('rentPrice', parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    className={errors.rentPrice ? 'border-red-500' : ''}
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary">
-                    ₫
-                  </span>
-                </div>
+                <NumericInput
+                  label="Rent Price"
+                  value={formData.rentPrice}
+                  onChange={(value) => handleInputChange('rentPrice', value)}
+                  placeholder="0.00"
+                  error={!!errors.rentPrice}
+                  required
+                  allowDecimals={true}
+                  maxDecimalPlaces={2}
+                />
                 {errors.rentPrice && <p className="text-sm text-red-500">{errors.rentPrice}</p>}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Sale Price</label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={formData.salePrice}
-                    onChange={(e) => handleInputChange('salePrice', parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary">
-                    ₫
-                  </span>
-                </div>
+                <NumericInput
+                  label="Sale Price"
+                  value={formData.salePrice}
+                  onChange={(value) => handleInputChange('salePrice', value)}
+                  placeholder="0.00"
+                  error={!!errors.salePrice}
+                  required
+                  allowDecimals={true}
+                  maxDecimalPlaces={2}
+                />
+                {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Deposit</label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={formData.deposit}
-                    onChange={(e) => handleInputChange('deposit', parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    className={errors.deposit ? 'border-red-500' : ''}
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary">
-                    ₫
-                  </span>
-                </div>
+                <NumericInput
+                  label="Deposit"
+                  value={formData.deposit}
+                  onChange={(value) => handleInputChange('deposit', value)}
+                  placeholder="0.00"
+                  error={!!errors.deposit}
+                  required
+                  allowDecimals={true}
+                  maxDecimalPlaces={2}
+                />
                 {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Total Stock *</label>
-                <Input
-                  type="number"
+                <NumericInput
+                  label="Total Stock"
                   value={formData.totalStock}
-                  onChange={(e) => handleInputChange('totalStock', parseInt(e.target.value) || 0)}
+                  onChange={(value) => handleInputChange('totalStock', value)}
                   placeholder="0"
-                  min="0"
-                  className={errors.totalStock ? 'border-red-500' : ''}
+                  error={!!errors.totalStock}
+                  required
+                  allowDecimals={false}
+                  min={0}
                 />
                 {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
               </div>
@@ -525,56 +683,76 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Warehouse className="w-5 h-5" />
-              Outlet Stock Distribution
+              Outlet Stock Distribution *
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
-                Total outlets: {outlets.length} | Outlet stock entries: {formData.outletStock.length}
+                Total outlets: {outlets.length} | Outlet stock entries: {formData.outletStock.length} | <span className="text-red-500">*</span> Stock values are required
               </p>
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Outlet</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {formData.outletStock.map((outletStock) => {
-                  const outlet = outlets.find(o => o.id === outletStock.outletId);
-                  const stockStatus = outletStock.stock === 0 ? 'Out of Stock' : 'In Stock';
-                  const statusVariant = outletStock.stock === 0 ? 'destructive' : 'default';
-                  
-                  return (
-                    <TableRow key={outletStock.outletId}>
-                      <TableCell className="font-medium">
-                        {outlet?.name || 'Unknown Outlet'}
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={outletStock.stock}
-                          onChange={(e) => updateOutletStock(outletStock.outletId, 'stock', parseInt(e.target.value) || 0)}
-                          min="0"
-                          className="w-20"
-                        />
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge variant={statusVariant} className="text-xs">
-                          {stockStatus}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
             
-
+            {outlets.length === 0 ? (
+              <div className="text-center py-8">
+                <Warehouse className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Outlets Available</h3>
+                <p className="text-muted-foreground mb-4">
+                  You need to create at least one outlet before you can add products. Products must be assigned to specific outlets for inventory management.
+                </p>
+                <p className="text-sm text-red-500">
+                  Please contact your administrator to set up outlets for your merchant.
+                </p>
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Outlet</TableHead>
+                      <TableHead>Stock</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {formData.outletStock.map((outletStock) => {
+                      const outlet = outlets.find(o => o.id === outletStock.outletId);
+                      
+                      return (
+                        <TableRow key={outletStock.outletId}>
+                          <TableCell className="font-medium">
+                            <div>
+                              <div className="font-medium">{outlet?.name || 'Unknown Outlet'}</div>
+                              {outlet?.address && (
+                                <div className="text-sm text-text-secondary mt-1">
+                                  {outlet.address}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <NumericInput
+                              value={outletStock.stock}
+                              onChange={(value) => updateOutletStock(outletStock.outletId, 'stock', value)}
+                              min={0}
+                              allowDecimals={false}
+                              required
+                              className="w-20"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                
+                {/* Outlet Stock Validation Error */}
+                {errors.outletStock && (
+                  <div className="mt-4">
+                    <p className="text-sm text-red-500">{errors.outletStock}</p>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -590,40 +768,68 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             {/* Drag & Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive 
+                dragActive && formData.images.length < 2
                   ? 'border-action-primary bg-action-primary/10' 
+                  : formData.images.length >= 2
+                  ? 'border-gray-300 bg-gray-50'
                   : 'border-border hover:border-action-primary/50'
               }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
+              onDragEnter={formData.images.length < 2 ? handleDrag : undefined}
+              onDragLeave={formData.images.length < 2 ? handleDrag : undefined}
+              onDragOver={formData.images.length < 2 ? handleDrag : undefined}
+              onDrop={formData.images.length < 2 ? handleDrop : undefined}
             >
-              <Upload className="w-8 h-8 mx-auto mb-2 text-text-secondary" />
+              <Upload className={`w-8 h-8 mx-auto mb-2 ${formData.images.length >= 2 ? 'text-gray-400' : 'text-text-secondary'}`} />
               <p className="text-text-primary font-medium mb-1">
-                Drag and drop images here, or click to browse
+                {formData.images.length >= 2 ? 'Maximum images reached' : 'Drag and drop images here'}
               </p>
               <p className="text-text-secondary text-sm mb-3">
-                Supports JPG, PNG, GIF up to 10MB each
+                Supports JPG, PNG, GIF up to 2MB each (max 2 images)
               </p>
+              
+              {/* File Input */}
               <input
+                ref={fileInputRef}
                 type="file"
                 multiple
                 accept="image/*"
                 onChange={(e) => handleImageUpload(e.target.files)}
                 className="hidden"
                 id="image-upload"
+                disabled={formData.images.length >= 2}
               />
-              <label htmlFor="image-upload">
-                <Button type="button" variant="outline" size="sm">
-                  Browse Files
-                </Button>
-              </label>
+              
+              {/* Browse Button */}
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={formData.images.length >= 2}
+              >
+                {formData.images.length >= 2 ? 'Max Images Reached' : 'Browse Files'}
+              </Button>
             </div>
 
-            {/* Image Preview Grid */}
+            {/* Image Counter and Preview Grid */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-text-secondary">
+                {formData.images.length}/2 images uploaded
+              </p>
+              {formData.images.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData(prev => ({ ...prev, images: [] }))}
+                >
+                  Clear All Images
+                </Button>
+              )}
+            </div>
+            
             {formData.images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {formData.images.map((image, index) => (
                   <div key={index} className="relative group">
                     <img
@@ -675,3 +881,4 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     </div>
   );
 };
+

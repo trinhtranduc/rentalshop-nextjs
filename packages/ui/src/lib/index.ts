@@ -2,4 +2,5 @@
 // UTILITIES
 // ============================================================================
 export { cn } from './cn';
-export { formatDate, formatCurrency } from './utils';
+export { formatDate } from './utils';
+export { formatCurrency } from '@rentalshop/utils';

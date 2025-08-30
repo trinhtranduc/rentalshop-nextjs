@@ -264,3 +264,101 @@ export async function getUsersByOutlet(outletId: number) {
     orderBy: { createdAt: 'desc' },
   });
 }
+
+// ============================================================================
+// USER SOFT DELETE FUNCTIONS
+// ============================================================================
+
+/**
+ * Soft delete user by public ID - follows dual ID system
+ * Sets isActive to false and deletedAt to current timestamp
+ */
+export async function softDeleteUser(publicId: number): Promise<any> {
+  // Find user by publicId
+  const user = await prisma.user.findUnique({
+    where: { publicId },
+    select: { id: true, publicId: true, email: true, isActive: true, deletedAt: true }
+  });
+
+  if (!user) {
+    throw new Error(`User with publicId ${publicId} not found`);
+  }
+
+  if (user.deletedAt) {
+    throw new Error(`User with publicId ${publicId} is already deleted`);
+  }
+
+  // Soft delete the user
+  const deletedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      isActive: false,
+      deletedAt: new Date(),
+    },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      outlet: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  return deletedUser;
+}
+
+/**
+ * Restore soft deleted user by public ID - follows dual ID system
+ * Sets isActive to true and clears deletedAt
+ */
+export async function restoreUser(publicId: number): Promise<any> {
+  // Find user by publicId
+  const user = await prisma.user.findUnique({
+    where: { publicId },
+    select: { id: true, publicId: true, email: true, isActive: true, deletedAt: true }
+  });
+
+  if (!user) {
+    throw new Error(`User with publicId ${publicId} not found`);
+  }
+
+  if (!user.deletedAt) {
+    throw new Error(`User with publicId ${publicId} is not deleted`);
+  }
+
+  // Restore the user
+  const restoredUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      isActive: true,
+      deletedAt: null,
+    },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+      outlet: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  return restoredUser;
+}

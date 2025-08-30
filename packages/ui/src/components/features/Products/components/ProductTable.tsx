@@ -166,7 +166,6 @@ export function ProductTable({
                 <SortableHeader column="category" sortable={false}>Category</SortableHeader>
                 <SortableHeader column="rentPrice" sortable={false}>Price</SortableHeader>
                 <SortableHeader column="available" sortable={false}>Stock</SortableHeader>
-                <SortableHeader column="status" sortable={false}>Status</SortableHeader>
                 <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Created At</SortableHeader>
                 <TableHead className="w-36">Actions</TableHead>
               </TableRow>
@@ -223,15 +222,6 @@ export function ProductTable({
                         {product.renting} renting
                       </div>
                     </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <Badge 
-                      variant={product.isActive ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {product.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
                   </TableCell>
                   
                   <TableCell>

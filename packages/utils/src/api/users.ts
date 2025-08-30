@@ -170,7 +170,7 @@ export const usersApi = {
    * Get current user profile
    */
   async getCurrentUser(): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/me`);
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/profile`);
     return await parseApiResponse<User>(response);
   },
 
@@ -178,10 +178,21 @@ export const usersApi = {
    * Update current user profile
    */
   async updateCurrentUser(userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/me`, {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/profile`, {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
     return await parseApiResponse<User>(response);
+  },
+
+  /**
+   * Delete current user account (soft delete)
+   */
+  async deleteAccount(userId: number): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/delete-account`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+    return await parseApiResponse<any>(response);
   }
 };

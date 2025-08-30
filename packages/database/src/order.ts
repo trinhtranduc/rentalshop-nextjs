@@ -356,7 +356,7 @@ export async function createOrder(
         publicId: nextPublicId,
         orderNumber: orderNumber,
         orderType: input.orderType,
-        status: 'RESERVED',
+        status: input.orderType === 'SALE' ? 'COMPLETED' : 'RESERVED',
         outletId: outlet.id, // Use CUID
         customerId: customer?.id || null, // Use CUID
         createdById: user.id, // Use CUID of user who created the order

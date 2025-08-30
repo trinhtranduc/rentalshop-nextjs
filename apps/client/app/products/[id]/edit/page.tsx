@@ -8,7 +8,6 @@ import {
   ProductsLoading,
   PageWrapper,
   PageHeader,
-  PageTitle,
   PageContent
 } from '@rentalshop/ui';
 
@@ -21,21 +20,21 @@ import {
   categoriesApi, 
   outletsApi
 } from "@rentalshop/utils";
-import type { ProductWithDetails, Category, Outlet } from '@rentalshop/ui';
-import type { ProductInput } from '@rentalshop/database';
+import type { ProductWithStock, Category, Outlet } from '@rentalshop/types';
+import type { ProductInput } from '@rentalshop/types';
 
 export default function ProductEditPage() {
   const router = useRouter();
   const params = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
-  const [product, setProduct] = useState<ProductWithDetails | null>(null);
+  const [product, setProduct] = useState<ProductWithStock | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const productId = params.id as string;
+  const productId = parseInt(params.id as string);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,21 +42,69 @@ export default function ProductEditPage() {
         setLoading(true);
         setError(null);
 
+        // Wait for authentication to complete
+        if (authLoading) {
+          return;
+        }
+
         // Fetch product details
         const productResponse = await productsApi.getProductById(productId);
+        if (productResponse.data) {
+                  console.log('🔍 Product response:', productResponse.data);
+        
+        // The API now returns ProductWithStock directly, no transformation needed
         setProduct(productResponse.data);
+        }
 
-        // Fetch categories and outlets for the form
+        // Debug: Log user and merchant info
+        console.log('🔍 Edit Product - user:', user);
+        console.log('🔍 Edit Product - user.merchant:', user?.merchant);
+        console.log('🔍 Edit Product - user.merchantId:', user?.merchantId);
+        console.log('🔍 Edit Product - user.role:', user?.role);
+        console.log('🔍 Edit Product - product.merchant:', product?.merchant);
+        
+        // Check if user has proper merchant access (same logic as add product page)
+        if (!user?.merchant?.id) {
+          console.error('🔍 Edit Product - ERROR: User has no merchant ID!');
+          console.error('🔍 Edit Product - user object:', user);
+          throw new Error('You must be associated with a merchant to edit products. Please contact your administrator.');
+        }
+        
+        // Use the same merchant ID resolution logic as add product page
+        const merchantIdForOutlets = Number(user.merchant.id);
+        console.log('🔍 Edit Product - merchantId for outlets:', merchantIdForOutlets);
+        
+        if (merchantIdForOutlets <= 0) {
+          console.error('🔍 Edit Product - ERROR: Invalid merchant ID:', merchantIdForOutlets);
+          throw new Error('Invalid merchant ID. Please contact your administrator.');
+        }
+        
+        // Fetch categories and outlets for the form (same as add product page)
         const [categoriesData, outletsData] = await Promise.all([
           categoriesApi.getCategories(),
-          outletsApi.getOutlets()
+          outletsApi.getOutletsByMerchant(merchantIdForOutlets)
         ]);
         
         if (categoriesData.success) {
           setCategories(categoriesData.data || []);
         }
         if (outletsData.success) {
-          setOutlets(outletsData.data?.outlets || []);
+          const outletsList = outletsData.data?.outlets || [];
+          console.log('🔍 Edit Product - outlets data:', outletsData.data);
+          console.log('🔍 Edit Product - outlets count:', outletsList.length);
+          console.log('🔍 Edit Product - outlets array:', outletsList);
+          setOutlets(outletsList);
+          
+          if (outletsList.length === 0) {
+            setError('No outlets found for your merchant. You need to create at least one outlet before you can edit products.');
+            setLoading(false);
+            return;
+          }
+        } else {
+          console.log('🔍 Edit Product - outlets fetch failed:', outletsData);
+          setError('Failed to load outlets. Please try again.');
+          setLoading(false);
+          return;
         }
 
       } catch (err) {
@@ -71,12 +118,23 @@ export default function ProductEditPage() {
     if (productId) {
       fetchData();
     }
-  }, [productId]);
+  }, [productId, authLoading]);
 
   const handleSave = async (data: ProductInput) => {
     try {
+      // Transform ProductInput to ProductUpdateInput format
+      const updateData = {
+        ...data,
+        // Convert images array to string for API
+        images: Array.isArray(data.images) ? data.images.join(',') : data.images || '',
+        // Map totalStock to stock for API
+        stock: data.totalStock,
+      };
+      
+      console.log('🔍 Updating product with data:', updateData);
+      
       // Call the update API
-      await productsApi.updateProduct(productId, data);
+      await productsApi.updateProduct(productId, updateData);
       
       // Redirect to the product view page
       router.push(`/products/${productId}`);
@@ -94,12 +152,25 @@ export default function ProductEditPage() {
     router.push(`/products/${productId}`);
   };
 
-  if (loading) {
+  // Show loading while authentication is in progress
+  if (authLoading) {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Edit Product</PageTitle>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-bold">Edit Product</h1>
+          </div>
         </PageHeader>
+        <PageContent>
+          <ProductsLoading />
+        </PageContent>
+      </PageWrapper>
+    );
+  }
+
+  if (loading) {
+    return (
+      <PageWrapper>
         <PageContent>
           <ProductsLoading />
         </PageContent>
@@ -110,9 +181,6 @@ export default function ProductEditPage() {
   if (error || !product) {
     return (
       <PageWrapper>
-        <PageHeader>
-          <PageTitle>Edit Product</PageTitle>
-        </PageHeader>
         <PageContent>
           <Card>
             <div className="p-6 text-center">
@@ -137,14 +205,20 @@ export default function ProductEditPage() {
   return (
     <PageWrapper>
       <PageHeader>
-        <PageTitle>Edit Product</PageTitle>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" onClick={handleBack} size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Product
+          </Button>
+        </div>
       </PageHeader>
+
       <PageContent>
         <ProductEdit
           product={product}
           categories={categories}
           outlets={outlets}
-          merchantId={user?.merchant?.id || ''}
+          merchantId={typeof user?.merchant?.id === 'number' ? user.merchant.id : 0}
           onSave={handleSave}
           onCancel={handleCancel}
           onBack={handleBack}

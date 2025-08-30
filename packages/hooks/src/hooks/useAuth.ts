@@ -143,7 +143,7 @@ export function useAuth() {
       try {
         const userData = JSON.parse(storedUser);
         setState(prev => ({ ...prev, user: userData, loading: false }));
-      } catch {
+      } catch (error) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         setState(prev => ({ ...prev, loading: false }));
