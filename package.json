@@ -24,7 +24,10 @@
     "db:reset-orders": "node scripts/reset-orders-2025.js",
     "db:regenerate-system": "node scripts/regenerate-entire-system-2025.js",
     "db:update-order-numbers": "node scripts/update-order-numbers.js",
-    "db:add-discount-fields": "node scripts/add-discount-fields.js"
+    "db:add-discount-fields": "node scripts/add-discount-fields.js",
+    "db:add-billing-cycles": "node scripts/add-mock-billing-cycles.js",
+    "db:seed-payments": "node scripts/seed-payments.js",
+    "db:seed-subscriptions": "node scripts/seed-subscriptions.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

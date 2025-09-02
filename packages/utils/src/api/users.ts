@@ -40,7 +40,7 @@ export const usersApi = {
   /**
    * Search users with filters
    */
-  async searchUsers(filters: UserFilters): Promise<ApiResponse<User[]>> {
+  async searchUsers(filters: UserFilters): Promise<ApiResponse<UsersResponse>> {
     const params = new URLSearchParams();
     
     if (filters.search) params.append('search', filters.search);
@@ -48,9 +48,11 @@ export const usersApi = {
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.status) params.append('status', filters.status);
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.limit) params.append('limit', filters.limit.toString());
     
     const response = await authenticatedFetch(`${apiUrls.users.list}?${params.toString()}`);
-    return await parseApiResponse<User[]>(response);
+    return await parseApiResponse<UsersResponse>(response);
   },
 
   /**
@@ -194,5 +196,48 @@ export const usersApi = {
       body: JSON.stringify({ userId }),
     });
     return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Update user by public ID (number)
+   */
+  async updateUserByPublicId(publicId: number, userData: UserUpdateInput): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${publicId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+    return await parseApiResponse<User>(response);
+  },
+
+  /**
+   * Activate user by public ID (number)
+   */
+  async activateUserByPublicId(publicId: number): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${publicId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'activate' }),
+    });
+    return await parseApiResponse<User>(response);
+  },
+
+  /**
+   * Deactivate user by public ID (number)
+   */
+  async deactivateUserByPublicId(publicId: number): Promise<ApiResponse<User>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${publicId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'deactivate' }),
+    });
+    return await parseApiResponse<User>(response);
+  },
+
+  /**
+   * Delete user by public ID (number)
+   */
+  async deleteUserByPublicId(publicId: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${publicId}`, {
+      method: 'DELETE',
+    });
+    return await parseApiResponse<void>(response);
   }
 };

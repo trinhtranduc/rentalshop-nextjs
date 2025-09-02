@@ -220,6 +220,17 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
         return result;
       }
       
+      // Handle API error responses with error field (most common case)
+      if (errorData.success === false && errorData.error) {
+        console.log('🔍 parseApiResponse: API error response detected');
+        const result = {
+          success: false,
+          error: errorData.error, // Use the error message directly
+        };
+        console.log('🔍 parseApiResponse: Returning API error:', result);
+        return result;
+      }
+      
       // Handle legacy error responses
       console.log('🔍 parseApiResponse: Legacy error response detected');
       const result = {

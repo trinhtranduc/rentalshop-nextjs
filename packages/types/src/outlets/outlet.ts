@@ -10,8 +10,6 @@ export interface Outlet {
   description?: string;
   merchantId: number;
   isActive: boolean;
-  isDefault: boolean;
-  status: string;    // ACTIVE, INACTIVE, CLOSED, SUSPENDED
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,8 +28,6 @@ export interface OutletUpdateInput {
   phone?: string;
   description?: string;
   isActive?: boolean;
-  isDefault?: boolean;
-  status?: string;   // ACTIVE, INACTIVE, CLOSED, SUSPENDED
 }
 
 // ============================================================================
@@ -54,8 +50,6 @@ export interface OutletSearchResult {
   phone?: string;
   description?: string;
   isActive: boolean;
-  isDefault: boolean;
-  status: string;    // ACTIVE, INACTIVE, CLOSED, SUSPENDED
   createdAt: Date;
   updatedAt: Date;
   merchantId: number;

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { CalendarHeader } from './components/CalendarHeader';
 import { CalendarNavigation } from './components/CalendarNavigation';

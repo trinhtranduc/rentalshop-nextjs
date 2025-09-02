@@ -98,6 +98,7 @@ export interface ProductWithStock extends Product {
 export interface ProductSearchFilter {
   merchantId?: number;  // Changed from string to number
   categoryId?: number;  // Changed from string to number
+  outletId?: number;    // Added outletId for filtering by outlet
   search?: string;
   page?: number;
   limit?: number;

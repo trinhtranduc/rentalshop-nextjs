@@ -840,6 +840,26 @@ export async function updateOrder(
 // ============================================================================
 
 /**
+ * Build orderBy clause with validation
+ */
+function buildOrderByClause(sortBy?: string, sortOrder?: string): any {
+  const validSortFields = [
+    'createdAt', 'updatedAt', 'pickupPlanAt', 'returnPlanAt', 
+    'status', 'totalAmount', 'orderNumber', 'depositAmount'
+  ];
+  
+  const orderBy: any = {};
+  if (sortBy && validSortFields.includes(sortBy)) {
+    orderBy[sortBy] = sortOrder === 'asc' ? 'asc' : 'desc';
+  } else {
+    // Default to createdAt desc
+    orderBy.createdAt = 'desc';
+  }
+  
+  return orderBy;
+}
+
+/**
  * Search orders - follows dual ID system
  * Input: publicIds (numbers), Output: publicIds (numbers)
  */
@@ -963,24 +983,24 @@ export async function searchOrders(
             address: true,
             merchantId: true,
             merchant: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
+              select: {
+                id: true,
+                publicId: true,
+                name: true,
+              },
             },
           },
         },
-      },
-      createdBy: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
+        createdBy: {
+          select: {
+            id: true,
+            publicId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+          },
         },
-      },
       orderItems: {
         include: {
           product: {
@@ -997,7 +1017,7 @@ export async function searchOrders(
       },
       payments: true,
     },
-      orderBy: { createdAt: 'desc' },
+      orderBy: buildOrderByClause(filters.sortBy, filters.sortOrder),
       take: limit,
       skip: offset,
     }),

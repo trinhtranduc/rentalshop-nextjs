@@ -34,21 +34,126 @@ yarn db:reset-orders
 
 After running `yarn db:regenerate-system`:
 
-**Merchant Accounts:**
+### **👑 Super Admin (System-wide Access)**
+- `admin@rentalshop.com` / `admin123`
+  - **Full system access** to all merchants and outlets
+  - **Manage subscription plans** and system settings
+  - **View all data** across the platform
+  - **Platform operations** and system management
+
+### **🏢 Merchant Accounts (Business Owners)**
 - `merchant1@example.com` / `merchant123`
 - `merchant2@example.com` / `merchant123`
+  - **Organization-wide access** within their merchant
+  - **Manage multiple outlets** and users
 
-**Outlet Admins:**
+### **🏪 Outlet Admins (Outlet Managers)**
 - `admin.outlet1@example.com` / `admin123`
 - `admin.outlet2@example.com` / `admin123`
 - `admin.outlet3@example.com` / `admin123`
 - `admin.outlet4@example.com` / `admin123`
+  - **Full access** to their assigned outlet
+  - **Manage outlet operations** and staff
 
-**Outlet Staff:**
+### **👥 Outlet Staff (Outlet Employees)**
 - `staff.outlet1@example.com` / `staff123`
 - `staff.outlet2@example.com` / `staff123`
 - `staff.outlet3@example.com` / `staff123`
 - `staff.outlet4@example.com` / `staff123`
+  - **Limited access** to their assigned outlet
+  - **Basic operations** and customer service
+
+## 🚀 Quick Start - Admin Panel
+
+### **1. Start All Services**
+```bash
+yarn dev:all
+```
+
+### **2. Access Admin Panel**
+- **URL**: `http://localhost:3001`
+- **Login**: `admin@rentalshop.com` / `admin123`
+
+### **3. Admin Dashboard Focus: System Operations**
+
+The admin dashboard is designed for **platform management** rather than individual business operations:
+
+#### **🏠 Dashboard (System Overview)**
+- **Platform Health Status** - API, Database, Uptime monitoring
+- **System Metrics** - Total merchants, users, revenue across platform
+- **Recent Activity** - New registrations, system alerts, maintenance notices
+- **Quick Actions** - Common admin tasks, emergency controls
+
+#### **🏢 Merchants (Merchant Management)**
+- **Merchant Directory** - View all merchants, search, filter by status
+- **Merchant Details** - Business info, subscription status, outlet count
+- **Merchant Actions** - Activate/deactivate, upgrade/downgrade plans
+- **Merchant Analytics** - Performance metrics, growth trends
+- **Bulk Operations** - Mass updates, bulk plan changes
+
+#### **📋 Plans (Subscription Management)**
+- **Plan Creation** - Design new subscription tiers with features
+- **Plan Configuration** - Set pricing, features, trial periods
+- **Plan Updates** - Modify existing plans, add/remove features
+- **Plan Analytics** - Popular plans, conversion rates, revenue per plan
+- **Trial Management** - Configure trial days, trial-to-paid conversion
+
+#### **💰 Payments (Billing & Revenue)**
+- **Payment History** - All transactions across platform
+- **Billing Management** - Invoice generation, payment tracking
+- **Revenue Analytics** - Platform revenue, merchant payments
+- **Refund Management** - Process refunds, handle disputes
+- **Tax Configuration** - Set tax rates, generate tax reports
+
+#### **👥 Users (User Management)**
+- **User Directory** - All users across platform
+- **Role Management** - Assign roles, manage permissions
+- **Access Control** - User access logs, security monitoring
+- **Bulk User Operations** - Mass role changes, bulk deactivation
+
+#### **⚙️ Settings (System Configuration)**
+- **Platform Configuration** - Site settings, feature toggles
+- **Email Templates** - Customize system emails
+- **Notification Settings** - Configure alerts, webhooks
+- **API Management** - API keys, rate limits, documentation
+- **Maintenance Mode** - System downtime, scheduled maintenance
+
+#### **📊 Analytics (Platform Analytics)**
+- **Platform Growth** - Merchant registration trends
+- **Revenue Analytics** - Platform earnings, growth metrics
+- **User Behavior** - Login patterns, feature usage
+- **Performance Metrics** - System performance, load times
+- **Business Intelligence** - Custom reports, data exports
+
+#### **🔒 Security (Security & Monitoring)**
+- **Security Monitoring** - Login attempts, suspicious activity
+- **Audit Logs** - All admin actions, system changes
+- **Data Privacy** - GDPR compliance, data export/deletion
+- **Backup Management** - Database backups, recovery procedures
+
+### **4. Key Benefits of Admin Panel**
+
+1. **🎯 System-Focused** - Admin focuses on platform operations, not individual business metrics
+2. **🏢 Merchant-Centric** - Easy management of all merchants and their subscriptions
+3. **📋 Plan Management** - Flexible subscription plan creation and management
+4. **💰 Revenue Control** - Complete oversight of platform revenue and billing
+5. **🔒 Security First** - Comprehensive security monitoring and access control
+6. **📊 Data-Driven** - Platform analytics for business decisions
+7. **⚙️ Configurable** - Flexible system settings and configurations
+
+### **5. Navigation Structure**
+
+```
+ADMIN DASHBOARD
+├── 🏠 Dashboard (System Overview)
+├── 🏢 Merchants (Merchant Management)
+├── 📋 Plans (Subscription Plans)
+├── 💰 Payments (Billing & Revenue)
+├── 👥 Users (User Management)
+├── ⚙️ Settings (System Configuration)
+├── 📊 Analytics (Platform Analytics)
+└── 🔒 Security (Security & Monitoring)
+```
 
 ## 🏗️ Architecture Overview
 
@@ -65,9 +170,10 @@ This monorepo follows a **dual ID system** for optimal security and usability:
 - **API responses are pre-filtered** - users only see data they're authorized to access
 
 ### **Role-Based Data Access:**
-- **OUTLET users**: Automatically restricted to their specific outlet
+- **OUTLET_STAFF users**: Automatically restricted to their specific outlet
+- **OUTLET_ADMIN users**: Can access data from their assigned outlet
 - **MERCHANT users**: Can access data from all their outlets
-- **ADMIN users**: Full system access across all merchants
+- **ADMIN users**: **Full system access** across all merchants and outlets
 
 ## 📋 Updated Order System (2025)
 
@@ -169,8 +275,111 @@ return {
   id: 999,              // publicId (number)
   outletId: 123,        // publicId (number)
   customerId: 456,      // publicId (number)
-  orderNumber: "2025-001"
+  orderNumber: "ORD-001-0001"
 };
 
 // 6️⃣ FRONTEND RECEIVES (Numbers)
+const response = {
+  id: 999,              // Number
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  orderNumber: "ORD-001-0001"
+};
 ```
+
+## 🎯 **Admin vs Client Application Focus**
+
+### **🏠 Admin Application (`apps/admin`)**
+- **Purpose**: Platform management and system operations
+- **Focus**: System-wide metrics, merchant management, subscription plans
+- **Users**: System administrators and platform operators
+- **Features**: Merchant management, plan configuration, system analytics
+
+### **🏪 Client Application (`apps/client`)**
+- **Purpose**: Individual business operations
+- **Focus**: Daily operations, customer management, order processing
+- **Users**: Merchant owners, outlet managers, staff
+- **Features**: Product management, customer service, order processing
+
+## 🚀 **Development Commands**
+
+### **Start All Applications**
+```bash
+# Start all apps (admin, client, api) concurrently
+yarn dev:all
+
+# Individual app development
+yarn dev:admin      # Admin panel (port 3001)
+yarn dev:client     # Client app (port 3000)
+yarn dev:api        # API server (port 3002)
+```
+
+### **Database Operations**
+```bash
+# Regenerate entire system
+yarn db:regenerate-system
+
+# Reset database
+yarn db:reset
+
+# Seed database
+yarn db:seed
+```
+
+### **Build & Deploy**
+```bash
+# Build all packages
+yarn build
+
+# Build specific package
+yarn workspace @rentalshop/ui build
+```
+
+## 📁 **Project Structure**
+
+```
+rentalshop-nextjs/
+├── apps/
+│   ├── admin/           # Admin dashboard (System operations)
+│   ├── client/          # Client application (Business operations)
+│   └── api/             # Backend API server
+├── packages/
+│   ├── ui/              # Shared UI components
+│   ├── auth/            # Authentication & authorization
+│   ├── database/        # Database utilities
+│   ├── types/           # TypeScript type definitions
+│   ├── utils/           # Utility functions
+│   └── hooks/           # React hooks
+├── prisma/              # Database schema & migrations
+└── scripts/             # Development & deployment scripts
+```
+
+## 🔧 **Technology Stack**
+
+- **Frontend**: Next.js 13+ with App Router
+- **Backend**: Next.js API routes
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT-based with role-based access control
+- **UI**: Tailwind CSS with custom component library
+- **State Management**: React hooks and context
+- **Type Safety**: Full TypeScript support
+- **Monorepo**: Yarn workspaces with Turborepo
+
+## 📚 **Documentation**
+
+- **Environment Setup**: See `docs/ENVIRONMENT_SETUP.md`
+- **Database Setup**: See `DATABASE_SETUP.md`
+- **API Review**: See `API_REVIEW.md`
+- **Component Library**: See `packages/ui/README.md`
+
+## 🤝 **Contributing**
+
+1. Follow the established monorepo structure
+2. Use shared packages for common functionality
+3. Maintain consistent TypeScript types
+4. Follow security-first principles
+5. Test all changes thoroughly
+
+## 📄 **License**
+
+This project is proprietary software. All rights reserved.

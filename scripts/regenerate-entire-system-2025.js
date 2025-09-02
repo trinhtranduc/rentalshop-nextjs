@@ -29,7 +29,10 @@ const SYSTEM_CONFIG = {
   ORDERS_PER_OUTLET: 30,
   TOTAL_ORDERS: 120,
   USERS_PER_OUTLET: 2, // 1 admin + 1 staff
-  TOTAL_USERS: 8
+  TOTAL_USERS: 8,
+  BILLING_CYCLES: 4,
+  PLANS: 3,
+  SUBSCRIPTIONS: 2
 };
 
 // Updated order types and statuses
@@ -41,6 +44,14 @@ const ORDER_STATUS_FLOW = {
   RENT: ['RESERVED', 'PICKUPED', 'RETURNED', 'CANCELLED'],
   SALE: ['RESERVED', 'COMPLETED', 'CANCELLED']
 };
+
+// Payment types and methods
+const PAYMENT_TYPES = ['DEPOSIT', 'FULL_PAYMENT', 'REFUND', 'LATE_FEE', 'DAMAGE_FEE'];
+const PAYMENT_METHODS = ['CASH', 'BANK_TRANSFER', 'CREDIT_CARD', 'DIGITAL_WALLET', 'CHECK'];
+const PAYMENT_STATUSES = ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELLED'];
+
+// Subscription statuses
+const SUBSCRIPTION_STATUSES = ['ACTIVE', 'TRIAL', 'CANCELLED', 'EXPIRED', 'PAUSED'];
 
 // Global counter for public IDs
 let publicIdCounter = 1000; // Start from 1000 to avoid conflicts
@@ -71,6 +82,18 @@ async function resetDatabase() {
   
   try {
     // Delete in correct order due to foreign key constraints
+    await prisma.subscriptionPayment.deleteMany({});
+    console.log('✅ Deleted all subscription payments');
+    
+    await prisma.subscription.deleteMany({});
+    console.log('✅ Deleted all subscriptions');
+    
+    await prisma.plan.deleteMany({});
+    console.log('✅ Deleted all plans');
+    
+    await prisma.billingCycle.deleteMany({});
+    console.log('✅ Deleted all billing cycles');
+    
     await prisma.payment.deleteMany({});
     console.log('✅ Deleted all payments');
     
@@ -119,6 +142,7 @@ async function createMerchants() {
       data: {
         publicId: i,
         name: `Merchant ${i}`,
+        email: `merchant${i}@example.com`,
         description: `Description for Merchant ${i}`,
         isActive: true
       }
@@ -138,13 +162,12 @@ async function createMerchantAccounts(merchants) {
   const merchantUsers = [];
   
   for (const merchant of merchants) {
-    const hashedPassword = await hashPassword('merchant123');
-    
+    const merchantPassword = await hashPassword('merchant123');
     const merchantUser = await prisma.user.create({
       data: {
         publicId: getNextPublicId(),
         email: `merchant${merchant.publicId}@example.com`,
-        password: hashedPassword,
+        password: merchantPassword,
         firstName: `Merchant`,
         lastName: `${merchant.publicId}`,
         phone: `+1-555-${String(merchant.publicId).padStart(4, '0')}`,
@@ -159,6 +182,31 @@ async function createMerchantAccounts(merchants) {
   }
   
   return merchantUsers;
+}
+
+// Step 3.5: Create super admin user
+async function createSuperAdmin() {
+  console.log('\n👑 Creating super admin user...');
+  
+  const adminPassword = await hashPassword('admin123');
+  const superAdmin = await prisma.user.create({
+    data: {
+      publicId: getNextPublicId(),
+      email: 'admin@rentalshop.com',
+      password: adminPassword,
+      firstName: 'Super',
+      lastName: 'Administrator',
+      phone: '+1-555-0001',
+      role: 'ADMIN',
+      isActive: true,
+      // No merchantId or outletId for super admin (system-wide access)
+      merchantId: null,
+      outletId: null
+    }
+  });
+  
+  console.log(`✅ Created super admin: ${superAdmin.email} / admin123`);
+  return superAdmin;
 }
 
 // Step 4: Create outlets
@@ -580,6 +628,301 @@ async function createOrders(outlets, customers, products, outletUsers) {
   return orders;
 }
 
+// Step 10: Create billing cycles
+async function createBillingCycles() {
+  console.log('\n💳 Creating billing cycles...');
+  
+  const billingCycles = [];
+  let cycleId = 1;
+  
+  const cycleData = [
+    { name: 'Monthly', value: 'monthly', months: 1, discount: 0, sortOrder: 1 },
+    { name: 'Quarterly', value: 'quarterly', months: 3, discount: 5, sortOrder: 2 },
+    { name: 'Semi-Annual', value: 'semi-annual', months: 6, discount: 10, sortOrder: 3 },
+    { name: 'Annual', value: 'annual', months: 12, discount: 20, sortOrder: 4 }
+  ];
+  
+  for (const cycle of cycleData) {
+    const billingCycle = await prisma.billingCycle.create({
+      data: {
+        publicId: cycleId++,
+        name: cycle.name,
+        value: cycle.value,
+        months: cycle.months,
+        discount: cycle.discount,
+        description: `${cycle.name} billing cycle with ${cycle.discount}% discount`,
+        isActive: true,
+        sortOrder: cycle.sortOrder
+      }
+    });
+    
+    console.log(`✅ Created billing cycle: ${billingCycle.name} (${billingCycle.discount}% discount)`);
+    billingCycles.push(billingCycle);
+  }
+  
+  return billingCycles;
+}
+
+// Step 11: Create subscription plans
+async function createPlans(billingCycles) {
+  console.log('\n📋 Creating subscription plans...');
+  
+  const plans = [];
+  let planId = 1;
+  
+  const planData = [
+    {
+      name: 'Starter',
+      description: 'Perfect for small rental businesses just getting started',
+      price: 29.99,
+      trialDays: 14,
+      maxOutlets: 1,
+      maxUsers: 3,
+      maxProducts: 100,
+      maxCustomers: 500,
+      features: JSON.stringify([
+        'Basic order management',
+        'Customer management',
+        'Product catalog',
+        'Basic reporting',
+        'Email support'
+      ]),
+      isPopular: false,
+      sortOrder: 1,
+      billingCycleValue: 'monthly'
+    },
+    {
+      name: 'Professional',
+      description: 'Ideal for growing rental businesses with multiple outlets',
+      price: 79.99,
+      trialDays: 14,
+      maxOutlets: 5,
+      maxUsers: 15,
+      maxProducts: 1000,
+      maxCustomers: 2000,
+      features: JSON.stringify([
+        'Advanced order management',
+        'Multi-outlet support',
+        'Advanced reporting & analytics',
+        'Inventory management',
+        'Payment processing',
+        'Priority support',
+        'API access'
+      ]),
+      isPopular: true,
+      sortOrder: 2,
+      billingCycleValue: 'monthly'
+    },
+    {
+      name: 'Enterprise',
+      description: 'For large rental businesses with unlimited needs',
+      price: 199.99,
+      trialDays: 30,
+      maxOutlets: -1, // unlimited
+      maxUsers: -1, // unlimited
+      maxProducts: -1, // unlimited
+      maxCustomers: -1, // unlimited
+      features: JSON.stringify([
+        'Unlimited everything',
+        'Custom integrations',
+        'Advanced analytics',
+        'White-label options',
+        'Dedicated support',
+        'Custom training',
+        'SLA guarantee'
+      ]),
+      isPopular: false,
+      sortOrder: 3,
+      billingCycleValue: 'annual'
+    }
+  ];
+  
+  for (const plan of planData) {
+    const billingCycle = billingCycles.find(bc => bc.value === plan.billingCycleValue);
+    
+    const subscriptionPlan = await prisma.plan.create({
+      data: {
+        publicId: planId++,
+        name: plan.name,
+        description: plan.description,
+        price: plan.price,
+        trialDays: plan.trialDays,
+        maxOutlets: plan.maxOutlets,
+        maxUsers: plan.maxUsers,
+        maxProducts: plan.maxProducts,
+        maxCustomers: plan.maxCustomers,
+        features: plan.features,
+        isActive: true,
+        isPopular: plan.isPopular,
+        sortOrder: plan.sortOrder,
+        billingCycleId: billingCycle?.id
+      }
+    });
+    
+    console.log(`✅ Created plan: ${subscriptionPlan.name} - $${subscriptionPlan.price}/${plan.billingCycleValue}`);
+    plans.push(subscriptionPlan);
+  }
+  
+  return plans;
+}
+
+// Step 12: Create subscriptions for merchants
+async function createSubscriptions(merchants, plans) {
+  console.log('\n🔄 Creating merchant subscriptions...');
+  
+  const subscriptions = [];
+  let subscriptionId = 1;
+  
+  for (let i = 0; i < merchants.length; i++) {
+    const merchant = merchants[i];
+    const plan = plans[i % plans.length]; // Rotate through plans
+    
+    // Calculate subscription dates
+    const startDate = new Date();
+    const trialEndDate = new Date(startDate.getTime() + (plan.trialDays * 24 * 60 * 60 * 1000));
+    const nextBillingDate = new Date(trialEndDate);
+    
+    // Determine subscription status
+    const status = Math.random() > 0.2 ? 'ACTIVE' : 'TRIAL'; // 80% active, 20% trial
+    
+    const subscription = await prisma.subscription.create({
+      data: {
+        publicId: subscriptionId++,
+        merchantId: merchant.id,
+        planId: plan.id,
+        status: status,
+        startDate: startDate,
+        endDate: status === 'ACTIVE' ? new Date(startDate.getTime() + (365 * 24 * 60 * 60 * 1000)) : null,
+        trialEndDate: trialEndDate,
+        nextBillingDate: nextBillingDate,
+        amount: plan.price,
+        currency: 'USD',
+        billingCycleId: plan.billingCycleId,
+        autoRenew: true,
+        cancelledAt: null,
+        cancellationReason: null
+      }
+    });
+    
+    // Update merchant with plan reference
+    await prisma.merchant.update({
+      where: { id: merchant.id },
+      data: {
+        planId: plan.id,
+        subscriptionStatus: status.toLowerCase()
+      }
+    });
+    
+    console.log(`✅ Created ${status.toLowerCase()} subscription for ${merchant.name} - ${plan.name}`);
+    subscriptions.push(subscription);
+  }
+  
+  return subscriptions;
+}
+
+// Step 13: Create additional payments for orders
+async function createAdditionalPayments(orders) {
+  console.log('\n💳 Creating additional payments...');
+  
+  const payments = [];
+  let paymentId = 1;
+  
+  for (const order of orders) {
+    // Create additional payments for some orders (late fees, damage fees, refunds)
+    const shouldCreateAdditionalPayment = Math.random() > 0.7; // 30% chance
+    
+    if (shouldCreateAdditionalPayment) {
+      const paymentTypes = ['LATE_FEE', 'DAMAGE_FEE', 'REFUND'];
+      const paymentType = pickRandom(paymentTypes);
+      const paymentMethod = pickRandom(PAYMENT_METHODS);
+      const paymentStatus = pickRandom(PAYMENT_STATUSES);
+      
+      let amount = 0;
+      let description = '';
+      
+      switch (paymentType) {
+        case 'LATE_FEE':
+          amount = Math.floor(Math.random() * 50) + 10; // $10-$60
+          description = `Late fee for order ${order.orderNumber}`;
+          break;
+        case 'DAMAGE_FEE':
+          amount = Math.floor(Math.random() * 200) + 50; // $50-$250
+          description = `Damage fee for order ${order.orderNumber}`;
+          break;
+        case 'REFUND':
+          amount = Math.floor(Math.random() * order.totalAmount * 0.5) + 10; // Partial refund
+          description = `Refund for order ${order.orderNumber}`;
+          break;
+      }
+      
+      const payment = await prisma.payment.create({
+        data: {
+          orderId: order.id,
+          amount: amount,
+          method: paymentMethod,
+          type: paymentType,
+          status: paymentStatus,
+          reference: `PAY-${paymentId.toString().padStart(6, '0')}`,
+          notes: description
+        }
+      });
+      
+      payments.push(payment);
+      paymentId++;
+      
+      if (payments.length <= 10) { // Log first 10 additional payments
+        console.log(`  💳 Created ${paymentType} payment: $${amount} - ${paymentStatus}`);
+      }
+    }
+  }
+  
+  console.log(`✅ Created ${payments.length} additional payments`);
+  return payments;
+}
+
+// Step 14: Create subscription payments
+async function createSubscriptionPayments(subscriptions) {
+  console.log('\n🔄 Creating subscription payments...');
+  
+  const subscriptionPayments = [];
+  let paymentId = 1;
+  
+  for (const subscription of subscriptions) {
+    // Create 1-3 payments per subscription
+    const numPayments = Math.floor(Math.random() * 3) + 1;
+    
+    for (let i = 0; i < numPayments; i++) {
+      const paymentMethod = pickRandom(PAYMENT_METHODS);
+      const paymentStatus = Math.random() > 0.1 ? 'COMPLETED' : 'FAILED'; // 90% success rate
+      
+      const payment = await prisma.subscriptionPayment.create({
+        data: {
+          publicId: paymentId++,
+          subscriptionId: subscription.id,
+          amount: subscription.amount,
+          currency: subscription.currency,
+          method: paymentMethod,
+          status: paymentStatus,
+          transactionId: `TXN-${paymentId.toString().padStart(8, '0')}`,
+          invoiceNumber: `INV-${subscription.publicId}-${i + 1}`,
+          description: `Subscription payment for ${subscription.plan?.name || 'Plan'}`,
+          failureReason: paymentStatus === 'FAILED' ? 'Insufficient funds' : null,
+          processedAt: paymentStatus === 'COMPLETED' ? new Date() : null
+        }
+      });
+      
+      subscriptionPayments.push(payment);
+      
+      if (subscriptionPayments.length <= 10) { // Log first 10 subscription payments
+        console.log(`  💳 Created subscription payment: $${subscription.amount} - ${paymentStatus}`);
+      }
+    }
+  }
+  
+  console.log(`✅ Created ${subscriptionPayments.length} subscription payments`);
+  return subscriptionPayments;
+}
+
 // Main function
 async function main() {
   try {
@@ -591,6 +934,9 @@ async function main() {
     console.log(`  • ${SYSTEM_CONFIG.CUSTOMERS_PER_MERCHANT} customers per merchant (${SYSTEM_CONFIG.TOTAL_CUSTOMERS} total)`);
     console.log(`  • ${SYSTEM_CONFIG.PRODUCTS_PER_MERCHANT} products per merchant (${SYSTEM_CONFIG.TOTAL_PRODUCTS} total)`);
     console.log(`  • ${SYSTEM_CONFIG.ORDERS_PER_OUTLET} orders per outlet (${SYSTEM_CONFIG.TOTAL_ORDERS} total)`);
+    console.log(`  • ${SYSTEM_CONFIG.BILLING_CYCLES} billing cycles`);
+    console.log(`  • ${SYSTEM_CONFIG.PLANS} subscription plans`);
+    console.log(`  • ${SYSTEM_CONFIG.SUBSCRIPTIONS} merchant subscriptions`);
     console.log('');
     
     // Step 1: Reset database
@@ -601,6 +947,9 @@ async function main() {
     
     // Step 3: Create merchant accounts
     const merchantUsers = await createMerchantAccounts(merchants);
+    
+    // Step 3.5: Create super admin user
+    const superAdmin = await createSuperAdmin();
     
     // Step 4: Create outlets
     const outlets = await createOutlets(merchants);
@@ -620,18 +969,42 @@ async function main() {
     // Step 9: Create orders
     const orders = await createOrders(outlets, customers, products, outletUsers);
     
+    // Step 10: Create billing cycles
+    const billingCycles = await createBillingCycles();
+    
+    // Step 11: Create subscription plans
+    const plans = await createPlans(billingCycles);
+    
+    // Step 12: Create merchant subscriptions
+    const subscriptions = await createSubscriptions(merchants, plans);
+    
+    // Step 13: Create additional payments for orders
+    const additionalPayments = await createAdditionalPayments(orders);
+    
+    // Step 14: Create subscription payments
+    const subscriptionPayments = await createSubscriptionPayments(subscriptions);
+    
     console.log('\n🎉 Complete system regeneration completed successfully!');
     console.log('\n📊 Final Summary:');
     console.log(`  ✅ ${merchants.length} merchants created`);
     console.log(`  ✅ ${merchantUsers.length} merchant accounts created`);
+    console.log(`  ✅ 1 super admin created`);
     console.log(`  ✅ ${outlets.length} outlets created`);
     console.log(`  ✅ ${outletUsers.length} outlet users created`);
     console.log(`  ✅ ${categories.length} categories created`);
     console.log(`  ✅ ${products.length} products created`);
     console.log(`  ✅ ${customers.length} customers created`);
     console.log(`  ✅ ${orders.length} orders created`);
+    console.log(`  ✅ ${billingCycles.length} billing cycles created`);
+    console.log(`  ✅ ${plans.length} subscription plans created`);
+    console.log(`  ✅ ${subscriptions.length} merchant subscriptions created`);
+    console.log(`  ✅ ${additionalPayments.length} additional payments created`);
+    console.log(`  ✅ ${subscriptionPayments.length} subscription payments created`);
     
     console.log('\n🔑 Login Credentials:');
+    console.log('\n=== SUPER ADMIN (System-wide Access) ===');
+    console.log(`  Super Admin: ${superAdmin.email} / admin123`);
+    
     console.log('\n=== MERCHANT ACCOUNTS ===');
     merchantUsers.forEach((user, index) => {
       console.log(`  Merchant ${index + 1}: ${user.email} / merchant123`);
@@ -668,6 +1041,38 @@ async function main() {
       });
     });
     
+    console.log('\n💳 Payment Summary:');
+    const paymentSummary = {};
+    additionalPayments.forEach(payment => {
+      if (!paymentSummary[payment.type]) {
+        paymentSummary[payment.type] = 0;
+      }
+      paymentSummary[payment.type]++;
+    });
+    
+    Object.entries(paymentSummary).forEach(([type, count]) => {
+      console.log(`  ${type}: ${count}`);
+    });
+    
+    console.log('\n🔄 Subscription Summary:');
+    const subscriptionSummary = {};
+    subscriptions.forEach(subscription => {
+      if (!subscriptionSummary[subscription.status]) {
+        subscriptionSummary[subscription.status] = 0;
+      }
+      subscriptionSummary[subscription.status]++;
+    });
+    
+    Object.entries(subscriptionSummary).forEach(([status, count]) => {
+      console.log(`  ${status}: ${count}`);
+    });
+    
+    console.log('\n📋 Plan Summary:');
+    plans.forEach(plan => {
+      const planSubscriptions = subscriptions.filter(s => s.planId === plan.id);
+      console.log(`  ${plan.name}: ${planSubscriptions.length} subscriptions - $${plan.price}/${plan.billingCycle?.value || 'monthly'}`);
+    });
+    
   } catch (error) {
     console.error('❌ Fatal error during system regeneration:', error);
     process.exit(1);
@@ -685,6 +1090,7 @@ module.exports = {
   resetDatabase, 
   createMerchants, 
   createMerchantAccounts, 
+  createSuperAdmin, 
   createOutlets, 
   createOutletUsers, 
   createCategories, 

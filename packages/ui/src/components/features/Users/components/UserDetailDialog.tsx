@@ -13,8 +13,8 @@ import { Button } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
 import { ConfirmationDialog } from '@rentalshop/ui';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
-import { userApiClient } from '../lib/UserApiClient';
-import { UserCheck, UserX, Key, AlertTriangle } from 'lucide-react';
+import { usersApi } from '@rentalshop/utils';
+import { UserCheck, UserX, Key, AlertTriangle, Trash2 } from 'lucide-react';
 import type { User } from '@rentalshop/types';
 
 interface UserDetailDialogProps {
@@ -35,6 +35,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState(false);
   const [isActivateConfirmOpen, setIsActivateConfirmOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   if (!user) return null;
@@ -139,6 +140,26 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
     onError?.(error);
   };
 
+  const handleDeleteUser = async () => {
+    setIsLoading(true);
+    try {
+      const response = await usersApi.deleteUserByPublicId(user.id);
+      
+      if (response.success) {
+        // Close dialog and notify parent
+        onOpenChange(false);
+        onUserUpdated?.(user); // This will trigger a refresh in the parent
+      } else {
+        onError?.(response.error || 'Failed to delete user');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      onError?.(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -165,7 +186,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                    <p className="text-gray-900 text-base font-medium">{user.name}</p>
+                    <p className="text-gray-900 text-base font-medium">{`${user.firstName || ''} ${user.lastName || ''}`.trim()}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -200,28 +221,36 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
             </Card>
 
             {/* Outlet Information */}
-            {user.outletStaff && user.outletStaff.length > 0 && (
+            {user.outlet && (
               <Card>
                 <CardContent className="p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                     Outlet Information
                   </h3>
-                  <div className="space-y-4">
-                    {user.outletStaff.map((staff) => (
-                      <div key={staff.id} className="border rounded-lg p-4 bg-gray-50">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Name</label>
-                            <p className="text-gray-900 text-base">{staff.outlet.name}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Outlet ID</label>
-                            <p className="text-gray-500 text-sm font-mono">{staff.outlet.id}</p>
-                          </div>
-                        </div>
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Name</label>
+                        <p className="text-gray-900 text-base">{user.outlet.name}</p>
                       </div>
-                    ))}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Outlet ID</label>
+                        <p className="text-gray-500 text-sm font-mono">{user.outlet.id}</p>
+                      </div>
+                      {user.outlet.merchant && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Merchant Name</label>
+                            <p className="text-gray-900 text-base">{user.outlet.merchant.name}</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Merchant ID</label>
+                            <p className="text-gray-500 text-sm font-mono">{user.outlet.merchant.id}</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -234,7 +263,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                   <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
                   Account Actions
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-3">
                     <h4 className="font-medium text-gray-900">Password Management</h4>
                     <Button
@@ -286,6 +315,28 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                       </div>
                     )}
                   </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-900">Danger Zone</h4>
+                    <Button
+                      onClick={() => setIsDeleteConfirmOpen(true)}
+                      variant="outline"
+                      className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
+                      disabled={isLoading || user.role === 'ADMIN'}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {isLoading ? 'Deleting...' : 'Delete Account'}
+                    </Button>
+                    <p className="text-xs text-gray-500">
+                      Permanently delete this user account
+                    </p>
+                    {user.role === 'ADMIN' && (
+                      <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                        <AlertTriangle className="h-3 w-3" />
+                        Admin accounts cannot be deleted
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -307,7 +358,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         open={isChangePasswordOpen}
         onOpenChange={setIsChangePasswordOpen}
         userId={user.id}
-        userName={user.name}
+        userName={`${user.firstName || ''} ${user.lastName || ''}`.trim()}
         onSuccess={handlePasswordChangeSuccess}
         onError={handlePasswordChangeError}
       />
@@ -318,7 +369,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         onOpenChange={setIsDeactivateConfirmOpen}
         type="warning"
         title="Deactivate User Account"
-        description={`Are you sure you want to deactivate ${user.name}? This will prevent them from logging in to the system.`}
+        description={`Are you sure you want to deactivate ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? This will prevent them from logging in to the system.`}
         confirmText="Deactivate Account"
         cancelText="Cancel"
         onConfirm={handleDeactivateUser}
@@ -330,10 +381,22 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         onOpenChange={setIsActivateConfirmOpen}
         type="info"
         title="Activate User Account"
-        description={`Are you sure you want to activate ${user.name}? This will allow them to log in to the system again.`}
+        description={`Are you sure you want to activate ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? This will allow them to log in to the system again.`}
         confirmText="Activate Account"
         cancelText="Cancel"
         onConfirm={handleActivateUser}
+      />
+
+      {/* Delete User Confirmation Dialog */}
+      <ConfirmationDialog
+        open={isDeleteConfirmOpen}
+        onOpenChange={setIsDeleteConfirmOpen}
+        type="danger"
+        title="Delete User Account"
+        description={`Are you sure you want to permanently delete ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? This action cannot be undone and will remove all user data.`}
+        confirmText="Delete Account"
+        cancelText="Cancel"
+        onConfirm={handleDeleteUser}
       />
     </>
   );

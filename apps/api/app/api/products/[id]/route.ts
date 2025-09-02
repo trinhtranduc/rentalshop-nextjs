@@ -85,12 +85,7 @@ export async function GET(
         outletId: os.outlet.publicId, // Use publicId for frontend
         stock: os.stock,
         available: os.available,
-        renting: os.renting,
-        outlet: {
-          id: os.outlet.publicId,        // Use publicId as id for frontend
-          name: os.outlet.name,
-          address: os.outlet.address
-        }
+        renting: os.renting
       })),
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString()

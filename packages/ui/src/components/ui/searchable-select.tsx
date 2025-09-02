@@ -82,11 +82,15 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   }, [query, onSearch]);
 
   const filtered = React.useMemo(() => {
+    console.log('🔍 SearchableSelect: Filtering with query:', query, 'onSearch:', !!onSearch, 'options count:', options?.length || 0);
+    
     if (onSearch) {
       // In search mode, return search results if available, otherwise show empty
       if (query.trim()) {
+        console.log('🔍 SearchableSelect: Search mode - returning internalOptions:', internalOptions.length);
         return internalOptions;
       } else {
+        console.log('🔍 SearchableSelect: Search mode - returning empty array');
         return [];
       }
     }
@@ -94,10 +98,12 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     // In non-search mode, filter the static options
     const q = query.trim().toLowerCase();
     if (!q) {
+      console.log('🔍 SearchableSelect: No query - returning all options:', (options || []).length);
       return options || []; // Use original options, not internalOptions
     }
     
     const filtered = options?.filter((o) => o.label.toLowerCase().includes(q));
+    console.log('🔍 SearchableSelect: Filtered results:', filtered?.length || 0, 'for query:', q);
     return filtered || [];
   }, [query, internalOptions, onSearch, options]);
 

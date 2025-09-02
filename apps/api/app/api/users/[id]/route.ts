@@ -11,7 +11,7 @@ import { findUserByPublicId } from '@rentalshop/database';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: number } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Verify authentication
@@ -43,14 +43,14 @@ export async function GET(
     } else if (currentUser.role === 'MERCHANT') {
       // Merchant can see all users within their organization
       canAccess = true;
-      userScope = { merchantId: currentUser.merchantId || undefined };
+      userScope = { merchantId: currentUser.merchantId ? parseInt(currentUser.merchantId) : undefined };
       console.log('🔐 Merchant access granted - scope:', userScope);
     } else if (currentUser.role === 'OUTLET_ADMIN') {
       // Outlet admin can see users within their outlet
       canAccess = true;
       userScope = { 
-        merchantId: currentUser.merchantId || undefined, 
-        outletId: currentUser.outletId || undefined 
+        merchantId: currentUser.merchantId ? parseInt(currentUser.merchantId) : undefined, 
+        outletId: currentUser.outletId ? parseInt(currentUser.outletId) : undefined 
       };
       console.log('🔐 Outlet Admin access granted - scope:', userScope);
     } else if (currentUser.role === 'OUTLET_STAFF') {
@@ -85,7 +85,25 @@ export async function GET(
     console.log('🔍 Looking for user with numeric ID:', numericId);
 
     // Check if user exists by ID
-    const user = await findUserByPublicId(numericId);
+    const user = await prisma.user.findUnique({
+      where: { publicId: numericId },
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+          },
+        },
+        outlet: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+          },
+        },
+      },
+    });
 
     console.log('🔍 Database query result:', user);
 
@@ -98,7 +116,7 @@ export async function GET(
     }
 
     // Validate scope access - ensure user can only view users within their scope
-    if (userScope.merchantId && user.merchantId !== userScope.merchantId) {
+    if (userScope.merchantId && user.merchantId && parseInt(user.merchantId) !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to access user from different merchant', {
         userMerchantId: user.merchantId,
         userScopeMerchantId: userScope.merchantId
@@ -109,7 +127,7 @@ export async function GET(
       );
     }
 
-    if (userScope.outletId && user.outletId !== userScope.outletId) {
+    if (userScope.outletId && user.outletId && parseInt(user.outletId) !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to access user from different outlet', {
         userOutletId: user.outletId,
         userScopeOutletId: userScope.outletId
@@ -181,12 +199,222 @@ export async function GET(
 }
 
 /**
+ * PUT /api/users/[publicId]
+ * Update user information by public ID (Admin, Merchant, Outlet Admin only)
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Verify authentication
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const currentUser = await verifyTokenSimple(token);
+    if (!currentUser) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Check authorization based on user role
+    let canAccess = false;
+    let userScope: { merchantId?: number; outletId?: number } = {};
+
+    // Normalize role for comparison (handle case sensitivity)
+    const normalizedRole = currentUser.role?.toUpperCase() || '';
+
+    if (normalizedRole === 'ADMIN') {
+      // Admin can update all users system-wide
+      canAccess = true;
+      userScope = {};
+      console.log('🔐 Admin access granted - can update all users system-wide');
+    } else if (normalizedRole === 'MERCHANT') {
+      // Merchant can update users within their organization
+      canAccess = true;
+      userScope = { merchantId: currentUser.merchantId ? parseInt(currentUser.merchantId) : undefined };
+      console.log('🔐 Merchant access granted - scope:', userScope);
+    } else if (normalizedRole === 'OUTLET_ADMIN') {
+      // Outlet admin can update users within their outlet
+      canAccess = true;
+      userScope = { 
+        merchantId: currentUser.merchantId ? parseInt(currentUser.merchantId) : undefined, 
+        outletId: currentUser.outletId ? parseInt(currentUser.outletId) : undefined 
+      };
+      console.log('🔐 Outlet Admin access granted - scope:', userScope);
+    } else if (normalizedRole === 'OUTLET_STAFF') {
+      // Outlet staff cannot update users
+      canAccess = false;
+      console.log('🔐 Outlet Staff access denied - cannot update users');
+    } else {
+      // Unknown role
+      canAccess = false;
+      console.log('❌ Unknown role:', currentUser.role, 'Normalized:', normalizedRole);
+    }
+
+    if (!canAccess) {
+      console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions to update users' }, 
+        { status: 403 }
+      );
+    }
+
+    console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
+
+    const { id } = params;
+    const body = await request.json();
+
+    // Validate public ID format (should be numeric)
+    const numericId = parseInt(id);
+    if (isNaN(numericId) || numericId <= 0) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { publicId: numericId },
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+          },
+        },
+        outlet: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Validate scope access - ensure user can only update users within their scope
+    if (userScope.merchantId && user.merchantId && parseInt(user.merchantId) !== userScope.merchantId) {
+      console.log('❌ Scope violation: User trying to update user from different merchant', {
+        userMerchantId: user.merchantId,
+        userScopeMerchantId: userScope.merchantId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: Cannot update user from different organization' },
+        { status: 403 }
+      );
+    }
+
+    if (userScope.outletId && user.outletId && parseInt(user.outletId) !== userScope.outletId) {
+      console.log('❌ Scope violation: User trying to update user from different outlet', {
+        userOutletId: user.outletId,
+        userScopeOutletId: userScope.outletId
+      });
+      return NextResponse.json(
+        { success: false, message: 'Access denied: Cannot update user from different outlet' },
+        { status: 403 }
+      );
+    }
+
+    console.log('✅ Scope validation passed - user can update this user data');
+
+    // Prevent modifying admin users (unless current user is also admin)
+    if (user.role === 'ADMIN' && currentUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, message: 'Cannot modify admin users' },
+        { status: 400 }
+      );
+    }
+
+    // Import the update function
+    const { updateUser } = await import('@rentalshop/database');
+
+    // Update user
+    const updatedUser = await updateUser(numericId, body);
+
+    console.log('✅ User updated successfully:', {
+      updatedUserId: numericId,
+      updatedBy: currentUser.publicId,
+      updatedUser: updatedUser.publicId
+    });
+
+    // Transform the data to match the expected format
+    const transformedUser = {
+      id: updatedUser.publicId, // Return publicId as "id" to frontend
+      name: `${updatedUser.firstName || ''} ${updatedUser.lastName || ''}`.trim() || 'Unknown',
+      email: updatedUser.email,
+      phone: updatedUser.phone || '',
+      role: updatedUser.role,
+      isActive: updatedUser.isActive,
+      createdAt: updatedUser.createdAt.toISOString(),
+      updatedAt: updatedUser.updatedAt.toISOString(),
+      
+      // Add missing fields that UI needs
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      merchantId: updatedUser.merchantId,
+      outletId: updatedUser.outletId,
+      emailVerified: (updatedUser as any).emailVerified || false,
+      lastLoginAt: (updatedUser as any).lastLoginAt?.toISOString(),
+      
+      // Include merchant and outlet objects
+      merchant: updatedUser.merchant ? {
+        id: updatedUser.merchant.id,
+        name: updatedUser.merchant.name
+      } : undefined,
+      
+      outlet: (updatedUser as any).outlet ? {
+        id: (updatedUser as any).outlet.id,
+        name: (updatedUser as any).outlet.name,
+        merchant: updatedUser.merchant ? {
+          id: updatedUser.merchant.id,
+          name: updatedUser.merchant.name
+        } : undefined
+      } : undefined
+    };
+
+    return NextResponse.json({
+      success: true,
+      data: transformedUser,
+      message: 'User updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Failed to update user',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * PATCH /api/users/[publicId]
  * Activate/Deactivate user by public ID (Admin only)
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { publicId: number } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Verify authentication
@@ -221,14 +449,14 @@ export async function PATCH(
     } else if (normalizedRole === 'MERCHANT') {
       // Merchant can activate/deactivate users within their organization
       canAccess = true;
-      userScope = { merchantId: currentUser.merchantId || undefined };
+      userScope = { merchantId: currentUser.merchantId ? parseInt(currentUser.merchantId) : undefined };
       console.log('🔐 Merchant access granted - scope:', userScope);
     } else if (normalizedRole === 'OUTLET_ADMIN') {
       // Outlet admin can activate/deactivate users within their outlet
       canAccess = true;
       userScope = { 
-        merchantId: currentUser.merchantId || undefined, 
-        outletId: currentUser.outletId || undefined 
+        merchantId: currentUser.merchantId ? parseInt(currentUser.merchantId) : undefined, 
+        outletId: currentUser.outletId ? parseInt(currentUser.outletId) : undefined 
       };
       console.log('🔐 Outlet Admin access granted - scope:', userScope);
     } else if (normalizedRole === 'OUTLET_STAFF') {
@@ -251,7 +479,7 @@ export async function PATCH(
 
     console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
 
-    const { publicId } = params;
+    const { id } = params;
     const body = await request.json();
     const { action } = body; // 'activate' or 'deactivate'
 
@@ -263,7 +491,7 @@ export async function PATCH(
     }
 
     // Validate public ID format (should be numeric)
-    const numericId = parseInt(publicId);
+    const numericId = parseInt(id);
     if (isNaN(numericId) || numericId <= 0) {
       return NextResponse.json(
         { success: false, message: 'Invalid user ID format' },
@@ -272,7 +500,25 @@ export async function PATCH(
     }
 
     // Check if user exists
-    const user = await findUserByPublicId(numericId);
+    const user = await prisma.user.findUnique({
+      where: { publicId: numericId },
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+          },
+        },
+        outlet: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+          },
+        },
+      },
+    });
 
     if (!user) {
       return NextResponse.json(
@@ -282,7 +528,7 @@ export async function PATCH(
     }
 
     // Validate scope access - ensure user can only activate/deactivate users within their scope
-    if (userScope.merchantId && user.merchantId !== userScope.merchantId) {
+    if (userScope.merchantId && user.merchantId && parseInt(user.merchantId) !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to activate/deactivate user from different merchant', {
         userMerchantId: user.merchantId,
         userScopeMerchantId: userScope.merchantId
@@ -293,7 +539,7 @@ export async function PATCH(
       );
     }
 
-    if (userScope.outletId && user.outletId !== userScope.outletId) {
+    if (userScope.outletId && user.outletId && parseInt(user.outletId) !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to activate/deactivate user from different outlet', {
         userOutletId: user.outletId,
         userScopeOutletId: userScope.outletId
@@ -357,7 +603,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { publicId: number } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Verify authentication
@@ -392,14 +638,14 @@ export async function DELETE(
     } else if (normalizedRole === 'MERCHANT') {
       // Merchant can delete users within their organization
       canAccess = true;
-      userScope = { merchantId: currentUser.merchantId || undefined };
+      userScope = { merchantId: currentUser.merchantId ? parseInt(currentUser.merchantId) : undefined };
       console.log('🔐 Merchant access granted - scope:', userScope);
     } else if (normalizedRole === 'OUTLET_ADMIN') {
       // Outlet admin can delete users within their outlet
       canAccess = true;
       userScope = { 
-        merchantId: currentUser.merchantId || undefined, 
-        outletId: currentUser.outletId || undefined 
+        merchantId: currentUser.merchantId ? parseInt(currentUser.merchantId) : undefined, 
+        outletId: currentUser.outletId ? parseInt(currentUser.outletId) : undefined 
       };
       console.log('🔐 Outlet Admin access granted - scope:', userScope);
     } else if (normalizedRole === 'OUTLET_STAFF') {
@@ -422,10 +668,10 @@ export async function DELETE(
 
     console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
 
-    const { publicId } = params;
+    const { id } = params;
 
     // Validate public ID format (should be numeric)
-    const numericId = parseInt(publicId);
+    const numericId = parseInt(id);
     if (isNaN(numericId) || numericId <= 0) {
       return NextResponse.json(
         { success: false, message: 'Invalid user ID format' },
@@ -434,7 +680,25 @@ export async function DELETE(
     }
 
     // Check if user exists
-    const user = await findUserByPublicId(numericId);
+    const user = await prisma.user.findUnique({
+      where: { publicId: numericId },
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+          },
+        },
+        outlet: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+          },
+        },
+      },
+    });
 
     if (!user) {
       return NextResponse.json(
@@ -444,7 +708,7 @@ export async function DELETE(
     }
 
     // Validate scope access - ensure user can only delete users within their scope
-    if (userScope.merchantId && user.merchantId !== userScope.merchantId) {
+    if (userScope.merchantId && user.merchantId && parseInt(user.merchantId) !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to delete user from different merchant', {
         userMerchantId: user.merchantId,
         userScopeMerchantId: userScope.merchantId
@@ -455,7 +719,7 @@ export async function DELETE(
       );
     }
 
-    if (userScope.outletId && user.outletId !== userScope.outletId) {
+    if (userScope.outletId && user.outletId && parseInt(user.outletId) !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to delete user from different outlet', {
         userOutletId: user.outletId,
         userScopeOutletId: userScope.outletId

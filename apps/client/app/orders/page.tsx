@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
-  Orders,
   OrdersLoading,
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent
 } from '@rentalshop/ui';
+import { Orders } from '../../components/Orders';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@rentalshop/hooks';
 import type { OrderSearchResult, OrderInput, OrderType, OrderStatus, OrderFilters as OrderFiltersType, OrderData } from '@rentalshop/types';
@@ -218,6 +218,9 @@ export default function OrdersPage() {
       case 'cancel':
         const orderForCancel = orders.find(o => o.orderNumber === orderNumber);
         if (orderForCancel) await handleCancel(orderForCancel.id);
+        break;
+      case 'edit':
+        router.push(`/orders/${numericOrderNumber}/edit`);
         break;
       default:
         console.log('Unknown action:', action);

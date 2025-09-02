@@ -19,45 +19,54 @@ import type {
 // ============================================================================
 
 /**
- * Search outlets with filters - follows dual ID system
+ * Search outlets - follows dual ID system
+ * Input: publicIds (numbers), Output: publicIds (numbers)
  */
 export async function searchOutlets(filters: OutletSearchFilter): Promise<OutletSearchResponse> {
-  const { merchantId, outletId, isActive, search, page = 1, limit = 20 } = filters;
+  const {
+    merchantId,
+    outletId, // Add outletId filter for outlet-level users
+    isActive,
+    search,
+    page = 1,
+    limit = 20
+  } = filters;
+
   const skip = (page - 1) * limit;
 
   // Build where clause
   const where: any = {};
 
   if (merchantId) {
-    // Find merchant by publicId first
+    // Find merchant by publicId
     const merchant = await prisma.merchant.findUnique({
       where: { publicId: merchantId },
       select: { id: true }
     });
     
-    if (!merchant) {
-      throw new Error(`Merchant with publicId ${merchantId} not found`);
+    if (merchant) {
+      where.merchantId = merchant.id; // Use CUID
     }
-    
-    where.merchantId = merchant.id; // Use CUID
   }
 
+  // Outlet-level filtering: Users can only see their assigned outlet
   if (outletId) {
-    // Find outlet by publicId first
+    // Find outlet by publicId
     const outlet = await prisma.outlet.findUnique({
       where: { publicId: outletId },
       select: { id: true }
     });
     
-    if (!outlet) {
-      throw new Error(`Outlet with publicId ${outletId} not found`);
+    if (outlet) {
+      where.id = outlet.id; // Use CUID for exact match
     }
-    
-    where.id = outlet.id; // Use CUID
   }
 
+  // Default to active outlets only
   if (isActive !== undefined) {
     where.isActive = isActive;
+  } else {
+    where.isActive = true;
   }
 
   if (search) {
@@ -82,10 +91,8 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
       phone: true,
       description: true,
       isActive: true,
-      isDefault: true,
       createdAt: true,
       updatedAt: true,
-      merchantId: true,
       merchant: {
         select: {
           id: true,
@@ -107,13 +114,11 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     phone: outlet.phone || undefined,
     description: outlet.description || undefined,
     isActive: outlet.isActive,
-    isDefault: outlet.isDefault,
-    status: outlet.isActive ? 'ACTIVE' : 'INACTIVE', // Derive status from isActive
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.publicId, // Use merchant's publicId
+    merchantId: outlet.merchant.publicId, // Return merchant publicId
     merchant: {
-      id: outlet.merchant.publicId, // Use merchant's publicId
+      id: outlet.merchant.publicId,
       name: outlet.merchant.name
     }
   }));
@@ -173,12 +178,11 @@ export async function getOutletsByMerchant(merchantId: number) {
     phone: outlet.phone || undefined,
     description: outlet.description || undefined,
     isActive: outlet.isActive,
-    status: outlet.isActive ? 'ACTIVE' : 'INACTIVE', // Derive status from isActive
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.publicId, // Use merchant's publicId
+    merchantId: outlet.merchant.publicId, // Return merchant publicId
     merchant: {
-      id: outlet.merchant.publicId, // Use merchant's publicId
+      id: outlet.merchant.publicId,
       name: outlet.merchant.name
     }
   }));
@@ -285,7 +289,6 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
     phone: outlet.phone || undefined,
     description: outlet.description || undefined,
     isActive: outlet.isActive,
-    status: outlet.isActive ? 'ACTIVE' : 'INACTIVE', // Derive status from isActive
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
     merchantId: outlet.merchant.publicId, // Return merchant publicId
@@ -317,7 +320,6 @@ export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
       ...(input.phone !== undefined && { phone: input.phone?.trim() }),
       ...(input.description !== undefined && { description: input.description?.trim() }),
       ...(input.isActive !== undefined && { isActive: input.isActive })
-      // Note: status field is not in database yet, so we don't update it
     },
     select: {
       id: true,
@@ -347,12 +349,11 @@ export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
     phone: updatedOutlet.phone || undefined,
     description: updatedOutlet.description || undefined,
     isActive: updatedOutlet.isActive,
-    status: updatedOutlet.isActive ? 'ACTIVE' : 'INACTIVE', // Derive status from isActive
     createdAt: updatedOutlet.createdAt,
     updatedAt: updatedOutlet.updatedAt,
-    merchantId: updatedOutlet.merchant.publicId, // Use merchant's publicId
+    merchantId: updatedOutlet.merchant.publicId, // Return merchant publicId
     merchant: {
-      id: updatedOutlet.merchant.publicId, // Use merchant's publicId
+      id: updatedOutlet.merchant.publicId,
       name: updatedOutlet.merchant.name
     }
   };

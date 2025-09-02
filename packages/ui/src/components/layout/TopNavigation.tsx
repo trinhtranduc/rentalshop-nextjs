@@ -15,11 +15,31 @@ import {
   User,
   LogOut,
   X,
-  Menu
+  Menu,
+  CreditCard,
+  Calendar,
+  ChevronDown,
+  BarChart3,
+  Shield,
+  FileText,
+  Database,
+  Activity,
+  Wrench,
+  Key,
+  Download,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
+import { LucideIcon } from 'lucide-react'
+
+interface NavItem {
+  href: string
+  label: string
+  icon: LucideIcon
+  subItems?: NavItem[]
+}
 
 interface TopNavigationProps {
   variant?: 'client' | 'admin'
@@ -45,7 +65,7 @@ export function TopNavigation({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const clientNavItems = [
+  const clientNavItems: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/products', label: 'Products', icon: Package },
     { href: '/customers', label: 'Customers', icon: Users },
@@ -53,18 +73,38 @@ export function TopNavigation({
     { href: '/settings', label: 'Settings', icon: Settings },
   ]
 
-  const adminNavItems = [
+  const adminNavItems: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/merchants', label: 'Merchants', icon: Building2 },
+    { 
+      href: '/plans', 
+      label: 'Plans', 
+      icon: Package,
+      subItems: [
+        { href: '/billing-cycles', label: 'Billing Cycles', icon: Calendar }
+      ]
+    },
+    { href: '/payments', label: 'Payments', icon: CreditCard },
     { href: '/users', label: 'Users', icon: Users },
-    { href: '/outlets', label: 'Outlets', icon: Building2 },
-    { href: '/products', label: 'Products', icon: Package },
-    { href: '/categories', label: 'Categories', icon: Tag },
-    { href: '/orders', label: 'Orders', icon: ShoppingCart },
-    { href: '/settings', label: 'Settings', icon: Settings },
+    { 
+      href: '/system', 
+      label: 'System', 
+      icon: Settings,
+      subItems: [
+        { href: '/system/settings', label: 'Settings', icon: Settings },
+        { href: '/system/audit-logs', label: 'Audit Logs', icon: FileText },
+        { href: '/system/notifications', label: 'Notifications', icon: Bell },
+        { href: '/system/health', label: 'System Health', icon: Activity },
+        { href: '/system/backup', label: 'Backup & Recovery', icon: Database },
+        { href: '/system/api-keys', label: 'API Management', icon: Key },
+        { href: '/system/maintenance', label: 'Maintenance', icon: Wrench }
+      ]
+    },
+    { href: '/security', label: 'Security', icon: Shield },
   ]
 
   // Filter nav items based on user role
-  const filterNavItemsByRole = (items: typeof adminNavItems, userRole?: string) => {
+  const filterNavItemsByRole = (items: NavItem[], userRole?: string) => {
     if (!userRole) return items;
     
     // Hide outlets tab for outlet-level users
@@ -107,7 +147,52 @@ export function TopNavigation({
           <nav className="hidden lg:flex items-center space-x-1">
             {navItems.map((item) => {
               const Icon = item.icon
-              const isActive = currentPage === item.href
+              const isActive = currentPage === item.href || (item.subItems && item.subItems.some(subItem => currentPage === subItem.href))
+              const hasSubItems = item.subItems && item.subItems.length > 0
+              
+              if (hasSubItems) {
+                return (
+                  <div key={item.href} className="relative group">
+                    <a
+                      href={item.href}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                      {item.label}
+                      <ChevronDown className="w-3 h-3" />
+                    </a>
+                    
+                    {/* Dropdown Menu */}
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="py-1">
+                        {item.subItems?.map((subItem) => {
+                          const SubIcon = subItem.icon
+                          const isSubActive = currentPage === subItem.href
+                          return (
+                            <a
+                              key={subItem.href}
+                              href={subItem.href}
+                              className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                                isSubActive
+                                  ? 'bg-blue-50 text-blue-700'
+                                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                              }`}
+                            >
+                              <SubIcon className={`w-4 h-4 ${isSubActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                              {subItem.label}
+                            </a>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              
               return (
                 <a
                   key={item.href}
@@ -236,21 +321,49 @@ export function TopNavigation({
           <div className="px-2 pt-2 pb-3 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon
-              const isActive = currentPage === item.href
+              const isActive = currentPage === item.href || (item.subItems && item.subItems.some(subItem => currentPage === subItem.href))
+              const hasSubItems = item.subItems && item.subItems.length > 0
+              
               return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className={`block px-3 py-2 rounded-lg text-base font-medium flex items-center gap-3 ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
-                  {item.label}
-                </a>
+                <div key={item.href}>
+                  <a
+                    href={item.href}
+                    className={`flex px-3 py-2 rounded-lg text-base font-medium items-center gap-3 ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                    {item.label}
+                  </a>
+                  
+                  {/* Mobile Sub-items */}
+                  {hasSubItems && (
+                    <div className="ml-6 space-y-1">
+                      {item.subItems?.map((subItem) => {
+                        const SubIcon = subItem.icon
+                        const isSubActive = currentPage === subItem.href
+                        return (
+                          <a
+                            key={subItem.href}
+                            href={subItem.href}
+                            className={`flex px-3 py-2 rounded-lg text-sm font-medium items-center gap-3 ${
+                              isSubActive
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            }`}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <SubIcon className={`w-4 h-4 ${isSubActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                            {subItem.label}
+                          </a>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               )
             })}
           </div>

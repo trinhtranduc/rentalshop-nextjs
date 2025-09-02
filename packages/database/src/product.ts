@@ -59,7 +59,6 @@ export async function getProductByPublicId(publicId: number, merchantId: number)
               id: true,
               publicId: true,
               name: true,
-              address: true,
             },
           },
         },
@@ -118,6 +117,7 @@ export async function getProductByBarcode(barcode: string, merchantId: number) {
 export async function searchProducts(filters: ProductSearchFilter) {
   const {
     merchantId,
+    outletId,
     categoryId,
     search,
     page = 1,
@@ -164,6 +164,24 @@ export async function searchProducts(filters: ProductSearchFilter) {
     ];
   }
 
+  // If outletId is specified, only show products that have stock at that outlet
+  if (outletId) {
+    // Find outlet by publicId
+    const outlet = await prisma.outlet.findUnique({
+      where: { publicId: outletId },
+      select: { id: true }
+    });
+    
+    if (outlet) {
+      where.outletStock = {
+        some: {
+          outletId: outlet.id, // Use CUID
+          stock: { gt: 0 }
+        }
+      };
+    }
+  }
+
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
@@ -205,8 +223,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
               select: {
                 id: true,
                 publicId: true,
-                name: true,
-                address: true
+                name: true
               }
             }
           }
@@ -253,7 +270,6 @@ export async function searchProducts(filters: ProductSearchFilter) {
         id: stock.outlet.publicId, // Return publicId (number)
         publicId: stock.outlet.publicId,
         name: stock.outlet.name,
-        address: stock.outlet.address,
       },
     })),
   }));
@@ -344,86 +360,7 @@ export async function createProduct(input: any): Promise<any> {
     },
   });
 
-  // Create outlet stock records (required)
-  if (!input.outletStock || !Array.isArray(input.outletStock) || input.outletStock.length === 0) {
-    throw new Error('Product must have at least one outlet stock entry');
-  }
-  
-  console.log('🔍 Creating outlet stock records for product:', product.id);
-  
-  const outletStockPromises = input.outletStock.map(async (stockItem: any) => {
-    console.log('🔍 Processing outlet stock item:', stockItem);
-    
-    // Find outlet by publicId
-    const outlet = await prisma.outlet.findUnique({
-      where: { publicId: stockItem.outletId }
-    });
-    
-    if (!outlet) {
-      throw new Error(`Outlet with publicId ${stockItem.outletId} not found`);
-    }
-
-    console.log('✅ Found outlet:', outlet.id, 'for publicId:', stockItem.outletId);
-
-    // Create outlet stock record
-    try {
-      const stockValue = stockItem.stock || 0; // Ensure stock is never undefined/null
-      
-      const outletStockRecord = await prisma.outletStock.create({
-        data: {
-          productId: product.id, // Use CUID
-          outletId: outlet.id, // Use CUID
-          stock: stockValue,
-          available: stockValue,
-          renting: 0,
-        },
-      });
-      console.log('✅ Created outlet stock record:', outletStockRecord);
-      return outletStockRecord;
-    } catch (error) {
-      console.error('❌ Failed to create outlet stock record:', error);
-      throw error;
-    }
-  });
-
-  // Wait for all outlet stock records to be created
-  const results = await Promise.all(outletStockPromises);
-  console.log('✅ Created outlet stock records:', results.length);
-
-  // Return product with outlet stock information
-  const productWithStock = await prisma.product.findUnique({
-    where: { id: product.id },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-        },
-      },
-      category: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-        },
-      },
-      outletStock: {
-        include: {
-                  outlet: {
-          select: {
-            id: true,
-            publicId: true,
-            name: true,
-            address: true,
-          },
-        },
-        },
-      },
-    },
-  });
-
-  return productWithStock;
+  return product;
 }
 
 // ============================================================================

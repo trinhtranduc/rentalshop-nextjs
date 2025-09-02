@@ -4,13 +4,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType } from '@rentalshop/types';
 import { useThrottledSearch } from '@rentalshop/hooks';
-import { categoriesApi } from '@rentalshop/utils';
+import { outletsApi, categoriesApi } from '@rentalshop/utils';
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;
   onFiltersChange: (filters: ProductFiltersType) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
+}
+
+interface Outlet {
+  id: number;
+  name: string;
 }
 
 interface Category {
@@ -20,13 +25,36 @@ interface Category {
 
 export function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: ProductFiltersProps) {
   // State for dynamic filter options
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
+  const [loadingOutlets, setLoadingOutlets] = useState(false);
+  const [outletError, setOutletError] = useState<string | null>(null);
+  
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
-  // Fetch categories on component mount
+  // Fetch outlets and categories on component mount
   useEffect(() => {
     const fetchData = async () => {
+      // Fetch outlets
+      try {
+        setLoadingOutlets(true);
+        setOutletError(null);
+        const result = await outletsApi.getOutlets();
+        if (result.success && result.data?.outlets) {
+          setOutlets(result.data.outlets);
+        } else {
+          setOutletError('Failed to load outlets');
+          setOutlets([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch outlets:', error);
+        setOutletError('Failed to load outlets');
+        setOutlets([]);
+      } finally {
+        setLoadingOutlets(false);
+      }
+
       // Fetch categories
       try {
         setLoadingCategories(true);
@@ -84,9 +112,8 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search and Basic Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end justify-between">
-          {/* Search Input - Left Side */}
-          <div className="flex-1 space-y-2 min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Search Products
             </label>
@@ -94,17 +121,15 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
               placeholder="Search by name, barcode..."
               value={query} // Use the throttled query state
               onChange={(e) => throttledSearchChange(e.target.value)} // Use throttled handler
-              className="w-full"
             />
           </div>
           
-          {/* Category Filter - Right Side */}
-          <div className="space-y-2 w-full sm:w-auto">
+          <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Category
             </label>
             <Select value={filters.categoryId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : parseInt(value))}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger>
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
@@ -135,7 +160,46 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
               </p>
             )}
           </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Outlet
+            </label>
+            <Select value={filters.outletId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('outletId', value === 'all' ? undefined : parseInt(value))}>
+              <SelectTrigger>
+                <SelectValue placeholder={loadingOutlets ? "Loading..." : "All Outlets"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Outlets</SelectItem>
+                {loadingOutlets ? (
+                  <SelectItem value="loading" disabled>Loading outlets...</SelectItem>
+                ) : outletError ? (
+                  <SelectItem value="error" disabled className="text-red-500">Error loading outlets</SelectItem>
+                ) : outlets.length === 0 ? (
+                  <SelectItem value="none" disabled className="text-gray-500">No outlets available</SelectItem>
+                ) : (
+                  outlets.map((outlet) => (
+                    <SelectItem key={outlet.id} value={outlet.id.toString()}>
+                      {outlet.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {outletError && (
+              <p className="text-xs text-red-500 dark:text-red-400">
+                {outletError}
+              </p>
+            )}
+            {!loadingOutlets && !outletError && outlets.length === 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                No outlets available for your role
+              </p>
+            )}
+          </div>
         </div>
+
+        
       </CardContent>
     </Card>
   );

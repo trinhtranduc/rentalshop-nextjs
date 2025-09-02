@@ -59,10 +59,6 @@ export async function GET(request: NextRequest) {
 
     const { merchantId, isActive, search, page, limit } = parsed.data;
 
-    console.log('🔍 Outlets API: Query params:', { merchantId, isActive, search, page, limit });
-    console.log('🔍 Outlets API: User role:', user.role);
-    console.log('🔍 Outlets API: User scope:', userScope);
-
     // Build search filters with role-based restrictions
     const filters = {
       // Role-based filtering: Users can only see outlets within their scope
@@ -70,13 +66,11 @@ export async function GET(request: NextRequest) {
         ? (merchantId || undefined)  // Admin can see any merchant's outlets
         : userScope.merchantId,      // Non-admin users restricted to their merchant
       outletId: userScope.outletId,  // Add outletId filter for outlet-level users
-      isActive: isActive !== undefined ? Boolean(isActive) : undefined, // Show all outlets by default
+      isActive: isActive !== undefined ? Boolean(isActive) : true,
       search: search || undefined,
       page: page || 1,
       limit: limit || 20
     };
-
-    console.log('🔍 Outlets API: Final filters:', filters);
 
     // Additional role-based filtering for outlet-level users
     if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
@@ -89,14 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Use the new database function that follows dual ID system
-    console.log('🔍 Outlets API: Calling searchOutlets with filters:', filters);
     const result = await searchOutlets(filters);
-    console.log('🔍 Outlets API: searchOutlets result:', {
-      outletsCount: result.outlets?.length || 0,
-      total: result.total,
-      page: result.page,
-      limit: result.limit
-    });
     
     // Additional filtering for outlet-level users (if not handled in database)
     let filteredOutlets = result.outlets;
@@ -104,11 +91,6 @@ export async function GET(request: NextRequest) {
       // Filter to only show the user's assigned outlet
       filteredOutlets = result.outlets.filter(outlet => outlet.id === userScope.outletId);
     }
-    
-    console.log('🔍 Outlets API: Final filtered outlets:', {
-      count: filteredOutlets?.length || 0,
-      outlets: filteredOutlets?.map(o => ({ id: o.id, name: o.name, merchantId: o.merchantId }))
-    });
     
     return NextResponse.json({
       success: true,

@@ -24,6 +24,7 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
+import { analyticsApi } from '@rentalshop/utils';
 
 // ============================================================================
 // TYPES
@@ -204,19 +205,8 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setLoadingCharts(true);
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
 
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      // Fetch all dashboard data in parallel
+      // Fetch all dashboard data in parallel using centralized APIs
       const [
         statsResponse,
         incomeResponse,
@@ -225,72 +215,54 @@ export default function DashboardPage() {
         topCustomersResponse,
         recentOrdersResponse
       ] = await Promise.all([
-        fetch('/api/analytics/dashboard', { headers }),
-        fetch('/api/analytics/income', { headers }),
-        fetch('/api/analytics/orders', { headers }),
-        fetch('/api/analytics/top-products', { headers }),
-        fetch('/api/analytics/top-customers', { headers }),
-        fetch('/api/analytics/recent-orders', { headers })
+        analyticsApi.getDashboardSummary(),
+        analyticsApi.getIncomeAnalytics(),
+        analyticsApi.getOrderAnalytics(),
+        analyticsApi.getTopProducts(),
+        analyticsApi.getTopCustomers(),
+        analyticsApi.getRecentOrders()
       ]);
 
       // Process responses
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
-        if (statsData.success) {
-          // Transform API data to match our DashboardStats interface
-          const apiStats = statsData.data;
-          setStats({
-            todayRevenue: apiStats.totalRevenue || 0,
-            todayRentals: apiStats.totalOrders || 0,
-            activeRentals: apiStats.totalOrders || 0,
-            todayPickups: 0, // Not available in current API
-            todayReturns: 0, // Not available in current API
-            overdueItems: 0, // Not available in current API
-            productUtilization: 0, // Not available in current API
-            totalRevenue: apiStats.totalRevenue || 0,
-            totalRentals: apiStats.totalOrders || 0,
-            completedRentals: apiStats.totalOrders || 0,
-            customerGrowth: 0, // Not available in current API
-            futureRevenue: apiStats.futureIncome || 0,
-            revenueGrowth: 0, // Not available in current API
-            customerBase: 0 // Not available in current API
-          });
-        }
+      if (statsResponse.success && statsResponse.data) {
+        // Transform API data to match our DashboardStats interface
+        const apiStats = statsResponse.data;
+        setStats({
+          todayRevenue: apiStats.totalRevenue || 0,
+          todayRentals: apiStats.totalOrders || 0,
+          activeRentals: apiStats.totalOrders || 0,
+          todayPickups: 0, // Not available in current API
+          todayReturns: 0, // Not available in current API
+          overdueItems: 0, // Not available in current API
+          productUtilization: 0, // Not available in current API
+          totalRevenue: apiStats.totalRevenue || 0,
+          totalRentals: apiStats.totalOrders || 0,
+          completedRentals: apiStats.totalOrders || 0,
+          customerGrowth: 0, // Not available in current API
+          futureRevenue: apiStats.futureIncome || 0,
+          revenueGrowth: 0, // Not available in current API
+          customerBase: 0 // Not available in current API
+        });
       }
 
-      if (incomeResponse.ok) {
-        const incomeData = await incomeResponse.json();
-        if (incomeData.success) {
-          setIncomeData(incomeData.data);
-        }
+      if (incomeResponse.success && incomeResponse.data) {
+        setIncomeData(incomeResponse.data);
       }
 
-      if (ordersResponse.ok) {
-        const ordersData = await ordersResponse.json();
-        if (ordersData.success) {
-          setOrderData(ordersData.data);
-        }
+      if (ordersResponse.success && ordersResponse.data) {
+        setOrderData(ordersResponse.data);
       }
 
-      if (topProductsResponse.ok) {
-        const productsData = await topProductsResponse.json();
-        if (productsData.success) {
-          setTopProducts(productsData.data);
-        }
+      if (topProductsResponse.success && topProductsResponse.data) {
+        setTopProducts(topProductsResponse.data);
       }
 
-      if (topCustomersResponse.ok) {
-        const customersData = await topCustomersResponse.json();
-        if (customersData.success) {
-          setTopCustomers(customersData.data);
-        }
+      if (topCustomersResponse.success && topCustomersResponse.data) {
+        setTopCustomers(topCustomersResponse.data);
       }
 
-      if (recentOrdersResponse.ok) {
-        const ordersData = await recentOrdersResponse.json();
-        if (ordersData.success) {
-          setRecentOrders(ordersData.data);
-        }
+      if (recentOrdersResponse.success && recentOrdersResponse.data) {
+        setRecentOrders(recentOrdersResponse.data);
       }
 
     } catch (error) {

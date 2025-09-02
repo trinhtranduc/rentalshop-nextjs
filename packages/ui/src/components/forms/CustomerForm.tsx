@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -52,7 +54,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     country: '',
     dateOfBirth: '',
     notes: '',
-    merchantId: '',
+    merchantId: 0,
     ...initialData
   });
 

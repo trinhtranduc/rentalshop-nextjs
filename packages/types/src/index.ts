@@ -26,5 +26,8 @@ export * from './outlets';
 // Category types
 export * from './categories';
 
+// Plan types
+export * from './plans';
+
 // Common types
 export * from './common';

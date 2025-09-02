@@ -120,7 +120,55 @@ export const analyticsApi = {
    * Get dashboard summary
    */
   async getDashboardSummary(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/dashboard`);
+    const response = await authenticatedFetch(apiUrls.analytics.dashboard);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get system analytics (admin only)
+   */
+  async getSystemAnalytics(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.analytics.system);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get income analytics
+   */
+  async getIncomeAnalytics(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.analytics.income);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get order analytics
+   */
+  async getOrderAnalytics(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.analytics.orders);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get top products
+   */
+  async getTopProducts(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.analytics.topProducts);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get top customers
+   */
+  async getTopCustomers(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.analytics.topCustomers);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get recent orders
+   */
+  async getRecentOrders(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.analytics.recentOrders);
     return await parseApiResponse<any>(response);
   },
 

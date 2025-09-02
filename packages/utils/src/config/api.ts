@@ -84,6 +84,43 @@ export interface ApiUrls {
     update: (id: number) => string;
     delete: (id: number) => string;
   };
+  plans: {
+    list: string;
+    create: string;
+    get: (id: number) => string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+    stats: string;
+    public: string;
+  };
+  billingCycles: {
+    list: string;
+    create: string;
+    get: (id: number) => string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+  };
+  payments: {
+    list: string;
+    create: string;
+    get: (id: number) => string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+    process: (id: number) => string;
+    refund: (id: number) => string;
+    stats: string;
+    export: string;
+  };
+  analytics: {
+    dashboard: string;
+    system: string;
+    revenue: string;
+    orders: string;
+    income: string;
+    topProducts: string;
+    topCustomers: string;
+    recentOrders: string;
+  };
 }
 
 /**
@@ -327,6 +364,43 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/users`,
       update: (id: number) => `${base}/api/users/${id}`,
       delete: (id: number) => `${base}/api/users/${id}`,
+    },
+    plans: {
+      list: `${base}/api/plans`,
+      create: `${base}/api/plans`,
+      get: (id: number) => `${base}/api/plans/${id}`,
+      update: (id: number) => `${base}/api/plans/${id}`,
+      delete: (id: number) => `${base}/api/plans/${id}`,
+      stats: `${base}/api/plans/stats`,
+      public: `${base}/api/plans/public`,
+    },
+    billingCycles: {
+      list: `${base}/api/billing-cycles`,
+      create: `${base}/api/billing-cycles`,
+      get: (id: number) => `${base}/api/billing-cycles/${id}`,
+      update: (id: number) => `${base}/api/billing-cycles/${id}`,
+      delete: (id: number) => `${base}/api/billing-cycles/${id}`,
+    },
+    payments: {
+      list: `${base}/api/payments`,
+      create: `${base}/api/payments`,
+      get: (id: number) => `${base}/api/payments/${id}`,
+      update: (id: number) => `${base}/api/payments/${id}`,
+      delete: (id: number) => `${base}/api/payments/${id}`,
+      process: (id: number) => `${base}/api/payments/${id}/process`,
+      refund: (id: number) => `${base}/api/payments/${id}/refund`,
+      stats: `${base}/api/payments/stats`,
+      export: `${base}/api/payments/export`,
+    },
+    analytics: {
+      dashboard: `${base}/api/analytics/dashboard`,
+      system: `${base}/api/analytics/system`,
+      revenue: `${base}/api/analytics/revenue`,
+      orders: `${base}/api/analytics/orders`,
+      income: `${base}/api/analytics/income`,
+      topProducts: `${base}/api/analytics/top-products`,
+      topCustomers: `${base}/api/analytics/top-customers`,
+      recentOrders: `${base}/api/analytics/recent-orders`,
     },
   };
 }
