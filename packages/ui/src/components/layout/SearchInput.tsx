@@ -1,6 +1,9 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import { cn, useThrottledSearch } from '@rentalshop/ui';
+import { cn } from '@rentalshop/ui';
+import { useThrottledSearch } from '@rentalshop/hooks';
 
 export interface SearchInputProps {
   placeholder?: string;

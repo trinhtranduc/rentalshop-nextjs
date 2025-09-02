@@ -10,13 +10,7 @@ import {
   PageHeader,
   PageTitle,
   PageContent,
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-  Badge,
+  OutletTable,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -38,8 +32,6 @@ import {
   Edit, 
   Trash2, 
   Building2, 
-  MapPin, 
-  Phone,
   CheckCircle,
   XCircle
 } from 'lucide-react';
@@ -192,6 +184,23 @@ export default function OutletsPage() {
     }
   };
 
+  const handleOutletAction = (action: string, outletId: number) => {
+    const outlet = outlets.find(o => o.id === outletId);
+    if (!outlet) return;
+
+    switch (action) {
+      case 'view':
+        // TODO: Implement view functionality
+        console.log('View outlet:', outlet);
+        break;
+      case 'edit':
+        handleEdit(outlet);
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
+  };
+
   const handleConfirmDisable = async () => {
     if (!outletToDisable) return;
     
@@ -295,114 +304,14 @@ export default function OutletsPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.isArray(outlets) && outlets.length > 0 ? (
-                    outlets.map((outlet) => (
-                      <TableRow key={outlet.id}>
-                        <TableCell className="font-medium">{outlet.name}</TableCell>
-                        <TableCell>
-                          {outlet.address ? (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <MapPin className="w-4 h-4" />
-                              {outlet.address}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">No address</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {outlet.phone ? (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Phone className="w-4 h-4" />
-                              {outlet.phone}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">No phone</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={
-                              outlet.isActive ? "default" : 
-                              "secondary"
-                            }
-                          >
-                            {outlet.isActive ? (
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                            ) : (
-                              <XCircle className="w-3 h-3 mr-1" />
-                            )}
-                            {outlet.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-gray-600">
-                          {new Date(outlet.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(outlet)}
-                              className="flex items-center gap-1"
-                            >
-                              <Edit className="w-3 h-3" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant={outlet.isActive ? 'destructive' : 'default'}
-                              size="sm"
-                              onClick={() => handleToggleStatus(outlet)}
-                              className="flex items-center gap-1"
-                              title={
-                                outlet.isActive 
-                                  ? 'Click to disable outlet' 
-                                  : 'Click to enable outlet'
-                              }
-                            >
-                              {outlet.isActive ? (
-                                <>
-                                  <XCircle className="w-3 h-3" />
-                                  Disable
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle className="w-3 h-3" />
-                                  Enable
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        <div className="flex flex-col items-center gap-2 text-gray-500">
-                          <Building2 className="w-8 h-8" />
-                          {loading ? 'Loading outlets...' : 'No outlets found'}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <OutletTable
+            outlets={outlets}
+            onOutletAction={handleOutletAction}
+            onSort={(column) => {
+              // TODO: Implement sorting if needed
+              console.log('Sort by:', column);
+            }}
+          />
         )}
 
         {/* Add/Edit Outlet Dialog */}

@@ -9,7 +9,10 @@ import {
   PageHeader,
   PageTitle,
   PageContent,
-  Button
+  Button,
+  UserPageHeader,
+  ToastContainer,
+  useToasts
 } from '@rentalshop/ui';
 import { UserPlus } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
@@ -32,6 +35,7 @@ import { usersApi } from "@rentalshop/utils";
 export default function UsersPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
   
   // State for users and UI
   const [users, setUsers] = useState<User[]>([]);
@@ -532,12 +536,16 @@ export default function UsersPage() {
               console.log('✅ User deleted successfully, refreshing user list...');
               // Refresh the user list manually
               await fetchUsers();
+              showSuccess('User Deleted', 'User has been deleted successfully.');
               console.log('✅ User deleted successfully');
             } else {
               console.error('❌ Failed to delete user:', deleteResponse.error);
+              showError('Delete Failed', deleteResponse.error || 'Failed to delete user');
             }
           } catch (error) {
             console.error('❌ Error deleting user:', error);
+            const errorMessage = error instanceof Error ? error.message : 'An error occurred while deleting the user';
+            showError('Delete Failed', errorMessage);
           }
           break;
         case 'activate':
@@ -547,12 +555,16 @@ export default function UsersPage() {
               console.log('✅ User activated successfully, refreshing user list...');
               // Refresh the user list manually
               await fetchUsers();
+              showSuccess('User Activated', 'User has been activated successfully.');
               console.log('✅ User activated successfully');
             } else {
               console.error('❌ Failed to activate user:', activateResponse.error);
+              showError('Activation Failed', activateResponse.error || 'Failed to activate user');
             }
           } catch (error) {
             console.error('❌ Error activating user:', error);
+            const errorMessage = error instanceof Error ? error.message : 'An error occurred while activating the user';
+            showError('Activation Failed', errorMessage);
           }
           break;
         case 'deactivate':
@@ -562,12 +574,16 @@ export default function UsersPage() {
               console.log('✅ User deactivated successfully, refreshing user list...');
               // Refresh the user list manually
               await fetchUsers();
+              showSuccess('User Deactivated', 'User has been deactivated successfully.');
               console.log('✅ User deactivated successfully');
             } else {
               console.error('❌ Failed to deactivate user:', deactivateResponse.error);
+              showError('Deactivation Failed', deactivateResponse.error || 'Failed to deactivate user');
             }
           } catch (error) {
             console.error('❌ Error deactivating user:', error);
+            const errorMessage = error instanceof Error ? error.message : 'An error occurred while deactivating the user';
+            showError('Deactivation Failed', errorMessage);
           }
           break;
         case 'add':
@@ -592,6 +608,21 @@ export default function UsersPage() {
     setCurrentPage(page);
   }, [currentPage]);
 
+  // Handler for header actions
+  const handleAddUser = () => {
+    router.push('/users/add');
+  };
+
+  // Role-based access control for Add User button - Can create OUTLET_ADMIN and OUTLET_STAFF
+  const canCreateUsers = user?.role === 'ADMIN' || 
+                        user?.role === 'MERCHANT' || 
+                        user?.role === 'OUTLET_ADMIN';
+
+  const handleExportUsers = () => {
+    // TODO: Implement export functionality
+    showInfo('Export Feature', 'Export functionality is coming soon!');
+  };
+
   if (loading) {
     return (
       <PageWrapper>
@@ -607,36 +638,19 @@ export default function UsersPage() {
 
   return (
     <PageWrapper>
-      <PageHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <PageTitle>Users</PageTitle>
-            <p className="text-gray-600">Manage users in the system</p>
-          </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => {
-                // TODO: Implement export functionality
-                alert('Export functionality coming soon!');
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              Export
-            </button>
-            <Button 
-              onClick={() => router.push('/users/add')}
-              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
-            >
-              <UserPlus className="w-4 h-4 mr-2" /> Add User
-            </Button>
-          </div>
-        </div>
-      </PageHeader>
-
       <PageContent>
+        {/* Page Header */}
+        <UserPageHeader
+          title="Users"
+          subtitle="Manage users in the system"
+          showExportButton={true}
+          showAddButton={canCreateUsers}
+          onExport={handleExportUsers}
+          onAdd={handleAddUser}
+          addButtonText="Add User"
+          exportButtonText="Export"
+          className="mb-6"
+        />
         <Users
           data={userData}
           filters={filters}
@@ -652,6 +666,9 @@ export default function UsersPage() {
           onError={handleError}
         />
       </PageContent>
+      
+      {/* Toast Container for notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 } 

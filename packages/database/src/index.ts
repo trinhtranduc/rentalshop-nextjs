@@ -98,6 +98,17 @@ export {
   restoreUser,
 } from './user';
 
+// Dual ID plan functions (RECOMMENDED)
+export {
+  getPlanByPublicId,
+  searchPlans,
+  createPlan,
+  updatePlan,
+  deletePlan,
+  getActivePlans,
+  getPlanStats,
+} from './plan';
+
 // ============================================================================
 // LEGACY FUNCTIONS - DEPRECATED
 // ============================================================================

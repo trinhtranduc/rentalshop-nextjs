@@ -11,7 +11,11 @@ import {
   Bell,
   ShoppingCart,
   Package,
-  Tag
+  Tag,
+  CreditCard,
+  BarChart3,
+  Shield,
+  Calendar
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -46,11 +50,13 @@ export function ServerTopNavigation({
 
   const adminNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/users', label: 'Users', icon: Users },
-    { href: '/shops', label: 'Shops', icon: Store },
-    { href: '/products', label: 'Products', icon: Package },
-    { href: '/orders', label: 'Orders', icon: ShoppingCart },
+    { href: '/merchants', label: 'Merchants', icon: Store },
+    { href: '/plans', label: 'Plans', icon: Package },
+    { href: '/billing-cycles', label: 'Billing Cycles', icon: Calendar },
+    { href: '/payments', label: 'Payments', icon: CreditCard },
     { href: '/settings', label: 'Settings', icon: Settings },
+    { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/security', label: 'Security', icon: Shield },
   ]
 
   const navItems = variant === 'admin' ? adminNavItems : clientNavItems

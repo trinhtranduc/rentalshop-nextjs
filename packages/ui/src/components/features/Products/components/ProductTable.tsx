@@ -1,10 +1,8 @@
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui/table';
 import { Button } from '../../../ui/button';
-import { Badge } from '../../../ui/badge';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
+import { Card, CardContent } from '../../../ui/card';
 import { Product } from '@rentalshop/types';
-import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Edit } from 'lucide-react';
+import { Eye, Edit } from 'lucide-react';
 
 interface ProductTableProps {
   products: Product[];
@@ -14,72 +12,7 @@ interface ProductTableProps {
   onSort?: (column: string) => void;
 }
 
-// Move SortableHeader outside to prevent recreation on each render
-const SortableHeader = ({ 
-  column, 
-  children, 
-  sortable = true,
-  onSort,
-  sortBy,
-  sortOrder
-}: { 
-  column: string; 
-  children: React.ReactNode; 
-  sortable?: boolean;
-  onSort?: (column: string) => void;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}) => {
-  if (!sortable || !onSort) {
-    return <TableHead className="px-4 py-3">{children}</TableHead>;
-  }
 
-  const isActive = sortBy === column;
-  
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('SortableHeader clicked:', column); // Debug log
-    onSort(column);
-  };
-  
-  return (
-    <TableHead 
-      className={`cursor-pointer transition-all duration-200 select-none px-4 py-3 ${
-        isActive 
-          ? 'bg-blue-50 dark:bg-blue-900/20 border-b-2 border-blue-500 dark:border-blue-400 shadow-sm' 
-          : 'hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-sm'
-      }`}
-      onClick={handleClick}
-      style={{ userSelect: 'none' }}
-    >
-      <div className="flex items-center justify-between group">
-        <span className={`font-medium transition-colors duration-200 ${
-          isActive 
-            ? 'text-blue-700 dark:text-blue-300' 
-            : 'text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200'
-        }`}>
-          {children}
-        </span>
-        <span className={`ml-2 transition-all duration-200 ${
-          isActive 
-            ? 'text-blue-600 dark:text-blue-400 scale-110' 
-            : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 group-hover:scale-105'
-        }`}>
-          {isActive ? (
-            sortOrder === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : (
-              <ArrowDown className="w-4 h-4" />
-            )
-          ) : (
-            <ArrowUpDown className="w-4 h-4" />
-          )}
-        </span>
-      </div>
-    </TableHead>
-  );
-};
 
 export function ProductTable({ 
   products, 
@@ -151,116 +84,141 @@ export function ProductTable({
   };
 
   return (
-    <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-          Products
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableHeader column="name" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Product</SortableHeader>
-                <SortableHeader column="category" sortable={false}>Category</SortableHeader>
-                <SortableHeader column="rentPrice" sortable={false}>Price</SortableHeader>
-                <SortableHeader column="available" sortable={false}>Stock</SortableHeader>
-                <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Created At</SortableHeader>
-                <TableHead className="w-36">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      {/* Product Image */}
-                      <div className="relative">
-                        {getProductImage(product)}
-                        {/* Hidden fallback placeholder for when image fails to load */}
-                        <div className="hidden w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center shadow-sm">
-                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                          </svg>
-                        </div>
-                      </div>
-                      
-                      {/* Product Info */}
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">
-                          {product.name}
-                        </div>
-                        {product.barcode && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {product.barcode}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
+    <div className="space-y-6">
+      {/* Header with sorting options */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Products ({products.length})
+        </h2>
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <span>Sort by:</span>
+          <div className="flex items-center gap-1">
+            {[
+              { key: 'name', label: 'Name' },
+              { key: 'createdAt', label: 'Created' }
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => onSort?.(key)}
+                className={`px-2 py-1 rounded text-xs transition-colors ${
+                  sortBy === key
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                {label}
+                {sortBy === key && (
+                  <span className="ml-1">
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Card-style rows */}
+      <div className="grid gap-4">
+        {products.map((product) => (
+          <Card 
+            key={product.id} 
+            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700"
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                {/* Left side - Main info */}
+                <div className="flex items-center gap-3 flex-1">
+                  {/* Product Image */}
+                  <div className="relative">
+                    {getProductImage(product)}
+                  </div>
                   
-                  <TableCell>
-                    <span className="capitalize">{product.categoryId}</span>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{formatCurrency(product.rentPrice)}</div>
-                      {product.deposit > 0 && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          Deposit: {formatCurrency(product.deposit)}
+                  {/* Product Details */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                        {product.name}
+                      </h3>
+                      {product.barcode && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {product.barcode}
                         </div>
                       )}
                     </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{product.available}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {product.renting} renting
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
+                      {/* Category */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Category</p>
+                        <p className="text-gray-900 dark:text-white capitalize">{product.categoryId}</p>
+                      </div>
+                      
+                      {/* Rent Price */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Rent Price</p>
+                        <p className="text-gray-900 dark:text-white font-medium">{formatCurrency(product.rentPrice)}</p>
+                        {product.deposit > 0 && (
+                          <p className="text-gray-500 dark:text-gray-400 text-xs">
+                            Deposit: {formatCurrency(product.deposit)}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Sale Price */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Sale Price</p>
+                        <p className="text-gray-900 dark:text-white font-medium">
+                          {(product as any).salePrice ? formatCurrency((product as any).salePrice) : 'N/A'}
+                        </p>
+                      </div>
+                      
+                      {/* Stock */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Stock</p>
+                        <p className="text-gray-900 dark:text-white font-medium">{product.available}</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs">
+                          {product.renting} renting
+                        </p>
+                      </div>
+                      
+                      {/* Created Date */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Created</p>
+                        <p className="text-gray-900 dark:text-white">
+                          {product.createdAt ? formatDate(product.createdAt.toString()) : 'N/A'}
+                        </p>
                       </div>
                     </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {product.createdAt ? formatDate(product.createdAt.toString()) : 'N/A'}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {/* View Button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onProductAction('view', product.id)}
-                        className="h-8 px-3"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                      
-                      {/* Edit Button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onProductAction('edit', product.id)}
-                        className="h-8 px-3"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                  </div>
+                </div>
+                
+                {/* Right side - Actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onProductAction('view', product.id)}
+                    className="h-8 px-3"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onProductAction('edit', product.id)}
+                    className="h-8 px-3"
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }

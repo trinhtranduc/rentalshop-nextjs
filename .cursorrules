@@ -27,21 +27,33 @@ yarn db:reset-orders   # Reset only orders
 
 After running `yarn db:regenerate-system`:
 
-**Merchant Accounts:**
+### **👑 Super Admin (System-wide Access)**
+- `admin@rentalshop.com` / `admin123`
+  - **Full system access** to all merchants and outlets
+  - **Manage subscription plans** and system settings
+  - **View all data** across the platform
+
+### **🏢 Merchant Accounts (Business Owners)**
 - `merchant1@example.com` / `merchant123`
 - `merchant2@example.com` / `merchant123`
+  - **Organization-wide access** within their merchant
+  - **Manage multiple outlets** and users
 
-**Outlet Admins:**
+### **🏪 Outlet Admins (Outlet Managers)**
 - `admin.outlet1@example.com` / `admin123`
 - `admin.outlet2@example.com` / `admin123`
 - `admin.outlet3@example.com` / `admin123`
 - `admin.outlet4@example.com` / `admin123`
+  - **Full access** to their assigned outlet
+  - **Manage outlet operations** and staff
 
-**Outlet Staff:**
+### **👥 Outlet Staff (Outlet Employees)**
 - `staff.outlet1@example.com` / `staff123`
 - `staff.outlet2@example.com` / `staff123`
 - `staff.outlet3@example.com` / `staff123`
 - `staff.outlet4@example.com` / `staff123`
+  - **Limited access** to their assigned outlet
+  - **Basic operations** and customer service
 
 ## 📋 **Updated Order System (2025)**
 

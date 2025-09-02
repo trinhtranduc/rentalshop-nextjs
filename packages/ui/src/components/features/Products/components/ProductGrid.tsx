@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { ProductCard } from './ProductCard';
 import { Product } from '@rentalshop/types';

@@ -2,6 +2,7 @@
 // BASE UI COMPONENTS (shadcn)
 // ============================================================================
 export { Badge, badgeVariants } from './badge';
+export { StatusBadge } from './status-badge';
 export { Button, buttonVariants } from './button';
 export { ButtonClean } from './button-clean';
 export { ButtonColorful } from './button-colorful';
@@ -15,6 +16,24 @@ export { Input } from './input';
 export { Label } from './label';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 export { Separator } from './separator';
+export { Switch } from './switch';
+export { 
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup
+} from './dropdown-menu';
 export { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './table';
 export { Textarea } from './textarea';
 export { NumericInput, PriceInput } from './price-input';

@@ -97,9 +97,15 @@ export default function UserPage() {
     if (!userId) return;
     
     try {
-      const response = await usersApi.getUserByPublicId(userId);
+      const numericId = parseInt(userId);
+      if (isNaN(numericId) || numericId <= 0) {
+        console.error('Invalid user ID format:', userId);
+        return;
+      }
+      
+      const response = await usersApi.getUserByPublicId(numericId);
       if (response.success && response.data) {
-        setUser(response.data);
+        setUserData(response.data);
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
@@ -118,14 +124,20 @@ export default function UserPage() {
     setShowEditSection(!showEditSection);
   };
 
-  const handleSave = async (userData: UserUpdateInput) => {
+  const handleSave = async (updateData: UserUpdateInput) => {
     try {
       setIsUpdating(true);
       
-      console.log('🔍 UserPage: Updating user:', userData);
+      console.log('🔍 UserPage: Updating user:', updateData);
+      
+      // Validate user ID
+      const numericId = parseInt(userId);
+      if (isNaN(numericId) || numericId <= 0) {
+        throw new Error('Invalid user ID format');
+      }
       
       // Use the real API to update user by public ID
-      const response = await usersApi.updateUserByPublicId(publicId, userData);
+      const response = await usersApi.updateUserByPublicId(numericId, updateData);
       
       if (response.success) {
         console.log('✅ UserPage: User updated successfully:', response.data);
@@ -146,20 +158,21 @@ export default function UserPage() {
       
     } catch (error) {
       console.error('❌ UserPage: Error updating user:', error);
-      showError('Update Failed', 'An error occurred while updating the user');
-      throw error; // Re-throw so the form can handle it
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while updating the user';
+      showError('Update Failed', errorMessage);
+      // Don't re-throw - let toast handle the error display
     } finally {
       setIsUpdating(false);
     }
   };
 
   const handleActivate = async () => {
-    if (!user) return;
+    if (!userData) return;
     
     try {
       setIsUpdating(true);
       // Use publicId for activation as the API expects numeric publicId
-      const response = await usersApi.activateUserByPublicId(publicId);
+      const response = await usersApi.activateUserByPublicId(userData.id);
       if (response.success) {
         // Refresh user data
         await refreshUserData();
@@ -176,19 +189,19 @@ export default function UserPage() {
   };
 
   const handleDeactivate = async () => {
-    if (!user) return;
+    if (!userData) return;
     
     // Show confirmation dialog first
     setShowDeactivateConfirm(true);
   };
 
   const confirmDeactivate = async () => {
-    if (!user) return;
+    if (!userData) return;
     
     try {
       setIsUpdating(true);
       // Use publicId for deactivation as the API expects numeric publicId
-      const response = await usersApi.deactivateUserByPublicId(publicId);
+      const response = await usersApi.deactivateUserByPublicId(userData.id);
       if (response.success) {
         // Refresh user data
         await refreshUserData();
@@ -206,12 +219,12 @@ export default function UserPage() {
   };
 
   const handleDelete = async () => {
-    if (!user) return;
+    if (!userData) return;
     
     try {
       setIsUpdating(true);
       // Use publicId for deletion as the API expects numeric publicId
-      const response = await usersApi.deleteUserByPublicId(publicId);
+      const response = await usersApi.deleteUserByPublicId(userData.id);
       if (response.success) {
         showSuccess('User Deleted', 'User account has been deleted successfully!');
         router.push('/users');
@@ -243,7 +256,7 @@ export default function UserPage() {
     );
   }
 
-  if (!user) {
+  if (!userData) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -267,8 +280,8 @@ export default function UserPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <UserPageHeader
-          title={user.name}
-          subtitle={user.email}
+          title={userData.name}
+          subtitle={userData.email}
           onBack={() => router.push('/users')}
           backText="Back to Users"
         >
@@ -296,12 +309,12 @@ export default function UserPage() {
         {/* User Information - Read Only OR Edit Form */}
         {!showEditSection ? (
           <UserInfoCard title="User Information">
-            <UserReadOnlyInfo user={user} />
+            <UserReadOnlyInfo user={userData} />
           </UserInfoCard>
         ) : (
           <div className="mt-8">
             <EditUserForm
-              user={user}
+              user={userData}
               onSave={handleSave}
               onCancel={() => setShowEditSection(false)}
               isSubmitting={isUpdating}
@@ -314,7 +327,7 @@ export default function UserPage() {
         {/* Account Management (Hidden when editing) */}
         {!showEditSection && (
           <AccountManagementCard
-            user={user}
+            user={userData}
             isUpdating={isUpdating}
             onActivate={handleActivate}
             onDeactivate={handleDeactivate}
@@ -329,7 +342,7 @@ export default function UserPage() {
         onOpenChange={setShowDeleteConfirm}
         type="danger"
         title="Delete User Account"
-        description={`Are you sure you want to delete "${user.name}"? This action cannot be undone and will permanently remove all user data.`}
+        description={`Are you sure you want to delete "${userData.name}"? This action cannot be undone and will permanently remove all user data.`}
         confirmText={isUpdating ? 'Deleting...' : 'Delete Account'}
         onConfirm={handleDelete}
       />
@@ -340,7 +353,7 @@ export default function UserPage() {
         onOpenChange={setShowDeactivateConfirm}
         type="warning"
         title="Deactivate User Account"
-        description={`Are you sure you want to deactivate "${user.name}"? This will prevent the user from logging in and accessing the system. This action can be reversed by an administrator.`}
+        description={`Are you sure you want to deactivate "${userData.name}"? This will prevent the user from logging in and accessing the system. This action can be reversed by an administrator.`}
         confirmText={isUpdating ? 'Deactivating...' : 'Deactivate Account'}
         onConfirm={confirmDeactivate}
       />

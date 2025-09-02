@@ -1,10 +1,8 @@
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../ui/table';
 import { Button } from '../../../ui/button';
-import { Badge } from '../../../ui/badge';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
+import { Card, CardContent } from '../../../ui/card';
 import { Customer } from '@rentalshop/types';
-import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Trash2 } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -14,72 +12,7 @@ interface CustomerTableProps {
   onSort?: (column: string) => void;
 }
 
-// Move SortableHeader outside to prevent recreation on each render
-const SortableHeader = ({ 
-  column, 
-  children, 
-  sortable = true,
-  onSort,
-  sortBy,
-  sortOrder
-}: { 
-  column: string; 
-  children: React.ReactNode; 
-  sortable?: boolean;
-  onSort?: (column: string) => void;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}) => {
-  if (!sortable || !onSort) {
-    return <TableHead className="px-4 py-3">{children}</TableHead>;
-  }
 
-  const isActive = sortBy === column;
-  
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('SortableHeader clicked:', column); // Debug log
-    onSort(column);
-  };
-  
-  return (
-    <TableHead 
-      className={`cursor-pointer transition-all duration-200 select-none px-4 py-3 ${
-        isActive 
-          ? 'bg-blue-50 dark:bg-blue-900/20 border-b-2 border-blue-500 dark:border-blue-400 shadow-sm' 
-          : 'hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-sm'
-      }`}
-      onClick={handleClick}
-      style={{ userSelect: 'none' }}
-    >
-      <div className="flex items-center justify-between group">
-        <span className={`font-medium transition-colors duration-200 ${
-          isActive 
-            ? 'text-blue-700 dark:text-blue-300' 
-            : 'text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200'
-        }`}>
-          {children}
-        </span>
-        <span className={`ml-2 transition-all duration-200 ${
-          isActive 
-            ? 'text-blue-600 dark:text-blue-400 scale-110' 
-            : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 group-hover:scale-105'
-        }`}>
-          {isActive ? (
-            sortOrder === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : (
-              <ArrowDown className="w-4 h-4" />
-            )
-          ) : (
-            <ArrowUpDown className="w-4 h-4" />
-          )}
-        </span>
-      </div>
-    </TableHead>
-  );
-};
 
 export function CustomerTable({ 
   customers, 
@@ -121,28 +54,7 @@ export function CustomerTable({
     );
   }
 
-  const getMembershipBadge = (level: string) => {
-    const variants = {
-      basic: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-      premium: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      vip: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-    };
-    
-    return (
-      <Badge variant="outline" className={variants[level as keyof typeof variants]}>
-        {level.toUpperCase()}
-      </Badge>
-    );
-  };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -153,88 +65,116 @@ export function CustomerTable({
   };
 
   return (
-    <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-          Customers
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableHeader column="name" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Customer</SortableHeader>
-                <SortableHeader column="contact" sortable={false}>Contact</SortableHeader>
-                <SortableHeader column="location" sortable={false}>Location</SortableHeader>
-                <SortableHeader column="createdAt" sortable={true} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort}>Created At</SortableHeader>
-                <TableHead className="w-24">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {customers.map((customer) => (
-                <TableRow key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <TableCell>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
+    <div className="space-y-6">
+      {/* Header with sorting options */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Customers ({customers.length})
+        </h2>
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <span>Sort by:</span>
+          <div className="flex items-center gap-1">
+            {[
+              { key: 'name', label: 'Name' },
+              { key: 'createdAt', label: 'Created' }
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => onSort?.(key)}
+                className={`px-2 py-1 rounded text-xs transition-colors ${
+                  sortBy === key
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                {label}
+                {sortBy === key && (
+                  <span className="ml-1">
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Card-style rows */}
+      <div className="grid gap-4">
+        {customers.map((customer) => (
+          <Card 
+            key={customer.id} 
+            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700"
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                {/* Left side - Main info */}
+                <div className="flex items-center gap-3 flex-1">
+                  {/* Customer Details */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                         {customer.firstName} {customer.lastName}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                      </h3>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         ID: {customer.id}
                       </div>
                     </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div>
-                      <div className="text-sm">{customer.email}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {customer.phone}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                      {/* Contact Info */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Contact</p>
+                        <p className="text-gray-900 dark:text-white">{customer.email}</p>
+                        <p className="text-gray-500 dark:text-gray-400">{customer.phone}</p>
+                      </div>
+                      
+                      {/* Location */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Location</p>
+                        {customer.city && customer.state && (
+                          <p className="text-gray-900 dark:text-white">
+                            {customer.city}, {customer.state}
+                          </p>
+                        )}
+                        {customer.country && (
+                          <p className="text-gray-500 dark:text-gray-400">
+                            {customer.country}
+                          </p>
+                        )}
+                        {!customer.city && !customer.state && !customer.country && (
+                          <p className="text-gray-500 dark:text-gray-400">N/A</p>
+                        )}
+                      </div>
+                      
+                      {/* Created Date */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Created</p>
+                        <p className="text-gray-900 dark:text-white">
+                          {customer.createdAt ? formatDate(customer.createdAt.toString()) : 'N/A'}
+                        </p>
                       </div>
                     </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div>
-                      {customer.city && customer.state && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {customer.city}, {customer.state}
-                        </div>
-                      )}
-                      {customer.country && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {customer.country}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {customer.createdAt ? formatDate(customer.createdAt.toString()) : 'N/A'}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {/* View Button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => triggerCustomerAction('view', customer)}
-                        className="h-8 px-3"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                  </div>
+                </div>
+                
+                {/* Right side - Actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => triggerCustomerAction('view', customer)}
+                    className="h-8 px-3"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }

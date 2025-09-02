@@ -1,62 +1,58 @@
-'use client'
-
 import React from 'react';
-import { Button } from '../../../ui/button';
+import { Button } from '@rentalshop/ui';
+import { Plus, Download } from 'lucide-react';
 
 interface UserPageHeaderProps {
-  title: string;
+  title?: string;
   subtitle?: string;
-  onBack?: () => void;
-  backText?: string;
-  backUrl?: string;
-  children?: React.ReactNode;
+  showExportButton?: boolean;
+  showAddButton?: boolean;
+  onExport?: () => void;
+  onAdd?: () => void;
+  addButtonText?: string;
+  exportButtonText?: string;
+  className?: string;
 }
 
-export const UserPageHeader: React.FC<UserPageHeaderProps> = ({
-  title,
-  subtitle,
-  onBack,
-  backText = 'Back to Users',
-  backUrl,
-  children
-}) => {
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else if (backUrl) {
-      window.location.href = backUrl;
-    }
-  };
-
+export function UserPageHeader({
+  title = "Users",
+  subtitle = "Manage users in the system",
+  showExportButton = false,
+  showAddButton = true,
+  onExport,
+  onAdd,
+  addButtonText = "Add User",
+  exportButtonText = "Export",
+  className = ""
+}: UserPageHeaderProps) {
   return (
-    <div className="mb-6">
-      {/* Back Button */}
-      {(onBack || backUrl) && (
-        <Button 
-          onClick={handleBack} 
-          variant="outline" 
-          className="mb-4"
-        >
-          ← {backText}
-        </Button>
-      )}
+    <div className={`flex justify-between items-start ${className}`}>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        <p className="text-gray-600 mt-1">{subtitle}</p>
+      </div>
       
-      {/* Title and Subtitle */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          {subtitle && (
-            <p className="text-gray-600 mt-1">{subtitle}</p>
-          )}
-        </div>
+      <div className="flex gap-3">
+        {showExportButton && (
+          <button 
+            onClick={onExport}
+            className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm transition-colors"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {exportButtonText}
+          </button>
+        )}
         
-        {/* Action Buttons */}
-        {children && (
-          <div className="flex gap-2">
-            {children}
-          </div>
+        {showAddButton && (
+          <Button 
+            onClick={onAdd}
+            className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {addButtonText}
+          </Button>
         )}
       </div>
     </div>
   );
-};
+}

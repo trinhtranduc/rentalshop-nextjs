@@ -17,11 +17,15 @@ const publicRoutes = [
   '/api/auth',
   '/api/health',
   '/api/docs',
+  '/api/plans/public',
+  '/api/system/api-keys/test', // Test endpoint for API keys
 ];
 
 // Admin-only routes
 const adminRoutes = [
   '/api/admin',
+  '/api/plans', // Plans are admin-only (except /api/plans/public)
+  '/api/billing-cycles', // Billing cycles are admin-only
   // Removed /api/users since it now has proper role-based authorization
   // that allows ADMIN, MERCHANT, and OUTLET_ADMIN roles
 ];
@@ -53,10 +57,15 @@ export async function middleware(request: NextRequest) {
   try {
     const payload = verifyTokenSimple(token);
 
-    // Admin-only routes
+    // Admin-only routes (with exceptions)
     const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
     if (isAdminRoute && payload.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      // Exception: /api/plans/public should remain accessible to all authenticated users
+      if (pathname.startsWith('/api/plans/public')) {
+        // Allow access to public plans endpoint for all authenticated users
+      } else {
+        return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     // Forward user context to downstream handlers via request headers

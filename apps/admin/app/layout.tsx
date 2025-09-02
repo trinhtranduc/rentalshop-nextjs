@@ -1,13 +1,16 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { CurrencyProvider } from '@rentalshop/hooks'
+import DynamicTopNavigation from './components/DynamicTopNavigation'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'Rental Shop - Admin',
-  description: 'Admin panel for rental shop management system',
+  description: 'Rental shop administration system',
 }
 
 export default function RootLayout({
@@ -16,11 +19,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi">
-      <body className={inter.className}>
-        <CurrencyProvider>
+    <html lang="en">
+      <body className={`${inter.variable} font-sans`}>
+        <DynamicTopNavigation />
+        <main className="pt-24">
           {children}
-        </CurrencyProvider>
+        </main>
       </body>
     </html>
   )

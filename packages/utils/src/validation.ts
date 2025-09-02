@@ -279,3 +279,37 @@ export const outletUpdateSchema = z.object({
 export type OutletsQuery = z.infer<typeof outletsQuerySchema>;
 export type OutletCreateInput = z.infer<typeof outletCreateSchema>;
 export type OutletUpdateInput = z.infer<typeof outletUpdateSchema>;
+
+// Plan validation schemas
+export const planCreateSchema = z.object({
+  name: z.string().min(1, 'Plan name is required'),
+  description: z.string().min(1, 'Plan description is required'),
+  price: z.number().nonnegative('Price must be non-negative'),
+  currency: z.string().default('USD'),
+  trialDays: z.number().int().min(0, 'Trial days must be non-negative'),
+  maxOutlets: z.number().int().min(-1, 'Max outlets must be -1 (unlimited) or positive'),
+  maxUsers: z.number().int().min(-1, 'Max users must be -1 (unlimited) or positive'),
+  maxProducts: z.number().int().min(-1, 'Max products must be -1 (unlimited) or positive'),
+  maxCustomers: z.number().int().min(-1, 'Max customers must be -1 (unlimited) or positive'),
+  features: z.array(z.string()).default([]),
+  isActive: z.boolean().default(true),
+  isPopular: z.boolean().default(false),
+  sortOrder: z.number().int().default(0),
+  billingCycle: z.string().default('monthly'),
+});
+
+export const planUpdateSchema = planCreateSchema.partial();
+
+export const plansQuerySchema = z.object({
+  search: z.string().optional(),
+  isActive: z.coerce.boolean().optional(),
+  isPopular: z.coerce.boolean().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  sortBy: z.enum(['name', 'price', 'createdAt', 'sortOrder']).default('sortOrder'),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
+
+export type PlanCreateInput = z.infer<typeof planCreateSchema>;
+export type PlanUpdateInput = z.infer<typeof planUpdateSchema>;
+export type PlansQuery = z.infer<typeof plansQuerySchema>;

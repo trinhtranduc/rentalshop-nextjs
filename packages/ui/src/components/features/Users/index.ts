@@ -15,7 +15,6 @@ export type {
   User, 
   UserCreateInput, 
   UserUpdateInput, 
-  UserFilters, 
   UserData, 
   UserAction 
 } from '@rentalshop/types';

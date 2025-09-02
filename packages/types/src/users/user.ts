@@ -13,12 +13,12 @@ export interface User {
   phone: string;
   role: UserRole;
   isActive: boolean;
-  createdAt: Date;
+  createdAt: Date | string; // Accept both Date objects and ISO strings from API
   emailVerified: boolean;
-  updatedAt: Date;
+  updatedAt: Date | string; // Accept both Date objects and ISO strings from API
   merchantId?: string | number; // Accept both string and number from API
   outletId?: string | number;  // Accept both string and number from API
-  lastLoginAt?: Date;
+  lastLoginAt?: Date | string; // Accept both Date objects and ISO strings from API
   
   // Additional fields from API response
   merchant?: {
@@ -60,6 +60,8 @@ export interface UserFilters {
   isActive?: boolean;
   status?: 'all' | 'active' | 'inactive';  // Added missing status property
   search?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface UserSearchResult {

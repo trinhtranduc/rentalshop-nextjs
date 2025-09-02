@@ -10,9 +10,10 @@ export { UserDetailDialog } from './UserDetailDialog';
 export { ChangePasswordDialog } from './ChangePasswordDialog';
 export { AddUserForm } from './AddUserForm';
 export { EditUserForm } from './EditUserForm';
+export { UserRow } from './UserRow';
+export { UserPageHeader } from './UserPageHeader';
 
 // // New reusable components
-export { UserPageHeader } from './UserPageHeader';
 export { UserInfoCard } from './UserInfoCard';
 export { UserReadOnlyInfo } from './UserReadOnlyInfo';
 export { AccountManagementCard } from './AccountManagementCard';

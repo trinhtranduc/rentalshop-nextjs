@@ -266,27 +266,11 @@ export async function POST(request: NextRequest) {
     // in the createUser function. This reduces API calls and ensures consistency.
     
     console.log('📡 Calling createUser database function...');
-    const result = await createUser(userData);
+    const newUser = await createUser(userData);
     
-    // Check if database function returned an error
-    if (!result.success) {
-      console.log('❌ Database validation failed:', result.error);
-      // Use the numeric code directly from database function
-      const statusCode = typeof result.code === 'number' ? result.code : 500;
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: result.error,
-          code: result.code
-        },
-        { status: statusCode }
-      );
-    }
-    
-    // At this point, result.success is true, so result.user should exist
-    const newUser = (result as any).user;
+    // createUser returns the user object directly, not a structured response
     if (!newUser) {
-      console.error('❌ Database returned success but no user data');
+      console.error('❌ Database returned no user data');
       return NextResponse.json(
         { success: false, error: 'Database error: No user data returned' },
         { status: 500 }

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../ui/button';
@@ -92,7 +94,7 @@ export function CustomerActions({
       id: 'bulk-actions',
       label: 'Bulk Actions',
       icon: Filter,
-      onClick: () => onAction('bulk-actions', ''),
+      onClick: () => onAction('bulk-actions', 0),
       variant: 'outline' as const
     }
   ];

@@ -21,6 +21,16 @@ const nextConfig = {
       },
     ];
   },
+  // Add this to ensure app directory works properly
+  experimental: {
+    appDir: true,
+  },
+  // Ensure proper routing
+  trailingSlash: false,
+  // Disable static optimization for development
+  ...(process.env.NODE_ENV === 'development' && {
+    staticPageGenerationTimeout: 0,
+  }),
 };
 
 module.exports = nextConfig; 

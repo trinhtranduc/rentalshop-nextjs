@@ -1,45 +1,151 @@
 'use client'
 
-import React, { useState } from 'react';
-import { Save, X, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save, X, Eye, EyeOff, Building2, Store } from 'lucide-react';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
+import { SearchableSelect } from '../../../ui/searchable-select';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import type { UserCreateInput } from '@rentalshop/types';
+import type { UserCreateInput, User } from '@rentalshop/types';
+import { merchantsApi, outletsApi } from '@rentalshop/utils';
 
 interface AddUserFormProps {
   onSave: (userData: UserCreateInput) => Promise<void>;
   onCancel?: () => void;
   isSubmitting?: boolean;
+  currentUser?: User | null;
 }
 
 export const AddUserForm: React.FC<AddUserFormProps> = ({
   onSave,
   onCancel,
-  isSubmitting: externalIsSubmitting
+  isSubmitting: externalIsSubmitting,
+  currentUser
 }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    role: undefined as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | undefined,
+    role: undefined as 'OUTLET_ADMIN' | 'OUTLET_STAFF' | undefined,
     isActive: true,
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    merchantId: '',
+    outletId: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [internalIsSubmitting, setInternalIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Data for dropdowns
+  const [merchants, setMerchants] = useState<any[]>([]);
+  const [outlets, setOutlets] = useState<any[]>([]);
+  const [loadingMerchants, setLoadingMerchants] = useState(false);
+  const [loadingOutlets, setLoadingOutlets] = useState(false);
 
   // Use external isSubmitting if provided, otherwise use internal state
   const isSubmitting = externalIsSubmitting !== undefined ? externalIsSubmitting : internalIsSubmitting;
 
-  console.log('🔍 AddUserForm: Component rendered');
+  // Role-based access control - Only OUTLET_ADMIN and OUTLET_STAFF can be created
+  const canSelectMerchant = currentUser?.role === 'ADMIN';
+  const canSelectOutlet = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT';
+  const showMerchantField = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT' || currentUser?.role === 'OUTLET_ADMIN' || currentUser?.role === 'OUTLET_STAFF';
+  const showOutletField = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT' || currentUser?.role === 'OUTLET_ADMIN' || currentUser?.role === 'OUTLET_STAFF';
+
+
+
+  // Pre-fill form data with current user's merchant/outlet when they can't be changed
+  useEffect(() => {
+    if (currentUser) {
+      const updates: any = {};
+      
+      // Pre-fill merchant ID if user can't select merchant
+      const userMerchantId = currentUser.merchantId || currentUser.merchant?.id;
+      if (!canSelectMerchant && userMerchantId) {
+        updates.merchantId = userMerchantId.toString();
+      }
+      
+      // Pre-fill outlet ID if user can't select outlet
+      const userOutletId = currentUser.outletId || currentUser.outlet?.id;
+      if (!canSelectOutlet && userOutletId) {
+        updates.outletId = userOutletId.toString();
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        setFormData(prev => ({ ...prev, ...updates }));
+      }
+    }
+  }, [currentUser, canSelectMerchant, canSelectOutlet]);
+
+  // Load merchants data
+  useEffect(() => {
+    if (canSelectMerchant) {
+      setLoadingMerchants(true);
+      merchantsApi.getMerchants()
+        .then(response => {
+          if (response.success && response.data) {
+            setMerchants(response.data.merchants || []);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading merchants:', error);
+        })
+        .finally(() => {
+          setLoadingMerchants(false);
+        });
+    } else if (currentUser?.merchantId || currentUser?.merchant?.id) {
+      // For non-admin users, set their merchant as the only option
+      const userMerchantId = currentUser.merchantId || currentUser.merchant?.id;
+      setMerchants([{
+        id: userMerchantId,
+        name: currentUser.merchant?.name || 'Current Merchant'
+      }]);
+      setFormData(prev => ({ ...prev, merchantId: userMerchantId?.toString() || '' }));
+    }
+  }, [canSelectMerchant, currentUser]);
+
+  // Load outlets data
+  useEffect(() => {
+    if (canSelectOutlet) {
+      setLoadingOutlets(true);
+      const merchantId = canSelectMerchant ? formData.merchantId : (currentUser?.merchantId || currentUser?.merchant?.id);
+      
+      if (merchantId) {
+        outletsApi.getOutletsByMerchant(Number(merchantId))
+          .then(response => {
+            if (response.success && response.data) {
+              setOutlets(response.data.outlets || []);
+            }
+          })
+          .catch(error => {
+            console.error('Error loading outlets:', error);
+          })
+          .finally(() => {
+            setLoadingOutlets(false);
+          });
+      } else {
+        setLoadingOutlets(false);
+      }
+    } else if (currentUser?.outletId) {
+      // For outlet users, set their outlet as the only option
+      setOutlets([{
+        id: currentUser.outletId,
+        name: currentUser.outlet?.name || 'Current Outlet'
+      }]);
+      setFormData(prev => ({ ...prev, outletId: currentUser.outletId?.toString() || '' }));
+    }
+  }, [canSelectOutlet, canSelectMerchant, formData.merchantId, currentUser]);
+
+  // Reset outlet when merchant changes
+  useEffect(() => {
+    if (canSelectMerchant && formData.merchantId) {
+      setFormData(prev => ({ ...prev, outletId: '' }));
+    }
+  }, [formData.merchantId, canSelectMerchant]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     console.log('🔍 AddUserForm: Input changed:', { field, value });
@@ -48,11 +154,6 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
     // Clear field-specific error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-    
-    // Clear general error message when user starts typing
-    if (errorMessage) {
-      setErrorMessage(null);
     }
   };
 
@@ -89,6 +190,16 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
       newErrors.role = 'Role is required';
     }
 
+    // Merchant validation based on role - Only OUTLET_ADMIN and OUTLET_STAFF require merchant
+    if (formData.role && (formData.role === 'OUTLET_ADMIN' || formData.role === 'OUTLET_STAFF') && !formData.merchantId) {
+      newErrors.merchantId = 'Merchant is required for this role';
+    }
+
+    // Outlet validation based on role
+    if (formData.role && (formData.role === 'OUTLET_ADMIN' || formData.role === 'OUTLET_STAFF') && !formData.outletId) {
+      newErrors.outletId = 'Outlet is required for this role';
+    }
+
     // Password validation - required for new users
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -117,26 +228,27 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
     if (!externalIsSubmitting) {
       setInternalIsSubmitting(true);
     }
-    setErrorMessage(null);
     
     try {
       const submitData = {
-        name: formData.name.trim(),
+        firstName: formData.name.trim().split(' ')[0] || '',
+        lastName: formData.name.trim().split(' ').slice(1).join(' ') || '',
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
         role: formData.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF',
-        isActive: formData.isActive,
-        password: formData.password
+        password: formData.password,
+        merchantId: formData.merchantId || undefined,
+        outletId: formData.outletId || undefined
       };
       
       console.log('🔍 AddUserForm: About to call onSave with data:', submitData);
       await onSave(submitData);
       console.log('✅ AddUserForm: User created successfully');
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ AddUserForm: Error saving user:', error);
-      const errorMsg = error instanceof Error ? error.message : 'An error occurred while saving the user';
-      setErrorMessage(errorMsg);
+      // Error handling is now done by the parent component using toast notifications
+      // No need to set error messages in the form
     } finally {
       if (!externalIsSubmitting) {
         setInternalIsSubmitting(false);
@@ -224,8 +336,6 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
                 <SelectContent>
                   <SelectItem value="OUTLET_STAFF">Outlet Staff</SelectItem>
                   <SelectItem value="OUTLET_ADMIN">Outlet Admin</SelectItem>
-                  <SelectItem value="MERCHANT">Merchant</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
                 </SelectContent>
               </Select>
               {errors.role && (
@@ -235,6 +345,93 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Organization Assignment */}
+      {(showMerchantField || showOutletField) && (
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+              Organization Assignment
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {showMerchantField && (
+                <div className="space-y-2">
+                  <Label htmlFor="merchant" className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4" />
+                    Merchant {canSelectMerchant ? '*' : '(Read-only)'}
+                  </Label>
+                  {canSelectMerchant ? (
+                    <SearchableSelect
+                      key={`merchant-${merchants.length}`}
+                      value={formData.merchantId ? Number(formData.merchantId) : undefined}
+                      onChange={(value) => handleInputChange('merchantId', value.toString())}
+                      options={merchants.map(merchant => ({
+                        value: merchant.id.toString(),
+                        label: merchant.name
+                      }))}
+                      placeholder={loadingMerchants ? "Loading merchants..." : "Search and select merchant"}
+                      searchPlaceholder="Search merchants..."
+                      emptyText="No merchants found"
+                      className={errors.merchantId ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                    />
+                  ) : (
+                    <Input
+                      value={currentUser?.merchant?.name || ''}
+                      disabled
+                      className="bg-gray-50 text-gray-600 cursor-not-allowed"
+                      placeholder="Current merchant"
+                    />
+                  )}
+                  {errors.merchantId && (
+                    <p className="text-sm text-red-600">{errors.merchantId}</p>
+                  )}
+                </div>
+              )}
+
+              {showOutletField && (
+                <div className="space-y-2">
+                  <Label htmlFor="outlet" className="flex items-center gap-2">
+                    <Store className="w-4 h-4" />
+                    Outlet {canSelectOutlet ? '*' : '(Read-only)'}
+                  </Label>
+                  {canSelectOutlet ? (
+                    <div>
+                      <SearchableSelect
+                        key={`outlet-${outlets.length}-${formData.merchantId}`}
+                        value={formData.outletId ? Number(formData.outletId) : undefined}
+                        onChange={(value) => handleInputChange('outletId', value.toString())}
+                        options={outlets.map(outlet => ({
+                          value: outlet.id.toString(),
+                          label: outlet.name
+                        }))}
+                        placeholder={
+                          loadingOutlets ? "Loading outlets..." : 
+                          !formData.merchantId && canSelectMerchant ? "Select merchant first" : 
+                          "Search and select outlet"
+                        }
+                        searchPlaceholder="Search outlets..."
+                        emptyText="No outlets found"
+                        className={errors.outletId ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                      />
+                    </div>
+                  ) : (
+                    <Input
+                      value={currentUser?.outlet?.name || ''}
+                      disabled
+                      className="bg-gray-50 text-gray-600 cursor-not-allowed"
+                      placeholder="Current outlet"
+                    />
+                  )}
+                  {errors.outletId && (
+                    <p className="text-sm text-red-600">{errors.outletId}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Password Section */}
       <Card>
@@ -334,18 +531,6 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
           <p className="text-sm text-yellow-800">
             ⚠️ <strong>Please fix the validation errors above before submitting.</strong>
-          </p>
-        </div>
-      )}
-
-      {/* Error Message */}
-      {errorMessage && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-sm text-red-600">
-            ❌ <strong>Error:</strong> {errorMessage}
-          </p>
-          <p className="text-xs text-red-500 mt-1">
-            Please fix the error and try again.
           </p>
         </div>
       )}

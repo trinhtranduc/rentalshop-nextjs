@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -20,10 +22,10 @@ import {
 import type { 
   OrderInput, 
   OrderItemInput, 
-  OrderType, 
+  OrderType,
   CustomerSearchResult,
-  ProductWithStock 
-} from '@rentalshop/database';
+  ProductWithStock
+} from '@rentalshop/types';
 
 interface OrderFormProps {
   initialData?: Partial<OrderInput>;
