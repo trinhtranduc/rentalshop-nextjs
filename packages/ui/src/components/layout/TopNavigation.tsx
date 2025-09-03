@@ -10,7 +10,6 @@ import {
   ShoppingCart,
   Store,
   Building2,
-  Search,
   Bell,
   User,
   LogOut,
@@ -20,7 +19,7 @@ import {
   Calendar,
   ChevronDown,
   BarChart3,
-  Shield,
+  ShieldCheck,
   FileText,
   Database,
   Activity,
@@ -30,7 +29,6 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Button } from '../ui/button'
-import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
 import { LucideIcon } from 'lucide-react'
 
@@ -46,7 +44,6 @@ interface TopNavigationProps {
   currentPage: string // Make this required instead of using usePathname
   notificationsCount?: number
   cartItemsCount?: number
-  onSearch?: (query: string) => void
   onLogout?: () => void
   onProfileClick?: () => void
   userRole?: string // Add user role for filtering navigation
@@ -57,13 +54,11 @@ export function TopNavigation({
   currentPage,
   notificationsCount = 0,
   cartItemsCount = 0,
-  onSearch,
   onLogout,
   onProfileClick,
   userRole
 }: TopNavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
 
   const clientNavItems: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -91,16 +86,12 @@ export function TopNavigation({
       label: 'System', 
       icon: Settings,
       subItems: [
-        { href: '/system/settings', label: 'Settings', icon: Settings },
-        { href: '/system/audit-logs', label: 'Audit Logs', icon: FileText },
-        { href: '/system/notifications', label: 'Notifications', icon: Bell },
-        { href: '/system/health', label: 'System Health', icon: Activity },
-        { href: '/system/backup', label: 'Backup & Recovery', icon: Database },
-        { href: '/system/api-keys', label: 'API Management', icon: Key },
-        { href: '/system/maintenance', label: 'Maintenance', icon: Wrench }
+        { href: '/system/backup', label: 'Backup Management', icon: Database },
+        { href: '/system/integrity', label: 'Data Integrity', icon: ShieldCheck },
+        { href: '/system/audit-logs', label: 'Audit Logs', icon: FileText }
       ]
     },
-    { href: '/security', label: 'Security', icon: Shield },
+
   ]
 
   // Filter nav items based on user role
@@ -119,12 +110,7 @@ export function TopNavigation({
     ? filterNavItemsByRole(adminNavItems, userRole) 
     : clientNavItems
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (onSearch) {
-      onSearch(searchQuery)
-    }
-  }
+
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -210,22 +196,8 @@ export function TopNavigation({
             })}
           </nav>
 
-          {/* Right: Search + Actions + User */}
+          {/* Right: Actions + User */}
           <div className="flex items-center space-x-4">
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="hidden md:block">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search products, customers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 pl-10 pr-4 h-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-            </form>
-
             {/* Quick Actions */}
             <div className="flex items-center space-x-2">
               {/* Notifications */}
@@ -298,21 +270,7 @@ export function TopNavigation({
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className="md:hidden pb-4">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search products, customers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </form>
-        </div>
+
       </div>
 
       {/* Mobile Navigation Menu */}

@@ -10,11 +10,10 @@ import {
   DialogFooter
 } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
-import { Card, CardContent } from '@rentalshop/ui';
 import { ConfirmationDialog } from '@rentalshop/ui';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { UserDisplayInfo } from './UserDisplayInfo';
 import { usersApi } from '@rentalshop/utils';
-import { UserCheck, UserX, Key, AlertTriangle, Trash2 } from 'lucide-react';
 import type { User } from '@rentalshop/types';
 
 interface UserDetailDialogProps {
@@ -40,55 +39,12 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
 
   if (!user) return null;
 
-  const formatDate = (date: Date | string) => {
-    if (!date) return 'N/A';
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
-  const getRoleBadgeStyle = (role: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
-      case 'MERCHANT':
-        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800';
-      case 'OUTLET_STAFF':
-        return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800';
-      case 'CLIENT':
-        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800';
-    }
-  };
-
-  const getStatusBadgeStyle = (isActive: boolean) => {
-    if (isActive) {
-      return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800';
-    } else {
-      return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
-    }
-  };
-
-  const getStatusDisplayName = (isActive: boolean) => {
-    return isActive ? 'Active' : 'Inactive';
-  };
-
-  const getStatusIcon = (isActive: boolean) => {
-    if (isActive) {
-      return '🟢'; // Green circle
-    } else {
-      return '🟡'; // Yellow circle
-    }
-  };
 
   const handleDeactivateUser = async () => {
     setIsLoading(true);
     try {
-      const response = await userApiClient.deactivateUser(user.id);
+      const response = await usersApi.updateUserStatus(user.id, 'inactive');
       
       if (response.success) {
         // Update local user state
@@ -111,7 +67,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   const handleActivateUser = async () => {
     setIsLoading(true);
     try {
-      const response = await userApiClient.activateUser(user.id);
+      const response = await usersApi.updateUserStatus(user.id, 'active');
       
       if (response.success) {
         // Update local user state
@@ -175,171 +131,16 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
             </div>
           </DialogHeader>
 
-          <div className="mt-6 space-y-6">
-            {/* Personal Information */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  Personal Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                    <p className="text-gray-900 text-base font-medium">{`${user.firstName || ''} ${user.lastName || ''}`.trim()}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <p className="text-gray-900 text-base">{user.email}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                    <p className="text-gray-900 text-base">{user.phone || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeStyle(user.role)}`}>
-                      {user.role === 'ADMIN' && 'Admin'}
-                      {user.role === 'MERCHANT' && 'Merchant'}
-                      {user.role === 'OUTLET_ADMIN' && 'Outlet Admin'}
-                      {user.role === 'OUTLET_STAFF' && 'Outlet Staff'}
-                      {!['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'].includes(user.role) && user.role}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(user.isActive)}`}>
-                      {getStatusDisplayName(user.isActive)}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
-                    <p className="text-gray-500 text-sm font-mono">{user.id}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Outlet Information */}
-            {user.outlet && (
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    Outlet Information
-                  </h3>
-                  <div className="border rounded-lg p-4 bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Name</label>
-                        <p className="text-gray-900 text-base">{user.outlet.name}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Outlet ID</label>
-                        <p className="text-gray-500 text-sm font-mono">{user.outlet.id}</p>
-                      </div>
-                      {user.outlet.merchant && (
-                        <>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Merchant Name</label>
-                            <p className="text-gray-900 text-base">{user.outlet.merchant.name}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Merchant ID</label>
-                            <p className="text-gray-500 text-sm font-mono">{user.outlet.merchant.id}</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Account Actions */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                  Account Actions
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Password Management</h4>
-                    <Button
-                      onClick={() => setIsChangePasswordOpen(true)}
-                      variant="outline"
-                      className="w-full justify-start"
-                    >
-                      <Key className="mr-2 h-4 w-4" />
-                      Change Password
-                    </Button>
-                    <p className="text-xs text-gray-500">
-                      Allow users to change their password securely
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Account Status</h4>
-                    {user.isActive ? (
-                      <Button
-                        onClick={() => setIsDeactivateConfirmOpen(true)}
-                        variant="outline"
-                        className="w-full justify-start text-orange-600 border-orange-200 hover:bg-orange-50"
-                        disabled={isLoading || user.role === 'ADMIN'}
-                      >
-                        <UserX className="mr-2 h-4 w-4" />
-                        {isLoading ? 'Deactivating...' : 'Deactivate Account'}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => setIsActivateConfirmOpen(true)}
-                        variant="outline"
-                        className="w-full justify-start text-green-600 border-green-200 hover:bg-green-50"
-                        disabled={isLoading}
-                      >
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        {isLoading ? 'Activating...' : 'Activate Account'}
-                      </Button>
-                    )}
-                    <p className="text-xs text-gray-500">
-                      {user.isActive 
-                        ? 'Deactivate to prevent login access' 
-                        : 'Activate to restore login access'
-                      }
-                    </p>
-                    {user.role === 'ADMIN' && (
-                      <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                        <AlertTriangle className="h-3 w-3" />
-                        Admin accounts cannot be deactivated
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Danger Zone</h4>
-                    <Button
-                      onClick={() => setIsDeleteConfirmOpen(true)}
-                      variant="outline"
-                      className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
-                      disabled={isLoading || user.role === 'ADMIN'}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {isLoading ? 'Deleting...' : 'Delete Account'}
-                    </Button>
-                    <p className="text-xs text-gray-500">
-                      Permanently delete this user account
-                    </p>
-                    {user.role === 'ADMIN' && (
-                      <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                        <AlertTriangle className="h-3 w-3" />
-                        Admin accounts cannot be deleted
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="mt-6">
+            <UserDisplayInfo
+              user={user}
+              showActions={true}
+              onChangePassword={() => setIsChangePasswordOpen(true)}
+              onActivate={() => setIsActivateConfirmOpen(true)}
+              onDeactivate={() => setIsDeactivateConfirmOpen(true)}
+              onDelete={() => setIsDeleteConfirmOpen(true)}
+              isLoading={isLoading}
+            />
           </div>
 
           <DialogFooter className="flex justify-end space-x-2">

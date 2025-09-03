@@ -54,6 +54,7 @@ export interface ProductUpdateInput {
 export interface ProductFilters {
   merchantId?: number;  // Changed from string to number
   categoryId?: number;  // Changed from string to number
+  outletId?: number;    // Added outletId for filtering by outlet
   available?: boolean;
   status?: 'all' | 'active' | 'inactive';  // Added missing status property
   search?: string;

@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { Customer } from '@rentalshop/types';
-import { Eye } from 'lucide-react';
+import { Eye, Edit, ShoppingBag } from 'lucide-react';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -27,13 +27,7 @@ export function CustomerTable({
   console.log('🔍 CustomerTable first customer:', customers?.[0]);
 
   const triggerCustomerAction = (action: string, customer: Customer) => {
-    // Create custom event to communicate with CustomerActions component
-    const event = new CustomEvent('customer-action', {
-      detail: { action, customer }
-    });
-    window.dispatchEvent(event);
-    
-    // Also call the original onCustomerAction for backward compatibility
+    // Directly call the onCustomerAction callback
     onCustomerAction(action, customer.id);
   };
 
@@ -168,6 +162,24 @@ export function CustomerTable({
                   >
                     <Eye className="h-3 w-3 mr-1" />
                     View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => triggerCustomerAction('edit', customer)}
+                    className="h-8 px-3"
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => triggerCustomerAction('viewOrders', customer)}
+                    className="h-8 px-3"
+                  >
+                    <ShoppingBag className="h-3 w-3 mr-1" />
+                    Orders
                   </Button>
                 </div>
               </div>

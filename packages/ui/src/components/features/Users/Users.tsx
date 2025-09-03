@@ -1,176 +1,306 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { UserFilters } from './components/UserFilters';
-import { UserGrid } from './components/UserGrid';
-import { UserTable } from './components/UserTable';
-import { UserPagination } from './components/UserPagination';
-import { ToastContainer, useToasts, Button } from '@rentalshop/ui';
-import type { UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput, User } from '@rentalshop/types';
-import { Grid, List, Plus } from 'lucide-react';
+import React from 'react';
+import { 
+  PageWrapper,
+  PageContent,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  ToastContainer,
+  useToasts,
+  UserPageHeader,
+  UserFilters as UserFiltersComponent,
+  UserTable,
+  UserDetailDialog,
+  UserForm,
+  Pagination,
+  EmptyState,
+  StatsOverview
+} from '@rentalshop/ui';
+import { 
+  User as UserIcon, 
+  CheckCircle, 
+  XCircle 
+} from 'lucide-react';
+import type { User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
+import { useUserManagement, type UseUserManagementOptions } from '@rentalshop/hooks';
+import { getRoleBadge, getStatusBadge, calculateUserStats } from '@rentalshop/utils';
 
-// Define UserData interface locally since it's not exported from types
-interface UserData {
-  users: User[];
-  total: number;
-  currentPage: number;
-  totalPages: number;
-  hasMore: boolean;
+export interface UsersProps {
+  title?: string;
+  subtitle?: string;
+  showExportButton?: boolean;
+  showAddButton?: boolean;
+  addButtonText?: string;
+  exportButtonText?: string;
+  showStats?: boolean;
+  useSearchUsers?: boolean;
+  initialLimit?: number;
+  currentUser?: User | null;
+  onExport?: () => void;
+  className?: string;
 }
 
-interface UsersProps {
-  data: UserData;
-  filters: UserFiltersType;
-  viewMode: 'grid' | 'table';
-  onFiltersChange: (filters: UserFiltersType) => void;
-  onSearchChange: (searchValue: string) => void;
-  onClearFilters?: () => void;
-  onViewModeChange: (mode: 'grid' | 'table') => void;
-  onUserAction: (action: string, userId: string) => void;
-  onPageChange: (page: number) => void;
-  onUserCreated?: (user: UserCreateInput | UserUpdateInput) => Promise<void>;
-  onUserUpdated?: (user: User) => Promise<void>;
-  onError?: (error: string) => void;
-}
-
-export function Users({ 
-  data, 
-  filters, 
-  viewMode, 
-  onFiltersChange, 
-  onSearchChange,
-  onClearFilters,
-  onViewModeChange, 
-  onUserAction, 
-  onPageChange,
-  onUserCreated,
-  onUserUpdated,
-  onError
-}: UsersProps) {
-  const router = useRouter();
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
-
-  // Listen for manual refresh requests from the dialog
-  useEffect(() => {
-    const handleRefreshRequest = () => {
-      console.log('🔄 Manual refresh requested from dialog');
-      // Trigger a refresh of the user list
-      // This will be handled by the parent page component
-      window.dispatchEvent(new CustomEvent('force-refresh-users'));
-    };
-
-    window.addEventListener('refresh-users-list', handleRefreshRequest);
-    return () => window.removeEventListener('refresh-users-list', handleRefreshRequest);
-  }, []);
-
-  const handleAddUser = () => {
-    console.log('🔍 Users: Add User button clicked, navigating to add user page');
-    router.push('/users/add');
+export const Users: React.FC<UsersProps> = ({
+  title = "User Management",
+  subtitle = "Manage users in the system",
+  showExportButton = true,
+  showAddButton = true,
+  addButtonText = "Add User",
+  exportButtonText = "Export Users",
+  showStats = false,
+  useSearchUsers = false,
+  initialLimit = 10,
+  currentUser,
+  onExport,
+  className = ""
+}) => {
+  const { toasts, addToast, removeToast } = useToasts();
+  
+  // Use the shared user management hook
+  const userManagementOptions: UseUserManagementOptions = {
+    initialLimit,
+    useSearchUsers,
+    enableStats: showStats
   };
+  
+  const {
+    users,
+    loading,
+    selectedUser,
+    showUserDetail,
+    showCreateForm,
+    showEditDialog,
+    pagination,
+    filteredUsers,
+    filters,
+    stats,
+    handleUserRowAction,
+    handleAddUser,
+    handleExportUsers,
+    handleFiltersChange,
+    handleSearchChange,
+    handleClearFilters,
+    handlePageChangeWithFetch,
+    handleUserCreated,
+    handleUserUpdatedAsync,
+    handleUserUpdated,
+    handleUserError,
+    setShowUserDetail,
+    setShowCreateForm,
+    setShowEditDialog
+  } = useUserManagement(userManagementOptions);
 
-  const handleUserCreated = async (userInput: UserCreateInput | UserUpdateInput) => {
+  // Enhanced handlers with toast notifications
+  const handleUserCreatedWithToast = async (userData: UserCreateInput | UserUpdateInput) => {
     try {
-      console.log('🔄 Users component: handleUserCreated called with:', userInput);
-      console.log('🔍 Users: About to call parent onUserCreated handler');
-      
-      // Call the parent handler
-      if (onUserCreated) {
-        console.log('🔍 Users: Calling parent onUserCreated handler');
-        await onUserCreated(userInput);
-        console.log('✅ Parent handler completed successfully');
-      }
-      
-      // Show success toast
-      showSuccess('User Created', 'User has been created successfully!');
-      console.log('🔍 Users: Success toast shown');
-      
+      await handleUserCreated(userData as UserCreateInput);
+      addToast('success', 'User Created', 'User has been created successfully.');
     } catch (error) {
-      console.error('❌ Error in handleUserCreated:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while creating the user';
-      
-      // Show error toast
-      showError('User Creation Failed', errorMessage);
-      
-      // Call parent error handler
-      onError?.(errorMessage);
-      
-      // Don't re-throw the error - let the form handle it
-      // This keeps the form open so user can fix the error
-      console.log('🔍 Users: Error handled, not re-throwing to keep form open');
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      addToast('error', 'Creation Failed', errorMessage);
+      throw error; // Re-throw to let the form handle the error
     }
   };
 
-  const handleUserUpdated = async (user: User) => {
+  const handleUserUpdatedWithToast = async (userData: UserUpdateInput) => {
     try {
-      console.log('🔄 Users component: handleUserUpdated called with:', user);
-      
-      if (onUserUpdated) {
-        await onUserUpdated(user);
-        console.log('✅ Parent handler completed successfully');
-      }
-      
-      // Show success toast
-      showSuccess('User Updated', 'User information has been updated successfully');
+      await handleUserUpdatedAsync(userData);
+      addToast('success', 'User Updated', 'User information has been updated successfully.');
     } catch (error) {
-      console.error('❌ Error in handleUserUpdated:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while updating the user';
-      
-      // Show error toast
-      showError('User Update Failed', errorMessage);
-      
-      // Call parent error handler
-      onError?.(errorMessage);
-      
-      // Re-throw to let the form handle the error
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      addToast('error', 'Update Failed', errorMessage);
+      throw error; // Re-throw to let the form handle the error
     }
   };
 
-  const handleError = (error: string) => {
-    console.error('❌ Error in Users component:', error);
-    showError('Operation Failed', error);
-    onError?.(error);
+  const handleExportWithToast = () => {
+    if (onExport) {
+      onExport();
+    } else {
+      handleExportUsers();
+      addToast('info', 'Export', 'Export functionality coming soon!');
+    }
   };
+
+  const handleUserUpdatedWithToastCallback = (updatedUser: User) => {
+    handleUserUpdated(updatedUser);
+    const fullName = `${updatedUser.firstName || ''} ${updatedUser.lastName || ''}`.trim();
+    addToast('success', 'User Updated', `User "${fullName}" has been updated successfully.`);
+  };
+
+  const handleUserErrorWithToast = (error: string) => {
+    handleUserError(error);
+    addToast('error', 'Error', error);
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <PageWrapper>
+        <PageContent>
+          <div className="animate-pulse">
+            <div className="h-8 bg-bg-tertiary rounded w-1/4 mb-6"></div>
+            <div className="h-12 bg-bg-tertiary rounded mb-6"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-24 bg-bg-tertiary rounded"></div>
+              ))}
+            </div>
+          </div>
+        </PageContent>
+      </PageWrapper>
+    );
+  }
 
   return (
-    <>
-      <div className="space-y-6">        
-        <UserFilters 
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onSearchChange={onSearchChange}
-          onClearFilters={onClearFilters}
+    <PageWrapper>
+      <PageContent className={className}>
+        {/* Page Header */}
+        <UserPageHeader
+          title={title}
+          subtitle={subtitle}
+          showExportButton={showExportButton}
+          showAddButton={showAddButton}
+          onExport={handleExportWithToast}
+          onAdd={handleAddUser}
+          addButtonText={addButtonText}
+          exportButtonText={exportButtonText}
+          className="mb-6"
         />
-        
-        {viewMode === 'grid' ? (
-          <UserGrid 
-            users={data.users}
-            onUserAction={onUserAction}
-          />
-        ) : (
-          <UserTable 
-            users={data.users}
-            onUserAction={onUserAction}
+
+        {/* Stats Overview - Only show if enabled */}
+        {showStats && stats && (
+          <StatsOverview
+            stats={[
+              {
+                label: 'Total Users',
+                value: stats.totalUsers,
+                icon: UserIcon,
+                color: 'text-blue-600',
+                bgColor: 'bg-blue-100'
+              },
+              {
+                label: 'Active Users',
+                value: stats.activeUsers,
+                icon: CheckCircle,
+                color: 'text-green-600',
+                bgColor: 'bg-green-100'
+              },
+              {
+                label: 'Inactive Users',
+                value: stats.inactiveUsers,
+                icon: XCircle,
+                color: 'text-gray-600',
+                bgColor: 'bg-gray-100'
+              },
+              {
+                label: 'Verified Users',
+                value: stats.verifiedUsers,
+                icon: CheckCircle,
+                color: 'text-green-600',
+                bgColor: 'bg-green-100'
+              }
+            ]}
+            className="mb-8"
           />
         )}
-        
-        <UserPagination 
-          currentPage={data.currentPage}
-          totalPages={data.totalPages}
-          total={data.total}
-          onPageChange={onPageChange}
+
+        {/* Search and Filters */}
+        <UserFiltersComponent
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onSearchChange={handleSearchChange}
+          onClearFilters={handleClearFilters}
         />
 
-        {/* Add User functionality now handled by navigation to /users/add */}
+        {/* Users List */}
+        <UserTable
+          users={filteredUsers}
+          onUserAction={handleUserRowAction}
+          className="py-4"
+        />
 
-        {/* User Actions are now handled directly in the UserTable component */}
-      </div>
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            limit={pagination.limit}
+            onPageChange={handlePageChangeWithFetch}
+            itemName="users"
+          />
+        )}
 
+        {/* Empty State */}
+        {filteredUsers.length === 0 && (
+          <EmptyState
+            icon={UserIcon}
+            title="No users found"
+            description={
+              filters.search || filters.role || filters.status
+                ? 'Try adjusting your search or filters'
+                : 'Get started by adding your first user'
+            }
+            actionLabel="Add User"
+            onAction={() => setShowCreateForm(true)}
+          />
+        )}
+      </PageContent>
+      {/* User Edit Dialog */}
+      {selectedUser && (
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update user information for {`${selectedUser.firstName || ''} ${selectedUser.lastName || ''}`.trim()}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <UserForm
+              user={selectedUser}
+              onSave={handleUserUpdatedWithToast}
+              onCancel={() => setShowEditDialog(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* User Detail Dialog (View Only) */}
+      <UserDetailDialog
+        open={showUserDetail}
+        onOpenChange={setShowUserDetail}
+        user={selectedUser}
+        onUserUpdated={handleUserUpdatedWithToastCallback}
+        onError={handleUserErrorWithToast}
+      />
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account with appropriate role and organization assignment.
+            </DialogDescription>
+          </DialogHeader>
+          <UserForm
+            onSave={handleUserCreatedWithToast as any}
+            onCancel={() => setShowCreateForm(false)}
+            currentUser={currentUser}
+          />
+        </DialogContent>
+      </Dialog>
+      
       {/* Toast Container for notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
-    </>
+    </PageWrapper>
   );
-}
+};
 
 export default Users;

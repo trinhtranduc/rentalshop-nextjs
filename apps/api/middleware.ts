@@ -16,6 +16,9 @@ const protectedRoutes = [
 const publicRoutes = [
   '/api/auth',
   '/api/health',
+  '/api/system/health',
+  '/api/system/backup',
+  '/api/system/integrity',
   '/api/docs',
   '/api/plans/public',
 ];

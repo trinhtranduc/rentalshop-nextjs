@@ -9,13 +9,12 @@ import {
   PageContent,
   Button,
   UserPageHeader,
-  UserInfoCard,
-  UserReadOnlyInfo,
+  UserDisplayInfo,
   AccountManagementCard,
   ConfirmationDialog,
   ToastContainer,
   useToasts,
-  EditUserForm
+  UserForm
 } from '@rentalshop/ui';
 import { Edit, ArrowLeft, UserCheck, UserX, Trash2, Key } from 'lucide-react';
 import type { User, UserUpdateInput } from '@rentalshop/types';
@@ -353,12 +352,11 @@ export default function UserDetailPage() {
         
         {/* User Information - Read Only OR Edit Form */}
         {!showEditSection ? (
-          <UserInfoCard title="User Information">
-            <UserReadOnlyInfo user={userDetails.user} />
-          </UserInfoCard>
+          <UserDisplayInfo user={userDetails.user} />
         ) : (
           <div className="mt-8">
-            <EditUserForm
+            <UserForm
+              mode="edit"
               user={userDetails.user}
               onSave={handleSave}
               onCancel={handleCancel}
