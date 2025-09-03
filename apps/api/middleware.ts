@@ -18,14 +18,12 @@ const publicRoutes = [
   '/api/health',
   '/api/docs',
   '/api/plans/public',
-  '/api/system/api-keys/test', // Test endpoint for API keys
 ];
 
 // Admin-only routes
 const adminRoutes = [
   '/api/admin',
   '/api/plans', // Plans are admin-only (except /api/plans/public)
-  '/api/billing-cycles', // Billing cycles are admin-only
   // Removed /api/users since it now has proper role-based authorization
   // that allows ADMIN, MERCHANT, and OUTLET_ADMIN roles
 ];

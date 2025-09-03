@@ -33,6 +33,7 @@ export * from './components/features/Backup';
 export * from './components/features/ApiManagement';
 export * from './components/features/SystemLogs';
 export * from './components/features/Security';
+export * from './components/features/AuditLogs';
 
 // TODO: Uncomment when component files are created
 export * from './components/features/OrderDetail';

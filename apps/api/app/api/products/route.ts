@@ -4,7 +4,10 @@ import { verifyTokenSimple } from '@rentalshop/auth';
 import { searchProducts, createProduct, updateProduct, deleteProduct } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, productUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
-import { searchRateLimiter } from '../../../lib/middleware/rateLimit';
+import { searchRateLimiter } from '@rentalshop/middleware';
+import { captureAuditContext } from '@rentalshop/middleware';
+import { createAuditHelper } from '@rentalshop/utils';
+import { prisma } from '@rentalshop/database';
 
 /**
  * GET /api/products
@@ -144,6 +147,9 @@ export const runtime = 'nodejs';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -226,6 +232,29 @@ export async function POST(request: NextRequest) {
     const product = await createProduct(productData);
     console.log('✅ Product created successfully:', product);
 
+    // Log audit event for product creation
+    try {
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logCreate({
+        entityType: 'Product',
+        entityId: product.id.toString(),
+        entityName: product.name,
+        newValues: product,
+        description: `Product created: ${product.name}`,
+        context: {
+          ...auditContext,
+          userId: user.id,
+          userEmail: user.email || undefined,
+          userRole: user.role || undefined,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log product creation audit:', auditError);
+      // Don't fail the request if audit logging fails
+    }
+
     return NextResponse.json({
       success: true,
       data: product
@@ -250,6 +279,9 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -310,6 +342,30 @@ export async function PUT(request: NextRequest) {
     };
 
     const product = await updateProduct(productIdNumber, updateData);
+
+    // Log audit event for product update
+    try {
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logUpdate({
+        entityType: 'Product',
+        entityId: product?.id.toString() || productIdNumber.toString(),
+        entityName: product?.name || `Product ${productIdNumber}`,
+        oldValues: {}, // We don't have the old values in this context
+        newValues: product || {},
+        description: `Product updated: ${product?.name || productIdNumber}`,
+        context: {
+          ...auditContext,
+          userId: user.id,
+          userEmail: user.email || undefined,
+          userRole: user.role || undefined,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log product update audit:', auditError);
+      // Don't fail the request if audit logging fails
+    }
 
     return NextResponse.json({
       success: true,

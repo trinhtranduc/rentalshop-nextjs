@@ -141,9 +141,9 @@ export const analyticsApi = {
   },
 
   /**
-   * Get order analytics
+   * Get order analytics summary
    */
-  async getOrderAnalytics(): Promise<ApiResponse<any>> {
+  async getOrderAnalyticsSummary(): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(apiUrls.analytics.orders);
     return await parseApiResponse<any>(response);
   },

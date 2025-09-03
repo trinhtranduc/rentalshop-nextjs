@@ -59,6 +59,7 @@ export async function getProductByPublicId(publicId: number, merchantId: number)
               id: true,
               publicId: true,
               name: true,
+              address: true,
             },
           },
         },
@@ -223,7 +224,8 @@ export async function searchProducts(filters: ProductSearchFilter) {
               select: {
                 id: true,
                 publicId: true,
-                name: true
+                name: true,
+                address: true
               }
             }
           }
@@ -270,6 +272,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
         id: stock.outlet.publicId, // Return publicId (number)
         publicId: stock.outlet.publicId,
         name: stock.outlet.name,
+        address: stock.outlet.address,
       },
     })),
   }));
@@ -384,20 +387,45 @@ export async function updateProduct(
     throw new Error(`Product with publicId ${publicId} not found`);
   }
 
+  // Handle category update if categoryId is provided
+  let categoryId = undefined;
+  if (input.categoryId !== undefined) {
+    if (input.categoryId === null || input.categoryId === 0) {
+      // Remove category
+      categoryId = null;
+    } else {
+      // Find category by publicId
+      const category = await prisma.category.findUnique({
+        where: { publicId: input.categoryId }
+      });
+      
+      if (!category) {
+        throw new Error(`Category with publicId ${input.categoryId} not found`);
+      }
+      
+      categoryId = category.id; // Use CUID for database
+    }
+  }
+
+  // Prepare update data
+  const updateData: any = {};
+  
+  // Only update fields that are provided
+  if (input.name !== undefined) updateData.name = input.name;
+  if (input.description !== undefined) updateData.description = input.description;
+  if (input.barcode !== undefined) updateData.barcode = input.barcode;
+  if (input.totalStock !== undefined) updateData.totalStock = input.totalStock;
+  if (input.rentPrice !== undefined) updateData.rentPrice = input.rentPrice;
+  if (input.salePrice !== undefined) updateData.salePrice = input.salePrice;
+  if (input.deposit !== undefined) updateData.deposit = input.deposit;
+  if (input.images !== undefined) updateData.images = input.images;
+  if (input.isActive !== undefined) updateData.isActive = input.isActive;
+  if (categoryId !== undefined) updateData.categoryId = categoryId;
+
   // Update product
   const updatedProduct = await prisma.product.update({
     where: { publicId },
-    data: {
-      name: input.name,
-      description: input.description,
-      barcode: input.barcode,
-      totalStock: input.totalStock,
-      rentPrice: input.rentPrice,
-      salePrice: input.salePrice,
-      deposit: input.deposit,
-      images: input.images,
-      isActive: input.isActive,
-    },
+    data: updateData,
     include: {
       merchant: {
         select: {

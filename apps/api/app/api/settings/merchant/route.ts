@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '../../lib/jwt-edge';
+import { verifyTokenSimple } from '@rentalshop/auth';
 import { z } from 'zod';
 
 // Validation schemas

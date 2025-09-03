@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '../../../../lib/jwt-edge';
+import { verifyTokenSimple } from '@rentalshop/auth';
+import { getAuditLogger, extractAuditContext } from '@rentalshop/database';
 import { z } from 'zod';
 
 // Validation schemas
@@ -155,6 +156,28 @@ export async function PUT(
         isActive: validatedData.isActive
       }
     });
+
+    // Log audit event
+    const auditLogger = getAuditLogger(prisma);
+    const context = extractAuditContext(request, user);
+    
+    await auditLogger.logUpdate(
+      'SystemSetting',
+      updatedSetting.id,
+      updatedSetting.key,
+      {
+        value: existingSetting.value,
+        description: existingSetting.description,
+        isActive: existingSetting.isActive
+      },
+      {
+        value: updatedSetting.value,
+        description: updatedSetting.description,
+        isActive: updatedSetting.isActive
+      },
+      context,
+      `Updated system setting: ${updatedSetting.key}`
+    );
 
     return NextResponse.json({
       success: true,

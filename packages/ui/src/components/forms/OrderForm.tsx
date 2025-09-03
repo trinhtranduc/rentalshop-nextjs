@@ -17,7 +17,8 @@ import {
   Badge,
   formatDate,
   formatCurrency,
-  SearchableSelect
+  SearchableSelect,
+  useToasts
 } from '@rentalshop/ui';
 import type { 
   OrderInput, 
@@ -67,6 +68,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   loading = false,
   layout = 'stacked',
 }) => {
+  const { showError, showWarning } = useToasts();
+  
   const [formData, setFormData] = useState<Partial<OrderInput>>({
     orderType: 'RENT',
     customerId: '',
@@ -196,17 +199,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     e.preventDefault();
     
     if (!formData.outletId) {
-      alert('Vui lòng chọn cửa hàng');
+      showError('Validation Error', 'Please select an outlet');
       return;
     }
 
     if (orderItems.length === 0) {
-      alert('Vui lòng thêm ít nhất một sản phẩm');
+      showError('Validation Error', 'Please add at least one product');
       return;
     }
 
     if (orderItems.some(item => !item.productId)) {
-      alert('Vui lòng chọn sản phẩm cho tất cả các mục');
+      showError('Validation Error', 'Please select a product for all items');
       return;
     }
 

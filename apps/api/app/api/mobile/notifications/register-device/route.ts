@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { config } from '@rentalshop/utils';
+import { apiConfig } from '@rentalshop/utils';
 
 /**
  * @swagger
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       message: 'Device registration failed',
-      error: config.logging.level === 'debug' ? error.message : 'Internal server error'
+      error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
     }, { status: 500 });
   }
 } 

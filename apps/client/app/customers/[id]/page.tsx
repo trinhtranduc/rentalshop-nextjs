@@ -146,7 +146,7 @@ export default function CustomerPage() {
       
     } catch (error) {
       console.error('❌ CustomerPage: Error deleting customer:', error);
-      alert('Failed to delete customer: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      showError('Delete Failed', 'Failed to delete customer: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsUpdating(false);
       setShowDeleteConfirm(false);
@@ -210,7 +210,7 @@ export default function CustomerPage() {
         setShowDeactivateConfirm(false);
         
         // Show success message
-        alert(`Customer ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+        showSuccess('Status Updated', `Customer ${newStatus ? 'activated' : 'deactivated'} successfully!`);
       } else {
         console.error('❌ CustomerPage: API error:', response.error);
         throw new Error(response.error || 'Failed to update customer status');
@@ -218,7 +218,7 @@ export default function CustomerPage() {
       
     } catch (error) {
       console.error('❌ CustomerPage: Error updating customer status:', error);
-      alert('Failed to update customer status: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      showError('Status Update Failed', 'Failed to update customer status: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsUpdating(false);
     }

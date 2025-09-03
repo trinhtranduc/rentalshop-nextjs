@@ -435,6 +435,9 @@ export const buildApiUrl = (endpoint: string): string => {
 // Get the current API base URL (for swagger docs)
 export const getApiUrl = (): string => getApiBaseUrl();
 
+// Export API_BASE_URL for direct use in API clients
+export const API_BASE_URL = getApiBaseUrl();
+
 // Legacy exports for backward compatibility
 export const getApiDatabaseUrl = () => apiConfig.database.url;
 export const getApiJwtSecret = () => apiConfig.auth.jwtSecret;

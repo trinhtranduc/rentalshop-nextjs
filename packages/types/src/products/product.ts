@@ -95,6 +95,32 @@ export interface ProductWithStock extends Product {
   }>;
 }
 
+// Product with full details for detailed views
+export interface ProductWithDetails extends Product {
+  category: {
+    id: number;        // Required - every product must have a category
+    publicId: number;  // Database returns publicId
+    name: string;
+  };
+  merchant: {
+    id: number;        // Required - every product must belong to a merchant
+    publicId: number;  // Database returns publicId
+    name: string;
+  };
+  outletStock: Array<{
+    id: number;        // Required - every product must have outlet stock
+    stock: number;
+    available: number;
+    renting: number;
+    outlet: {
+      id: number;      // Required - every outlet stock must reference an outlet
+      publicId: number; // Database returns publicId
+      name: string;
+      address?: string; // Outlet address for display
+    };
+  }>;
+}
+
 export interface ProductSearchFilter {
   merchantId?: number;  // Changed from string to number
   categoryId?: number;  // Changed from string to number

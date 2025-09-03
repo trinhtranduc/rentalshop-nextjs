@@ -12,7 +12,9 @@ import {
   PageHeader,
   PageTitle,
   PageContent,
-  Pagination
+  Pagination,
+  useToasts,
+  ToastContainer
 } from '@rentalshop/ui';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
@@ -93,6 +95,7 @@ interface ProductPageData {
 export default function ProductsPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { toasts, showInfo, removeToast } = useToasts();
   const isMerchantLevel = user && ((user.role === 'ADMIN' && !user.outlet?.id) || user.role === 'MERCHANT');
   
   // State for products and UI
@@ -346,6 +349,7 @@ export default function ProductsPage() {
   }
 
   return (
+    <>
     <PageWrapper>
       <PageHeader>
         <div className="flex justify-between items-start">
@@ -358,7 +362,7 @@ export default function ProductsPage() {
               <button 
                 onClick={() => {
                   // TODO: Implement export functionality
-                  alert('Export functionality coming soon!');
+                  showInfo('Export Feature', 'Export functionality coming soon!');
                 }}
                 className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
               >
@@ -395,5 +399,7 @@ export default function ProductsPage() {
 
 
     </PageWrapper>
+    <ToastContainer toasts={toasts} onClose={removeToast} />
+  </>
   );
 } 

@@ -344,14 +344,60 @@ rentalshop-nextjs/
 │   ├── client/          # Client application (Business operations)
 │   └── api/             # Backend API server
 ├── packages/
-│   ├── ui/              # Shared UI components
+│   ├── ui/              # Shared UI components (Pure presentation)
 │   ├── auth/            # Authentication & authorization
-│   ├── database/        # Database utilities
+│   ├── database/        # Database utilities & Prisma
 │   ├── types/           # TypeScript type definitions
-│   ├── utils/           # Utility functions
-│   └── hooks/           # React hooks
+│   ├── utils/           # Utility functions & API clients
+│   └── hooks/           # React hooks & business logic
 ├── prisma/              # Database schema & migrations
 └── scripts/             # Development & deployment scripts
+```
+
+## 🔌 **API Architecture**
+
+### **Separation of Concerns**
+- **UI Components** (`packages/ui/`): Pure presentation components with no API logic
+- **API Clients** (`packages/utils/src/api/`): Centralized API request functions
+- **App Pages** (`apps/*/app/`): Business logic and API integration
+- **Backend APIs** (`apps/api/app/api/`): Server-side endpoints
+
+### **API Client Structure**
+```
+packages/utils/src/api/
+├── auth.ts              # Authentication API
+├── audit-logs.ts        # Audit logs API
+├── customers.ts         # Customer management API
+├── orders.ts            # Order management API
+├── products.ts          # Product management API
+├── settings.ts          # Settings management API
+├── users.ts             # User management API
+└── index.ts             # Export all API clients
+```
+
+### **Usage Pattern**
+```typescript
+// ✅ CORRECT: Use API clients in app pages
+// apps/admin/app/audit-logs/page.tsx
+import { getAuditLogs } from '@rentalshop/utils';
+
+export default function AuditLogsPage() {
+  const [logs, setLogs] = useState([]);
+  
+  useEffect(() => {
+    getAuditLogs().then(setLogs);
+  }, []);
+  
+  return <AuditLogViewer logs={logs} />;
+}
+
+// ❌ WRONG: Don't put API logic in UI components
+// packages/ui/src/components/features/AuditLogs/AuditLogViewer.tsx
+export function AuditLogViewer() {
+  // Don't make API calls here!
+  const [logs, setLogs] = useState([]);
+  // ...
+}
 ```
 
 ## 🔧 **Technology Stack**

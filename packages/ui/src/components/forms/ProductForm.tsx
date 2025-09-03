@@ -288,10 +288,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-
+    console.log('🔍 ProductForm: Form submitted with data:', formData);
     
     // Validate form and set errors if validation fails
     if (!validateForm()) {
+      console.log('❌ ProductForm: Validation failed');
 
       // Set validation errors here instead
       const newErrors: Partial<Record<keyof ProductFormData, string>> = {};

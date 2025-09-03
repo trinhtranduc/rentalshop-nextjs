@@ -24,4 +24,8 @@ export * from './validation';
 export * from './errors';
 
 // Public ID utilities
-export * from './publicId'; 
+export * from './publicId';
+
+// Audit helper utilities
+export * from './audit-helper';
+export * from './audit-config'; 

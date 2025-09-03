@@ -4,6 +4,9 @@ export * from './password';
 export * from './jwt';
 export * from './authorization';
 
+// Export specific JWT functions
+export { verifyTokenSimple, generateToken, verifyToken } from './jwt';
+
 // Export types (but exclude AuthResponse to avoid conflicts)
 export type { 
   LoginCredentials, 
