@@ -11,7 +11,8 @@ import {
   PageTitle,
   PageContent,
   useToasts,
-  ToastContainer
+  ToastContainer,
+  FormSkeleton
 } from '@rentalshop/ui';
 import { CreateOrderForm } from '@rentalshop/ui';
 import type { CustomerSearchResult, ProductWithStock, OrderInput } from '@rentalshop/types';
@@ -164,7 +165,7 @@ export default function CreateOrderPage() {
       <PageContent>
         <ToastContainer toasts={toasts} onClose={removeToast} />
         {loading ? (
-          <ProductsLoading />
+          <FormSkeleton />
         ) : (
           <CreateOrderForm
             onSubmit={handleSubmit}

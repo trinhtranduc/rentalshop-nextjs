@@ -4,6 +4,9 @@ import { verifyTokenSimple } from '@rentalshop/auth';
 import { findUserById, findUserByPublicId, createUser, updateUser } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole } from '@rentalshop/auth';
+import { captureAuditContext } from '@rentalshop/middleware';
+import { createAuditHelper } from '@rentalshop/utils';
+import { prisma } from '@rentalshop/database';
 
 
 export interface UserFilters {
@@ -171,6 +174,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log('🔄 POST /api/users - Creating new user');
+    
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
     
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');

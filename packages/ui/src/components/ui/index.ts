@@ -41,6 +41,7 @@ export { NumericInputDemo } from './numeric-input-demo';
 export { DateRangePicker } from './date-range-picker';
 export type { DateRange } from './date-range-picker';
 export { Pagination } from './pagination';
+export { RadioGroup, RadioGroupItem } from './radio-group';
 
 // ============================================================================
 // SKELETON COMPONENTS (Loading States)

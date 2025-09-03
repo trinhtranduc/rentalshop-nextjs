@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription
 } from '@rentalshop/ui';
-import { PlanForm } from '@rentalshop/ui';
+import { PlanForm } from '../../../forms/PlanForm';
 import type { 
   PlanCreateInput, 
   PlanUpdateInput,
@@ -86,7 +86,7 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           loading={loading}
-          mode={mode === 'view' ? 'edit' : mode}
+          mode={mode}
           hideHeader={true}
           title={getDialogTitle()}
           submitText={mode === 'create' ? 'Create Plan' : mode === 'edit' ? 'Update Plan' : 'Save Changes'}

@@ -8,7 +8,9 @@ import {
   PageTitle,
   PageContent,
   Orders,
-  Button
+  Button,
+  useToasts,
+  ToastContainer
 } from '@rentalshop/ui';
 import { ArrowLeft, Plus } from 'lucide-react';
 import type { Order, OrderFilters, OrdersData } from '@rentalshop/types';
@@ -30,6 +32,7 @@ interface OrderData {
 export default function MerchantOrdersPage() {
   const params = useParams();
   const router = useRouter();
+  const { toasts, showInfo, removeToast } = useToasts();
   const merchantId = params.id as string;
   
   const [orderData, setOrderData] = useState<OrderData>({
@@ -236,6 +239,7 @@ export default function MerchantOrdersPage() {
   }
 
   return (
+    <>
     <PageWrapper>
       <PageHeader>
         <div className="flex items-center justify-between">
@@ -258,7 +262,7 @@ export default function MerchantOrdersPage() {
               size="sm"
               onClick={() => {
                 // TODO: Implement export functionality
-                alert('Export functionality coming soon!');
+                showInfo('Export Feature', 'Export functionality coming soon!');
               }}
             >
               Export
@@ -288,5 +292,7 @@ export default function MerchantOrdersPage() {
         />
       </PageContent>
     </PageWrapper>
+    <ToastContainer toasts={toasts} onClose={removeToast} />
+  </>
   );
 }

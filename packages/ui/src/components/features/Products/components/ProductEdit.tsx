@@ -144,6 +144,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
         merchantId={merchantId}
         hideHeader={true}
         hideSubmitButton={true}
+        formId="product-form"
       />
 
       {/* Action Buttons */}

@@ -74,7 +74,7 @@ export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const hasInitializedRef = useRef(false);
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toasts, showSuccess, showError, showInfo, removeToast } = useToasts();
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -524,7 +524,7 @@ export default function CustomersPage() {
             <button 
               onClick={() => {
                 // TODO: Implement export functionality
-                alert('Export functionality coming soon!');
+                showInfo('Export Feature', 'Export functionality coming soon!');
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
             >

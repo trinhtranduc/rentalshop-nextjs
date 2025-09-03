@@ -153,12 +153,14 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           
           <div className="p-6">
             {product.outletStock.map((outletStock, index) => (
-              <div key={outletStock.outlet.id} className={`${index > 0 ? 'border-t border-gray-100 pt-6 mt-6' : ''}`}>
+              <div key={outletStock.outlet?.id || outletStock.id || index} className={`${index > 0 ? 'border-t border-gray-100 pt-6 mt-6' : ''}`}>
                 <div className="mb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900">{outletStock.outlet.name}</h3>
-                      {outletStock.outlet.address ? (
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {outletStock.outlet?.name || 'Unknown Outlet'}
+                      </h3>
+                      {outletStock.outlet?.address ? (
                         <p className="text-sm text-gray-600 mt-1">{outletStock.outlet.address}</p>
                       ) : (
                         <p className="text-sm text-gray-400 mt-1 italic">No address available</p>

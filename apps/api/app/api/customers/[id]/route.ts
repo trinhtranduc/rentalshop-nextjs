@@ -4,10 +4,11 @@ import {
   getCustomerByPublicId, 
   updateCustomer
 } from '@rentalshop/database';
-import { customerUpdateSchema } from '@rentalshop/utils';
+import { customerUpdateSchema, createAuditHelper } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { CustomerUpdateInput } from '@rentalshop/types';
 import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 
@@ -130,6 +131,7 @@ export async function PUT(
   console.log('PUT /api/customers/[id] called with ID:', params.id);
   
   try {
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -167,6 +169,15 @@ export async function PUT(
       );
     }
 
+    // Get existing customer for audit logging
+    const existingCustomer = await getCustomerByPublicId(customerId, userMerchantId);
+    if (!existingCustomer) {
+      return NextResponse.json(
+        { success: false, message: 'Customer not found' },
+        { status: 404 }
+      );
+    }
+
     // Get request body
     const body = await request.json();
     
@@ -197,6 +208,56 @@ export async function PUT(
         { success: false, message: 'Failed to update customer' },
         { status: 500 }
       );
+    }
+
+    // Log audit event for customer update
+    try {
+      console.log('🔍 Customer API - About to log audit event:', {
+        entityType: 'Customer',
+        entityId: updatedCustomer.id.toString(),
+        hasUser: !!user,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+
+      const auditHelper = createAuditHelper(prisma);
+      
+      // Create simplified audit context
+      const auditContext = {
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        merchantId: user.merchantId,
+        outletId: user.outletId,
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1',
+        userAgent: request.headers.get('user-agent') || 'Unknown',
+        requestId: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        metadata: {
+          method: request.method,
+          url: request.url,
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      await auditHelper.logUpdate({
+        entityType: 'Customer',
+        entityId: updatedCustomer.id.toString(),
+        entityName: `${updatedCustomer.firstName} ${updatedCustomer.lastName}`,
+        oldValues: existingCustomer,
+        newValues: updatedCustomer,
+        description: `Customer updated: ${existingCustomer.firstName} ${existingCustomer.lastName} -> ${updatedCustomer.firstName} ${updatedCustomer.lastName}`,
+        context: auditContext
+      });
+      console.log('✅ Customer API - Audit event logged successfully');
+    } catch (auditError) {
+      console.error('❌ Customer API - Failed to log customer update audit:', auditError);
+      console.error('❌ Customer API - Audit error stack:', auditError instanceof Error ? auditError.stack : undefined);
+      // Don't fail the request if audit logging fails
     }
 
     // Transform the response to ensure publicId is properly exposed

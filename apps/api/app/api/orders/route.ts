@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { 
   createOrder, 
@@ -13,6 +13,8 @@ import type { OrderInput, OrderSearchFilter, OrderUpdateInput, OrderType, OrderS
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
+import { captureAuditContext } from '@rentalshop/middleware';
+import { createAuditHelper } from '@rentalshop/utils';
 
 /**
  * GET /api/orders
@@ -299,6 +301,9 @@ export const runtime = 'nodejs';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -576,6 +581,29 @@ export async function POST(request: NextRequest) {
       outletId: order.outletId
     });
 
+    // Log audit event for order creation
+    try {
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logCreate({
+        entityType: 'Order',
+        entityId: order.id.toString(),
+        entityName: order.orderNumber,
+        newValues: order,
+        description: `Order created: ${order.orderNumber}`,
+        context: {
+          ...auditContext,
+          userId: user.id,
+          userEmail: user.email || undefined,
+          userRole: user.role || undefined,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log order creation audit:', auditError);
+      // Don't fail the request if audit logging fails
+    }
+
     return NextResponse.json({
       success: true,
       data: order,
@@ -670,6 +698,9 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -731,6 +762,30 @@ export async function PUT(request: NextRequest) {
     // Update the order
     const updatedOrder = await updateOrder(parseInt(orderId), updateInput, user.publicId);
 
+    // Log audit event for order update
+    try {
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logUpdate({
+        entityType: 'Order',
+        entityId: updatedOrder?.id.toString() || orderId,
+        entityName: updatedOrder?.orderNumber || `Order ${orderId}`,
+        oldValues: {}, // We don't have the old values in this context
+        newValues: updatedOrder || {},
+        description: `Order updated: ${updatedOrder?.orderNumber || orderId}`,
+        context: {
+          ...auditContext,
+          userId: user.id,
+          userEmail: user.email || undefined,
+          userRole: user.role || undefined,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log order update audit:', auditError);
+      // Don't fail the request if audit logging fails
+    }
+
     return NextResponse.json({
       success: true,
       data: updatedOrder,
@@ -751,6 +806,9 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -789,6 +847,30 @@ export async function DELETE(request: NextRequest) {
 
     // Cancel the order
     const cancelledOrder = await cancelOrder(parseInt(orderId), user.publicId, reason);
+
+    // Log audit event for order cancellation
+    try {
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logUpdate({
+        entityType: 'Order',
+        entityId: cancelledOrder?.id.toString() || orderId,
+        entityName: cancelledOrder?.orderNumber || `Order ${orderId}`,
+        oldValues: {}, // We don't have the old values in this context
+        newValues: cancelledOrder,
+        description: `Order cancelled: ${cancelledOrder?.orderNumber || orderId} - ${reason}`,
+        context: {
+          ...auditContext,
+          userId: user.id,
+          userEmail: user.email || undefined,
+          userRole: user.role || undefined,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log order cancellation audit:', auditError);
+      // Don't fail the request if audit logging fails
+    }
 
     return NextResponse.json({
       success: true,

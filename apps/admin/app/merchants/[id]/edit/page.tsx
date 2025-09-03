@@ -310,13 +310,9 @@ export default function EditMerchantPage() {
                     <Label htmlFor="isActive">Active</Label>
                   </div>
                   {editData.isActive ? (
-                    <StatusBadge status="active" variant="success">
-                      Active
-                    </StatusBadge>
+                    <StatusBadge status="active" variant="default" />
                   ) : (
-                    <StatusBadge status="inactive" variant="destructive">
-                      Inactive
-                    </StatusBadge>
+                    <StatusBadge status="inactive" variant="default" />
                   )}
                 </div>
               </div>
@@ -334,16 +330,8 @@ export default function EditMerchantPage() {
                   <Label className="text-gray-500">Created</Label>
                   <p>{new Date(merchant.createdAt).toLocaleString()}</p>
                 </div>
-                <div>
-                  <Label className="text-gray-500">Last Updated</Label>
-                  <p>{new Date(merchant.updatedAt).toLocaleString()}</p>
-                </div>
-                {merchant.expiresAt && (
-                  <div>
-                    <Label className="text-gray-500">Expires At</Label>
-                    <p>{new Date(merchant.expiresAt).toLocaleString()}</p>
-                  </div>
-                )}
+
+
               </div>
             </CardContent>
           </Card>

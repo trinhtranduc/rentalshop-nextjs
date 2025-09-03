@@ -30,153 +30,18 @@ import {
   Star,
   Settings
 } from 'lucide-react';
-// Temporary type definitions to avoid import issues
-interface Plan {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  currency: string;
-  trialDays: number;
-  maxOutlets: number;
-  maxUsers: number;
-  maxProducts: number;
-  maxCustomers: number;
-  features: string[];
-  isActive: boolean;
-  isPopular: boolean;
-  sortOrder: number;
-  billingCycle: BillingCycle;
-  billingCycleMonths: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-type BillingCycle = 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
-
-interface PlanCreateInput {
-  name: string;
-  description: string;
-  price: number;
-  currency?: string;
-  trialDays: number;
-  maxOutlets: number;
-  maxUsers: number;
-  maxProducts: number;
-  maxCustomers: number;
-  features: string[];
-  isActive?: boolean;
-  isPopular?: boolean;
-  sortOrder?: number;
-  billingCycle?: BillingCycle;
-  billingCycleMonths?: number;
-}
-
-interface PlanUpdateInput {
-  name?: string;
-  description?: string;
-  price?: number;
-  currency?: string;
-  trialDays?: number;
-  maxOutlets?: number;
-  maxUsers?: number;
-  maxProducts?: number;
-  maxCustomers?: number;
-  features?: string[];
-  isActive?: boolean;
-  isPopular?: boolean;
-  sortOrder?: number;
-  billingCycle?: BillingCycle;
-  billingCycleMonths?: number;
-}
+import type { 
+  PlanCreateInput, 
+  PlanUpdateInput,
+  Plan,
+  BillingCycle
+} from '@rentalshop/types';
 import { 
   BILLING_CYCLES,
   calculateDiscountedPrice,
   getBillingCycleDiscount,
   formatBillingCycle
 } from '@rentalshop/constants';
-
-// Fallback billing cycles in case the import fails
-const FALLBACK_BILLING_CYCLES = [
-  {
-    value: 'monthly',
-    label: 'Monthly',
-    months: 1,
-    description: 'Billed every month'
-  },
-  {
-    value: 'quarterly',
-    label: 'Quarterly (3 Months)',
-    months: 3,
-    description: 'Billed every 3 months'
-  },
-  {
-    value: 'semi_annual',
-    label: 'Semi-Annual (6 Months)',
-    months: 6,
-    description: 'Billed every 6 months'
-  },
-  {
-    value: 'annual',
-    label: 'Annual (12 Months)',
-    months: 12,
-    description: 'Billed every 12 months'
-  }
-];
-
-// Use imported BILLING_CYCLES or fallback
-const BILLING_CYCLES_SAFE = BILLING_CYCLES || FALLBACK_BILLING_CYCLES;
-
-// Debug logging to help identify import issues
-console.log('🔍 PlanForm: BILLING_CYCLES imported:', !!BILLING_CYCLES);
-console.log('🔍 PlanForm: BILLING_CYCLES_SAFE:', BILLING_CYCLES_SAFE);
-
-// Fallback functions in case imports fail
-const formatBillingCycleSafe = (cycle: string): string => {
-  if (typeof formatBillingCycle === 'function') {
-    return formatBillingCycle(cycle);
-  }
-  // Fallback implementation
-  const cycleMap: Record<string, string> = {
-    'monthly': 'Monthly',
-    'quarterly': 'Quarterly',
-    'semi_annual': 'Semi-Annual',
-    'annual': 'Annual'
-  };
-  return cycleMap[cycle] || cycle;
-};
-
-const getBillingCycleDiscountSafe = (cycle: string): number => {
-  if (typeof getBillingCycleDiscount === 'function') {
-    return getBillingCycleDiscount(cycle);
-  }
-  // Fallback implementation
-  const discountMap: Record<string, number> = {
-    'monthly': 0,
-    'quarterly': 5,
-    'semi_annual': 10,
-    'annual': 20
-  };
-  return discountMap[cycle] || 0;
-};
-
-const calculateDiscountedPriceSafe = (basePrice: number, cycle: string): number => {
-  if (typeof calculateDiscountedPrice === 'function') {
-    return calculateDiscountedPrice(basePrice, cycle);
-  }
-  // Fallback implementation
-  const discount = getBillingCycleDiscountSafe(cycle);
-  const monthsMap: Record<string, number> = {
-    'monthly': 1,
-    'quarterly': 3,
-    'semi_annual': 6,
-    'annual': 12
-  };
-  const months = monthsMap[cycle] || 1;
-  const totalPrice = basePrice * months;
-  const discountAmount = totalPrice * (discount / 100);
-  return totalPrice - discountAmount;
-};
 
 interface PlanFormData {
   name: string;
@@ -253,7 +118,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   };
 
   const handleBillingCycleChange = (cycle: BillingCycle) => {
-    const cycleOption = BILLING_CYCLES_SAFE.find(option => option.value === cycle);
+    const cycleOption = BILLING_CYCLES.find(option => option.value === cycle);
     setFormData(prev => ({ 
       ...prev, 
       billingCycle: cycle,
@@ -484,7 +349,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {BILLING_CYCLES_SAFE.map((cycle) => (
+                    {BILLING_CYCLES.map((cycle) => (
                       <SelectItem key={cycle.value} value={cycle.value}>
                         <div className="flex flex-col">
                           <span className="font-medium">{cycle.label}</span>
@@ -517,21 +382,21 @@ export const PlanForm: React.FC<PlanFormProps> = ({
               <div className="text-2xl font-bold text-text-primary">
                 {formatCurrency(formData.price, formData.currency)}
                 <span className="text-lg text-text-secondary font-normal ml-2">
-                  /{formatBillingCycleSafe(formData.billingCycle).toLowerCase()}
+                  /{formatBillingCycle(formData.billingCycle).toLowerCase()}
                 </span>
               </div>
               
               {/* Show discount if applicable */}
-              {getBillingCycleDiscountSafe(formData.billingCycle) > 0 && (
+              {getBillingCycleDiscount(formData.billingCycle) > 0 && (
                 <div className="text-sm text-action-success mt-1">
-                  {getBillingCycleDiscountSafe(formData.billingCycle)}% discount applied
+                  {getBillingCycleDiscount(formData.billingCycle)}% discount applied
                 </div>
               )}
               
               {/* Show total price for longer cycles */}
               {formData.billingCycleMonths > 1 && (
                 <div className="text-sm text-text-secondary mt-1">
-                  Total: {formatCurrency(calculateDiscountedPriceSafe(formData.price, formData.billingCycle), formData.currency)} for {formData.billingCycleMonths} months
+                  Total: {formatCurrency(calculateDiscountedPrice(formData.price, formData.billingCycle), formData.currency)} for {formData.billingCycleMonths} months
                 </div>
               )}
               

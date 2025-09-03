@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from '@rentalshop/auth';
-import { getProductByPublicId } from '@rentalshop/database';
+import { getProductByPublicId, updateProduct } from '@rentalshop/database';
 import { getUserScope, assertAnyRole } from '@rentalshop/auth';
+import { productUpdateSchema } from '@rentalshop/utils';
+import { captureAuditContext } from '@rentalshop/middleware';
+import { createAuditHelper } from '@rentalshop/utils';
+import { prisma } from '@rentalshop/database';
 
 /**
  * GET /api/products/[id]
@@ -82,10 +86,17 @@ export async function GET(
       category: product.category,
       merchant: product.merchant,
       outletStock: product.outletStock.map(os => ({
+        id: os.id,
         outletId: os.outlet.publicId, // Use publicId for frontend
         stock: os.stock,
         available: os.available,
-        renting: os.renting
+        renting: os.renting,
+        outlet: {
+          id: os.outlet.publicId, // Use publicId for frontend
+          publicId: os.outlet.publicId,
+          name: os.outlet.name,
+          address: os.outlet.address || null // Include address if available
+        }
       })),
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString()
@@ -121,6 +132,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -169,12 +183,76 @@ export async function PUT(
       );
     }
 
-    // For now, return a placeholder response since the update logic needs to be implemented
-    // using the proper database functions that handle the dual ID system
+    const publicId = parseInt(id);
+
+    // Parse and validate request body
+    const body = await request.json();
+    console.log('🔍 PUT /api/products/[id] - Update request body:', body);
+
+    // Validate input data
+    const validatedData = productUpdateSchema.parse(body);
+    console.log('✅ Validated update data:', validatedData);
+
+    // Check if product exists and user has access to it
+    const existingProduct = await getProductByPublicId(publicId, userMerchantId);
+    if (!existingProduct) {
+      return NextResponse.json(
+        { success: false, message: 'Product not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update the product using the database function
+    const updatedProduct = await updateProduct(publicId, validatedData);
+    console.log('✅ Product updated successfully:', updatedProduct);
+
+    // Log audit event for product update
+    try {
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logUpdate({
+        entityType: 'Product',
+        entityId: updatedProduct?.id.toString() || publicId.toString(),
+        entityName: updatedProduct?.name || `Product ${publicId}`,
+        oldValues: {}, // We don't have the old values in this context
+        newValues: updatedProduct || {},
+        description: `Product updated: ${updatedProduct?.name || publicId}`,
+        context: {
+          ...auditContext,
+          userId: user.id,
+          userEmail: user.email || undefined,
+          userRole: user.role || undefined,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log product update audit:', auditError);
+      // Don't fail the request if audit logging fails
+    }
+
+    // Transform the response to match frontend expectations
+    const transformedProduct = {
+      id: updatedProduct.publicId, // Return publicId as "id" to frontend
+      name: updatedProduct.name,
+      description: updatedProduct.description,
+      barcode: updatedProduct.barcode,
+      categoryId: updatedProduct.categoryId,
+      rentPrice: updatedProduct.rentPrice,
+      salePrice: updatedProduct.salePrice,
+      deposit: updatedProduct.deposit,
+      totalStock: updatedProduct.totalStock,
+      images: updatedProduct.images,
+      isActive: updatedProduct.isActive,
+      category: updatedProduct.category,
+      merchant: updatedProduct.merchant,
+      createdAt: updatedProduct.createdAt.toISOString(),
+      updatedAt: updatedProduct.updatedAt.toISOString()
+    };
+
     return NextResponse.json({
       success: true,
-      data: {},
-      message: 'Product update functionality coming soon'
+      data: transformedProduct,
+      message: 'Product updated successfully'
     });
 
   } catch (error) {

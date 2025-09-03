@@ -109,6 +109,16 @@ export {
   getPlanStats,
 } from './plan';
 
+// Audit logging system
+export {
+  AuditLogger,
+  getAuditLogger,
+  extractAuditContext,
+  type AuditContext,
+  type AuditLogData,
+  type AuditLogFilter,
+} from './audit';
+
 // ============================================================================
 // LEGACY FUNCTIONS - DEPRECATED
 // ============================================================================

@@ -20,3 +20,5 @@ export * from './users';
 export * from './plans';
 export * from './billing-cycles';
 export * from './payments';
+export * from './audit-logs';
+export * from './settings';

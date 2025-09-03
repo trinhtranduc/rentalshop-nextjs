@@ -6,7 +6,9 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  useToasts,
+  ToastContainer
 } from '@rentalshop/ui';
 import { Orders } from '../../components/Orders';
 import { useRouter } from 'next/navigation';
@@ -17,6 +19,7 @@ import { authenticatedFetch } from '@rentalshop/utils';
 export default function OrdersPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
   
   // State for orders and UI
   const [orders, setOrders] = useState<OrderSearchResult[]>([]);
@@ -240,11 +243,11 @@ export default function OrdersPage() {
       if (response.ok) {
         fetchOrders();
         fetchStats();
-        alert('Order confirmed!');
+        showSuccess('Order Confirmed', 'Order has been confirmed successfully!');
       }
     } catch (error) {
       console.error('Error updating order:', error);
-      alert('An error occurred while updating the order');
+      showError('Update Failed', 'An error occurred while updating the order');
     }
   }, [fetchOrders, fetchStats]);
 
@@ -261,11 +264,11 @@ export default function OrdersPage() {
       if (response.ok) {
         fetchOrders();
         fetchStats();
-        alert('Order returned!');
+        showSuccess('Order Returned', 'Order has been returned successfully!');
       }
     } catch (error) {
       console.error('Error updating order:', error);
-      alert('An error occurred while updating the order');
+      showError('Update Failed', 'An error occurred while updating the order');
     }
   }, [fetchOrders, fetchStats]);
 
@@ -283,11 +286,11 @@ export default function OrdersPage() {
       if (response.ok) {
         fetchOrders();
         fetchStats();
-        alert('Order cancelled!');
+        showSuccess('Order Cancelled', 'Order has been cancelled successfully!');
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      alert('An error occurred while cancelling the order');
+      showError('Cancellation Failed', 'An error occurred while cancelling the order');
     }
   }, [fetchOrders, fetchStats]);
 
@@ -385,6 +388,7 @@ export default function OrdersPage() {
   }
 
   return (
+    <>
     <PageWrapper>
       <PageHeader>
         <div className="flex justify-between items-start">
@@ -396,7 +400,7 @@ export default function OrdersPage() {
             <button 
               onClick={() => {
                 // TODO: Implement export functionality
-                alert('Export functionality coming soon!');
+                showInfo('Export Feature', 'Export functionality coming soon!');
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
             >
@@ -431,5 +435,7 @@ export default function OrdersPage() {
         />
       </PageContent>
     </PageWrapper>
+    <ToastContainer toasts={toasts} onClose={removeToast} />
+  </>
   );
 } 

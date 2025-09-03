@@ -1,13 +1,8 @@
+import type { BillingCycleOption } from '@rentalshop/types';
+
 // ============================================================================
 // BILLING CYCLE CONSTANTS
 // ============================================================================
-
-export interface BillingCycleOption {
-  value: string;
-  label: string;
-  months: number;
-  description: string;
-}
 
 export const BILLING_CYCLES: BillingCycleOption[] = [
   {

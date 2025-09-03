@@ -53,7 +53,7 @@ export default function CustomerAPITestPage() {
 
   const runTest = async (endpoint: string, method: string, data?: any) => {
     if (!token) {
-      alert('Please enter a valid JWT token');
+      // Toast notification would be handled by parent component
       return;
     }
 

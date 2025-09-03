@@ -10,8 +10,11 @@ import {
 import { customersQuerySchema, customerCreateSchema, customerUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { CustomerFilters, CustomerInput, CustomerUpdateInput, CustomerSearchFilter } from '@rentalshop/types';
-import { searchRateLimiter } from '../../../lib/middleware/rateLimit';
+import { searchRateLimiter } from '@rentalshop/middleware';
 import { PrismaClient } from '@prisma/client';
+import { AuditLogger } from '../../../../packages/database/src/audit';
+import { captureAuditContext, getAuditContext } from '@rentalshop/middleware';
+import { createAuditHelper } from '@rentalshop/utils';
 
 const prisma = new PrismaClient();
 
@@ -283,6 +286,9 @@ export const runtime = 'nodejs';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -338,6 +344,29 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Customer created successfully:', customer);
 
+    // Log audit event using selective audit helper
+    try {
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logCreate({
+        entityType: 'Customer',
+        entityId: customer.id.toString(),
+        entityName: `${customer.firstName} ${customer.lastName}`,
+        newValues: customer,
+        description: `Customer created: ${customer.firstName} ${customer.lastName}`,
+        context: {
+          ...auditContext,
+          userId: user.id,
+          userEmail: user.email,
+          userRole: user.role,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log customer creation audit:', auditError);
+      // Don't fail the request if audit logging fails
+    }
+
     return NextResponse.json({
       success: true,
       data: customer,
@@ -385,6 +414,9 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    // Capture audit context
+    const auditContext = await captureAuditContext(request);
+    
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -457,6 +489,51 @@ export async function PUT(request: NextRequest) {
 
     // Update customer using new dual ID system
     const customer = await updateCustomer(parseInt(customerId), updateData);
+
+    // Log audit event using selective audit helper
+    console.log('🔍 Customer API - About to log audit event:', {
+      entityType: 'Customer',
+      entityId: customer.id.toString(),
+      hasAuditContext: !!auditContext,
+      hasUser: !!user,
+      auditContext: auditContext,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        merchantId: user.merchantId,
+        outletId: user.outletId
+      }
+    });
+    
+    try {
+      console.log('🔍 Customer API - Creating audit helper...');
+      const auditHelper = createAuditHelper(prisma);
+      console.log('✅ Customer API - Audit helper created');
+      
+      console.log('🔍 Customer API - Calling auditHelper.logUpdate...');
+      await auditHelper.logUpdate({
+        entityType: 'Customer',
+        entityId: customer.id.toString(),
+        entityName: `${customer.firstName} ${customer.lastName}`,
+        oldValues: existingCustomer,
+        newValues: customer,
+        description: `Customer updated: ${customer.firstName} ${customer.lastName}`,
+        context: {
+          ...auditContext,
+          userId: user.id,
+          userEmail: user.email,
+          userRole: user.role,
+          merchantId: user.merchantId,
+          outletId: user.outletId
+        }
+      });
+      console.log('✅ Customer API - Audit event logged successfully');
+    } catch (auditError) {
+      console.error('❌ Customer API - Failed to log customer update audit:', auditError);
+      console.error('❌ Customer API - Audit error stack:', auditError.stack);
+      // Don't fail the request if audit logging fails
+    }
 
     return NextResponse.json({
       success: true,
