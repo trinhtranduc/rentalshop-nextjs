@@ -127,6 +127,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   // Debug: Log initial data changes
   useEffect(() => {
     console.log('🔍 ProductForm - initialData changed:', initialData);
+    console.log('🔍 ProductForm - initialData.categoryId:', initialData.categoryId);
+    console.log('🔍 ProductForm - initialData.categoryId type:', typeof initialData.categoryId);
     console.log('🔍 ProductForm - mode:', mode);
     console.log('🔍 ProductForm - outlets:', outlets);
     console.log('🔍 ProductForm - initialData.outletStock:', initialData.outletStock);
@@ -289,6 +291,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     e.preventDefault();
     
     console.log('🔍 ProductForm: Form submitted with data:', formData);
+    console.log('🔍 ProductForm - categoryId type:', typeof formData.categoryId);
+    console.log('🔍 ProductForm - categoryId value:', formData.categoryId);
     
     // Validate form and set errors if validation fails
     if (!validateForm()) {

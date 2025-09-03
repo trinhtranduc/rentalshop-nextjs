@@ -39,25 +39,8 @@ import {
   Settings
 } from 'lucide-react';
 
-interface Plan {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  currency: string;
-  billingCycle: 'monthly' | 'yearly';
-  trialDays: number;
-  maxOutlets: number;
-  maxUsers: number;
-  maxProducts: number;
-  maxCustomers: number;
-  features: string[];
-  isPopular: boolean;
-  isActive: boolean;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// Import the Plan type from the types package
+import type { Plan } from '@rentalshop/types';
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -77,123 +60,25 @@ export default function PlansPage() {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
-      const response = await fetch('http://localhost:3002/api/plans', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setPlans(data.data);
-        }
+      const { plansApi } = await import('@rentalshop/utils');
+      const response = await plansApi.getPlans();
+      
+      if (response.success && response.data) {
+        // The API returns PlansResponse with nested structure
+        const plansData = response.data.plans || [];
+        setPlans(Array.isArray(plansData) ? plansData : []);
       } else {
-        console.error('Failed to fetch plans');
+        console.error('Failed to fetch plans:', response.error);
         // Fallback to mock data for now
-        setMockData();
       }
     } catch (error) {
       console.error('Error fetching plans:', error);
       // Fallback to mock data for now
-      setMockData();
     } finally {
       setLoading(false);
     }
   };
-
-  const setMockData = () => {
-    setPlans([
-      {
-        id: 1,
-        name: 'Basic',
-        description: 'Perfect for small rental businesses just getting started',
-        price: 29,
-        currency: 'USD',
-        billingCycle: 'monthly',
-        trialDays: 14,
-        maxOutlets: 1,
-        maxUsers: 3,
-        maxProducts: 50,
-        maxCustomers: 100,
-        features: [
-          'Basic inventory management',
-          'Customer database',
-          'Order processing',
-          'Basic reporting',
-          'Email support'
-        ],
-        isPopular: false,
-        isActive: true,
-        sortOrder: 1,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      {
-        id: 2,
-        name: 'Professional',
-        description: 'Ideal for growing rental businesses with multiple outlets',
-        price: 79,
-        currency: 'USD',
-        billingCycle: 'monthly',
-        trialDays: 30,
-        maxOutlets: 5,
-        maxUsers: 15,
-        maxProducts: 200,
-        maxCustomers: 500,
-        features: [
-          'Advanced inventory management',
-          'Multi-outlet support',
-          'Advanced analytics',
-          'Customer loyalty program',
-          'Priority support',
-          'API access',
-          'Custom branding'
-        ],
-        isPopular: true,
-        isActive: true,
-        sortOrder: 2,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      {
-        id: 3,
-        name: 'Enterprise',
-        description: 'For large rental operations with complex needs',
-        price: 199,
-        currency: 'USD',
-        billingCycle: 'monthly',
-        trialDays: 30,
-        maxOutlets: -1, // Unlimited
-        maxUsers: -1, // Unlimited
-        maxProducts: -1, // Unlimited
-        maxCustomers: -1, // Unlimited
-        features: [
-          'Unlimited everything',
-          'Advanced automation',
-          'White-label solution',
-          'Dedicated account manager',
-          'Custom integrations',
-          'Advanced security',
-          'SLA guarantee'
-        ],
-        isPopular: false,
-        isActive: true,
-        sortOrder: 3,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      }
-    ]);
-  };
-
+  
   const getBillingCycleText = (cycle: string) => {
     return cycle === 'monthly' ? '/month' : '/year';
   };
@@ -218,7 +103,7 @@ export default function PlansPage() {
   };
 
   // Filter and sort plans
-  const filteredAndSortedPlans = plans
+  const filteredAndSortedPlans = (Array.isArray(plans) ? plans : [])
     .filter(plan => {
       const matchesSearch = plan.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            plan.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -437,7 +322,6 @@ export default function PlansPage() {
                       <td className="py-4 px-4">
                         <StatusBadge 
                           status={plan.isActive ? 'active' : 'inactive'}
-                          text={plan.isActive ? 'Active' : 'Inactive'}
                         />
                       </td>
                       <td className="py-4 px-4 text-sm text-text-secondary">

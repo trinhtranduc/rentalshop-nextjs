@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { Product } from '@rentalshop/types';
-import { Eye, Edit } from 'lucide-react';
+import { Eye, Edit, ShoppingCart } from 'lucide-react';
 
 interface ProductTableProps {
   products: Product[];
@@ -203,6 +203,15 @@ export function ProductTable({
                   >
                     <Eye className="h-3 w-3 mr-1" />
                     View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onProductAction('view-orders', product.id)}
+                    className="h-8 px-3"
+                  >
+                    <ShoppingCart className="h-3 w-3 mr-1" />
+                    Orders
                   </Button>
                   <Button
                     variant="outline"

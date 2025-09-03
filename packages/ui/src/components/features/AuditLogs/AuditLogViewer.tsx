@@ -172,75 +172,42 @@ interface AuditLogRowProps {
 function AuditLogRow({ log, onViewDetails }: AuditLogRowProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+      minute: '2-digit'
     });
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'SECURITY':
-        return <AlertTriangle className="w-4 h-4" />;
-      case 'BUSINESS':
-        return <Activity className="w-4 h-4" />;
-      case 'SYSTEM':
-        return <Monitor className="w-4 h-4" />;
-      case 'COMPLIANCE':
-        return <CheckCircle className="w-4 h-4" />;
-      default:
-        return <Info className="w-4 h-4" />;
-    }
-  };
-
   return (
-    <Card className="mb-3 hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <ActionBadge action={log.action} />
-              <SeverityBadge severity={log.severity} />
-              <Badge variant="outline" className="flex items-center gap-1">
-                {getCategoryIcon(log.category)}
-                {log.category}
-              </Badge>
-            </div>
+    <Card className="mb-2 hover:shadow-sm transition-shadow">
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <ActionBadge action={log.action} />
+            <SeverityBadge severity={log.severity} />
             
-            <div className="space-y-1 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-text-primary">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-medium text-text-primary truncate">
                   {log.entityType}: {log.entityName || log.entityId}
                 </span>
+                {log.user && (
+                  <span className="text-text-tertiary text-xs">
+                    by {log.user.name}
+                  </span>
+                )}
               </div>
               
               {log.description && (
-                <p className="text-text-secondary">{log.description}</p>
+                <p className="text-text-secondary text-xs truncate mt-1">
+                  {log.description}
+                </p>
               )}
-              
-              <div className="flex items-center gap-4 text-text-tertiary">
-                {log.user && (
-                  <div className="flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    <span>{log.user.name} ({log.user.role})</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span>{formatDate(log.createdAt)}</span>
-                </div>
-                
-                {log.ipAddress && (
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    <span>{log.ipAddress}</span>
-                  </div>
-                )}
-              </div>
+            </div>
+            
+            <div className="text-xs text-text-tertiary whitespace-nowrap">
+              {formatDate(log.createdAt)}
             </div>
           </div>
           
@@ -248,6 +215,7 @@ function AuditLogRow({ log, onViewDetails }: AuditLogRowProps) {
             variant="outline"
             size="sm"
             onClick={() => onViewDetails(log)}
+            className="ml-3 flex-shrink-0"
           >
             <Eye className="w-4 h-4 mr-2" />
             View Details
@@ -537,14 +505,6 @@ export function AuditLogViewer({
                       onViewDetails={handleViewDetails}
                     />
                   ))}
-                  
-                                      {pagination?.hasMore && (
-                      <div className="text-center pt-4">
-                        <Button onClick={onLoadMore} disabled={loading}>
-                          Load More
-                        </Button>
-                      </div>
-                    )}
                 </div>
               )}
             </CardContent>

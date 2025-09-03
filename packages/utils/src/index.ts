@@ -28,4 +28,13 @@ export * from './publicId';
 
 // Audit helper utilities
 export * from './audit-helper';
-export * from './audit-config'; 
+export * from './audit-config';
+
+// User utilities
+export * from './userUtils';
+
+// Customer utilities
+export * from './customerUtils';
+
+// Product utilities
+export * from './productUtils'; 

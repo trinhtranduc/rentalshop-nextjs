@@ -11,3 +11,4 @@ export { ProductEdit} from './ProductEdit';
 export { ProductAddForm } from './ProductAddForm';
 export { ProductCard } from './ProductCard';
 export { ProductOrdersView } from './ProductOrdersView';
+export { ProductOrdersDialog } from './ProductOrdersDialog';

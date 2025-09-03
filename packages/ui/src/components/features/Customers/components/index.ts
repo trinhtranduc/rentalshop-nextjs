@@ -8,6 +8,7 @@ export { CustomerPageHeader } from './CustomerPageHeader';
 // Customer forms
 export { AddCustomerForm } from './AddCustomerForm';
 export { EditCustomerForm, type EditCustomerFormRef } from './EditCustomerForm';
+export { CustomerForm } from './CustomerForm';
 
 // Customer actions and navigation
 export { CustomerActions } from './CustomerActions';
@@ -19,3 +20,5 @@ export { CustomerPagination } from './CustomerPagination';
 export { CustomerStats } from './CustomerStats';
 export { CustomerOrdersDialog } from './CustomerOrdersDialog';
 export { CustomersLoading, CustomerDetailLoading } from './CustomersLoading';
+
+

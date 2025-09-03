@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AuditLogViewer } from '@rentalshop/ui';
+import { 
+  AuditLogViewer,
+  PageWrapper,
+  PageHeader,
+  PageTitle,
+  PageContent,
+  Pagination,
+  useToasts
+} from '@rentalshop/ui';
 import { 
   getAuditLogs, 
   getAuditLogStats,
@@ -9,22 +17,24 @@ import {
   type AuditLogFilter, 
   type AuditLogStats 
 } from '@rentalshop/utils';
-import { useToasts } from '@rentalshop/ui';
+import { usePagination } from '@rentalshop/hooks';
 
 export default function SystemAuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<AuditLogStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<AuditLogFilter>({
-    limit: 50,
+    limit: 10,
     offset: 0
   });
-  const [pagination, setPagination] = useState({
-    total: 0,
-    limit: 50,
-    offset: 0,
-    hasMore: false
-  });
+  
+  // Use reusable pagination hook
+  const {
+    pagination,
+    handlePageChange,
+    updatePaginationFromResponse
+  } = usePagination({ initialLimit: 10, initialOffset: 0 });
+  
   const { addToast } = useToasts();
 
   // Load audit logs
@@ -35,7 +45,7 @@ export default function SystemAuditLogsPage() {
       const result = await getAuditLogs(currentFilter);
       
       setLogs(result.data);
-      setPagination(result.pagination);
+      updatePaginationFromResponse(result.pagination);
     } catch (error: any) {
       addToast({
         title: 'Failed to load audit logs',
@@ -65,16 +75,17 @@ export default function SystemAuditLogsPage() {
 
   // Handle filter reset
   const handleFilterReset = () => {
-    const resetFilter = { limit: 50, offset: 0 };
+    const resetFilter = { limit: 10, offset: 0 };
     setFilter(resetFilter);
     loadAuditLogs(resetFilter);
   };
 
-  // Handle pagination
-  const handleLoadMore = () => {
+  // Handle pagination - use the hook's handlePageChange
+  const handlePageChangeClick = (page: number) => {
+    handlePageChange(page);
     const newFilter = {
       ...filter,
-      offset: (filter.offset || 0) + (filter.limit || 50)
+      offset: (page - 1) * pagination.limit
     };
     setFilter(newFilter);
     loadAuditLogs(newFilter);
@@ -101,27 +112,41 @@ export default function SystemAuditLogsPage() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary mb-2">System Audit Logs</h1>
-        <p className="text-text-secondary">
-          Track all system changes, user actions, and security events across the platform.
-        </p>
-      </div>
+    <PageWrapper maxWidth="7xl" padding="md" spacing="md">
+      <PageHeader>
+        <PageTitle subtitle="Track all system changes, user actions, and security events across the platform">
+          System Audit Logs
+        </PageTitle>
+      </PageHeader>
       
-      <AuditLogViewer 
-        className="w-full"
-        logs={logs}
-        stats={stats}
-        loading={loading}
-        filter={filter}
-        pagination={pagination}
-        onFilterChange={handleFilterChange}
-        onFilterReset={handleFilterReset}
-        onLoadMore={handleLoadMore}
-        onRefresh={() => loadAuditLogs()}
-        onViewDetails={handleViewDetails}
-      />
-    </div>
+      <PageContent>
+        <AuditLogViewer 
+          className="w-full"
+          logs={logs}
+          stats={stats}
+          loading={loading}
+          filter={filter}
+          pagination={pagination}
+          onFilterChange={handleFilterChange}
+          onFilterReset={handleFilterReset}
+          onRefresh={() => loadAuditLogs()}
+          onViewDetails={handleViewDetails}
+        />
+        
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              limit={pagination.limit}
+              onPageChange={handlePageChangeClick}
+              itemName="audit logs"
+            />
+          </div>
+        )}
+      </PageContent>
+    </PageWrapper>
   );
 }

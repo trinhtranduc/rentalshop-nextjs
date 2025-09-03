@@ -274,8 +274,8 @@ export default function CustomerOrdersPage() {
         <CustomerPageHeader
           title={`${customer.firstName} ${customer.lastName} - Orders`}
           subtitle="View and manage customer orders"
-          onBack={() => router.push(`/customers/${publicId}`)}
-          backText="Back to Customer"
+          onBack={() => router.push('/customers')}
+          backText="Back to Customers"
         />
 
         {/* Customer Summary Card */}

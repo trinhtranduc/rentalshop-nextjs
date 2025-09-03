@@ -8,6 +8,7 @@ import {
   type AuditLogFilter, 
   type AuditLogStats 
 } from '@rentalshop/utils';
+import { usePagination } from '@rentalshop/hooks';
 import { 
   Card,
   CardContent,
@@ -21,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
   Badge,
+  Pagination,
   useToasts
 } from '@rentalshop/ui';
 import { 
@@ -353,7 +355,7 @@ function AuditLogFilter({ filter, onFilterChange, onReset }: AuditLogFilterProps
             Reset Filters
           </Button>
           <div className="text-sm text-text-secondary">
-            Showing {filter.limit || 50} results per page
+            Showing {filter.limit || 10} results per page
           </div>
         </div>
       </CardContent>
@@ -367,15 +369,15 @@ export default function AuditLogsPage() {
   const [stats, setStats] = useState<AuditLogStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<AuditLogFilter>({
-    limit: 50,
+    limit: 10,
     offset: 0
   });
-  const [pagination, setPagination] = useState({
-    total: 0,
-    limit: 50,
-    offset: 0,
-    hasMore: false
-  });
+  // Use reusable pagination hook
+  const {
+    pagination,
+    handlePageChange,
+    updatePaginationFromResponse
+  } = usePagination({ initialLimit: 10, initialOffset: 0 });
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'logs' | 'stats'>('logs');
@@ -389,7 +391,7 @@ export default function AuditLogsPage() {
       const result = await getAuditLogs(currentFilter);
       
       setLogs(result.data);
-      setPagination(result.pagination);
+      updatePaginationFromResponse(result.pagination);
     } catch (error: any) {
       addToast({
         title: 'Failed to load audit logs',
@@ -419,16 +421,17 @@ export default function AuditLogsPage() {
 
   // Handle filter reset
   const handleFilterReset = () => {
-    const resetFilter = { limit: 50, offset: 0 };
+    const resetFilter = { limit: 10, offset: 0 };
     setFilter(resetFilter);
     loadAuditLogs(resetFilter);
   };
 
-  // Handle pagination
-  const handleLoadMore = () => {
+  // Handle pagination - use the hook's handlePageChange
+  const handlePageChangeClick = (page: number) => {
+    handlePageChange(page);
     const newFilter = {
       ...filter,
-      offset: (filter.offset || 0) + (filter.limit || 50)
+      offset: (page - 1) * pagination.limit
     };
     setFilter(newFilter);
     loadAuditLogs(newFilter);
@@ -525,11 +528,17 @@ export default function AuditLogsPage() {
                       />
                     ))}
                     
-                    {pagination.hasMore && (
-                      <div className="text-center pt-4">
-                        <Button onClick={handleLoadMore} disabled={loading}>
-                          Load More
-                        </Button>
+                    {/* Pagination */}
+                    {pagination.totalPages > 1 && (
+                      <div className="pt-6">
+                        <Pagination
+                          currentPage={pagination.currentPage}
+                          totalPages={pagination.totalPages}
+                          total={pagination.total}
+                          limit={pagination.limit}
+                          onPageChange={handlePageChangeClick}
+                          itemName="audit logs"
+                        />
                       </div>
                     )}
                   </div>
