@@ -40,10 +40,14 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
       try {
         setLoadingOutlets(true);
         setOutletError(null);
+        console.log('🔍 ProductFilters: Fetching outlets...');
         const result = await outletsApi.getOutlets();
+        console.log('🔍 ProductFilters: Outlets API result:', result);
         if (result.success && result.data?.outlets) {
+          console.log('🔍 ProductFilters: Setting outlets:', result.data.outlets);
           setOutlets(result.data.outlets);
         } else {
+          console.log('🔍 ProductFilters: Failed to load outlets - result:', result);
           setOutletError('Failed to load outlets');
           setOutlets([]);
         }
@@ -178,11 +182,14 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
                 ) : outlets.length === 0 ? (
                   <SelectItem value="none" disabled className="text-gray-500">No outlets available</SelectItem>
                 ) : (
-                  outlets.map((outlet) => (
-                    <SelectItem key={outlet.id} value={outlet.id.toString()}>
-                      {outlet.name}
-                    </SelectItem>
-                  ))
+                  outlets.map((outlet) => {
+                    console.log('🔍 ProductFilters: Rendering outlet:', outlet);
+                    return (
+                      <SelectItem key={outlet.id} value={outlet.id.toString()}>
+                        {outlet.name}
+                      </SelectItem>
+                    );
+                  })
                 )}
               </SelectContent>
             </Select>

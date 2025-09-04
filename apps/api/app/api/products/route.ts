@@ -66,12 +66,14 @@ export async function GET(request: NextRequest) {
     const { page, limit, search, categoryId } = parsed.data;
     console.log('Parsed filters:', { page, limit, search, categoryId });
 
-    const { merchantId } = getUserScope(user as any);
+    const { merchantId, outletId } = getUserScope(user as any);
     console.log('Merchant ID from scope:', merchantId);
+    console.log('Outlet ID from scope:', outletId);
     
     const filters = {
-      merchantId: merchantId ? parseInt(merchantId) : undefined,
-      categoryId: categoryId ? parseInt(categoryId) : undefined,
+      merchantId: merchantId ? parseInt(merchantId.toString()) : undefined,
+      outletId: outletId ? parseInt(outletId.toString()) : undefined, // Add outlet filtering for role-based access
+      categoryId: categoryId ? parseInt(categoryId.toString()) : undefined,
       search,
       page,
       limit,
@@ -246,8 +248,8 @@ export async function POST(request: NextRequest) {
           userId: user.id,
           userEmail: user.email || undefined,
           userRole: user.role || undefined,
-          merchantId: user.merchantId,
-          outletId: user.outletId
+          merchantId: user.merchantId || undefined,
+          outletId: user.outletId || undefined
         }
       });
     } catch (auditError) {
@@ -358,8 +360,8 @@ export async function PUT(request: NextRequest) {
           userId: user.id,
           userEmail: user.email || undefined,
           userRole: user.role || undefined,
-          merchantId: user.merchantId,
-          outletId: user.outletId
+          merchantId: user.merchantId || undefined,
+          outletId: user.outletId || undefined
         }
       });
     } catch (auditError) {

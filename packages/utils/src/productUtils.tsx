@@ -238,7 +238,7 @@ export const getProductStockStatus = (available: number, totalStock: number): st
  * @returns Boolean indicating if product can be rented
  */
 export const canRentProduct = (product: Product | ProductWithDetails): boolean => {
-  return product.isActive && product.available > 0 && product.rentPrice && product.rentPrice > 0;
+  return product.isActive && product.available > 0 && product.rentPrice > 0;
 };
 
 /**
@@ -247,7 +247,7 @@ export const canRentProduct = (product: Product | ProductWithDetails): boolean =
  * @returns Boolean indicating if product can be sold
  */
 export const canSellProduct = (product: Product | ProductWithDetails): boolean => {
-  return product.isActive && product.available > 0 && product.salePrice && product.salePrice > 0;
+  return product.isActive && product.available > 0 && (product as any).salePrice && (product as any).salePrice > 0;
 };
 
 /**
@@ -274,7 +274,7 @@ export const getProductCategoryName = (product: Product | ProductWithDetails): s
  * @returns Outlet name or 'No Outlet'
  */
 export const getProductOutletName = (product: Product | ProductWithDetails): string => {
-  return 'outlet' in product ? (product.outlet?.name || 'No Outlet') : 'No Outlet';
+  return 'outlet' in product ? ((product as any).outlet?.name || 'No Outlet') : 'No Outlet';
 };
 
 /**

@@ -118,20 +118,6 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div>
-            <h1 className="text-2xl font-bold">Edit Product</h1>
-            <p className="text-muted-foreground">
-              Update product information and inventory levels
-            </p>
-          </div>
-        </div>
-      </div>
-
-
-
       {/* Product Form */}
       <ProductForm
         initialData={initialFormData}

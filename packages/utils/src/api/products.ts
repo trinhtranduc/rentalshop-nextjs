@@ -45,11 +45,31 @@ export const productsApi = {
     
     if (filters.search) params.append('search', filters.search);
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.available !== undefined) params.append('available', filters.available.toString());
     if (filters.status) params.append('status', filters.status);
     if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
     
     const response = await authenticatedFetch(`${apiUrls.products.list}?${params.toString()}`);
+    return await parseApiResponse<Product[]>(response);
+  },
+
+  /**
+   * Search products for a specific merchant (admin context)
+   */
+  async searchMerchantProducts(merchantId: number, filters: ProductFilters): Promise<ApiResponse<Product[]>> {
+    const params = new URLSearchParams();
+    
+    if (filters.search) params.append('search', filters.search);
+    if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.available !== undefined) params.append('available', filters.available.toString());
+    if (filters.status) params.append('status', filters.status);
+    if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
+    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+    
+    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/products?${params.toString()}`);
     return await parseApiResponse<Product[]>(response);
   },
 

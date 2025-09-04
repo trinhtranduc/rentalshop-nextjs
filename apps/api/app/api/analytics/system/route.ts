@@ -69,7 +69,13 @@ export async function GET(request: NextRequest) {
       prisma.merchant.count({ 
         where: { 
           isActive: true,
-          orders: { some: { createdAt: { gte: startOfMonth } } }
+          outlets: {
+            some: {
+              orders: {
+                some: { createdAt: { gte: startOfMonth } }
+              }
+            }
+          }
         }
       }),
       

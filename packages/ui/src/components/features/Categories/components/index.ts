@@ -8,5 +8,5 @@ export { CategoryGrid } from './CategoryGrid';
 export { CategoryTable } from './CategoryTable';
 export { CategoryCard } from './CategoryCard';
 export { CategoryForm } from './CategoryForm';
-export { CategoryPagination } from './CategoryPagination';
+export { CategoryView } from './CategoryView';
 export { CategoryFilters } from './CategoryFilters';

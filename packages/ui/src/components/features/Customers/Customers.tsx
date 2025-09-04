@@ -294,7 +294,7 @@ export const Customers: React.FC<CustomersProps> = ({
       {/* Customer Edit Dialog */}
       {selectedCustomer && (
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Customer</DialogTitle>
               <DialogDescription>
@@ -322,7 +322,7 @@ export const Customers: React.FC<CustomersProps> = ({
 
       {/* Create Customer Dialog */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Customer</DialogTitle>
             <DialogDescription>

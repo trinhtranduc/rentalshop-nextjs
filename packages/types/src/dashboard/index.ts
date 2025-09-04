@@ -22,38 +22,10 @@ export interface OrderDataPoint {
   revenue: number;
 }
 
-export interface OrderData {
-  id: number;
-  orderNumber: string;
-  status: string;
-  customerName: string;
-  customerPhone: string;
-  createdAt: Date;
-  pickupPlanAt?: Date;
-  returnPlanAt?: Date;
-  subtotal: number;
-  taxAmount: number;
-  discountAmount: number;
-  totalAmount: number;
-  orderItems: OrderItemData[];
-  pickupNotes?: string;
-  returnNotes?: string;
-  damageNotes?: string;
-  bailAmount?: number;
-  material?: string;
-  // Additional properties for order details
-  damageFee?: number;
-  securityDeposit?: number;
-  collateralType?: string;
-  collateralDetails?: string;
-  notes?: string;
-  // Order type and other fields
-  orderType?: string;
-  depositAmount?: number;
-  pickedUpAt?: Date;
-  returnedAt?: Date;
-  isReadyToDeliver?: boolean;
-}
+// ============================================================================
+// NOTE: OrderData has been moved to order-display.ts for better organization
+// Use OrderListItem from @rentalshop/types/orders for order display
+// ============================================================================
 
 export interface OrderItemData {
   id: number;

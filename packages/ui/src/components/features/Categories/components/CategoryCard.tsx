@@ -9,26 +9,26 @@ import {
   Button,
   Badge
 } from '../../../ui';
-import { Edit, Trash2, Tag, Calendar, MoreHorizontal, Eye } from 'lucide-react';
+import { Edit, Tag, Calendar, MoreHorizontal, Eye } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
 
 interface CategoryCardProps {
   category: Category;
   onView: (category: Category) => void;
-  onDelete: (category: Category) => void;
+  onEdit: (category: Category) => void;
 }
 
 export const CategoryCard: React.FC<CategoryCardProps> = ({
   category,
   onView,
-  onDelete
+  onEdit
 }) => {
   const handleView = () => {
     onView(category);
   };
 
-  const handleDelete = () => {
-    onDelete(category);
+  const handleEdit = () => {
+    onEdit(category);
   };
 
   return (
@@ -67,11 +67,11 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDelete}
-              className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+              onClick={handleEdit}
+              className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
             >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Delete
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
             </Button>
           </div>
         </div>

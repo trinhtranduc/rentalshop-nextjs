@@ -7,13 +7,13 @@ import {
   Badge,
   Button
 } from '@rentalshop/ui';
-import { Edit, Trash2, Eye } from 'lucide-react';
+import { Edit, Eye } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
 
 interface CategoryTableProps {
   categories: Category[];
   onViewCategory: (category: Category) => void;
-  onDeleteCategory: (category: Category) => void;
+  onEditCategory: (category: Category) => void;
   sortField?: string;
   sortOrder?: 'asc' | 'desc';
   onSortChange?: (field: string, order: 'asc' | 'desc') => void;
@@ -22,7 +22,7 @@ interface CategoryTableProps {
 export const CategoryTable: React.FC<CategoryTableProps> = ({
   categories,
   onViewCategory,
-  onDeleteCategory,
+  onEditCategory,
   sortField,
   sortOrder,
   onSortChange
@@ -181,11 +181,11 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onDeleteCategory(category)}
-                    className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                    onClick={() => onEditCategory(category)}
+                    className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
                   >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Delete
+                    <Edit className="h-3 w-3 mr-1" />
+                    Edit
                   </Button>
                 </div>
               </div>

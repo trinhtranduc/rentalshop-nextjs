@@ -14,7 +14,6 @@ export { CustomerForm } from './CustomerForm';
 export { CustomerActions } from './CustomerActions';
 export { CustomerHeader } from './CustomerHeader';
 export { CustomerSearch } from './CustomerSearch';
-export { CustomerPagination } from './CustomerPagination';
 
 // Customer data and utilities
 export { CustomerStats } from './CustomerStats';

@@ -75,13 +75,15 @@ export async function getOrderByPublicId(publicId: number): Promise<OrderWithDet
           name: true,
           address: true,
           merchantId: true,
-          merchant: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-            },
-          },
+                          merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
         },
       },
       createdBy: {
@@ -212,13 +214,15 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDe
           name: true,
           address: true,
           merchantId: true,
-          merchant: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-            },
-          },
+                          merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
         },
       },
       createdBy: {
@@ -391,13 +395,15 @@ export async function createOrder(
             name: true,
             address: true,
             merchantId: true,
-            merchant: {
-              select: {
-                id: true,
-                publicId: true,
-                name: true,
-              },
-            },
+                            merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
           },
         },
         createdBy: {
@@ -501,13 +507,15 @@ export async function createOrder(
             name: true,
             address: true,
             merchantId: true,
-            merchant: {
-              select: {
-                id: true,
-                publicId: true,
-                name: true,
-              },
-            },
+                            merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
           },
         },
         createdBy: {
@@ -674,13 +682,15 @@ export async function updateOrder(
           name: true,
           address: true,
           merchantId: true,
-          merchant: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-            },
-          },
+                          merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
         },
       },
       createdBy: {
@@ -763,13 +773,15 @@ export async function updateOrder(
           name: true,
           address: true,
           merchantId: true,
-          merchant: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-            },
-          },
+                          merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
         },
       },
       createdBy: {
@@ -982,13 +994,15 @@ export async function searchOrders(
             name: true,
             address: true,
             merchantId: true,
-            merchant: {
-              select: {
-                id: true,
-                publicId: true,
-                name: true,
-              },
-            },
+                            merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
           },
         },
         createdBy: {
@@ -1205,13 +1219,15 @@ export async function cancelOrder(publicId: number, userId: number, reason?: str
           name: true,
           address: true,
           merchantId: true,
-          merchant: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-            },
-          },
+                          merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
         },
       },
       orderItems: {
@@ -1261,13 +1277,15 @@ export async function cancelOrder(publicId: number, userId: number, reason?: str
           name: true,
           address: true,
           merchantId: true,
-          merchant: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-            },
-          },
+                          merchant: {
+                  select: {
+                    id: true,
+                    publicId: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                  },
+                },
         },
       },
       orderItems: {

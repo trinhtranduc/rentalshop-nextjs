@@ -56,10 +56,21 @@ export async function GET(
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    // Build where clause
+    // Build where clause with role-based filtering
     const where: any = {
       merchantId: merchant.id // Use the actual CUID - products are directly related to merchants
     };
+
+    // Role-based filtering: Outlet users can only see products from their outlet
+    if (user.outletId) {
+      // Outlet role: filter by specific outlet
+      where.outletStock = {
+        some: {
+          outletId: user.outletId
+        }
+      };
+    }
+    // Merchant role: can see all products from all outlets (no additional filtering needed)
 
     // Add search filter
     if (search) {
