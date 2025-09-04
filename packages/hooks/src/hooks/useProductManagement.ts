@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
 import { productsApi } from '@rentalshop/utils';
-import type { Product, ProductWithDetails, ProductFilters as ProductFiltersType, ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
+import type { Product, ProductWithDetails, ProductWithStock, ProductFilters, ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
 
 export interface UseProductManagementOptions {
   initialLimit?: number;
@@ -22,10 +22,11 @@ export interface UseProductManagementReturn {
   outletFilter: string;
   availabilityFilter: string;
   statusFilter: string;
-  selectedProduct: Product | null;
+  selectedProduct: Product | ProductWithStock | null;
   showProductDetail: boolean;
   showCreateForm: boolean;
   showEditDialog: boolean;
+  showOrdersDialog: boolean;
   pagination: any;
   
   // Actions
@@ -50,7 +51,7 @@ export interface UseProductManagementReturn {
   handleProductRowAction: (action: string, productId: number) => void;
   handleAddProduct: () => void;
   handleExportProducts: () => void;
-  handleFiltersChange: (newFilters: ProductFiltersType) => void;
+  handleFiltersChange: (newFilters: ProductFilters) => void;
   handleSearchChange: (searchValue: string) => void;
   handleClearFilters: () => void;
   handlePageChangeWithFetch: (page: number) => void;
@@ -59,7 +60,7 @@ export interface UseProductManagementReturn {
   
   // Computed values
   filteredProducts: Product[];
-  filters: ProductFiltersType;
+  filters: ProductFilters;
   stats?: any;
 }
 
@@ -80,7 +81,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
   const [outletFilter, setOutletFilter] = useState<string>('all');
   const [availabilityFilter, setAvailabilityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | ProductWithStock | null>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -99,16 +100,23 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       let response;
       
       if (useSearchProducts) {
-        // Admin page uses searchProducts with filters
-        const filters: ProductFiltersType = {
+        // Admin page uses searchMerchantProducts with filters
+        const filters: ProductFilters = {
           search: searchTerm || undefined,
           categoryId: categoryFilter !== 'all' ? parseInt(categoryFilter) : undefined,
+          outletId: outletFilter !== 'all' ? parseInt(outletFilter) : undefined,
           available: availabilityFilter === 'in-stock' ? true : 
                     availabilityFilter === 'out-of-stock' ? false : undefined,
           status: statusFilter !== 'all' ? (statusFilter as 'active' | 'inactive') : undefined
         };
         
-        response = await productsApi.searchProducts(filters);
+        // Use merchant-specific API for admin context
+        if (merchantId) {
+          response = await productsApi.searchMerchantProducts(merchantId, filters);
+        } else {
+          // Fallback to regular searchProducts for client context
+          response = await productsApi.searchProducts(filters);
+        }
       } else {
         // Client page uses getProductsPaginated
         response = await productsApi.getProductsPaginated(page, pagination.limit);
@@ -250,7 +258,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
   }, [products, enableStats]);
 
   // Create filters object for components
-  const filters: ProductFiltersType = useMemo(() => ({
+  const filters: ProductFilters = useMemo(() => ({
     search: searchTerm,
     categoryId: categoryFilter === 'all' ? undefined : parseInt(categoryFilter),
     available: availabilityFilter === 'in-stock' ? true : 
@@ -259,9 +267,28 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
   }), [searchTerm, categoryFilter, availabilityFilter, statusFilter]);
 
   // Event handlers
-  const handleViewProduct = useCallback((product: Product) => {
-    setSelectedProduct(product);
-    setShowProductDetail(true);
+  const handleViewProduct = useCallback(async (product: Product) => {
+    try {
+      setLoading(true);
+      // Fetch full product details with outlet stock information
+      const response = await productsApi.getProduct(product.id);
+      if (response.success && response.data) {
+        setSelectedProduct(response.data);
+        setShowProductDetail(true);
+      } else {
+        console.error('Failed to fetch product details:', response.error);
+        // Fallback to basic product info
+        setSelectedProduct(product);
+        setShowProductDetail(true);
+      }
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+      // Fallback to basic product info
+      setSelectedProduct(product);
+      setShowProductDetail(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const handleEditProduct = useCallback((product: Product) => {
@@ -306,8 +333,21 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
         handleViewProduct(product);
         break;
       case 'view-orders':
-        setSelectedProduct(product);
-        setShowOrdersDialog(true);
+        // Navigate to product orders page instead of opening dialog
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname;
+          
+          // Check if we're in admin/merchant context
+          const merchantMatch = currentPath.match(/\/merchants\/(\d+)/);
+          if (merchantMatch) {
+            // Admin/merchant context - navigate to merchant route
+            const merchantId = merchantMatch[1];
+            window.location.href = `/merchants/${merchantId}/products/${productId}/orders`;
+          } else {
+            // Client context - navigate to client route
+            window.location.href = `/products/${productId}/orders`;
+          }
+        }
         break;
       case 'edit':
         handleEditProduct(product);
@@ -330,7 +370,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     console.log('Export functionality coming soon!');
   }, []);
 
-  const handleFiltersChange = useCallback((newFilters: ProductFiltersType) => {
+  const handleFiltersChange = useCallback((newFilters: ProductFilters) => {
     setCategoryFilter(newFilters.categoryId?.toString() || 'all');
     setOutletFilter(newFilters.outletId?.toString() || 'all');
     setAvailabilityFilter(
@@ -405,6 +445,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     showProductDetail,
     showCreateForm,
     showEditDialog,
+    showOrdersDialog,
     pagination,
     
     // Actions

@@ -55,6 +55,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
     product.images && product.images.length > 0 ? product.images[0] : null
   );
 
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.style.display = 'none';
   };
@@ -152,7 +153,8 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           </div>
           
           <div className="p-6">
-            {product.outletStock.map((outletStock, index) => (
+            {product.outletStock && product.outletStock.length > 0 ? (
+              product.outletStock.map((outletStock, index) => (
               <div key={outletStock.outlet?.id || outletStock.id || index} className={`${index > 0 ? 'border-t border-gray-100 pt-6 mt-6' : ''}`}>
                 <div className="mb-4">
                   <div className="flex items-center justify-between">
@@ -187,7 +189,13 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                   </div>
                 </div>
               </div>
-            ))}
+            )))
+            : (
+              <div className="text-center py-8">
+                <div className="text-gray-500 mb-2">No outlet stock information available</div>
+                <div className="text-sm text-gray-400">This product may not be assigned to any outlets yet.</div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,12 +1,11 @@
 import React from 'react';
 import { 
   OrderHeader,
-  OrderFilters,
+  OrderFilters as OrderFiltersComponent,
   OrderTable,
-  OrderListActions,
-  OrderStats,
-  OrderPagination
+  OrderStats
 } from './components';
+import { Pagination } from '@rentalshop/ui';
 import type { OrdersData, OrderFilters } from '@rentalshop/types';
 
 interface OrdersProps {
@@ -37,7 +36,7 @@ export function Orders({
         stats={data.stats}
       />
       
-      <OrderFilters 
+      <OrderFiltersComponent 
         filters={filters}
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}
@@ -51,11 +50,13 @@ export function Orders({
         onSort={onSort}
       />
       
-      <OrderPagination 
+      <Pagination 
         currentPage={data.currentPage}
         totalPages={data.totalPages}
         total={data.total}
+        limit={data.limit || 20}
         onPageChange={onPageChange}
+        itemName="orders"
       />
     </div>
   );

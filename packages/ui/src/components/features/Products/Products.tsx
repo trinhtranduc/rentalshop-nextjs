@@ -1,17 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ProductHeader, 
+  ProductPageHeader,
   ProductFilters, 
   ProductGrid, 
   ProductTable, 
   ProductActions, 
-  ProductPagination,
   ProductDetail,
   ProductAddForm,
-  ProductEdit,
-  ProductOrdersDialog
+  ProductEdit
 } from './components';
 import { 
   PageWrapper,
@@ -24,7 +23,8 @@ import {
   ToastContainer,
   useToasts,
   Button,
-  EmptyState
+  EmptyState,
+  Pagination
 } from '@rentalshop/ui';
 import { 
   ProductSearchResult as ProductData, 
@@ -36,6 +36,7 @@ import {
   ProductCreateInput,
   ProductUpdateInput
 } from '@rentalshop/types';
+import { outletsApi, categoriesApi } from '@rentalshop/utils';
 import { useProductManagement, type UseProductManagementOptions } from '@rentalshop/hooks';
 import { 
   Package as PackageIcon, 
@@ -119,6 +120,45 @@ export function Products({
   mode = 'legacy'
 }: ProductsProps) {
   const { toasts, showSuccess, showError, removeToast } = useToasts();
+  
+  // State for outlets and categories
+  const [availableOutlets, setAvailableOutlets] = useState<Outlet[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
+  const [loadingOutlets, setLoadingOutlets] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  // Fetch outlets and categories data
+  useEffect(() => {
+    const fetchData = async () => {
+      // Fetch outlets
+      try {
+        setLoadingOutlets(true);
+        const outletsResult = await outletsApi.getOutlets();
+        if (outletsResult.success && outletsResult.data?.outlets) {
+          setAvailableOutlets(outletsResult.data.outlets);
+        }
+      } catch (error) {
+        console.error('Failed to fetch outlets:', error);
+      } finally {
+        setLoadingOutlets(false);
+      }
+
+      // Fetch categories
+      try {
+        setLoadingCategories(true);
+        const categoriesResult = await categoriesApi.getCategories();
+        if (categoriesResult.success && categoriesResult.data) {
+          setAvailableCategories(categoriesResult.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // For legacy mode, use the existing implementation
   if (mode === 'legacy' && data && filters && onFiltersChange && onSearchChange && onProductAction && onPageChange) {
@@ -207,6 +247,7 @@ export function Products({
     filteredProducts,
     filters: hookFilters,
     stats
+  // @ts-ignore - Temporary fix for workspace package resolution
   } = useProductManagement(hookOptions);
 
   // Handle product creation
@@ -219,10 +260,25 @@ export function Products({
     }
   };
 
-  // Handle product update
-  const handleProductUpdatedWrapper = async (productData: ProductUpdateInput) => {
+  // Handle product update - convert ProductInput to ProductUpdateInput
+  const handleProductUpdatedWrapper = async (productData: any) => {
     try {
-      await handleProductUpdatedAsync(productData);
+      // Convert ProductInput to ProductUpdateInput format
+      const updateData: ProductUpdateInput = {
+        name: productData.name,
+        description: productData.description,
+        barcode: productData.barcode,
+        categoryId: productData.categoryId,
+        rentPrice: productData.rentPrice,
+        salePrice: productData.salePrice,
+        deposit: productData.deposit,
+        stock: productData.totalStock, // Map totalStock to stock
+        totalStock: productData.totalStock,
+        images: Array.isArray(productData.images) ? productData.images.join(',') : productData.images, // Convert array to string
+        isActive: productData.isActive
+      };
+      
+      await handleProductUpdatedAsync(updateData);
       showSuccess('Product Updated', 'Product has been updated successfully!');
     } catch (error) {
       showError('Update Failed', error instanceof Error ? error.message : 'Failed to update product');
@@ -256,37 +312,30 @@ export function Products({
   return (
     <PageWrapper className={className}>
       {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">{title}</h1>
-            {subtitle && (
-              <p className="text-text-secondary mt-1">{subtitle}</p>
-            )}
-          </div>
-          <div className="flex items-center space-x-3">
-            {showExportButton && (
-              <Button
-                variant="outline"
-                onClick={handleExport}
-                className="flex items-center"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {exportButtonText}
-              </Button>
-            )}
-            {showAddButton && (
-              <Button
-                onClick={handleAddProduct}
-                className="flex items-center"
-              >
-                <PackageIcon className="w-4 h-4 mr-2" />
-                {addButtonText}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      <ProductPageHeader
+        title={title}
+        subtitle={subtitle}
+      >
+        {showAddButton && (
+          <Button
+            onClick={handleAddProduct}
+            className="flex items-center space-x-2"
+          >
+            <PackageIcon className="w-4 h-4" />
+            <span>{addButtonText}</span>
+          </Button>
+        )}
+        {showExportButton && (
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            className="flex items-center space-x-2"
+          >
+            <Download className="w-4 h-4" />
+            <span>{exportButtonText}</span>
+          </Button>
+        )}
+      </ProductPageHeader>
 
       <PageContent>
         {/* Stats Overview */}
@@ -346,7 +395,15 @@ export function Products({
           <div className="mb-6">
             <ProductTable
               products={filteredProducts}
-              onProductAction={handleProductRowAction}
+              onProductAction={(action: string, productId: number) => {
+                // Handle view-orders with passed handler (navigation), 
+                // view/edit with hook handler (dialogs)
+                if (action === 'view-orders' && onProductAction) {
+                  onProductAction(action, productId);
+                } else {
+                  handleProductRowAction(action, productId);
+                }
+              }}
               sortBy="name"
               sortOrder="asc"
               onSort={(column) => {
@@ -366,27 +423,22 @@ export function Products({
                   ? 'Try adjusting your search or filters'
                   : 'Get started by adding your first product'
               }
+              actionLabel={addButtonText}
+              onAction={handleAddProduct}
             />
-            {!searchTerm && categoryFilter === 'all' && outletFilter === 'all' && 
-             availabilityFilter === 'all' && statusFilter === 'all' && showAddButton && (
-              <div className="text-center mt-4">
-                <Button onClick={handleAddProduct}>
-                  <PackageIcon className="w-4 h-4 mr-2" />
-                  {addButtonText}
-                </Button>
-              </div>
-            )}
           </div>
         )}
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
           <div className="mb-6">
-            <ProductPagination
+            <Pagination
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
               total={pagination.total}
+              limit={pagination.limit}
               onPageChange={handlePageChangeWithFetch}
+              itemName="products"
             />
           </div>
         )}
@@ -394,7 +446,7 @@ export function Products({
 
       {/* Product Detail Dialog */}
       <Dialog open={showProductDetail} onOpenChange={setShowProductDetail}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Product Details</DialogTitle>
             <DialogDescription>
@@ -405,6 +457,8 @@ export function Products({
             <ProductDetail
               product={selectedProduct}
               onEdit={handleEditProduct}
+              isMerchantAccount={true}
+              showActions={true}
             />
           )}
         </DialogContent>
@@ -412,7 +466,7 @@ export function Products({
 
       {/* Create Product Dialog */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Product</DialogTitle>
             <DialogDescription>
@@ -421,9 +475,10 @@ export function Products({
           </DialogHeader>
           <ProductAddForm
             onSave={handleProductCreatedWrapper}
+            onCancel={() => setShowCreateForm(false)}
             onBack={() => setShowCreateForm(false)}
-            categories={[]}
-            outlets={[]}
+            categories={availableCategories}
+            outlets={availableOutlets}
             merchantId={merchantId?.toString() || ''}
           />
         </DialogContent>
@@ -431,7 +486,7 @@ export function Products({
 
       {/* Edit Product Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
             <DialogDescription>
@@ -442,21 +497,16 @@ export function Products({
             <ProductEdit
               product={selectedProduct as any}
               onSave={handleProductUpdatedWrapper}
+              onCancel={() => setShowEditDialog(false)}
               onBack={() => setShowEditDialog(false)}
-              categories={[]}
-              outlets={[]}
+              categories={availableCategories}
+              outlets={availableOutlets}
               merchantId={merchantId || 0}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Product Orders Dialog */}
-      <ProductOrdersDialog
-        open={showOrdersDialog}
-        onOpenChange={setShowOrdersDialog}
-        product={selectedProduct}
-      />
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} onClose={removeToast} />

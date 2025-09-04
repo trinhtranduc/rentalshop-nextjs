@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only ADMIN users can access audit logs
-    if (user.role !== 'ADMIN') {
+    if (user?.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Admin access required.' },
         { status: 403 }

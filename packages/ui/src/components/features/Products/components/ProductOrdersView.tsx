@@ -30,17 +30,22 @@ import {
   Clock,
   User,
   MapPin,
-  BarChart3
+  BarChart3,
+  ArrowLeft
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../../../lib';
 import { ProductsLoading } from './ProductsLoading';
 import { 
-  OrderFilters,
-  OrderTable,
-  OrderPagination
+  OrderFilters as OrderFiltersComponent,
+  OrderTable
 } from '../../Orders/components';
+import { Pagination } from '@rentalshop/ui';
 import { ordersApi } from '@rentalshop/utils';
-import type { OrderWithDetails, OrderFilters as OrderFiltersType } from '@rentalshop/types';
+import type { 
+  OrderWithDetails, 
+  OrderFilters,
+  OrderStats
+} from '@rentalshop/types';
 
 interface ProductOrdersViewProps {
   productId: string;
@@ -70,7 +75,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   
   // Initialize filters
-  const [filters, setFilters] = useState<OrderFiltersType>({
+  const [filters, setFilters] = useState<OrderFilters>({
     search: '',
     status: undefined,
     orderType: undefined,
@@ -95,11 +100,17 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
         console.log('🔍 ProductOrdersView: API Response:', response);
         
         if (response.success && response.data) {
-          // Ensure response.data is an array
-          const ordersData = Array.isArray(response.data) ? response.data : [];
+          // Handle both array and paginated response structures
+          const ordersData = Array.isArray(response.data) 
+            ? response.data 
+            : (response.data as any).orders || [];
+          const totalPages = Array.isArray(response.data) 
+            ? 1 
+            : (response.data as any).totalPages || 1;
           console.log('🔍 ProductOrdersView: Setting orders:', ordersData);
-          setOrders(ordersData);
-          setTotalPages(1); // Since we're getting all orders for the product
+          console.log('🔍 ProductOrdersView: Total pages:', totalPages);
+          setOrders(ordersData as OrderWithDetails[]);
+          setTotalPages(totalPages);
         } else {
           console.log('🔍 ProductOrdersView: No data or unsuccessful response');
           setOrders([]);
@@ -129,28 +140,26 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     pendingOrders: Array.isArray(orders) ? orders.filter(order => order.status === 'RESERVED').length : 0
   };
 
-  // Transform orders to match the expected format for OrderTable with safety checks
+  // Transform OrderWithDetails to the format expected by OrderTable
+  console.log('🔍 ProductOrdersView: Transforming orders:', orders);
   const orderData = {
     orders: Array.isArray(orders) ? orders.map(order => ({
-      id: order.publicId, // Use publicId for frontend display
+      id: typeof order.id === 'string' ? parseInt(order.id) : order.id, // Handle both string and number IDs
       orderNumber: order.orderNumber,
       orderType: order.orderType,
       status: order.status,
-      customerId: order.customer?.publicId || 0,
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
       customerPhone: order.customer?.phone || 'No phone',
-      outletId: order.outlet.publicId,
       outletName: order.outlet.name,
+      merchantName: order.outlet.merchant?.name || 'N/A',
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-      orderItems: order.orderItems,
-      payments: order.payments
+      createdAt: new Date(order.createdAt),
+      pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt) : undefined,
+      returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt) : undefined,
+      pickedUpAt: order.pickedUpAt ? new Date(order.pickedUpAt) : undefined,
+      returnedAt: order.returnedAt ? new Date(order.returnedAt) : undefined,
+      isReadyToDeliver: (order as any).isReadyToDeliver || false
     })) : [],
     total: Array.isArray(orders) ? orders.length : 0,
     currentPage,
@@ -158,25 +167,25 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     limit: filters.limit || 20,
     stats: {
       totalOrders: overview.totalOrders,
-      pendingOrders: overview.pendingOrders,
-      activeOrders: overview.activeRentals,
-      completedOrders: overview.completedOrders,
-      cancelledOrders: 0,
       totalRevenue: overview.totalSales,
       totalDeposits: overview.totalDeposits,
-      averageOrderValue: overview.totalOrders > 0 ? overview.totalSales / overview.totalOrders : 0,
-      ordersThisMonth: overview.totalOrders,
-      revenueThisMonth: overview.totalSales
-    }
+      activeRentals: overview.activeRentals,
+      overdueRentals: 0, // Not calculated in this context
+      completedOrders: overview.completedOrders,
+      cancelledOrders: 0, // Not calculated in this context
+      averageOrderValue: overview.totalOrders > 0 ? overview.totalSales / overview.totalOrders : 0
+    } as OrderStats
   };
 
-  const handleFiltersChange = (newFilters: OrderFiltersType) => {
+  console.log('🔍 ProductOrdersView: Final orderData:', orderData);
+
+  const handleFiltersChange = (newFilters: OrderFilters) => {
     setFilters(newFilters);
     setCurrentPage(1);
   };
 
   const handleSearchChange = (searchValue: string) => {
-    setFilters(prev => ({ ...prev, search: searchValue }));
+    setFilters((prev: OrderFilters) => ({ ...prev, search: searchValue }));
     setCurrentPage(1);
   };
 
@@ -208,7 +217,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
 
   const handleSort = (column: string) => {
     const newSortOrder = filters.sortBy === column && filters.sortOrder === 'asc' ? 'desc' : 'asc';
-    setFilters(prev => ({
+    setFilters((prev: OrderFilters) => ({
       ...prev,
       sortBy: column,
       sortOrder: newSortOrder
@@ -225,7 +234,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
         const response = await ordersApi.getOrdersByProduct(parseInt(productId));
         
         if (response.success && response.data) {
-          setOrders(response.data);
+          setOrders(response.data as OrderWithDetails[]);
           setTotalPages(1);
         } else {
           setOrders([]);
@@ -296,7 +305,8 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
               </Button>
               {onClose && (
                 <Button variant="outline" onClick={onClose}>
-                  Close
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Products
                 </Button>
               )}
             </div>
@@ -462,7 +472,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
       <div className="space-y-6">
         {/* OrderListHeader hidden as requested */}
         
-        <OrderFilters 
+        <OrderFiltersComponent 
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onSearchChange={handleSearchChange}
@@ -477,11 +487,13 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
           onSort={handleSort}
         />
         
-        <OrderPagination 
+        <Pagination 
           currentPage={orderData.currentPage}
           totalPages={orderData.totalPages}
           total={orderData.total}
+          limit={orderData.limit}
           onPageChange={handlePageChange}
+          itemName="orders"
         />
       </div>
     </div>

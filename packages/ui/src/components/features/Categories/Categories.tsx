@@ -6,13 +6,13 @@ import { CategoryFilters as CategoryFiltersComponent } from './components/Catego
 import { CategoryActions } from './components/CategoryActions';
 import { CategoryGrid } from './components/CategoryGrid';
 import { CategoryTable } from './components/CategoryTable';
-import { CategoryPagination } from './components/CategoryPagination';
 import { CategoryForm } from './components/CategoryForm';
+import { CategoryView } from './components/CategoryView';
 import type { 
   Category, 
   CategoryFilters 
 } from '@rentalshop/types';
-import { Card, CardHeader, CardTitle, CardContent, Button } from '@rentalshop/ui';
+import { Card, CardHeader, CardTitle, CardContent, Button, Pagination } from '@rentalshop/ui';
 import { Trash2 } from 'lucide-react';
 
 interface CategoriesProps {
@@ -30,6 +30,7 @@ interface CategoriesProps {
   currentPage: number;
   totalPages: number;
   totalCategories: number;
+  limit: number;
   onPageChange: (page: number) => void;
 }
 
@@ -48,6 +49,7 @@ export const Categories: React.FC<CategoriesProps> = ({
   currentPage,
   totalPages,
   totalCategories,
+  limit,
   onPageChange
 }) => {
   // Safety check for categories
@@ -55,6 +57,7 @@ export const Categories: React.FC<CategoriesProps> = ({
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [viewingCategory, setViewingCategory] = useState<Category | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [sortField, setSortField] = useState<string>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -70,10 +73,7 @@ export const Categories: React.FC<CategoriesProps> = ({
   }, []);
 
   const handleViewCategory = useCallback((category: Category) => {
-    // Navigate to category view page or open view dialog
-    // For now, we'll just log the action - this can be updated based on your routing needs
-    console.log('Viewing category:', category);
-    // You can implement navigation here: router.push(`/categories/${category.id}`)
+    setViewingCategory(category);
   }, []);
 
   const handleDeleteCategory = useCallback((category: Category) => {
@@ -104,6 +104,10 @@ export const Categories: React.FC<CategoriesProps> = ({
   const handleFormClose = useCallback(() => {
     setShowAddForm(false);
     setEditingCategory(null);
+  }, []);
+
+  const handleViewClose = useCallback(() => {
+    setViewingCategory(null);
   }, []);
 
   const handleFormSubmit = useCallback(async (categoryData: Partial<Category>) => {
@@ -213,7 +217,7 @@ export const Categories: React.FC<CategoriesProps> = ({
         <CategoryTable
           categories={sortedCategories}
           onViewCategory={handleViewCategory}
-          onDeleteCategory={handleDeleteCategory}
+          onEditCategory={handleEditCategory}
           sortField={sortField}
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
@@ -221,11 +225,13 @@ export const Categories: React.FC<CategoriesProps> = ({
       )}
 
       {/* Category Pagination */}
-      <CategoryPagination
+      <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
         total={totalCategories}
+        limit={limit}
         onPageChange={onPageChange}
+        itemName="categories"
       />
 
       {/* Category Form Modal */}
@@ -235,6 +241,16 @@ export const Categories: React.FC<CategoriesProps> = ({
           category={editingCategory}
           onSave={handleFormSubmit}
           onCancel={handleFormClose}
+        />
+      )}
+
+      {/* Category View Dialog */}
+      {viewingCategory && (
+        <CategoryView
+          category={viewingCategory}
+          onClose={handleViewClose}
+          onEdit={handleEditCategory}
+          onDelete={handleDeleteCategory}
         />
       )}
 

@@ -64,11 +64,30 @@ export async function GET(request: NextRequest) {
 
     // If productId is provided, get orders for that specific product
     if (productId) {
+      // Convert publicId to CUID for database query
+      const product = await prisma.product.findUnique({
+        where: { publicId: parseInt(productId) },
+        select: { id: true }
+      });
+      
+      if (!product) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            orders: [],
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+            currentPage: 1
+          }
+        });
+      }
+      
       const orders = await prisma.order.findMany({
         where: {
           orderItems: {
             some: {
-              productId: productId
+              productId: product.id // Use CUID
             }
           }
         },
@@ -87,12 +106,21 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               publicId: true,
-              name: true
+              name: true,
+              merchant: {
+                select: {
+                  id: true,
+                  publicId: true,
+                  name: true,
+                  email: true,
+                  phone: true
+                }
+              }
             }
           },
           orderItems: {
             where: {
-              productId: productId
+              productId: product.id // Use CUID
             },
             include: {
               product: {
@@ -126,7 +154,7 @@ export async function GET(request: NextRequest) {
         where: {
           orderItems: {
             some: {
-              productId: productId
+              productId: product.id // Use CUID
             }
           }
         }
@@ -158,7 +186,13 @@ export async function GET(request: NextRequest) {
             } : null,
             outlet: {
               id: order.outlet.publicId,           // Use publicId for outlet
-              name: order.outlet.name
+              name: order.outlet.name,
+              merchant: order.outlet.merchant ? {
+                id: order.outlet.merchant.publicId,  // Use publicId for merchant
+                name: order.outlet.merchant.name,
+                email: order.outlet.merchant.email,
+                phone: order.outlet.merchant.phone
+              } : null
             },
             orderItems: order.orderItems.map(item => ({
               id: 0,                              // Placeholder for compatibility
@@ -237,6 +271,8 @@ export async function GET(request: NextRequest) {
         merchant: {
           id: order.outlet.merchant.publicId,       // Use publicId as id
           name: order.outlet.merchant.name,
+          email: order.outlet.merchant.email,
+          phone: order.outlet.merchant.phone
         },
       },
       // Creator information

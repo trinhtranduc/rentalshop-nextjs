@@ -105,7 +105,7 @@ export default function ProductViewPage() {
 
   const handleViewOrders = () => {
     // Navigate to product orders page
-    router.push(`/products/${productId}/vieworders`);
+    router.push(`/products/${productId}/orders`);
   };
 
   const handleBack = () => {

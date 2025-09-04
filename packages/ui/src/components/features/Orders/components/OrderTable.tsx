@@ -4,11 +4,26 @@ import React from 'react';
 import { Button } from '@rentalshop/ui';
 import { Badge } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
-import { OrderData } from '@rentalshop/types';
 import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Edit } from 'lucide-react';
 
+// Local interface matching what OrderTable actually uses
+interface OrderTableItem {
+  id: number;
+  orderNumber: string;
+  orderType: string;
+  status: string;
+  customerName: string;
+  customerPhone: string;
+  outletName: string;
+  totalAmount: number;
+  depositAmount: number;
+  createdAt: Date;
+  pickupPlanAt?: Date;
+  returnPlanAt?: Date;
+}
+
 interface OrderTableProps {
-  orders: OrderData[];
+  orders: OrderTableItem[];
   onOrderAction: (action: string, orderId: string) => void;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';

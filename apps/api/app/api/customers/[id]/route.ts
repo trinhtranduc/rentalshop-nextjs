@@ -55,6 +55,13 @@ export async function GET(
     const userMerchantId = userScope.merchantId;
     console.log('User merchant ID:', userMerchantId);
 
+    if (!userMerchantId) {
+      return NextResponse.json(
+        { success: false, message: 'User must be associated with a merchant' },
+        { status: 400 }
+      );
+    }
+
     // Get customer by public ID using new dual ID system
     const customer = await getCustomerByPublicId(customerId, userMerchantId);
     
@@ -232,8 +239,8 @@ export async function PUT(
         userId: user.id,
         userEmail: user.email,
         userRole: user.role,
-        merchantId: user.merchantId,
-        outletId: user.outletId,
+        merchantId: user.merchantId || undefined,
+        outletId: user.outletId || undefined,
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1',
         userAgent: request.headers.get('user-agent') || 'Unknown',
         requestId: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

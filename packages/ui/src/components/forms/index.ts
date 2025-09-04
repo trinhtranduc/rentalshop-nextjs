@@ -1,7 +1,7 @@
 // ============================================================================
 // FORM COMPONENTS (Business Forms)
 // ============================================================================
-export { CustomerForm } from './CustomerForm';
+// CustomerForm is exported from features/Customers to avoid conflicts
 export { ProductForm } from './ProductForm';
 export { OrderForm } from './OrderForm';
 export { CreateOrderForm } from './CreateOrderForm/CreateOrderForm';

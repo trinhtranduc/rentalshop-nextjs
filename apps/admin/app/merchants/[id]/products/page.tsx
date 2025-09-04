@@ -21,21 +21,13 @@ export default function MerchantProductsPage() {
 
   const handleProductAction = (action: string, productId: number) => {
     switch (action) {
-      case 'view':
-        router.push(`/merchants/${merchantId}/products/${productId}`);
-        break;
       case 'view-orders':
-        // This will be handled by the ProductOrdersDialog in the Products component
-        console.log('View orders for product:', productId);
-        break;
-      case 'edit':
-        router.push(`/merchants/${merchantId}/products/${productId}/edit`);
-        break;
-      case 'add':
-        router.push(`/merchants/${merchantId}/products/add`);
+        // Navigate to product orders page
+        router.push(`/merchants/${merchantId}/products/${productId}/orders`);
         break;
       default:
-        console.log('Product action:', action, productId);
+        // Let the hook handle add/view/edit actions with dialogs
+        console.log('Product action handled by hook:', action, productId);
     }
   };
 
