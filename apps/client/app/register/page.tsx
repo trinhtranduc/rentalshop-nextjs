@@ -24,7 +24,11 @@ export default function RegisterPage() {
           password: data.password,
           name: data.name,
           phone: data.phone,
-          role: 'CLIENT',
+          role: data.role || 'CLIENT',
+          businessName: data.businessName,
+          outletName: data.outletName,
+          merchantCode: data.merchantCode,
+          outletCode: data.outletCode,
         }),
       });
       

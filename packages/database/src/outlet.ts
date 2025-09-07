@@ -62,11 +62,9 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     }
   }
 
-  // Default to active outlets only
+  // Only filter by isActive if explicitly provided
   if (isActive !== undefined) {
     where.isActive = isActive;
-  } else {
-    where.isActive = true;
   }
 
   if (search) {

@@ -22,4 +22,5 @@ export * from './billing-cycles';
 export * from './payments';
 export * from './audit-logs';
 export * from './settings';
+export * from './subscriptions';
 export * from './backupApi';

@@ -251,9 +251,9 @@ export const PaymentDetailDialog: React.FC<PaymentDetailDialogProps> = ({
                   </div>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600">Billing Cycle:</span>
+                      <span className="text-sm font-medium text-gray-600">Plan Variant:</span>
                       <span className="text-sm text-gray-900">
-                        {payment.subscription.billingCycle?.name || 'N/A'}
+                        {payment.subscription.planVariant?.name || 'N/A'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">

@@ -6,6 +6,25 @@ import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../commo
 import { apiUrls } from '../config/api';
 import type { Plan, PlanCreateInput, PlanUpdateInput, PlanFilters } from '@rentalshop/types';
 
+/**
+ * Public fetch function for unauthenticated requests
+ */
+const publicFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  const defaultOptions: RequestInit = {
+    method: 'GET',
+    headers,
+    ...options,
+  };
+
+  return await fetch(url, defaultOptions);
+};
+
 export interface PlansResponse {
   plans: Plan[];
   total: number;
@@ -27,12 +46,13 @@ export const plansApi = {
   /**
    * Get all plans with filters and pagination
    */
-  async getPlans(filters: PlanFilters = {}): Promise<ApiResponse<PlansResponse>> {
+  async getPlans(filters: PlanFilters & { includeInactive?: boolean } = {}): Promise<ApiResponse<PlansResponse>> {
     const params = new URLSearchParams();
     
     if (filters.search) params.append('search', filters.search);
     if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
     if (filters.isPopular !== undefined) params.append('isPopular', filters.isPopular.toString());
+    if (filters.includeInactive) params.append('includeInactive', 'true');
     if (filters.limit) params.append('limit', filters.limit.toString());
     if (filters.offset) params.append('offset', filters.offset.toString());
     if (filters.sortBy) params.append('sortBy', filters.sortBy);
@@ -98,6 +118,19 @@ export const plansApi = {
    */
   async getPublicPlans(): Promise<ApiResponse<Plan[]>> {
     const response = await authenticatedFetch(apiUrls.plans.public);
+    return await parseApiResponse<Plan[]>(response);
+  }
+};
+
+/**
+ * Public plans API client (no authentication required)
+ */
+export const publicPlansApi = {
+  /**
+   * Get public plans with variants (no authentication required)
+   */
+  async getPublicPlansWithVariants(): Promise<ApiResponse<Plan[]>> {
+    const response = await publicFetch(apiUrls.plans.public);
     return await parseApiResponse<Plan[]>(response);
   }
 };

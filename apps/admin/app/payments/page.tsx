@@ -98,6 +98,7 @@ export default function PaymentsPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [merchants, setMerchants] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
+  const [planVariants, setPlanVariants] = useState<any[]>([]);
   const [billingCycles, setBillingCycles] = useState<any[]>([]);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showPaymentDetail, setShowPaymentDetail] = useState(false);
@@ -105,39 +106,53 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     fetchPayments();
+    fetchFormData(); // Load form data immediately
   }, []);
-
-  useEffect(() => {
-    if (payments.length > 0) {
-      fetchFormData();
-    }
-  }, [payments]);
 
   const fetchFormData = async () => {
     try {
-      // Extract unique merchants from payments data
-      const uniqueMerchants = Array.from(
-        new Set(payments.map(p => p.subscription?.merchant?.name).filter(Boolean))
-      ).map((name, index) => ({
-        id: index + 1,
-        name: name as string,
-        email: `${(name as string).toLowerCase().replace(/\s+/g, '')}@example.com`
-      }));
+      // TODO: Replace with actual API calls
+      // For now, using mock data to get the form working
       
-      setMerchants(uniqueMerchants);
+      // Mock merchants data
+      const mockMerchants = [
+        { id: 1, name: "Merchant 1", email: "merchant1@example.com" },
+        { id: 2, name: "Merchant 2", email: "merchant2@example.com" },
+        { id: 3, name: "Merchant 3", email: "merchant3@example.com" }
+      ];
+      setMerchants(mockMerchants);
       
-      // Extract unique plans from payments data
-      const uniquePlans = Array.from(
-        new Set(payments.map(p => p.subscription?.plan?.name).filter(Boolean))
-      ).map((name, index) => ({
-        id: index + 1,
-        name: name as string,
-        price: 199.99, // Default price
-        currency: 'USD'
-      }));
+      // Mock plans data
+      const mockPlans = [
+        { id: 1, name: "Basic", price: 9.99, currency: "USD" },
+        { id: 2, name: "Professional", price: 19.99, currency: "USD" },
+        { id: 3, name: "Enterprise", price: 49.99, currency: "USD" }
+      ];
+      setPlans(mockPlans);
       
-      setPlans(uniquePlans);
+      // Mock plan variants data
+      const mockPlanVariants = [
+        // Basic plan variants
+        { id: 1, planId: 1, name: "1 Month", duration: 1, price: 9.99, discount: 0, savings: 0, isActive: true },
+        { id: 2, planId: 1, name: "3 Months", duration: 3, price: 27.99, discount: 10, savings: 2.01, isActive: true },
+        { id: 3, planId: 1, name: "6 Months", duration: 6, price: 53.99, discount: 15, savings: 5.01, isActive: true },
+        { id: 4, planId: 1, name: "12 Months", duration: 12, price: 99.99, discount: 25, savings: 19.99, isActive: true },
+        
+        // Professional plan variants
+        { id: 5, planId: 2, name: "1 Month", duration: 1, price: 19.99, discount: 0, savings: 0, isActive: true },
+        { id: 6, planId: 2, name: "3 Months", duration: 3, price: 56.99, discount: 10, savings: 3.01, isActive: true },
+        { id: 7, planId: 2, name: "6 Months", duration: 6, price: 107.99, discount: 15, savings: 9.01, isActive: true },
+        { id: 8, planId: 2, name: "12 Months", duration: 12, price: 199.99, discount: 25, savings: 39.99, isActive: true },
+        
+        // Enterprise plan variants
+        { id: 9, planId: 3, name: "1 Month", duration: 1, price: 49.99, discount: 0, savings: 0, isActive: true },
+        { id: 10, planId: 3, name: "3 Months", duration: 3, price: 142.99, discount: 10, savings: 7.01, isActive: true },
+        { id: 11, planId: 3, name: "6 Months", duration: 6, price: 269.99, discount: 15, savings: 29.01, isActive: true },
+        { id: 12, planId: 3, name: "12 Months", duration: 12, price: 499.99, discount: 25, savings: 99.99, isActive: true }
+      ];
+      setPlanVariants(mockPlanVariants);
       
+      // Keep billing cycles for backward compatibility
       setBillingCycles([
         { id: 1, name: 'Monthly', months: 1, discount: 0 },
         { id: 2, name: 'Quarterly', months: 3, discount: 5 },
@@ -153,17 +168,27 @@ export default function PaymentsPage() {
     try {
       setFormLoading(true);
       
-      // Here you would call your API to create the payment
-      console.log('Creating payment:', formData);
+      // Import authenticatedFetch dynamically to avoid SSR issues
+      const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/utils');
       
-      // For now, just show a success message
-      addToast('success', 'Payment Created', `Successfully created payment for ${formData.amount} ${formData.currency}`);
+      // Call the manual payment API with proper authentication
+      const response = await authenticatedFetch('/api/payments/manual', {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      });
       
-      setShowPaymentForm(false);
-      fetchPayments(); // Refresh the payments list
+      const result = await handleApiResponse(response);
+      
+      if (result.success) {
+        addToast('success', 'Payment Created', `Successfully created payment for ${formData.amount} ${formData.currency}`);
+        setShowPaymentForm(false);
+        fetchPayments(); // Refresh the payments list
+      } else {
+        throw new Error(result.message || 'Failed to create payment');
+      }
     } catch (error) {
       console.error('Error creating payment:', error);
-      addToast('error', 'Error', 'Failed to create payment. Please try again.');
+      addToast('error', 'Error', `Failed to create payment: ${error.message}`);
     } finally {
       setFormLoading(false);
     }
@@ -661,7 +686,7 @@ export default function PaymentsPage() {
               loading={formLoading}
               merchants={merchants}
               plans={plans}
-              billingCycles={billingCycles}
+              planVariants={planVariants}
             />
           </DialogContent>
         </Dialog>

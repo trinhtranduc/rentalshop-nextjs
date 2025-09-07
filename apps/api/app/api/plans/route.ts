@@ -36,19 +36,20 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const isActive = searchParams.get('isActive');
     const isPopular = searchParams.get('isPopular');
+    const includeInactive = searchParams.get('includeInactive');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const sortBy = searchParams.get('sortBy') || 'sortOrder';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
 
-    // Build filters
+    // Build filters - default to active plans only unless explicitly requested
     const filters = {
       search: search || undefined,
-      isActive: isActive ? isActive === 'true' : undefined,
+      isActive: includeInactive === 'true' ? undefined : (isActive ? isActive === 'true' : true), // Show all if includeInactive=true
       isPopular: isPopular ? isPopular === 'true' : undefined,
       limit,
       offset,
-      sortBy: sortBy as 'name' | 'price' | 'createdAt' | 'sortOrder',
+      sortBy: sortBy as 'name' | 'price' | 'basePrice' | 'createdAt' | 'sortOrder',  // ✅ Updated to support basePrice
       sortOrder: sortOrder as 'asc' | 'desc'
     };
 
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       message: 'Plan created successfully'
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating plan:', error);
     
     if (error.name === 'ZodError') {

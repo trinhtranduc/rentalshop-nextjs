@@ -13,7 +13,8 @@ import {
   ShoppingCart, 
   Calendar,
   ChevronDown,
-  LogOut
+  LogOut,
+  Clock
 } from 'lucide-react';
 
 interface AdminNavigationProps {
@@ -45,16 +46,16 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
       current: pathname.startsWith('/plans')
     },
     {
-      name: 'Billing Cycles',
-      href: '/billing-cycles',
-      icon: Calendar,
-      current: pathname.startsWith('/billing-cycles')
-    },
-    {
       name: 'Payments',
       href: '/payments',
       icon: CreditCard,
       current: pathname.startsWith('/payments')
+    },
+    {
+      name: 'Subscriptions',
+      href: '/subscriptions',
+      icon: Clock,
+      current: pathname.startsWith('/subscriptions')
     },
     {
       name: 'Users',

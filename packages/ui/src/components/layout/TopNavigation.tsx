@@ -17,6 +17,7 @@ import {
   Menu,
   CreditCard,
   Calendar,
+  Clock,
   ChevronDown,
   BarChart3,
   ShieldCheck,
@@ -74,11 +75,9 @@ export function TopNavigation({
     { 
       href: '/plans', 
       label: 'Plans', 
-      icon: Package,
-      subItems: [
-        { href: '/billing-cycles', label: 'Billing Cycles', icon: Calendar }
-      ]
+      icon: Package
     },
+    { href: '/subscriptions', label: 'Subscriptions', icon: Clock },
     { href: '/payments', label: 'Payments', icon: CreditCard },
     { href: '/users', label: 'Users', icon: Users },
     { 

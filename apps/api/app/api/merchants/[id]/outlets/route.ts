@@ -62,9 +62,9 @@ export async function GET(
     // Add search filter
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { address: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } }
+        { name: { contains: search } },
+        { address: { contains: search } },
+        { phone: { contains: search } }
       ];
     }
 

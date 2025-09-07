@@ -12,24 +12,30 @@ interface RegisterFormData {
   password: string;
   confirmPassword: string;
   name: string;
-  store_name: string;
-  address: string;
   phone: string;
   acceptTermsAndPrivacy: boolean;
+  // Role is always MERCHANT for public registration
+  role: 'MERCHANT';
+  // For merchant registration
+  businessName?: string;
+  outletName?: string;
+  // For outlet staff registration
+  merchantCode?: string;
+  outletCode?: string;
 }
 
 interface Step1Values {
   login: string;
   password: string;
   confirmPassword: string;
+  name: string;
+  phone: string;
+  businessName: string;
+  acceptTermsAndPrivacy: boolean;
 }
 
 interface Step2Values {
-  name: string;
-  store_name: string;
-  address: string;
-  phone: string;
-  acceptTermsAndPrivacy: boolean;
+  outletName: string;
 }
 
 interface RegisterFormProps {
@@ -53,13 +59,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     password: "",
     confirmPassword: "",
     name: "",
-    store_name: "",
-    address: "",
     phone: "",
+    businessName: "",
     acceptTermsAndPrivacy: false,
+    role: 'MERCHANT',
   });
 
-  // Step 1 validation schema
+  // Step 1 validation schema (Account + Personal + Business)
   const step1ValidationSchema = Yup.object({
     login: Yup.string()
       .email("Please enter a valid email")
@@ -71,6 +77,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     confirmPassword: Yup.string()
       .oneOf([Yup.ref("password")], "Password does not match")
       .required("Please confirm your password"),
+    name: Yup.string()
+      .min(2, "Name must be at least 2 characters")
+      .required("Please Enter Your Name"),
+    phone: Yup.string()
+      .matches(/^[0-9+\-\s()]+$/, "Please enter a valid phone number")
+      .min(10, "Phone number must be at least 10 digits")
+      .required("Please Enter Phone Number"),
+    businessName: Yup.string()
+      .min(2, "Business name must be at least 2 characters")
+      .required("Please Enter Business Name"),
+    acceptTermsAndPrivacy: Yup.boolean()
+      .oneOf([true], "You must accept the Terms of Service and Privacy Policy")
+      .required("You must accept the Terms of Service and Privacy Policy"),
   });
 
   const step1Validation = useFormik<Step1Values>({
@@ -79,6 +98,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       login: formData.login,
       password: formData.password,
       confirmPassword: formData.confirmPassword,
+      name: formData.name,
+      phone: formData.phone,
+      businessName: formData.businessName || "",
+      acceptTermsAndPrivacy: formData.acceptTermsAndPrivacy,
     },
     validationSchema: step1ValidationSchema,
     onSubmit: (values: Step1Values) => {
@@ -87,66 +110,56 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     },
   });
 
-  // Step 2 validation schema
+  // Step 2 validation schema (Outlet setup)
   const step2ValidationSchema = Yup.object({
-    name: Yup.string().required("Please Enter Your Name"),
-    store_name: Yup.string().required("Please Enter Store Name"),
-    address: Yup.string().required("Please Enter Address"),
-    phone: Yup.string()
-      .matches(/^[0-9+\-\s()]+$/, "Please enter a valid phone number")
-      .min(10, "Phone number must be at least 10 digits")
-      .required("Please Enter Phone Number"),
-    acceptTermsAndPrivacy: Yup.boolean()
-      .oneOf([true], "You must accept the Terms of Service and Privacy Policy")
-      .required("You must accept the Terms of Service and Privacy Policy"),
+    outletName: Yup.string()
+      .min(2, "Outlet name must be at least 2 characters")
+      .required("Please Enter Outlet Name"),
   });
 
   const step2Validation = useFormik<Step2Values>({
     enableReinitialize: true,
     initialValues: {
-      name: formData.name,
-      store_name: formData.store_name,
-      address: formData.address,
-      phone: formData.phone,
-      acceptTermsAndPrivacy: formData.acceptTermsAndPrivacy,
+      outletName: formData.outletName || 'Main Store',
     },
     validationSchema: step2ValidationSchema,
     onSubmit: async (values: Step2Values) => {
-      const finalData = { ...formData, ...values };
-      
-      try {
-        if (onRegister) {
-          await onRegister(finalData);
-        } else {
-          // Fallback: log the data
-          console.log("Registering with data:", finalData);
-        }
-        
-        // Reset form
-        step2Validation.resetForm();
-        setFormData({
-          login: "",
-          password: "",
-          confirmPassword: "",
-          name: "",
-          store_name: "",
-          address: "",
-          phone: "",
-          acceptTermsAndPrivacy: false,
-        });
-        setCurrentStep(1);
-        
-        // Navigate to login
-        if (onNavigate) {
-          setTimeout(() => {
-            onNavigate("/login");
-          }, 2000);
-        }
-      } catch (error) {
-        console.error("Registration failed:", error);
-      }
+      handleFinalSubmit({ ...formData, ...values });
     },
   });
+
+
+  const handleFinalSubmit = async (finalData: RegisterFormData) => {
+    try {
+      if (onRegister) {
+        await onRegister(finalData);
+      } else {
+        console.log("Registering with data:", finalData);
+      }
+      
+      // Reset form
+      setFormData({
+        login: "",
+        password: "",
+        confirmPassword: "",
+        name: "",
+        phone: "",
+        businessName: "",
+        acceptTermsAndPrivacy: false,
+        role: 'MERCHANT',
+      });
+      setCurrentStep(1);
+      
+      // Navigate to login
+      if (onNavigate) {
+        setTimeout(() => {
+          onNavigate("/login");
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Registration failed:", error);
+    }
+  };
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +170,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     e.preventDefault();
     step2Validation.handleSubmit();
   };
+
 
   const goBackToStep1 = () => {
     setCurrentStep(1);
@@ -187,10 +201,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             </div>
           </div>
           <h1 className="mt-4 text-2xl font-bold text-gray-800">
-            Create New Account
+            Start Your Rental Business
           </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Get your free rental shop account now
+            Join thousands of successful rental businesses with our 14-day free trial
           </p>
         </div>
 
@@ -203,7 +217,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               }`}>
                 1
               </div>
-              <span className="text-sm font-medium">Account</span>
+              <span className="text-sm font-medium">Account & Business</span>
             </div>
             <div className="text-gray-400">→</div>
             <div className={`flex items-center gap-2 ${currentStep >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
@@ -212,7 +226,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               }`}>
                 2
               </div>
-              <span className="text-sm font-medium">Store Info</span>
+              <span className="text-sm font-medium">Outlet Setup</span>
             </div>
           </div>
         </div>
@@ -236,10 +250,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         <Card className="shadow-lg">
           <CardHeader className="text-center border-b border-gray-200 bg-gray-50 rounded-t-lg">
             <CardTitle className="text-xl font-semibold text-gray-800">
-              {currentStep === 1 ? "Create Account" : "Store Information"}
+              {currentStep === 1 ? "Create Your Account" : "Set Up Your First Outlet"}
             </CardTitle>
             <CardDescription className="text-sm text-gray-600 mt-1">
-              {currentStep === 1 ? "Enter your account details" : "Enter your store information"}
+              {currentStep === 1 ? "Enter your details to start your free trial" : "Name your first outlet location"}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
@@ -343,19 +357,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     )}
                   </div>
 
-                  {/* Next Button */}
-                  <Button type="submit" className="w-full">
-                    Next
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleStep2Submit}>
-                <div className="space-y-4">
                   {/* Name Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Name
+                      Full Name
                     </label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -365,64 +370,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         type="text"
                         placeholder="Enter your full name"
                         className="pl-10"
-                        onChange={step2Validation.handleChange}
-                        onBlur={step2Validation.handleBlur}
-                        value={step2Validation.values.name || ""}
+                        onChange={step1Validation.handleChange}
+                        onBlur={step1Validation.handleBlur}
+                        value={step1Validation.values.name || ""}
                       />
                     </div>
-                    {step2Validation.touched.name && step2Validation.errors.name && (
+                    {step1Validation.touched.name && step1Validation.errors.name && (
                       <p className="mt-1 text-sm text-red-600">
-                        {step2Validation.errors.name}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Store Name Field */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Store Name
-                    </label>
-                    <div className="relative">
-                      <Store className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="store_name"
-                        name="store_name"
-                        type="text"
-                        placeholder="Enter your store name"
-                        className="pl-10"
-                        onChange={step2Validation.handleChange}
-                        onBlur={step2Validation.handleBlur}
-                        value={step2Validation.values.store_name || ""}
-                      />
-                    </div>
-                    {step2Validation.touched.store_name && step2Validation.errors.store_name && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {step2Validation.errors.store_name}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Address Field */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address
-                    </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="address"
-                        name="address"
-                        type="text"
-                        placeholder="Enter your address"
-                        className="pl-10"
-                        onChange={step2Validation.handleChange}
-                        onBlur={step2Validation.handleBlur}
-                        value={step2Validation.values.address || ""}
-                      />
-                    </div>
-                    {step2Validation.touched.address && step2Validation.errors.address && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {step2Validation.errors.address}
+                        {step1Validation.errors.name}
                       </p>
                     )}
                   </div>
@@ -430,7 +385,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   {/* Phone Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone
+                      Phone Number
                     </label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -440,53 +395,129 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         type="tel"
                         placeholder="Enter your phone number"
                         className="pl-10"
-                        onChange={step2Validation.handleChange}
-                        onBlur={step2Validation.handleBlur}
-                        value={step2Validation.values.phone || ""}
+                        onChange={step1Validation.handleChange}
+                        onBlur={step1Validation.handleBlur}
+                        value={step1Validation.values.phone || ""}
                       />
                     </div>
-                    {step2Validation.touched.phone && step2Validation.errors.phone && (
+                    {step1Validation.touched.phone && step1Validation.errors.phone && (
                       <p className="mt-1 text-sm text-red-600">
-                        {step2Validation.errors.phone}
+                        {step1Validation.errors.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Business Name Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Name
+                    </label>
+                    <div className="relative">
+                      <Store className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="businessName"
+                        name="businessName"
+                        type="text"
+                        placeholder="Enter your business name"
+                        className="pl-10"
+                        onChange={step1Validation.handleChange}
+                        onBlur={step1Validation.handleBlur}
+                        value={step1Validation.values.businessName || ""}
+                      />
+                    </div>
+                    {step1Validation.touched.businessName && step1Validation.errors.businessName && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {step1Validation.errors.businessName}
                       </p>
                     )}
                   </div>
 
                   {/* Terms and Privacy */}
                   <div>
-                    <div className="flex items-start gap-2">
-                      <input
-                        type="checkbox"
-                        id="acceptTermsAndPrivacy"
-                        name="acceptTermsAndPrivacy"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
-                        onChange={step2Validation.handleChange}
-                        checked={step2Validation.values.acceptTermsAndPrivacy || false}
-                      />
-                      <label htmlFor="acceptTermsAndPrivacy" className="text-sm text-gray-600 leading-relaxed">
-                        I agree to the{" "}
-                        <button
-                          type="button"
-                          onClick={openTermsOfService}
-                          className="text-blue-600 hover:text-blue-800 underline bg-transparent border-0 p-0 font-inherit cursor-pointer"
-                        >
-                          Terms of Service
-                        </button>{" "}
-                        and{" "}
-                        <button
-                          type="button"
-                          onClick={openPrivacyPolicy}
-                          className="text-blue-600 hover:text-blue-800 underline bg-transparent border-0 p-0 font-inherit cursor-pointer"
-                        >
-                          Privacy Policy
-                        </button>
-                      </label>
+                    <div className="flex items-start">
+                      <div className="flex items-center h-5">
+                        <input
+                          id="acceptTermsAndPrivacy"
+                          name="acceptTermsAndPrivacy"
+                          type="checkbox"
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          onChange={step1Validation.handleChange}
+                          onBlur={step1Validation.handleBlur}
+                          checked={step1Validation.values.acceptTermsAndPrivacy || false}
+                        />
+                      </div>
+                      <div className="ml-3 text-sm">
+                        <label htmlFor="acceptTermsAndPrivacy" className="text-gray-600">
+                          I agree to the{" "}
+                          <button
+                            type="button"
+                            className="text-blue-600 hover:text-blue-800 hover:underline bg-transparent border-0 p-0 font-inherit cursor-pointer"
+                          >
+                            Terms of Service
+                          </button>{" "}
+                          and{" "}
+                          <button
+                            type="button"
+                            className="text-blue-600 hover:text-blue-800 hover:underline bg-transparent border-0 p-0 font-inherit cursor-pointer"
+                          >
+                            Privacy Policy
+                          </button>
+                        </label>
+                      </div>
                     </div>
-                    {step2Validation.touched.acceptTermsAndPrivacy && step2Validation.errors.acceptTermsAndPrivacy && (
+                    {step1Validation.touched.acceptTermsAndPrivacy && step1Validation.errors.acceptTermsAndPrivacy && (
                       <p className="mt-1 text-sm text-red-600">
-                        {step2Validation.errors.acceptTermsAndPrivacy}
+                        {step1Validation.errors.acceptTermsAndPrivacy}
                       </p>
                     )}
+                  </div>
+
+                  {/* Next Button */}
+                  <Button type="submit" className="w-full">
+                    Continue
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleStep2Submit}>
+                <div className="space-y-4">
+                  {/* Outlet Name Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Outlet Name
+                    </label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="outletName"
+                        name="outletName"
+                        type="text"
+                        placeholder="Main Store / Downtown Location"
+                        className="pl-10"
+                        onChange={step2Validation.handleChange}
+                        onBlur={step2Validation.handleBlur}
+                        value={step2Validation.values.outletName || ""}
+                      />
+                    </div>
+                    {step2Validation.touched.outletName && step2Validation.errors.outletName && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {step2Validation.errors.outletName}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      This will be your first outlet. You can add more locations later.
+                    </p>
+                  </div>
+
+                  {/* Trial Information */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 mb-2">What happens next?</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• Your merchant account will be created</li>
+                      <li>• A default outlet will be set up</li>
+                      <li>• You'll get a 14-day free trial</li>
+                      <li>• You can access both web and mobile apps</li>
+                    </ul>
                   </div>
 
                   {/* Buttons */}
@@ -495,12 +526,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       type="button"
                       variant="outline"
                       className="flex-1"
-                      onClick={goBackToStep1}
+                      onClick={() => setCurrentStep(1)}
                     >
                       Back
                     </Button>
                     <Button type="submit" className="flex-1">
-                      Create Account
+                      Start Free Trial
                     </Button>
                   </div>
                 </div>

@@ -133,7 +133,7 @@ export async function PUT(
       message: 'Plan updated successfully'
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating plan:', error);
     
     if (error.name === 'ZodError') {
@@ -159,7 +159,7 @@ export async function PUT(
 
 /**
  * DELETE /api/plans/[id]
- * Delete a specific plan (soft delete)
+ * Delete a specific plan (permanent delete)
  */
 export async function DELETE(
   request: NextRequest,
@@ -203,7 +203,7 @@ export async function DELETE(
 
     const publicId = parseInt(id);
 
-    // Delete plan using database function (soft delete)
+    // Delete plan using database function (permanent delete)
     const result = await deletePlan(publicId);
 
     return NextResponse.json({
@@ -212,7 +212,7 @@ export async function DELETE(
       message: 'Plan deleted successfully'
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting plan:', error);
     
     if (error.message === 'Plan not found') {

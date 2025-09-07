@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { verifyTokenSimple } from '@rentalshop/auth';
+// Force TypeScript refresh - address field added
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,10 +44,10 @@ export async function GET(request: NextRequest) {
     // Search across multiple fields
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+        { name: { contains: search } },
+        { email: { contains: search } },
+        { phone: { contains: search } },
+        { description: { contains: search } }
       ];
     }
 
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     // Plan filtering
     if (plan && plan !== 'all') {
-      where.subscriptionPlan = plan;
+      where.planId = plan;
     }
 
     // Revenue range filtering
@@ -108,8 +109,8 @@ export async function GET(request: NextRequest) {
       orderBy.email = sortOrder;
     } else if (sortBy === 'subscriptionStatus') {
       orderBy.subscriptionStatus = sortOrder;
-    } else if (sortBy === 'subscriptionPlan') {
-      orderBy.subscriptionPlan = sortOrder;
+    } else if (sortBy === 'planId') {
+      orderBy.planId = sortOrder;
           } else if (sortBy === 'createdAt') {
         orderBy.createdAt = sortOrder;
       } else if (sortBy === 'updatedAt') {
@@ -142,7 +143,8 @@ export async function GET(request: NextRequest) {
             users: true,
             products: true
           }
-        }
+        },
+        // No need to fetch outlet address since merchant has its own address
       }
     });
 
@@ -152,8 +154,17 @@ export async function GET(request: NextRequest) {
       name: merchant.name,
       email: merchant.email,
       phone: merchant.phone,
+      address: merchant.address,
+      city: merchant.city,
+      state: merchant.state,
+      zipCode: merchant.zipCode,
+      country: merchant.country,
+      businessType: merchant.businessType,
+      taxId: merchant.taxId,
+      website: merchant.website,
+      description: merchant.description,
       isActive: merchant.isActive,
-      subscriptionPlan: merchant.subscriptionPlan,
+      planId: merchant.planId,
       subscriptionStatus: merchant.subscriptionStatus,
       trialEndsAt: merchant.trialEndsAt,
       outletsCount: merchant._count.outlets,
@@ -211,10 +222,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, phone, subscriptionPlan, subscriptionStatus } = body;
+    const { name, email, phone, address, planId, subscriptionStatus } = body;
 
     // Validate required fields
-    if (!name || !email || !phone || !subscriptionPlan) {
+    if (!name || !email || !phone || !planId) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields' },
         { status: 400 }
@@ -234,12 +245,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new merchant
+    // Generate publicId
+    const lastMerchant = await prisma.merchant.findFirst({
+      orderBy: { publicId: 'desc' },
+      select: { publicId: true }
+    });
+    const nextPublicId = (lastMerchant?.publicId || 0) + 1;
+
     const merchant = await prisma.merchant.create({
       data: {
+        publicId: nextPublicId,
         name,
         email,
         phone,
-        subscriptionPlan,
+        address,
+        planId,
         subscriptionStatus: subscriptionStatus || 'trial',
         isActive: true,
         totalRevenue: 0
@@ -255,7 +275,7 @@ export async function POST(request: NextRequest) {
         email: merchant.email,
         phone: merchant.phone,
         isActive: merchant.isActive,
-        subscriptionPlan: merchant.subscriptionPlan,
+        planId: merchant.planId,
         subscriptionStatus: merchant.subscriptionStatus,
         trialEndsAt: merchant.trialEndsAt,
         outletsCount: 0,
@@ -270,7 +290,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating merchant:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to create merchant', error: error.message },
+      { success: false, message: 'Failed to create merchant', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

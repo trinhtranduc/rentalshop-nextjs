@@ -1,72 +1,43 @@
 // ============================================================================
-// PLAN DATABASE FUNCTIONS - DUAL ID SYSTEM
+// PLAN DATABASE FUNCTIONS - MODERN SUBSCRIPTION SYSTEM
 // ============================================================================
 
 import { prisma } from './client';
-import type { PlanCreateInput, PlanUpdateInput, PlanFilters } from '@rentalshop/types';
-
-/**
- * Helper function to get billing cycle ID by value
- */
-async function getBillingCycleId(value: string): Promise<string | null> {
-  const billingCycle = await prisma.billingCycle.findUnique({
-    where: { value }
-  });
-  return billingCycle?.id || null;
-}
+import type { Plan, PlanCreateInput, PlanUpdateInput, PlanFilters } from '@rentalshop/types';
+import { calculatePlanPricing } from './subscription';
 
 /**
  * Get plan by public ID
  */
-export async function getPlanByPublicId(publicId: number) {
+export async function getPlanByPublicId(publicId: number): Promise<Plan | null> {
   try {
     const plan = await prisma.plan.findUnique({
-      where: { publicId },
-      include: {
-        billingCycle: true,
-        subscriptions: {
-          select: {
-            id: true,
-            publicId: true,
-            status: true,
-            amount: true,
-            merchant: {
-              select: {
-                publicId: true,
-                name: true
-              }
-            }
-          }
-        }
-      }
+      where: { publicId }
     });
 
     if (!plan) return null;
 
-    // Transform to match frontend expectations
     return {
-      id: plan.publicId,                    // Return publicId as "id"
+      id: plan.id,
+      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
-      price: plan.price,
+      basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      maxOutlets: plan.maxOutlets,
-      maxUsers: plan.maxUsers,
-      maxProducts: plan.maxProducts,
-      maxCustomers: plan.maxCustomers,
-      features: plan.features ? JSON.parse(plan.features) : [],
+      limits: {
+        outlets: plan.maxOutlets,
+        users: plan.maxUsers,
+        products: plan.maxProducts,
+        customers: plan.maxCustomers
+      },
+      features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
-      billingCycle: plan.billingCycle?.value || 'monthly',
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      // Computed fields
-      merchantCount: plan.subscriptions.filter(sub => sub.status === 'ACTIVE').length,
-      totalRevenue: plan.subscriptions
-        .filter(sub => sub.status === 'ACTIVE')
-        .reduce((sum, sub) => sum + (sub.amount || 0), 0)
+      pricing: calculatePlanPricing(plan.basePrice)
     };
   } catch (error) {
     console.error('Error getting plan by public ID:', error);
@@ -75,111 +46,104 @@ export async function getPlanByPublicId(publicId: number) {
 }
 
 /**
- * Search plans with filtering and pagination
+ * Get all plans
  */
-export async function searchPlans(filters: PlanFilters = {}) {
+export async function getAllPlans(): Promise<Plan[]> {
   try {
-    const {
-      search,
-      isActive,
-      isPopular,
-      limit = 50,
-      offset = 0,
-      sortBy = 'sortOrder',
-      sortOrder = 'asc'
-    } = filters;
+    const plans = await prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' }
+    });
 
-    // Build where clause
+    return plans.map(plan => ({
+      id: plan.id,
+      publicId: plan.publicId,
+      name: plan.name,
+      description: plan.description,
+      basePrice: plan.basePrice,
+      currency: plan.currency,
+      trialDays: plan.trialDays,
+      limits: {
+        outlets: plan.maxOutlets,
+        users: plan.maxUsers,
+        products: plan.maxProducts,
+        customers: plan.maxCustomers
+      },
+      features: JSON.parse(plan.features || '[]'),
+      isActive: plan.isActive,
+      isPopular: plan.isPopular,
+      sortOrder: plan.sortOrder,
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+      pricing: calculatePlanPricing(plan.basePrice)
+    }));
+  } catch (error) {
+    console.error('Error getting all plans:', error);
+    throw error;
+  }
+}
+
+/**
+ * Search plans with filters
+ */
+export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: Plan[]; total: number; hasMore: boolean }> {
+  try {
     const where: any = {};
-    
-    if (search) {
+
+    // Apply filters
+    if (filters.search) {
       where.OR = [
-        { name: { contains: search } },
-        { description: { contains: search } }
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } }
       ];
     }
 
-    if (isActive !== undefined) {
-      where.isActive = isActive;
+    if (filters.isActive !== undefined) {
+      where.isActive = filters.isActive;
     }
 
-    if (isPopular !== undefined) {
-      where.isPopular = isPopular;
+    if (filters.isPopular !== undefined) {
+      where.isPopular = filters.isPopular;
     }
 
-    // Build orderBy clause
-    const orderBy: any = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'price') {
-      orderBy.price = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
-    } else {
-      orderBy.sortOrder = sortOrder;
-    }
+    // Get total count
+    const total = await prisma.plan.count({ where });
 
-    // Fetch plans with related data
-    const [plans, total] = await Promise.all([
-      prisma.plan.findMany({
-        where,
-        include: {
-          billingCycle: true,
-          subscriptions: {
-            select: {
-              id: true,
-              status: true,
-              amount: true,
-              merchant: {
-                select: {
-                  publicId: true,
-                  name: true
-                }
-              }
-            }
-          }
-        },
-        orderBy,
-        take: limit,
-        skip: offset
-      }),
-      prisma.plan.count({ where })
-    ]);
-
-    // Transform data for frontend
-    const transformedPlans = plans.map(plan => {
-      const activeSubscriptions = plan.subscriptions.filter(sub => sub.status === 'ACTIVE');
-      const merchantCount = activeSubscriptions.length;
-      const totalRevenue = activeSubscriptions.reduce((sum, sub) => sum + (sub.amount || 0), 0);
-      
-      return {
-        id: plan.publicId,                    // Return publicId as "id"
-        name: plan.name,
-        description: plan.description,
-        price: plan.price,
-        currency: plan.currency,
-        trialDays: plan.trialDays,
-        maxOutlets: plan.maxOutlets,
-        maxUsers: plan.maxUsers,
-        maxProducts: plan.maxProducts,
-        maxCustomers: plan.maxCustomers,
-        features: plan.features ? JSON.parse(plan.features) : [],
-        isActive: plan.isActive,
-        isPopular: plan.isPopular,
-        sortOrder: plan.sortOrder,
-        billingCycle: plan.billingCycle?.value || 'monthly',
-        createdAt: plan.createdAt,
-        updatedAt: plan.updatedAt,
-        // Computed fields
-        merchantCount,
-        totalRevenue
-      };
+    // Get plans with pagination
+    const plans = await prisma.plan.findMany({
+      where,
+      orderBy: { sortOrder: 'asc' },
+      take: filters.limit || 20,
+      skip: filters.offset || 0
     });
+
+    const transformedPlans = plans.map(plan => ({
+      id: plan.id,
+      publicId: plan.publicId,
+      name: plan.name,
+      description: plan.description,
+      basePrice: plan.basePrice,
+      currency: plan.currency,
+      trialDays: plan.trialDays,
+      limits: {
+        outlets: plan.maxOutlets,
+        users: plan.maxUsers,
+        products: plan.maxProducts,
+        customers: plan.maxCustomers
+      },
+      features: JSON.parse(plan.features || '[]'),
+      isActive: plan.isActive,
+      isPopular: plan.isPopular,
+      sortOrder: plan.sortOrder,
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+      pricing: calculatePlanPricing(plan.basePrice)
+    }));
 
     return {
       plans: transformedPlans,
       total,
-      hasMore: offset + limit < total
+      hasMore: (filters.offset || 0) + (filters.limit || 20) < total
     };
   } catch (error) {
     console.error('Error searching plans:', error);
@@ -190,67 +154,54 @@ export async function searchPlans(filters: PlanFilters = {}) {
 /**
  * Create a new plan
  */
-export async function createPlan(data: PlanCreateInput) {
+export async function createPlan(data: PlanCreateInput): Promise<Plan> {
   try {
-    // Generate next public ID
+    // Generate next publicId
     const lastPlan = await prisma.plan.findFirst({
       orderBy: { publicId: 'desc' }
     });
     const nextPublicId = (lastPlan?.publicId || 0) + 1;
 
-    // Create plan
     const plan = await prisma.plan.create({
       data: {
         publicId: nextPublicId,
         name: data.name,
         description: data.description,
-        price: data.price,
+        basePrice: data.basePrice,
         currency: data.currency || 'USD',
         trialDays: data.trialDays,
-        maxOutlets: data.maxOutlets,
-        maxUsers: data.maxUsers,
-        maxProducts: data.maxProducts,
-        maxCustomers: data.maxCustomers,
-        features: JSON.stringify(data.features || []),
-        isActive: data.isActive !== undefined ? data.isActive : true,
-        isPopular: data.isPopular || false,
-        sortOrder: data.sortOrder || 0,
-        billingCycleId: data.billingCycle ? await getBillingCycleId(data.billingCycle) : null
-      },
-      include: {
-        billingCycle: true,
-        subscriptions: {
-          select: {
-            id: true,
-            status: true,
-            amount: true
-          }
-        }
+        maxOutlets: data.limits.outlets,
+        maxUsers: data.limits.users,
+        maxProducts: data.limits.products,
+        maxCustomers: data.limits.customers,
+        features: JSON.stringify(data.features),
+        isActive: data.isActive ?? true,
+        isPopular: data.isPopular ?? false,
+        sortOrder: data.sortOrder ?? 0
       }
     });
 
-    // Transform response
     return {
-      id: plan.publicId,                    // Return publicId as "id"
+      id: plan.id,
+      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
-      price: plan.price,
+      basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      maxOutlets: plan.maxOutlets,
-      maxUsers: plan.maxUsers,
-      maxProducts: plan.maxProducts,
-      maxCustomers: plan.maxCustomers,
-      features: plan.features ? JSON.parse(plan.features) : [],
+      limits: {
+        outlets: plan.maxOutlets,
+        users: plan.maxUsers,
+        products: plan.maxProducts,
+        customers: plan.maxCustomers
+      },
+      features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
-      billingCycle: plan.billingCycle?.value || 'monthly',
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      // Computed fields
-      merchantCount: 0,
-      totalRevenue: 0
+      pricing: calculatePlanPricing(plan.basePrice)
     };
   } catch (error) {
     console.error('Error creating plan:', error);
@@ -259,85 +210,52 @@ export async function createPlan(data: PlanCreateInput) {
 }
 
 /**
- * Update an existing plan
+ * Update a plan
  */
-export async function updatePlan(publicId: number, data: PlanUpdateInput) {
+export async function updatePlan(publicId: number, data: PlanUpdateInput): Promise<Plan | null> {
   try {
-    // Check if plan exists
-    const existingPlan = await prisma.plan.findUnique({
-      where: { publicId }
-    });
-
-    if (!existingPlan) {
-      throw new Error('Plan not found');
-    }
-
-    // Prepare update data
-    const updateData: any = {};
-    
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.price !== undefined) updateData.price = data.price;
-    if (data.currency !== undefined) updateData.currency = data.currency;
-    if (data.trialDays !== undefined) updateData.trialDays = data.trialDays;
-    if (data.maxOutlets !== undefined) updateData.maxOutlets = data.maxOutlets;
-    if (data.maxUsers !== undefined) updateData.maxUsers = data.maxUsers;
-    if (data.maxProducts !== undefined) updateData.maxProducts = data.maxProducts;
-    if (data.maxCustomers !== undefined) updateData.maxCustomers = data.maxCustomers;
-    if (data.features !== undefined) updateData.features = JSON.stringify(data.features);
-    if (data.isActive !== undefined) updateData.isActive = data.isActive;
-    if (data.isPopular !== undefined) updateData.isPopular = data.isPopular;
-    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
-    if (data.billingCycle !== undefined) updateData.billingCycle = data.billingCycle;
-
-    // Update plan
     const plan = await prisma.plan.update({
       where: { publicId },
-      data: updateData,
-      include: {
-        billingCycle: true,
-        subscriptions: {
-          select: {
-            id: true,
-            status: true,
-            amount: true,
-            merchant: {
-              select: {
-                publicId: true,
-                name: true
-              }
-            }
-          }
-        }
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.description && { description: data.description }),
+        ...(data.basePrice && { basePrice: data.basePrice }),
+        ...(data.currency && { currency: data.currency }),
+        ...(data.trialDays && { trialDays: data.trialDays }),
+        ...(data.limits && {
+          maxOutlets: data.limits.outlets,
+          maxUsers: data.limits.users,
+          maxProducts: data.limits.products,
+          maxCustomers: data.limits.customers
+        }),
+        ...(data.features && { features: JSON.stringify(data.features) }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+        ...(data.isPopular !== undefined && { isPopular: data.isPopular }),
+        ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder })
       }
     });
 
-    // Transform response
-    const activeSubscriptions = plan.subscriptions.filter(sub => sub.status === 'ACTIVE');
-    const merchantCount = activeSubscriptions.length;
-    const totalRevenue = activeSubscriptions.reduce((sum, sub) => sum + (sub.amount || 0), 0);
-
     return {
-      id: plan.publicId,                    // Return publicId as "id"
+      id: plan.id,
+      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
-      price: plan.price,
+      basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      maxOutlets: plan.maxOutlets,
-      maxUsers: plan.maxUsers,
-      maxProducts: plan.maxProducts,
-      maxCustomers: plan.maxCustomers,
-      features: plan.features ? JSON.parse(plan.features) : [],
+      limits: {
+        outlets: plan.maxOutlets,
+        users: plan.maxUsers,
+        products: plan.maxProducts,
+        customers: plan.maxCustomers
+      },
+      features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
-      billingCycle: plan.billingCycle?.value || 'monthly',
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      // Computed fields
-      merchantCount,
-      totalRevenue
+      pricing: calculatePlanPricing(plan.basePrice)
     };
   } catch (error) {
     console.error('Error updating plan:', error);
@@ -346,40 +264,18 @@ export async function updatePlan(publicId: number, data: PlanUpdateInput) {
 }
 
 /**
- * Delete a plan (soft delete by setting isActive to false)
+ * Delete a plan (soft delete)
  */
-export async function deletePlan(publicId: number) {
+export async function deletePlan(publicId: number): Promise<boolean> {
   try {
-    // Check if plan exists
-    const existingPlan = await prisma.plan.findUnique({
+    await prisma.plan.update({
       where: { publicId },
-      include: {
-        subscriptions: {
-          where: { status: 'ACTIVE' }
-        }
+      data: { 
+        isActive: false,
+        deletedAt: new Date()
       }
     });
-
-    if (!existingPlan) {
-      throw new Error('Plan not found');
-    }
-
-    // Check if plan has active subscriptions
-    if (existingPlan.subscriptions.length > 0) {
-      throw new Error('Cannot delete plan with active subscriptions');
-    }
-
-    // Soft delete by setting isActive to false
-    const plan = await prisma.plan.update({
-      where: { publicId },
-      data: { isActive: false }
-    });
-
-    return {
-      id: plan.publicId,
-      name: plan.name,
-      isActive: plan.isActive
-    };
+    return true;
   } catch (error) {
     console.error('Error deleting plan:', error);
     throw error;
@@ -387,54 +283,40 @@ export async function deletePlan(publicId: number) {
 }
 
 /**
- * Get all active plans (for public display)
+ * Get active plans
  */
-export async function getActivePlans() {
+export async function getActivePlans(): Promise<Plan[]> {
   try {
     const plans = await prisma.plan.findMany({
-      where: { isActive: true },
-      include: {
-        billingCycle: true,
-        subscriptions: {
-          select: {
-            id: true,
-            status: true,
-            amount: true
-          }
-        }
+      where: { 
+        isActive: true,
+        deletedAt: null
       },
       orderBy: { sortOrder: 'asc' }
     });
 
-    // Transform data for frontend
-    return plans.map(plan => {
-      const activeSubscriptions = plan.subscriptions.filter(sub => sub.status === 'ACTIVE');
-      const merchantCount = activeSubscriptions.length;
-      const totalRevenue = activeSubscriptions.reduce((sum, sub) => sum + (sub.amount || 0), 0);
-      
-      return {
-        id: plan.publicId,                    // Return publicId as "id"
-        name: plan.name,
-        description: plan.description,
-        price: plan.price,
-        currency: plan.currency,
-        trialDays: plan.trialDays,
-        maxOutlets: plan.maxOutlets,
-        maxUsers: plan.maxUsers,
-        maxProducts: plan.maxProducts,
-        maxCustomers: plan.maxCustomers,
-        features: plan.features ? JSON.parse(plan.features) : [],
-        isActive: plan.isActive,
-        isPopular: plan.isPopular,
-        sortOrder: plan.sortOrder,
-        billingCycle: plan.billingCycle?.value || 'monthly',
-        createdAt: plan.createdAt,
-        updatedAt: plan.updatedAt,
-        // Computed fields
-        merchantCount,
-        totalRevenue
-      };
-    });
+    return plans.map(plan => ({
+      id: plan.id,
+      publicId: plan.publicId,
+      name: plan.name,
+      description: plan.description,
+      basePrice: plan.basePrice,
+      currency: plan.currency,
+      trialDays: plan.trialDays,
+      limits: {
+        outlets: plan.maxOutlets,
+        users: plan.maxUsers,
+        products: plan.maxProducts,
+        customers: plan.maxCustomers
+      },
+      features: JSON.parse(plan.features || '[]'),
+      isActive: plan.isActive,
+      isPopular: plan.isPopular,
+      sortOrder: plan.sortOrder,
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+      pricing: calculatePlanPricing(plan.basePrice)
+    }));
   } catch (error) {
     console.error('Error getting active plans:', error);
     throw error;
@@ -446,23 +328,16 @@ export async function getActivePlans() {
  */
 export async function getPlanStats() {
   try {
-    const [totalPlans, activePlans, totalSubscriptions, activeSubscriptions, totalRevenue] = await Promise.all([
+    const [totalPlans, activePlans, popularPlans] = await Promise.all([
       prisma.plan.count(),
       prisma.plan.count({ where: { isActive: true } }),
-      prisma.subscription.count(),
-      prisma.subscription.count({ where: { status: 'ACTIVE' } }),
-      prisma.subscription.aggregate({
-        where: { status: 'ACTIVE' },
-        _sum: { amount: true }
-      })
+      prisma.plan.count({ where: { isPopular: true } })
     ]);
 
     return {
       totalPlans,
       activePlans,
-      totalSubscriptions,
-      activeSubscriptions,
-      totalRevenue: totalRevenue._sum.amount || 0
+      popularPlans
     };
   } catch (error) {
     console.error('Error getting plan stats:', error);

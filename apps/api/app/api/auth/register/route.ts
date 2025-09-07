@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { registerUser } from '@rentalshop/auth';
+import { registerUser } from '@rentalshop/database';
 import { registerSchema } from '@rentalshop/utils';
+import { generateToken } from '@rentalshop/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,19 +10,33 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = registerSchema.parse(body);
     
-    // Register user
+    // Register user with smart registration
     const result = await registerUser({
       email: validatedData.email,
       password: validatedData.password,
       name: validatedData.name,
       phone: validatedData.phone,
       role: validatedData.role || 'CLIENT',
+      businessName: validatedData.businessName,
+      outletName: validatedData.outletName,
+      merchantCode: validatedData.merchantCode,
+      outletCode: validatedData.outletCode,
+    });
+    
+    // Generate JWT token
+    const token = generateToken({
+      userId: result.user.id.toString(), // Convert to string for JWT
+      email: result.user.email,
+      role: result.user.role,
     });
     
     return NextResponse.json({
       success: true,
-      message: 'Registration successful',
-      data: result
+      message: result.message,
+      data: {
+        user: result.user,
+        token: token
+      }
     }, { status: 201 });
     
   } catch (error: any) {
@@ -37,11 +52,32 @@ export async function POST(request: NextRequest) {
     }
     
     // Handle specific auth errors
-    if (error.message === 'User already exists') {
+    if (error.message === 'User with this email already exists') {
       return NextResponse.json({
         success: false,
         message: 'User with this email already exists'
       }, { status: 409 });
+    }
+    
+    if (error.message === 'Merchant with this email already exists') {
+      return NextResponse.json({
+        success: false,
+        message: 'Merchant with this email already exists'
+      }, { status: 409 });
+    }
+    
+    if (error.message.includes('Invalid merchant code')) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid merchant code. Please check with your manager.'
+      }, { status: 400 });
+    }
+    
+    if (error.message.includes('Invalid outlet code')) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid outlet code. Please check with your manager.'
+      }, { status: 400 });
     }
     
     // Generic error

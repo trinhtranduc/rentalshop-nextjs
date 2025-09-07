@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   Button,
   Input,
   Textarea,
-  Badge
+  Label
 } from '../../../ui';
-import { X, Save, Loader2, Tag } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
 
 interface CategoryFormProps {
@@ -29,8 +29,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    isActive: true
+    description: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,8 +39,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     if (category && mode === 'edit') {
       setFormData({
         name: category.name || '',
-        description: category.description || '',
-        isActive: category.isActive ?? true
+        description: category.description || ''
       });
     }
   }, [category, mode]);
@@ -87,8 +85,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
       // Prepare category data
       const categoryData: Partial<Category> = {
         name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        isActive: formData.isActive
+        description: formData.description.trim() || undefined
       };
 
       // Call the onSave callback
@@ -108,116 +105,78 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Tag className="h-5 w-5 text-primary" />
-              </div>
-              <CardTitle className="text-xl">
-                {mode === 'create' ? 'Add New Category' : 'Edit Category'}
-              </CardTitle>
-            </div>
+    <Dialog open={true} onOpenChange={onCancel}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === 'create' ? 'Add New Category' : 'Edit Category'}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Category Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              placeholder="Enter category name"
+              className={errors.name ? 'border-red-500' : ''}
+              disabled={isSubmitting}
+              required
+            />
+            {errors.name && (
+              <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Enter category description (optional)"
+              rows={3}
+              className={errors.description ? 'border-red-500' : ''}
+              disabled={isSubmitting}
+            />
+            {errors.description && (
+              <p className="text-sm text-red-500 mt-1">{errors.description}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              {formData.description.length}/200 characters
+            </p>
+          </div>
+
+
+          <div className="flex items-center justify-end gap-3 pt-4">
             <Button
-              variant="ghost"
-              size="sm"
+              type="button"
+              variant="outline"
               onClick={handleCancel}
               disabled={isSubmitting}
-              className="h-8 w-8 p-0"
             >
-              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {mode === 'create' ? 'Create Category' : 'Update Category'}
+                </>
+              )}
             </Button>
           </div>
-        </CardHeader>
-
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Category Name */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">
-                Category Name *
-              </label>
-              <Input
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter category name"
-                className={errors.name ? 'border-red-500' : ''}
-                disabled={isSubmitting}
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name}</p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">
-                Description
-              </label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Enter category description (optional)"
-                rows={3}
-                className={errors.description ? 'border-red-500' : ''}
-                disabled={isSubmitting}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">{errors.description}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {formData.description.length}/200 characters
-              </p>
-            </div>
-
-            {/* Active Status */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                disabled={isSubmitting}
-                className="rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="isActive" className="text-sm font-medium text-text-primary">
-                Active Category
-              </label>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="min-w-[100px]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    {mode === 'create' ? 'Create' : 'Update'}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };

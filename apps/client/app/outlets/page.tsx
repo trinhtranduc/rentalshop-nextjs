@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
   Input,
   Label,
@@ -53,9 +54,11 @@ export default function OutletsPage() {
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [outletToDisable, setOutletToDisable] = useState<Outlet | null>(null);
   const [editingOutlet, setEditingOutlet] = useState<Outlet | null>(null);
+  const [viewingOutlet, setViewingOutlet] = useState<Outlet | null>(null);
   const [formData, setFormData] = useState<OutletFormData>({
     name: '',
     address: '',
@@ -150,6 +153,11 @@ export default function OutletsPage() {
     }
   };
 
+  const handleView = (outlet: Outlet) => {
+    setViewingOutlet(outlet);
+    setShowViewDialog(true);
+  };
+
   const handleEdit = (outlet: Outlet) => {
     setEditingOutlet(outlet);
     setFormData({
@@ -190,11 +198,16 @@ export default function OutletsPage() {
 
     switch (action) {
       case 'view':
-        // TODO: Implement view functionality
-        console.log('View outlet:', outlet);
+        handleView(outlet);
         break;
       case 'edit':
         handleEdit(outlet);
+        break;
+      case 'disable':
+        handleToggleStatus(outlet);
+        break;
+      case 'enable':
+        handleToggleStatus(outlet);
         break;
       default:
         console.log('Unknown action:', action);
@@ -316,7 +329,7 @@ export default function OutletsPage() {
 
         {/* Add/Edit Outlet Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>
                 {editingOutlet ? 'Edit Outlet' : 'Add New Outlet'}
@@ -389,7 +402,7 @@ export default function OutletsPage() {
 
         {/* Disable Outlet Confirmation Dialog */}
         <Dialog open={showDisableConfirm} onOpenChange={setShowDisableConfirm}>
-          <DialogContent className="sm:max-w-[400px]">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Disable Outlet</DialogTitle>
             </DialogHeader>
@@ -426,6 +439,106 @@ export default function OutletsPage() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Outlet Dialog */}
+        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <div>
+                <DialogTitle className="text-xl font-semibold">
+                  Outlet Details
+                </DialogTitle>
+                <DialogDescription className="text-sm text-gray-600 mt-1">
+                  View outlet information and details
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+            {viewingOutlet && (
+              <div className="mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div>
+                  <Label className="text-sm font-medium text-gray-700">Outlet Name</Label>
+                  <div className="mt-1 p-3 bg-gray-50 rounded-md border">
+                    <p className="text-gray-900 font-medium">{viewingOutlet.name}</p>
+                  </div>
+                </div>
+                  
+                  {viewingOutlet.address && (
+                    <div className="md:col-span-2">
+                      <Label className="text-sm font-medium text-gray-700">Address</Label>
+                      <div className="mt-1 p-3 bg-gray-50 rounded-md border">
+                        <p className="text-gray-900 whitespace-pre-wrap">{viewingOutlet.address}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {viewingOutlet.phone && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Phone</Label>
+                      <div className="mt-1 p-3 bg-gray-50 rounded-md border">
+                        <p className="text-gray-900">{viewingOutlet.phone}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {viewingOutlet.description && (
+                    <div className="md:col-span-2">
+                      <Label className="text-sm font-medium text-gray-700">Description</Label>
+                      <div className="mt-1 p-3 bg-gray-50 rounded-md border">
+                        <p className="text-gray-900 whitespace-pre-wrap">{viewingOutlet.description}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Created</Label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md border">
+                      <p className="text-gray-900">
+                        {new Date(viewingOutlet.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Last Updated</Label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md border">
+                      <p className="text-gray-900">
+                        {new Date(viewingOutlet.updatedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-end gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowViewDialog(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowViewDialog(false);
+                      handleEdit(viewingOutlet);
+                    }}
+                  >
+                    Edit Outlet
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </PageContent>

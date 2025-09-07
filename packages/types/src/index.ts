@@ -29,5 +29,8 @@ export * from './categories';
 // Plan types
 export * from './plans';
 
+// Subscription types
+export * from './subscription';
+
 // Common types
 export * from './common';

@@ -1,7 +1,7 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../common';
-import type { SubscriptionPayment, SubscriptionPaymentCreateInput, SubscriptionPaymentUpdateInput } from '@rentalshop/types';
+import type { Payment, PaymentInput, PaymentUpdateInput } from '@rentalshop/types';
 
 // Local type definitions for API responses
 export interface PaymentFilters {
@@ -15,7 +15,7 @@ export interface PaymentFilters {
 }
 
 export interface PaymentsResponse {
-  payments: SubscriptionPayment[];
+  payments: Payment[];
   total: number;
   hasMore: boolean;
 }
@@ -48,31 +48,42 @@ export const paymentsApi = {
   /**
    * Get a specific payment by ID
    */
-  async getPayment(id: number): Promise<ApiResponse<SubscriptionPayment>> {
+  async getPayment(id: number): Promise<ApiResponse<Payment>> {
     const response = await authenticatedFetch(apiUrls.payments.get(id));
-    return await parseApiResponse<SubscriptionPayment>(response);
+    return await parseApiResponse<Payment>(response);
   },
 
   /**
    * Create a new payment
    */
-  async createPayment(input: SubscriptionPaymentCreateInput): Promise<ApiResponse<SubscriptionPayment>> {
+  async createPayment(input: PaymentInput): Promise<ApiResponse<Payment>> {
     const response = await authenticatedFetch(apiUrls.payments.create, {
       method: 'POST',
       body: JSON.stringify(input),
     });
-    return await parseApiResponse<SubscriptionPayment>(response);
+    return await parseApiResponse<Payment>(response);
   },
 
   /**
    * Update an existing payment
    */
-  async updatePayment(id: number, input: SubscriptionPaymentUpdateInput): Promise<ApiResponse<SubscriptionPayment>> {
+  async updatePayment(id: number, input: PaymentUpdateInput): Promise<ApiResponse<Payment>> {
     const response = await authenticatedFetch(apiUrls.payments.update(id), {
       method: 'PUT',
       body: JSON.stringify(input),
     });
-    return await parseApiResponse<SubscriptionPayment>(response);
+    return await parseApiResponse<Payment>(response);
+  },
+
+  /**
+   * Create a manual payment
+   */
+  async createManualPayment(input: ManualPaymentCreateInput): Promise<ApiResponse<ManualPayment>> {
+    const response = await authenticatedFetch(apiUrls.payments.manual, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+    return await parseApiResponse<ManualPayment>(response);
   },
 
   /**
@@ -88,22 +99,22 @@ export const paymentsApi = {
   /**
    * Process payment
    */
-  async processPayment(id: number): Promise<ApiResponse<SubscriptionPayment>> {
+  async processPayment(id: number): Promise<ApiResponse<Payment>> {
     const response = await authenticatedFetch(apiUrls.payments.process(id), {
       method: 'POST',
     });
-    return await parseApiResponse<SubscriptionPayment>(response);
+    return await parseApiResponse<Payment>(response);
   },
 
   /**
    * Refund payment
    */
-  async refundPayment(id: number, reason?: string): Promise<ApiResponse<SubscriptionPayment>> {
+  async refundPayment(id: number, reason?: string): Promise<ApiResponse<Payment>> {
     const response = await authenticatedFetch(apiUrls.payments.refund(id), {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
-    return await parseApiResponse<SubscriptionPayment>(response);
+    return await parseApiResponse<Payment>(response);
   },
 
   /**
@@ -131,3 +142,39 @@ export const paymentsApi = {
     return await parseApiResponse<{ downloadUrl: string }>(response);
   }
 };
+
+// Manual payment types
+export interface ManualPaymentCreateInput {
+  merchantId: number;
+  planId: number;
+  amount: number;
+  currency: string;
+  method: string;
+  description?: string;
+  extendSubscription?: boolean;
+  monthsToExtend?: number;
+  invoiceNumber?: string;
+  transactionId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface ManualPayment {
+  id: number;
+  amount: number;
+  method: string;
+  type: string;
+  status: string;
+  reference: string;
+  notes?: string;
+  createdAt: string;
+  metadata?: {
+    planId: string;
+    startDate?: string;
+    endDate?: string;
+    extendSubscription?: boolean;
+    monthsToExtend?: number;
+    transactionId?: string;
+    currency: string;
+  };
+}

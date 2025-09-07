@@ -7,6 +7,7 @@ export interface Merchant {
   name: string;
   email: string;
   phone?: string;
+  address?: string;              // Merchant address
   description?: string;
   planId?: number;               // Reference to Plan publicId
   subscriptionStatus: string;    // Current subscription status
@@ -18,13 +19,56 @@ export interface Merchant {
   updatedAt: Date;
   
   // Relations (forward references to avoid circular dependencies)
-  plan?: any;                    // Current plan details
+  plan?: PlanDetails;            // Current plan details
+  currentSubscription?: CurrentSubscription; // Current subscription details
   outlets?: any[];               // Merchant outlets
   users?: any[];                 // Merchant users
   customers?: any[];             // Merchant customers
   products?: any[];              // Merchant products
   categories?: any[];            // Merchant categories
   subscriptions?: any[];         // Subscription history
+}
+
+export interface PlanDetails {
+  id: number;
+  name: string;
+  description: string;
+  basePrice: number;
+  currency: string;
+  trialDays: number;
+  maxOutlets: number;
+  maxUsers: number;
+  maxProducts: number;
+  maxCustomers: number;
+  features: string[];
+  isActive: boolean;
+  isPopular: boolean;
+}
+
+export interface CurrentSubscription {
+  id: number;
+  status: string;
+  startDate: Date;
+  endDate?: Date;
+  trialEndDate?: Date;
+  nextBillingDate?: Date;
+  amount: number;
+  currency: string;
+  autoRenew: boolean;
+  plan?: {
+    id: number;
+    name: string;
+    basePrice: number;
+    currency: string;
+  };
+  planVariant?: {
+    id: number;
+    name: string;
+    duration: number;
+    price: number;
+    discount: number;
+    savings: number;
+  };
 }
 
 export interface MerchantCreateInput {

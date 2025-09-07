@@ -67,10 +67,10 @@ export async function GET(
     // Add search filter
     if (search) {
       where.OR = [
-        { orderNumber: { contains: search, mode: 'insensitive' } },
-        { customer: { firstName: { contains: search, mode: 'insensitive' } } },
-        { customer: { lastName: { contains: search, mode: 'insensitive' } } },
-        { customer: { phone: { contains: search, mode: 'insensitive' } } }
+        { orderNumber: { contains: search } },
+        { customer: { firstName: { contains: search } } },
+        { customer: { lastName: { contains: search } } },
+        { customer: { phone: { contains: search } } }
       ];
     }
 

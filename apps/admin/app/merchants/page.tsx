@@ -135,6 +135,10 @@ export default function MerchantsPage() {
       case 'edit':
         router.push(`/merchants/${merchantId}/edit`);
         break;
+      case 'change-plan':
+        // This will be handled by the Merchants component
+        console.log('Change plan for merchant:', merchantId);
+        break;
       default:
         console.log('Merchant action:', action, merchantId);
     }

@@ -10,6 +10,7 @@ export interface SearchableOption {
   // Extended fields for rich product display
   image?: string;
   subtitle?: string;
+  description?: string;
   details?: string[];
   type?: 'customer' | 'product' | 'default';
 }
@@ -47,6 +48,12 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const [query, setQuery] = React.useState('');
   const [internalOptions, setInternalOptions] = React.useState<SearchableOption[]>(options || []);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const onSearchRef = React.useRef(onSearch);
+
+  // Update ref when onSearch changes
+  React.useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
 
   // Initialize internal options based on mode
   React.useEffect(() => {
@@ -63,13 +70,17 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   React.useEffect(() => {
     let active = true;
     const run = async () => {
-      if (onSearch && query.trim()) {  // Only search if query has content
-        const res = await onSearch(query);
+      const currentOnSearch = onSearchRef.current;
+      if (currentOnSearch && query.trim()) {  // Only search if query has content
+        console.log('🔍 SearchableSelect: Making API call for query:', query);
+        const res = await currentOnSearch(query);
         if (active && Array.isArray(res)) {
+          console.log('🔍 SearchableSelect: Received results:', res.length);
           setInternalOptions(res);
         }
-      } else if (onSearch && !query.trim()) {
-        // Clear search results when query is empty
+      } else if (currentOnSearch && !query.trim() && !value) {
+        // Only clear search results when query is empty AND no value is selected
+        console.log('🔍 SearchableSelect: Clearing results for empty query (no selection)');
         setInternalOptions([]);
       }
     };
@@ -79,7 +90,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       active = false;
       clearTimeout(t);
     };
-  }, [query, onSearch]);
+  }, [query, value]); // Depend on both query and value
 
   const filtered = React.useMemo(() => {
     console.log('🔍 SearchableSelect: Filtering with query:', query, 'onSearch:', !!onSearch, 'options count:', options?.length || 0);
@@ -134,8 +145,14 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const handleSelect = (option: SearchableOption) => {
     onChange?.(parseInt(option.value));
     setOpen(false);
-    // Clear the query so user can easily search for another item
-    setQuery('');
+    // Keep the selected option in the internal options so it remains visible
+    if (onSearch) {
+      setInternalOptions([option]);
+    }
+    // Clear the query after a short delay to allow the selection to be visible
+    setTimeout(() => {
+      setQuery('');
+    }, 100);
   };
 
   return (
@@ -325,7 +342,12 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         </div>
                       ) : (
                         // Customer or default layout
-                        <div className="font-medium text-gray-900 truncate">{opt.label}</div>
+                        <div className="space-y-1">
+                          <div className="font-medium text-gray-900 truncate">{opt.label}</div>
+                          {opt.description && (
+                            <div className="text-sm text-gray-600 whitespace-pre-line">{opt.description}</div>
+                          )}
+                        </div>
                       )}
                     </div>
                     

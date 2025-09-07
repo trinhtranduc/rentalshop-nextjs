@@ -42,10 +42,10 @@ export async function GET(request: NextRequest) {
     
     if (search) {
       where.OR = [
-        { description: { contains: search, mode: 'insensitive' } },
-        { invoiceNumber: { contains: search, mode: 'insensitive' } },
-        { transactionId: { contains: search, mode: 'insensitive' } },
-        { merchant: { name: { contains: search, mode: 'insensitive' } } }
+        { description: { contains: search } },
+        { invoiceNumber: { contains: search } },
+        { transactionId: { contains: search } },
+        { merchant: { name: { contains: search } } }
       ];
     }
 
@@ -57,18 +57,19 @@ export async function GET(request: NextRequest) {
       where.method = method.toUpperCase();
     }
 
-    // Fetch payments with related data
+    // Fetch all payments using unified Payment model
     const [payments, total] = await Promise.all([
-      prisma.subscriptionPayment.findMany({
+      prisma.payment.findMany({
         where,
         include: {
+          merchant: {
+            select: {
+              name: true,
+              publicId: true
+            }
+          },
           subscription: {
             include: {
-              merchant: {
-                select: {
-                  name: true
-                }
-              },
               plan: {
                 select: {
                   name: true
@@ -81,24 +82,23 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset
       }),
-      prisma.subscriptionPayment.count({ where })
+      prisma.payment.count({ where })
     ]);
 
     // Transform data for frontend
     const transformedPayments = payments.map(payment => {
       return {
         id: payment.publicId,
-        merchantId: payment.subscription.merchant.publicId,
-        merchantName: payment.subscription.merchant.name,
-        planName: payment.subscription.plan.name,
+        merchantId: payment.merchant?.publicId || payment.subscription?.merchant?.publicId || 0,
+        merchantName: payment.merchant?.name || payment.subscription?.merchant?.name || 'Unknown Merchant',
+        planName: payment.subscription?.plan?.name || 'Manual Payment',
         amount: payment.amount,
         currency: payment.currency || 'USD',
         status: payment.status.toLowerCase(),
         paymentMethod: payment.method.toLowerCase(),
-        billingCycle: payment.subscription.billingCycle?.toLowerCase() || 'monthly',
-        invoiceNumber: payment.invoiceNumber || `INV-${payment.publicId}`,
-        description: payment.description || `${payment.subscription.plan.name} Plan Payment`,
-        transactionId: payment.transactionId || `txn_${payment.publicId}`,
+        invoiceNumber: payment.invoiceNumber || payment.reference || `PAY-${payment.publicId}`,
+        description: payment.description || payment.notes || 'Payment',
+        transactionId: payment.transactionId || payment.reference || `txn_${payment.publicId}`,
         createdAt: payment.createdAt.toISOString(),
         processedAt: payment.processedAt?.toISOString(),
         failureReason: payment.failureReason

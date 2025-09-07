@@ -61,7 +61,6 @@ interface ProductFormData {
   deposit: number;
   totalStock: number;
   images: string[];
-  isActive: boolean;
   outletStock: Array<{
     outletId: number;
     stock: number;
@@ -110,7 +109,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     deposit: 0,
     totalStock: 0,
     images: [],
-    isActive: true,
     outletStock: [],
     sku: '',
     ...initialData
@@ -165,7 +163,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         deposit: 0,
         totalStock: 0,
         images: [],
-        isActive: true,
         outletStock: [],
         sku: '',
         ...initialData

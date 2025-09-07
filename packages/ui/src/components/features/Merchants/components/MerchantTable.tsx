@@ -7,7 +7,9 @@ import {
 } from '../../../ui';
 import { 
   Eye, 
-  Edit
+  Edit,
+  CreditCard,
+  MoreVertical
 } from 'lucide-react';
 
 interface Merchant {
@@ -201,6 +203,15 @@ export function MerchantTable({
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onMerchantAction('change-plan', merchant.id)}
+                    className="h-9 px-4"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Change Plan
                   </Button>
                 </div>
               </div>

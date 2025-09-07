@@ -24,6 +24,7 @@
   "dependencies": {
     "zod": "^3.22.0",
     "date-fns": "^2.30.0",
+    "stripe": "^14.0.0",
     "@rentalshop/constants": "file:../constants"
   }
 } 

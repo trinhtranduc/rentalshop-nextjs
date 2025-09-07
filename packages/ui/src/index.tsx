@@ -24,6 +24,7 @@ export * from './components/features/Categories';
 export * from './components/features/Plans';
 export * from './components/features/BillingCycles';
 export * from './components/features/Payments';
+export * from './components/features/Subscriptions';
 export * from './components/features/Admin';
 
 // System Admin Features

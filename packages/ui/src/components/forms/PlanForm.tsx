@@ -16,7 +16,8 @@ import {
   Textarea, 
   Badge,
   Switch,
-  Label
+  Label,
+  LimitInput
 } from '../ui';
 import { 
   Package, 
@@ -46,7 +47,7 @@ import {
 interface PlanFormData {
   name: string;
   description: string;
-  price: number;
+  basePrice: number;  // ✅ Updated: Use basePrice instead of price
   currency: string;
   billingCycle: BillingCycle;
   billingCycleMonths: number;
@@ -58,6 +59,7 @@ interface PlanFormData {
   features: string[];
   isActive: boolean;
   isPopular: boolean;
+  mobileOnly: boolean;  // ✅ NEW: Mobile-only plan flag
   sortOrder: number;
 }
 
@@ -89,7 +91,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   const [formData, setFormData] = useState<PlanFormData>({
     name: '',
     description: '',
-    price: 0,
+    basePrice: 0,  // ✅ Updated: Use basePrice instead of price
     currency: 'USD',
     billingCycle: 'monthly',
     billingCycleMonths: 1,
@@ -101,6 +103,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     features: [],
     isActive: true,
     isPopular: false,
+    mobileOnly: false,  // ✅ NEW: Default to false
     sortOrder: 0,
     ...initialData
   });
@@ -129,10 +132,6 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     }
   };
 
-  const handleNumberInputChange = (field: keyof PlanFormData, value: string) => {
-    const numValue = value === '' ? 0 : parseInt(value);
-    handleInputChange(field, numValue);
-  };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof PlanFormData, string>> = {};
@@ -145,8 +144,8 @@ export const PlanForm: React.FC<PlanFormProps> = ({
       newErrors.description = 'Plan description is required';
     }
 
-    if (formData.price < 0) {
-      newErrors.price = 'Price must be non-negative';
+    if (formData.basePrice < 0) {
+      newErrors.basePrice = 'Price must be non-negative';
     }
 
     if (formData.trialDays < 0) {
@@ -259,7 +258,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                   id="sortOrder"
                   type="number"
                   value={formData.sortOrder}
-                  onChange={(e) => handleNumberInputChange('sortOrder', e.target.value)}
+                  onChange={(e) => handleInputChange('sortOrder', parseInt(e.target.value) || 0)}
                   placeholder="0"
                   min="0"
                 />
@@ -299,6 +298,17 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                   Popular Plan
                 </Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="mobileOnly"
+                  checked={formData.mobileOnly}
+                  onCheckedChange={(checked) => handleInputChange('mobileOnly', checked)}
+                />
+                <Label htmlFor="mobileOnly" className="flex items-center gap-1">
+                  <Settings className="w-4 h-4" />
+                  Mobile Only
+                </Label>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -314,18 +324,18 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Price *</Label>
+                <Label htmlFor="basePrice">Base Price *</Label>
                 <Input
-                  id="price"
+                  id="basePrice"
                   type="number"
                   step="0.01"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                  value={formData.basePrice}
+                  onChange={(e) => handleInputChange('basePrice', parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
                   min="0"
-                  className={errors.price ? 'border-red-500' : ''}
+                  className={errors.basePrice ? 'border-red-500' : ''}
                 />
-                {errors.price && <p className="text-sm text-red-500">{errors.price}</p>}
+                {errors.basePrice && <p className="text-sm text-red-500">{errors.basePrice}</p>}
               </div>
 
               <div className="space-y-2">
@@ -368,7 +378,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                 id="trialDays"
                 type="number"
                 value={formData.trialDays}
-                onChange={(e) => handleNumberInputChange('trialDays', e.target.value)}
+                onChange={(e) => handleInputChange('trialDays', parseInt(e.target.value) || 0)}
                 placeholder="0"
                 min="0"
                 className={errors.trialDays ? 'border-red-500' : ''}
@@ -380,7 +390,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             <div className="bg-bg-secondary p-4 rounded-lg">
               <div className="text-sm text-text-secondary mb-2">Price Preview:</div>
               <div className="text-2xl font-bold text-text-primary">
-                {formatCurrency(formData.price, formData.currency)}
+                {formatCurrency(formData.basePrice, formData.currency)}
                 <span className="text-lg text-text-secondary font-normal ml-2">
                   /{formatBillingCycle(formData.billingCycle).toLowerCase()}
                 </span>
@@ -396,7 +406,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
               {/* Show total price for longer cycles */}
               {formData.billingCycleMonths > 1 && (
                 <div className="text-sm text-text-secondary mt-1">
-                  Total: {formatCurrency(calculateDiscountedPrice(formData.price, formData.billingCycle), formData.currency)} for {formData.billingCycleMonths} months
+                  Total: {formatCurrency(calculateDiscountedPrice(formData.basePrice, formData.billingCycle), formData.currency)} for {formData.billingCycleMonths} months
                 </div>
               )}
               
@@ -419,65 +429,49 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="maxOutlets">Max Outlets</Label>
-                <Input
-                  id="maxOutlets"
-                  type="number"
-                  value={formData.maxOutlets}
-                  onChange={(e) => handleNumberInputChange('maxOutlets', e.target.value)}
-                  placeholder="1"
-                  min="-1"
-                  className={errors.maxOutlets ? 'border-red-500' : ''}
-                />
-                {errors.maxOutlets && <p className="text-sm text-red-500">{errors.maxOutlets}</p>}
-                <p className="text-xs text-text-tertiary">Use -1 for unlimited</p>
-              </div>
+              <LimitInput
+                id="maxOutlets"
+                label="Max Outlets"
+                value={formData.maxOutlets}
+                onChange={(value) => handleInputChange('maxOutlets', value)}
+                placeholder="-1 (unlimited)"
+                helpText="Use -1 for unlimited"
+                error={!!errors.maxOutlets}
+              />
+              {errors.maxOutlets && <p className="text-sm text-red-500">{errors.maxOutlets}</p>}
 
-              <div className="space-y-2">
-                <Label htmlFor="maxUsers">Max Users</Label>
-                <Input
-                  id="maxUsers"
-                  type="number"
-                  value={formData.maxUsers}
-                  onChange={(e) => handleNumberInputChange('maxUsers', e.target.value)}
-                  placeholder="1"
-                  min="-1"
-                  className={errors.maxUsers ? 'border-red-500' : ''}
-                />
-                {errors.maxUsers && <p className="text-sm text-red-500">{errors.maxUsers}</p>}
-                <p className="text-xs text-text-tertiary">Use -1 for unlimited</p>
-              </div>
+              <LimitInput
+                id="maxUsers"
+                label="Max Users"
+                value={formData.maxUsers}
+                onChange={(value) => handleInputChange('maxUsers', value)}
+                placeholder="-1 (unlimited)"
+                helpText="Use -1 for unlimited"
+                error={!!errors.maxUsers}
+              />
+              {errors.maxUsers && <p className="text-sm text-red-500">{errors.maxUsers}</p>}
 
-              <div className="space-y-2">
-                <Label htmlFor="maxProducts">Max Products</Label>
-                <Input
-                  id="maxProducts"
-                  type="number"
-                  value={formData.maxProducts}
-                  onChange={(e) => handleNumberInputChange('maxProducts', e.target.value)}
-                  placeholder="10"
-                  min="-1"
-                  className={errors.maxProducts ? 'border-red-500' : ''}
-                />
-                {errors.maxProducts && <p className="text-sm text-red-500">{errors.maxProducts}</p>}
-                <p className="text-xs text-text-tertiary">Use -1 for unlimited</p>
-              </div>
+              <LimitInput
+                id="maxProducts"
+                label="Max Products"
+                value={formData.maxProducts}
+                onChange={(value) => handleInputChange('maxProducts', value)}
+                placeholder="-1 (unlimited)"
+                helpText="Use -1 for unlimited"
+                error={!!errors.maxProducts}
+              />
+              {errors.maxProducts && <p className="text-sm text-red-500">{errors.maxProducts}</p>}
 
-              <div className="space-y-2">
-                <Label htmlFor="maxCustomers">Max Customers</Label>
-                <Input
-                  id="maxCustomers"
-                  type="number"
-                  value={formData.maxCustomers}
-                  onChange={(e) => handleNumberInputChange('maxCustomers', e.target.value)}
-                  placeholder="50"
-                  min="-1"
-                  className={errors.maxCustomers ? 'border-red-500' : ''}
-                />
-                {errors.maxCustomers && <p className="text-sm text-red-500">{errors.maxCustomers}</p>}
-                <p className="text-xs text-text-tertiary">Use -1 for unlimited</p>
-              </div>
+              <LimitInput
+                id="maxCustomers"
+                label="Max Customers"
+                value={formData.maxCustomers}
+                onChange={(value) => handleInputChange('maxCustomers', value)}
+                placeholder="-1 (unlimited)"
+                helpText="Use -1 for unlimited"
+                error={!!errors.maxCustomers}
+              />
+              {errors.maxCustomers && <p className="text-sm text-red-500">{errors.maxCustomers}</p>}
             </div>
 
             {/* Limits Preview */}

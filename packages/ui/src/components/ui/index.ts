@@ -1,6 +1,7 @@
 // ============================================================================
 // BASE UI COMPONENTS (shadcn)
 // ============================================================================
+export { Alert, AlertTitle, AlertDescription } from './alert';
 export { Badge, badgeVariants } from './badge';
 export { StatusBadge } from './status-badge';
 export { Button, buttonVariants } from './button';
@@ -38,6 +39,7 @@ export { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 export { Textarea } from './textarea';
 export { NumericInput, PriceInput } from './price-input';
 export { NumericInputDemo } from './numeric-input-demo';
+export { LimitInput } from './limit-input';
 export { DateRangePicker } from './date-range-picker';
 export type { DateRange } from './date-range-picker';
 export { Pagination } from './pagination';

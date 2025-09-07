@@ -1,0 +1,148 @@
+// ============================================================================
+// SUBSCRIPTION API ENDPOINTS
+// ============================================================================
+
+import { NextRequest, NextResponse } from 'next/server';
+import { 
+  searchSubscriptions, 
+  createSubscription,
+  getExpiredSubscriptions,
+  markSubscriptionAsExpired,
+  extendSubscription
+} from '@rentalshop/database';
+import { verifyTokenSimple } from '@rentalshop/auth';
+import { subscriptionCreateSchema } from '@rentalshop/utils';
+
+// ============================================================================
+// GET /api/subscriptions - Search subscriptions
+// ============================================================================
+export async function GET(request: NextRequest) {
+  try {
+    // Verify authentication
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Parse query parameters
+    const { searchParams } = new URL(request.url);
+    const filters = {
+      merchantId: searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : undefined,
+      planId: searchParams.get('planId') ? parseInt(searchParams.get('planId')!) : undefined,
+      status: searchParams.get('status') || undefined,
+      startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
+      endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20,
+      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0
+    };
+
+    // Role-based filtering
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      // Outlet users can only see their merchant's subscriptions
+      if (user.merchantId) {
+        filters.merchantId = user.merchantId;
+      } else {
+        return NextResponse.json(
+          { success: false, message: 'No merchant access' },
+          { status: 403 }
+        );
+      }
+    } else if (user.role === 'MERCHANT') {
+      // Merchant users can only see their own subscriptions
+      if (user.merchantId) {
+        filters.merchantId = user.merchantId;
+      } else {
+        return NextResponse.json(
+          { success: false, message: 'No merchant access' },
+          { status: 403 }
+        );
+      }
+    }
+    // ADMIN users can see all subscriptions (no filtering)
+
+    const result = await searchSubscriptions(filters);
+
+    return NextResponse.json({
+      success: true,
+      data: result.subscriptions,
+      pagination: {
+        total: result.total,
+        hasMore: result.hasMore,
+        limit: filters.limit,
+        offset: filters.offset
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching subscriptions:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch subscriptions' },
+      { status: 500 }
+    );
+  }
+}
+
+// ============================================================================
+// POST /api/subscriptions - Create subscription
+// ============================================================================
+export async function POST(request: NextRequest) {
+  try {
+    // Verify authentication
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Check permissions - only ADMIN and MERCHANT can create subscriptions
+    if (!['ADMIN', 'MERCHANT'].includes(user.role)) {
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const validatedData = subscriptionCreateSchema.parse(body);
+
+    // Role-based restrictions
+    if (user.role === 'MERCHANT' && user.merchantId) {
+      // Merchants can only create subscriptions for themselves
+      validatedData.merchantId = user.merchantId;
+    }
+
+    const subscription = await createSubscription(validatedData);
+
+    return NextResponse.json({
+      success: true,
+      data: subscription,
+      message: 'Subscription created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating subscription:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to create subscription' },
+      { status: 500 }
+    );
+  }
+}
