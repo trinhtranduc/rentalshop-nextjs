@@ -11,6 +11,13 @@ import {
   Button
 } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
+import { 
+  merchantsApi,
+  extendSubscription, 
+  cancelSubscription, 
+  suspendSubscription, 
+  reactivateSubscription 
+} from '@rentalshop/utils';
 import type { Merchant } from '@rentalshop/types';
 
 export default function MerchantDetailPage() {
@@ -19,6 +26,7 @@ export default function MerchantDetailPage() {
   const merchantId = params.id as string;
   
   const [merchant, setMerchant] = useState<any>(null);
+  const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,36 +38,25 @@ export default function MerchantDetailPage() {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setMerchant(data.data);
-        } else {
-          setError(data.message || 'Failed to fetch merchant details');
-        }
+      // Use centralized API function
+      const response = await merchantsApi.getMerchantDetail(Number(merchantId));
+      
+      if (response.success && response.data) {
+        // The API returns data in the format: { merchant: {...}, stats: {...}, ... }
+        setMerchant(response.data);
+        
+        // Add mock plans data for the Change Plan dialog
+        setPlans([
+          { id: 1, name: 'Starter', basePrice: 29.99, currency: 'USD', description: 'Basic plan for small businesses' },
+          { id: 2, name: 'Professional', basePrice: 59.99, currency: 'USD', description: 'Advanced plan for growing businesses' },
+          { id: 3, name: 'Enterprise', basePrice: 99.99, currency: 'USD', description: 'Full-featured plan for large businesses' }
+        ]);
       } else {
-        console.error('Failed to fetch merchant details');
-        // Fallback to mock data for now
+        setError(response.message || 'Failed to fetch merchant details');
       }
     } catch (error) {
       console.error('Error fetching merchant details:', error);
       setError('Failed to fetch merchant details');
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }
@@ -93,6 +90,132 @@ export default function MerchantDetailPage() {
   const handleOrderAction = (action: string, orderId: number) => {
     console.log('Order action:', action, orderId);
     // Handle order actions
+  };
+
+  // Subscription action handlers
+  const handlePlanChange = async (planData: {
+    planId: number;
+    planVariantId?: number;
+    reason?: string;
+    effectiveDate?: string;
+    notifyMerchant?: boolean;
+  }) => {
+    try {
+      const response = await merchantsApi.updateMerchantPlan(Number(merchantId), {
+        planId: planData.planId,
+        reason: planData.reason,
+        effectiveDate: planData.effectiveDate,
+        notifyMerchant: planData.notifyMerchant
+      });
+
+      if (response.success) {
+        console.log('Plan changed successfully');
+        // Refresh merchant data
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to change plan:', response.message);
+      }
+    } catch (error) {
+      console.error('Error changing plan:', error);
+    }
+  };
+
+  const handlePlanDisable = async (subscriptionId: number, reason: string) => {
+    try {
+      const response = await merchantsApi.disableMerchantPlan(Number(merchantId), subscriptionId, reason);
+
+      if (response.success) {
+        console.log('Plan disabled successfully');
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to disable plan:', response.message);
+      }
+    } catch (error) {
+      console.error('Error disabling plan:', error);
+    }
+  };
+
+  const handlePlanDelete = async (subscriptionId: number, reason: string) => {
+    try {
+      const response = await merchantsApi.deleteMerchantPlan(Number(merchantId), subscriptionId, reason);
+
+      if (response.success) {
+        console.log('Plan deleted successfully');
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to delete plan:', response.message);
+      }
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+    }
+  };
+
+  const handleExtend = async (subscription: any) => {
+    try {
+      const response = await extendSubscription(subscription.id, {
+        newEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        amount: subscription.amount,
+        method: 'MANUAL_EXTENSION',
+        description: 'Subscription extended by admin'
+      });
+
+      if (response.success) {
+        console.log('Subscription extended successfully');
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to extend subscription:', response.message);
+      }
+    } catch (error) {
+      console.error('Error extending subscription:', error);
+    }
+  };
+
+  const handleCancel = async (subscription: any, reason: string, cancelType: 'immediate' | 'end_of_period') => {
+    try {
+      // For now, we'll use the simple cancelSubscription function
+      // TODO: Update the API to support cancelType parameter
+      const response = await cancelSubscription(subscription.id, reason);
+
+      if (response.success) {
+        console.log('Subscription cancelled successfully');
+        console.log('Cancel type:', cancelType); // Log the cancel type for now
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to cancel subscription:', response.message);
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+    }
+  };
+
+  const handleSuspend = async (subscription: any, reason: string) => {
+    try {
+      const response = await suspendSubscription(subscription.id, reason);
+
+      if (response.success) {
+        console.log('Subscription suspended successfully');
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to suspend subscription:', response.message);
+      }
+    } catch (error) {
+      console.error('Error suspending subscription:', error);
+    }
+  };
+
+  const handleReactivate = async (subscription: any) => {
+    try {
+      const response = await reactivateSubscription(subscription.id);
+
+      if (response.success) {
+        console.log('Subscription reactivated successfully');
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to reactivate subscription:', response.message);
+      }
+    } catch (error) {
+      console.error('Error reactivating subscription:', error);
+    }
   };
 
   if (loading) {
@@ -137,7 +260,19 @@ export default function MerchantDetailPage() {
   }
 
   // Prepare data for MerchantDetail component
-  const merchantData = merchant;
+  const merchantData = {
+    merchant: merchant?.merchant || merchant || {},
+    stats: merchant?.stats || {
+      totalOutlets: merchant?.outletsCount || 0,
+      totalUsers: merchant?.usersCount || 0,
+      totalProducts: merchant?.productsCount || 0,
+      totalOrders: merchant?.ordersCount || 0,
+      totalRevenue: merchant?.totalRevenue || 0,
+      activeOrders: merchant?.activeOrders || 0,
+      completedOrders: merchant?.completedOrders || 0,
+      cancelledOrders: merchant?.cancelledOrders || 0
+    }
+  };
 
   return (
     <PageWrapper>
@@ -152,7 +287,7 @@ export default function MerchantDetailPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Merchants
             </Button>
-            <PageTitle subtitle={`Manage merchant: ${merchant.merchant.name}`}>
+            <PageTitle subtitle={`Manage merchant: ${merchant?.merchant?.name || merchant?.name || 'Unknown'}`}>
               Merchant Details
             </PageTitle>
           </div>
@@ -170,11 +305,17 @@ export default function MerchantDetailPage() {
       <PageContent>
         <MerchantDetail
           data={merchantData}
+          plans={plans}
           onMerchantAction={handleMerchantAction}
           onOutletAction={handleOutletAction}
           onUserAction={handleUserAction}
           onProductAction={handleProductAction}
           onOrderAction={handleOrderAction}
+          onPlanChange={handlePlanChange}
+          onExtend={handleExtend}
+          onCancel={handleCancel}
+          onSuspend={handleSuspend}
+          onReactivate={handleReactivate}
         />
       </PageContent>
     </PageWrapper>

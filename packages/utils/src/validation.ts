@@ -11,7 +11,13 @@ export const registerSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   phone: z.string().optional(),
-  role: z.enum(['CLIENT', 'SHOP_OWNER', 'ADMIN']).optional(),
+  role: z.enum(['CLIENT', 'SHOP_OWNER', 'ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']).optional(),
+  // For merchant registration
+  businessName: z.string().optional(),
+  outletName: z.string().optional(),
+  // For outlet staff registration
+  merchantCode: z.string().optional(),
+  outletCode: z.string().optional(),
 });
 
 // Product validation schemas (aligned with API routes and DB types)
@@ -252,6 +258,7 @@ export const outletsQuerySchema = z.object({
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;
     if (v === undefined) return undefined;
+    if (v === 'all') return 'all';
     return v === 'true';
   }).optional(),
   search: z.string().optional(),
@@ -284,7 +291,7 @@ export type OutletUpdateInput = z.infer<typeof outletUpdateSchema>;
 export const planCreateSchema = z.object({
   name: z.string().min(1, 'Plan name is required'),
   description: z.string().min(1, 'Plan description is required'),
-  price: z.number().nonnegative('Price must be non-negative'),
+  basePrice: z.number().nonnegative('Base price must be non-negative'),  // ✅ Updated to basePrice
   currency: z.string().default('USD'),
   trialDays: z.number().int().min(0, 'Trial days must be non-negative'),
   maxOutlets: z.number().int().min(-1, 'Max outlets must be -1 (unlimited) or positive'),
@@ -294,8 +301,8 @@ export const planCreateSchema = z.object({
   features: z.array(z.string()).default([]),
   isActive: z.boolean().default(true),
   isPopular: z.boolean().default(false),
+  mobileOnly: z.boolean().default(false),  // ✅ NEW: Mobile-only plan flag
   sortOrder: z.number().int().default(0),
-  billingCycle: z.string().default('monthly'),
 });
 
 export const planUpdateSchema = planCreateSchema.partial();
@@ -306,10 +313,48 @@ export const plansQuerySchema = z.object({
   isPopular: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
-  sortBy: z.enum(['name', 'price', 'createdAt', 'sortOrder']).default('sortOrder'),
+  sortBy: z.enum(['name', 'price', 'basePrice', 'createdAt', 'sortOrder']).default('sortOrder'),  // ✅ Updated to support basePrice
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
 export type PlanCreateInput = z.infer<typeof planCreateSchema>;
 export type PlanUpdateInput = z.infer<typeof planUpdateSchema>;
 export type PlansQuery = z.infer<typeof plansQuerySchema>;
+
+// ============================================================================
+// Plan Variant validation schemas
+// ============================================================================
+
+export const planVariantCreateSchema = z.object({
+  planId: z.string().min(1, 'Plan ID is required'),
+  name: z.string().min(1, 'Variant name is required'),
+  duration: z.number().int().positive('Duration must be positive'),
+  price: z.number().nonnegative('Price must be non-negative').optional(),
+  basePrice: z.number().nonnegative('Base price must be non-negative').optional(),
+  discount: z.number().min(0).max(100, 'Discount must be between 0 and 100').default(0),
+  isActive: z.boolean().default(true),
+  isPopular: z.boolean().default(false),
+  sortOrder: z.number().int().default(0),
+});
+
+export const planVariantUpdateSchema = planVariantCreateSchema.partial().extend({
+  planId: z.string().min(1, 'Plan ID is required').optional(), // Optional for updates
+});
+
+export const planVariantsQuerySchema = z.object({
+  planId: z.string().optional(),
+  search: z.string().optional(),
+  isActive: z.coerce.boolean().optional(),
+  isPopular: z.coerce.boolean().optional(),
+  duration: z.coerce.number().int().positive().optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
+  maxPrice: z.coerce.number().nonnegative().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  sortBy: z.enum(['name', 'price', 'duration', 'discount', 'createdAt', 'sortOrder']).default('sortOrder'),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
+
+export type PlanVariantCreateInput = z.infer<typeof planVariantCreateSchema>;
+export type PlanVariantUpdateInput = z.infer<typeof planVariantUpdateSchema>;
+export type PlanVariantsQuery = z.infer<typeof planVariantsQuerySchema>;

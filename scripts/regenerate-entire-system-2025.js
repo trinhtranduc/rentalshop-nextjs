@@ -32,6 +32,7 @@ const SYSTEM_CONFIG = {
   TOTAL_USERS: 8,
   BILLING_CYCLES: 4,
   PLANS: 3,
+  BILLING_PERIODS: 3, // Monthly, Quarterly, Yearly
   SUBSCRIPTIONS: 2
 };
 
@@ -82,8 +83,10 @@ async function resetDatabase() {
   
   try {
     // Delete in correct order due to foreign key constraints
-    await prisma.subscriptionPayment.deleteMany({});
-    console.log('✅ Deleted all subscription payments');
+    // Note: subscriptionPayment model was removed, using unified Payment model
+    
+    await prisma.payment.deleteMany({});
+    console.log('✅ Deleted all payments');
     
     await prisma.subscription.deleteMany({});
     console.log('✅ Deleted all subscriptions');
@@ -91,11 +94,14 @@ async function resetDatabase() {
     await prisma.plan.deleteMany({});
     console.log('✅ Deleted all plans');
     
-    await prisma.billingCycle.deleteMany({});
-    console.log('✅ Deleted all billing cycles');
-    
-    await prisma.payment.deleteMany({});
-    console.log('✅ Deleted all payments');
+    // Reset merchant plans and subscription status
+    await prisma.merchant.updateMany({
+      data: {
+        planId: null,
+        subscriptionStatus: 'trial'
+      }
+    });
+    console.log('✅ Reset merchant plans and subscription status');
     
     await prisma.orderItem.deleteMany({});
     console.log('✅ Deleted all order items');
@@ -137,13 +143,66 @@ async function createMerchants() {
   
   const merchants = [];
   
+  // Sample business data for realistic merchant information
+  const businessData = [
+    {
+      name: 'Rental Shop Demo',
+      businessType: 'Equipment Rental',
+      address: '123 Main Street',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'United States',
+      phone: '+1-555-0100',
+      website: 'https://rentalshop-demo.com',
+      taxId: '12-3456789',
+      description: 'Professional equipment rental services for construction and events'
+    },
+    {
+      name: 'Outdoor Equipment Co.',
+      businessType: 'Outdoor Gear Rental',
+      address: '456 Mountain View Drive',
+      city: 'Denver',
+      state: 'CO',
+      zipCode: '80202',
+      country: 'United States',
+      phone: '+1-555-0200',
+      website: 'https://outdoor-equipment-co.com',
+      taxId: '98-7654321',
+      description: 'Premium outdoor gear and adventure equipment rentals'
+    }
+  ];
+  
   for (let i = 1; i <= SYSTEM_CONFIG.MERCHANTS; i++) {
+    const business = businessData[i - 1] || {
+      name: `Merchant ${i}`,
+      businessType: 'General Rental',
+      address: `${i * 100} Business Ave`,
+      city: 'City',
+      state: 'ST',
+      zipCode: `${10000 + i}`,
+      country: 'United States',
+      phone: `+1-555-${String(i).padStart(4, '0')}`,
+      website: `https://merchant${i}.com`,
+      taxId: `${i}-${String(Math.random() * 1000000).padStart(7, '0')}`,
+      description: `Description for Merchant ${i}`
+    };
+    
     const merchant = await prisma.merchant.create({
       data: {
         publicId: i,
-        name: `Merchant ${i}`,
+        name: business.name,
         email: `merchant${i}@example.com`,
-        description: `Description for Merchant ${i}`,
+        phone: business.phone,
+        address: business.address,
+        city: business.city,
+        state: business.state,
+        zipCode: business.zipCode,
+        country: business.country,
+        businessType: business.businessType,
+        taxId: business.taxId,
+        website: business.website,
+        description: business.description,
         isActive: true
       }
     });
@@ -502,6 +561,15 @@ async function createOrders(outlets, customers, products, outletUsers) {
       
       // Generate realistic dates based on status
       const now = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Start of today
+      
+      // Create some orders with today's date (first 5 orders per outlet)
+      const isTodayOrder = i < 5;
+      const orderCreatedAt = isTodayOrder ? 
+        new Date(today.getTime() + Math.random() * 24 * 60 * 60 * 1000) : // Random time today
+        randomDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), now); // Random date in last 30 days
+      
       let pickupPlanAt = null;
       let returnPlanAt = null;
       let pickedUpAt = null;
@@ -564,7 +632,8 @@ async function createOrders(outlets, customers, products, outletUsers) {
             damageNotes: '',
             outletId: outlet.id,
             customerId: customer.id,
-            createdById: outletUsers.find(u => u.outletId === outlet.id)?.id || outletUsers[0]?.id // Use outlet user as creator
+            createdById: outletUsers.find(u => u.outletId === outlet.id)?.id || outletUsers[0]?.id, // Use outlet user as creator
+            createdAt: orderCreatedAt // Set custom creation date
           }
         });
         
@@ -593,28 +662,13 @@ async function createOrders(outlets, customers, products, outletUsers) {
           });
         }
         
-        // Create payment record
-        if (depositAmount > 0 || status === 'COMPLETED') {
-          const paymentMethods = ['CASH', 'BANK_TRANSFER', 'CREDIT_CARD', 'DIGITAL_WALLET'];
-          const paymentMethod = pickRandom(paymentMethods);
-          
-          await prisma.payment.create({
-            data: {
-              orderId: order.id,
-              amount: status === 'COMPLETED' ? totalAmount : depositAmount,
-              method: paymentMethod,
-              type: status === 'COMPLETED' ? 'FULL_PAYMENT' : 'DEPOSIT',
-              status: status === 'CANCELLED' ? 'REFUNDED' : 'COMPLETED',
-              reference: `PAY-${order.publicId.toString().padStart(6, '0')}`,
-              notes: `${orderType} ${status === 'COMPLETED' ? 'payment' : 'deposit'} for ${orderNumber}`
-            }
-          });
-        }
+        // Payment creation skipped (using unified Payment model)
         
         orders.push(order);
         
         if (i < 5) { // Log first 5 orders for each outlet
-          console.log(`  ✅ Created ${orderType} order: ${orderNumber} - ${status} - $${totalAmount.toFixed(2)}`);
+          const dateInfo = isTodayOrder ? ' (TODAY)' : '';
+          console.log(`  ✅ Created ${orderType} order: ${orderNumber} - ${status} - $${totalAmount.toFixed(2)}${dateInfo}`);
         }
         
       } catch (error) {
@@ -663,9 +717,9 @@ async function createBillingCycles() {
   return billingCycles;
 }
 
-// Step 11: Create subscription plans
-async function createPlans(billingCycles) {
-  console.log('\n📋 Creating subscription plans...');
+// Step 11: Create modern subscription plans
+async function createPlans() {
+  console.log('\n📋 Creating modern subscription plans...');
   
   const plans = [];
   let planId = 1;
@@ -674,78 +728,80 @@ async function createPlans(billingCycles) {
     {
       name: 'Starter',
       description: 'Perfect for small rental businesses just getting started',
-      price: 29.99,
+      basePrice: 29.99,
       trialDays: 14,
       maxOutlets: 1,
       maxUsers: 3,
       maxProducts: 100,
-      maxCustomers: 500,
+      maxCustomers: -1, // Unlimited customers
       features: JSON.stringify([
-        'Basic order management',
+        'Basic inventory management',
         'Customer management',
-        'Product catalog',
+        'Order processing',
         'Basic reporting',
-        'Email support'
+        'Email support',
+        'Mobile app access'
       ]),
       isPopular: false,
-      sortOrder: 1,
-      billingCycleValue: 'monthly'
+      sortOrder: 1
     },
     {
       name: 'Professional',
       description: 'Ideal for growing rental businesses with multiple outlets',
-      price: 79.99,
+      basePrice: 79.99,
       trialDays: 14,
       maxOutlets: 5,
       maxUsers: 15,
       maxProducts: 1000,
-      maxCustomers: 2000,
+      maxCustomers: -1, // Unlimited customers
       features: JSON.stringify([
-        'Advanced order management',
+        'Advanced inventory management',
         'Multi-outlet support',
         'Advanced reporting & analytics',
-        'Inventory management',
+        'Inventory forecasting',
         'Payment processing',
         'Priority support',
-        'API access'
+        'API access',
+        'Team collaboration tools',
+        'Advanced integrations'
       ]),
       isPopular: true,
-      sortOrder: 2,
-      billingCycleValue: 'monthly'
+      sortOrder: 2
     },
     {
       name: 'Enterprise',
-      description: 'For large rental businesses with unlimited needs',
-      price: 199.99,
-      trialDays: 30,
+      description: 'For large rental operations with complex needs',
+      basePrice: 199.99,
+      trialDays: 14,
       maxOutlets: -1, // unlimited
       maxUsers: -1, // unlimited
       maxProducts: -1, // unlimited
       maxCustomers: -1, // unlimited
       features: JSON.stringify([
         'Unlimited everything',
+        'Advanced analytics & reporting',
         'Custom integrations',
-        'Advanced analytics',
+        'Dedicated account manager',
+        '24/7 phone support',
         'White-label options',
-        'Dedicated support',
-        'Custom training',
-        'SLA guarantee'
+        'Advanced security features',
+        'Custom workflows',
+        'Enterprise SSO',
+        'Advanced API access'
       ]),
       isPopular: false,
-      sortOrder: 3,
-      billingCycleValue: 'annual'
+      sortOrder: 3
     }
   ];
   
   for (const plan of planData) {
-    const billingCycle = billingCycles.find(bc => bc.value === plan.billingCycleValue);
-    
     const subscriptionPlan = await prisma.plan.create({
       data: {
         publicId: planId++,
         name: plan.name,
         description: plan.description,
-        price: plan.price,
+        basePrice: plan.basePrice,
+        currency: 'USD',
         trialDays: plan.trialDays,
         maxOutlets: plan.maxOutlets,
         maxUsers: plan.maxUsers,
@@ -754,36 +810,85 @@ async function createPlans(billingCycles) {
         features: plan.features,
         isActive: true,
         isPopular: plan.isPopular,
-        sortOrder: plan.sortOrder,
-        billingCycleId: billingCycle?.id
+        sortOrder: plan.sortOrder
       }
     });
     
-    console.log(`✅ Created plan: ${subscriptionPlan.name} - $${subscriptionPlan.price}/${plan.billingCycleValue}`);
+    console.log(`✅ Created plan: ${subscriptionPlan.name} - Base: $${subscriptionPlan.basePrice}/month`);
     plans.push(subscriptionPlan);
+  }
+  
+  // Display pricing structure
+  console.log('\n💰 Modern Pricing Structure:');
+  for (const plan of plans) {
+    console.log(`\n📦 ${plan.name} ($${plan.basePrice}/month base):`);
+    console.log(`  Monthly:    $${plan.basePrice.toFixed(2)}/month     (0% off)`);
+    console.log(`  Quarterly:  $${(plan.basePrice * 3 * 0.9).toFixed(2)}/quarter   (10% off, Save $${(plan.basePrice * 3 * 0.1).toFixed(2)})`);
+    console.log(`  Yearly:     $${(plan.basePrice * 12 * 0.8).toFixed(2)}/year      (20% off, Save $${(plan.basePrice * 12 * 0.2).toFixed(2)})`);
   }
   
   return plans;
 }
 
-// Step 12: Create subscriptions for merchants
-async function createSubscriptions(merchants, plans) {
-  console.log('\n🔄 Creating merchant subscriptions...');
+// Step 11.5: Modern pricing system (no plan variants needed)
+async function createPlanVariants(plans) {
+  console.log('\n📋 Modern pricing system - no plan variants needed');
+  console.log('✅ Pricing calculated dynamically: Monthly (0%), Quarterly (10%), Yearly (20%)');
+  return []; // No plan variants in modern system
+}
+
+// Step 12: Create modern subscriptions for merchants
+async function createSubscriptions(merchants, plans, planVariants) {
+  console.log('\n🔄 Creating modern merchant subscriptions...');
   
   const subscriptions = [];
   let subscriptionId = 1;
   
+  // Modern pricing configuration
+  const PRICING_CONFIG = {
+    DISCOUNTS: {
+      monthly: 0,      // 0% discount
+      quarterly: 10,   // 10% discount
+      yearly: 20,      // 20% discount
+    }
+  };
+  
+  // Calculate pricing for a given base price and period
+  function calculatePricing(basePrice, period) {
+    const totalMonths = period;
+    const totalBasePrice = basePrice * totalMonths;
+    const discount = PRICING_CONFIG.DISCOUNTS[period === 1 ? 'monthly' : period === 3 ? 'quarterly' : 'yearly'];
+    const discountAmount = (totalBasePrice * discount) / 100;
+    const finalPrice = totalBasePrice - discountAmount;
+    
+    return {
+      basePrice: totalBasePrice,
+      discount,
+      finalPrice,
+      savings: discountAmount,
+      interval: period === 1 ? 'month' : period === 3 ? 'month' : 'year',
+      intervalCount: period === 1 ? 1 : period === 3 ? 3 : 1
+    };
+  }
+  
+  const billingPeriods = [1, 3, 12]; // Monthly, Quarterly, Yearly
+  const statuses = ['trial', 'active', 'past_due', 'cancelled', 'paused'];
+  
   for (let i = 0; i < merchants.length; i++) {
     const merchant = merchants[i];
     const plan = plans[i % plans.length]; // Rotate through plans
+    const period = billingPeriods[i % billingPeriods.length];
+    const status = statuses[i % statuses.length];
     
-    // Calculate subscription dates
-    const startDate = new Date();
-    const trialEndDate = new Date(startDate.getTime() + (plan.trialDays * 24 * 60 * 60 * 1000));
-    const nextBillingDate = new Date(trialEndDate);
+    const pricing = calculatePricing(plan.basePrice, period);
     
-    // Determine subscription status
-    const status = Math.random() > 0.2 ? 'ACTIVE' : 'TRIAL'; // 80% active, 20% trial
+    // Calculate dates
+    const now = new Date();
+    const trialStart = plan.trialDays > 0 ? now : undefined;
+    const trialEnd = plan.trialDays > 0 ? new Date(now.getTime() + (plan.trialDays * 24 * 60 * 60 * 1000)) : undefined;
+    
+    const currentPeriodStart = trialEnd || now;
+    const currentPeriodEnd = new Date(currentPeriodStart.getTime() + (period * 30 * 24 * 60 * 60 * 1000));
     
     const subscription = await prisma.subscription.create({
       data: {
@@ -791,16 +896,20 @@ async function createSubscriptions(merchants, plans) {
         merchantId: merchant.id,
         planId: plan.id,
         status: status,
-        startDate: startDate,
-        endDate: status === 'ACTIVE' ? new Date(startDate.getTime() + (365 * 24 * 60 * 60 * 1000)) : null,
-        trialEndDate: trialEndDate,
-        nextBillingDate: nextBillingDate,
-        amount: plan.price,
+        currentPeriodStart,
+        currentPeriodEnd,
+        trialStart,
+        trialEnd,
+        amount: pricing.finalPrice,
         currency: 'USD',
-        billingCycleId: plan.billingCycleId,
-        autoRenew: true,
-        cancelledAt: null,
-        cancellationReason: null
+        interval: pricing.interval,
+        intervalCount: pricing.intervalCount,
+        period: period,
+        discount: pricing.discount,
+        savings: pricing.savings,
+        cancelAtPeriodEnd: status === 'cancelled',
+        canceledAt: status === 'cancelled' ? now : null,
+        cancelReason: status === 'cancelled' ? 'Sample cancellation' : null
       }
     });
     
@@ -809,119 +918,21 @@ async function createSubscriptions(merchants, plans) {
       where: { id: merchant.id },
       data: {
         planId: plan.id,
-        subscriptionStatus: status.toLowerCase()
+        subscriptionStatus: status
       }
     });
     
-    console.log(`✅ Created ${status.toLowerCase()} subscription for ${merchant.name} - ${plan.name}`);
+    const periodName = period === 1 ? 'Monthly' : period === 3 ? 'Quarterly' : 'Yearly';
+    console.log(`✅ Created ${status} subscription for ${merchant.name} - ${plan.name} (${periodName}, $${pricing.finalPrice.toFixed(2)}, ${pricing.discount}% off)`);
     subscriptions.push(subscription);
   }
   
   return subscriptions;
 }
 
-// Step 13: Create additional payments for orders
-async function createAdditionalPayments(orders) {
-  console.log('\n💳 Creating additional payments...');
-  
-  const payments = [];
-  let paymentId = 1;
-  
-  for (const order of orders) {
-    // Create additional payments for some orders (late fees, damage fees, refunds)
-    const shouldCreateAdditionalPayment = Math.random() > 0.7; // 30% chance
-    
-    if (shouldCreateAdditionalPayment) {
-      const paymentTypes = ['LATE_FEE', 'DAMAGE_FEE', 'REFUND'];
-      const paymentType = pickRandom(paymentTypes);
-      const paymentMethod = pickRandom(PAYMENT_METHODS);
-      const paymentStatus = pickRandom(PAYMENT_STATUSES);
-      
-      let amount = 0;
-      let description = '';
-      
-      switch (paymentType) {
-        case 'LATE_FEE':
-          amount = Math.floor(Math.random() * 50) + 10; // $10-$60
-          description = `Late fee for order ${order.orderNumber}`;
-          break;
-        case 'DAMAGE_FEE':
-          amount = Math.floor(Math.random() * 200) + 50; // $50-$250
-          description = `Damage fee for order ${order.orderNumber}`;
-          break;
-        case 'REFUND':
-          amount = Math.floor(Math.random() * order.totalAmount * 0.5) + 10; // Partial refund
-          description = `Refund for order ${order.orderNumber}`;
-          break;
-      }
-      
-      const payment = await prisma.payment.create({
-        data: {
-          orderId: order.id,
-          amount: amount,
-          method: paymentMethod,
-          type: paymentType,
-          status: paymentStatus,
-          reference: `PAY-${paymentId.toString().padStart(6, '0')}`,
-          notes: description
-        }
-      });
-      
-      payments.push(payment);
-      paymentId++;
-      
-      if (payments.length <= 10) { // Log first 10 additional payments
-        console.log(`  💳 Created ${paymentType} payment: $${amount} - ${paymentStatus}`);
-      }
-    }
-  }
-  
-  console.log(`✅ Created ${payments.length} additional payments`);
-  return payments;
-}
+// Step 13: Create additional payments for orders (removed - using unified Payment model)
 
-// Step 14: Create subscription payments
-async function createSubscriptionPayments(subscriptions) {
-  console.log('\n🔄 Creating subscription payments...');
-  
-  const subscriptionPayments = [];
-  let paymentId = 1;
-  
-  for (const subscription of subscriptions) {
-    // Create 1-3 payments per subscription
-    const numPayments = Math.floor(Math.random() * 3) + 1;
-    
-    for (let i = 0; i < numPayments; i++) {
-      const paymentMethod = pickRandom(PAYMENT_METHODS);
-      const paymentStatus = Math.random() > 0.1 ? 'COMPLETED' : 'FAILED'; // 90% success rate
-      
-      const payment = await prisma.subscriptionPayment.create({
-        data: {
-          publicId: paymentId++,
-          subscriptionId: subscription.id,
-          amount: subscription.amount,
-          currency: subscription.currency,
-          method: paymentMethod,
-          status: paymentStatus,
-          transactionId: `TXN-${paymentId.toString().padStart(8, '0')}`,
-          invoiceNumber: `INV-${subscription.publicId}-${i + 1}`,
-          description: `Subscription payment for ${subscription.plan?.name || 'Plan'}`,
-          failureReason: paymentStatus === 'FAILED' ? 'Insufficient funds' : null,
-          processedAt: paymentStatus === 'COMPLETED' ? new Date() : null
-        }
-      });
-      
-      subscriptionPayments.push(payment);
-      
-      if (subscriptionPayments.length <= 10) { // Log first 10 subscription payments
-        console.log(`  💳 Created subscription payment: $${subscription.amount} - ${paymentStatus}`);
-      }
-    }
-  }
-  
-  console.log(`✅ Created ${subscriptionPayments.length} subscription payments`);
-  return subscriptionPayments;
-}
+// Step 14: Create subscription payments (removed - using unified Payment model)
 
 // Main function
 async function main() {
@@ -935,70 +946,86 @@ async function main() {
     console.log(`  • ${SYSTEM_CONFIG.PRODUCTS_PER_MERCHANT} products per merchant (${SYSTEM_CONFIG.TOTAL_PRODUCTS} total)`);
     console.log(`  • ${SYSTEM_CONFIG.ORDERS_PER_OUTLET} orders per outlet (${SYSTEM_CONFIG.TOTAL_ORDERS} total)`);
     console.log(`  • ${SYSTEM_CONFIG.BILLING_CYCLES} billing cycles`);
-    console.log(`  • ${SYSTEM_CONFIG.PLANS} subscription plans`);
+    console.log(`  • ${SYSTEM_CONFIG.PLANS} modern subscription plans`);
+    console.log(`  • ${SYSTEM_CONFIG.BILLING_PERIODS} billing periods (Monthly, Quarterly, Yearly)`);
     console.log(`  • ${SYSTEM_CONFIG.SUBSCRIPTIONS} merchant subscriptions`);
     console.log('');
     
     // Step 1: Reset database
     await resetDatabase();
     
-    // Step 2: Create merchants
-    const merchants = await createMerchants();
+    // Step 2: Create subscription plans FIRST
+    console.log('📋 Creating subscription plans...');
+    const plans = await createPlans();
     
-    // Step 3: Create merchant accounts
-    const merchantUsers = await createMerchantAccounts(merchants);
+    // Step 3: Create plan variants
+    console.log('📋 Creating plan variants...');
+    const planVariants = await createPlanVariants(plans);
     
-    // Step 3.5: Create super admin user
+    // Step 4: Create super admin user
+    console.log('📋 Creating super admin...');
     const superAdmin = await createSuperAdmin();
     
-    // Step 4: Create outlets
+    // Step 5: Create merchants
+    console.log('📋 Creating merchants...');
+    const merchants = await createMerchants();
+    
+    // Step 6: Create merchant accounts
+    console.log('📋 Creating merchant accounts...');
+    const merchantUsers = await createMerchantAccounts(merchants);
+    
+    // Step 7: Create outlets
+    console.log('📋 Creating outlets...');
     const outlets = await createOutlets(merchants);
     
-    // Step 5: Create outlet users
+    // Step 8: Create outlet users
+    console.log('📋 Creating outlet users...');
     const outletUsers = await createOutletUsers(outlets);
     
-    // Step 6: Create categories
+    // Step 9: Create categories
+    console.log('📋 Creating categories...');
     const categories = await createCategories(merchants);
     
-    // Step 7: Create products
+    // Step 10: Create products
+    console.log('📋 Creating products...');
     const products = await createProducts(categories, outlets);
     
-    // Step 8: Create customers
+    // Step 11: Create customers
+    console.log('📋 Creating customers...');
     const customers = await createCustomers(merchants);
     
-    // Step 9: Create orders
+    // Step 12: Create orders
+    console.log('📋 Creating orders...');
     const orders = await createOrders(outlets, customers, products, outletUsers);
     
-    // Step 10: Create billing cycles
-    const billingCycles = await createBillingCycles();
-    
-    // Step 11: Create subscription plans
-    const plans = await createPlans(billingCycles);
-    
-    // Step 12: Create merchant subscriptions
-    const subscriptions = await createSubscriptions(merchants, plans);
-    
-    // Step 13: Create additional payments for orders
-    const additionalPayments = await createAdditionalPayments(orders);
+    // Step 13: Create merchant subscriptions (with proper plan assignment)
+    console.log('📋 Creating merchant subscriptions...');
+    const subscriptions = await createSubscriptions(merchants, plans, planVariants);
     
     // Step 14: Create subscription payments
+    console.log('📋 Creating subscription payments...');
     const subscriptionPayments = await createSubscriptionPayments(subscriptions);
+    
+    // Step 13: Skip payment creation (using unified Payment model)
+    // const additionalPayments = await createAdditionalPayments(orders);
+    
+    // Step 14: Skip subscription payments (using unified Payment model)
+    // const subscriptionPayments = await createSubscriptionPayments(subscriptions);
     
     console.log('\n🎉 Complete system regeneration completed successfully!');
     console.log('\n📊 Final Summary:');
+    console.log(`  ✅ ${plans.length} modern subscription plans created`);
+    console.log(`  ✅ Modern pricing system (Monthly, Quarterly, Yearly)`);
+    console.log(`  ✅ 1 super admin created`);
     console.log(`  ✅ ${merchants.length} merchants created`);
     console.log(`  ✅ ${merchantUsers.length} merchant accounts created`);
-    console.log(`  ✅ 1 super admin created`);
     console.log(`  ✅ ${outlets.length} outlets created`);
     console.log(`  ✅ ${outletUsers.length} outlet users created`);
     console.log(`  ✅ ${categories.length} categories created`);
     console.log(`  ✅ ${products.length} products created`);
     console.log(`  ✅ ${customers.length} customers created`);
-    console.log(`  ✅ ${orders.length} orders created`);
-    console.log(`  ✅ ${billingCycles.length} billing cycles created`);
-    console.log(`  ✅ ${plans.length} subscription plans created`);
+    console.log(`  ✅ ${orders.length} orders created (${SYSTEM_CONFIG.TOTAL_OUTLETS * 5} with today's date)`);
     console.log(`  ✅ ${subscriptions.length} merchant subscriptions created`);
-    console.log(`  ✅ ${additionalPayments.length} additional payments created`);
     console.log(`  ✅ ${subscriptionPayments.length} subscription payments created`);
     
     console.log('\n🔑 Login Credentials:');
@@ -1042,17 +1069,8 @@ async function main() {
     });
     
     console.log('\n💳 Payment Summary:');
-    const paymentSummary = {};
-    additionalPayments.forEach(payment => {
-      if (!paymentSummary[payment.type]) {
-        paymentSummary[payment.type] = 0;
-      }
-      paymentSummary[payment.type]++;
-    });
-    
-    Object.entries(paymentSummary).forEach(([type, count]) => {
-      console.log(`  ${type}: ${count}`);
-    });
+
+    console.log('  ⏭️  Payments skipped (using unified Payment model)');
     
     console.log('\n🔄 Subscription Summary:');
     const subscriptionSummary = {};
@@ -1070,7 +1088,9 @@ async function main() {
     console.log('\n📋 Plan Summary:');
     plans.forEach(plan => {
       const planSubscriptions = subscriptions.filter(s => s.planId === plan.id);
-      console.log(`  ${plan.name}: ${planSubscriptions.length} subscriptions - $${plan.price}/${plan.billingCycle?.value || 'monthly'}`);
+      const planVariantsForPlan = planVariants.filter(v => v.planId === plan.id);
+      console.log(`  ${plan.name}: ${planSubscriptions.length} subscriptions - Base: $${plan.basePrice}/month`);
+      console.log(`    Variants: ${planVariantsForPlan.length} options (${planVariantsForPlan.map(v => `${v.name}: $${v.price}`).join(', ')})`);
     });
     
   } catch (error) {
@@ -1079,6 +1099,50 @@ async function main() {
   } finally {
     await prisma.$disconnect();
   }
+}
+
+/**
+ * Create subscription payments for all subscriptions
+ */
+async function createSubscriptionPayments(subscriptions) {
+  console.log('  💳 Creating subscription payments...');
+  const payments = [];
+  
+  for (const subscription of subscriptions) {
+    try {
+      // Get next payment public ID
+      const lastPayment = await prisma.payment.findFirst({
+        orderBy: { publicId: 'desc' }
+      });
+      const paymentPublicId = (lastPayment?.publicId || 0) + 1;
+      
+      // Create payment record for subscription
+      const payment = await prisma.payment.create({
+        data: {
+          publicId: paymentPublicId,
+          subscriptionId: subscription.id,
+          merchantId: subscription.merchantId,
+          amount: subscription.amount,
+          currency: subscription.currency,
+          method: 'STRIPE', // Default to Stripe for demo
+          type: 'SUBSCRIPTION_PAYMENT',
+          status: 'COMPLETED',
+          reference: `sub_${subscription.publicId}_${Date.now()}`,
+          description: `Payment for ${subscription.plan?.name} subscription`,
+          processedAt: new Date()
+        }
+      });
+      
+      payments.push(payment);
+      console.log(`    ✅ Created payment for subscription ${subscription.publicId}`);
+      
+    } catch (error) {
+      console.error(`    ❌ Error creating payment for subscription ${subscription.publicId}:`, error.message);
+    }
+  }
+  
+  console.log(`  ✅ Created ${payments.length} subscription payments`);
+  return payments;
 }
 
 // Run the script
@@ -1096,5 +1160,9 @@ module.exports = {
   createCategories, 
   createProducts, 
   createCustomers, 
-  createOrders 
+  createOrders,
+  createPlans,
+  createPlanVariants,
+  createSubscriptions,
+  createSubscriptionPayments
 };

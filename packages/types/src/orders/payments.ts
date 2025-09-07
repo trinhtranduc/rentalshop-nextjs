@@ -2,19 +2,30 @@
 // PAYMENTS TYPES
 // ============================================================================
 
-export type PaymentMethod = 'CASH' | 'CARD' | 'BANK_TRANSFER' | 'DIGITAL_WALLET';
-export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-export type PaymentType = 'DEPOSIT' | 'SECURITY_DEPOSIT' | 'RENTAL_FEE' | 'DAMAGE_FEE' | 'LATE_FEE' | 'REFUND';
+export type PaymentMethod = 'STRIPE' | 'TRANSFER' | 'MANUAL' | 'CASH' | 'CHECK' | 'PAYPAL';
+export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' | 'CANCELLED';
+export type PaymentType = 'ORDER_PAYMENT' | 'SUBSCRIPTION_PAYMENT' | 'PLAN_CHANGE' | 'PLAN_EXTENSION';
 export type CollateralType = 'CASH' | 'ID_CARD' | 'PASSPORT' | 'DRIVERS_LICENSE' | 'OTHER';
 
 export interface Payment {
   id: number;
-  orderId: number;
   amount: number;
+  currency: string;
   method: PaymentMethod;
+  type: PaymentType;
   status: PaymentStatus;
-  transactionId?: number;
+  reference?: string;
+  transactionId?: string;
+  invoiceNumber?: string;
+  description?: string;
   notes?: string;
+  failureReason?: string;
+  metadata?: string;
+  processedAt?: Date;
+  processedBy?: string;
+  orderId?: number;
+  subscriptionId?: number;
+  merchantId?: number;
   createdAt: Date;
   updatedAt: Date;
 }

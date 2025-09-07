@@ -343,16 +343,20 @@ export async function createOrder(
     });
     const nextPublicId = (lastOrder?.publicId || 0) + 1;
 
-    // Generate order number: ORD-{outletId}-{sequence}
-    // Get next sequence for this specific outlet
-    const lastOrderInOutlet = await tx.order.findFirst({
-      where: { outletId: outlet.id },
-      orderBy: { publicId: 'desc' },
-      select: { publicId: true }
+    // Generate order number using the new generator with configuration
+    const { generateOrderNumber, getOrderNumberConfig } = await import('./order-number-generator');
+    
+    const config = getOrderNumberConfig();
+    const orderNumberResult = await generateOrderNumber({
+      format: config.format,
+      outletId: outlet.publicId,
+      prefix: config.prefix,
+      sequenceLength: config.sequenceLength,
+      randomLength: config.randomLength,
+      includeDate: config.includeDate
     });
     
-    const nextSequence = (lastOrderInOutlet?.publicId || 0) + 1;
-    const orderNumber = `ORD-${outlet.publicId.toString().padStart(3, '0')}-${nextSequence.toString().padStart(4, '0')}`;
+    const orderNumber = orderNumberResult.orderNumber;
 
     // Create order
     const order = await tx.order.create({
@@ -840,9 +844,27 @@ export async function updateOrder(
       notes: item.notes || '',
     })),
     payments: finalOrder.payments.map(payment => ({
-      ...payment,
-      id: 0, // Placeholder since Payment interface expects number but database returns string
-      orderId: 0, // Placeholder since Payment interface expects number but database returns string
+      id: payment.publicId, // Use publicId as the numeric ID
+      publicId: payment.publicId,
+      orderId: payment.orderId ? parseInt(payment.orderId) : 0,
+      subscriptionId: payment.subscriptionId ? parseInt(payment.subscriptionId) : undefined,
+      merchantId: payment.merchantId ? parseInt(payment.merchantId) : undefined,
+      amount: payment.amount,
+      currency: payment.currency,
+      method: payment.method,
+      type: payment.type,
+      status: payment.status,
+      reference: payment.reference,
+      transactionId: payment.transactionId ? parseInt(payment.transactionId) : undefined,
+      invoiceNumber: payment.invoiceNumber,
+      description: payment.description,
+      notes: payment.notes,
+      failureReason: payment.failureReason,
+      metadata: payment.metadata,
+      processedAt: payment.processedAt,
+      processedBy: payment.processedBy,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
     })),
   } as OrderWithDetails;
 }

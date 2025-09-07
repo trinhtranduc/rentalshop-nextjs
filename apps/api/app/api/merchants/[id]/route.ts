@@ -32,10 +32,63 @@ export async function GET(
       );
     }
 
-    // Get merchant with related data
+    // Get merchant with related data including plan and subscription info
     const merchant = await prisma.merchant.findUnique({
       where: { publicId: merchantId },
       include: {
+        plan: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+            description: true,
+            basePrice: true,
+            currency: true,
+            trialDays: true,
+            maxOutlets: true,
+            maxUsers: true,
+            maxProducts: true,
+            maxCustomers: true,
+            features: true,
+            isActive: true,
+            isPopular: true
+          }
+        },
+        subscriptions: {
+          where: { 
+            OR: [
+              { status: { in: ['ACTIVE', 'TRIAL'] } },
+              { status: { in: ['active', 'trial'] } }
+            ]
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            publicId: true,
+            status: true,
+            currentPeriodStart: true,
+            currentPeriodEnd: true,
+            trialStart: true,
+            trialEnd: true,
+            amount: true,
+            currency: true,
+            interval: true,
+            intervalCount: true,
+            discount: true,
+            savings: true,
+            cancelAtPeriodEnd: true,
+            plan: {
+              select: {
+                id: true,
+                publicId: true,
+                name: true,
+                basePrice: true,
+                currency: true
+              }
+            }
+          } as any
+        },
         _count: {
           select: {
             outlets: true,
@@ -43,77 +96,32 @@ export async function GET(
             products: true
           }
         },
-        outlets: {
-          select: {
-            id: true,
-            publicId: true,
-            name: true,
-            address: true,
-            phone: true,
-            isActive: true,
-            createdAt: true
-          }
-        },
-        users: {
-          select: {
-            id: true,
-            publicId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            role: true,
-            isActive: true,
-            createdAt: true
-          }
-        },
-        products: {
-          select: {
-            id: true,
-            publicId: true,
-            name: true,
-            description: true,
-            rentPrice: true,
-            salePrice: true,
-            deposit: true,
-            isActive: true,
-            createdAt: true
-          }
-        }
       }
     });
 
-    // Get orders for this merchant's outlets
-    const merchantOutlets = await prisma.outlet.findMany({
-      where: { merchantId: merchant.id },
-      select: { id: true }
-    });
-
-    const outletIds = merchantOutlets.map(outlet => outlet.id);
-    
-    const orders = await prisma.order.findMany({
+    // Get basic order statistics without fetching all orders
+    const orderStats = await prisma.order.groupBy({
+      by: ['status'],
       where: {
-        outletId: { in: outletIds }
+        outlet: {
+          merchantId: merchant!.id
+        }
       },
-      select: {
-        id: true,
-        publicId: true,
-        orderNumber: true,
-        orderType: true,
-        status: true,
-        totalAmount: true,
-        createdAt: true
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50 // Limit to recent orders
+      _count: {
+        status: true
+      }
     });
 
-    // Calculate order statistics
-    const orderStats = {
-      totalOrders: orders.length,
-      activeOrders: orders.filter(order => ['RESERVED', 'PICKUPED'].includes(order.status)).length,
-      completedOrders: orders.filter(order => ['COMPLETED', 'RETURNED'].includes(order.status)).length,
-      cancelledOrders: orders.filter(order => order.status === 'CANCELLED').length
+    const orderCounts = orderStats.reduce((acc, stat) => {
+      acc[stat.status] = stat._count.status;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const stats = {
+      totalOrders: Object.values(orderCounts).reduce((sum, count) => sum + count, 0),
+      activeOrders: (orderCounts['RESERVED'] || 0) + (orderCounts['PICKUPED'] || 0),
+      completedOrders: (orderCounts['COMPLETED'] || 0) + (orderCounts['RETURNED'] || 0),
+      cancelledOrders: orderCounts['CANCELLED'] || 0
     };
 
     if (!merchant) {
@@ -123,81 +131,111 @@ export async function GET(
       );
     }
 
-    // Transform data for frontend
+    // Get current subscription info
+    const currentSubscription = (merchant as any).subscriptions?.[0];
+    
+    // Transform data for frontend (using type assertion to handle schema fields)
+    const merchantData = merchant as any;
     const transformedMerchant = {
-      id: merchant.publicId,
-      name: merchant.name,
-      email: merchant.email,
-      phone: merchant.phone,
-      isActive: merchant.isActive,
-      subscriptionPlan: merchant.subscriptionPlan,
-      subscriptionStatus: merchant.subscriptionStatus,
-      trialEndsAt: merchant.trialEndsAt,
-      outletsCount: merchant._count.outlets,
-      usersCount: merchant._count.users,
-      productsCount: merchant._count.products,
-      totalRevenue: merchant.totalRevenue || 0,
-      createdAt: merchant.createdAt,
-      lastActiveAt: merchant.lastActiveAt
+      id: merchantData.publicId,
+      name: merchantData.name,
+      email: merchantData.email,
+      phone: merchantData.phone,
+      address: merchantData.address || null,
+      city: merchantData.city || null,
+      state: merchantData.state || null,
+      zipCode: merchantData.zipCode || null,
+      country: merchantData.country || null,
+      businessType: merchantData.businessType || null,
+      taxId: merchantData.taxId || null,
+      website: merchantData.website || null,
+      description: merchantData.description || null,
+      isActive: merchantData.isActive,
+      planId: merchantData.planId,
+      subscriptionStatus: merchantData.subscriptionStatus,
+      trialEndsAt: (currentSubscription as any)?.trialEnd || null,
+      outletsCount: merchantData._count?.outlets || 0,
+      usersCount: merchantData._count?.users || 0,
+      productsCount: merchantData._count?.products || 0,
+      totalRevenue: merchantData.totalRevenue || 0,
+      createdAt: merchantData.createdAt,
+      lastActiveAt: merchantData.lastActiveAt,
+      // Enhanced plan and subscription info
+      plan: merchantData.plan ? {
+        id: merchantData.plan.publicId,
+        name: merchantData.plan.name,
+        description: merchantData.plan.description,
+        basePrice: merchantData.plan.basePrice,
+        currency: merchantData.plan.currency,
+        trialDays: merchantData.plan.trialDays,
+        limits: {
+          outlets: merchantData.plan.maxOutlets,
+          users: merchantData.plan.maxUsers,
+          products: merchantData.plan.maxProducts,
+          customers: merchantData.plan.maxCustomers
+        },
+        features: merchantData.plan.features ? JSON.parse(merchantData.plan.features) : [],
+        isActive: merchantData.plan.isActive,
+        isPopular: merchantData.plan.isPopular
+      } : null,
+      currentSubscription: currentSubscription ? {
+        id: currentSubscription.publicId,
+        status: currentSubscription.status,
+        startDate: currentSubscription.currentPeriodStart,
+        endDate: currentSubscription.currentPeriodEnd,
+        trialEndDate: currentSubscription.trialEnd,
+        nextBillingDate: currentSubscription.currentPeriodEnd,
+        amount: currentSubscription.amount,
+        currency: currentSubscription.currency,
+        autoRenew: !currentSubscription.cancelAtPeriodEnd,
+        interval: currentSubscription.interval,
+        intervalCount: currentSubscription.intervalCount,
+        discount: currentSubscription.discount,
+        savings: currentSubscription.savings,
+        plan: currentSubscription.plan ? {
+          id: currentSubscription.plan.publicId,
+          name: currentSubscription.plan.name,
+          basePrice: currentSubscription.plan.basePrice,
+          currency: currentSubscription.plan.currency
+        } : null
+      } : {
+        // Fallback for merchants without active subscriptions
+        id: null,
+        status: merchantData.subscriptionStatus || 'inactive',
+        startDate: null,
+        endDate: null,
+        trialEndDate: merchantData.trialEndsAt,
+        nextBillingDate: null,
+        amount: merchantData.plan?.basePrice || 0,
+        currency: merchantData.plan?.currency || 'USD',
+        autoRenew: false,
+        interval: 'month',
+        intervalCount: 1,
+        discount: 0,
+        savings: 0,
+        plan: merchantData.plan ? {
+          id: merchantData.plan.publicId,
+          name: merchantData.plan.name,
+          basePrice: merchantData.plan.basePrice,
+          currency: merchantData.plan.currency
+        } : null
+      }
     };
 
-    const transformedOutlets = merchant.outlets.map(outlet => ({
-      id: outlet.publicId,
-      name: outlet.name,
-      address: outlet.address,
-      phone: outlet.phone,
-      isActive: outlet.isActive,
-      createdAt: outlet.createdAt
-    }));
-
-    const transformedUsers = merchant.users.map(user => ({
-      id: user.publicId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      isActive: user.isActive,
-      createdAt: user.createdAt
-    }));
-
-    const transformedProducts = merchant.products.map(product => ({
-      id: product.publicId,
-      name: product.name,
-      description: product.description,
-      rentPrice: product.rentPrice,
-      salePrice: product.salePrice,
-      deposit: product.deposit,
-      isActive: product.isActive,
-      createdAt: product.createdAt
-    }));
-
-    const transformedOrders = orders.map(order => ({
-      id: order.publicId,
-      orderNumber: order.orderNumber,
-      orderType: order.orderType,
-      status: order.status,
-      totalAmount: order.totalAmount,
-      createdAt: order.createdAt
-    }));
 
     return NextResponse.json({
       success: true,
       data: {
         merchant: transformedMerchant,
-        outlets: transformedOutlets,
-        users: transformedUsers,
-        products: transformedProducts,
-        orders: transformedOrders,
         stats: {
           totalOutlets: merchant._count.outlets,
           totalUsers: merchant._count.users,
           totalProducts: merchant._count.products,
-          totalOrders: orderStats.totalOrders,
+          totalOrders: stats.totalOrders,
           totalRevenue: merchant.totalRevenue || 0,
-          activeOrders: orderStats.activeOrders,
-          completedOrders: orderStats.completedOrders,
-          cancelledOrders: orderStats.cancelledOrders
+          activeOrders: stats.activeOrders,
+          completedOrders: stats.completedOrders,
+          cancelledOrders: stats.cancelledOrders
         }
       }
     });
@@ -314,7 +352,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, email, phone, subscriptionPlan, subscriptionStatus, isActive } = body;
+    const { name, email, phone, address, planId, subscriptionStatus, isActive } = body;
 
     // Check if email already exists (if changing email)
     if (email) {
@@ -340,7 +378,8 @@ export async function PUT(
         ...(name && { name }),
         ...(email && { email }),
         ...(phone !== undefined && { phone }),
-        ...(subscriptionPlan && { subscriptionPlan }),
+        ...(address !== undefined && { address }),
+        ...(planId && { planId }),
         ...(subscriptionStatus && { subscriptionStatus }),
         ...(isActive !== undefined && { isActive }),
         lastActiveAt: new Date()
@@ -356,7 +395,7 @@ export async function PUT(
         email: updatedMerchant.email,
         phone: updatedMerchant.phone,
         isActive: updatedMerchant.isActive,
-        subscriptionPlan: updatedMerchant.subscriptionPlan,
+        planId: updatedMerchant.planId,
         subscriptionStatus: updatedMerchant.subscriptionStatus,
         trialEndsAt: updatedMerchant.trialEndsAt,
         totalRevenue: updatedMerchant.totalRevenue,

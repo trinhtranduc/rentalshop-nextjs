@@ -15,6 +15,7 @@ import { ENVIRONMENT } from './environment';
 import { API } from './api';
 import * as ORDERS from './orders';
 import * as BILLING_CYCLES from './billing-cycles';
+import * as BILLING from './billing';
 
 // Export all constant modules
 export * from './pagination';
@@ -26,6 +27,7 @@ export * from './environment';
 export * from './api';
 export * from './orders';
 export * from './billing-cycles';
+export * from './billing';
 
 // Explicit exports for critical constants
 export { 
@@ -62,6 +64,7 @@ export const CONSTANTS = {
   API,
   ORDERS,
   BILLING_CYCLES,
+  BILLING,
 } as const;
 
 // Re-export the main constants object

@@ -1,0 +1,100 @@
+// ============================================================================
+// SUBSCRIPTION EXTENSION API ENDPOINTS
+// ============================================================================
+
+import { NextRequest, NextResponse } from 'next/server';
+import { extendSubscription } from '@rentalshop/database';
+import { verifyTokenSimple } from '@rentalshop/auth';
+
+// ============================================================================
+// POST /api/subscriptions/extend - Extend subscription (Admin only)
+// ============================================================================
+export async function POST(request: NextRequest) {
+  try {
+    // Verify authentication
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Only ADMIN can extend subscriptions
+    if (user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, message: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { 
+      subscriptionId, 
+      newEndDate, 
+      amount, 
+      method = 'MANUAL_EXTENSION',
+      description 
+    } = body;
+
+    // Validate required fields
+    if (!subscriptionId || !newEndDate || amount === undefined) {
+      return NextResponse.json(
+        { success: false, message: 'Subscription ID, end date, and amount are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate dates
+    const endDate = new Date(newEndDate);
+    if (isNaN(endDate.getTime())) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid end date format' },
+        { status: 400 }
+      );
+    }
+
+    if (endDate <= new Date()) {
+      return NextResponse.json(
+        { success: false, message: 'End date must be in the future' },
+        { status: 400 }
+      );
+    }
+
+    // Validate amount
+    if (amount <= 0) {
+      return NextResponse.json(
+        { success: false, message: 'Amount must be greater than 0' },
+        { status: 400 }
+      );
+    }
+
+    const extendedSubscription = await extendSubscription(
+      subscriptionId,
+      endDate,
+      amount,
+      method,
+      description
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: extendedSubscription,
+      message: `Subscription extended until ${endDate.toISOString().split('T')[0]}`
+    });
+  } catch (error) {
+    console.error('Error extending subscription:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to extend subscription' },
+      { status: 500 }
+    );
+  }
+}

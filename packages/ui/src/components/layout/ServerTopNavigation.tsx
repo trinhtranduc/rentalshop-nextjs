@@ -15,7 +15,8 @@ import {
   CreditCard,
   BarChart3,
   Shield,
-  Calendar
+  Calendar,
+  Clock
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -52,7 +53,7 @@ export function ServerTopNavigation({
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/merchants', label: 'Merchants', icon: Store },
     { href: '/plans', label: 'Plans', icon: Package },
-    { href: '/billing-cycles', label: 'Billing Cycles', icon: Calendar },
+    { href: '/subscriptions', label: 'Subscriptions', icon: Clock },
     { href: '/payments', label: 'Payments', icon: CreditCard },
     { href: '/settings', label: 'Settings', icon: Settings },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },

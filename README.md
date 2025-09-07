@@ -42,24 +42,24 @@ After running `yarn db:regenerate-system`:
   - **Platform operations** and system management
 
 ### **🏢 Merchant Accounts (Business Owners)**
-- `merchant1@example.com` / `merchant123`
-- `merchant2@example.com` / `merchant123`
+- `merchant1@example.com` / `merchant123` (Merchant 1)
+- `merchant2@example.com` / `merchant123` (Merchant 2)
   - **Organization-wide access** within their merchant
   - **Manage multiple outlets** and users
 
 ### **🏪 Outlet Admins (Outlet Managers)**
-- `admin.outlet1@example.com` / `admin123`
-- `admin.outlet2@example.com` / `admin123`
-- `admin.outlet3@example.com` / `admin123`
-- `admin.outlet4@example.com` / `admin123`
+- `admin.outlet1@example.com` / `admin123` (Outlet 1 - Merchant 1)
+- `admin.outlet2@example.com` / `admin123` (Outlet 2 - Merchant 1)
+- `admin.outlet3@example.com` / `admin123` (Outlet 1 - Merchant 2)
+- `admin.outlet4@example.com` / `admin123` (Outlet 2 - Merchant 2)
   - **Full access** to their assigned outlet
   - **Manage outlet operations** and staff
 
 ### **👥 Outlet Staff (Outlet Employees)**
-- `staff.outlet1@example.com` / `staff123`
-- `staff.outlet2@example.com` / `staff123`
-- `staff.outlet3@example.com` / `staff123`
-- `staff.outlet4@example.com` / `staff123`
+- `staff.outlet1@example.com` / `staff123` (Outlet 1 - Merchant 1)
+- `staff.outlet2@example.com` / `staff123` (Outlet 2 - Merchant 1)
+- `staff.outlet3@example.com` / `staff123` (Outlet 1 - Merchant 2)
+- `staff.outlet4@example.com` / `staff123` (Outlet 2 - Merchant 2)
   - **Limited access** to their assigned outlet
   - **Basic operations** and customer service
 

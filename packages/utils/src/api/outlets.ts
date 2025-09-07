@@ -90,9 +90,9 @@ export const outletsApi = {
    */
   async getOutletsByMerchant(merchantId: number): Promise<ApiResponse<OutletsResponse>> {
     console.log('🔍 Outlets API Client: Calling getOutletsByMerchant with merchantId:', merchantId);
-    console.log('🔍 Outlets API Client: API URL:', `${apiUrls.base}/api/outlets?merchantId=${merchantId}`);
+    console.log('🔍 Outlets API Client: API URL:', `${apiUrls.base}/api/outlets?merchantId=${merchantId}&isActive=all`);
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?merchantId=${merchantId}`);
+    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?merchantId=${merchantId}&isActive=all`);
     console.log('🔍 Outlets API Client: Raw response:', response);
     
     const result = await parseApiResponse<OutletsResponse>(response);

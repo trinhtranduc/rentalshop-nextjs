@@ -93,6 +93,17 @@ export interface ApiUrls {
     stats: string;
     public: string;
   };
+  planVariants: {
+    list: string;
+    create: string;
+    get: (id: number) => string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+    bulk: string;
+    recycle: string;
+    restore: (id: number) => string;
+    stats: string;
+  };
   billingCycles: {
     list: string;
     create: string;
@@ -103,6 +114,7 @@ export interface ApiUrls {
   payments: {
     list: string;
     create: string;
+    manual: string;
     get: (id: number) => string;
     update: (id: number) => string;
     delete: (id: number) => string;
@@ -110,6 +122,16 @@ export interface ApiUrls {
     refund: (id: number) => string;
     stats: string;
     export: string;
+  };
+  subscriptions: {
+    list: string;
+    create: string;
+    get: (id: number) => string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+    extend: (id: number) => string;
+    status: string;
+    stats: string;
   };
   analytics: {
     dashboard: string;
@@ -374,6 +396,17 @@ function createApiUrls(): ApiUrls {
       stats: `${base}/api/plans/stats`,
       public: `${base}/api/plans/public`,
     },
+    planVariants: {
+      list: `${base}/api/plan-variants`,
+      create: `${base}/api/plan-variants`,
+      get: (id: number) => `${base}/api/plan-variants/${id}`,
+      update: (id: number) => `${base}/api/plan-variants/${id}`,
+      delete: (id: number) => `${base}/api/plan-variants/${id}`,
+      bulk: `${base}/api/plan-variants/bulk`,
+      recycle: `${base}/api/plan-variants/recycle`,
+      restore: (id: number) => `${base}/api/plan-variants/recycle/${id}`,
+      stats: `${base}/api/plan-variants/stats`,
+    },
     billingCycles: {
       list: `${base}/api/billing-cycles`,
       create: `${base}/api/billing-cycles`,
@@ -384,6 +417,7 @@ function createApiUrls(): ApiUrls {
     payments: {
       list: `${base}/api/payments`,
       create: `${base}/api/payments`,
+      manual: `${base}/api/payments/manual`,
       get: (id: number) => `${base}/api/payments/${id}`,
       update: (id: number) => `${base}/api/payments/${id}`,
       delete: (id: number) => `${base}/api/payments/${id}`,
@@ -391,6 +425,16 @@ function createApiUrls(): ApiUrls {
       refund: (id: number) => `${base}/api/payments/${id}/refund`,
       stats: `${base}/api/payments/stats`,
       export: `${base}/api/payments/export`,
+    },
+    subscriptions: {
+      list: `${base}/api/subscriptions`,
+      create: `${base}/api/subscriptions`,
+      get: (id: number) => `${base}/api/subscriptions/${id}`,
+      update: (id: number) => `${base}/api/subscriptions/${id}`,
+      delete: (id: number) => `${base}/api/subscriptions/${id}`,
+      extend: (id: number) => `${base}/api/subscriptions/${id}/extend`,
+      status: `${base}/api/subscriptions/status`,
+      stats: `${base}/api/subscriptions/stats`,
     },
     analytics: {
       dashboard: `${base}/api/analytics/dashboard`,

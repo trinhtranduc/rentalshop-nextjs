@@ -34,68 +34,8 @@ async function main() {
 
   console.log('✅ Merchants created');
 
-  // Create billing cycles
-  const monthlyBillingCycle = await prisma.billingCycle.upsert({
-    where: { value: 'monthly' },
-    update: {},
-    create: {
-      publicId: 1,
-      name: 'Monthly',
-      value: 'monthly',
-      months: 1,
-      discount: 0,
-      description: 'Billed every month',
-      isActive: true,
-      sortOrder: 1
-    }
-  });
-
-  const quarterlyBillingCycle = await prisma.billingCycle.upsert({
-    where: { value: 'quarterly' },
-    update: {},
-    create: {
-      publicId: 2,
-      name: 'Quarterly',
-      value: 'quarterly',
-      months: 3,
-      discount: 5,
-      description: 'Billed every 3 months with 5% discount',
-      isActive: true,
-      sortOrder: 2
-    }
-  });
-
-  const semiAnnualBillingCycle = await prisma.billingCycle.upsert({
-    where: { value: 'semi_annual' },
-    update: {},
-    create: {
-      publicId: 3,
-      name: 'Semi-Annual',
-      value: 'semi_annual',
-      months: 6,
-      discount: 10,
-      description: 'Billed every 6 months with 10% discount',
-      isActive: true,
-      sortOrder: 3
-    }
-  });
-
-  const annualBillingCycle = await prisma.billingCycle.upsert({
-    where: { value: 'annual' },
-    update: {},
-    create: {
-      publicId: 4,
-      name: 'Annual',
-      value: 'annual',
-      months: 12,
-      discount: 20,
-      description: 'Billed every 12 months with 20% discount',
-      isActive: true,
-      sortOrder: 4
-    }
-  });
-
-  console.log('✅ Billing cycles created');
+  // Billing cycles removed - replaced by plan variants system
+  console.log('✅ Billing cycles skipped (replaced by plan variants)');
 
   // Create outlets for merchant 1
   const outlet1 = await prisma.outlet.upsert({

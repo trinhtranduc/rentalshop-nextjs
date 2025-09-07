@@ -37,4 +37,7 @@ export * from './userUtils';
 export * from './customerUtils';
 
 // Product utilities
-export * from './productUtils'; 
+export * from './productUtils';
+
+// Proration utilities
+export * from './proration'; 

@@ -8,7 +8,9 @@ import {
 import { 
   Building2, 
   Edit, 
-  Eye 
+  Eye,
+  Power,
+  PowerOff
 } from 'lucide-react';
 import type { Outlet } from '@rentalshop/types';
 
@@ -79,6 +81,9 @@ export function OutletTable({
                     <div className="flex items-center gap-3 mb-1">
                       <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                         {outlet.name}
+                        {!outlet.isActive && (
+                          <span className="ml-2 text-sm text-red-600 font-normal">(Disabled)</span>
+                        )}
                       </h3>
                       <StatusBadge 
                         status={outlet.isActive ? 'active' : 'inactive'}
@@ -132,6 +137,24 @@ export function OutletTable({
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Edit
+                  </Button>
+                  <Button
+                    variant={outlet.isActive ? "destructive" : "default"}
+                    size="sm"
+                    onClick={() => onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id)}
+                    className="h-8 px-3"
+                  >
+                    {outlet.isActive ? (
+                      <>
+                        <PowerOff className="h-3 w-3 mr-1" />
+                        Disable
+                      </>
+                    ) : (
+                      <>
+                        <Power className="h-3 w-3 mr-1" />
+                        Enable
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

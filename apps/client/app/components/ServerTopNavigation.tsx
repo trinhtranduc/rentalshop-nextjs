@@ -11,6 +11,7 @@ import {
   Calendar,
   Tag,
   Settings,
+  CreditCard,
   ChevronDown
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
@@ -36,7 +37,6 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
       submenu: [
         { href: '/products', label: 'All Products', icon: Package },
         { href: '/categories', label: 'Categories', icon: Tag },
-        { href: '/products/add', label: 'Add Product', icon: Package },
       ]
     },
     { href: '/customers', label: 'Customers', icon: Users },

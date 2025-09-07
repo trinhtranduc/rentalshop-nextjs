@@ -40,8 +40,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     dateOfBirth: '',
     idNumber: '',
     idType: 'other' as 'passport' | 'drivers_license' | 'national_id' | 'other',
-    notes: '',
-    isActive: true
+    notes: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,7 +54,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         lastName: customer.lastName || '',
         email: customer.email || '',
         phone: customer.phone || '',
-        companyName: customer.companyName || '',
+        companyName: (customer as any).companyName || '',
         address: customer.address || '',
         city: customer.city || '',
         state: customer.state || '',
@@ -64,13 +63,12 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         dateOfBirth: customer.dateOfBirth ? new Date(customer.dateOfBirth).toISOString().split('T')[0] : '',
         idNumber: customer.idNumber || '',
         idType: customer.idType || 'other',
-        notes: customer.notes || '',
-        isActive: customer.isActive ?? true
+        notes: customer.notes || ''
       });
     }
   }, [mode, customer]);
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -128,7 +126,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         idNumber: formData.idNumber.trim() || undefined,
         idType: formData.idType,
         notes: formData.notes.trim() || undefined,
-        isActive: formData.isActive
       };
 
       await onSave(customerData);
@@ -351,25 +348,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             />
           </div>
 
-          {/* Status (only for edit mode) */}
-          {mode === 'edit' && (
-            <div className="mt-4 space-y-2">
-              <Label htmlFor="isActive">Status</Label>
-              <Select
-                value={formData.isActive ? 'active' : 'inactive'}
-                onValueChange={(value) => handleInputChange('isActive', value === 'active')}
-                disabled={isFormSubmitting}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </CardContent>
       </Card>
 

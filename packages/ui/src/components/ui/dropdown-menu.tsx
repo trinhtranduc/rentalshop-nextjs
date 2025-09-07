@@ -14,23 +14,38 @@ const DropdownMenuTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement> & {
     onToggle?: (open: boolean) => void
+    asChild?: boolean
   }
->(({ className, children, onToggle, ...props }, ref) => (
-  <button
-    ref={ref}
-    className={cn(
-      "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-      className
-    )}
-    onClick={(e) => {
-      e.stopPropagation()
-      onToggle?.(true)
-    }}
-    {...props}
-  >
-    {children}
-  </button>
-))
+>(({ className, children, onToggle, asChild = false, ...props }, ref) => {
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<any>, {
+      ...props,
+      ref,
+      onClick: (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onToggle?.(true)
+        children.props.onClick?.(e)
+      }
+    })
+  }
+
+  return (
+    <button
+      ref={ref}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        className
+      )}
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle?.(true)
+      }}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+})
 DropdownMenuTrigger.displayName = "DropdownMenuTrigger"
 
 const DropdownMenuContent = React.forwardRef<
@@ -42,14 +57,36 @@ const DropdownMenuContent = React.forwardRef<
     onOpenChange?: (open: boolean) => void
   }
 >(({ className, align = "start", sideOffset = 4, open = false, onOpenChange, ...props }, ref) => {
+  const contentRef = React.useRef<HTMLDivElement>(null)
+  
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (open && contentRef.current && !contentRef.current.contains(event.target as Node)) {
+        onOpenChange?.(false)
+      }
+    }
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [open, onOpenChange])
+
   if (!open) return null
   
   return (
     <div
-      ref={ref}
+      ref={(node) => {
+        (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = node
+        if (typeof ref === 'function') {
+          ref(node)
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLDivElement | null>).current = node
+        }
+      }}
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95",
-        align === "end" && "right-0",
+        "absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-white p-1 text-gray-900 shadow-md animate-in fade-in-0 zoom-in-95",
+        align === "end" ? "right-0" : "left-0",
         className
       )}
       style={{ marginTop: sideOffset }}
