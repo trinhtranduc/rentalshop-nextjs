@@ -20,17 +20,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  ConfirmationDialog,
+  ConfirmationDialogWithReason,
   ToastContainer,
   useToasts
 } from '@rentalshop/ui';
 import { 
-  searchSubscriptions, 
-  createSubscription, 
-  cancelSubscription,
-  suspendSubscription,
-  reactivateSubscription,
-  changeSubscriptionPlan,
+  subscriptionsApi,
   merchantsApi,
   plansApi
 } from '@rentalshop/utils';
@@ -68,7 +63,7 @@ export default function SubscriptionsPage() {
   // Confirmation dialog state
   const [confirmationDialog, setConfirmationDialog] = useState<{
     open: boolean;
-    type: 'cancel' | 'suspend' | 'reactivate' | 'changePlan';
+    type: 'cancel' | 'changePlan';
     subscription: Subscription | null;
     data?: any;
   }>({
@@ -83,7 +78,7 @@ export default function SubscriptionsPage() {
       setLoading(true);
       
       // Fetch subscriptions
-      const subscriptionsResult = await searchSubscriptions({
+      const subscriptionsResult = await subscriptionsApi.search({
         limit: pagination.limit,
         offset: (pagination.page - 1) * pagination.limit
       });
@@ -244,31 +239,15 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const handleCancel = (subscription: Subscription, reason: string) => {
+  const handleCancel = (subscription: Subscription) => {
     setConfirmationDialog({
       open: true,
       type: 'cancel',
-      subscription,
-      data: { reason }
-    });
-  };
-
-  const handleSuspend = (subscription: Subscription, reason: string) => {
-    setConfirmationDialog({
-      open: true,
-      type: 'suspend',
-      subscription,
-      data: { reason }
-    });
-  };
-
-  const handleReactivate = (subscription: Subscription) => {
-    setConfirmationDialog({
-      open: true,
-      type: 'reactivate',
       subscription
     });
   };
+
+
 
   const handleChangePlan = (subscription: Subscription, newPlanId: number, period: BillingPeriod) => {
     setConfirmationDialog({
@@ -279,25 +258,22 @@ export default function SubscriptionsPage() {
     });
   };
 
-  const handleConfirmationConfirm = async () => {
+  const handleConfirmationConfirm = async (reason: string) => {
     const { type, subscription, data } = confirmationDialog;
     if (!subscription) return;
+
+    // Close dialog immediately to prevent double submission
+    setConfirmationDialog({ open: false, type: 'cancel', subscription: null });
 
     try {
       let result;
       
       switch (type) {
         case 'cancel':
-          result = await cancelSubscription(subscription.publicId, data.reason);
-          break;
-        case 'suspend':
-          result = await suspendSubscription(subscription.publicId, data.reason);
-          break;
-        case 'reactivate':
-          result = await reactivateSubscription(subscription.publicId);
+          result = await subscriptionsApi.cancel(subscription.publicId, reason);
           break;
         case 'changePlan':
-          result = await changeSubscriptionPlan(subscription.publicId, data.newPlanId, data.period);
+          result = await subscriptionsApi.changePlan(subscription.publicId, data.newPlanId);
           break;
         default:
           return;
@@ -307,7 +283,7 @@ export default function SubscriptionsPage() {
         await fetchData(); // Refresh data
         showSuccess(
           'Operation Successful',
-          `Subscription ${type === 'cancel' ? 'cancelled' : type === 'suspend' ? 'suspended' : type === 'reactivate' ? 'reactivated' : 'plan changed'} successfully`
+          `Subscription ${type === 'cancel' ? 'cancelled' : 'plan changed'} successfully`
         );
       } else {
         showError(
@@ -321,8 +297,6 @@ export default function SubscriptionsPage() {
         'Operation Failed',
         `Error ${type}ing subscription. Please try again.`
       );
-    } finally {
-      setConfirmationDialog({ open: false, type: 'cancel', subscription: null });
     }
   };
 
@@ -350,7 +324,7 @@ export default function SubscriptionsPage() {
     try {
       setSubmitting(true);
       
-      const result = await createSubscription(data);
+      const result = await subscriptionsApi.create(data);
 
       if (result.success) {
         setShowCreateDialog(false);
@@ -479,8 +453,6 @@ export default function SubscriptionsPage() {
           onView={handleView}
           onEdit={handleEdit}
           onCancel={handleCancel}
-          onSuspend={handleSuspend}
-          onReactivate={handleReactivate}
           onChangePlan={handleChangePlan}
           onExtend={handleExtend}
           loading={loading}
@@ -516,35 +488,34 @@ export default function SubscriptionsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmation Dialog */}
-      <ConfirmationDialog
+      {/* Confirmation Dialog with Reason */}
+      <ConfirmationDialogWithReason
         open={confirmationDialog.open}
         onOpenChange={(open) => setConfirmationDialog(prev => ({ ...prev, open }))}
-        type={confirmationDialog.type === 'cancel' || confirmationDialog.type === 'suspend' ? 'warning' : 'info'}
+        type={confirmationDialog.type === 'cancel' ? 'warning' : 'info'}
         title={
           confirmationDialog.type === 'cancel' ? 'Cancel Subscription' :
-          confirmationDialog.type === 'suspend' ? 'Suspend Subscription' :
-          confirmationDialog.type === 'reactivate' ? 'Reactivate Subscription' :
           'Change Subscription Plan'
         }
         description={
           confirmationDialog.type === 'cancel' ? 
-            `Are you sure you want to cancel this subscription? This action cannot be undone.` :
-          confirmationDialog.type === 'suspend' ? 
-            `Are you sure you want to suspend this subscription? The subscription will be paused.` :
-          confirmationDialog.type === 'reactivate' ? 
-            `Are you sure you want to reactivate this subscription? It will resume billing.` :
-            `Are you sure you want to change the subscription plan? This will update the billing.`
+            `Are you sure you want to cancel this subscription for ${confirmationDialog.subscription?.merchant?.name || 'this merchant'}? This action cannot be undone and will stop billing at the current period.` :
+            `Are you sure you want to change the subscription plan for ${confirmationDialog.subscription?.merchant?.name || 'this merchant'}? This will update the billing and may affect the subscription amount.`
         }
         confirmText={
           confirmationDialog.type === 'cancel' ? 'Cancel Subscription' :
-          confirmationDialog.type === 'suspend' ? 'Suspend Subscription' :
-          confirmationDialog.type === 'reactivate' ? 'Reactivate Subscription' :
           'Change Plan'
         }
         onConfirm={handleConfirmationConfirm}
         onCancel={handleConfirmationCancel}
         isLoading={submitting}
+        reasonLabel="Reason"
+        reasonPlaceholder={
+          confirmationDialog.type === 'cancel' ? 
+            'Enter reason for cancelling this subscription...' : 
+            'Enter reason for changing this subscription plan...'
+        }
+        requireReason={true}
       />
 
       {/* Edit Subscription Dialog */}

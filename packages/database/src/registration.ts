@@ -17,6 +17,12 @@ export interface RegistrationInput {
   // For merchant registration
   businessName?: string;
   outletName?: string;
+  // Address fields for merchant registration
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
   // For outlet staff/admin registration
   merchantCode?: string;
   outletCode?: string;
@@ -180,6 +186,11 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
       name: data.businessName || `${data.name}'s Business`,
       email: data.email,
       phone: data.phone,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      zipCode: data.zipCode,
+      country: data.country,
       isActive: true,
       subscriptionStatus: 'trial'
     }
@@ -207,7 +218,7 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     }
   });
 
-  // 6. Create default outlet
+  // 6. Create default outlet with merchant information
   const lastOutlet = await tx.outlet.findFirst({
     orderBy: { publicId: 'desc' }
   });
@@ -217,7 +228,13 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     data: {
       publicId: outletPublicId,
       name: data.outletName || 'Main Store',
-      address: 'Address to be updated',
+      // Always use merchant's information as primary source, with user input as fallback
+      address: merchant.address || data.address || 'Address to be updated',
+      phone: merchant.phone || data.phone,
+      city: merchant.city || data.city,
+      state: merchant.state || data.state,
+      zipCode: merchant.zipCode || data.zipCode,
+      country: merchant.country || data.country,
       description: 'Default outlet created during registration',
       merchantId: merchant.id,
       isActive: true,
@@ -242,8 +259,8 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
       status: 'trial',
       amount: 0, // Free trial
       currency: 'USD',
-      interval: trialPlan.interval,
-      intervalCount: trialPlan.intervalCount,
+      interval: 'month', // Default to monthly for trial
+      intervalCount: 1, // 1 month intervals
       currentPeriodStart: subscriptionStartDate,
       currentPeriodEnd: trialEndDate,
       trialStart: subscriptionStartDate,
@@ -324,7 +341,12 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
         data: {
           publicId: outletPublicId,
           name: `${merchant.name} - Main Store`,
-          address: 'Address to be updated',
+          address: merchant.address || 'Address to be updated',
+          phone: merchant.phone,
+          city: merchant.city,
+          state: merchant.state,
+          zipCode: merchant.zipCode,
+          country: merchant.country,
           description: 'Default outlet for staff',
           merchantId: merchant.id,
           isActive: true,

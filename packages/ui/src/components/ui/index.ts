@@ -13,6 +13,7 @@ export { CardColorful, CardHeaderColorful, CardTitleColorful, CardContentColorfu
 export { CurrencySelector } from './currency-selector';
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
 export { ConfirmationDialog } from './confirmation-dialog';
+export { ConfirmationDialogWithReason } from './confirmation-dialog-with-reason';
 export { Input } from './input';
 export { Label } from './label';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';

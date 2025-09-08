@@ -144,7 +144,6 @@ export {
   pauseSubscription,
   resumeSubscription,
   cancelSubscription,
-  reactivateSubscription,
   getAllPlans,
   getPlanById,
   calculatePlanPricing,

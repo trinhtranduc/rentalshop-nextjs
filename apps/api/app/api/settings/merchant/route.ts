@@ -1,26 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
 import { verifyTokenSimple } from '@rentalshop/auth';
-import { z } from 'zod';
+import { prisma } from '@rentalshop/database';
 
-// Validation schemas
-const merchantSettingSchema = z.object({
-  key: z.string().min(1).max(100),
-  value: z.string(),
-  type: z.enum(['string', 'number', 'boolean', 'json']).default('string'),
-  category: z.enum(['general', 'business', 'notifications', 'integrations']).default('general'),
-  description: z.string().optional(),
-  isActive: z.boolean().default(true)
-});
-
-const updateMerchantSettingSchema = z.object({
-  value: z.string(),
-  description: z.string().optional(),
-  isActive: z.boolean().optional()
-});
-
-// GET /api/settings/merchant - Get merchant settings
-export async function GET(request: NextRequest) {
+/**
+ * PUT /api/settings/merchant
+ * Update current user's merchant business information
+ * Only accessible by users with merchant role or admin
+ */
+export async function PUT(request: NextRequest) {
   try {
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -42,173 +29,104 @@ export async function GET(request: NextRequest) {
     // Check if user has merchant access
     if (!user.merchantId) {
       return NextResponse.json(
-        { success: false, message: 'Merchant access required' },
-        { status: 403 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const isActive = searchParams.get('isActive');
-
-    // Build where clause
-    const where: any = {
-      merchantId: user.merchantId
-    };
-    if (category) {
-      where.category = category;
-    }
-    if (isActive !== null) {
-      where.isActive = isActive === 'true';
-    }
-
-    const settings = await prisma.merchantSetting.findMany({
-      where,
-      orderBy: [
-        { category: 'asc' },
-        { key: 'asc' }
-      ]
-    });
-
-    // Transform settings to include typed values
-    const transformedSettings = settings.map(setting => ({
-      id: setting.publicId,
-      key: setting.key,
-      value: parseSettingValue(setting.value, setting.type),
-      type: setting.type,
-      category: setting.category,
-      description: setting.description,
-      isActive: setting.isActive,
-      createdAt: setting.createdAt,
-      updatedAt: setting.updatedAt
-    }));
-
-    return NextResponse.json({
-      success: true,
-      data: transformedSettings
-    });
-
-  } catch (error) {
-    console.error('Error fetching merchant settings:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch merchant settings' },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/settings/merchant - Create new merchant setting
-export async function POST(request: NextRequest) {
-  try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user has merchant access and can manage settings
-    if (!user.merchantId || !['ADMIN', 'MERCHANT'].includes(user.role)) {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions. Merchant admin access required.' },
+        { success: false, message: 'User does not have merchant access' },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    const validatedData = merchantSettingSchema.parse(body);
+    const { 
+      name, 
+      email, 
+      phone, 
+      address, 
+      city, 
+      state, 
+      zipCode, 
+      country, 
+      businessType, 
+      taxId, 
+      website, 
+      description 
+    } = body;
 
-    // Check if setting with this key already exists for this merchant
-    const existingSetting = await prisma.merchantSetting.findUnique({
-      where: { 
-        merchantId_key: {
-          merchantId: user.merchantId,
-          key: validatedData.key
-        }
-      }
-    });
-
-    if (existingSetting) {
+    // Validate required fields
+    if (!name) {
       return NextResponse.json(
-        { success: false, message: 'Setting with this key already exists for this merchant' },
-        { status: 409 }
+        { success: false, message: 'Business name is required' },
+        { status: 400 }
       );
     }
 
-    // Get next public ID
-    const lastSetting = await prisma.merchantSetting.findFirst({
-      orderBy: { publicId: 'desc' }
-    });
-    const nextPublicId = (lastSetting?.publicId || 0) + 1;
+    // Check if email already exists (if changing email)
+    if (email) {
+      const existingMerchant = await prisma.merchant.findFirst({
+        where: {
+          email,
+          NOT: { id: user.merchantId }
+        }
+      });
 
-    const setting = await prisma.merchantSetting.create({
+      if (existingMerchant) {
+        return NextResponse.json(
+          { success: false, message: 'Email already exists' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Update merchant
+    const updatedMerchant = await prisma.merchant.update({
+      where: { id: user.merchantId },
       data: {
-        publicId: nextPublicId,
-        merchantId: user.merchantId,
-        key: validatedData.key,
-        value: validatedData.value,
-        type: validatedData.type,
-        category: validatedData.category,
-        description: validatedData.description,
-        isActive: validatedData.isActive
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(phone !== undefined && { phone }),
+        ...(address !== undefined && { address }),
+        ...(city !== undefined && { city }),
+        ...(state !== undefined && { state }),
+        ...(zipCode !== undefined && { zipCode }),
+        ...(country !== undefined && { country }),
+        ...(businessType !== undefined && { businessType }),
+        ...(taxId !== undefined && { taxId }),
+        ...(website !== undefined && { website }),
+        ...(description !== undefined && { description }),
+        lastActiveAt: new Date()
       }
     });
 
     return NextResponse.json({
       success: true,
+      message: 'Merchant information updated successfully',
       data: {
-        id: setting.publicId,
-        key: setting.key,
-        value: parseSettingValue(setting.value, setting.type),
-        type: setting.type,
-        category: setting.category,
-        description: setting.description,
-        isActive: setting.isActive,
-        createdAt: setting.createdAt,
-        updatedAt: setting.updatedAt
+        id: updatedMerchant.publicId,
+        name: updatedMerchant.name,
+        email: updatedMerchant.email,
+        phone: updatedMerchant.phone,
+        address: updatedMerchant.address,
+        city: updatedMerchant.city,
+        state: updatedMerchant.state,
+        zipCode: updatedMerchant.zipCode,
+        country: updatedMerchant.country,
+        businessType: updatedMerchant.businessType,
+        taxId: updatedMerchant.taxId,
+        website: updatedMerchant.website,
+        description: updatedMerchant.description,
+        isActive: updatedMerchant.isActive,
+        planId: updatedMerchant.planId,
+        subscriptionStatus: updatedMerchant.subscriptionStatus,
+        totalRevenue: updatedMerchant.totalRevenue,
+        createdAt: updatedMerchant.createdAt,
+        lastActiveAt: updatedMerchant.lastActiveAt
       }
-    }, { status: 201 });
+    });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { success: false, message: 'Validation error', errors: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('Error creating merchant setting:', error);
+    console.error('Error updating merchant information:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { success: false, message: 'Failed to create merchant setting' },
+      { success: false, message: 'Failed to update merchant information', error: errorMessage },
       { status: 500 }
     );
-  }
-}
-
-// Helper function to parse setting values based on type
-function parseSettingValue(value: string, type: string): any {
-  try {
-    switch (type) {
-      case 'number':
-        return parseFloat(value);
-      case 'boolean':
-        return value === 'true';
-      case 'json':
-        return JSON.parse(value);
-      default:
-        return value;
-    }
-  } catch (error) {
-    return value; // Return as string if parsing fails
   }
 }

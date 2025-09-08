@@ -54,7 +54,7 @@ export const useSubscriptionStatus = (options: SubscriptionStatusOptions = {}) =
     try {
       setStatus(prev => ({ ...prev, loading: true, error: null }));
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       if (!token) {
         setStatus(prev => ({
           ...prev,

@@ -87,6 +87,16 @@ const statusConfig = {
   error: {
     color: 'bg-action-danger/10 text-action-danger border-action-danger/20',
     icon: '❌'
+  },
+  
+  // Outlet Statuses
+  default: {
+    color: 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600',
+    icon: ''
+  },
+  'main branch': {
+    color: 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600',
+    icon: ''
   }
 };
 

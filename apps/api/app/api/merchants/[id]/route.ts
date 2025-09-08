@@ -61,8 +61,6 @@ export async function GET(
               { status: { in: ['active', 'trial'] } }
             ]
           },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
           select: {
             id: true,
             publicId: true,
@@ -78,6 +76,7 @@ export async function GET(
             discount: true,
             savings: true,
             cancelAtPeriodEnd: true,
+            createdAt: true,
             plan: {
               select: {
                 id: true,
@@ -87,7 +86,7 @@ export async function GET(
                 currency: true
               }
             }
-          } as any
+          }
         },
         _count: {
           select: {
@@ -131,8 +130,11 @@ export async function GET(
       );
     }
 
-    // Get current subscription info
-    const currentSubscription = (merchant as any).subscriptions?.[0];
+    // Get current subscription info (most recent by createdAt)
+    const subscriptions = (merchant as any).subscriptions || [];
+    const currentSubscription = subscriptions.length > 0 
+      ? subscriptions.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+      : null;
     
     // Transform data for frontend (using type assertion to handle schema fields)
     const merchantData = merchant as any;
@@ -352,7 +354,23 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, email, phone, address, planId, subscriptionStatus, isActive } = body;
+    const { 
+      name, 
+      email, 
+      phone, 
+      address, 
+      city, 
+      state, 
+      zipCode, 
+      country, 
+      businessType, 
+      taxId, 
+      website, 
+      description, 
+      planId, 
+      subscriptionStatus, 
+      isActive 
+    } = body;
 
     // Check if email already exists (if changing email)
     if (email) {
@@ -379,6 +397,14 @@ export async function PUT(
         ...(email && { email }),
         ...(phone !== undefined && { phone }),
         ...(address !== undefined && { address }),
+        ...(city !== undefined && { city }),
+        ...(state !== undefined && { state }),
+        ...(zipCode !== undefined && { zipCode }),
+        ...(country !== undefined && { country }),
+        ...(businessType !== undefined && { businessType }),
+        ...(taxId !== undefined && { taxId }),
+        ...(website !== undefined && { website }),
+        ...(description !== undefined && { description }),
         ...(planId && { planId }),
         ...(subscriptionStatus && { subscriptionStatus }),
         ...(isActive !== undefined && { isActive }),
@@ -394,10 +420,18 @@ export async function PUT(
         name: updatedMerchant.name,
         email: updatedMerchant.email,
         phone: updatedMerchant.phone,
+        address: updatedMerchant.address,
+        city: updatedMerchant.city,
+        state: updatedMerchant.state,
+        zipCode: updatedMerchant.zipCode,
+        country: updatedMerchant.country,
+        businessType: updatedMerchant.businessType,
+        taxId: updatedMerchant.taxId,
+        website: updatedMerchant.website,
+        description: updatedMerchant.description,
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,
         subscriptionStatus: updatedMerchant.subscriptionStatus,
-        trialEndsAt: updatedMerchant.trialEndsAt,
         totalRevenue: updatedMerchant.totalRevenue,
         createdAt: updatedMerchant.createdAt,
         lastActiveAt: updatedMerchant.lastActiveAt

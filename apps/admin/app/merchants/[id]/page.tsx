@@ -15,8 +15,6 @@ import {
   merchantsApi,
   extendSubscription, 
   cancelSubscription, 
-  suspendSubscription, 
-  reactivateSubscription 
 } from '@rentalshop/utils';
 import type { Merchant } from '@rentalshop/types';
 
@@ -188,36 +186,6 @@ export default function MerchantDetailPage() {
     }
   };
 
-  const handleSuspend = async (subscription: any, reason: string) => {
-    try {
-      const response = await suspendSubscription(subscription.id, reason);
-
-      if (response.success) {
-        console.log('Subscription suspended successfully');
-        fetchMerchantDetails();
-      } else {
-        console.error('Failed to suspend subscription:', response.message);
-      }
-    } catch (error) {
-      console.error('Error suspending subscription:', error);
-    }
-  };
-
-  const handleReactivate = async (subscription: any) => {
-    try {
-      const response = await reactivateSubscription(subscription.id);
-
-      if (response.success) {
-        console.log('Subscription reactivated successfully');
-        fetchMerchantDetails();
-      } else {
-        console.error('Failed to reactivate subscription:', response.message);
-      }
-    } catch (error) {
-      console.error('Error reactivating subscription:', error);
-    }
-  };
-
   if (loading) {
     return (
       <PageWrapper>
@@ -314,8 +282,6 @@ export default function MerchantDetailPage() {
           onPlanChange={handlePlanChange}
           onExtend={handleExtend}
           onCancel={handleCancel}
-          onSuspend={handleSuspend}
-          onReactivate={handleReactivate}
         />
       </PageContent>
     </PageWrapper>

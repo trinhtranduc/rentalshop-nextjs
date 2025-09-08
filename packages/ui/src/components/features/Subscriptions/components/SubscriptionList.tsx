@@ -34,11 +34,11 @@ import {
   Users,
   Building,
   Package,
-  Clock
+  Clock,
+  X
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant, BillingPeriod } from '@rentalshop/types';
 import { SubscriptionViewDialog } from './SubscriptionViewDialog';
-import { SubscriptionCancelDialog } from './SubscriptionCancelDialog';
 import { SubscriptionExtendDialog } from './SubscriptionExtendDialog';
 import { SubscriptionChangePlanDialog } from './SubscriptionChangePlanDialog';
 import { SubscriptionEditDialog } from './SubscriptionEditDialog';
@@ -52,8 +52,6 @@ interface SubscriptionListProps {
   onDelete?: (subscription: Subscription) => void;
   onExtend?: (subscription: Subscription) => void;
   onCancel?: (subscription: Subscription, reason: string) => void;
-  onSuspend?: (subscription: Subscription, reason: string) => void;
-  onReactivate?: (subscription: Subscription) => void;
   onChangePlan?: (subscription: Subscription, newPlanId: number, period: BillingPeriod) => void;
   loading?: boolean;
   pagination?: {
@@ -73,8 +71,6 @@ export function SubscriptionList({
   onDelete,
   onExtend,
   onCancel,
-  onSuspend,
-  onReactivate,
   onChangePlan,
   loading = false,
   pagination
@@ -88,10 +84,10 @@ export function SubscriptionList({
   // Dialog states
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [showChangePlanDialog, setShowChangePlanDialog] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  
 
   // Filter subscriptions
   useEffect(() => {
@@ -180,8 +176,7 @@ export function SubscriptionList({
   };
 
   const handleCancel = (subscription: Subscription) => {
-    setSelectedSubscription(subscription);
-    setShowCancelDialog(true);
+    onCancel?.(subscription, ''); // Reason will be collected in the confirmation dialog
   };
 
   const handleExtend = (subscription: Subscription) => {
@@ -194,22 +189,7 @@ export function SubscriptionList({
     setShowChangePlanDialog(true);
   };
 
-  const handleSuspend = (subscription: Subscription) => {
-    const reason = prompt('Reason for suspension:');
-    if (reason) {
-      onSuspend?.(subscription, reason);
-    }
-  };
 
-  const handleReactivate = (subscription: Subscription) => {
-    onReactivate?.(subscription);
-  };
-
-  const handleCancelConfirm = (subscription: Subscription, reason: string) => {
-    onCancel?.(subscription, reason);
-    setShowCancelDialog(false);
-    setSelectedSubscription(null);
-  };
 
   const handleExtendConfirm = (subscription: Subscription, data: any) => {
     onExtend?.(subscription);
@@ -224,8 +204,6 @@ export function SubscriptionList({
   };
 
   const canCancel = (subscription: Subscription) => ['active', 'trial'].includes(subscription.status);
-  const canSuspend = (subscription: Subscription) => ['active', 'trial'].includes(subscription.status);
-  const canReactivate = (subscription: Subscription) => ['cancelled', 'paused'].includes(subscription.status);
   const canExtend = (subscription: Subscription) => ['active', 'trial', 'past_due'].includes(subscription.status);
   const canChangePlan = (subscription: Subscription) => ['active', 'trial'].includes(subscription.status);
 
@@ -461,8 +439,6 @@ export function SubscriptionList({
         onClose={() => setShowViewDialog(false)}
         onEdit={handleEdit}
         onCancel={handleCancel}
-        onSuspend={handleSuspend}
-        onReactivate={handleReactivate}
         onExtend={handleExtend}
         onChangePlan={handleChangePlan}
       />
@@ -477,13 +453,6 @@ export function SubscriptionList({
         loading={loading}
       />
 
-      <SubscriptionCancelDialog
-        subscription={selectedSubscription}
-        isOpen={showCancelDialog}
-        onClose={() => setShowCancelDialog(false)}
-        onConfirm={handleCancelConfirm}
-        loading={loading}
-      />
 
       <SubscriptionExtendDialog
         subscription={selectedSubscription}

@@ -30,7 +30,7 @@ export default function CreateSubscriptionPage() {
       // Fetch plans
       const plansResponse = await fetch('/api/plans', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
       const plansData = await plansResponse.json();
@@ -42,7 +42,7 @@ export default function CreateSubscriptionPage() {
       // Fetch merchants
       const merchantsResponse = await fetch('/api/merchants', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
       const merchantsData = await merchantsResponse.json();
@@ -70,7 +70,7 @@ export default function CreateSubscriptionPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify(data)
       });

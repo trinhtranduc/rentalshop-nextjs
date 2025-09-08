@@ -2,39 +2,36 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { RegisterForm } from '@rentalshop/ui';
+import { RegisterForm, ToastContainer, useToasts } from '@rentalshop/ui';
+import { authApi } from '@rentalshop/utils';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
 
   const handleRegister = async (data: any) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.login,
-          password: data.password,
-          name: data.name,
-          phone: data.phone,
-          role: data.role || 'CLIENT',
-          businessName: data.businessName,
-          outletName: data.outletName,
-          merchantCode: data.merchantCode,
-          outletCode: data.outletCode,
-        }),
-      });
+      // Prepare registration data for the centralized API
+      const registrationData = {
+        email: data.login,
+        password: data.password,
+        name: data.name,
+        phone: data.phone,
+        role: data.role || 'MERCHANT', // Default to MERCHANT for public registration
+        businessName: data.businessName,
+        // Default outlet name to business name
+        outletName: data.businessName,
+      };
       
-      const result = await response.json();
+      // Use centralized API client
+      const result = await authApi.register(registrationData);
       
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(result.message || 'Registration failed');
       }
       
@@ -45,11 +42,27 @@ export default function RegisterPage() {
       }
       
       console.log('Registration successful:', result);
-      router.push('/login');
+      
+      // Show success toast
+      showSuccess(
+        "Registration Successful! 🎉",
+        "Your merchant account has been created. Redirecting to login..."
+      );
+      
+      // Navigate to login after a short delay
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
       
     } catch (error: any) {
       console.error('Registration failed:', error);
       setError(error.message || 'Registration failed. Please try again.');
+      
+      // Show error toast
+      showError(
+        "Registration Failed",
+        error.message || "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -60,10 +73,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <RegisterForm
-      onRegister={handleRegister}
-      onNavigate={handleNavigate}
-      registrationError={error}
-    />
+    <>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      <RegisterForm
+        onRegister={handleRegister}
+        onNavigate={handleNavigate}
+        registrationError={error}
+      />
+    </>
   );
 } 

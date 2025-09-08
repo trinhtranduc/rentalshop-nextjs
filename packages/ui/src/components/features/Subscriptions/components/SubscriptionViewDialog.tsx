@@ -21,7 +21,8 @@ import {
   Pause, 
   Play, 
   Clock, 
-  ArrowRight 
+  ArrowRight,
+  X
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant } from '@rentalshop/types';
 
@@ -31,8 +32,6 @@ interface SubscriptionViewDialogProps {
   onClose: () => void;
   onEdit?: (subscription: Subscription) => void;
   onCancel?: (subscription: Subscription) => void;
-  onSuspend?: (subscription: Subscription) => void;
-  onReactivate?: (subscription: Subscription) => void;
   onExtend?: (subscription: Subscription) => void;
   onChangePlan?: (subscription: Subscription) => void;
 }
@@ -43,8 +42,6 @@ export function SubscriptionViewDialog({
   onClose,
   onEdit,
   onCancel,
-  onSuspend,
-  onReactivate,
   onExtend,
   onChangePlan
 }: SubscriptionViewDialogProps) {
@@ -73,17 +70,12 @@ export function SubscriptionViewDialog({
   const isActiveStatus = normalizedStatus === 'active' || (subscription.status as string) === 'ACTIVE';
   
   // For debugging - show all actions if handlers exist
-  const debugMode = true; // Set to false in production
+  const debugMode = false; // Set to false in production
   
   const canCancel = debugMode ? !!onCancel : (isActive && !!onCancel);
-  const canSuspend = debugMode ? !!onSuspend : (isActive && !!onSuspend);
-  const canReactivate = debugMode ? !!onReactivate : (isInactive && !!onReactivate);
   const canExtend = debugMode ? !!onExtend : (isActive && !!onExtend);
   const canChangePlan = debugMode ? !!onChangePlan : (isActive && !!onChangePlan);
   
-  // Show only one of suspend/reactivate based on status
-  const showSuspend = (isActive || isActiveStatus) && !!onSuspend;
-  const showReactivate = (isInactive || isExpired) && !!onReactivate;
 
   // Debug logging
   console.log('SubscriptionViewDialog Debug:', {
@@ -95,16 +87,10 @@ export function SubscriptionViewDialog({
     isExpired,
     isActiveStatus,
     canCancel,
-    canSuspend,
-    canReactivate,
     canExtend,
     canChangePlan,
-    showSuspend,
-    showReactivate,
     hasHandlers: {
       onCancel: !!onCancel,
-      onSuspend: !!onSuspend,
-      onReactivate: !!onReactivate,
       onExtend: !!onExtend,
       onChangePlan: !!onChangePlan
     }
@@ -312,33 +298,13 @@ export function SubscriptionViewDialog({
                 Change Plan
               </Button>
             )}
-            {showSuspend && (
-              <Button 
-                variant="outline" 
-                onClick={() => onSuspend!(subscription)}
-                className="flex items-center gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-              >
-                <Pause className="h-4 w-4" />
-                Suspend
-              </Button>
-            )}
-            {showReactivate && (
-              <Button 
-                variant="outline" 
-                onClick={() => onReactivate!(subscription)}
-                className="flex items-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-              >
-                <Play className="h-4 w-4" />
-                Reactivate
-              </Button>
-            )}
             {canCancel && onCancel && (
               <Button 
                 variant="destructive" 
                 onClick={() => onCancel(subscription)}
                 className="flex items-center gap-2"
               >
-                <Trash2 className="h-4 w-4" />
+                <X className="h-4 w-4" />
                 Cancel Subscription
               </Button>
             )}

@@ -85,6 +85,13 @@ export function OutletTable({
                           <span className="ml-2 text-sm text-red-600 font-normal">(Disabled)</span>
                         )}
                       </h3>
+                      {outlet.isDefault && (
+                        <StatusBadge 
+                          status="main branch"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                        />
+                      )}
                       <StatusBadge 
                         status={outlet.isActive ? 'active' : 'inactive'}
                       />
@@ -143,6 +150,8 @@ export function OutletTable({
                     size="sm"
                     onClick={() => onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id)}
                     className="h-8 px-3"
+                    disabled={outlet.isDefault}
+                    title={outlet.isDefault ? "Default outlet cannot be disabled" : ""}
                   >
                     {outlet.isActive ? (
                       <>

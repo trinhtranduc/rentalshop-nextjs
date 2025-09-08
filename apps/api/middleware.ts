@@ -10,6 +10,7 @@ const protectedRoutes = [
   '/api/products',
   '/api/customers',
   '/api/notifications',
+  '/api/subscriptions',
 ];
 
 // Public routes that don't require authentication

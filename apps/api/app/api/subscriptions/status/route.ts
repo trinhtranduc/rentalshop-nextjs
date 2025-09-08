@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's subscription
-    const subscription = await getSubscriptionByMerchantId(user.merchantId || 0);
+    const subscription = await getSubscriptionByMerchantId(Number(user.merchantId) || 0);
     
     if (!subscription) {
       return NextResponse.json({
@@ -44,16 +44,16 @@ export async function GET(request: NextRequest) {
 
     // Check if subscription is expired
     const now = new Date();
-    const isExpired = subscription.status === 'EXPIRED' || 
-      (subscription.endDate && new Date(subscription.endDate) < now);
+    const isExpired = subscription.status === 'cancelled' || 
+      (subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) < now);
     
-    const isExpiringSoon = subscription.status === 'ACTIVE' && 
-      subscription.endDate && 
-      new Date(subscription.endDate) <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const isExpiringSoon = subscription.status === 'active' && 
+      subscription.currentPeriodEnd && 
+      new Date(subscription.currentPeriodEnd) <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     // Calculate days until expiry
-    const daysUntilExpiry = subscription.endDate ? 
-      Math.ceil((new Date(subscription.endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+    const daysUntilExpiry = subscription.currentPeriodEnd ? 
+      Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
 
     return NextResponse.json({
       success: true,
@@ -61,16 +61,28 @@ export async function GET(request: NextRequest) {
         hasSubscription: true,
         subscription: {
           id: subscription.id,
+          publicId: subscription.publicId,
+          merchantId: subscription.merchantId,
+          planId: subscription.planId,
           status: subscription.status,
-          plan: subscription.plan,
-          merchant: subscription.merchant,
-          startDate: subscription.startDate,
-          endDate: subscription.endDate,
-          nextBillingDate: subscription.nextBillingDate,
+          currentPeriodStart: subscription.currentPeriodStart,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          trialStart: subscription.trialStart,
+          trialEnd: subscription.trialEnd,
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+          canceledAt: subscription.canceledAt,
+          cancelReason: subscription.cancelReason,
           amount: subscription.amount,
           currency: subscription.currency,
-          billingCycle: subscription.billingCycle,
-          autoRenew: subscription.autoRenew
+          interval: subscription.interval,
+          intervalCount: subscription.intervalCount,
+          period: subscription.period,
+          discount: subscription.discount,
+          savings: subscription.savings,
+          createdAt: subscription.createdAt,
+          updatedAt: subscription.updatedAt,
+          merchant: subscription.merchant,
+          plan: subscription.plan
         },
         isExpired,
         isExpiringSoon,

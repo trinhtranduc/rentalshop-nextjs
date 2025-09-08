@@ -153,8 +153,14 @@ export const authenticatedFetch = async (
     if (response.status === API.STATUS.UNAUTHORIZED) {
       // Handle unauthorized - redirect to login or refresh token
       if (typeof window !== 'undefined') {
+        console.error('🔒 Unauthorized access - token may be expired or invalid');
+        console.error('🔒 Response status:', response.status);
+        console.error('🔒 Response URL:', url);
         localStorage.removeItem('authToken');
-        window.location.href = '/login';
+        // Add a small delay to allow console logs to be seen before redirect
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
       }
       throw new Error('Unauthorized access');
     }
@@ -195,8 +201,14 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
     // Handle unauthorized responses by redirecting to login
     if (response.status === API.STATUS.UNAUTHORIZED) {
       if (typeof window !== 'undefined') {
+        console.error('🔒 parseApiResponse: Unauthorized access - token may be expired or invalid');
+        console.error('🔒 parseApiResponse: Response status:', response.status);
+        console.error('🔒 parseApiResponse: Response URL:', response.url);
         localStorage.removeItem('authToken');
-        window.location.href = '/login';
+        // Add a small delay to allow console logs to be seen before redirect
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
       }
       throw new Error('Unauthorized access - redirecting to login');
     }

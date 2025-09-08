@@ -354,17 +354,24 @@ export function MerchantPlanManagement({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Current Plan
+            Current Subscription
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {merchant.currentPlan ? (
+          {(merchant.currentPlan || currentSubscription) ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold">{merchant.currentPlan.name}</h3>
+                  <h3 className="text-lg font-semibold">
+                    {merchant.currentPlan?.name || currentSubscription?.plan?.name || 'No plan assigned'}
+                  </h3>
                   <p className="text-sm text-gray-500">
-                    {formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency)}
+                    {merchant.currentPlan ? 
+                      formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency) :
+                      currentSubscription ? 
+                        formatPrice(currentSubscription.amount, currentSubscription.currency) :
+                        'No pricing available'
+                    }
                   </p>
                 </div>
                 <StatusBadge 
@@ -464,12 +471,12 @@ export function MerchantPlanManagement({
           ) : (
             <div className="text-center py-8">
               <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Plan Assigned</h3>
-              <p className="text-gray-500 mb-4">This merchant doesn't have an active subscription plan.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Subscription</h3>
+              <p className="text-gray-500 mb-4">This merchant doesn't have an active subscription.</p>
               <div className="flex flex-wrap items-center justify-center gap-3">
               <Button onClick={handleOpenChangeDialog}>
                 <CreditCard className="h-4 w-4 mr-2" />
-                Assign Plan
+                Create Subscription
               </Button>
                 
                 {/* Always show Change Plan button */}

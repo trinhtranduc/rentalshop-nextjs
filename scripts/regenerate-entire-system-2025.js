@@ -139,9 +139,10 @@ async function resetDatabase() {
 
 // Step 2: Create merchants
 async function createMerchants() {
-  console.log('\n🏢 Creating merchants...');
+  console.log('\n🏢 Creating merchants with default outlets...');
   
   const merchants = [];
+  let outletId = 1;
   
   // Sample business data for realistic merchant information
   const businessData = [
@@ -203,11 +204,33 @@ async function createMerchants() {
         taxId: business.taxId,
         website: business.website,
         description: business.description,
-        isActive: true
+        isActive: true,
+        subscriptionStatus: 'trial' // Ensure all merchants start with trial status
       }
     });
     
     console.log(`✅ Created merchant: ${merchant.name} (ID: ${merchant.publicId})`);
+    
+    // Create default outlet for this merchant immediately with all merchant info
+    const defaultOutlet = await prisma.outlet.create({
+      data: {
+        publicId: outletId++,
+        name: `${business.name} - Main Branch`,
+        address: business.address,
+        phone: business.phone,
+        city: business.city,
+        state: business.state,
+        zipCode: business.zipCode,
+        country: business.country,
+        description: `Main branch of ${business.name}`,
+        isActive: true,
+        isDefault: true, // Mark as default outlet
+        merchantId: merchant.id
+      }
+    });
+    
+    console.log(`✅ Created default outlet: ${defaultOutlet.name} for ${merchant.name}`);
+    
     merchants.push(merchant);
   }
   
@@ -268,28 +291,34 @@ async function createSuperAdmin() {
   return superAdmin;
 }
 
-// Step 4: Create outlets
-async function createOutlets(merchants) {
-  console.log('\n🏪 Creating outlets...');
+// Step 4: Create additional outlets (non-default)
+async function createAdditionalOutlets(merchants) {
+  console.log('\n🏪 Creating additional outlets...');
   
   const outlets = [];
-  let outletId = 1;
+  let outletId = merchants.length + 1; // Start after default outlets
   
   for (const merchant of merchants) {
-    for (let i = 1; i <= SYSTEM_CONFIG.OUTLETS_PER_MERCHANT; i++) {
+    // Create additional outlets (excluding the default one already created)
+    for (let i = 2; i <= SYSTEM_CONFIG.OUTLETS_PER_MERCHANT; i++) {
       const outlet = await prisma.outlet.create({
         data: {
           publicId: outletId++,
           name: `Outlet ${i} - ${merchant.name}`,
           address: `Address for Outlet ${i} of ${merchant.name}`,
           phone: `+1-555-${String(outletId).padStart(4, '0')}`,
+          city: merchant.city,
+          state: merchant.state,
+          zipCode: merchant.zipCode,
+          country: merchant.country,
           description: `Description for Outlet ${i} of ${merchant.name}`,
           isActive: true,
+          isDefault: false, // Not default outlet
           merchantId: merchant.id
         }
       });
       
-      console.log(`✅ Created outlet: ${outlet.name} for ${merchant.name}`);
+      console.log(`✅ Created additional outlet: ${outlet.name} for ${merchant.name}`);
       outlets.push(outlet);
     }
   }
@@ -974,13 +1003,19 @@ async function main() {
     console.log('📋 Creating merchant accounts...');
     const merchantUsers = await createMerchantAccounts(merchants);
     
-    // Step 7: Create outlets
-    console.log('📋 Creating outlets...');
-    const outlets = await createOutlets(merchants);
+    // Step 7: Create additional outlets
+    console.log('📋 Creating additional outlets...');
+    const additionalOutlets = await createAdditionalOutlets(merchants);
+    
+    // Get all outlets (default + additional)
+    const allOutlets = await prisma.outlet.findMany({
+      orderBy: { publicId: 'asc' }
+    });
+    console.log(`📊 Total outlets created: ${allOutlets.length} (${merchants.length} default + ${additionalOutlets.length} additional)`);
     
     // Step 8: Create outlet users
     console.log('📋 Creating outlet users...');
-    const outletUsers = await createOutletUsers(outlets);
+    const outletUsers = await createOutletUsers(allOutlets);
     
     // Step 9: Create categories
     console.log('📋 Creating categories...');
@@ -988,7 +1023,7 @@ async function main() {
     
     // Step 10: Create products
     console.log('📋 Creating products...');
-    const products = await createProducts(categories, outlets);
+    const products = await createProducts(categories, allOutlets);
     
     // Step 11: Create customers
     console.log('📋 Creating customers...');
@@ -996,7 +1031,7 @@ async function main() {
     
     // Step 12: Create orders
     console.log('📋 Creating orders...');
-    const orders = await createOrders(outlets, customers, products, outletUsers);
+    const orders = await createOrders(allOutlets, customers, products, outletUsers);
     
     // Step 13: Create merchant subscriptions (with proper plan assignment)
     console.log('📋 Creating merchant subscriptions...');
@@ -1019,7 +1054,7 @@ async function main() {
     console.log(`  ✅ 1 super admin created`);
     console.log(`  ✅ ${merchants.length} merchants created`);
     console.log(`  ✅ ${merchantUsers.length} merchant accounts created`);
-    console.log(`  ✅ ${outlets.length} outlets created`);
+    console.log(`  ✅ ${allOutlets.length} outlets created (${merchants.length} default + ${additionalOutlets.length} additional)`);
     console.log(`  ✅ ${outletUsers.length} outlet users created`);
     console.log(`  ✅ ${categories.length} categories created`);
     console.log(`  ✅ ${products.length} products created`);
@@ -1155,7 +1190,7 @@ module.exports = {
   createMerchants, 
   createMerchantAccounts, 
   createSuperAdmin, 
-  createOutlets, 
+  createAdditionalOutlets, 
   createOutletUsers, 
   createCategories, 
   createProducts, 

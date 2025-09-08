@@ -19,6 +19,13 @@ export async function POST(request: NextRequest) {
       role: validatedData.role || 'CLIENT',
       businessName: validatedData.businessName,
       outletName: validatedData.outletName,
+      // Address fields for merchant registration
+      address: validatedData.address,
+      city: validatedData.city,
+      state: validatedData.state,
+      zipCode: validatedData.zipCode,
+      country: validatedData.country,
+      // For outlet staff registration
       merchantCode: validatedData.merchantCode,
       outletCode: validatedData.outletCode,
     });

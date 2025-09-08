@@ -15,11 +15,6 @@ import {
   Input,
   Textarea,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   StatusBadge,
   ToastContainer,
   useToasts
@@ -32,8 +27,14 @@ interface MerchantEditData {
   email: string;
   phone: string;
   address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  businessType: string;
+  taxId: string;
+  website: string;
   description?: string;
-  plan: string;
   isActive: boolean;
 }
 
@@ -52,8 +53,14 @@ export default function EditMerchantPage() {
     email: '',
     phone: '',
     address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    businessType: '',
+    taxId: '',
+    website: '',
     description: '',
-    plan: 'BASIC',
     isActive: true
   });
 
@@ -89,8 +96,14 @@ export default function EditMerchantPage() {
             email: data.data.merchant.email,
             phone: data.data.merchant.phone || '',
             address: data.data.merchant.address || '',
+            city: data.data.merchant.city || '',
+            state: data.data.merchant.state || '',
+            zipCode: data.data.merchant.zipCode || '',
+            country: data.data.merchant.country || '',
+            businessType: data.data.merchant.businessType || '',
+            taxId: data.data.merchant.taxId || '',
+            website: data.data.merchant.website || '',
             description: data.data.merchant.description || '',
-            plan: data.data.merchant.plan || 'BASIC',
             isActive: data.data.merchant.isActive
           });
         } else {
@@ -235,56 +248,103 @@ export default function EditMerchantPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Name *</Label>
+                    <Label htmlFor="name">Business Name *</Label>
                     <Input
                       id="name"
                       value={editData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Enter merchant name"
+                      placeholder="Enter business name"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email">Business Email *</Label>
                     <Input
                       id="email"
                       type="email"
                       value={editData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      placeholder="Enter email address"
+                      placeholder="Enter business email"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone">Business Phone</Label>
                     <Input
                       id="phone"
                       value={editData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="Enter phone number"
+                      placeholder="Enter business phone"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="plan">Plan</Label>
-                    <Select
-                      value={editData.plan}
-                      onValueChange={(value) => handleInputChange('plan', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select plan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="BASIC">Basic</SelectItem>
-                        <SelectItem value="PRO">Pro</SelectItem>
-                        <SelectItem value="ENTERPRISE">Enterprise</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="businessType">Business Type</Label>
+                    <Input
+                      id="businessType"
+                      value={editData.businessType}
+                      onChange={(e) => handleInputChange('businessType', e.target.value)}
+                      placeholder="Enter business type"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="taxId">Tax ID</Label>
+                    <Input
+                      id="taxId"
+                      value={editData.taxId}
+                      onChange={(e) => handleInputChange('taxId', e.target.value)}
+                      placeholder="Enter tax ID"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      value={editData.website}
+                      onChange={(e) => handleInputChange('website', e.target.value)}
+                      placeholder="Enter website URL"
+                    />
                   </div>
                   <div className="md:col-span-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Textarea
+                    <Label htmlFor="address">Business Address</Label>
+                    <Input
                       id="address"
                       value={editData.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="Enter address"
+                      placeholder="Enter business address"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={editData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      placeholder="Enter city"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      value={editData.state}
+                      onChange={(e) => handleInputChange('state', e.target.value)}
+                      placeholder="Enter state"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="zipCode">Zip Code</Label>
+                    <Input
+                      id="zipCode"
+                      value={editData.zipCode}
+                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                      placeholder="Enter zip code"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={editData.country}
+                      onChange={(e) => handleInputChange('country', e.target.value)}
+                      placeholder="Enter country"
                     />
                   </div>
                   <div className="md:col-span-2">
