@@ -23,7 +23,10 @@ import {
   DialogFooter,
   Input,
   Textarea,
-  Label
+  Label,
+  ConfirmationDialog,
+  ToastContainer,
+  useToasts
 } from '@rentalshop/ui';
 import { 
   ArrowLeft,
@@ -38,7 +41,8 @@ import {
   CheckCircle,
   Clock,
   Download,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant, Payment } from '@rentalshop/types';
 
@@ -55,9 +59,23 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [extendData, setExtendData] = useState({
+    newEndDate: new Date(),
     amount: 0,
     method: 'MANUAL',
-    notes: ''
+    description: ''
+  });
+
+  // Toast management
+  const { toasts, showSuccess, showError, removeToast } = useToasts();
+
+  // Confirmation dialog state
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    open: boolean;
+    type: 'delete' | 'pause' | 'cancel';
+    data?: any;
+  }>({
+    open: false,
+    type: 'delete'
   });
 
   // Fetch subscription data
@@ -65,17 +83,14 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     try {
       setLoading(true);
       
-      const response = await fetch(`/api/subscriptions/${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const { subscriptionsApi } = await import('@rentalshop/utils');
+      const result = await subscriptionsApi.getById(parseInt(params.id));
       
-      const data = await response.json();
-      
-      if (data.success) {
-        setSubscription(data.data.subscription);
-        setPayments(data.data.payments || []);
+      if (result.success && result.data) {
+        setSubscription(result.data);
+        setPayments(result.data.payments || []);
+      } else {
+        throw new Error(result.message || 'Failed to fetch subscription');
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
@@ -88,55 +103,119 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     fetchSubscription();
   }, [params.id]);
 
-  const handleExtend = async () => {
-    try {
-      const response = await fetch(`/api/subscriptions/${params.id}/extend`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(extendData)
-      });
+  const handleExtend = () => {
+    setShowExtendModal(true);
+  };
 
-      if (response.ok) {
+  const handleExtendConfirm = async () => {
+    try {
+      const { subscriptionsApi } = await import('@rentalshop/utils');
+      const result = await subscriptionsApi.extend(parseInt(params.id), extendData);
+
+      if (result.success) {
         setShowExtendModal(false);
         await fetchSubscription(); // Refresh data
+        showSuccess('Subscription Extended', 'Subscription has been extended successfully');
+      } else {
+        showError('Extension Failed', result.message || 'Failed to extend subscription');
       }
     } catch (error) {
       console.error('Error extending subscription:', error);
+      showError('Extension Failed', 'Error extending subscription. Please try again.');
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    setConfirmationDialog({
+      open: true,
+      type: 'delete'
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
       const response = await fetch(`/api/subscriptions/${params.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
 
       if (response.ok) {
+        showSuccess('Subscription Deleted', 'Subscription has been deleted successfully');
         // Redirect to subscriptions list
         window.location.href = '/admin/subscriptions';
+      } else {
+        showError('Deletion Failed', 'Failed to delete subscription');
       }
     } catch (error) {
       console.error('Error deleting subscription:', error);
+      showError('Deletion Failed', 'Error deleting subscription. Please try again.');
+    } finally {
+      setConfirmationDialog({ open: false, type: 'delete' });
+    }
+  };
+
+  const handlePause = () => {
+    setConfirmationDialog({
+      open: true,
+      type: 'pause'
+    });
+  };
+
+  const handlePauseConfirm = async () => {
+    try {
+      const response = await fetch(`/api/subscriptions/${params.id}/suspend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({ reason: 'Admin suspended subscription' })
+      });
+
+      if (response.ok) {
+        await fetchSubscription(); // Refresh data
+        showSuccess('Subscription Suspended', 'Subscription has been suspended successfully');
+      } else {
+        showError('Suspension Failed', 'Failed to suspend subscription');
+      }
+    } catch (error) {
+      console.error('Error suspending subscription:', error);
+      showError('Suspension Failed', 'Error suspending subscription. Please try again.');
+    } finally {
+      setConfirmationDialog({ open: false, type: 'pause' });
+    }
+  };
+
+  const handleCancel = () => {
+    setConfirmationDialog({
+      open: true,
+      type: 'cancel'
+    });
+  };
+
+  const handleCancelConfirm = async () => {
+    try {
+      const { subscriptionsApi } = await import('@rentalshop/utils');
+      const result = await subscriptionsApi.cancel(parseInt(params.id), 'Admin cancelled subscription');
+
+      if (result.success) {
+        await fetchSubscription(); // Refresh data
+        showSuccess('Subscription Cancelled', 'Subscription has been cancelled successfully');
+      } else {
+        showError('Cancellation Failed', result.message || 'Failed to cancel subscription');
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      showError('Cancellation Failed', 'Error cancelling subscription. Please try again.');
+    } finally {
+      setConfirmationDialog({ open: false, type: 'cancel' });
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      'TRIAL': { variant: 'warning' as const, label: 'Trial' },
-      'ACTIVE': { variant: 'success' as const, label: 'Active' },
-      'CANCELLED': { variant: 'destructive' as const, label: 'Cancelled' },
-      'EXPIRED': { variant: 'destructive' as const, label: 'Expired' },
-      'SUSPENDED': { variant: 'warning' as const, label: 'Suspended' }
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || { variant: 'secondary' as const, label: status };
-    return <StatusBadge variant={config.variant}>{config.label}</StatusBadge>;
+    return <StatusBadge status={status} />;
   };
 
   const formatDate = (date: string | Date) => {
@@ -224,14 +303,34 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
           </Button>
           <Button
             variant="outline"
-            onClick={() => setShowExtendModal(true)}
+            onClick={handleExtend}
           >
             <CreditCard className="h-4 w-4 mr-2" />
             Extend
           </Button>
+          {subscription.status === 'active' && (
+            <Button
+              variant="outline"
+              onClick={handlePause}
+              className="text-orange-600 hover:text-orange-700"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Suspend
+            </Button>
+          )}
+          {subscription.status === 'active' && (
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              className="text-red-600 hover:text-red-700"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          )}
           <Button
             variant="outline"
-            onClick={() => setShowDeleteModal(true)}
+            onClick={handleDelete}
             className="text-red-600 hover:text-red-700"
           >
             <Trash2 className="h-4 w-4 mr-2" />
@@ -241,19 +340,19 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       </div>
 
       {/* Status Alert */}
-      {(isExpiringSoon(subscription.endDate) || isExpired(subscription.endDate)) && (
+      {(isExpiringSoon(subscription.currentPeriodEnd) || isExpired(subscription.currentPeriodEnd)) && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-5 w-5 text-orange-600" />
               <div>
                 <h3 className="font-medium text-orange-800">
-                  {isExpired(subscription.endDate) ? 'Subscription Expired' : 'Subscription Expiring Soon'}
+                  {isExpired(subscription.currentPeriodEnd) ? 'Subscription Expired' : 'Subscription Expiring Soon'}
                 </h3>
                 <p className="text-sm text-orange-700">
-                  {isExpired(subscription.endDate) 
-                    ? `This subscription expired on ${formatDate(subscription.endDate!)}`
-                    : `This subscription expires on ${formatDate(subscription.endDate!)}`
+                  {isExpired(subscription.currentPeriodEnd) 
+                    ? `This subscription expired on ${formatDate(subscription.currentPeriodEnd!)}`
+                    : `This subscription expires on ${formatDate(subscription.currentPeriodEnd!)}`
                   }
                 </p>
               </div>
@@ -279,11 +378,11 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <Label className="text-sm font-medium text-gray-600">Status</Label>
                   <div className="mt-1">
                     {getStatusBadge(subscription.status)}
-                    {isExpiringSoon(subscription.endDate) && (
-                      <Badge variant="warning" className="ml-2">Expiring Soon</Badge>
+                    {isExpiringSoon(subscription.currentPeriodEnd) && (
+                      <Badge variant="outline" className="ml-2">Expiring Soon</Badge>
                     )}
-                    {isExpired(subscription.endDate) && (
-                      <Badge variant="destructive" className="ml-2">Expired</Badge>
+                    {isExpired(subscription.currentPeriodEnd) && (
+                      <Badge variant="outline" className="ml-2">Expired</Badge>
                     )}
                   </div>
                 </div>
@@ -300,40 +399,40 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <Label className="text-sm font-medium text-gray-600">Start Date</Label>
                   <div className="mt-1 flex items-center space-x-1">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <span>{formatDate(subscription.startDate)}</span>
+                    <span>{formatDate(subscription.currentPeriodStart)}</span>
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">End Date</Label>
                   <div className="mt-1 flex items-center space-x-1">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <span>{subscription.endDate ? formatDate(subscription.endDate) : 'No end date'}</span>
+                    <span>{subscription.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : 'No end date'}</span>
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Next Billing</Label>
                   <div className="mt-1 flex items-center space-x-1">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <span>{formatDate(subscription.nextBillingDate)}</span>
+                    <span>{formatDate(subscription.currentPeriodEnd)}</span>
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Auto Renew</Label>
                   <div className="mt-1 flex items-center space-x-1">
-                    {subscription.autoRenew ? (
+                    {!subscription.cancelAtPeriodEnd ? (
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     ) : (
                       <Clock className="h-4 w-4 text-gray-400" />
                     )}
-                    <span>{subscription.autoRenew ? 'Yes' : 'No'}</span>
+                    <span>{!subscription.cancelAtPeriodEnd ? 'Yes' : 'No'}</span>
                   </div>
                 </div>
               </div>
               
-              {subscription.changeReason && (
+              {subscription.cancelReason && (
                 <div>
-                  <Label className="text-sm font-medium text-gray-600">Change Reason</Label>
-                  <p className="mt-1 text-sm text-gray-700">{subscription.changeReason}</p>
+                  <Label className="text-sm font-medium text-gray-600">Cancel Reason</Label>
+                  <p className="mt-1 text-sm text-gray-700">{subscription.cancelReason}</p>
                 </div>
               )}
             </CardContent>
@@ -376,12 +475,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                         <TableCell>{formatCurrency(payment.amount, payment.currency)}</TableCell>
                         <TableCell>{payment.method}</TableCell>
                         <TableCell>
-                          <StatusBadge 
-                            variant={payment.status === 'COMPLETED' ? 'success' : 
-                                   payment.status === 'FAILED' ? 'destructive' : 'warning'}
-                          >
-                            {payment.status}
-                          </StatusBadge>
+                          <StatusBadge status={payment.status} />
                         </TableCell>
                         <TableCell className="font-mono text-sm">
                           {payment.reference || 'N/A'}
@@ -418,9 +512,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Status</Label>
                   <div className="mt-1">
-                    <StatusBadge variant="success">
-                      {subscription.merchant?.subscriptionStatus || 'Active'}
-                    </StatusBadge>
+                    <StatusBadge status={subscription.merchant?.subscriptionStatus || 'Active'} />
                   </div>
                 </div>
               </div>
@@ -451,12 +543,12 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                     {formatCurrency(subscription.plan?.basePrice || 0, subscription.plan?.currency || 'USD')}
                   </p>
                 </div>
-                {subscription.planVariant && (
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Variant</Label>
-                    <p className="text-sm text-gray-700">{subscription.planVariant.name}</p>
-                  </div>
-                )}
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Interval</Label>
+                  <p className="text-sm text-gray-700">
+                    {subscription.intervalCount} {subscription.interval}(s)
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -465,79 +557,136 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
 
       {/* Extend Modal */}
       <Dialog open={showExtendModal} onOpenChange={setShowExtendModal}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Extend Subscription</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-blue-600" />
+              Extend Subscription
+            </DialogTitle>
             <DialogDescription>
-              Extend this subscription with a manual payment.
+              Extend subscription for {subscription?.merchant?.name || 'Unknown Merchant'}. 
+              This will update the end date and create a payment record.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                value={extendData.amount}
-                onChange={(e) => setExtendData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="method">Payment Method</Label>
-              <select
-                id="method"
-                value={extendData.method}
-                onChange={(e) => setExtendData(prev => ({ ...prev, method: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="MANUAL">Manual</option>
-                <option value="STRIPE">Stripe</option>
-                <option value="TRANSFER">Bank Transfer</option>
-                <option value="CASH">Cash</option>
-                <option value="CHECK">Check</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={extendData.notes}
-                onChange={(e) => setExtendData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Optional notes about this extension..."
-              />
+
+          <div className="space-y-6">
+            {/* Current Subscription Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Current Subscription</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500">Plan</Label>
+                    <p className="text-sm font-medium">{subscription?.plan?.name || 'Unknown Plan'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500">Current Amount</Label>
+                    <p className="text-sm font-medium">
+                      {formatCurrency(subscription?.amount || 0, subscription?.currency || 'USD')}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500">Current End Date</Label>
+                    <p className="text-sm">{subscription?.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : 'No end date'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500">Status</Label>
+                    <p className="text-sm">{subscription?.status}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Extension Details */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="amount">Extension Amount</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={extendData.amount}
+                    onChange={(e) => setExtendData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="method">Payment Method</Label>
+                  <select
+                    id="method"
+                    value={extendData.method}
+                    onChange={(e) => setExtendData(prev => ({ ...prev, method: e.target.value }))}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="MANUAL">Manual</option>
+                    <option value="STRIPE">Stripe</option>
+                    <option value="TRANSFER">Bank Transfer</option>
+                    <option value="CASH">Cash</option>
+                    <option value="CHECK">Check</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={extendData.description}
+                  onChange={(e) => setExtendData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Optional description about this extension..."
+                  rows={3}
+                />
+              </div>
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowExtendModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleExtend}>
+            <Button onClick={handleExtendConfirm}>
               Extend Subscription
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Modal */}
-      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Subscription</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this subscription? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete Subscription
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        open={confirmationDialog.open}
+        onOpenChange={(open) => setConfirmationDialog(prev => ({ ...prev, open }))}
+        type={confirmationDialog.type === 'delete' ? 'danger' : confirmationDialog.type === 'cancel' ? 'warning' : 'warning'}
+        title={
+          confirmationDialog.type === 'pause' ? 'Suspend Subscription' :
+          confirmationDialog.type === 'cancel' ? 'Cancel Subscription' :
+          'Delete Subscription'
+        }
+        description={
+          confirmationDialog.type === 'pause' ?
+            `Are you sure you want to suspend this subscription for ${subscription?.merchant?.name || 'this merchant'}? The subscription will be paused and billing will stop immediately. You can reactivate it later if needed.` :
+          confirmationDialog.type === 'cancel' ?
+            `Are you sure you want to cancel this subscription for ${subscription?.merchant?.name || 'this merchant'}? This will stop billing and the subscription will end at the current period. This action cannot be undone.` :
+            `Are you sure you want to permanently delete this subscription for ${subscription?.merchant?.name || 'this merchant'}? This action cannot be undone and will permanently remove all subscription data.`
+        }
+        confirmText={
+          confirmationDialog.type === 'pause' ? 'Suspend Subscription' :
+          confirmationDialog.type === 'cancel' ? 'Cancel Subscription' :
+          'Delete Subscription'
+        }
+        onConfirm={
+          confirmationDialog.type === 'pause' ? handlePauseConfirm :
+          confirmationDialog.type === 'cancel' ? handleCancelConfirm :
+          handleDeleteConfirm
+        }
+        onCancel={() => setConfirmationDialog({ open: false, type: 'delete' })}
+      />
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

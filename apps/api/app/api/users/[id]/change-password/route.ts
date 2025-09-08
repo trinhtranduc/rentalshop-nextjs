@@ -6,15 +6,18 @@ import bcrypt from 'bcryptjs';
 import { findUserByPublicId } from '@rentalshop/database';
 
 /**
- * PATCH /api/users/[publicId]/change-password
+ * PATCH /api/users/[id]/change-password
  * Change user password (Admin or self)
+ * 
+ * For admin password changes: Only requires { newPassword }
+ * For self password changes: Requires { newPassword, confirmPassword }
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { publicId: number } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    console.log('🔐 PATCH /api/users/[publicId]/change-password - Changing password for user:', params.publicId);
+    console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', params.id);
     
     // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -33,12 +36,12 @@ export async function PATCH(
       );
     }
 
-    const { publicId } = params;
+    const { id } = params;
     const body = await request.json();
     const { newPassword, confirmPassword } = body;
 
     // Validate public ID format (should be numeric)
-    const numericId = parseInt(publicId);
+    const numericId = parseInt(id);
     if (isNaN(numericId) || numericId <= 0) {
       return NextResponse.json(
         { success: false, message: 'Invalid user ID format' },
@@ -54,7 +57,9 @@ export async function PATCH(
       );
     }
 
-    if (newPassword !== confirmPassword) {
+    // Only validate confirmPassword if it's provided (for self password changes)
+    // Admin password changes don't require confirmPassword
+    if (confirmPassword && newPassword !== confirmPassword) {
       return NextResponse.json(
         { success: false, message: 'New passwords do not match' },
         { status: 400 }

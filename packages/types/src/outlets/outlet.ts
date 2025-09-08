@@ -7,9 +7,14 @@ export interface Outlet {
   name: string;
   address?: string;
   phone?: string;
+  city?: string;     // Outlet city
+  state?: string;    // Outlet state
+  zipCode?: string;  // Outlet zip code
+  country?: string;  // Outlet country
   description?: string;
   merchantId: number;
   isActive: boolean;
+  isDefault?: boolean;  // Indicates if this is the default outlet for the merchant
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +31,10 @@ export interface OutletUpdateInput {
   name?: string;
   address?: string;
   phone?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
   description?: string;
   isActive?: boolean;
 }
@@ -48,8 +57,13 @@ export interface OutletSearchResult {
   name: string;
   address?: string;
   phone?: string;
+  city?: string;     // Outlet city
+  state?: string;    // Outlet state
+  zipCode?: string;  // Outlet zip code
+  country?: string;  // Outlet country
   description?: string;
   isActive: boolean;
+  isDefault?: boolean;  // Indicates if this is the default outlet for the merchant
   createdAt: Date;
   updatedAt: Date;
   merchantId: number;

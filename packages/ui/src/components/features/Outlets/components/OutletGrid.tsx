@@ -12,7 +12,7 @@ import {
   MapPin, 
   Phone, 
   Edit, 
-  Eye 
+  Eye
 } from 'lucide-react';
 import type { Outlet } from '@rentalshop/types';
 
@@ -46,13 +46,18 @@ export function OutletGrid({
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="w-5 h-5" />
                 {outlet.name}
+                {outlet.isDefault && (
+                  <StatusBadge 
+                    status="main branch"
+                    variant="outline"
+                    className="flex items-center gap-1"
+                  />
+                )}
               </CardTitle>
               <StatusBadge 
                 status={outlet.isActive ? 'active' : 'inactive'}
-                variant={outlet.isActive ? 'success' : 'destructive'}
-              >
-                {outlet.isActive ? 'Active' : 'Inactive'}
-              </StatusBadge>
+                variant="default"
+              />
             </div>
           </CardHeader>
           <CardContent className="space-y-4">

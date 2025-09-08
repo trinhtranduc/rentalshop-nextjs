@@ -58,6 +58,10 @@ interface SubscriptionFormData {
   cancelReason?: string;
   autoRenew: boolean;
   changeReason?: string;
+  // Additional fields for form handling
+  startDate?: Date;
+  endDate?: Date;
+  nextBillingDate?: Date;
 }
 
 interface SubscriptionFormProps {
@@ -103,7 +107,11 @@ export function SubscriptionForm({
     canceledAt: initialData?.canceledAt,
     cancelReason: initialData?.cancelReason,
     autoRenew: initialData?.autoRenew ?? true,
-    changeReason: initialData?.changeReason || ''
+    changeReason: initialData?.changeReason || '',
+    // Initialize additional fields
+    startDate: initialData?.currentPeriodStart || new Date(),
+    endDate: initialData?.currentPeriodEnd || new Date(),
+    nextBillingDate: initialData?.currentPeriodEnd || new Date()
   });
 
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -178,8 +186,8 @@ export function SubscriptionForm({
 
   // Calculate trial end date when start date or plan changes
   useEffect(() => {
-    if (selectedPlan && formData.status === 'TRIAL' && selectedPlan.trialDays > 0) {
-      const trialEndDate = new Date(formData.startDate);
+    if (selectedPlan && formData.status === 'trial' && selectedPlan.trialDays > 0) {
+      const trialEndDate = new Date(formData.startDate || formData.currentPeriodStart);
       trialEndDate.setDate(trialEndDate.getDate() + selectedPlan.trialDays);
       
       setFormData(prev => ({
@@ -194,7 +202,7 @@ export function SubscriptionForm({
   // Calculate end date for active subscriptions
   useEffect(() => {
     if (formData.status === 'ACTIVE' && selectedPlan) {
-      const endDate = new Date(formData.startDate);
+      const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setMonth(endDate.getMonth() + 1); // Default to 1 month
       
       setFormData(prev => ({
@@ -414,13 +422,13 @@ export function SubscriptionForm({
           {/* Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate" className="flex items-center space-x-2">
+              <Label htmlFor="currentPeriodStart" className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4" />
                 <span>Start Date *</span>
               </Label>
               <Input
                 type="datetime-local"
-                value={formData.startDate.toISOString().slice(0, 16)}
+                value={formData.startDate?.toISOString().slice(0, 16) || ''}
                 onChange={(e) => handleInputChange('startDate', new Date(e.target.value))}
                 disabled={mode === 'view'}
                 className={errors.startDate ? 'border-red-500' : ''}

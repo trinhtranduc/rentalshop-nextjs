@@ -8,6 +8,10 @@ export interface Merchant {
   email: string;
   phone?: string;
   address?: string;              // Merchant address
+  city?: string;                 // Merchant city
+  state?: string;                // Merchant state
+  zipCode?: string;              // Merchant zip code
+  country?: string;              // Merchant country
   description?: string;
   planId?: number;               // Reference to Plan publicId
   subscriptionStatus: string;    // Current subscription status

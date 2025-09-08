@@ -89,6 +89,7 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
       phone: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true,
       merchant: {
@@ -112,6 +113,7 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     phone: outlet.phone || undefined,
     description: outlet.description || undefined,
     isActive: outlet.isActive,
+    isDefault: outlet.isDefault || false,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
     merchantId: outlet.merchant.publicId, // Return merchant publicId
@@ -155,6 +157,7 @@ export async function getOutletsByMerchant(merchantId: number) {
       phone: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true,
       merchant: {
@@ -176,6 +179,7 @@ export async function getOutletsByMerchant(merchantId: number) {
     phone: outlet.phone || undefined,
     description: outlet.description || undefined,
     isActive: outlet.isActive,
+    isDefault: outlet.isDefault || false,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
     merchantId: outlet.merchant.publicId, // Return merchant publicId
@@ -303,11 +307,16 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
 export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
   const outlet = await prisma.outlet.findUnique({
     where: { publicId },
-    select: { id: true, merchantId: true, name: true }
+    select: { id: true, merchantId: true, name: true, isDefault: true }
   });
 
   if (!outlet) {
     throw new Error(`Outlet with publicId ${publicId} not found`);
+  }
+
+  // Prevent disabling default outlets
+  if (outlet.isDefault && input.isActive === false) {
+    throw new Error('Default outlet cannot be disabled');
   }
 
   const updatedOutlet = await prisma.outlet.update({
@@ -316,19 +325,14 @@ export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
       ...(input.name !== undefined && { name: input.name.trim() }),
       ...(input.address !== undefined && { address: input.address?.trim() }),
       ...(input.phone !== undefined && { phone: input.phone?.trim() }),
+      ...(input.city !== undefined && { city: input.city?.trim() }),
+      ...(input.state !== undefined && { state: input.state?.trim() }),
+      ...(input.zipCode !== undefined && { zipCode: input.zipCode?.trim() }),
+      ...(input.country !== undefined && { country: input.country?.trim() }),
       ...(input.description !== undefined && { description: input.description?.trim() }),
       ...(input.isActive !== undefined && { isActive: input.isActive })
     },
-    select: {
-      id: true,
-      publicId: true,
-      name: true,
-      address: true,
-      phone: true,
-      description: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true,
+    include: {
       merchant: {
         select: {
           id: true,
@@ -345,6 +349,10 @@ export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
     name: updatedOutlet.name,
     address: updatedOutlet.address || undefined,
     phone: updatedOutlet.phone || undefined,
+    city: (updatedOutlet as any).city || undefined,
+    state: (updatedOutlet as any).state || undefined,
+    zipCode: (updatedOutlet as any).zipCode || undefined,
+    country: (updatedOutlet as any).country || undefined,
     description: updatedOutlet.description || undefined,
     isActive: updatedOutlet.isActive,
     createdAt: updatedOutlet.createdAt,

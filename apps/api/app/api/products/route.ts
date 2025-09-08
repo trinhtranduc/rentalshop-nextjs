@@ -8,6 +8,7 @@ import { searchRateLimiter } from '@rentalshop/middleware';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
+import { withSubscriptionRequired, withSubscriptionOptional } from '../../middleware/subscription-access';
 
 /**
  * GET /api/products

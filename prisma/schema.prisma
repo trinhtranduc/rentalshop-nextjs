@@ -8,24 +8,24 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  publicId      Int       @unique
-  email         String    @unique
+  id            String     @id @default(cuid())
+  publicId      Int        @unique
+  email         String     @unique
   password      String
   firstName     String
   lastName      String
   phone         String?
-  role          String    @default("OUTLET_STAFF")
-  isActive      Boolean   @default(true)
-  deletedAt     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role          String     @default("OUTLET_STAFF")
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   merchantId    String?
   outletId      String?
-  createdOrders Order[]
-  outlet        Outlet?   @relation(fields: [outletId], references: [id])
-  merchant      Merchant? @relation(fields: [merchantId], references: [id])
+  deletedAt     DateTime?
   auditLogs     AuditLog[]
+  createdOrders Order[]
+  outlet        Outlet?    @relation(fields: [outletId], references: [id])
+  merchant      Merchant?  @relation(fields: [merchantId], references: [id])
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -37,37 +37,35 @@ model User {
 }
 
 model Merchant {
-  id                String     @id @default(cuid())
-  publicId          Int        @unique
-  name              String
-  email             String     @unique
-  phone             String?
-  address           String?
-  city              String?
-  state             String?
-  zipCode           String?
-  country           String?
-  businessType      String?
-  taxId             String?
-  website           String?
-  description       String?
-  planId            String?    // Reference to current Plan
-  subscriptionStatus String    @default("trial") // ✅ MODERN: trial, active, past_due, cancelled, paused
-  totalRevenue      Float      @default(0)
-  lastActiveAt      DateTime?
-  isActive          Boolean    @default(true)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  
-  // Relations
-  plan              Plan?      @relation(fields: [planId], references: [id])
-  categories        Category[]
-  customers         Customer[]
-  outlets           Outlet[]
-  products          Product[]
-  users             User[]
-  subscriptions     Subscription[]
-  payments          Payment[]  // For direct merchant payments
+  id                 String        @id @default(cuid())
+  publicId           Int           @unique
+  name               String
+  email              String        @unique
+  phone              String?
+  address            String?
+  city               String?
+  state              String?
+  zipCode            String?
+  country            String?
+  businessType       String?
+  taxId              String?
+  website            String?
+  description        String?
+  planId             String?
+  subscriptionStatus String        @default("trial")
+  totalRevenue       Float         @default(0)
+  lastActiveAt       DateTime?
+  isActive           Boolean       @default(true)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  categories         Category[]
+  customers          Customer[]
+  plan               Plan?         @relation(fields: [planId], references: [id])
+  outlets            Outlet[]
+  payments           Payment[]
+  products           Product[]
+  subscriptions      Subscription?
+  users              User[]
 
   @@index([name])
   @@index([email])
@@ -88,6 +86,10 @@ model Outlet {
   updatedAt   DateTime      @updatedAt
   merchantId  String
   phone       String?
+  city        String?
+  country     String?
+  state       String?
+  zipCode     String?
   orders      Order[]
   merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products    OutletStock[]
@@ -252,32 +254,30 @@ model OrderItem {
 }
 
 model Payment {
-  id            String   @id @default(cuid())
-  publicId      Int      @unique
-  amount        Float
-  currency      String   @default("USD") // ✅ ADDED: Currency field
-  method        String   // STRIPE, TRANSFER, MANUAL, CASH, CHECK
-  type          String   // ORDER_PAYMENT, SUBSCRIPTION_PAYMENT, PLAN_CHANGE, PLAN_EXTENSION
-  status        String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED, CANCELLED
-  reference     String?  // Stripe payment ID, bank reference, etc.
-  transactionId String?  // ✅ ADDED: Transaction ID for external systems
-  invoiceNumber String?  // ✅ ADDED: Invoice number
-  description   String?  // ✅ ADDED: Payment description
-  notes         String?  // Internal notes
-  failureReason String?  // ✅ ADDED: Failure reason for failed payments
-  metadata      String?  // JSON string for additional payment data
-  processedAt   DateTime?
-  processedBy   String?  // User ID who processed the payment
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  // Relations
-  orderId       String?  // For order payments
-  order         Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  subscriptionId String? // For subscription payments
-  subscription  Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  merchantId    String?  // For direct merchant payments
-  merchant      Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  id             String        @id @default(cuid())
+  publicId       Int           @unique
+  amount         Float
+  currency       String        @default("USD")
+  method         String
+  type           String
+  status         String        @default("PENDING")
+  reference      String?
+  transactionId  String?
+  invoiceNumber  String?
+  description    String?
+  notes          String?
+  failureReason  String?
+  metadata       String?
+  processedAt    DateTime?
+  processedBy    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  orderId        String?
+  subscriptionId String?
+  merchantId     String?
+  merchant       Merchant?     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, status])
   @@index([subscriptionId, status])
@@ -288,94 +288,78 @@ model Payment {
   @@index([currency])
 }
 
-// ============================================================================
-// SUBSCRIPTION & PLAN MODELS
-// ============================================================================
-
 model Plan {
-  id            String    @id @default(cuid())
-  publicId      Int       @unique
-  name          String    @unique
+  id            String         @id @default(cuid())
+  publicId      Int            @unique
+  name          String         @unique
   description   String
-  basePrice     Float     // ✅ MODERN: Monthly base price for calculations
-  currency      String    @default("USD")
-  trialDays     Int       @default(14) // ✅ MODERN: Standard 14-day trial
-  maxOutlets    Int       @default(-1)  // -1 = unlimited
-  maxUsers      Int       @default(-1)  // -1 = unlimited
-  maxProducts   Int       @default(-1)  // -1 = unlimited
-  maxCustomers  Int       @default(-1)  // -1 = unlimited
-  features      String    // JSON array of features
-  isActive      Boolean   @default(true)
-  isPopular     Boolean   @default(false)
-  sortOrder     Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime? // For recycling
-  
-  // Relations
+  basePrice     Float
+  currency      String         @default("USD")
+  trialDays     Int            @default(14)
+  maxOutlets    Int            @default(-1)
+  maxUsers      Int            @default(-1)
+  maxProducts   Int            @default(-1)
+  maxCustomers  Int            @default(-1)
+  features      String
+  isActive      Boolean        @default(true)
+  isPopular     Boolean        @default(false)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
   merchants     Merchant[]
   subscriptions Subscription[]
-  
+
   @@index([publicId])
   @@index([isActive])
   @@index([sortOrder])
   @@index([deletedAt])
 }
 
-
 model Subscription {
-  id                String    @id @default(cuid())
-  publicId          Int       @unique
-  merchantId        String    @unique // ✅ MODERN: One subscription per merchant
-  planId            String
-  status            String    @default("trial") // ✅ MODERN: trial, active, past_due, cancelled, paused
+  id                 String    @id @default(cuid())
+  publicId           Int       @unique
+  merchantId         String    @unique
+  planId             String
+  status             String    @default("trial")
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
-  trialStart        DateTime?
-  trialEnd          DateTime?
-  cancelAtPeriodEnd Boolean   @default(false)
-  canceledAt        DateTime?
-  cancelReason      String?
-  amount            Float
-  currency          String    @default("USD")
-  interval          String    @default("month") // ✅ MODERN: month, quarter, year
-  intervalCount     Int       @default(1) // ✅ MODERN: 1 for month/year, 3 for quarter
-  period            Int       @default(1) // ✅ MODERN: 1, 3, or 12 months
-  discount          Float     @default(0) // ✅ MODERN: Applied discount percentage
-  savings           Float     @default(0) // ✅ MODERN: Amount saved due to discount
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
-  // Relations
-  merchant          Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  plan              Plan      @relation(fields: [planId], references: [id])
-  payments          Payment[]
-  
+  trialStart         DateTime?
+  trialEnd           DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  canceledAt         DateTime?
+  cancelReason       String?
+  amount             Float
+  currency           String    @default("USD")
+  interval           String    @default("month")
+  intervalCount      Int       @default(1)
+  period             Int       @default(1)
+  discount           Float     @default(0)
+  savings            Float     @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  payments           Payment[]
+  plan               Plan      @relation(fields: [planId], references: [id])
+  merchant           Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
   @@index([merchantId])
   @@index([planId])
   @@index([status])
   @@index([publicId])
 }
 
-
-// ============================================================================
-// AUDIT LOGGING
-// ============================================================================
-
 model AuditLog {
-  id          String   @id @default(cuid())
-  entityType  String   // MERCHANT, USER, ORDER, etc.
-  entityId    String   // ID of the entity being audited
-  action      String   // CREATE, UPDATE, DELETE, PLAN_CHANGED, etc.
-  details     String   // JSON string with change details
-  userId      String?  // User who performed the action
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
-  
-  // Relations
-  user        User?    @relation(fields: [userId], references: [id])
-  
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  action     String
+  details    String
+  userId     String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+
   @@index([entityType, entityId])
   @@index([userId])
   @@index([action])

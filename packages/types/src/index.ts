@@ -32,5 +32,8 @@ export * from './plans';
 // Subscription types
 export * from './subscription';
 
+// Settings types
+export * from './settings';
+
 // Common types
 export * from './common';

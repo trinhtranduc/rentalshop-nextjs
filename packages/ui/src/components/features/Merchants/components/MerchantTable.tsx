@@ -8,27 +8,9 @@ import {
 import { 
   Eye, 
   Edit,
-  CreditCard,
   MoreVertical
 } from 'lucide-react';
-
-interface Merchant {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  isActive: boolean;
-  subscriptionPlan: string;
-  subscriptionStatus: 'active' | 'trial' | 'expired' | 'cancelled';
-  trialEndsAt?: string;
-  expiredAt?: string;
-  outletsCount: number;
-  usersCount: number;
-  productsCount: number;
-  totalRevenue: number;
-  createdAt: string;
-  lastActiveAt: string;
-}
+import type { Merchant } from '@rentalshop/types';
 
 interface MerchantTableProps {
   merchants: Merchant[];
@@ -85,9 +67,9 @@ export function MerchantTable({
               { key: 'name', label: 'Name' },
               { key: 'email', label: 'Email' },
               { key: 'subscriptionPlan', label: 'Plan' },
-              { key: 'createdAt', label: 'Created' },
+              { key: 'createdAt', label: 'Started At' },
               { key: 'trialEndsAt', label: 'Trial Expires' },
-              { key: 'expiredAt', label: 'Expired At' }
+              { key: 'lastActiveAt', label: 'Expired At' }
             ].map(({ key, label }) => (
               <button
                 key={key}
@@ -135,19 +117,33 @@ export function MerchantTable({
                       <div>
                         <p className="text-gray-500 dark:text-gray-400 mb-1">Contact</p>
                         <p className="text-gray-900 dark:text-white">{merchant.email}</p>
-                        <p className="text-gray-500 dark:text-gray-400">{merchant.phone}</p>
+                        <p className="text-gray-500 dark:text-gray-400">{merchant.phone || 'No phone'}</p>
                       </div>
                       
                       {/* Subscription Plan */}
                       <div>
                         <p className="text-gray-500 dark:text-gray-400 mb-1">Plan</p>
-                        <p className="text-gray-900 dark:text-white font-medium">{merchant.subscriptionPlan}</p>
+                        <p className="text-gray-900 dark:text-white font-medium">
+                          {merchant.subscriptionPlan?.replace(' Plan trial', '') || 'No Plan'}
+                        </p>
                         <p className="text-gray-500 dark:text-gray-400 capitalize">{merchant.subscriptionStatus}</p>
                       </div>
                       
                       {/* Created Date */}
                       <div>
                         <p className="text-gray-500 dark:text-gray-400 mb-1">Created</p>
+                        <p className="text-gray-900 dark:text-white">
+                          {merchant.createdAt ? new Date(merchant.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          }) : 'N/A'}
+                        </p>
+                      </div>
+                      
+                      {/* Started At */}
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Started At</p>
                         <p className="text-gray-900 dark:text-white">
                           {merchant.createdAt ? new Date(merchant.createdAt).toLocaleDateString('en-US', {
                             year: 'numeric',
@@ -169,11 +165,11 @@ export function MerchantTable({
                         </p>
                       </div>
                       
-                      {/* Expired At Date */}
+                      {/* Expired At */}
                       <div>
                         <p className="text-gray-500 dark:text-gray-400 mb-1">Expired At</p>
                         <p className="text-gray-900 dark:text-white">
-                          {merchant.expiredAt ? new Date(merchant.expiredAt).toLocaleDateString('en-US', {
+                          {merchant.lastActiveAt ? new Date(merchant.lastActiveAt).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric'
@@ -203,15 +199,6 @@ export function MerchantTable({
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onMerchantAction('change-plan', merchant.id)}
-                    className="h-9 px-4"
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Change Plan
                   </Button>
                 </div>
               </div>

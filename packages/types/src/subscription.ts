@@ -26,7 +26,7 @@ export interface Subscription {
   interval: BillingInterval;
   intervalCount: number; // 1 for month/year, 3 for quarter
   period: BillingPeriod; // 1, 3, or 12 months
-  discount: number; // Applied discount percentage
+  discount: number; // Applied discouotnt percentage
   savings: number; // Amount saved due to discount
   createdAt: Date;
   updatedAt: Date;
@@ -53,10 +53,40 @@ export interface SubscriptionCreateInput {
 }
 
 export interface SubscriptionUpdateInput {
+  id: number;
   planId?: number;
-  status?: SubscriptionStatus;
+  planVariantId?: number;
+  status?: 'TRIAL' | 'ACTIVE' | 'CANCELLED' | 'SUSPENDED' | 'EXPIRED';
+  startDate?: Date | string;
+  endDate?: Date | string;
+  trialEndDate?: Date | string;
+  nextBillingDate?: Date | string;
+  amount?: number;
+  currency?: string;
+  autoRenew?: boolean;
+  cancellationReason?: string;
   cancelAtPeriodEnd?: boolean;
   cancelReason?: string;
+}
+
+export interface SubscriptionFilters {
+  merchantId?: number;
+  planId?: number;
+  status?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface SubscriptionsResponse {
+  data: Subscription[];
+  pagination: {
+    total: number;
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+  };
 }
 
 // Subscription actions

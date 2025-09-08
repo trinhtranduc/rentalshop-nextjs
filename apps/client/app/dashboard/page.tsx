@@ -11,7 +11,8 @@ import {
   PageTitle,
   PageContent,
   IncomeChart,
-  OrderChart
+  OrderChart,
+  SubscriptionStatusBanner
 } from '@rentalshop/ui';
 import { 
   Package,
@@ -196,7 +197,7 @@ export default function DashboardPage() {
   const [orderData, setOrderData] = useState<OrderData[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -207,6 +208,17 @@ export default function DashboardPage() {
       setLoadingCharts(true);
 
       // Fetch all dashboard data in parallel using centralized APIs
+      // Create default date range for analytics
+      const today = new Date();
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      
+      const defaultFilters = {
+        startDate: startOfMonth.toISOString().split('T')[0],
+        endDate: endOfMonth.toISOString().split('T')[0],
+        groupBy: 'day' as const
+      };
+
       const [
         statsResponse,
         incomeResponse,
@@ -216,8 +228,8 @@ export default function DashboardPage() {
         recentOrdersResponse
       ] = await Promise.all([
         analyticsApi.getDashboardSummary(),
-        analyticsApi.getIncomeAnalytics(),
-        analyticsApi.getOrderAnalytics(),
+        analyticsApi.getIncomeAnalytics(defaultFilters),
+        analyticsApi.getOrderAnalytics(defaultFilters),
         analyticsApi.getTopProducts(),
         analyticsApi.getTopCustomers(),
         analyticsApi.getRecentOrders()
@@ -267,6 +279,29 @@ export default function DashboardPage() {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      
+      // Set default data if API fails to prevent crashes
+      setStats({
+        todayRevenue: 0,
+        todayRentals: 0,
+        activeRentals: 0,
+        todayPickups: 0,
+        todayReturns: 0,
+        overdueItems: 0,
+        productUtilization: 0,
+        totalRevenue: 0,
+        totalRentals: 0,
+        completedRentals: 0,
+        customerGrowth: 0,
+        futureRevenue: 0,
+        revenueGrowth: 0,
+        customerBase: 0
+      });
+      setIncomeData([]);
+      setOrderData([]);
+      setTopProducts([]);
+      setTopCustomers([]);
+      setRecentOrders([]);
     } finally {
       setLoadingCharts(false);
     }

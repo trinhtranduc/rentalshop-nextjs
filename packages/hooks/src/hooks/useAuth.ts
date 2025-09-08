@@ -95,20 +95,33 @@ export function useAuth() {
   const refreshUser = useCallback(async () => {
     try {
       const token = localStorage.getItem('authToken');
+      console.log('refreshUser called, token exists:', !!token);
+      
       if (!token) {
+        console.log('No token found, setting user to null');
         setState(prev => ({ ...prev, user: null, loading: false }));
         return;
       }
 
-      const response = await fetch('/api/auth/me', {
+      console.log('Fetching user profile from API...');
+      const response = await fetch('/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('Profile API response:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText
+      });
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Profile API data:', data);
+        
         if (data.success && data.data) {
+          console.log('Setting user data:', data.data);
           setState(prev => ({ 
             ...prev, 
             user: data.data,
@@ -116,12 +129,15 @@ export function useAuth() {
           }));
           localStorage.setItem('user', JSON.stringify(data.data));
         } else {
+          console.error('API returned success:false:', data);
           throw new Error('Failed to refresh user');
         }
       } else if (response.status === 401) {
+        console.log('Token expired, logging out');
         // Token expired or invalid
         logout();
       } else {
+        console.error('API error:', response.status, response.statusText);
         throw new Error('Failed to refresh user');
       }
     } catch (err) {
@@ -135,23 +151,37 @@ export function useAuth() {
   // ============================================================================
 
   useEffect(() => {
-    // Check for existing auth on mount
+    // Check for existing auth on mount and refresh user data
     const token = localStorage.getItem('authToken');
     const storedUser = localStorage.getItem('user');
+
+    console.log('useAuth useEffect - localStorage check:', {
+      hasToken: !!token,
+      hasStoredUser: !!storedUser,
+      tokenLength: token?.length,
+      storedUserLength: storedUser?.length
+    });
 
     if (token && storedUser) {
       try {
         const userData = JSON.parse(storedUser);
+        console.log('Parsed stored user data:', userData);
         setState(prev => ({ ...prev, user: userData, loading: false }));
+        
+        // Refresh user data from API to get latest merchant/outlet info
+        console.log('Calling refreshUser...');
+        refreshUser();
       } catch (error) {
+        console.error('Error parsing stored user data:', error);
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         setState(prev => ({ ...prev, loading: false }));
       }
     } else {
+      console.log('No token or stored user found');
       setState(prev => ({ ...prev, loading: false }));
     }
-  }, []);
+  }, [refreshUser]);
 
   // ============================================================================
   // RETURN VALUES

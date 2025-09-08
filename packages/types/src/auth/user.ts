@@ -36,6 +36,11 @@ export interface RegisterData {
   role: UserRole;
   merchantId?: number;
   outletId?: number;
+  // Additional fields for merchant registration
+  businessName?: string;
+  outletName?: string;
+  merchantCode?: string;
+  outletCode?: string;
 }
 
 export interface PasswordReset {

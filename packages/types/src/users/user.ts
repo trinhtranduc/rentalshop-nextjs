@@ -22,14 +22,37 @@ export interface User {
   
   // Additional fields from API response
   merchant?: {
-    id: string | number;
+    id: number;                 // publicId
     name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+    businessType?: string;
+    taxId?: string;
+    website?: string;
+    description?: string;
+    isActive: boolean;
+    planId?: string;
+    subscriptionStatus?: string;
+    totalRevenue?: number;
+    createdAt: Date | string;
+    lastActiveAt?: Date | string;
   };
   outlet?: {
-    id: string | number;
+    id: number;                 // publicId
     name: string;
+    address?: string;
+    phone?: string;
+    description?: string;
+    isActive: boolean;
+    isDefault: boolean;
+    createdAt: Date | string;
     merchant?: {
-      id: string | number;
+      id: number;               // publicId
       name: string;
     };
   };

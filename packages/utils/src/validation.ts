@@ -15,6 +15,12 @@ export const registerSchema = z.object({
   // For merchant registration
   businessName: z.string().optional(),
   outletName: z.string().optional(),
+  // Address fields for merchant registration
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional(),
   // For outlet staff registration
   merchantCode: z.string().optional(),
   outletCode: z.string().optional(),
@@ -278,6 +284,10 @@ export const outletUpdateSchema = z.object({
   name: z.string().min(1, 'Outlet name is required').optional(),
   address: z.string().optional(),
   phone: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional(),
   description: z.string().optional(),
   isActive: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).optional(),

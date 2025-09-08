@@ -76,8 +76,18 @@ export function calculatePlanPricing(basePrice: number): {
 // ============================================================================
 
 export async function getSubscriptionByMerchantId(merchantId: number): Promise<Subscription | null> {
+  // First find the merchant by publicId to get the CUID
+  const merchant = await prisma.merchant.findUnique({
+    where: { publicId: merchantId },
+    select: { id: true }
+  });
+  
+  if (!merchant) {
+    return null;
+  }
+  
   const subscription = await prisma.subscription.findUnique({
-    where: { merchantId: merchantId.toString() },
+    where: { merchantId: merchant.id },
     include: {
       merchant: {
         select: {
@@ -786,32 +796,47 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
 
 export async function cancelSubscription(
   subscriptionId: number, 
-  reason?: string
-): Promise<Subscription> {
-  const subscription = await prisma.subscription.update({
-    where: { publicId: subscriptionId },
-    data: {
-      status: 'cancelled',
-      cancelAtPeriodEnd: true,
-      cancelReason: reason,
-      canceledAt: new Date(),
-      updatedAt: new Date()
-    },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-          email: true,
-          subscriptionStatus: true
-        }
-      },
-      plan: true
-    }
-  });
+  reason?: string,
+  user?: any
+): Promise<{ success: boolean; message: string; data?: Subscription; statusCode?: number }> {
+  try {
+    // First check if subscription exists
+    const existingSubscription = await prisma.subscription.findUnique({
+      where: { publicId: subscriptionId }
+    });
 
-  return {
+    if (!existingSubscription) {
+      return {
+        success: false,
+        message: 'Subscription not found',
+        statusCode: 404
+      };
+    }
+
+    const subscription = await prisma.subscription.update({
+      where: { publicId: subscriptionId },
+      data: {
+        status: 'cancelled',
+        cancelAtPeriodEnd: true,
+        cancelReason: reason,
+        canceledAt: new Date(),
+        updatedAt: new Date()
+      },
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            publicId: true,
+            name: true,
+            email: true,
+            subscriptionStatus: true
+          }
+        },
+        plan: true
+      }
+    });
+
+  const result: Subscription = {
     id: subscription.id,
     publicId: subscription.publicId,
     merchantId: subscription.merchantId,
@@ -857,74 +882,20 @@ export async function cancelSubscription(
       pricing: calculatePlanPricing(subscription.plan.basePrice)
     }
   };
+
+    return {
+      success: true,
+      message: 'Subscription cancelled successfully',
+      data: result
+    };
+  } catch (error) {
+    console.error('Error cancelling subscription:', error);
+    return {
+      success: false,
+      message: 'Failed to cancel subscription',
+      statusCode: 500
+    };
+  }
 }
 
-export async function reactivateSubscription(subscriptionId: number): Promise<Subscription> {
-  const subscription = await prisma.subscription.update({
-    where: { publicId: subscriptionId },
-    data: {
-      status: 'active',
-      cancelAtPeriodEnd: false,
-      updatedAt: new Date()
-    },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-          email: true,
-          subscriptionStatus: true
-        }
-      },
-      plan: true
-    }
-  });
 
-  return {
-    id: subscription.id,
-    publicId: subscription.publicId,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    trialStart: subscription.trialStart || undefined,
-    trialEnd: subscription.trialEnd || undefined,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    canceledAt: subscription.canceledAt || undefined,
-    cancelReason: subscription.cancelReason || undefined,
-    amount: subscription.amount,
-    currency: subscription.currency,
-    interval: subscription.interval as BillingInterval,
-    intervalCount: subscription.intervalCount,
-    period: subscription.period as BillingPeriod,
-    discount: subscription.discount,
-    savings: subscription.savings,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: {
-      id: subscription.plan.id,
-      publicId: subscription.plan.publicId,
-      name: subscription.plan.name,
-      description: subscription.plan.description,
-      basePrice: subscription.plan.basePrice,
-      currency: subscription.plan.currency,
-      trialDays: subscription.plan.trialDays,
-      limits: {
-        outlets: subscription.plan.maxOutlets,
-        users: subscription.plan.maxUsers,
-        products: subscription.plan.maxProducts,
-        customers: subscription.plan.maxCustomers
-      },
-      features: JSON.parse(subscription.plan.features || '[]'),
-      isActive: subscription.plan.isActive,
-      isPopular: subscription.plan.isPopular,
-      sortOrder: subscription.plan.sortOrder,
-      createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt,
-      pricing: calculatePlanPricing(subscription.plan.basePrice)
-    }
-  };
-}
