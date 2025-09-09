@@ -4,6 +4,7 @@ export * from './password';
 export * from './jwt';
 export * from './authorization';
 export * from './subscription-access';
+export * from './subscription-errors';
 
 // Export specific JWT functions
 export { verifyTokenSimple, generateToken, verifyToken } from './jwt';

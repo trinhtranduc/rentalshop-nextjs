@@ -139,6 +139,7 @@ export const authenticatedFetch = async (
     headers[API.HEADERS.AUTHORIZATION] = `Bearer ${token}`;
   }
   
+  
   // Set default options using API constants
   const defaultOptions: RequestInit = {
     method: API.METHODS.GET,
@@ -183,6 +184,23 @@ export const authenticatedFetch = async (
   }
 };
 
+
+
+/**
+ * Get subscription status message
+ * Centralized error messages for subscription issues
+ */
+const getSubscriptionStatusMessage = (status: string): string => {
+  const statusMessages: Record<string, string> = {
+    'cancelled': 'Your subscription has been cancelled. Please contact support to reactivate your account.',
+    'expired': 'Your subscription has expired. Please renew to continue using our services.',
+    'suspended': 'Your subscription has been suspended. Please contact support for assistance.',
+    'past_due': 'Your subscription payment is past due. Please update your payment method.'
+  };
+  
+  return statusMessages[status.toLowerCase()] || 'There is an issue with your subscription. Please contact support.';
+};
+
 /**
  * Parse API response
  * 
@@ -194,6 +212,8 @@ export const authenticatedFetch = async (
  * instead of response.data.data
  */
 export const parseApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
+  // Subscription status checking is now handled in authenticatedFetch
+  
   if (!response.ok) {
     console.log('🔍 parseApiResponse: Response not OK, status:', response.status);
     console.log('🔍 parseApiResponse: Response statusText:', response.statusText);

@@ -37,17 +37,10 @@ export interface SubscriptionRestrictions {
 // SUBSCRIPTION STATUS DEFINITIONS
 // ============================================================================
 
-export const SUBSCRIPTION_STATUS = {
-  TRIAL: 'trial',
-  ACTIVE: 'active',
-  PAST_DUE: 'past_due',
-  CANCELLED: 'cancelled',
-  PAUSED: 'paused',
-  DISABLED: 'disabled',
-  DELETED: 'deleted'
-} as const;
+import { SUBSCRIPTION_STATUS, SubscriptionStatus } from '@rentalshop/constants';
 
-export type SubscriptionStatus = typeof SUBSCRIPTION_STATUS[keyof typeof SUBSCRIPTION_STATUS];
+// Re-export from centralized constants
+export { SUBSCRIPTION_STATUS, SubscriptionStatus };
 
 // ============================================================================
 // ACCESS CONTROL FUNCTIONS

@@ -2,23 +2,10 @@
 // ORDER CONSTANTS
 // ============================================================================
 
-// ============================================================================
-// ORDER STATUSES
-// ============================================================================
-export const ORDER_STATUSES = {
-  // RENT order statuses
-  RESERVED: 'RESERVED',   // mới cục (new order) - Most professional
-  PICKUPED: 'PICKUPED',   // đang thuê (currently renting)
-  RETURNED: 'RETURNED',   // đã trả (returned)
-  
-  // SALE order statuses
-  COMPLETED: 'COMPLETED', // completed sale
-  
-  // Common statuses
-  CANCELLED: 'CANCELLED'  // hủy (cancelled) - applies to both types
-} as const;
+import { ORDER_STATUS, OrderStatus } from './status';
 
-export type OrderStatus = typeof ORDER_STATUSES[keyof typeof ORDER_STATUSES];
+// Re-export from centralized status constants
+export { ORDER_STATUS as ORDER_STATUSES, OrderStatus };
 
 // ============================================================================
 // ORDER TYPES

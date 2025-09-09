@@ -1,4 +1,5 @@
 import { Order, OrderFilters, OrderData, OrderStats, OrderDetailData, SettingsForm } from '@rentalshop/types';
+import { ORDER_STATUS, getStatusColor, getStatusLabel } from '@rentalshop/constants';
 
 export const filterOrders = (orders: OrderData[], filters: OrderFilters): OrderData[] => {
   return orders.filter(order => {
@@ -102,10 +103,10 @@ export const paginateOrders = (orders: Order[], page: number, limit: number): Or
 
 export const calculateOrderStats = (orders: Order[]): OrderStats => {
   const totalOrders = orders.length;
-  const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
-  const activeOrders = orders.filter(o => o.status === 'ACTIVE').length;
-  const completedOrders = orders.filter(o => o.status === 'COMPLETED').length;
-  const cancelledOrders = orders.filter(o => o.status === 'CANCELLED').length;
+  const pendingOrders = orders.filter(o => o.status === ORDER_STATUS.RESERVED).length;
+  const activeOrders = orders.filter(o => o.status === ORDER_STATUS.PICKUPED).length;
+  const completedOrders = orders.filter(o => o.status === ORDER_STATUS.COMPLETED || o.status === ORDER_STATUS.RETURNED).length;
+  const cancelledOrders = orders.filter(o => o.status === ORDER_STATUS.CANCELLED).length;
   
   const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
   const totalDeposits = orders.reduce((sum, o) => sum + o.depositAmount, 0);
@@ -155,27 +156,11 @@ export const formatDate = (dateString: string): string => {
 };
 
 export const getOrderStatusColor = (status: string): string => {
-  const colors = {
-    PENDING: 'text-yellow-600 dark:text-yellow-400',
-    BOOKED: 'text-blue-600 dark:text-blue-400',
-    ACTIVE: 'text-green-600 dark:text-green-400',
-    COMPLETED: 'text-gray-600 dark:text-gray-400',
-    CANCELLED: 'text-red-600 dark:text-red-400',
-    RETURNED: 'text-purple-600 dark:text-purple-400'
-  };
-  return colors[status as keyof typeof colors] || colors.PENDING;
+  return getStatusColor(status, 'order');
 };
 
 export const getOrderStatusBadge = (status: string): string => {
-  const badges = {
-    PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    BOOKED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    COMPLETED: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-    CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    RETURNED: 'bg-purple-100 text-purple-800 dark:bg-green-900 dark:text-purple-200'
-  };
-  return badges[status as keyof typeof badges] || badges.PENDING;
+  return getStatusColor(status, 'order');
 };
 
 export const getOrderTypeBadge = (type: string): string => {
@@ -222,7 +207,7 @@ export const calculateOrderTotal = (orderItems: any[]): number => {
 };
 
 export const isOrderOverdue = (order: Order): boolean => {
-  if (order.status !== 'ACTIVE' || !order.returnPlanAt) return false;
+  if (order.status !== ORDER_STATUS.PICKUPED || !order.returnPlanAt) return false;
   
   const returnDate = new Date(order.returnPlanAt);
   const now = new Date();
@@ -230,7 +215,7 @@ export const isOrderOverdue = (order: Order): boolean => {
 };
 
 export const getDaysUntilReturn = (order: Order): number | null => {
-  if (order.status !== 'ACTIVE' || !order.returnPlanAt) return null;
+  if (order.status !== ORDER_STATUS.PICKUPED || !order.returnPlanAt) return null;
   
   const returnDate = new Date(order.returnPlanAt);
   const now = new Date();
@@ -242,9 +227,9 @@ export const getDaysUntilReturn = (order: Order): number | null => {
 
 export const calculateCollectionAmount = (order: OrderDetailData, settingsForm: SettingsForm): number => {
   if (order.orderType === 'RENT') {
-    if (order.status === 'RESERVED') {
+    if (order.status === ORDER_STATUS.RESERVED) {
       return settingsForm.bailAmount || 0;
-    } else if (order.status === 'PICKUP') {
+    } else if (order.status === ORDER_STATUS.PICKUPED) {
       return (settingsForm.bailAmount || 0) - (settingsForm.damageFee || 0);
     }
   }
@@ -253,9 +238,9 @@ export const calculateCollectionAmount = (order: OrderDetailData, settingsForm: 
 
 export const getCollectionTitle = (order: OrderDetailData): string => {
   if (order.orderType === 'RENT') {
-    if (order.status === 'RESERVED') {
+    if (order.status === ORDER_STATUS.RESERVED) {
       return 'Bail Amount';
-    } else if (order.status === 'PICKUP') {
+    } else if (order.status === ORDER_STATUS.PICKUPED) {
       return 'Collection Amount';
     }
   }

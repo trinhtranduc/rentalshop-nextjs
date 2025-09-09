@@ -42,6 +42,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [viewConfirmPass, setViewConfirmPass] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [accountData, setAccountData] = useState<Partial<RegisterFormData>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toasts, showSuccess, showError, removeToast } = useToasts();
 
   // Step 1 validation schema (Account Information)
@@ -108,97 +109,90 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     },
     validationSchema: currentStep === 1 ? step1ValidationSchema : step2ValidationSchema,
     onSubmit: async (values: RegisterFormData) => {
-      try {
-        if (currentStep === 1) {
-          // Step 1: Save account data and move to step 2
-          setAccountData({
-            login: values.login,
-            password: values.password,
-            confirmPassword: values.confirmPassword,
-            name: values.name,
-            phone: values.phone,
-            role: values.role,
-          });
-          setCurrentStep(2);
-          return;
-        }
+      // Prevent double submission
+      if (isSubmitting) {
+        return;
+      }
+      
+      setIsSubmitting(true);
+      
+      // Add timeout to prevent stuck button
+      const timeoutId = setTimeout(() => {
+        setIsSubmitting(false);
+      }, 10000); // 10 second timeout
+      
+      if (currentStep === 1) {
+        // Step 1: Save account data and move to step 2
+        setAccountData({
+          login: values.login,
+          password: values.password,
+          confirmPassword: values.confirmPassword,
+          name: values.name,
+          phone: values.phone,
+          role: values.role,
+        });
+        setCurrentStep(2);
+        return;
+      }
 
-        // Step 2: Complete registration with all data
-        const completeData = { ...accountData, ...values };
+      // Step 2: Complete registration with all data
+      const completeData = { ...accountData, ...values };
+      
+      try {
+        // Use centralized API directly
         
-        if (onRegister) {
-          // Use the provided onRegister function (from parent component)
-          await onRegister(completeData as RegisterFormData);
-          
-          // Show success toast
-          showSuccess(
-            "Registration Successful! 🎉",
-            "Your merchant account has been created. You can now access both web and mobile apps."
-          );
-          
-          // Reset form
-          formik.resetForm();
-          setCurrentStep(1);
-          setAccountData({});
-          
-          // Navigate to login after showing success message
-          if (onNavigate) {
-            setTimeout(() => {
-              onNavigate("/login");
-            }, 3000); // Give time to see the success message
-          }
-        } else {
-          // Fallback: Use centralized API directly
-          const registrationData = {
-            email: completeData.login!,
-            password: completeData.password!,
-            name: completeData.name!,
-            phone: completeData.phone!,
-            role: completeData.role!,
-            businessName: values.businessName,
-            address: values.address,
-            city: values.city,
-            state: values.state,
-            zipCode: values.zipCode,
-            country: values.country,
-            // Default outlet name to business name
-            outletName: values.businessName,
-          };
-          
-          const result = await authApi.register(registrationData);
-          
-          if (!result.success) {
-            throw new Error(result.message || 'Registration failed');
-          }
-          
-          // Store token in localStorage
-          if (result.data?.token) {
-            localStorage.setItem('authToken', result.data.token);
-            localStorage.setItem('user', JSON.stringify(result.data.user));
-          }
-          
-          showSuccess("Registration Complete!", "Account created successfully.");
-          
-          // Reset form
-          formik.resetForm();
-          setCurrentStep(1);
-          setAccountData({});
-          
-          // Navigate to login
-          if (onNavigate) {
-            setTimeout(() => {
-              onNavigate("/login");
-            }, 2000);
-          }
+        const registrationData = {
+          email: completeData.login!,
+          password: completeData.password!,
+          name: completeData.name!,
+          phone: completeData.phone!,
+          role: completeData.role!,
+          businessName: values.businessName,
+          address: values.address,
+          city: values.city,
+          state: values.state,
+          zipCode: values.zipCode,
+          country: values.country,
+          // Default outlet name to business name
+          outletName: values.businessName,
+        };
+        
+        const result = await authApi.register(registrationData);
+        
+        // Check if result has error field (from parseApiResponse)
+        if (result.error) {
+          throw new Error(result.error);
         }
-      } catch (error: any) {
-        console.error("Registration failed:", error);
         
-        // Show error toast
+        if (!result.success) {
+          throw new Error(result.error || result.message || 'Registration failed');
+        }
+        
+        // Store token in localStorage
+        if (result.data?.token) {
+          localStorage.setItem('authToken', result.data.token);
+          localStorage.setItem('user', JSON.stringify(result.data.user));
+        }
+        
+        showSuccess("Registration Complete!", "Account created successfully.");
+        
+        // Reset form
+        formik.resetForm();
+        setCurrentStep(1);
+        setAccountData({});
+        
+        // Navigate to login after a short delay
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      } catch (error: any) {
         showError(
           "Registration Failed",
           error.message || "Something went wrong. Please try again."
         );
+      } finally {
+        clearTimeout(timeoutId);
+        setIsSubmitting(false);
       }
     },
   });
@@ -240,7 +234,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={formik.handleSubmit} className="space-y-6">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            formik.handleSubmit(e);
+          }} className="space-y-6">
             {/* Step 1: Account Information */}
             {currentStep === 1 && (
               <>
@@ -377,9 +374,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <Button
                   type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                  disabled={formik.isSubmitting}
+                  disabled={isSubmitting}
                 >
-                  {formik.isSubmitting ? 'Validating...' : 'Continue to Business Info'}
+                  {isSubmitting ? 'Validating...' : 'Continue to Business Info'}
                 </Button>
               </>
             )}
@@ -575,9 +572,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   <Button
                     type="submit"
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                    disabled={formik.isSubmitting}
+                    disabled={isSubmitting}
                   >
-                    {formik.isSubmitting ? 'Creating Account...' : 'Create Merchant Account'}
+                    {isSubmitting ? 'Creating Account...' : 'Create Merchant Account'}
                   </Button>
                 </div>
               </>
