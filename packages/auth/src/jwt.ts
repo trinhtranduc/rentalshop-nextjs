@@ -28,9 +28,53 @@ export const verifyTokenSimple = async (token: string) => {
         outlet: true,
       },
     });
+
+    if (!user) {
+      return null;
+    }
+
+    // Check subscription status for merchants
+    if (user.merchant) {
+      const currentSubscription = await prisma.subscription.findFirst({
+        where: {
+          merchantId: user.merchant.id,
+          status: {
+            in: ['active', 'trial', 'cancelled', 'expired', 'suspended', 'past_due']
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      if (currentSubscription) {
+        const subscriptionStatus = currentSubscription.status.toLowerCase();
+        
+        // If subscription is cancelled, expired, or suspended, throw error
+        if (['cancelled', 'expired', 'suspended', 'past_due'].includes(subscriptionStatus)) {
+          const errorMessage = getSubscriptionStatusMessage(subscriptionStatus);
+          throw new Error(errorMessage);
+        }
+      }
+    }
+
     return user;
   } catch (error) {
     console.error('JWT verification - Error:', error);
     return null;
   }
+};
+
+/**
+ * Get subscription status message
+ */
+const getSubscriptionStatusMessage = (status: string): string => {
+  const statusMessages: Record<string, string> = {
+    'cancelled': 'Your subscription has been cancelled. Please contact support to reactivate your account.',
+    'expired': 'Your subscription has expired. Please renew to continue using our services.',
+    'suspended': 'Your subscription has been suspended. Please contact support for assistance.',
+    'past_due': 'Your subscription payment is past due. Please update your payment method.'
+  };
+  
+  return statusMessages[status.toLowerCase()] || 'There is an issue with your subscription. Please contact support.';
 }; 

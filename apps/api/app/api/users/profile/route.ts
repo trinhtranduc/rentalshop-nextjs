@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { verifyTokenSimple, handleSubscriptionError } from '@rentalshop/auth';
 import { findUserById, updateUser, prisma } from '@rentalshop/database';
 
 /**
@@ -153,13 +153,15 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);
+    
+    // Handle subscription errors consistently
+    const errorResponse = handleSubscriptionError(error);
     return NextResponse.json(
       { 
-        success: false, 
-        error: 'Failed to fetch user profile',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        success: errorResponse.success, 
+        error: errorResponse.error
       },
-      { status: 500 }
+      { status: errorResponse.status }
     );
   }
 }

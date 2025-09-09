@@ -3,9 +3,10 @@
 // ============================================================================
 
 import { Plan } from './plans';
+import { SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
 
-export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'paused';
-export type BillingInterval = 'month' | 'quarter' | 'year';
+// Re-export types from centralized constants
+export type { SubscriptionStatus, BillingInterval };
 export type BillingPeriod = 1 | 3 | 12; // months
 
 export interface Subscription {

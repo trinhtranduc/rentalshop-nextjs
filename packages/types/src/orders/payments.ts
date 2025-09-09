@@ -2,9 +2,10 @@
 // PAYMENTS TYPES
 // ============================================================================
 
-export type PaymentMethod = 'STRIPE' | 'TRANSFER' | 'MANUAL' | 'CASH' | 'CHECK' | 'PAYPAL';
-export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' | 'CANCELLED';
-export type PaymentType = 'ORDER_PAYMENT' | 'SUBSCRIPTION_PAYMENT' | 'PLAN_CHANGE' | 'PLAN_EXTENSION';
+import { PaymentMethod, PaymentStatus, PaymentType } from '@rentalshop/constants';
+
+// Re-export types from centralized constants
+export type { PaymentMethod, PaymentStatus, PaymentType };
 export type CollateralType = 'CASH' | 'ID_CARD' | 'PASSPORT' | 'DRIVERS_LICENSE' | 'OTHER';
 
 export interface Payment {

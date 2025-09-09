@@ -2,69 +2,18 @@
 
 import React from 'react';
 import { cn } from '../../lib/utils';
+import { getStatusColor, getStatusLabel } from '@rentalshop/constants';
 
 export interface StatusBadgeProps {
   status: string;
+  type?: 'subscription' | 'order' | 'payment' | 'entity' | 'availability';
   variant?: 'default' | 'outline' | 'solid';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-const statusConfig = {
-  // Merchant Statuses
-  active: {
-    color: 'bg-action-success/10 text-action-success border-action-success/20',
-    icon: ''
-  },
-  inactive: {
-    color: 'bg-text-tertiary/10 text-text-tertiary border-text-tertiary/20',
-    icon: ''
-  },
-  trial: {
-    color: 'bg-action-primary/10 text-action-primary border-action-primary/20',
-    icon: ''
-  },
-  expired: {
-    color: 'bg-action-warning/10 text-action-warning border-action-warning/20',
-    icon: ''
-  },
-  cancelled: {
-    color: 'bg-action-danger/10 text-action-danger border-action-danger/20',
-    icon: ''
-  },
-  
-  // Payment Statuses
-  completed: {
-    color: 'bg-action-success/10 text-action-success border-action-success/20',
-    icon: ''
-  },
-  pending: {
-    color: 'bg-action-warning/10 text-action-warning border-action-warning/20',
-    icon: ''
-  },
-  failed: {
-    color: 'bg-action-danger/10 text-action-danger border-action-danger/20',
-    icon: ''
-  },
-  refunded: {
-    color: 'bg-text-tertiary/10 text-text-tertiary border-text-tertiary/20',
-    icon: '↩'
-  },
-  
-  // Order Statuses
-  reserved: {
-    color: 'bg-action-primary/10 text-action-primary border-action-primary/20',
-    icon: ''
-  },
-  pickuped: {
-    color: 'bg-action-warning/10 text-action-warning border-action-warning/20',
-    icon: ''
-  },
-  returned: {
-    color: 'bg-action-success/10 text-action-success border-action-success/20',
-    icon: ''
-  },
-  
+// Special statuses that don't fit the standard categories
+const specialStatusConfig = {
   // User Statuses
   online: {
     color: 'bg-action-success/10 text-action-success border-action-success/20',
@@ -108,14 +57,26 @@ const sizeClasses = {
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({
   status,
+  type = 'entity',
   variant = 'default',
   size = 'md',
   className
 }) => {
-  const config = statusConfig[status.toLowerCase() as keyof typeof statusConfig] || {
-    color: 'bg-text-tertiary/10 text-text-tertiary border-text-tertiary/20',
-    icon: '❓'
-  };
+  // Check if it's a special status first
+  const specialConfig = specialStatusConfig[status.toLowerCase() as keyof typeof specialStatusConfig];
+  
+  let config;
+  if (specialConfig) {
+    config = specialConfig;
+  } else {
+    // Use centralized status constants
+    const colorClass = getStatusColor(status, type);
+    const label = getStatusLabel(status, type);
+    config = {
+      color: colorClass,
+      icon: ''
+    };
+  }
 
   const baseClasses = cn(
     'inline-flex items-center gap-1.5 rounded-full font-medium border',

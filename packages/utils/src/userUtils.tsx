@@ -8,6 +8,7 @@ import {
   XCircle 
 } from 'lucide-react';
 import type { User } from '@rentalshop/types';
+import { USER_ROLE, ENTITY_STATUS, getStatusColor, getStatusLabel } from '@rentalshop/constants';
 
 /**
  * Get role badge configuration and component
@@ -16,10 +17,10 @@ import type { User } from '@rentalshop/types';
  */
 export const getRoleBadge = (role: string) => {
   const roleConfig = {
-    'ADMIN': { color: 'bg-red-100 text-red-800', icon: Shield, text: 'Admin' },
-    'MERCHANT': { color: 'bg-blue-100 text-blue-800', icon: Building2, text: 'Merchant' },
-    'OUTLET_ADMIN': { color: 'bg-green-100 text-green-800', icon: Store, text: 'Outlet Admin' },
-    'OUTLET_STAFF': { color: 'bg-gray-100 text-gray-800', icon: UserIcon, text: 'Outlet Staff' }
+    [USER_ROLE.ADMIN]: { color: 'bg-red-100 text-red-800', icon: Shield, text: 'Admin' },
+    [USER_ROLE.MERCHANT]: { color: 'bg-blue-100 text-blue-800', icon: Building2, text: 'Merchant' },
+    [USER_ROLE.OUTLET_ADMIN]: { color: 'bg-green-100 text-green-800', icon: Store, text: 'Outlet Admin' },
+    [USER_ROLE.OUTLET_STAFF]: { color: 'bg-gray-100 text-gray-800', icon: UserIcon, text: 'Outlet Staff' }
   };
   
   const config = roleConfig[role as keyof typeof roleConfig];
@@ -39,13 +40,17 @@ export const getRoleBadge = (role: string) => {
  * @returns JSX element for status badge
  */
 export const getStatusBadge = (isActive: boolean) => {
+  const status = isActive ? ENTITY_STATUS.ACTIVE : ENTITY_STATUS.INACTIVE;
+  const colorClass = getStatusColor(status, 'entity');
+  const label = getStatusLabel(status, 'entity');
+  const Icon = isActive ? CheckCircle : XCircle;
+  
   const statusConfig = {
-    true: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Active' },
-    false: { color: 'bg-gray-100 text-gray-800', icon: XCircle, text: 'Inactive' }
+    true: { color: colorClass, icon: CheckCircle, text: label },
+    false: { color: colorClass, icon: XCircle, text: label }
   };
   
   const config = statusConfig[isActive.toString() as keyof typeof statusConfig];
-  const Icon = config.icon;
   
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>

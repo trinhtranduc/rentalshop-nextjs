@@ -16,6 +16,7 @@ import { API } from './api';
 import * as ORDERS from './orders';
 import * as BILLING_CYCLES from './billing-cycles';
 import * as BILLING from './billing';
+import * as STATUS from './status';
 
 // Export all constant modules
 export * from './pagination';
@@ -28,6 +29,24 @@ export * from './api';
 export * from './orders';
 export * from './billing-cycles';
 export * from './billing';
+// Export status constants and types
+export * from './status';
+
+// Explicit exports for status constants
+export { 
+  SUBSCRIPTION_STATUS,
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+  PAYMENT_METHOD,
+  PAYMENT_TYPE,
+  ORDER_TYPE,
+  USER_ROLE,
+  ENTITY_STATUS,
+  PRODUCT_AVAILABILITY_STATUS,
+  BILLING_INTERVAL,
+  AUDIT_ACTION,
+  AUDIT_ENTITY_TYPE
+} from './status';
 
 // Explicit exports for critical constants
 export { 
@@ -65,7 +84,21 @@ export const CONSTANTS = {
   ORDERS,
   BILLING_CYCLES,
   BILLING,
+  STATUS,
 } as const;
 
 // Re-export the main constants object
 export { CONSTANTS as default };
+
+// Re-export status functions directly
+export { 
+  getStatusColor,
+  getStatusLabel,
+  getStatusOptions,
+  isSubscriptionActive,
+  isOrderCompleted,
+  isPaymentSuccessful,
+  isPaymentPending,
+  isPaymentFailed,
+  isEntityActive
+} from './status';

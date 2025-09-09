@@ -166,6 +166,7 @@ export function SubscriptionList({
   const handleEdit = (subscription: Subscription) => {
     setSelectedSubscription(subscription);
     setShowEditDialog(true);
+    setShowViewDialog(false); // Close the view dialog
   };
 
   const handleEditSave = async (data: any) => {
@@ -177,16 +178,19 @@ export function SubscriptionList({
 
   const handleCancel = (subscription: Subscription) => {
     onCancel?.(subscription, ''); // Reason will be collected in the confirmation dialog
+    setShowViewDialog(false); // Close the view dialog
   };
 
   const handleExtend = (subscription: Subscription) => {
     setSelectedSubscription(subscription);
     setShowExtendDialog(true);
+    setShowViewDialog(false); // Close the view dialog
   };
 
   const handleChangePlan = (subscription: Subscription) => {
     setSelectedSubscription(subscription);
     setShowChangePlanDialog(true);
+    setShowViewDialog(false); // Close the view dialog
   };
 
 
@@ -194,12 +198,14 @@ export function SubscriptionList({
   const handleExtendConfirm = (subscription: Subscription, data: any) => {
     onExtend?.(subscription);
     setShowExtendDialog(false);
+    setShowViewDialog(false); // Close the view dialog
     setSelectedSubscription(null);
   };
 
   const handleChangePlanConfirm = (subscription: Subscription, newPlanId: number, period: BillingPeriod) => {
     onChangePlan?.(subscription, newPlanId, period);
     setShowChangePlanDialog(false);
+    setShowViewDialog(false); // Close the view dialog
     setSelectedSubscription(null);
   };
 

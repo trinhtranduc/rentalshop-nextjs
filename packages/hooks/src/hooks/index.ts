@@ -10,5 +10,4 @@ export { usePagination } from './usePagination';
 export { useUserManagement, type UseUserManagementOptions } from './useUserManagement';
 export { useCustomerManagement, type UseCustomerManagementOptions } from './useCustomerManagement';
 export { useProductManagement, type UseProductManagementOptions } from './useProductManagement';
-export { useSubscriptionStatus } from './useSubscriptionStatus';
 export { useSubscriptionAccess, useCanPerform, useSubscriptionStatusInfo } from './useSubscriptionAccess';

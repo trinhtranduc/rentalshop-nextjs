@@ -6,12 +6,10 @@ import { OrderItemInput, OrderItemWithProduct } from './order-items';
 import type { Payment } from './payments';
 
 // Simplified order types: only RENT and SALE
-export type OrderType = 'RENT' | 'SALE';
+import { OrderType, OrderStatus } from '@rentalshop/constants';
 
-// Order statuses based on order type:
-// RENT: RESERVED (mới cục), PICKUPED (đang thuê), RETURNED (đã trả), CANCELLED (hủy)
-// SALE: COMPLETED và CANCELLED
-export type OrderStatus = 'RESERVED' | 'PICKUPED' | 'RETURNED' | 'COMPLETED' | 'CANCELLED';
+// Re-export types from centralized constants
+export type { OrderType, OrderStatus };
 
 export interface Order {
   id: string;           // Database CUID (internal use)
