@@ -121,6 +121,11 @@ export {
   restoreUser,
 } from './user';
 
+// Dual ID merchant functions (RECOMMENDED)
+export {
+  updateMerchant,
+} from './merchant';
+
 // Dual ID plan functions (RECOMMENDED)
 export {
   getPlanByPublicId,

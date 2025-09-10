@@ -76,7 +76,7 @@ export default function PlansPage() {
       // Fetch plans
       const plansResponse = await fetch('/api/plans', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
       const plansData = await plansResponse.json();
@@ -89,7 +89,7 @@ export default function PlansPage() {
       // Fetch current subscription
       const subscriptionResponse = await fetch('/api/subscriptions/status', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
       const subscriptionData = await subscriptionResponse.json();
@@ -144,7 +144,7 @@ export default function PlansPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
           planId: selectedPlan?.publicId,

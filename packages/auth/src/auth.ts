@@ -26,7 +26,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
   }
 
   const token = generateToken({
-    userId: user.id, // Use internal ID (string) for JWT token
+    userId: user.publicId, // Use publicId (number) for JWT token consistency
     email: user.email,
     role: user.role,
   });
@@ -83,7 +83,7 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
   });
 
   const token = generateToken({
-    userId: user.id, // Use internal ID (string) for JWT token
+    userId: user.publicId, // Use publicId (number) for JWT token consistency
     email: user.email,
     role: user.role,
   });

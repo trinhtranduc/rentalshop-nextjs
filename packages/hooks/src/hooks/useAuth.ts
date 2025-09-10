@@ -95,22 +95,22 @@ export function useAuth() {
   const refreshUser = useCallback(async () => {
     try {
       const token = localStorage.getItem('authToken');
-      console.log('refreshUser called, token exists:', !!token);
+      console.log('🔄 refreshUser called, token exists:', !!token);
       
       if (!token) {
-        console.log('No token found, setting user to null');
+        console.log('❌ No token found, setting user to null');
         setState(prev => ({ ...prev, user: null, loading: false }));
         return;
       }
 
-      console.log('Fetching user profile from API...');
+      console.log('🌐 Fetching user profile from API...');
       const response = await fetch('/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
-      console.log('Profile API response:', {
+      console.log('📥 Profile API response:', {
         ok: response.ok,
         status: response.status,
         statusText: response.statusText
@@ -118,10 +118,10 @@ export function useAuth() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Profile API data:', data);
+        console.log('📊 Profile API data:', data);
         
         if (data.success && data.data) {
-          console.log('Setting user data:', data.data);
+          console.log('✅ Setting user data:', data.data);
           setState(prev => ({ 
             ...prev, 
             user: data.data,
@@ -129,20 +129,33 @@ export function useAuth() {
           }));
           localStorage.setItem('user', JSON.stringify(data.data));
         } else {
-          console.error('API returned success:false:', data);
+          console.error('❌ API returned success:false:', data);
           throw new Error('Failed to refresh user');
         }
       } else if (response.status === 401) {
-        console.log('Token expired, logging out');
+        console.log('🔒 Token expired, logging out');
         // Token expired or invalid
         logout();
       } else {
-        console.error('API error:', response.status, response.statusText);
+        console.error('❌ API error:', response.status, response.statusText);
+        // If we have a token but API fails, clear corrupted data
+        if (localStorage.getItem('authToken')) {
+          console.log('🧹 Clearing corrupted auth data...');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          setState(prev => ({ ...prev, user: null, loading: false }));
+        }
         throw new Error('Failed to refresh user');
       }
     } catch (err) {
-      console.error('Error refreshing user:', err);
-      logout();
+      console.error('💥 Error refreshing user:', err);
+      // If we have a token but refresh fails, clear corrupted data
+      if (localStorage.getItem('authToken')) {
+        console.log('🧹 Clearing corrupted auth data due to error...');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        setState(prev => ({ ...prev, user: null, loading: false }));
+      }
     }
   }, [logout]);
 
@@ -155,30 +168,36 @@ export function useAuth() {
     const token = localStorage.getItem('authToken');
     const storedUser = localStorage.getItem('user');
 
-    console.log('useAuth useEffect - localStorage check:', {
+    console.log('🔍 useAuth useEffect - localStorage check:', {
       hasToken: !!token,
       hasStoredUser: !!storedUser,
       tokenLength: token?.length,
-      storedUserLength: storedUser?.length
+      storedUserLength: storedUser?.length,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'null',
+      storedUserPreview: storedUser ? storedUser.substring(0, 100) + '...' : 'null'
     });
 
-    if (token && storedUser) {
+    if (token && storedUser && storedUser !== 'null') {
       try {
         const userData = JSON.parse(storedUser);
-        console.log('Parsed stored user data:', userData);
+        console.log('✅ Parsed stored user data:', userData);
         setState(prev => ({ ...prev, user: userData, loading: false }));
         
         // Refresh user data from API to get latest merchant/outlet info
-        console.log('Calling refreshUser...');
+        console.log('🔄 Calling refreshUser...');
         refreshUser();
       } catch (error) {
-        console.error('Error parsing stored user data:', error);
+        console.error('❌ Error parsing stored user data:', error);
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         setState(prev => ({ ...prev, loading: false }));
       }
+    } else if (token && (!storedUser || storedUser === 'null')) {
+      console.log('🔄 Token exists but no user data - refreshing from API...');
+      // We have a token but no user data, try to refresh from API
+      refreshUser();
     } else {
-      console.log('No token or stored user found');
+      console.log('❌ No token or stored user found - user will be null');
       setState(prev => ({ ...prev, loading: false }));
     }
   }, [refreshUser]);

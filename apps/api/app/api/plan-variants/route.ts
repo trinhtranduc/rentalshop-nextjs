@@ -4,28 +4,22 @@ import {
   createPlanVariant, 
   getPlanVariantStats 
 } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { planVariantCreateSchema } from '@rentalshop/utils';
 import type { PlanVariantCreateInput } from '@rentalshop/types';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication and authorization
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
 
     // Check if user is ADMIN (only admins can view all plan variants)
     if (user.role !== 'ADMIN') {
@@ -87,22 +81,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication and authorization
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
 
     // Check if user is ADMIN (only admins can create plan variants)
     if (user.role !== 'ADMIN') {

@@ -4,37 +4,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { manualExpiryCheck } from '@rentalshop/middleware';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { withAdminAuth } from '@rentalshop/auth';
 
 // ============================================================================
 // POST /api/subscriptions/check-expiry - Manual expiry check (Admin only)
 // ============================================================================
-export async function POST(request: NextRequest) {
+export const POST = withAdminAuth(async (authorizedRequest) => {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Only ADMIN can run manual expiry checks
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Admin access required' },
-        { status: 403 }
-      );
-    }
+    // User is already authenticated and authorized as ADMIN
+    const { user, request } = authorizedRequest;
 
     // Run manual expiry check
     const results = await manualExpiryCheck();
@@ -51,4 +29,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

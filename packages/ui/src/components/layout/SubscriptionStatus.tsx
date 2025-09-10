@@ -16,7 +16,7 @@ import {
   TrendingUp,
   Zap
 } from 'lucide-react';
-import { useSubscriptionStatus } from '@rentalshop/hooks';
+import { useSubscriptionStatusInfo } from '@rentalshop/hooks';
 
 interface SubscriptionStatusProps {
   showDetails?: boolean;
@@ -36,7 +36,7 @@ export function SubscriptionStatus({ showDetails = false, className = '' }: Subs
     planName,
     loading,
     error
-  } = useSubscriptionStatus();
+  } = useSubscriptionStatusInfo();
 
   if (loading) {
     return (

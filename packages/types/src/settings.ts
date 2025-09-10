@@ -5,13 +5,13 @@
 export interface PersonalProfileUpdate {
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string; // Email field is disabled - cannot be updated
   phone?: string;
 }
 
 export interface MerchantInfoUpdate {
   name: string;
-  email?: string;
+  email?: string; // Email field is disabled - cannot be updated
   phone?: string;
   address?: string;
   city?: string;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 
 // GET: Fetch product detail for editing (includes categories and outlets for the merchant)
 export async function GET(
@@ -8,15 +8,16 @@ export async function GET(
   { params }: { params: { id: string; productId: string } }
 ) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ success: false, message: 'Access token required' }, { status: 401 });
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { success: false, message: authResult.message },
+        { status: authResult.status }
+      );
     }
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
-    }
+    const user = authResult.user;
 
     const merchantPublicId = parseInt(params.id);
     const productPublicId = parseInt(params.productId);
@@ -101,14 +102,16 @@ export async function PUT(
   { params }: { params: { id: string; productId: string } }
 ) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ success: false, message: 'Access token required' }, { status: 401 });
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { success: false, message: authResult.message },
+        { status: authResult.status }
+      );
     }
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
-    }
+
+    const user = authResult.user;
 
     const merchantPublicId = parseInt(params.id);
     const productPublicId = parseInt(params.productId);

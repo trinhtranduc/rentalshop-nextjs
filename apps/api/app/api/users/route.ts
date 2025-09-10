@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { withUserManagementAuth } from '@rentalshop/auth';
 import { findUserById, findUserByPublicId, createUser, updateUser } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema } from '@rentalshop/utils';
-import { assertAnyRole } from '@rentalshop/auth';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
@@ -24,87 +23,17 @@ export interface UserListOptions {
 
 /**
  * GET /api/users
- * Get users with filtering and pagination (Admin only)
+ * Get users with filtering and pagination (Role-based access)
  */
-export async function GET(request: NextRequest) {
+export const GET = withUserManagementAuth(async (authorizedRequest) => {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    console.log('🔍 Full user object from token:', JSON.stringify(user, null, 2));
-    console.log('🔍 User role:', user.role);
-    console.log('🔍 User merchantId:', user.merchantId);
-    console.log('🔍 User outletId:', user.outletId);
-    console.log('🔍 User email:', user.email);
-
-    // Initialize userScope outside try block
-    let userScope: { merchantId?: number; outletId?: number } = {};
-
-    try {
-      // Check authorization based on user role
-      let canAccess = false;
-
-      // Normalize role for comparison (handle case sensitivity)
-      const normalizedRole = user.role?.toUpperCase() || '';
-
-      if (normalizedRole === 'ADMIN') {
-        // Admin can see all users system-wide
-        canAccess = true;
-        userScope = {};
-        console.log('🔐 Admin access granted - can see all users system-wide');
-      } else if (normalizedRole === 'MERCHANT') {
-        // Merchant can see all users within their organization
-        canAccess = true;
-        userScope = { merchantId: user.merchantId || undefined };
-        console.log('🔐 Merchant access granted - scope:', userScope);
-      } else if (normalizedRole === 'OUTLET_ADMIN') {
-        // Outlet admin can see users within their outlet
-        canAccess = true;
-        userScope = { 
-          merchantId: user.merchantId || undefined, 
-          outletId: user.outletId || undefined 
-        };
-        console.log('🔐 Outlet Admin access granted - scope:', userScope);
-      } else if (normalizedRole === 'OUTLET_STAFF') {
-        // Outlet staff cannot manage users
-        canAccess = false;
-        console.log('🔐 Outlet Staff access denied - cannot manage users');
-      } else {
-        // Unknown role
-        canAccess = false;
-        console.log('❌ Unknown role:', user.role, 'Normalized:', normalizedRole);
-      }
-
-      if (!canAccess) {
-        console.log('❌ Access denied for user:', { role: user.role, merchantId: user.merchantId, outletId: user.outletId });
-        return NextResponse.json(
-          { success: false, message: 'Insufficient permissions to view users' }, 
-          { status: 403 }
-        );
-      }
-
-      console.log('✅ Access granted for user:', { role: user.role, scope: userScope });
-    } catch (error) {
-      console.error('❌ Error in authorization logic:', error);
-      return NextResponse.json(
-        { success: false, message: 'Authorization error', error: error instanceof Error ? error.message : 'Unknown error' }, 
-        { status: 500 }
-      );
-    }
+    // User is already authenticated and authorized
+    // User scope is automatically determined based on role:
+    // - ADMIN: no restrictions (can see all users)
+    // - MERCHANT: scoped to their merchant
+    // - OUTLET_ADMIN: scoped to their outlet
+    // - OUTLET_STAFF: automatically denied (no users.manage permission)
+    const { user, userScope, request } = authorizedRequest;
 
     const { searchParams } = new URL(request.url);
     const parsed = usersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
@@ -165,46 +94,21 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * POST /api/users
- * Create a new user (Admin only)
+ * Create a new user (Role-based access)
  */
-export async function POST(request: NextRequest) {
+export const POST = withUserManagementAuth(async (authorizedRequest) => {
   try {
     console.log('🔄 POST /api/users - Creating new user');
     
     // Capture audit context
-    const auditContext = await captureAuditContext(request);
+    const auditContext = await captureAuditContext(authorizedRequest.request);
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      console.log('❌ No authorization token provided');
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      console.log('❌ Invalid authorization token');
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin
-    try {
-      assertAnyRole(user as any, ['ADMIN']);
-      console.log('✅ User has admin role:', user.email);
-    } catch {
-      console.log('❌ User does not have admin role:', user.email);
-      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
-    }
+    // User is already authenticated and authorized
+    const { user, userScope, request } = authorizedRequest;
 
     const body = await request.json();
     console.log('📝 Request body received:', body);
@@ -225,9 +129,9 @@ export async function POST(request: NextRequest) {
     const p = parsed.data;
     
     // Get merchant ID from the authenticated user
-    let merchantId: number | undefined;
-    if (user.merchantId) {
-      merchantId = user.merchantId;
+    let merchantId: string | undefined;
+    if (user.merchant?.id) {
+      merchantId = user.merchant.id.toString();
     } else if (user.role === 'ADMIN') {
       // Admin users can create users without a specific merchant (system-wide)
       merchantId = undefined;
@@ -335,75 +239,21 @@ export async function POST(request: NextRequest) {
       { status: statusCode }
     );
   }
-}
+});
 
 /**
  * PUT /api/users
- * Update an existing user (Admin only)
+ * Update an existing user (Role-based access)
  */
-export async function PUT(request: NextRequest) {
+export const PUT = withUserManagementAuth(async (authorizedRequest) => {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const currentUser = await verifyTokenSimple(token);
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check authorization based on user role
-    let canAccess = false;
-    let userScope: { merchantId?: number; outletId?: number } = {};
-
-    // Normalize role for comparison (handle case sensitivity)
-    const normalizedRole = currentUser.role?.toUpperCase() || '';
-
-    if (normalizedRole === 'ADMIN') {
-      // Admin can update all users system-wide
-      canAccess = true;
-      userScope = {};
-      console.log('🔐 Admin access granted - can update all users system-wide');
-    } else if (normalizedRole === 'MERCHANT') {
-      // Merchant can update users within their organization
-      canAccess = true;
-      userScope = { merchantId: currentUser.merchantId || undefined };
-      console.log('🔐 Merchant access granted - scope:', userScope);
-    } else if (normalizedRole === 'OUTLET_ADMIN') {
-      // Outlet admin can update users within their outlet
-      canAccess = true;
-      userScope = { 
-        merchantId: currentUser.merchantId || undefined, 
-        outletId: currentUser.outletId || undefined 
-      };
-      console.log('🔐 Outlet Admin access granted - scope:', userScope);
-    } else if (normalizedRole === 'OUTLET_STAFF') {
-      // Outlet staff cannot update users
-      canAccess = false;
-      console.log('🔐 Outlet Staff access denied - cannot update users');
-    } else {
-      // Unknown role
-      canAccess = false;
-      console.log('❌ Unknown role:', currentUser.role, 'Normalized:', normalizedRole);
-    }
-
-    if (!canAccess) {
-      console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions to update users' }, 
-        { status: 403 }
-      );
-    }
-
-    console.log('✅ Access granted for user:', { role: currentUser.role, scope: userScope });
+    // User is already authenticated and authorized
+    // User scope is automatically determined based on role:
+    // - ADMIN: no restrictions (can update all users)
+    // - MERCHANT: scoped to their merchant
+    // - OUTLET_ADMIN: scoped to their outlet
+    // - OUTLET_STAFF: automatically denied (no users.manage permission)
+    const { user, userScope, request } = authorizedRequest;
 
     const body = await request.json();
     const { publicId, ...updateData } = body;
@@ -436,9 +286,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate scope access - ensure user can only update users within their scope
-    if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
+    if (userScope.merchantId && existingUser.merchant?.publicId !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to update user from different merchant', {
-        existingUserMerchantId: existingUser.merchantId,
+        existingUserMerchantId: existingUser.merchant?.publicId,
         userScopeMerchantId: userScope.merchantId
       });
       return NextResponse.json(
@@ -447,9 +297,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    if (userScope.outletId && existingUser.outletId !== userScope.outletId) {
+    if (userScope.outletId && existingUser.outlet?.publicId !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to update user from different outlet', {
-        existingUserOutletId: existingUser.outletId,
+        existingUserOutletId: existingUser.outlet?.publicId,
         userScopeOutletId: userScope.outletId
       });
       return NextResponse.json(
@@ -465,8 +315,8 @@ export async function PUT(request: NextRequest) {
     
     console.log('Final update data for database:', updateDataForDB);
     
-    // Update user using the internal ID from existingUser
-    const updatedUser = await updateUser(existingUser.id, updateDataForDB);
+    // Update user using the publicId from existingUser
+    const updatedUser = await updateUser(existingUser.publicId, updateDataForDB);
 
     return NextResponse.json({
       success: true,
@@ -484,7 +334,7 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * Helper function to get users with filtering and pagination
@@ -598,7 +448,7 @@ async function getUsers(
 
   // Transform the response to expose publicId as "id" to the client
   const transformedUsers = users.map((user: any) => ({
-            id: user.publicId, // Return publicId as "id" to frontend
+            id: user.id, // Return id to frontend
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
@@ -641,35 +491,17 @@ async function getUsers(
 
 /**
  * DELETE /api/users
- * Soft delete a user (Admin, Merchant, or Outlet Admin only)
+ * Soft delete a user (Role-based access)
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = withUserManagementAuth(async (authorizedRequest) => {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check authorization - only Admin, Merchant, or Outlet Admin can delete users
-    const normalizedRole = user.role?.toUpperCase() || '';
-    if (!['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'].includes(normalizedRole)) {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions to delete users' },
-        { status: 403 }
-      );
-    }
+    // User is already authenticated and authorized
+    // User scope is automatically determined based on role:
+    // - ADMIN: no restrictions (can delete all users)
+    // - MERCHANT: scoped to their merchant
+    // - OUTLET_ADMIN: scoped to their outlet
+    // - OUTLET_STAFF: automatically denied (no users.manage permission)
+    const { user, userScope, request } = authorizedRequest;
 
     // Get the user ID to delete from the request body
     const body = await request.json();
@@ -683,7 +515,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user is trying to delete themselves
-    if (user.publicId === userId) {
+    if (user.id === userId) {
       return NextResponse.json(
         { success: false, message: 'You cannot delete your own account' },
         { status: 400 }
@@ -698,7 +530,7 @@ export async function DELETE(request: NextRequest) {
 
     console.log('✅ User soft deleted successfully:', {
       deletedUserId: userId,
-      deletedBy: user.publicId,
+      deletedBy: user.id,
       deletedUser: deletedUser.publicId
     });
 
@@ -736,4 +568,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}); 

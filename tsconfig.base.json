@@ -23,7 +23,8 @@
       "@rentalshop/database": ["./packages/database/src"],
       "@rentalshop/utils": ["./packages/utils/src"],
       "@rentalshop/types": ["./packages/types/src"],
-      "@rentalshop/hooks": ["./packages/hooks/src"]
+      "@rentalshop/hooks": ["./packages/hooks/src"],
+      "@rentalshop/constants": ["./packages/constants/src"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "**/node_modules"]

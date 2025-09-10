@@ -31,14 +31,14 @@ import {
   TrendingUp,
   Check
 } from 'lucide-react';
-import type { PlanVariant, Plan } from '@rentalshop/types';
+import type { Subscription, Plan } from '@rentalshop/types';
 
 interface PlanVariantFormProps {
   isOpen: boolean;
   onClose: () => void;
-  variant?: PlanVariant | null;
+  variant?: Subscription | null;
   plans: Plan[];
-  onSave: (variant: Partial<PlanVariant>) => void;
+  onSave: (variant: Partial<Subscription>) => void;
 }
 
 export default function PlanVariantForm({ 
@@ -50,14 +50,14 @@ export default function PlanVariantForm({
 }: PlanVariantFormProps) {
   const [formData, setFormData] = useState({
     planId: '',
-    name: '',
-    duration: 1,
-    price: 0,
+    status: 'ACTIVE' as any,
+    period: 1 as any,
+    amount: 0,
     basePrice: 0,
     discount: 0,
-    isActive: true,
-    isPopular: false,
-    sortOrder: 0
+    interval: 'month' as any,
+    intervalCount: 1,
+    currency: 'USD'
   });
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   const [calculatedSavings, setCalculatedSavings] = useState(0);
@@ -66,26 +66,26 @@ export default function PlanVariantForm({
     if (variant) {
       setFormData({
         planId: variant.planId.toString(),
-        name: variant.name,
-        duration: variant.duration,
-        price: variant.price,
+        status: variant.status,
+        period: variant.period,
+        amount: variant.amount,
         basePrice: variant.plan?.basePrice || 0,
         discount: variant.discount,
-        isActive: variant.isActive,
-        isPopular: variant.isPopular,
-        sortOrder: variant.sortOrder
+        interval: variant.interval,
+        intervalCount: variant.intervalCount,
+        currency: variant.currency
       });
     } else {
       setFormData({
         planId: '',
-        name: '',
-        duration: 1,
-        price: 0,
+        status: 'ACTIVE' as any,
+        period: 1 as any,
+        amount: 0,
         basePrice: 0,
         discount: 0,
-        isActive: true,
-        isPopular: false,
-        sortOrder: 0
+        interval: 'month' as any,
+        intervalCount: 1,
+        currency: 'USD'
       });
     }
   }, [variant, isOpen]);
@@ -107,18 +107,20 @@ export default function PlanVariantForm({
         ...prev,
         planId,
         basePrice: selectedPlan.basePrice,
-        name: `${selectedPlan.name} - ${prev.duration} Month${prev.duration !== 1 ? 's' : ''}`
+        amount: selectedPlan.basePrice * prev.period
       }));
     }
   };
 
-  const handleDurationChange = (duration: number) => {
+  const handlePeriodChange = (period: number) => {
     const selectedPlan = plans.find(plan => plan.id.toString() === formData.planId);
     if (selectedPlan) {
       setFormData(prev => ({
         ...prev,
-        duration,
-        name: `${selectedPlan.name} - ${duration} Month${duration !== 1 ? 's' : ''}`
+        period,
+        amount: selectedPlan.basePrice * period,
+        intervalCount: period === 1 ? 1 : period === 3 ? 3 : 1,
+        interval: period === 12 ? 'year' : 'month'
       }));
     }
   };
@@ -126,14 +128,14 @@ export default function PlanVariantForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const variantData = {
+    const subscriptionData = {
       ...formData,
       planId: formData.planId,
-      price: formData.price || calculatedPrice,
+      amount: formData.amount || calculatedPrice,
       savings: calculatedSavings
     };
     
-    onSave(variantData);
+    onSave(subscriptionData);
   };
 
   const selectedPlan = plans.find(plan => plan.id.toString() === formData.planId);
@@ -144,7 +146,7 @@ export default function PlanVariantForm({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            {variant ? 'Edit Plan Variant' : 'Create Plan Variant'}
+            {variant ? 'Edit Subscription' : 'Create Subscription'}
           </DialogTitle>
         </DialogHeader>
 
@@ -169,37 +171,24 @@ export default function PlanVariantForm({
             </Select>
           </div>
 
-          {/* Duration */}
+          {/* Period */}
           <div className="space-y-2">
-            <Label htmlFor="duration">Duration (months) *</Label>
+            <Label htmlFor="period">Billing Period *</Label>
             <Select 
-              value={formData.duration.toString()} 
-              onValueChange={(value) => handleDurationChange(parseInt(value))}
+              value={formData.period.toString()} 
+              onValueChange={(value) => handlePeriodChange(parseInt(value))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select duration" />
+                <SelectValue placeholder="Select period" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="1">1 Month</SelectItem>
-                <SelectItem value="3">3 Months</SelectItem>
-                <SelectItem value="6">6 Months</SelectItem>
-                <SelectItem value="12">12 Months</SelectItem>
-                <SelectItem value="24">24 Months</SelectItem>
+                <SelectItem value="3">3 Months (Quarterly)</SelectItem>
+                <SelectItem value="12">12 Months (Yearly)</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Variant Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Variant Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., 3 Months, 6 Months, Annual"
-              required
-            />
-          </div>
 
           {/* Pricing Section */}
           <Card>
@@ -265,26 +254,26 @@ export default function PlanVariantForm({
                 </div>
               </div>
 
-              {/* Custom Price Override */}
+              {/* Custom Amount Override */}
               <div className="space-y-2">
-                <Label htmlFor="price">Custom Price (optional)</Label>
+                <Label htmlFor="amount">Custom Amount (optional)</Label>
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-text-secondary" />
                   <Input
-                    id="price"
+                    id="amount"
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.price || ''}
+                    value={formData.amount || ''}
                     onChange={(e) => setFormData(prev => ({ 
                       ...prev, 
-                      price: parseFloat(e.target.value) || 0 
+                      amount: parseFloat(e.target.value) || 0 
                     }))}
-                    placeholder="Leave empty to use calculated price"
+                    placeholder="Leave empty to use calculated amount"
                   />
                 </div>
                 <p className="text-xs text-text-secondary">
-                  Leave empty to use the calculated price based on discount
+                  Leave empty to use the calculated amount based on discount
                 </p>
               </div>
             </CardContent>
@@ -293,49 +282,45 @@ export default function PlanVariantForm({
           {/* Settings */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="sortOrder">Sort Order</Label>
-              <Input
-                id="sortOrder"
-                type="number"
-                value={formData.sortOrder}
-                onChange={(e) => setFormData(prev => ({ 
+              <Label htmlFor="status">Status</Label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
-                  sortOrder: parseInt(e.target.value) || 0 
+                  status: value as any
                 }))}
-                placeholder="0"
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="TRIAL">Trial</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                  <SelectItem value="EXPIRED">Expired</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="space-y-2">
-              <Label>Status</Label>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      isActive: e.target.checked 
-                    }))}
-                    className="rounded"
-                  />
-                  <span className="text-sm">Active</span>
-                </label>
-                
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.isPopular}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      isPopular: e.target.checked 
-                    }))}
-                    className="rounded"
-                  />
-                  <Star className="w-4 h-4" />
-                  <span className="text-sm">Popular</span>
-                </label>
-              </div>
+              <Label htmlFor="currency">Currency</Label>
+              <Select 
+                value={formData.currency} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  currency: value
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                  <SelectItem value="GBP">GBP</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -347,7 +332,7 @@ export default function PlanVariantForm({
             </Button>
             <Button type="submit">
               <Check className="w-4 h-4 mr-2" />
-              {variant ? 'Update Variant' : 'Create Variant'}
+              {variant ? 'Update Subscription' : 'Create Subscription'}
             </Button>
           </div>
         </form>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { calculateProration, shouldApplyProration } from '@rentalshop/utils';
 import { z } from 'zod';
 
@@ -18,22 +18,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Check if user is admin
     if (user.role !== 'ADMIN') {
@@ -59,7 +50,7 @@ export async function PUT(
       // 1. Get merchant
       const merchant = await tx.merchant.findUnique({
         where: { publicId: merchantId },
-        include: { plan: true, subscriptions: { orderBy: { createdAt: 'desc' }, take: 1 } }
+        include: { plan: true, subscription: true }
       });
 
       if (!merchant) {
@@ -82,21 +73,21 @@ export async function PUT(
       // 3. Get plan variant if specified
       let planVariant = null;
       if (validatedData.planVariantId) {
-        planVariant = await tx.planVariant.findUnique({
-          where: { publicId: validatedData.planVariantId }
-        });
+        // planVariant = await tx.planVariant.findUnique({
+        //   where: { publicId: validatedData.planVariantId }
+        // });
 
-        if (!planVariant) {
-          throw new Error('Plan variant not found');
-        }
+        // if (!planVariant) {
+        //   throw new Error('Plan variant not found');
+        // }
 
-        if (!planVariant.isActive) {
-          throw new Error('Plan variant is not active');
-        }
+        // if (!planVariant.isActive) {
+        //   throw new Error('Plan variant is not active');
+        // }
 
-        if (planVariant.planId !== newPlan.id) {
-          throw new Error('Plan variant does not belong to selected plan');
-        }
+        // if (planVariant.planId !== newPlan.id) {
+        //   throw new Error('Plan variant does not belong to selected plan');
+        // }
       }
 
       // 4. Check if merchant is already on this plan
@@ -105,14 +96,14 @@ export async function PUT(
       }
 
       // 5. Get current subscription
-      const currentSubscription = merchant.subscriptions[0];
+      const currentSubscription = merchant.subscription;
       const effectiveDate = validatedData.effectiveDate 
         ? new Date(validatedData.effectiveDate)
         : new Date();
 
       // 6. Calculate pricing and duration
-      const finalPrice = planVariant ? planVariant.price : newPlan.basePrice;
-      const durationMonths = planVariant ? planVariant.duration : 1;
+      const finalPrice = newPlan.basePrice;
+      const durationMonths = 1;
       const endDate = new Date(effectiveDate.getTime() + (durationMonths * 30 * 24 * 60 * 60 * 1000));
 
       // 7. Create new subscription
@@ -126,16 +117,14 @@ export async function PUT(
           publicId: subscriptionPublicId,
           merchantId: merchant.id,
           planId: newPlan.id,
-          planVariantId: planVariant?.id,
           status: 'ACTIVE',
-          startDate: effectiveDate,
-          endDate: endDate,
-          nextBillingDate: endDate,
+          currentPeriodStart: effectiveDate,
+          currentPeriodEnd: endDate,
           amount: finalPrice,
           currency: newPlan.currency,
-          autoRenew: true,
-          changeReason: validatedData.reason || 'Plan changed by admin',
-          changedBy: user.id
+          interval: 'month',
+          intervalCount: 1,
+          cancelAtPeriodEnd: false
         }
       });
 
@@ -148,8 +137,8 @@ export async function PUT(
         const proration = calculateProration(
           {
             amount: currentPrice,
-            currentPeriodStart: currentSubscription.startDate,
-            currentPeriodEnd: currentSubscription.endDate || new Date()
+            currentPeriodStart: currentSubscription.currentPeriodStart,
+            currentPeriodEnd: currentSubscription.currentPeriodEnd || new Date()
           },
           finalPrice,
           effectiveDate
@@ -172,7 +161,7 @@ export async function PUT(
       let paymentStatus = 'COMPLETED';
       let paymentMethod = 'MANUAL';
       let paymentAmount = finalPrice;
-      let paymentNotes = `Plan change from ${merchant.plan?.name || 'None'} to ${newPlan.name}${planVariant ? ` (${planVariant.name})` : ''}`;
+      let paymentNotes = `Plan change from ${merchant.plan?.name || 'None'} to ${newPlan.name}`;
       
       // Check if this is a free upgrade (trial to paid, or downgrade)
       const isFreeUpgrade = finalPrice === 0 || (merchant.plan && newPlan.basePrice <= merchant.plan.basePrice);
@@ -240,8 +229,8 @@ export async function PUT(
             oldPlanName: merchant.plan?.name || 'None',
             newPlanId: newPlan.publicId,
             newPlanName: newPlan.name,
-            planVariantId: planVariant?.publicId || null,
-            planVariantName: planVariant?.name || null,
+            planVariantId: null,
+            planVariantName: null,
             finalPrice: finalPrice,
             durationMonths: durationMonths,
             reason: validatedData.reason,
@@ -261,7 +250,7 @@ export async function PUT(
         planChange: {
           from: merchant.plan?.name || 'None',
           to: newPlan.name,
-          variant: planVariant?.name || null,
+          variant: null,
           price: finalPrice,
           duration: durationMonths,
           effectiveDate: effectiveDate.toISOString(),
@@ -332,22 +321,13 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Check if user is admin
     if (user.role !== 'ADMIN') {
@@ -370,9 +350,8 @@ export async function GET(
       where: { publicId: merchantId },
       include: {
         plan: true,
-        subscriptions: {
-          include: { plan: true },
-          orderBy: { createdAt: 'desc' }
+        subscription: {
+          include: { plan: true }
         }
       }
     });
@@ -410,16 +389,16 @@ export async function GET(
           } : null,
           subscriptionStatus: merchant.subscriptionStatus
         },
-        subscriptions: merchant.subscriptions.map(sub => ({
-          id: sub.publicId,
-          planName: sub.plan.name,
-          status: sub.status,
-          startDate: sub.startDate,
-          endDate: sub.endDate,
-          amount: sub.amount,
-          currency: sub.currency,
-          changeReason: sub.changeReason
-        })),
+        subscription: merchant.subscription ? {
+          id: merchant.subscription.publicId,
+          planName: merchant.subscription.plan.name,
+          status: merchant.subscription.status,
+          startDate: merchant.subscription.currentPeriodStart,
+          endDate: merchant.subscription.currentPeriodEnd,
+          amount: merchant.subscription.amount,
+          currency: merchant.subscription.currency,
+          changeReason: 'plan_change'
+        } : null,
         planChangeHistory: planChangeLogs.map(log => ({
           id: log.id,
           action: log.action,
@@ -447,22 +426,13 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Check if user is admin
     if (user.role !== 'ADMIN') {
@@ -523,9 +493,8 @@ export async function PATCH(
           where: { id: subscription.id },
           data: {
             status: 'DISABLED',
-            cancellationReason: reason,
-            cancelledAt: new Date(),
-            autoRenew: false
+            cancelReason: reason,
+            canceledAt: new Date(),
           }
         });
         auditAction = 'PLAN_DISABLED';
@@ -535,9 +504,8 @@ export async function PATCH(
           where: { id: subscription.id },
           data: {
             status: 'DELETED',
-            cancellationReason: reason,
-            cancelledAt: new Date(),
-            autoRenew: false
+            cancelReason: reason,
+            canceledAt: new Date(),
           }
         });
         auditAction = 'PLAN_DELETED';

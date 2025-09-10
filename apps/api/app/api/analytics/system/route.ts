@@ -1,33 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { withAdminAuth } from '@rentalshop/auth';
 
-export async function GET(request: NextRequest) {
+export const GET = withAdminAuth(async (authorizedRequest) => {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is ADMIN (only admins can see system analytics)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: 403 }
-      );
-    }
+    // User is already authenticated and authorized as ADMIN
+    const { user, userScope, request } = authorizedRequest;
 
     // Get current date for calculations
     const now = new Date();
@@ -154,4 +132,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

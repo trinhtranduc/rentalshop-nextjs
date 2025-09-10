@@ -1,46 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrderByNumber } from '@rentalshop/database';
-import { verifyTokenSimple, assertAnyRole } from '@rentalshop/auth';
+import { withOrderViewAuth } from '@rentalshop/auth';
 
-export async function GET(
-  request: NextRequest,
+export const GET = withOrderViewAuth(async (
+  authorizedRequest,
   { params }: { params: { orderNumber: string } }
-) {
+) => {
   try {
     console.log('🔍 [by-number] Starting order lookup for:', params.orderNumber);
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      console.log('❌ [by-number] No token provided');
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const decoded = await verifyTokenSimple(token);
-    if (!decoded) {
-      console.log('❌ [by-number] Invalid token');
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    console.log('✅ [by-number] Token verified for user:', decoded.email);
-
-    // Check if user has permission to view orders
-    try {
-      await assertAnyRole(decoded, ['ADMIN', 'MERCHANT', 'OUTLET_STAFF']);
-      console.log('✅ [by-number] User has required role');
-    } catch (roleError) {
-      console.log('❌ [by-number] Role check failed:', roleError);
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions' },
-        { status: 403 }
-      );
-    }
+    // User is already authenticated and authorized to view orders
+    const { user, userScope, request } = authorizedRequest;
+    console.log('✅ [by-number] Token verified for user:', user.email);
 
     const { orderNumber } = params;
 
@@ -170,4 +141,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

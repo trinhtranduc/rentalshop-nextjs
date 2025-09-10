@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { updateOrder } from '@rentalshop/database';
 import { assertAnyRole } from '@rentalshop/auth';
 import { z } from 'zod';
@@ -34,22 +34,16 @@ export async function PATCH(
   { params }: { params: { orderId: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { success: false, error: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
 
     const { orderId } = params;
     

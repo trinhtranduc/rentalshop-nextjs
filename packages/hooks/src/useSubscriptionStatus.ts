@@ -36,7 +36,7 @@ export function useSubscriptionStatus(): SubscriptionStatus {
       
       const response = await fetch('/api/subscriptions/status', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
       

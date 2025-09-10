@@ -11,7 +11,7 @@ export const profileApi = {
    * Get current user profile
    */
   async getProfile(): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile`);
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/profile`);
     return await parseApiResponse<User>(response);
   },
 
@@ -19,7 +19,7 @@ export const profileApi = {
    * Update current user profile
    */
   async updateProfile(profileData: ProfileUpdateInput): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile`, {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/users/profile`, {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });

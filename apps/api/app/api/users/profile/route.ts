@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple, handleSubscriptionError } from '@rentalshop/auth';
+import { authenticateRequest, handleSubscriptionError } from '@rentalshop/auth';
 import { findUserById, updateUser, prisma } from '@rentalshop/database';
 
 /**
@@ -8,34 +8,23 @@ import { findUserById, updateUser, prisma } from '@rentalshop/database';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('Profile API called');
+    console.log('🔍 Profile API called');
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    console.log('Token received:', !!token);
-    
-    if (!token) {
-      console.log('No token provided');
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      console.log('❌ Authentication failed');
+      return authResult.response;
     }
 
-    const user = await verifyTokenSimple(token);
-    console.log('Token verification result:', !!user, user ? { id: user.id, role: user.role } : null);
-    
-    if (!user) {
-      console.log('Token verification failed');
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
+    console.log('✅ Token verification result: Success', { id: user.id, role: user.role });
 
     // Get user profile with complete merchant and outlet data
+    // Note: user.id is the publicId, we need to find by publicId
+    console.log('🔍 Searching for user with publicId:', user.id);
     const userProfile = await prisma.user.findUnique({
-      where: { id: user.id },
+      where: { publicId: user.id },
       include: {
         merchant: {
           select: {
@@ -85,11 +74,20 @@ export async function GET(request: NextRequest) {
     });
 
     if (!userProfile) {
+      console.log('❌ User not found with publicId:', user.id);
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: 404 }
       );
     }
+
+    console.log('✅ User profile found:', { 
+      id: userProfile.id, 
+      publicId: userProfile.publicId, 
+      email: userProfile.email,
+      hasMerchant: !!userProfile.merchant,
+      hasOutlet: !!userProfile.outlet
+    });
 
     // Transform user data to include complete merchant and outlet information
     const transformedUser = {
@@ -147,12 +145,17 @@ export async function GET(request: NextRequest) {
       outletName: userProfile.outlet?.name
     });
 
+    console.log('✅ Returning user profile data');
     return NextResponse.json({
       success: true,
       data: transformedUser,
     });
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error('💥 Error fetching user profile:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     
     // Handle subscription errors consistently
     const errorResponse = handleSubscriptionError(error);
@@ -172,33 +175,23 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     const body = await request.json();
     
-    // Validate input
-    const { firstName, lastName, email, phone } = body;
+    // Validate input - email updates are disabled for security
+    const { firstName, lastName, phone } = body;
     
-    // Only allow updating certain fields
+    // Only allow updating certain fields (email is disabled)
     const updateData: any = {};
     if (firstName && firstName.trim()) updateData.firstName = firstName.trim();
     if (lastName && lastName.trim()) updateData.lastName = lastName.trim();
-    if (email && email.trim()) updateData.email = email.toLowerCase().trim();
     if (phone !== undefined) updateData.phone = phone?.trim() || null;
 
     if (Object.keys(updateData).length === 0) {
@@ -211,29 +204,125 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Get user's publicId to use with updateUser function
-    const userWithPublicId = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { publicId: true }
-    });
+    // Validate phone uniqueness if phone is being updated
+    if (updateData.phone) {
+      // Get the current user's merchant ID from database
+      const currentUser = await prisma.user.findUnique({
+        where: { publicId: user.id },
+        select: { merchantId: true, role: true }
+      });
 
-    if (!userWithPublicId) {
-      return NextResponse.json(
-        { success: false, message: 'User not found' },
-        { status: 404 }
-      );
+      // Build the where clause for phone uniqueness check
+      const whereClause: any = {
+        phone: updateData.phone,
+        publicId: { not: user.id }, // Exclude current user
+      };
+
+      // For admin users (merchantId is null), check globally
+      // For other users, check within their merchant
+      if (currentUser?.merchantId) {
+        whereClause.merchantId = currentUser.merchantId;
+      } else if (currentUser?.role === 'ADMIN') {
+        // Admin users can have unique phone numbers globally
+        // No additional filter needed
+      } else {
+        // For users without merchant, check globally
+        whereClause.merchantId = null;
+      }
+
+      const existingUserWithPhone = await prisma.user.findFirst({
+        where: whereClause,
+      });
+
+      if (existingUserWithPhone) {
+        const scopeMessage = currentUser?.role === 'ADMIN' 
+          ? 'globally' 
+          : 'in your organization';
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Phone number already exists ${scopeMessage}` 
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Update user profile using publicId
-    const updatedUser = await updateUser(userWithPublicId.publicId, updateData);
+    // Note: user.id is already the publicId (number) from the JWT token
+    console.log('🔄 Updating user profile:', {
+      userId: user.id,
+      updateData,
+      userRole: user.role,
+      merchantId: user.merchant?.id
+    });
+
+    const updatedUser = await updateUser(user.id, updateData);
+
+    console.log('✅ Profile updated successfully:', {
+      userId: updatedUser.publicId,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      phone: updatedUser.phone
+    });
+
+    // Transform user data to match GET profile response format
+    const transformedUser = {
+      ...updatedUser,
+      // Direct IDs for quick access
+      merchantId: updatedUser.merchant?.publicId,
+      outletId: updatedUser.outlet?.publicId,
+      // Complete merchant object with all business info
+      merchant: updatedUser.merchant ? {
+        id: updatedUser.merchant.publicId,
+        name: updatedUser.merchant.name,
+        email: updatedUser.merchant.email,
+        phone: updatedUser.merchant.phone,
+        address: updatedUser.merchant.address,
+        city: updatedUser.merchant.city,
+        state: updatedUser.merchant.state,
+        zipCode: updatedUser.merchant.zipCode,
+        country: updatedUser.merchant.country,
+        businessType: updatedUser.merchant.businessType,
+        taxId: updatedUser.merchant.taxId,
+        website: updatedUser.merchant.website,
+        description: updatedUser.merchant.description,
+        isActive: updatedUser.merchant.isActive,
+        planId: updatedUser.merchant.planId,
+        subscriptionStatus: updatedUser.merchant.subscriptionStatus,
+        totalRevenue: updatedUser.merchant.totalRevenue,
+        createdAt: updatedUser.merchant.createdAt,
+        lastActiveAt: updatedUser.merchant.lastActiveAt,
+      } : undefined,
+      // Complete outlet object with all outlet info  
+      outlet: updatedUser.outlet ? {
+        id: updatedUser.outlet.publicId,
+        name: updatedUser.outlet.name,
+        address: updatedUser.outlet.address,
+        phone: updatedUser.outlet.phone,
+        description: updatedUser.outlet.description,
+        isActive: updatedUser.outlet.isActive,
+        isDefault: updatedUser.outlet.isDefault,
+        createdAt: updatedUser.outlet.createdAt,
+        merchant: updatedUser.outlet.merchant ? {
+          id: updatedUser.outlet.merchant.publicId,
+          name: updatedUser.outlet.merchant.name,
+        } : undefined,
+      } : undefined,
+    };
 
     return NextResponse.json({
       success: true,
-      data: updatedUser,
+      data: transformedUser,
       message: 'Profile updated successfully',
     });
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    console.error('❌ Error updating user profile:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
     return NextResponse.json(
       { 
         success: false, 

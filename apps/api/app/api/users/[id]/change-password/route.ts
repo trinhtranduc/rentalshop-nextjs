@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { assertAnyRole } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
@@ -19,22 +19,16 @@ export async function PATCH(
   try {
     console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', params.id);
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const currentUser = await verifyTokenSimple(token);
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const currentUser = authResult.user;
 
     const { id } = params;
     const body = await request.json();

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { 
+  withOrderViewAuth,
+  withOrderCreateAuth,
+  withOrderUpdateAuth,
+  withOrderDeleteAuth,
+  withOrderExportAuth
+} from '@rentalshop/auth';
 import { 
   createOrder, 
   searchOrders, 
@@ -10,7 +16,6 @@ import {
   cancelOrder
 } from '@rentalshop/database';
 import type { OrderInput, OrderSearchFilter, OrderUpdateInput, OrderType, OrderStatus } from '@rentalshop/types';
-import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
 import { captureAuditContext } from '@rentalshop/middleware';
@@ -27,24 +32,10 @@ import { createAuditHelper } from '@rentalshop/utils';
  *   - orderId: Get specific order
  *   - productId: Get orders for specific product (for availability checking)
  */
-export async function GET(request: NextRequest) {
+export const GET = withOrderViewAuth(async (authorizedRequest) => {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    // User is already authenticated and authorized to view orders
+    const { user, userScope, request } = authorizedRequest;
 
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
@@ -327,7 +318,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';
 
@@ -335,38 +326,13 @@ export const runtime = 'nodejs';
  * POST /api/orders
  * Create new order
  */
-export async function POST(request: NextRequest) {
+export const POST = withOrderCreateAuth(async (authorizedRequest) => {
   try {
     // Capture audit context
-    const auditContext = await captureAuditContext(request);
+    const auditContext = await captureAuditContext(authorizedRequest.request);
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Authorization: creating orders requires outlet team (OUTLET_ADMIN/OUTLET_STAFF) or ADMIN/MERCHANT
-    try {
-      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
-    } catch {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Insufficient permissions to create orders',
-        error: 'FORBIDDEN'
-      }, { status: 403 });
-    }
+    // User is already authenticated and authorized to create orders
+    const { user, userScope, request } = authorizedRequest;
 
     // Parse and validate request body
     const body = await request.json();
@@ -726,33 +692,19 @@ export async function POST(request: NextRequest) {
       error: 'INTERNAL_ERROR'
     }, { status: 500 });
   }
-}
+});
 
 /**
  * PUT /api/orders
  * Update order (requires orderId in query params)
  */
-export async function PUT(request: NextRequest) {
+export const PUT = withOrderUpdateAuth(async (authorizedRequest) => {
   try {
     // Capture audit context
-    const auditContext = await captureAuditContext(request);
+    const auditContext = await captureAuditContext(authorizedRequest.request);
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    // User is already authenticated and authorized to update orders
+    const { user, userScope, request } = authorizedRequest;
 
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get('orderId');
@@ -834,33 +786,21 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * DELETE /api/orders
  * Cancel order (requires orderId in query params)
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = withOrderDeleteAuth(async (authorizedRequest) => {
   try {
     // Capture audit context
-    const auditContext = await captureAuditContext(request);
+    const auditContext = await captureAuditContext(authorizedRequest.request);
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    // User is already authenticated and authorized to delete orders
+    // Only ADMIN, MERCHANT, OUTLET_ADMIN can delete orders
+    // OUTLET_STAFF will automatically get 403 Forbidden
+    const { user, userScope, request } = authorizedRequest;
 
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get('orderId');
@@ -873,12 +813,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     const body = await request.json();
-    // Authorization: cancelling orders requires outlet team or merchant/admin
-    try {
-      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
-    } catch {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
     const reason = body.reason || 'Order cancelled by user';
 
     // Cancel the order
@@ -920,4 +854,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}); 

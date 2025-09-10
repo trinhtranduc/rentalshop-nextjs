@@ -1,33 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { withAdminAuth } from '@rentalshop/auth';
 
-export async function GET(request: NextRequest) {
+export const GET = withAdminAuth(async (authorizedRequest) => {
   try {
-    // Verify authentication and authorization
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is ADMIN (only admins can view all billing cycles)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
-      );
-    }
+    // User is already authenticated and authorized as ADMIN
+    const { request } = authorizedRequest;
 
     // Get search parameters
     const { searchParams } = new URL(request.url);
@@ -94,34 +72,12 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAdminAuth(async (authorizedRequest) => {
   try {
-    // Verify authentication and authorization
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is ADMIN (only admins can create billing cycles)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
-      );
-    }
+    // User is already authenticated and authorized as ADMIN
+    const { request } = authorizedRequest;
 
     // Parse request body
     const body = await request.json();
@@ -192,4 +148,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

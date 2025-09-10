@@ -5,7 +5,8 @@
 import { ORDER_STATUS, OrderStatus } from './status';
 
 // Re-export from centralized status constants
-export { ORDER_STATUS as ORDER_STATUSES, OrderStatus };
+export { ORDER_STATUS as ORDER_STATUSES } from './status';
+export type { OrderStatus } from './status';
 
 // ============================================================================
 // ORDER TYPES

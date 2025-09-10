@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 
 /**
@@ -8,22 +8,13 @@ import { prisma } from '@rentalshop/database';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Build where clause based on user role and scope
     const where: any = { isActive: true };
@@ -78,28 +69,18 @@ export async function POST(request: NextRequest) {
   console.log('🚀 POST /api/categories - Starting category creation...');
   
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    console.log('🔑 Auth token received:', token ? 'Yes' : 'No');
-    
-    if (!token) {
-      console.log('❌ No access token provided');
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      console.log('❌ Authentication failed:', authResult.message);
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const user = await verifyTokenSimple(token);
-    console.log('👤 User verification result:', user ? 'Success' : 'Failed');
-    
-    if (!user) {
-      console.log('❌ Invalid token - user verification failed');
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
+    console.log('👤 User verification result: Success');
 
     console.log('👤 User details:', {
       id: user.id,

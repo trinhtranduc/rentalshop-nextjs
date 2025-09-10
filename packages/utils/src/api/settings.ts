@@ -1,4 +1,6 @@
-import { authenticatedFetch, parseApiResponse, apiUrls } from '../index';
+import { authenticatedFetch, parseApiResponse } from '../index';
+import { apiUrls } from '../config/api';
+import { profileApi } from './profile';
 import type { ApiResponse } from '../index';
 import type { 
   PersonalProfileUpdate, 
@@ -17,23 +19,21 @@ import type {
 export const settingsApi = {
   /**
    * Update personal profile information
+   * Uses centralized profileApi for consistency
    */
   async updatePersonalProfile(data: PersonalProfileUpdate): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/users/profile', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    return await parseApiResponse<any>(response);
+    console.log('🔍 DEBUG: settingsApi.updatePersonalProfile called');
+    console.log('🔍 DEBUG: Request data:', data);
+    
+    // Use centralized profileApi to avoid duplication
+    return await profileApi.updateProfile(data);
   },
 
   /**
    * Update merchant business information
    */
   async updateMerchantInfo(data: MerchantInfoUpdate): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/settings/merchant', {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/settings/merchant`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ export const settingsApi = {
    * Update outlet information
    */
   async updateOutletInfo(data: OutletInfoUpdate): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/settings/outlet', {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/settings/outlet`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ export const settingsApi = {
    * Update security settings (password)
    */
   async updateSecurity(data: SecurityUpdate): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch('/api/auth/change-password', {
+    const response = await authenticatedFetch(`${apiUrls.base}/api/auth/change-password`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
