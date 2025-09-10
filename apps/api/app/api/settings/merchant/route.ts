@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { authenticateRequest } from '@rentalshop/auth';
+import { updateMerchant } from '@rentalshop/database';
 
 /**
  * PUT /api/settings/merchant
@@ -9,25 +9,16 @@ import { prisma } from '@rentalshop/database';
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Check if user has merchant access
-    if (!user.merchantId) {
+    if (!user.merchant?.id) {
       return NextResponse.json(
         { success: false, message: 'User does not have merchant access' },
         { status: 403 }
@@ -37,7 +28,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { 
       name, 
-      email, 
       phone, 
       address, 
       city, 
@@ -58,41 +48,22 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check if email already exists (if changing email)
-    if (email) {
-      const existingMerchant = await prisma.merchant.findFirst({
-        where: {
-          email,
-          NOT: { id: user.merchantId }
-        }
-      });
+    // Email field is disabled - users cannot change their email address
+    // This ensures email uniqueness and prevents account hijacking
 
-      if (existingMerchant) {
-        return NextResponse.json(
-          { success: false, message: 'Email already exists' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Update merchant
-    const updatedMerchant = await prisma.merchant.update({
-      where: { id: user.merchantId },
-      data: {
-        ...(name && { name }),
-        ...(email && { email }),
-        ...(phone !== undefined && { phone }),
-        ...(address !== undefined && { address }),
-        ...(city !== undefined && { city }),
-        ...(state !== undefined && { state }),
-        ...(zipCode !== undefined && { zipCode }),
-        ...(country !== undefined && { country }),
-        ...(businessType !== undefined && { businessType }),
-        ...(taxId !== undefined && { taxId }),
-        ...(website !== undefined && { website }),
-        ...(description !== undefined && { description }),
-        lastActiveAt: new Date()
-      }
+    // Update merchant using the centralized database function
+    const updatedMerchant = await updateMerchant(user.merchant.id, {
+      name,
+      phone,
+      address,
+      city,
+      state,
+      zipCode,
+      country,
+      businessType,
+      taxId,
+      website,
+      description
     });
 
     return NextResponse.json({

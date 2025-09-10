@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getActivePlanVariants } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 
 export async function GET(
   request: NextRequest,

@@ -1,4 +1,11 @@
-import type { BillingCycleOption } from '@rentalshop/types';
+// Define BillingCycleOption locally to avoid circular dependency
+export interface BillingCycleOption {
+  value: string;
+  label: string;
+  months: number;
+  discount: number;
+  description: string;
+}
 
 // ============================================================================
 // BILLING CYCLE CONSTANTS
@@ -9,24 +16,28 @@ export const BILLING_CYCLES: BillingCycleOption[] = [
     value: 'monthly',
     label: 'Monthly',
     months: 1,
+    discount: 0,
     description: 'Billed every month'
   },
   {
     value: 'quarterly',
     label: 'Quarterly (3 Months)',
     months: 3,
+    discount: 5,
     description: 'Billed every 3 months'
   },
   {
     value: 'semi_annual',
     label: 'Semi-Annual (6 Months)',
     months: 6,
+    discount: 10,
     description: 'Billed every 6 months'
   },
   {
     value: 'annual',
     label: 'Annual (12 Months)',
     months: 12,
+    discount: 20,
     description: 'Billed every 12 months'
   }
 ];

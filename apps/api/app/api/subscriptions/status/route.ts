@@ -4,32 +4,31 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSubscriptionByMerchantId } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 
 // ============================================================================
 // GET /api/subscriptions/status - Get current user's subscription status
 // ============================================================================
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
+    
+    const user = authResult.user;
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
+    // Check if user has a merchant
+    if (!user.merchant?.id) {
+      return NextResponse.json({
+        success: false,
+        message: 'User is not associated with any merchant'
+      }, { status: 400 });
     }
 
     // Get user's subscription
-    const subscription = await getSubscriptionByMerchantId(Number(user.merchantId) || 0);
+    const subscription = await getSubscriptionByMerchantId(user.merchant.id);
     
     if (!subscription) {
       return NextResponse.json({

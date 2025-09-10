@@ -29,7 +29,6 @@ export * from './api';
 export * from './orders';
 export * from './billing-cycles';
 export * from './billing';
-// Export status constants and types
 export * from './status';
 
 // Explicit exports for status constants
@@ -46,6 +45,22 @@ export {
   BILLING_INTERVAL,
   AUDIT_ACTION,
   AUDIT_ENTITY_TYPE
+} from './status';
+
+// Export status types
+export type {
+  SubscriptionStatus,
+  OrderStatus,
+  PaymentStatus,
+  PaymentMethod,
+  PaymentType,
+  OrderType,
+  UserRole,
+  EntityStatus,
+  ProductAvailabilityStatus,
+  BillingInterval,
+  AuditAction,
+  AuditEntityType
 } from './status';
 
 // Explicit exports for critical constants

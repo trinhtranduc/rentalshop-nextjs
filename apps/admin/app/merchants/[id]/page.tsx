@@ -13,8 +13,7 @@ import {
 import { ArrowLeft } from 'lucide-react';
 import { 
   merchantsApi,
-  extendSubscription, 
-  cancelSubscription, 
+  subscriptionsApi
 } from '@rentalshop/utils';
 import type { Merchant } from '@rentalshop/types';
 
@@ -150,7 +149,7 @@ export default function MerchantDetailPage() {
 
   const handleExtend = async (subscription: any) => {
     try {
-      const response = await extendSubscription(subscription.id, {
+      const response = await subscriptionsApi.extend(subscription.id, {
         newEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         amount: subscription.amount,
         method: 'MANUAL_EXTENSION',
@@ -172,7 +171,7 @@ export default function MerchantDetailPage() {
     try {
       // For now, we'll use the simple cancelSubscription function
       // TODO: Update the API to support cancelType parameter
-      const response = await cancelSubscription(subscription.id, reason);
+      const response = await subscriptionsApi.cancel(subscription.id, reason);
 
       if (response.success) {
         console.log('Subscription cancelled successfully');

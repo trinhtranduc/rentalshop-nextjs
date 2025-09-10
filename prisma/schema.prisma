@@ -64,7 +64,7 @@ model Merchant {
   outlets            Outlet[]
   payments           Payment[]
   products           Product[]
-  subscriptions      Subscription?
+  subscription       Subscription?
   users              User[]
 
   @@index([name])

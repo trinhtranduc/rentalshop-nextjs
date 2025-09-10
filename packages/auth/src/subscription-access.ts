@@ -37,10 +37,10 @@ export interface SubscriptionRestrictions {
 // SUBSCRIPTION STATUS DEFINITIONS
 // ============================================================================
 
-import { SUBSCRIPTION_STATUS, SubscriptionStatus } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, type SubscriptionStatus } from '@rentalshop/constants';
 
-// Re-export from centralized constants
-export { SUBSCRIPTION_STATUS, SubscriptionStatus };
+// Re-export only the constant, not the type
+export { SUBSCRIPTION_STATUS };
 
 // ============================================================================
 // ACCESS CONTROL FUNCTIONS

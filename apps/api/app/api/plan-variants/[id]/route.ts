@@ -6,7 +6,7 @@ import {
   restorePlanVariant,
   permanentlyDeletePlanVariant
 } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { planVariantUpdateSchema } from '@rentalshop/utils';
 
 export async function GET(
@@ -14,22 +14,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication and authorization
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
 
     // Check if user is ADMIN (only admins can view plan variants)
     if (user.role !== 'ADMIN') {
@@ -76,22 +70,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication and authorization
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
 
     // Check if user is ADMIN (only admins can update plan variants)
     if (user.role !== 'ADMIN') {
@@ -155,22 +143,16 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication and authorization
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
 
     // Check if user is ADMIN (only admins can delete plan variants)
     if (user.role !== 'ADMIN') {

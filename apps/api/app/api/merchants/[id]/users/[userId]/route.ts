@@ -1,28 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string; userId: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     const merchantPublicId = parseInt(params.id);
     const userPublicId = parseInt(params.userId);
@@ -153,22 +144,13 @@ export async function PUT(
   { params }: { params: { id: string; userId: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     const merchantPublicId = parseInt(params.id);
     const userPublicId = parseInt(params.userId);
@@ -195,12 +177,13 @@ export async function PUT(
 
     // Get request body
     const body = await request.json();
-    const { firstName, lastName, email, phone, role, outletId, isActive } = body;
+    const { firstName, lastName, phone, role, outletId, isActive } = body;
+    // Email field is disabled - users cannot change their email address
 
     // Validate required fields
-    if (!firstName || !lastName || !email) {
+    if (!firstName || !lastName) {
       return NextResponse.json(
-        { success: false, message: 'First name, last name, and email are required' },
+        { success: false, message: 'First name and last name are required' },
         { status: 400 }
       );
     }
@@ -243,7 +226,8 @@ export async function PUT(
 
     if (firstName) updateData.firstName = firstName;
     if (lastName) updateData.lastName = lastName;
-    if (email) updateData.email = email;
+    // Email field is disabled - users cannot change their email address
+    // This ensures email uniqueness and prevents account hijacking
     if (phone !== undefined) updateData.phone = phone || null;
     if (role) updateData.role = role;
     if (outletCuid !== undefined) updateData.outletId = outletCuid;

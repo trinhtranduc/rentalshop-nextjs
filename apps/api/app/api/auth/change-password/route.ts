@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
 
@@ -9,22 +9,13 @@ import bcrypt from 'bcryptjs';
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
 
-    const currentUser = await verifyTokenSimple(token);
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const currentUser = authResult.user;
 
     const body = await request.json();
     const { currentPassword, newPassword, confirmPassword } = body;
@@ -53,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Get current user from database to verify current password
     const user = await prisma.user.findUnique({
-      where: { id: currentUser.id },
+      where: { publicId: currentUser.id },
       select: { id: true, password: true, email: true }
     });
 

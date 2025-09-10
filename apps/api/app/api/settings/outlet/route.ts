@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 
 /**
@@ -9,30 +9,37 @@ import { prisma } from '@rentalshop/database';
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    console.log('🔍 DEBUG: Settings outlet PUT API called');
+    
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      console.error('❌ DEBUG: Authentication failed in settings outlet PUT');
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
+    console.log('🔍 DEBUG: User authenticated:', {
+      id: user.id,
+      role: user.role,
+      merchantId: user.merchant?.id,
+      outletId: user.outletId
+    });
 
     // Check if user has outlet access
-    if (!user.outletId) {
+    // Admin users can access any outlet, others need specific outlet access
+    if (!user.outletId && user.role !== 'ADMIN') {
+      console.error('❌ DEBUG: User does not have outlet access:', {
+        outletId: user.outletId,
+        role: user.role
+      });
       return NextResponse.json(
         { success: false, message: 'User does not have outlet access' },
         { status: 403 }
       );
     }
+    
+    console.log('🔍 DEBUG: User has outlet access, proceeding with update');
 
     const body = await request.json();
     const { name, address, phone, description } = body;
@@ -46,8 +53,22 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update outlet
+    // For admin users, we need to get the outlet ID from the request or use a default
+    let outletId = user.outletId;
+    
+    // If admin user doesn't have outletId, we need to handle this differently
+    if (!outletId && user.role === 'ADMIN') {
+      console.log('🔍 DEBUG: Admin user without outletId, need to specify outlet');
+      return NextResponse.json(
+        { success: false, message: 'Admin users need to specify outlet ID for outlet updates' },
+        { status: 400 }
+      );
+    }
+    
+    console.log('🔍 DEBUG: Updating outlet with ID:', outletId);
+    
     const updatedOutlet = await prisma.outlet.update({
-      where: { publicId: user.outletId },
+      where: { publicId: outletId },
       data: {
         name,
         address,

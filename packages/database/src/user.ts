@@ -159,29 +159,60 @@ export async function updateUser(
     throw new Error(`User with publicId ${publicId} not found`);
   }
 
-  // Update user
+  // Update user - only update fields that are provided
+  const updateData: any = {};
+  if (input.firstName !== undefined) updateData.firstName = input.firstName;
+  if (input.lastName !== undefined) updateData.lastName = input.lastName;
+  if (input.phone !== undefined) updateData.phone = input.phone;
+  // Note: email updates are disabled for security reasons
+
   const updatedUser = await prisma.user.update({
     where: { publicId },
-    data: {
-      firstName: input.firstName,
-      lastName: input.lastName,
-      email: input.email,
-      phone: input.phone,
-    },
+    data: updateData,
     include: {
       merchant: {
         select: {
           id: true,
           publicId: true,
           name: true,
-        },
+          email: true,
+          phone: true,
+          address: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          businessType: true,
+          taxId: true,
+          website: true,
+          description: true,
+          isActive: true,
+          planId: true,
+          subscriptionStatus: true,
+          totalRevenue: true,
+          createdAt: true,
+          lastActiveAt: true,
+        }
       },
       outlet: {
         select: {
           id: true,
           publicId: true,
           name: true,
-        },
+          address: true,
+          phone: true,
+          description: true,
+          isActive: true,
+          isDefault: true,
+          createdAt: true,
+          merchant: {
+            select: {
+              id: true,
+              publicId: true,
+              name: true,
+            }
+          }
+        }
       },
     },
   });

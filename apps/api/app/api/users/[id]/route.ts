@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
-import { assertAnyRole } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { findUserByPublicId } from '@rentalshop/database';
 
@@ -14,22 +13,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const currentUser = await verifyTokenSimple(token);
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const currentUser = authResult.user;
 
     // Check authorization based on user role
     let canAccess = false;
@@ -207,22 +200,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const currentUser = await verifyTokenSimple(token);
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const currentUser = authResult.user;
 
     // Check authorization based on user role
     let canAccess = false;
@@ -417,22 +404,16 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const currentUser = await verifyTokenSimple(token);
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const currentUser = authResult.user;
 
     // Check authorization based on user role
     let canAccess = false;
@@ -575,7 +556,7 @@ export async function PATCH(
     }
 
     await prisma.user.update({
-      where: { id: user.id },
+      where: { publicId: user.id },
       data: { isActive: newStatus }
     });
 
@@ -606,22 +587,16 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    const currentUser = await verifyTokenSimple(token);
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const currentUser = authResult.user;
 
     // Check authorization based on user role
     let canAccess = false;
@@ -794,7 +769,7 @@ export async function DELETE(
 
     // Delete user
     await prisma.user.delete({
-      where: { id: user.id }
+      where: { publicId: user.id }
     });
 
     console.log('✅ User deleted successfully from database:', user.id);

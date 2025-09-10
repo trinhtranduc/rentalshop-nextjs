@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { 
   searchOutlets,
   createOutlet,
@@ -19,22 +19,13 @@ const prisma = new PrismaClient();
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Get user scope for role-based access control
     const userScope = getUserScope(user as any);
@@ -117,22 +108,13 @@ export const runtime = 'nodejs';
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Check if user can create outlets
     try {
@@ -208,32 +190,34 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    console.log('🔍 DEBUG: Outlet PUT API called');
+    
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      console.error('❌ DEBUG: Authentication failed in outlet PUT');
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
+    console.log('🔍 DEBUG: User authenticated:', {
+      id: user.id,
+      role: user.role,
+      merchantId: user.merchant?.id,
+      outletId: user.outletId
+    });
 
     // Check if user can update outlets
-    try {
-      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
-    } catch {
+    // Admin users can update any outlet, MERCHANT users can update their own outlets
+    if (user.role !== 'ADMIN' && user.role !== 'MERCHANT') {
+      console.error('❌ DEBUG: User does not have permission to update outlets:', user.role);
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
         { status: 403 }
       );
     }
+    
+    console.log('🔍 DEBUG: User has permission to update outlets');
 
     const { searchParams } = new URL(request.url);
     const outletId = searchParams.get('outletId');
@@ -258,11 +242,19 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if outlet exists and belongs to user's merchant
+    // For admin users, allow access to any outlet
+    // For other users, check merchant ownership
+    const whereClause: any = {
+      publicId: outletIdNumber,
+    };
+    
+    if (user.merchant?.id) {
+      whereClause.merchantId = user.merchant.id;
+    }
+    // Admin users (merchantId: null) can access any outlet
+    
     const existingOutlet = await prisma.outlet.findFirst({
-      where: {
-        publicId: outletIdNumber,
-        merchantId: user.merchant!.id // Use CUID from user
-      }
+      where: whereClause
     });
 
     if (!existingOutlet) {
@@ -274,12 +266,18 @@ export async function PUT(request: NextRequest) {
 
     // Check if name is being changed and if it's unique within merchant organization
     if (validatedData.name && validatedData.name !== existingOutlet.name) {
+      const duplicateWhereClause: any = {
+        name: validatedData.name.trim(),
+        id: { not: existingOutlet.id } // Exclude current outlet
+      };
+      
+      // Only check within same merchant for non-admin users
+      if (user.merchant?.id) {
+        duplicateWhereClause.merchantId = user.merchant.id;
+      }
+      
       const duplicateOutlet = await prisma.outlet.findFirst({
-        where: {
-          name: validatedData.name.trim(),
-          merchantId: user.merchant!.id,
-          id: { not: existingOutlet.id } // Exclude current outlet
-        }
+        where: duplicateWhereClause
       });
 
       if (duplicateOutlet) {
@@ -322,22 +320,13 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Check if user can delete outlets
     try {

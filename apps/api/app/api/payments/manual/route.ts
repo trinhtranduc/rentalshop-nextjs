@@ -6,13 +6,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 
 // Manual payment creation schema
 const createManualPaymentSchema = z.object({
   merchantId: z.number().positive('Merchant ID is required'),
   planId: z.number().positive('Plan ID is required'),
-  planVariantId: z.number().positive('Plan variant ID is required'),
+  // planVariantId: z.number().positive('Plan variant ID is required'), // Not supported in current schema
   amount: z.number().positive('Amount must be positive'),
   currency: z.string().min(1, 'Currency is required'),
   method: z.enum(['STRIPE', 'PAYPAL', 'BANK_TRANSFER', 'CREDIT_CARD', 'CASH']),
@@ -30,22 +30,13 @@ const createManualPaymentSchema = z.object({
 // ============================================================================
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Parse and validate request body
     const body = await request.json();
@@ -56,11 +47,7 @@ export async function POST(request: NextRequest) {
       where: { publicId: validatedData.merchantId },
       include: { 
         plan: true,
-        subscriptions: {
-          where: { status: { in: ['ACTIVE', 'TRIAL'] } },
-          orderBy: { createdAt: 'desc' },
-          take: 1
-        }
+        subscription: true
       }
     });
 
@@ -76,13 +63,9 @@ export async function POST(request: NextRequest) {
       where: { publicId: validatedData.planId }
     });
 
-    const planVariant = await prisma.planVariant.findUnique({
-      where: { publicId: validatedData.planVariantId }
-    });
-
-    if (!plan || !planVariant) {
+    if (!plan) {
       return NextResponse.json(
-        { success: false, message: 'Plan or plan variant not found' },
+        { success: false, message: 'Plan not found' },
         { status: 404 }
       );
     }
@@ -104,24 +87,24 @@ export async function POST(request: NextRequest) {
           type: 'SUBSCRIPTION_PAYMENT',
           status: 'COMPLETED', // Manual payments are immediately completed
           reference: validatedData.invoiceNumber || `MANUAL-${paymentPublicId}`,
-          notes: validatedData.description || `Manual payment for ${plan.name} - ${planVariant.name}`,
+          notes: validatedData.description || `Manual payment for ${plan.name}`,
           merchantId: merchant.id,
-          subscriptionId: merchant.subscriptions[0]?.id,
+          subscriptionId: merchant.subscription?.id,
           processedBy: user.id
         }
       });
 
       // If extending subscription, update the subscription
-      if (validatedData.extendSubscription && merchant.subscriptions[0] && validatedData.monthsToExtend) {
-        const currentSubscription = merchant.subscriptions[0];
-        if (currentSubscription.endDate) {
-          const newEndDate = new Date(currentSubscription.endDate);
+      if (validatedData.extendSubscription && merchant.subscription && validatedData.monthsToExtend) {
+        const currentSubscription = merchant.subscription;
+        if (currentSubscription.currentPeriodEnd) {
+          const newEndDate = new Date(currentSubscription.currentPeriodEnd);
           newEndDate.setMonth(newEndDate.getMonth() + validatedData.monthsToExtend);
 
           await tx.subscription.update({
             where: { id: currentSubscription.id },
             data: {
-              endDate: newEndDate,
+              currentPeriodEnd: newEndDate,
               updatedAt: new Date()
             }
           });
@@ -140,7 +123,7 @@ export async function POST(request: NextRequest) {
             method: payment.method,
             merchantId: merchant.publicId,
             planId: plan.publicId,
-            planVariantId: planVariant.publicId,
+            planVariantId: null,
             startDate: validatedData.startDate,
             endDate: validatedData.endDate,
             createdBy: user.id,

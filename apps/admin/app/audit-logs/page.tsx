@@ -391,13 +391,14 @@ export default function AuditLogsPage() {
       const result = await getAuditLogs(currentFilter);
       
       setLogs(result.data);
-      updatePaginationFromResponse(result.pagination);
-    } catch (error: any) {
-      addToast({
-        title: 'Failed to load audit logs',
-        message: error.message || 'Please try again later.',
-        type: 'error'
+      updatePaginationFromResponse({
+        total: result.pagination?.total || 0,
+        limit: result.pagination?.limit || 10,
+        offset: result.pagination?.offset || 0,
+        hasMore: result.pagination?.hasMore || false
       });
+    } catch (error: any) {
+      addToast('error', 'Failed to load audit logs', error.message || 'Please try again later.');
     } finally {
       setLoading(false);
     }

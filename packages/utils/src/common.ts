@@ -116,14 +116,20 @@ export const authenticatedFetch = async (
   url: string,
   options: RequestInit = {}
 ): Promise<Response> => {
+  console.log('🔍 DEBUG: authenticatedFetch called with URL:', url);
+  console.log('🔍 DEBUG: Request options:', options);
+  
   // Get token from localStorage or other storage
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  console.log('🔍 DEBUG: Token found:', token ? `${token.substring(0, 50)}...` : 'null');
   
   // Check if user is authenticated before making the request
   if (!token && typeof window !== 'undefined') {
-    console.log('🔒 No auth token found, redirecting to login');
+    console.error('🚨 DEBUG: No auth token found, redirecting to login');
+    console.error('🚨 DEBUG: This will cause auto-redirect to login page!');
     localStorage.removeItem('authToken');
-    window.location.href = '/login';
+    localStorage.removeItem('userData');
+    // window.location.href = '/login';
     throw new Error('Authentication required');
   }
   
@@ -148,19 +154,37 @@ export const authenticatedFetch = async (
   };
   
   try {
+    console.log('🔍 DEBUG: Making fetch request to:', url);
     const response = await fetch(url, defaultOptions);
+    console.log('🔍 DEBUG: Response received, status:', response.status);
+    console.log('🔍 DEBUG: Response statusText:', response.statusText);
+    console.log('🔍 DEBUG: Response headers:', [...response.headers.entries()]);
     
     // Handle common HTTP status codes using API constants
     if (response.status === API.STATUS.UNAUTHORIZED) {
       // Handle unauthorized - redirect to login or refresh token
       if (typeof window !== 'undefined') {
+        console.error('🚨 DEBUG: UNAUTHORIZED RESPONSE DETECTED!');
+        console.error('🚨 DEBUG: This will trigger auto-redirect to login page!');
         console.error('🔒 Unauthorized access - token may be expired or invalid');
         console.error('🔒 Response status:', response.status);
         console.error('🔒 Response URL:', url);
+        console.error('🔒 Response statusText:', response.statusText);
+        
+        // Try to get response body for more details
+        try {
+          const responseText = await response.clone().text();
+          console.error('🔒 Response body:', responseText);
+        } catch (e) {
+          console.error('🔒 Could not read response body:', e);
+        }
+        
         localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
         // Add a small delay to allow console logs to be seen before redirect
         setTimeout(() => {
-          window.location.href = '/login';
+          console.error('🚨 DEBUG: REDIRECTING TO LOGIN PAGE NOW!');
+          // window.location.href = '/login';
         }, 1000);
       }
       throw new Error('Unauthorized access');
@@ -212,22 +236,40 @@ const getSubscriptionStatusMessage = (status: string): string => {
  * instead of response.data.data
  */
 export const parseApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
+  console.log('🔍 DEBUG: parseApiResponse called with status:', response.status);
+  console.log('🔍 DEBUG: Response OK:', response.ok);
+  console.log('🔍 DEBUG: Response URL:', response.url);
+  
   // Subscription status checking is now handled in authenticatedFetch
   
   if (!response.ok) {
-    console.log('🔍 parseApiResponse: Response not OK, status:', response.status);
-    console.log('🔍 parseApiResponse: Response statusText:', response.statusText);
+    console.error('❌ DEBUG: parseApiResponse - Response not OK, status:', response.status);
+    console.error('❌ DEBUG: parseApiResponse - Response statusText:', response.statusText);
+    console.error('❌ DEBUG: parseApiResponse - Response URL:', response.url);
     
     // Handle unauthorized responses by redirecting to login
     if (response.status === API.STATUS.UNAUTHORIZED) {
       if (typeof window !== 'undefined') {
+        console.error('🚨 DEBUG: parseApiResponse - UNAUTHORIZED RESPONSE!');
+        console.error('🚨 DEBUG: This will trigger auto-redirect to login page!');
         console.error('🔒 parseApiResponse: Unauthorized access - token may be expired or invalid');
         console.error('🔒 parseApiResponse: Response status:', response.status);
         console.error('🔒 parseApiResponse: Response URL:', response.url);
+        
+        // Try to get response body for more details
+        try {
+          const responseText = await response.clone().text();
+          console.error('🔒 parseApiResponse - Response body:', responseText);
+        } catch (e) {
+          console.error('🔒 parseApiResponse - Could not read response body:', e);
+        }
+        
         localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
         // Add a small delay to allow console logs to be seen before redirect
         setTimeout(() => {
-          window.location.href = '/login';
+          console.error('🚨 DEBUG: parseApiResponse - REDIRECTING TO LOGIN PAGE NOW!');
+          // window.location.href = '/login';
         }, 1000);
       }
       throw new Error('Unauthorized access - redirecting to login');
@@ -341,7 +383,8 @@ export const handleApiError = (error: any, redirectToLogin: boolean = true) => {
     if (redirectToLogin && typeof window !== 'undefined') {
       console.log('🔄 Redirecting to login due to unauthorized access');
       localStorage.removeItem('authToken');
-      window.location.href = '/login';
+      localStorage.removeItem('userData');
+      // window.location.href = '/login';
       return;
     }
   }
@@ -367,7 +410,7 @@ export const requireAuth = (): void => {
   if (!isAuthenticated()) {
     if (typeof window !== 'undefined') {
       console.log('🔒 User not authenticated, redirecting to login');
-      window.location.href = '/login';
+      // window.location.href = '/login';
     }
   }
 };

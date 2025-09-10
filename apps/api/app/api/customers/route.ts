@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 import { 
   createCustomer, 
   getCustomerByPublicId, 
@@ -33,29 +33,18 @@ export async function GET(request: NextRequest) {
   console.log('GET /api/customers called');
   
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    console.log('Token received:', token ? 'Yes' : 'No');
-    
-    if (!token) {
-      console.log('No token provided');
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      console.log('Authentication failed:', authResult.message);
       return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    console.log('Verifying token...');
-    const user = await verifyTokenSimple(token);
-    console.log('User verification result:', user ? 'Success' : 'Failed');
-    
-    if (!user) {
-      console.log('Invalid token');
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
+    console.log('User verification result: Success');
 
     // Get merchantId from user and convert to number
     const userMerchantId = getUserScope(user as any).merchantId;
@@ -289,22 +278,13 @@ export async function POST(request: NextRequest) {
     // Capture audit context
     const auditContext = await captureAuditContext(request);
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Parse request body
     const body = await request.json();
@@ -417,22 +397,13 @@ export async function PUT(request: NextRequest) {
     // Capture audit context
     const auditContext = await captureAuditContext(request);
     
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Get merchantId from user
     const userMerchantId = getUserScope(user as any).merchantId;
@@ -556,22 +527,13 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     // Get merchantId from user
     const userMerchantId = getUserScope(user as any).merchantId;

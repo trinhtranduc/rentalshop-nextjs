@@ -1,28 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     const merchantId = parseInt(params.id);
     if (isNaN(merchantId)) {
@@ -54,13 +45,7 @@ export async function GET(
             isPopular: true
           }
         },
-        subscriptions: {
-          where: { 
-            OR: [
-              { status: { in: ['ACTIVE', 'TRIAL'] } },
-              { status: { in: ['active', 'trial'] } }
-            ]
-          },
+        subscription: {
           select: {
             id: true,
             publicId: true,
@@ -130,11 +115,8 @@ export async function GET(
       );
     }
 
-    // Get current subscription info (most recent by createdAt)
-    const subscriptions = (merchant as any).subscriptions || [];
-    const currentSubscription = subscriptions.length > 0 
-      ? subscriptions.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-      : null;
+    // Get current subscription info
+    const currentSubscription = (merchant as any).subscription || null;
     
     // Transform data for frontend (using type assertion to handle schema fields)
     const merchantData = merchant as any;
@@ -257,22 +239,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     const merchantId = parseInt(params.id);
     if (isNaN(merchantId)) {
@@ -328,22 +301,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Verify authentication using centralized middleware
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
     }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
+    
+    const user = authResult.user;
 
     const merchantId = parseInt(params.id);
     if (isNaN(merchantId)) {

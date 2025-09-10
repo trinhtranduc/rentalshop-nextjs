@@ -1,34 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { verifyTokenSimple } from '@rentalshop/auth';
-import { assertAnyRole } from '@rentalshop/auth';
+import { withAuthAndAuthz } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (authorizedRequest) => {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // RBAC: ADMIN or MERCHANT
-    try {
-      assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
-    } catch {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
+    // User is already authenticated and authorized to view analytics
+    const { user, userScope, request } = authorizedRequest;
 
     // Get current year and month
     const now = new Date();
@@ -84,5 +62,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+});
+
 export const runtime = 'nodejs';

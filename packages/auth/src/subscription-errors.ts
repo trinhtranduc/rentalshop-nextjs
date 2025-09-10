@@ -47,9 +47,9 @@ export function handleSubscriptionError(error: unknown): SubscriptionErrorRespon
 }
 
 /**
- * Get subscription status message for a given status
+ * Get subscription status error message for a given status
  */
-export function getSubscriptionStatusMessage(status: string): string {
+export function getSubscriptionStatusErrorMessage(status: string): string {
   const statusMessages: Record<string, string> = {
     'cancelled': 'Your subscription has been cancelled. Please contact support to reactivate your account.',
     'expired': 'Your subscription has expired. Please renew to continue using our services.',

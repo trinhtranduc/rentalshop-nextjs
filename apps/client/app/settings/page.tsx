@@ -18,7 +18,7 @@ import {
   Separator
 } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
-import { usersApi, authApi, settingsApi, getCurrentUserSubscriptionStatus } from '@rentalshop/utils';
+import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
 import { 
   User, 
   Shield, 
@@ -120,14 +120,14 @@ export default function SettingsPage() {
   const [personalFormData, setPersonalFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    email: user?.email || '',
+    // Email field is disabled - cannot be updated
     phone: user?.phone || '',
   });
   
   // Merchant information form data
   const [merchantFormData, setMerchantFormData] = useState({
     name: '',
-    email: '',
+    // Email field is disabled - cannot be updated
     phone: '',
     address: '',
     city: '',
@@ -171,7 +171,7 @@ export default function SettingsPage() {
     const fetchSubscriptionData = async () => {
       try {
         setSubscriptionLoading(true);
-        const response = await getCurrentUserSubscriptionStatus();
+        const response = await subscriptionsApi.getCurrentUserSubscriptionStatus();
         
         if (response.success) {
           setSubscriptionData(response.data);
@@ -211,7 +211,7 @@ export default function SettingsPage() {
       
       setMerchantFormData({
         name: user.merchant.name || '',
-        email: user.merchant.email || '',
+        // Email field is disabled - cannot be updated
         phone: user.merchant.phone || '',
         address: user.merchant.address || '',
         city: user.merchant.city || '',
@@ -266,7 +266,7 @@ export default function SettingsPage() {
     setPersonalFormData({
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
-      email: user?.email || '',
+      // Email field is disabled - cannot be updated
       phone: user?.phone || '',
     });
     
@@ -322,36 +322,76 @@ export default function SettingsPage() {
   };
 
   const handleUpdatePersonalProfile = async () => {
+    console.log('🔍 DEBUG: handleUpdatePersonalProfile called');
+    console.log('🔍 DEBUG: Current user:', user);
+    console.log('🔍 DEBUG: Personal form data:', personalFormData);
+    
     try {
+      console.log('🔍 DEBUG: Setting isUpdating to true');
       setIsUpdating(true);
       
       if (!user?.id) {
+        console.error('❌ DEBUG: User ID not found, user object:', user);
         throw new Error('User ID not found');
       }
 
+      console.log('🔍 DEBUG: User ID found:', user.id);
+      console.log('🔍 DEBUG: About to call settingsApi.updatePersonalProfile with data:', {
+        firstName: personalFormData.firstName,
+        lastName: personalFormData.lastName,
+        // Email field is disabled - cannot be updated
+        phone: personalFormData.phone
+      });
+
       // Call the settings API for personal profile update
+      console.log('🔍 DEBUG: Calling settingsApi.updatePersonalProfile...');
       const response = await settingsApi.updatePersonalProfile({
         firstName: personalFormData.firstName,
         lastName: personalFormData.lastName,
-        email: personalFormData.email,
+        // Email field is disabled - cannot be updated
         phone: personalFormData.phone
       });
       
+      console.log('🔍 DEBUG: API response received:', response);
+      console.log('🔍 DEBUG: Response success:', response.success);
+      console.log('🔍 DEBUG: Response error:', response.error);
+      console.log('🔍 DEBUG: Response message:', response.message);
+      
       if (response.success) {
-        console.log('Personal profile updated successfully:', response.data);
+        console.log('✅ DEBUG: Personal profile updated successfully:', response.data);
         
-        // Refresh user data
-        // await refreshUser();
+        // Refresh user data to get the latest profile information
+        await refreshUser();
         
+        console.log('🔍 DEBUG: Setting isEditingPersonal to false');
         setIsEditingPersonal(false);
+        console.log('🔍 DEBUG: Showing success message');
         showSuccess('Success', 'Personal profile updated successfully!');
       } else {
+        console.error('❌ DEBUG: API call failed:', response.error || response.message);
         showError('Error', response.error || response.message || 'Failed to update personal profile');
       }
     } catch (error) {
-      console.error('Error updating personal profile:', error);
+      console.error('❌ DEBUG: Exception caught in handleUpdatePersonalProfile:', error);
+      console.error('❌ DEBUG: Error name:', error instanceof Error ? error.name : 'Unknown');
+      console.error('❌ DEBUG: Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ DEBUG: Error stack:', error instanceof Error ? error.stack : 'No stack');
+      console.error('❌ DEBUG: Full error object:', error);
+      
+      // Check if this is an authentication error that would trigger redirect
+      if (error instanceof Error && error.message && error.message.includes('Authentication required')) {
+        console.error('🚨 DEBUG: AUTHENTICATION ERROR DETECTED - This will trigger redirect to login!');
+        console.error('🚨 DEBUG: Error details:', error);
+      }
+      
+      if (error instanceof Error && error.message && error.message.includes('Unauthorized')) {
+        console.error('🚨 DEBUG: UNAUTHORIZED ERROR DETECTED - This will trigger redirect to login!');
+        console.error('🚨 DEBUG: Error details:', error);
+      }
+      
       showError('Error', 'Failed to update personal profile. Please try again.');
     } finally {
+      console.log('🔍 DEBUG: Setting isUpdating to false');
       setIsUpdating(false);
     }
   };
@@ -376,7 +416,7 @@ export default function SettingsPage() {
       });
       console.log('📝 Updating merchant info with data:', {
         name: merchantFormData.name,
-        email: merchantFormData.email,
+        // Email field is disabled - cannot be updated
         phone: merchantFormData.phone,
         address: merchantFormData.address,
         city: merchantFormData.city,
@@ -390,7 +430,7 @@ export default function SettingsPage() {
       console.log('🔄 Calling centralized API...');
       const response = await settingsApi.updateMerchantInfo({
         name: merchantFormData.name,
-        email: merchantFormData.email,
+        // Email field is disabled - cannot be updated
         phone: merchantFormData.phone,
         address: merchantFormData.address,
         city: merchantFormData.city,
@@ -411,13 +451,13 @@ export default function SettingsPage() {
       console.log('Merchant updated successfully');
       console.log('📋 Updated merchant data from API:', response.data);
       
-      // Don't refresh user data - let's check step by step
-      // await refreshUser();
+      // Refresh user data to get the latest merchant information
+      await refreshUser();
       
       setIsEditingMerchant(false);
       showSuccess('Success', 'Business information updated successfully!');
       
-      console.log('✅ Update completed without refresh - check if data is updated');
+      console.log('✅ Update completed with refresh - data should be updated');
     } catch (error) {
       console.error('❌ Error updating merchant:', error);
       console.error('❌ Error details:', {
@@ -482,7 +522,7 @@ export default function SettingsPage() {
     setPersonalFormData({
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
-      email: user?.email || '',
+      // Email field is disabled - cannot be updated
       phone: user?.phone || '',
     });
     
@@ -494,7 +534,7 @@ export default function SettingsPage() {
     if (user?.merchant) {
       setMerchantFormData({
         name: user.merchant.name || '',
-        email: user.merchant.email || '',
+        // Email field is disabled - cannot be updated
         phone: user.merchant.phone || '',
         address: user.merchant.address || '',
         city: user.merchant.city || '',
@@ -673,20 +713,25 @@ export default function SettingsPage() {
                 <Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </Label>
-                {isEditingPersonal ? (
+                <div className="relative">
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    value={personalFormData.email}
-                    onChange={handlePersonalInputChange}
-                    placeholder="Enter your email address"
+                    value={user?.email || ''}
+                    placeholder="Email address"
+                    disabled={true}
+                    className="bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
-                ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.email || 'Not provided'}
-                  </p>
-                )}
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                      Cannot be changed
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Email addresses cannot be changed for security reasons
+                </p>
               </div>
 
               <div>
@@ -784,20 +829,25 @@ export default function SettingsPage() {
                 <Label htmlFor="merchantEmail" className="block text-sm font-medium text-gray-700 mb-2">
                   Business Email
                 </Label>
-                {isEditingMerchant ? (
+                <div className="relative">
                   <Input
                     id="merchantEmail"
                     name="email"
                     type="email"
-                    value={merchantFormData.email}
-                    onChange={handleMerchantInputChange}
-                    placeholder="Enter business email"
+                    value={user?.merchant?.email || ''}
+                    placeholder="Business email address"
+                    disabled={true}
+                    className="bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
-                ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.email || 'Not provided'}
-                  </p>
-                )}
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                      Cannot be changed
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Business email addresses cannot be changed for security reasons
+                </p>
               </div>
 
               <div>
@@ -1368,10 +1418,15 @@ export default function SettingsPage() {
         </PageHeader>
         <div className="flex justify-center items-center py-12">
           <div className="text-center">
-            <p className="text-red-600 mb-4">Unable to load user data</p>
-            <Button onClick={() => window.location.reload()}>
-              Retry
-            </Button>
+            <p className="text-red-600 mb-4">You need to be logged in to access settings</p>
+            <div className="space-x-4">
+              <Button onClick={() => window.location.href = '/login'}>
+                Go to Login
+              </Button>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
           </div>
         </div>
       </PageWrapper>

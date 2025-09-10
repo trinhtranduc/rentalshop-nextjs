@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { authenticateRequest } from '@rentalshop/auth';
 
 /**
  * GET /api/auth/verify
@@ -7,25 +7,16 @@ import { verifyTokenSimple } from '@rentalshop/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Get token from Authorization header
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
+    // Verify authentication using the centralized method
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'No token provided' },
-        { status: 401 }
+        { success: false, message: authResult.message },
+        { status: authResult.status }
       );
     }
 
-    // Verify token
-    const user = await verifyTokenSimple(token);
-    
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
+    const user = authResult.user;
 
     // Return user information (include outlet for role-based UI)
     return NextResponse.json({

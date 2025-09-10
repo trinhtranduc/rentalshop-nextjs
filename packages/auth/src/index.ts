@@ -2,9 +2,54 @@
 export * from './auth';
 export * from './password';
 export * from './jwt';
-export * from './authorization';
 export * from './subscription-access';
 export * from './subscription-errors';
+
+// Export consolidated authorization system (single source of truth)
+export * from './core';
+export * from './middleware';
+
+// Re-export specific functions for backward compatibility
+export { 
+  authenticateRequest,
+  getUserScope,
+  hasPermission,
+  canAccessResource,
+  createAuthError,
+  createScopeError,
+  createPermissionError,
+  canCreateOrders,
+  canViewOrders,
+  canUpdateOrders,
+  canDeleteOrders,
+  canManageOrders,
+  canExportOrders,
+  canExportProducts,
+  canExportCustomers
+} from './core';
+
+export {
+  withAuth,
+  withAuthAndAuthz,
+  withAdminAuth,
+  withUserManagementAuth,
+  withProductManagementAuth,
+  withOrderManagementAuth,
+  withOrderCreateAuth,
+  withOrderViewAuth,
+  withOrderUpdateAuth,
+  withOrderDeleteAuth,
+  withOrderExportAuth,
+  withProductExportAuth,
+  withCustomerExportAuth,
+  withCustomerManagementAuth,
+  withBillingManagementAuth,
+  withViewAuth,
+  withMerchantScope,
+  withOutletScope,
+  buildSecureWhereClause,
+  validateResourceBelongsToUser
+} from './middleware';
 
 // Export specific JWT functions
 export { verifyTokenSimple, generateToken, verifyToken } from './jwt';

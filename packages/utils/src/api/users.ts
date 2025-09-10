@@ -1,5 +1,6 @@
 import { authenticatedFetch, parseApiResponse } from '../common';
 import { apiUrls } from '../config/api';
+import { profileApi } from './profile';
 import type { ApiResponse } from '../common';
 import type { User, UserCreateInput, UserUpdateInput, UserFilters } from '@rentalshop/types';
 
@@ -170,21 +171,18 @@ export const usersApi = {
 
   /**
    * Get current user profile
+   * Uses centralized profileApi for consistency
    */
   async getCurrentUser(): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/profile`);
-    return await parseApiResponse<User>(response);
+    return await profileApi.getProfile();
   },
 
   /**
    * Update current user profile
+   * Uses centralized profileApi for consistency
    */
   async updateCurrentUser(userData: Partial<UserUpdateInput>): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/profile`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
-    return await parseApiResponse<User>(response);
+    return await profileApi.updateProfile(userData);
   },
 
   /**
