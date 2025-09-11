@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Products } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
+import { PAGINATION } from '@rentalshop/constants';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function ProductsPage() {
       exportButtonText="Export Products"
       showStats={false}
       useSearchProducts={false}
-      initialLimit={10}
+      initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
       currentUser={currentUser}
       onProductAction={handleProductAction}
     />

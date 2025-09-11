@@ -18,6 +18,7 @@ import {
   type AuditLogStats 
 } from '@rentalshop/utils';
 import { usePagination } from '@rentalshop/hooks';
+import { PAGINATION } from '@rentalshop/constants';
 
 export default function SystemAuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -33,7 +34,7 @@ export default function SystemAuditLogsPage() {
     pagination,
     handlePageChange,
     updatePaginationFromResponse
-  } = usePagination({ initialLimit: 10, initialOffset: 0 });
+  } = usePagination({ initialLimit: PAGINATION.DEFAULT_PAGE_SIZE, initialOffset: 0 });
   
   const { addToast } = useToasts();
 

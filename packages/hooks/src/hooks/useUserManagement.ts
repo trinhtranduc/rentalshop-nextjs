@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
 import { usersApi } from '@rentalshop/utils';
+import { PAGINATION } from '@rentalshop/constants';
 import type { User, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 
 export interface UseUserManagementOptions {
@@ -58,7 +59,7 @@ export interface UseUserManagementReturn {
 
 export const useUserManagement = (options: UseUserManagementOptions = {}): UseUserManagementReturn => {
   const {
-    initialLimit = 10,
+    initialLimit = PAGINATION.DEFAULT_PAGE_SIZE,
     useSearchUsers = false,
     enableStats = false
   } = options;

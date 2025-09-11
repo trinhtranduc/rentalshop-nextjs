@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
 import { useRouter } from 'next/navigation';
 import { 
   Merchants,
@@ -10,6 +9,7 @@ import {
   PageTitle,
   PageContent
 } from '@rentalshop/ui';
+import { merchantsApi, type Merchant as ApiMerchant } from '@rentalshop/utils';
 import type { Merchant } from '@rentalshop/types';
 
 export default function MerchantsPage() {
@@ -41,40 +41,50 @@ export default function MerchantsPage() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, planFilter]);
 
+  // Convert API response to expected type
+  const convertApiMerchantToMerchant = (apiMerchant: ApiMerchant): Merchant => {
+    return {
+      id: apiMerchant.id,
+      name: apiMerchant.name,
+      email: apiMerchant.email || '',
+      phone: apiMerchant.phone,
+      address: apiMerchant.address,
+      isActive: apiMerchant.isActive,
+      subscriptionPlan: apiMerchant.planId,
+      subscriptionStatus: (apiMerchant.subscriptionStatus as 'active' | 'trial' | 'expired' | 'cancelled') || 'trial',
+      trialEndsAt: apiMerchant.trialEndsAt ? String(apiMerchant.trialEndsAt) : undefined,
+      outletsCount: 0, // Default values - these would come from a separate API call
+      usersCount: 0,
+      productsCount: 0,
+      totalRevenue: apiMerchant.totalRevenue || 0,
+      createdAt: String(apiMerchant.createdAt),
+      lastActiveAt: apiMerchant.lastActiveAt ? String(apiMerchant.lastActiveAt) : undefined,
+    };
+  };
+
   const fetchMerchants = async () => {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
-      const response = await fetch('http://localhost:3002/api/merchants', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setMerchants(data.data.merchants || []);
-          setTotalMerchants(data.data.total || 0);
-        } else {
-          console.error('Failed to fetch merchants:', data.message);
-          // Fallback to mock data for now
-        }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.getMerchants();
+      
+      if (response.success && response.data) {
+        // Convert API response to expected type
+        const convertedMerchants = (response.data.merchants || []).map(convertApiMerchantToMerchant);
+        setMerchants(convertedMerchants);
+        setTotalMerchants(response.data.total || 0);
       } else {
-        console.error('Failed to fetch merchants');
-        // Fallback to mock data for now
+        console.error('Failed to fetch merchants:', response.error);
+        // Set empty state on error
+        setMerchants([]);
+        setTotalMerchants(0);
       }
     } catch (error) {
       console.error('Error fetching merchants:', error);
-      // Fallback to mock data for now
+      // Set empty state on error
+      setMerchants([]);
+      setTotalMerchants(0);
     } finally {
       setLoading(false);
     }
@@ -82,7 +92,7 @@ export default function MerchantsPage() {
 
   const filteredMerchants = (merchants || []).filter(merchant => {
     const matchesSearch = merchant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         merchant.email.toLowerCase().includes(searchTerm.toLowerCase());
+                         (merchant.email && merchant.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'all' || 
                          (statusFilter === 'active' && merchant.isActive) ||
                          (statusFilter === 'inactive' && !merchant.isActive);

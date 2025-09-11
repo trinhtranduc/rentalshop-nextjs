@@ -9,6 +9,8 @@ export interface OrdersResponse {
   page: number;
   limit: number;
   totalPages: number;
+  hasMore: boolean;
+  currentPage: number;
 }
 
 /**
@@ -40,7 +42,7 @@ export const ordersApi = {
   /**
    * Search orders with filters
    */
-  async searchOrders(filters: OrderFilters): Promise<ApiResponse<Order[]>> {
+  async searchOrders(filters: OrderFilters): Promise<ApiResponse<OrdersResponse>> {
     const params = new URLSearchParams();
     
     if (filters.search) params.append('search', filters.search);
@@ -69,7 +71,7 @@ export const ordersApi = {
     if (filters.orderType) params.append('orderType', filters.orderType);
     
     const response = await authenticatedFetch(`${apiUrls.orders.list}?${params.toString()}`);
-    return await parseApiResponse<Order[]>(response);
+    return await parseApiResponse<OrdersResponse>(response);
   },
 
   /**

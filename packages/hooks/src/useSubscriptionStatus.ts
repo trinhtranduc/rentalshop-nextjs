@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { subscriptionsApi } from '@rentalshop/utils';
 import type { Subscription } from '@rentalshop/types';
 
 interface SubscriptionStatus {
@@ -35,18 +35,12 @@ export function useSubscriptionStatus(): SubscriptionStatus {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/subscriptions/status', {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`
-        }
-      });
+      const result = await subscriptionsApi.getCurrentUserSubscriptionStatus();
       
-      const data = await response.json();
-      
-      if (data.success) {
-        setSubscription(data.data.subscription);
+      if (result.success && result.data) {
+        setSubscription(result.data.subscription);
       } else {
-        setError(data.message || 'Failed to fetch subscription status');
+        setError(result.message || 'Failed to fetch subscription status');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch subscription status');

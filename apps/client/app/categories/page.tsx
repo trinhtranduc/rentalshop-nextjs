@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   PageWrapper,
   PageHeader,
@@ -10,18 +10,28 @@ import {
   Button
 } from '@rentalshop/ui';
 import { categoriesApi } from '@rentalshop/utils';
+import { usePagination } from '@rentalshop/hooks';
+import { PAGINATION } from '@rentalshop/constants';
 import type { Category, CategoryFilters, CategoryData } from '@rentalshop/types';
 
 export default function CategoriesPage() {
   // State for categories and UI
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true); // Start with loading = true
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<CategoryFilters>({ search: '' });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCategories, setTotalCategories] = useState(0);
-  const [isClient, setIsClient] = useState(false); // Track if we're on client side
+  const [isClient, setIsClient] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // Pagination hook
+  const { pagination, handlePageChange: paginationPageChange, updatePaginationFromResponse } = usePagination({
+    initialLimit: PAGINATION.DEFAULT_PAGE_SIZE,
+    initialOffset: 0
+  });
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const hasInitializedRef = useRef(false);
 
   // Ensure we're on client side
   useEffect(() => {
@@ -40,24 +50,68 @@ export default function CategoriesPage() {
     return () => clearTimeout(timer);
   }, [isClient]); // Only run when isClient becomes true
 
-  // Fetch categories when filters or page changes (but not on initial load)
+  // Fetch categories when pagination or search changes
   useEffect(() => {
-    if (currentPage !== 1 || filters.search !== '') {
+    if (hasInitializedRef.current) {
       fetchCategories();
     }
-  }, [currentPage, filters]);
+  }, [pagination.offset, pagination.limit, searchQuery]);
 
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       
-      const response = await categoriesApi.getCategories();
-      if (response.success && response.data) {
-        setCategories(response.data);
-        setTotalCategories(response.data.length);
-        setTotalPages(1); // Since we're not paginating yet
+      console.log('🔍 fetchCategories called with params:', {
+        search: searchQuery,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        currentPage: pagination.currentPage
+      });
+
+      // Use paginated API if we have search or pagination
+      if (searchQuery || pagination.offset > 0) {
+        const response = await categoriesApi.getCategoriesPaginated(
+          pagination.currentPage,
+          pagination.limit
+        );
+        
+        if (response.success && response.data) {
+          const data = response.data;
+          console.log('🔍 Categories API response:', data);
+          
+          setCategories(data.categories || []);
+          
+          // Update pagination from API response
+          updatePaginationFromResponse({
+            total: data.total || 0,
+            limit: pagination.limit,
+            offset: pagination.offset,
+            hasMore: data.total > pagination.offset + pagination.limit
+          });
+        } else {
+          throw new Error(response.message || 'Failed to fetch categories');
+        }
       } else {
-        throw new Error(response.message || 'Failed to fetch categories');
+        // Use regular API for initial load
+        const response = await categoriesApi.getCategories();
+        if (response.success && response.data) {
+          setCategories(response.data);
+          
+          // Update pagination for regular response
+          updatePaginationFromResponse({
+            total: response.data.length,
+            limit: pagination.limit,
+            offset: 0,
+            hasMore: false
+          });
+        } else {
+          throw new Error(response.message || 'Failed to fetch categories');
+        }
+      }
+      
+      hasInitializedRef.current = true;
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
       }
     } catch (error) {
       console.error('❌ Error fetching categories:', error);
@@ -65,30 +119,32 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false);
     }
-  }, []); // Remove dependencies since we're calling it manually
+  }, [pagination.offset, pagination.limit, pagination.currentPage, searchQuery, updatePaginationFromResponse, isInitialLoad]);
 
   const handleSearchChange = useCallback((search: string) => {
+    setSearchQuery(search);
     setFilters(prev => ({ ...prev, search }));
-    setCurrentPage(1); // Reset to first page when search changes
-  }, []);
+    // Reset pagination when search changes
+    paginationPageChange(1);
+  }, [paginationPageChange]);
 
   const handleFiltersChange = useCallback((newFilters: CategoryFilters) => {
     setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, []);
+    setSearchQuery(newFilters.search || '');
+    // Reset pagination when filters change
+    paginationPageChange(1);
+  }, [paginationPageChange]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({ search: '' });
-    setCurrentPage(1);
-  }, []);
+    setSearchQuery('');
+    // Reset pagination when clearing filters
+    paginationPageChange(1);
+  }, [paginationPageChange]);
 
   const handleCategoryAction = useCallback((action: string, categoryId: number) => {
     console.log('Category action:', action, categoryId);
     // Handle different actions here
-  }, []);
-
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
   }, []);
 
   const handleCategoryCreated = useCallback(async (categoryData: Partial<Category>) => {
@@ -97,7 +153,6 @@ export default function CategoriesPage() {
       if (response.success && response.data) {
         const newCategory = response.data;
         setCategories(prev => [newCategory, ...prev]);
-        setTotalCategories(prev => prev + 1);
         // Refresh the list to get updated data
         fetchCategories();
       } else {
@@ -135,7 +190,6 @@ export default function CategoriesPage() {
       const response = await categoriesApi.deleteCategory(categoryId);
       if (response.success) {
         setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-        setTotalCategories(prev => prev - 1);
         // Refresh the list to get updated data
         fetchCategories();
       } else {
@@ -171,10 +225,11 @@ export default function CategoriesPage() {
               onFiltersChange={handleFiltersChange}
               onSearchChange={handleSearchChange}
               onClearFilters={handleClearFilters}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalCategories={totalCategories}
-              onPageChange={handlePageChange}
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalCategories={pagination.total}
+              limit={pagination.limit}
+              onPageChange={paginationPageChange}
             />
           </div>
         </PageContent>
@@ -257,10 +312,11 @@ export default function CategoriesPage() {
             onFiltersChange={handleFiltersChange}
             onSearchChange={handleSearchChange}
             onClearFilters={handleClearFilters}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalCategories={totalCategories}
-            onPageChange={handlePageChange}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalCategories={pagination.total}
+            limit={pagination.limit}
+            onPageChange={paginationPageChange}
           />
         </div>
       </PageContent>

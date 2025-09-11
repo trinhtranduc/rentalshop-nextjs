@@ -301,17 +301,18 @@ export type OutletUpdateInput = z.infer<typeof outletUpdateSchema>;
 export const planCreateSchema = z.object({
   name: z.string().min(1, 'Plan name is required'),
   description: z.string().min(1, 'Plan description is required'),
-  basePrice: z.number().nonnegative('Base price must be non-negative'),  // ✅ Updated to basePrice
+  basePrice: z.number().nonnegative('Base price must be non-negative'),
   currency: z.string().default('USD'),
   trialDays: z.number().int().min(0, 'Trial days must be non-negative'),
-  maxOutlets: z.number().int().min(-1, 'Max outlets must be -1 (unlimited) or positive'),
-  maxUsers: z.number().int().min(-1, 'Max users must be -1 (unlimited) or positive'),
-  maxProducts: z.number().int().min(-1, 'Max products must be -1 (unlimited) or positive'),
-  maxCustomers: z.number().int().min(-1, 'Max customers must be -1 (unlimited) or positive'),
+  limits: z.object({
+    outlets: z.number().int().min(-1, 'Max outlets must be -1 (unlimited) or positive'),
+    users: z.number().int().min(-1, 'Max users must be -1 (unlimited) or positive'),
+    products: z.number().int().min(-1, 'Max products must be -1 (unlimited) or positive'),
+    customers: z.number().int().min(-1, 'Max customers must be -1 (unlimited) or positive'),
+  }),
   features: z.array(z.string()).default([]),
   isActive: z.boolean().default(true),
   isPopular: z.boolean().default(false),
-  mobileOnly: z.boolean().default(false),  // ✅ NEW: Mobile-only plan flag
   sortOrder: z.number().int().default(0),
 });
 

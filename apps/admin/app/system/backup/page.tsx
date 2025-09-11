@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { authenticatedFetch } from '@rentalshop/utils';
 import { 
   Card, 
   CardHeader, 
@@ -73,7 +74,7 @@ export default function BackupManagementPage() {
 
   const fetchBackups = async () => {
     try {
-      const response = await fetch('/api/system/backup');
+      const response = await authenticatedFetch('/api/system/backup');
       const data = await response.json();
       
       if (data.success) {
@@ -88,7 +89,7 @@ export default function BackupManagementPage() {
 
   const fetchSchedules = async () => {
     try {
-      const response = await fetch('/api/system/backup/schedule');
+      const response = await authenticatedFetch('/api/system/backup/schedule');
       const data = await response.json();
       
       if (data.success) {
@@ -104,7 +105,7 @@ export default function BackupManagementPage() {
   const createBackup = async (type: 'full' | 'incremental' | 'schema-only' = 'full') => {
     try {
       setLoading(true);
-      const response = await fetch('/api/system/backup', {
+      const response = await authenticatedFetch('/api/system/backup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, compress: true })
@@ -128,7 +129,7 @@ export default function BackupManagementPage() {
   const verifyBackup = async (backupId: string) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/system/backup/verify', {
+      const response = await authenticatedFetch('/api/system/backup/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ backupId, performRestoreTest: true })

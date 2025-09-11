@@ -221,13 +221,17 @@ export default function DashboardPage() {
 
       const [
         statsResponse,
+        todayMetricsResponse,
+        growthMetricsResponse,
         incomeResponse,
         ordersResponse,
         topProductsResponse,
         topCustomersResponse,
         recentOrdersResponse
       ] = await Promise.all([
-        analyticsApi.getDashboardSummary(),
+        analyticsApi.getEnhancedDashboardSummary(),
+        analyticsApi.getTodayMetrics(),
+        analyticsApi.getGrowthMetrics(),
         analyticsApi.getIncomeAnalytics(defaultFilters),
         analyticsApi.getOrderAnalytics(defaultFilters),
         analyticsApi.getTopProducts(),
@@ -239,21 +243,24 @@ export default function DashboardPage() {
       if (statsResponse.success && statsResponse.data) {
         // Transform API data to match our DashboardStats interface
         const apiStats = statsResponse.data;
+        const todayMetrics = todayMetricsResponse.success ? todayMetricsResponse.data : {};
+        const growthMetrics = growthMetricsResponse.success ? growthMetricsResponse.data : {};
+        
         setStats({
           todayRevenue: apiStats.totalRevenue || 0,
           todayRentals: apiStats.totalOrders || 0,
           activeRentals: apiStats.totalOrders || 0,
-          todayPickups: 0, // Not available in current API
-          todayReturns: 0, // Not available in current API
-          overdueItems: 0, // Not available in current API
-          productUtilization: 0, // Not available in current API
+          todayPickups: todayMetrics.todayPickups || 0,
+          todayReturns: todayMetrics.todayReturns || 0,
+          overdueItems: todayMetrics.overdueItems || 0,
+          productUtilization: todayMetrics.productUtilization || 0,
           totalRevenue: apiStats.totalRevenue || 0,
           totalRentals: apiStats.totalOrders || 0,
           completedRentals: apiStats.totalOrders || 0,
-          customerGrowth: 0, // Not available in current API
+          customerGrowth: growthMetrics.customerGrowth || 0,
           futureRevenue: apiStats.futureIncome || 0,
-          revenueGrowth: 0, // Not available in current API
-          customerBase: 0 // Not available in current API
+          revenueGrowth: growthMetrics.revenueGrowth || 0,
+          customerBase: growthMetrics.customerBase || 0
         });
       }
 

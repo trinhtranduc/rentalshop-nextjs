@@ -161,6 +161,7 @@ export interface ApiUrls {
   merchants: {
     list: string;
     create: string;
+    register: string;
     get: (id: number) => string;
     update: (id: number) => string;
     delete: (id: number) => string;
@@ -540,10 +541,14 @@ function createApiUrls(): ApiUrls {
       outletPerformance: `${base}/api/analytics/outlet-performance`,
       seasonalTrends: `${base}/api/analytics/seasonal-trends`,
       export: `${base}/api/analytics/export`,
+      todayMetrics: `${base}/api/analytics/today-metrics`,
+      growthMetrics: `${base}/api/analytics/growth-metrics`,
+      enhancedDashboard: `${base}/api/analytics/enhanced-dashboard`,
     },
     merchants: {
       list: `${base}/api/merchants`,
       create: `${base}/api/merchants`,
+      register: `${base}/api/merchants/register`,
       get: (id: number) => `${base}/api/merchants/${id}`,
       update: (id: number) => `${base}/api/merchants/${id}`,
       delete: (id: number) => `${base}/api/merchants/${id}`,

@@ -3,6 +3,7 @@
 import React from 'react';
 import { Customers } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
+import { PAGINATION } from '@rentalshop/constants';
 import type { Customer } from '@rentalshop/types';
 
 export default function CustomersPage() {
@@ -19,7 +20,7 @@ export default function CustomersPage() {
       exportButtonText="Export"
       showStats={false} // Client page typically doesn't show stats overview
       useSearchCustomers={false} // Client page uses getCustomersPaginated
-      initialLimit={20} // Client page might have a different default limit
+      initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
       currentUser={currentUser}
     />
   );

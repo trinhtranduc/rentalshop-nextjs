@@ -12,6 +12,7 @@ import {
 } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
+import { PAGINATION } from '@rentalshop/constants';
 
 export default function MerchantProductsPage() {
   const params = useParams();
@@ -62,7 +63,7 @@ export default function MerchantProductsPage() {
           exportButtonText="Export Products"
           showStats={true}
           useSearchProducts={true}
-          initialLimit={20}
+          initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
           merchantId={parseInt(merchantId)}
           currentUser={currentUser}
           onProductAction={handleProductAction}

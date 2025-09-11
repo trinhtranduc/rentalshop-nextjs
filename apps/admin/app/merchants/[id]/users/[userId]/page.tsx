@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -50,36 +50,18 @@ export default function UserDetailPage() {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.users.get(parseInt(merchantId), parseInt(userId));
+      const data = await response.json();
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/users/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setUserDetails(data.data);
-        } else {
-          setError(data.message || 'Failed to fetch user details');
-        }
+      if (data.success) {
+        setUserDetails(data.data);
       } else {
-        console.error('Failed to fetch user details');
-        // Fallback to mock data for now
+        setError(data.message || 'Failed to fetch user details');
       }
     } catch (error) {
       console.error('Error fetching user details:', error);
       setError('Failed to fetch user details');
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }
@@ -94,43 +76,23 @@ export default function UserDetailPage() {
     try {
       setIsUpdating(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.users.update(parseInt(merchantId), parseInt(userId), userData);
+      const data = await response.json();
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Update local state
-          if (userDetails) {
-            setUserDetails({
-              ...userDetails,
-              user: data.data
-            });
-          }
-          setShowEditSection(false);
-          showSuccess('User updated', 'Changes saved successfully.');
-        } else {
-          const msg = data.message || 'Failed to update user';
-          showError('Update failed', msg);
+      if (data.success) {
+        // Update local state
+        if (userDetails) {
+          setUserDetails({
+            ...userDetails,
+            user: data.data
+          });
         }
+        setShowEditSection(false);
+        showSuccess('User updated', 'Changes saved successfully.');
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMsg = errorData.message || `Server error: ${response.status}`;
-        showError('Update failed', errorMsg);
+        const msg = data.message || 'Failed to update user';
+        showError('Update failed', msg);
       }
     } catch (error) {
       console.error('Error updating user:', error);
@@ -148,36 +110,20 @@ export default function UserDetailPage() {
     try {
       setIsUpdating(true);
       
-      const token = getAuthToken();
-      if (!token) {
-        showError('Authentication required', 'Please log in again');
-        return;
-      }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.users.update(parseInt(merchantId), parseInt(userId), { isActive: true });
+      const data = await response.json();
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isActive: true })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          if (userDetails) {
-            setUserDetails({
-              ...userDetails,
-              user: data.data
-            });
-          }
-          showSuccess('User Activated', 'User account has been activated successfully!');
-        } else {
-          showError('Activation Failed', data.message || 'Failed to activate user');
+      if (data.success) {
+        if (userDetails) {
+          setUserDetails({
+            ...userDetails,
+            user: data.data
+          });
         }
+        showSuccess('User Activated', 'User account has been activated successfully!');
       } else {
-        showError('Activation Failed', 'Server returned an error');
+        showError('Activation Failed', data.message || 'Failed to activate user');
       }
     } catch (error) {
       console.error('Error activating user:', error);
@@ -191,37 +137,21 @@ export default function UserDetailPage() {
     try {
       setIsUpdating(true);
       
-      const token = getAuthToken();
-      if (!token) {
-        showError('Authentication required', 'Please log in again');
-        return;
-      }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.users.update(parseInt(merchantId), parseInt(userId), { isActive: false });
+      const data = await response.json();
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isActive: false })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          if (userDetails) {
-            setUserDetails({
-              ...userDetails,
-              user: data.data
-            });
-          }
-          showSuccess('User Deactivated', 'User account has been deactivated successfully!');
-          setShowDeactivateConfirm(false);
-        } else {
-          showError('Deactivation Failed', data.message || 'Failed to deactivate user');
+      if (data.success) {
+        if (userDetails) {
+          setUserDetails({
+            ...userDetails,
+            user: data.data
+          });
         }
+        showSuccess('User Deactivated', 'User account has been deactivated successfully!');
+        setShowDeactivateConfirm(false);
       } else {
-        showError('Deactivation Failed', 'Server returned an error');
+        showError('Deactivation Failed', data.message || 'Failed to deactivate user');
       }
     } catch (error) {
       console.error('Error deactivating user:', error);
@@ -235,33 +165,17 @@ export default function UserDetailPage() {
     try {
       setIsUpdating(true);
       
-      const token = getAuthToken();
-      if (!token) {
-        showError('Authentication required', 'Please log in again');
-        return;
-      }
-
       // For now, just deactivate the user instead of deleting
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isActive: false })
-      });
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.users.update(parseInt(merchantId), parseInt(userId), { isActive: false });
+      const data = await response.json();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          showSuccess('User Deactivated', 'User account has been deactivated successfully!');
-          setShowDeleteConfirm(false);
-          router.push(`/merchants/${merchantId}/users`);
-        } else {
-          showError('Deactivation Failed', data.message || 'Failed to deactivate user');
-        }
+      if (data.success) {
+        showSuccess('User Deactivated', 'User account has been deactivated successfully!');
+        setShowDeleteConfirm(false);
+        router.push(`/merchants/${merchantId}/users`);
       } else {
-        showError('Deactivation Failed', 'Server returned an error');
+        showError('Deactivation Failed', data.message || 'Failed to deactivate user');
       }
     } catch (error) {
       console.error('Error deactivating user:', error);

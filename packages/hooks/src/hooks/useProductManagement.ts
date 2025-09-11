@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
 import { productsApi } from '@rentalshop/utils';
+import { PAGINATION } from '@rentalshop/constants';
 import type { Product, ProductWithDetails, ProductWithStock, ProductFilters, ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
 
 export interface UseProductManagementOptions {
@@ -66,7 +67,7 @@ export interface UseProductManagementReturn {
 
 export const useProductManagement = (options: UseProductManagementOptions = {}): UseProductManagementReturn => {
   const {
-    initialLimit = 20,
+    initialLimit = PAGINATION.DEFAULT_PAGE_SIZE,
     useSearchProducts = false,
     enableStats = false,
     merchantId,

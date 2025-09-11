@@ -3,6 +3,7 @@
 import React from 'react';
 import { Users } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
+import { PAGINATION } from '@rentalshop/constants';
 import type { User } from '@rentalshop/types';
 
 export default function UsersPage() {
@@ -18,7 +19,7 @@ export default function UsersPage() {
       exportButtonText="Export Users"
       showStats={true}
       useSearchUsers={true}
-      initialLimit={10}
+      initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
       currentUser={currentUser}
     />
   );

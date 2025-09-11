@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { subscriptionsApi } from '@rentalshop/utils';
 import { 
   Card,
   CardHeader,
@@ -135,19 +135,14 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
 
   const handleDeleteConfirm = async () => {
     try {
-      const response = await fetch(`/api/subscriptions/${params.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`
-        }
-      });
-
-      if (response.ok) {
+      const result = await subscriptionsApi.delete(parseInt(params.id));
+      
+      if (result.success) {
         showSuccess('Subscription Deleted', 'Subscription has been deleted successfully');
         // Redirect to subscriptions list
         window.location.href = '/admin/subscriptions';
       } else {
-        showError('Deletion Failed', 'Failed to delete subscription');
+        showError('Deletion Failed', result.message || 'Failed to delete subscription');
       }
     } catch (error) {
       console.error('Error deleting subscription:', error);
@@ -166,20 +161,15 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
 
   const handlePauseConfirm = async () => {
     try {
-      const response = await fetch(`/api/subscriptions/${params.id}/suspend`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAuthToken()}`
-        },
-        body: JSON.stringify({ reason: 'Admin suspended subscription' })
+      const result = await subscriptionsApi.suspend(parseInt(params.id), { 
+        reason: 'Admin suspended subscription' 
       });
 
-      if (response.ok) {
+      if (result.success) {
         await fetchSubscription(); // Refresh data
         showSuccess('Subscription Suspended', 'Subscription has been suspended successfully');
       } else {
-        showError('Suspension Failed', 'Failed to suspend subscription');
+        showError('Suspension Failed', result.message || 'Failed to suspend subscription');
       }
     } catch (error) {
       console.error('Error suspending subscription:', error);
