@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { customerCreateSchema } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * POST /api/customers/debug
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       message: 'Internal server error',
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 

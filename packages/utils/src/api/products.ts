@@ -69,7 +69,7 @@ export const productsApi = {
     if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/products?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.merchants.products.list(merchantId)}?${params.toString()}`);
     return await parseApiResponse<Product[]>(response);
   },
 
@@ -77,7 +77,7 @@ export const productsApi = {
    * Get product by ID
    */
   async getProduct(productId: number): Promise<ApiResponse<ProductWithStock>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/products/${productId}`);
+    const response = await authenticatedFetch(apiUrls.products.update(productId));
     return await parseApiResponse<ProductWithStock>(response);
   },
 
@@ -140,7 +140,7 @@ export const productsApi = {
    * Update product stock
    */
   async updateProductStock(productId: number, stock: number): Promise<ApiResponse<Product>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/products/${productId}/stock`, {
+    const response = await authenticatedFetch(apiUrls.products.updateStock(productId), {
       method: 'PATCH',
       body: JSON.stringify({ stock }),
     });
@@ -151,7 +151,7 @@ export const productsApi = {
    * Bulk update products
    */
   async bulkUpdateProducts(updates: Array<{ id: number; data: Partial<ProductUpdateInput> }>): Promise<ApiResponse<Product[]>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/products/bulk-update`, {
+    const response = await authenticatedFetch(apiUrls.products.bulkUpdate, {
       method: 'PATCH',
       body: JSON.stringify({ updates }),
     });

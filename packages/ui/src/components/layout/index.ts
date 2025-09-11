@@ -13,5 +13,7 @@ export { TimePeriodSelector } from './TimePeriodSelector';
 export { LanguageSwitcher } from './LanguageSwitcher';
 export { Navigation } from './navigation';
 export { Sidebar } from './sidebar';
+export { AdminSidebar } from './AdminSidebar';
+export { ClientSidebar } from './ClientSidebar';
 export { Layout } from './layout';
 export { SubscriptionStatus } from './SubscriptionStatus'; 

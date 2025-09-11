@@ -1,4 +1,5 @@
 import type { CustomerWithMerchant, CustomerInput, CustomerUpdateInput } from '@rentalshop/database';
+import { getAuthToken } from '@rentalshop/utils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -33,7 +34,7 @@ class CustomerApiClient {
     if (typeof window === 'undefined') {
       throw new Error('Auth token not available in server context');
     }
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication token not found');
     }

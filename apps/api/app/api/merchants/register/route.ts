@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { registerMerchantWithTrial } from '@rentalshop/database';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 // Validation schema for merchant registration
 const merchantRegistrationSchema = z.object({
@@ -66,21 +67,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         message: 'A merchant with this email already exists'
-      }, { status: 409 });
+      }, { status: API.STATUS.CONFLICT });
     }
     
     if (error.message === 'User with this email already exists') {
       return NextResponse.json({
         success: false,
         message: 'A user with this email already exists'
-      }, { status: 409 });
+      }, { status: API.STATUS.CONFLICT });
     }
     
     if (error.message === 'Trial plan not found. Please contact support.') {
       return NextResponse.json({
         success: false,
         message: 'Trial plan not available. Please contact support.'
-      }, { status: 500 });
+      }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
     }
     
     // Generic error
@@ -88,6 +89,6 @@ export async function POST(request: NextRequest) {
       success: false,
       message: 'Merchant registration failed',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }

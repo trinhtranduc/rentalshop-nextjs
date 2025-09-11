@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // GET: Fetch product detail for editing (includes categories and outlets for the merchant)
 export async function GET(
@@ -27,7 +28,7 @@ export async function GET(
 
     const merchant = await prisma.merchant.findUnique({ where: { publicId: merchantPublicId }, select: { id: true } });
     if (!merchant) {
-      return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
     const product = await prisma.product.findFirst({
@@ -55,7 +56,7 @@ export async function GET(
     });
 
     if (!product) {
-      return NextResponse.json({ success: false, message: 'Product not found' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Product not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
     // Fetch auxiliary data
@@ -92,7 +93,7 @@ export async function GET(
     return NextResponse.json({ success: true, data: transformed });
   } catch (error) {
     console.error('Error fetching product detail:', error);
-    return NextResponse.json({ success: false, message: 'Failed to fetch product' }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'Failed to fetch product' }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -136,7 +137,7 @@ export async function PUT(
 
     const merchant = await prisma.merchant.findUnique({ where: { publicId: merchantPublicId }, select: { id: true } });
     if (!merchant) {
-      return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
     const existing = await prisma.product.findFirst({
@@ -144,7 +145,7 @@ export async function PUT(
       select: { id: true }
     });
     if (!existing) {
-      return NextResponse.json({ success: false, message: 'Product not found' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Product not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
     // Resolve category CUID from publicId
@@ -191,7 +192,7 @@ export async function PUT(
     return NextResponse.json({ success: true, data: { id: updated.publicId, ...updated } });
   } catch (error) {
     console.error('Error updating product:', error);
-    return NextResponse.json({ success: false, message: 'Failed to update product' }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'Failed to update product' }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 

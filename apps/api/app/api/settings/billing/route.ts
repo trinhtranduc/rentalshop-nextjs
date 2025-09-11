@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {API} from '@rentalshop/constants';
 
 // Simple in-memory storage (in production, use database)
 let billingConfig = {
@@ -19,7 +20,7 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json(
       { success: false, message: 'Failed to fetch billing configuration' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { success: false, message: 'Failed to update billing configuration' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

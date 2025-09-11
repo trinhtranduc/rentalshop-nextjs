@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 const forgetPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -44,6 +45,6 @@ export async function POST(request: NextRequest) {
       success: false,
       message: 'Failed to process password reset request',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

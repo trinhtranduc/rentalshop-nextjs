@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { assertAnyRole } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // Mock API keys data - in a real implementation, this would come from a database
 const mockApiKeys = [
@@ -87,13 +88,13 @@ export async function GET(request: NextRequest) {
     if (error.message?.includes('Insufficient permissions')) {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions to view API keys' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -152,13 +153,13 @@ export async function POST(request: NextRequest) {
     if (error.message?.includes('Insufficient permissions')) {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions to create API keys' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

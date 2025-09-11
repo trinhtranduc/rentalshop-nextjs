@@ -3,6 +3,7 @@ import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 import { calculateProration, shouldApplyProration } from '@rentalshop/utils';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 // Validation schema for plan change
 const planChangeSchema = z.object({
@@ -30,7 +31,7 @@ export async function PUT(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Admin access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -282,14 +283,14 @@ export async function PUT(
       return NextResponse.json({
         success: false,
         message: 'Merchant not found'
-      }, { status: 404 });
+      }, { status: API.STATUS.NOT_FOUND });
     }
     
     if (error.message === 'Plan not found') {
       return NextResponse.json({
         success: false,
         message: 'Plan not found'
-      }, { status: 404 });
+      }, { status: API.STATUS.NOT_FOUND });
     }
     
     if (error.message === 'Plan is not active') {
@@ -311,7 +312,7 @@ export async function PUT(
       success: false,
       message: 'Failed to update merchant plan',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -333,7 +334,7 @@ export async function GET(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Admin access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -359,7 +360,7 @@ export async function GET(
     if (!merchant) {
       return NextResponse.json(
         { success: false, message: 'Merchant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -416,7 +417,7 @@ export async function GET(
       success: false,
       message: 'Failed to get merchant plan history',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -438,7 +439,7 @@ export async function PATCH(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Admin access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -554,14 +555,14 @@ export async function PATCH(
       return NextResponse.json({
         success: false,
         message: 'Merchant not found'
-      }, { status: 404 });
+      }, { status: API.STATUS.NOT_FOUND });
     }
     
     if (error.message === 'Subscription not found') {
       return NextResponse.json({
         success: false,
         message: 'Subscription not found'
-      }, { status: 404 });
+      }, { status: API.STATUS.NOT_FOUND });
     }
     
     if (error.message === 'Subscription does not belong to this merchant') {
@@ -583,6 +584,6 @@ export async function PATCH(
       success: false,
       message: 'Failed to manage plan',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }

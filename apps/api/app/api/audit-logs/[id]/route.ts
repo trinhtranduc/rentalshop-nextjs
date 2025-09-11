@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // GET /api/audit-logs/[id] - Get specific audit log entry
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -62,7 +63,7 @@ export async function GET(
     if (!auditLog) {
       return NextResponse.json(
         { success: false, message: 'Audit log not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -110,7 +111,7 @@ export async function GET(
     console.error('Error fetching audit log:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch audit log' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

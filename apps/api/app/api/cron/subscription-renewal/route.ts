@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createSubscriptionRenewalManager, DEFAULT_RENEWAL_CONFIG } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // POST /api/cron/subscription-renewal - Run subscription renewal process
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
         message: 'Subscription renewal cron job failed',
         error: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

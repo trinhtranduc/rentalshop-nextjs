@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { createAuditHelper } from '@rentalshop/utils';
 import { captureAuditContext, getAuditContext } from '@rentalshop/middleware';
+import {API} from '@rentalshop/constants';
 
 const prisma = new PrismaClient();
 
@@ -117,6 +118,6 @@ export async function POST(request: NextRequest) {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }

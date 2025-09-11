@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // CORE TYPES
@@ -192,7 +193,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
             message: error.message,
             code: 'SUBSCRIPTION_ERROR'
           },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         )
       };
     }
@@ -299,6 +300,16 @@ export function isOutletTeam(user: Pick<AuthUser, 'role'>): boolean {
 export function canManageUsers(user: Pick<AuthUser, 'role'>): boolean {
   return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
 }
+
+/**
+ * Assert that user has any of the specified roles (throws error if not)
+ */
+export function assertAnyRole(user: Pick<AuthUser, 'role'>, allowed: Role[]): void {
+  if (!hasAnyRole(user, allowed)) {
+    throw new Error(`Insufficient permissions. Required roles: ${allowed.join(', ')}`);
+  }
+}
+
 
 /**
  * Check if user can manage outlets
@@ -415,7 +426,7 @@ export function validateScope(
           message: 'Access denied: Cannot access data from other merchants',
           code: 'SCOPE_VIOLATION'
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       )
     };
   }
@@ -430,7 +441,7 @@ export function validateScope(
           message: 'Access denied: Cannot access data from other outlets',
           code: 'SCOPE_VIOLATION'
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       )
     };
   }

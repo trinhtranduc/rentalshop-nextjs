@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { manualExpiryCheck } from '@rentalshop/middleware';
 import { withAdminAuth } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // POST /api/subscriptions/check-expiry - Manual expiry check (Admin only)
@@ -26,7 +27,7 @@ export const POST = withAdminAuth(async (authorizedRequest) => {
     console.error('Error running manual expiry check:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to run expiry check' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });

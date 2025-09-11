@@ -172,7 +172,7 @@ export const subscriptionsApi = {
    * Get subscription statistics
    */
   async getSubscriptionStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/subscriptions/stats`);
+    const response = await authenticatedFetch(apiUrls.subscriptions.stats);
     return await parseApiResponse<any>(response);
   }
 };

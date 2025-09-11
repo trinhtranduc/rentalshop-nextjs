@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@rentalshop/auth';
 import { loginSchema } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * @swagger
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         message: 'Account is deactivated. Please contact support.'
-      }, { status: 403 });
+      }, { status: API.STATUS.FORBIDDEN });
     }
     
     // Generic error
@@ -165,6 +166,6 @@ export async function POST(request: NextRequest) {
       success: false,
       message: 'Login failed',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

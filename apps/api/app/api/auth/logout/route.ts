@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {API} from '@rentalshop/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,6 @@ export async function POST(request: NextRequest) {
       success: false,
       message: 'Logout failed',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

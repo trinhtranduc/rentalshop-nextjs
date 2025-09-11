@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import type { Subscription } from '@rentalshop/types';
 
 interface SubscriptionStatus {
@@ -36,7 +37,7 @@ export function useSubscriptionStatus(): SubscriptionStatus {
       
       const response = await fetch('/api/subscriptions/status', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       

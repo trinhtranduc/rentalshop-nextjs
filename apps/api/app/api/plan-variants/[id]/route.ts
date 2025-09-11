@@ -8,6 +8,7 @@ import {
 } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 import { planVariantUpdateSchema } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 export async function GET(
   request: NextRequest,
@@ -29,7 +30,7 @@ export async function GET(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN.STATUS.FORBIDDEN }
       );
     }
 
@@ -47,7 +48,7 @@ export async function GET(
     if (!variant) {
       return NextResponse.json(
         { success: false, message: 'Plan variant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -60,7 +61,7 @@ export async function GET(
     console.error('Error fetching plan variant:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -85,7 +86,7 @@ export async function PUT(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -123,13 +124,13 @@ export async function PUT(
     if (error.message === 'Plan variant not found') {
       return NextResponse.json(
         { success: false, message: 'Plan variant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -158,7 +159,7 @@ export async function DELETE(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -195,7 +196,7 @@ export async function DELETE(
     if (error.message === 'Plan variant not found') {
       return NextResponse.json(
         { success: false, message: 'Plan variant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -208,7 +209,7 @@ export async function DELETE(
 
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

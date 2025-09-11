@@ -3,6 +3,7 @@ import { getPlanByPublicId, updatePlan, deletePlan } from '@rentalshop/database'
 import { authenticateRequest } from '@rentalshop/auth';
 import { planUpdateSchema } from '@rentalshop/utils';
 import type { PlanUpdateInput } from '@rentalshop/types';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/plans/[id]
@@ -25,7 +26,7 @@ export async function GET(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -47,7 +48,7 @@ export async function GET(
     if (!plan) {
       return NextResponse.json(
         { success: false, message: 'Plan not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -60,7 +61,7 @@ export async function GET(
     console.error('Error fetching plan:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -89,7 +90,7 @@ export async function PUT(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -131,13 +132,13 @@ export async function PUT(
     if (error.message === 'Plan not found') {
       return NextResponse.json(
         { success: false, message: 'Plan not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -166,7 +167,7 @@ export async function DELETE(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -197,7 +198,7 @@ export async function DELETE(
     if (error.message === 'Plan not found') {
       return NextResponse.json(
         { success: false, message: 'Plan not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -210,7 +211,7 @@ export async function DELETE(
 
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

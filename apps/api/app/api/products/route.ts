@@ -9,6 +9,7 @@ import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
 import { withSubscriptionRequired, withSubscriptionOptional } from '../../middleware/subscription-access';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/products
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
     }
 
     return new NextResponse(bodyString, {
-      status: 200,
+      status: API.STATUS.OK,
       headers: {
         'Content-Type': 'application/json',
         ETag: etag,
@@ -123,7 +124,7 @@ export async function GET(request: NextRequest) {
         message: 'Failed to fetch products',
         error: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json(
         { success: false, message: 'Forbidden' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -223,11 +224,11 @@ export async function POST(request: NextRequest) {
         description: `Product created: ${product.name}`,
         context: {
           ...auditContext,
-          userId: user.id,
+          userId: user.id.toString(),
           userEmail: user.email || undefined,
           userRole: user.role || undefined,
-          merchantId: user.merchantId || undefined,
-          outletId: user.outletId || undefined
+          merchantId: user.merchant?.id?.toString() || undefined,
+          outletId: user.outlet?.id?.toString() || undefined
         }
       });
     } catch (auditError) {
@@ -248,7 +249,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(
       { success: false, message: 'Failed to create product' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -276,7 +277,7 @@ export async function PUT(request: NextRequest) {
     } catch {
       return NextResponse.json(
         { success: false, message: 'Forbidden' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -326,11 +327,11 @@ export async function PUT(request: NextRequest) {
         description: `Product updated: ${product?.name || productIdNumber}`,
         context: {
           ...auditContext,
-          userId: user.id,
+          userId: user.id.toString(),
           userEmail: user.email || undefined,
           userRole: user.role || undefined,
-          merchantId: user.merchantId || undefined,
-          outletId: user.outletId || undefined
+          merchantId: user.merchant?.id?.toString() || undefined,
+          outletId: user.outlet?.id?.toString() || undefined
         }
       });
     } catch (auditError) {
@@ -346,7 +347,7 @@ export async function PUT(request: NextRequest) {
     console.error('Error in PUT /api/products:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update product' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -371,7 +372,7 @@ export async function DELETE(request: NextRequest) {
     } catch {
       return NextResponse.json(
         { success: false, message: 'Forbidden' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -404,7 +405,7 @@ export async function DELETE(request: NextRequest) {
     console.error('Error in DELETE /api/products:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete product' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 } 

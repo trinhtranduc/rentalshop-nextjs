@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { cancelSubscription } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 export async function POST(
   request: NextRequest,
@@ -51,7 +52,7 @@ export async function POST(
     console.error('Error cancelling subscription:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

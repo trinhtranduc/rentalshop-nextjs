@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 interface IntegrityCheck {
   name: string;
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
         failed: 1,
         warnings: 0
       }
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 

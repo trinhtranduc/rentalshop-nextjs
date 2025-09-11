@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import ClientTopNavigation from './components/ClientTopNavigation'
+import ClientLayout from './components/ClientLayout'
 import { CurrencyProvider } from '@rentalshop/hooks'
 import './globals.css'
 import Script from 'next/script'
@@ -21,13 +21,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi">
+    <html lang="en">
       <body className={`${inter.variable} font-sans`}>
         <CurrencyProvider>
-          <ClientTopNavigation />
-          <main className="pt-24">
+          <ClientLayout>
             {children}
-          </main>
+          </ClientLayout>
         </CurrencyProvider>
         <Script src="/mobile-menu.js" />
       </body>

@@ -6,6 +6,7 @@ import { productUpdateSchema } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/products/[id]
@@ -55,7 +56,7 @@ export async function GET(
       console.log('❌ Product not found in database for publicId:', publicId);
       return NextResponse.json(
         { success: false, message: 'Product not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -109,7 +110,7 @@ export async function GET(
         error: 'Failed to fetch product',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -143,7 +144,7 @@ export async function PUT(
     } catch {
       return NextResponse.json(
         { success: false, message: 'Forbidden: Insufficient permissions to update products' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -183,7 +184,7 @@ export async function PUT(
     if (!existingProduct) {
       return NextResponse.json(
         { success: false, message: 'Product not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -248,7 +249,7 @@ export async function PUT(
         error: 'Failed to update product',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -279,7 +280,7 @@ export async function DELETE(
     } catch {
       return NextResponse.json(
         { success: false, message: 'Forbidden: Insufficient permissions to delete products' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -319,7 +320,7 @@ export async function DELETE(
         error: 'Failed to delete product',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

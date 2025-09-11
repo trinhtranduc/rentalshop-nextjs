@@ -51,7 +51,7 @@ export const analyticsApi = {
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.groupBy) params.append('groupBy', filters.groupBy);
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/revenue?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.analytics.revenue}?${params.toString()}`);
     return await parseApiResponse<RevenueData[]>(response);
   },
 
@@ -67,7 +67,7 @@ export const analyticsApi = {
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.groupBy) params.append('groupBy', filters.groupBy);
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/orders?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.analytics.orders}?${params.toString()}`);
     return await parseApiResponse<any>(response);
   },
 
@@ -82,7 +82,7 @@ export const analyticsApi = {
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/products?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.analytics.topProducts}?${params.toString()}`);
     return await parseApiResponse<ProductAnalytics[]>(response);
   },
 
@@ -97,7 +97,7 @@ export const analyticsApi = {
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/customers?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.analytics.topCustomers}?${params.toString()}`);
     return await parseApiResponse<CustomerAnalytics[]>(response);
   },
 
@@ -112,7 +112,7 @@ export const analyticsApi = {
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/inventory?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.analytics.inventory}?${params.toString()}`);
     return await parseApiResponse<any>(response);
   },
 
@@ -182,7 +182,7 @@ export const analyticsApi = {
     if (filters.endDate) params.append('endDate', filters.endDate);
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/outlet-performance?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.analytics.outletPerformance}?${params.toString()}`);
     return await parseApiResponse<any>(response);
   },
 
@@ -197,7 +197,7 @@ export const analyticsApi = {
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/seasonal-trends?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.analytics.seasonalTrends}?${params.toString()}`);
     return await parseApiResponse<any>(response);
   },
 
@@ -214,7 +214,7 @@ export const analyticsApi = {
     if (filters.groupBy) params.append('groupBy', filters.groupBy);
     params.append('format', format);
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/analytics/export?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.analytics.export}?${params.toString()}`);
     return await parseApiResponse<any>(response);
   }
 };

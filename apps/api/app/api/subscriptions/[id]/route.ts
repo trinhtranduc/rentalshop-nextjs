@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { getSubscriptionByMerchantId, changePlan, pauseSubscription, resumeSubscription } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // GET /api/subscriptions/[id] - Get subscription by ID
@@ -43,7 +44,7 @@ export async function GET(
     if (!subscription) {
       return NextResponse.json(
         { success: false, message: 'Subscription not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -52,14 +53,14 @@ export async function GET(
       if (user.merchantId && subscription.merchantId !== user.merchantId) {
         return NextResponse.json(
           { success: false, message: 'Access denied' },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         );
       }
     } else if (user.role === 'MERCHANT') {
       if (user.merchantId && subscription.merchantId !== user.merchantId) {
         return NextResponse.json(
           { success: false, message: 'Access denied' },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         );
       }
     }
@@ -72,7 +73,7 @@ export async function GET(
     console.error('Error fetching subscription:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch subscription' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -97,7 +98,7 @@ export async function PUT(
     if (!['ADMIN', 'MERCHANT'].includes(user.role)) {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -149,7 +150,7 @@ export async function PUT(
     console.error('Error updating subscription:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update subscription' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -174,7 +175,7 @@ export async function DELETE(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -196,7 +197,7 @@ export async function DELETE(
     console.error('Error deleting subscription:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete subscription' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

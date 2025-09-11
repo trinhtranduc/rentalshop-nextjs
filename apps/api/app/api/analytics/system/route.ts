@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { withAdminAuth } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 export const GET = withAdminAuth(async (authorizedRequest) => {
   try {
@@ -129,7 +130,7 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
     console.error('Error fetching system analytics:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch system analytics' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import DynamicTopNavigation from './components/DynamicTopNavigation'
+import AdminLayout from './components/AdminLayout'
 import './globals.css'
 
 const inter = Inter({ 
@@ -21,10 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans`}>
-        <DynamicTopNavigation />
-        <main className="pt-24">
+        <AdminLayout>
           {children}
-        </main>
+        </AdminLayout>
       </body>
     </html>
   )

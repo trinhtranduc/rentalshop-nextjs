@@ -5,7 +5,9 @@ import {
   withOrderCreateAuth,
   withOrderUpdateAuth,
   withOrderDeleteAuth,
-  withOrderExportAuth
+  withOrderExportAuth,
+  getUserScope,
+  assertAnyRole
 } from '@rentalshop/auth';
 import { 
   createOrder, 
@@ -20,6 +22,7 @@ import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rental
 import { prisma } from '@rentalshop/database';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/orders
@@ -315,7 +318,7 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
     console.error('Error fetching orders:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });
@@ -527,13 +530,12 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
     }
 
     // Validate that user has access to the specified outlet
-    const userScope = getUserScope(user as any);
     if (userScope.outletId && userScope.outletId !== orderInput.outletId) {
       return NextResponse.json({
         success: false,
         message: 'You can only create orders for your assigned outlet',
         error: 'OUTLET_ACCESS_DENIED'
-      }, { status: 403 });
+      }, { status: API.STATUS.FORBIDDEN });
     }
 
     if (userScope.merchantId) {
@@ -563,7 +565,7 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
           success: false,
           message: 'You can only create orders for outlets in your merchant organization',
           error: 'MERCHANT_ACCESS_DENIED'
-        }, { status: 403 });
+        }, { status: API.STATUS.FORBIDDEN });
       }
     }
 
@@ -572,7 +574,7 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
     console.log('🔍 Business validation passed, calling createOrder function...');
 
     // Create the order
-    const order = await createOrder(orderInput, user.publicId);
+    const order = await createOrder(orderInput, user.id);
     
     console.log('✅ Order created successfully:', {
       orderId: order.id,
@@ -594,11 +596,11 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
         description: `Order created: ${order.orderNumber}`,
         context: {
           ...auditContext,
-          userId: user.id,
+          userId: user.id.toString(),
           userEmail: user.email || undefined,
           userRole: user.role || undefined,
-          merchantId: user.merchantId,
-          outletId: user.outletId
+          merchantId: user.merchant?.id?.toString(),
+          outletId: user.outlet?.id?.toString()
         }
       });
     } catch (auditError) {
@@ -624,7 +626,7 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
           success: false,
           message: 'Order with this number already exists',
           error: 'DUPLICATE_ORDER'
-        }, { status: 409 });
+        }, { status: API.STATUS.CONFLICT });
       }
       
       if (error.message.includes('Foreign key constraint failed')) {
@@ -690,7 +692,7 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
       success: false,
       message: 'Failed to create order. Please try again.',
       error: 'INTERNAL_ERROR'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 });
 
@@ -721,7 +723,7 @@ export const PUT = withOrderUpdateAuth(async (authorizedRequest) => {
     try {
       assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
     } catch {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: API.STATUS.FORBIDDEN });
     }
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
@@ -748,7 +750,7 @@ export const PUT = withOrderUpdateAuth(async (authorizedRequest) => {
     };
 
     // Update the order
-    const updatedOrder = await updateOrder(parseInt(orderId), updateInput, user.publicId);
+    const updatedOrder = await updateOrder(parseInt(orderId), updateInput, user.id);
 
     // Log audit event for order update
     try {
@@ -762,11 +764,11 @@ export const PUT = withOrderUpdateAuth(async (authorizedRequest) => {
         description: `Order updated: ${updatedOrder?.orderNumber || orderId}`,
         context: {
           ...auditContext,
-          userId: user.id,
+          userId: user.id.toString(),
           userEmail: user.email || undefined,
           userRole: user.role || undefined,
-          merchantId: user.merchantId,
-          outletId: user.outletId
+          merchantId: user.merchant?.id?.toString(),
+          outletId: user.outlet?.id?.toString()
         }
       });
     } catch (auditError) {
@@ -783,7 +785,7 @@ export const PUT = withOrderUpdateAuth(async (authorizedRequest) => {
     console.error('Error updating order:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });
@@ -816,7 +818,7 @@ export const DELETE = withOrderDeleteAuth(async (authorizedRequest) => {
     const reason = body.reason || 'Order cancelled by user';
 
     // Cancel the order
-    const cancelledOrder = await cancelOrder(parseInt(orderId), user.publicId, reason);
+    const cancelledOrder = await cancelOrder(parseInt(orderId), user.id, reason);
 
     // Log audit event for order cancellation
     try {
@@ -830,11 +832,11 @@ export const DELETE = withOrderDeleteAuth(async (authorizedRequest) => {
         description: `Order cancelled: ${cancelledOrder?.orderNumber || orderId} - ${reason}`,
         context: {
           ...auditContext,
-          userId: user.id,
+          userId: user.id.toString(),
           userEmail: user.email || undefined,
           userRole: user.role || undefined,
-          merchantId: user.merchantId,
-          outletId: user.outletId
+          merchantId: user.merchant?.id?.toString(),
+          outletId: user.outlet?.id?.toString()
         }
       });
     } catch (auditError) {
@@ -851,7 +853,7 @@ export const DELETE = withOrderDeleteAuth(async (authorizedRequest) => {
     console.error('Error cancelling order:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }); 

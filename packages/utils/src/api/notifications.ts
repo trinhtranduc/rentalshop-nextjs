@@ -36,7 +36,7 @@ export const notificationsApi = {
    * Get all notifications
    */
   async getNotifications(): Promise<ApiResponse<Notification[]>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications`);
+    const response = await authenticatedFetch(apiUrls.notifications.list);
     const result = await parseApiResponse<Notification[]>(response);
     return result;
   },
@@ -50,7 +50,7 @@ export const notificationsApi = {
       limit: limit.toString()
     });
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.notifications.list}?${params.toString()}`);
     return await parseApiResponse<NotificationsResponse>(response);
   },
 
@@ -65,7 +65,7 @@ export const notificationsApi = {
     if (filters.page) params.append('page', filters.page.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.notifications.list}?${params.toString()}`);
     return await parseApiResponse<Notification[]>(response);
   },
 
@@ -73,7 +73,7 @@ export const notificationsApi = {
    * Get notification by ID
    */
   async getNotification(notificationId: number): Promise<ApiResponse<Notification>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/${notificationId}`);
+    const response = await authenticatedFetch(apiUrls.notifications.get(notificationId));
     return await parseApiResponse<Notification>(response);
   },
 
@@ -81,7 +81,7 @@ export const notificationsApi = {
    * Mark notification as read
    */
   async markAsRead(notificationId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/${notificationId}/read`, {
+    const response = await authenticatedFetch(apiUrls.notifications.markRead(notificationId), {
       method: 'PATCH',
     });
     return await parseApiResponse<{ message: string }>(response);
@@ -91,7 +91,7 @@ export const notificationsApi = {
    * Mark notification as unread
    */
   async markAsUnread(notificationId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/${notificationId}/unread`, {
+    const response = await authenticatedFetch(apiUrls.notifications.markUnread(notificationId), {
       method: 'PATCH',
     });
     return await parseApiResponse<{ message: string }>(response);
@@ -101,7 +101,7 @@ export const notificationsApi = {
    * Mark all notifications as read
    */
   async markAllAsRead(): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/mark-all-read`, {
+    const response = await authenticatedFetch(apiUrls.notifications.markAllRead, {
       method: 'PATCH',
     });
     return await parseApiResponse<{ message: string }>(response);
@@ -111,7 +111,7 @@ export const notificationsApi = {
    * Delete notification
    */
   async deleteNotification(notificationId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/${notificationId}`, {
+    const response = await authenticatedFetch(apiUrls.notifications.delete(notificationId), {
       method: 'DELETE',
     });
     return await parseApiResponse<{ message: string }>(response);
@@ -121,7 +121,7 @@ export const notificationsApi = {
    * Delete all read notifications
    */
   async deleteAllRead(): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/delete-read`, {
+    const response = await authenticatedFetch(apiUrls.notifications.deleteAllRead, {
       method: 'DELETE',
     });
     return await parseApiResponse<{ message: string }>(response);
@@ -131,7 +131,7 @@ export const notificationsApi = {
    * Get unread count
    */
   async getUnreadCount(): Promise<ApiResponse<{ count: number }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/unread-count`);
+    const response = await authenticatedFetch(apiUrls.notifications.unreadCount);
     return await parseApiResponse<{ count: number }>(response);
   },
 
@@ -139,7 +139,7 @@ export const notificationsApi = {
    * Get notification preferences
    */
   async getPreferences(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/preferences`);
+    const response = await authenticatedFetch(apiUrls.notifications.preferences);
     return await parseApiResponse<any>(response);
   },
 
@@ -147,7 +147,7 @@ export const notificationsApi = {
    * Update notification preferences
    */
   async updatePreferences(preferences: any): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/preferences`, {
+    const response = await authenticatedFetch(apiUrls.notifications.preferences, {
       method: 'PUT',
       body: JSON.stringify(preferences),
     });
@@ -158,7 +158,7 @@ export const notificationsApi = {
    * Send test notification
    */
   async sendTestNotification(): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/notifications/test`, {
+    const response = await authenticatedFetch(apiUrls.notifications.test, {
       method: 'POST',
     });
     return await parseApiResponse<{ message: string }>(response);

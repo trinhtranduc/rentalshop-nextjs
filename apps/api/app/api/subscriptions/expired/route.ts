@@ -9,6 +9,7 @@ import {
   extendSubscription
 } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // GET /api/subscriptions/expired - Get expired subscriptions
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Admin access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching expired subscriptions:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch expired subscriptions' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Admin access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
     console.error('Error marking subscription as expired:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to mark subscription as expired' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import { 
   Card,
   CardHeader,
@@ -137,7 +138,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       const response = await fetch(`/api/subscriptions/${params.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
 
@@ -169,7 +170,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify({ reason: 'Admin suspended subscription' })
       });

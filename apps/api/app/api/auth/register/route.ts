@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { registerUser } from '@rentalshop/database';
 import { registerSchema } from '@rentalshop/utils';
 import { generateToken } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,14 +64,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         message: 'User with this email already exists'
-      }, { status: 409 });
+      }, { status: API.STATUS.CONFLICT });
     }
     
     if (error.message === 'Merchant with this email already exists') {
       return NextResponse.json({
         success: false,
         message: 'Merchant with this email already exists'
-      }, { status: 409 });
+      }, { status: API.STATUS.CONFLICT });
     }
     
     if (error.message.includes('Invalid merchant code')) {
@@ -92,6 +93,6 @@ export async function POST(request: NextRequest) {
       success: false,
       message: 'Registration failed',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

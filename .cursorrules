@@ -1248,7 +1248,7 @@ export async function POST(request: NextRequest) {
     if (!canManageProducts(user)) {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 

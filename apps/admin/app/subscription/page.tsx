@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SubscriptionList } from '@rentalshop/ui';
+import { getAuthToken } from '@rentalshop/utils';
 import type { Subscription, Plan, Merchant, SubscriptionUpdateInput } from '@rentalshop/types';
 
 export default function AdminSubscriptionPage() {
@@ -23,7 +24,7 @@ export default function AdminSubscriptionPage() {
         // Fetch subscriptions
         const subscriptionsResponse = await fetch('/api/subscriptions', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${getAuthToken()}`
           }
         });
         const subscriptionsData = await subscriptionsResponse.json();
@@ -35,7 +36,7 @@ export default function AdminSubscriptionPage() {
         // Fetch plans
         const plansResponse = await fetch('/api/plans', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${getAuthToken()}`
           }
         });
         const plansData = await plansResponse.json();
@@ -47,7 +48,7 @@ export default function AdminSubscriptionPage() {
         // Fetch merchants
         const merchantsResponse = await fetch('/api/merchants', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${getAuthToken()}`
           }
         });
         const merchantsData = await merchantsResponse.json();
@@ -79,7 +80,7 @@ export default function AdminSubscriptionPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify(data)
       });
@@ -88,7 +89,7 @@ export default function AdminSubscriptionPage() {
         // Refresh the subscriptions list
         const subscriptionsResponse = await fetch('/api/subscriptions', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${getAuthToken()}`
           }
         });
         const subscriptionsData = await subscriptionsResponse.json();

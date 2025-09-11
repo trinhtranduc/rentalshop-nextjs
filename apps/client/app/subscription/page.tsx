@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import {
   Card,
   CardHeader,
@@ -55,7 +56,7 @@ export default function MerchantSubscriptionPage() {
       
       const response = await fetch('/api/subscriptions/status', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       

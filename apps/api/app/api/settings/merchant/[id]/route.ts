@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 // Validation schemas
 const updateMerchantSettingSchema = z.object({
@@ -28,7 +29,7 @@ export async function GET(
     if (!user.merchantId) {
       return NextResponse.json(
         { success: false, message: 'Merchant access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -50,7 +51,7 @@ export async function GET(
     if (!setting) {
       return NextResponse.json(
         { success: false, message: 'Setting not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -73,7 +74,7 @@ export async function GET(
     console.error('Error fetching merchant setting:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch merchant setting' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -96,7 +97,7 @@ export async function PUT(
     if (!user.merchantId || !['ADMIN', 'MERCHANT'].includes(user.role)) {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Merchant admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -122,7 +123,7 @@ export async function PUT(
     if (!existingSetting) {
       return NextResponse.json(
         { success: false, message: 'Setting not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -161,7 +162,7 @@ export async function PUT(
     console.error('Error updating merchant setting:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update merchant setting' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -184,7 +185,7 @@ export async function DELETE(
     if (!user.merchantId || !['ADMIN', 'MERCHANT'].includes(user.role)) {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Merchant admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -207,7 +208,7 @@ export async function DELETE(
     if (!existingSetting) {
       return NextResponse.json(
         { success: false, message: 'Setting not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -224,7 +225,7 @@ export async function DELETE(
     console.error('Error deleting merchant setting:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete merchant setting' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

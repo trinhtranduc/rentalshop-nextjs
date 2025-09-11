@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
       database: 'disconnected',
       error: errorDetails,
       timestamp: new Date().toISOString()
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   } finally {
     await prisma.$disconnect();
   }

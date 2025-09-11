@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrderByNumber } from '@rentalshop/database';
 import { withOrderViewAuth } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 export const GET = withOrderViewAuth(async (
   authorizedRequest,
@@ -31,7 +32,7 @@ export const GET = withOrderViewAuth(async (
     if (!order) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -132,13 +133,13 @@ export const GET = withOrderViewAuth(async (
     if (error instanceof Error && error.message.includes('permission')) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });

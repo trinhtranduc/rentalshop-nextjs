@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -19,6 +20,7 @@ import {
   ToastContainer,
   useToasts
 } from '@rentalshop/ui';
+import { merchantsApi } from '@rentalshop/utils';
 import { ArrowLeft, Save, Building2 } from 'lucide-react';
 import type { Merchant } from '@rentalshop/types';
 
@@ -72,20 +74,8 @@ export default function EditMerchantPage() {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Use centralized API client
+      const result = await merchantsApi.getMerchantDetail(parseInt(merchantId));
 
       if (response.ok) {
         const data = await response.json();
@@ -126,7 +116,7 @@ export default function EditMerchantPage() {
       setSaving(true);
       
       // Get auth token from localStorage
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         console.error('No auth token found');
         setError('Authentication required');

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import {
   Card,
   CardHeader,
@@ -76,7 +77,7 @@ export default function PlansPage() {
       // Fetch plans
       const plansResponse = await fetch('/api/plans', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       const plansData = await plansResponse.json();
@@ -89,7 +90,7 @@ export default function PlansPage() {
       // Fetch current subscription
       const subscriptionResponse = await fetch('/api/subscriptions/status', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       const subscriptionData = await subscriptionResponse.json();
@@ -144,7 +145,7 @@ export default function PlansPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify({
           planId: selectedPlan?.publicId,

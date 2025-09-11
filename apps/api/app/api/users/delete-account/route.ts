@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { softDeleteUser } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * POST /api/users/delete-account
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (user.publicId !== userId) {
       return NextResponse.json(
         { success: false, message: 'You can only delete your own account' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     if (error.message.includes('not found')) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: false, message: 'Failed to delete account', error: error.message },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

@@ -4,6 +4,7 @@ import { assertAnyRole } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
 import { findUserByPublicId } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * PATCH /api/users/[id]/change-password
@@ -66,7 +67,7 @@ export async function PATCH(
     if (!targetUser) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -80,7 +81,7 @@ export async function PATCH(
     if (!isAdmin && !isSelf) {
       return NextResponse.json(
         { success: false, message: 'You can only change your own password' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -110,7 +111,7 @@ export async function PATCH(
         error: 'Failed to change password',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

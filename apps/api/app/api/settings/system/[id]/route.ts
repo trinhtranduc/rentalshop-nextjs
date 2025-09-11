@@ -3,6 +3,7 @@ import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 import { getAuditLogger, extractAuditContext } from '@rentalshop/database';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 // Validation schemas
 const updateSystemSettingSchema = z.object({
@@ -29,7 +30,7 @@ export async function GET(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -48,7 +49,7 @@ export async function GET(
     if (!setting) {
       return NextResponse.json(
         { success: false, message: 'Setting not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -72,7 +73,7 @@ export async function GET(
     console.error('Error fetching system setting:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch system setting' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -95,7 +96,7 @@ export async function PUT(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -118,7 +119,7 @@ export async function PUT(
     if (!existingSetting) {
       return NextResponse.json(
         { success: false, message: 'Setting not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -126,7 +127,7 @@ export async function PUT(
     if (existingSetting.isReadOnly) {
       return NextResponse.json(
         { success: false, message: 'Cannot update read-only setting' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -188,7 +189,7 @@ export async function PUT(
     console.error('Error updating system setting:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update system setting' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -211,7 +212,7 @@ export async function DELETE(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -231,7 +232,7 @@ export async function DELETE(
     if (!existingSetting) {
       return NextResponse.json(
         { success: false, message: 'Setting not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -239,7 +240,7 @@ export async function DELETE(
     if (existingSetting.isReadOnly) {
       return NextResponse.json(
         { success: false, message: 'Cannot delete read-only setting' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -256,7 +257,7 @@ export async function DELETE(
     console.error('Error deleting system setting:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete system setting' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

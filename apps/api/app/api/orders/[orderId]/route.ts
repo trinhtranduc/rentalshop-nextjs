@@ -4,6 +4,7 @@ import { getOrderByPublicId, getOrderByNumber, updateOrder, cancelOrder } from '
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { orderUpdateSchema } from '@rentalshop/utils';
 import type { OrderUpdateInput } from '@rentalshop/types';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/orders/[orderId]
@@ -62,7 +63,7 @@ export async function GET(
     if (!order) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -83,7 +84,7 @@ export async function GET(
       } catch {
         return NextResponse.json(
           { success: false, error: 'Forbidden: You can only view orders from your own outlet' },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         );
       }
     }
@@ -163,7 +164,7 @@ export async function GET(
     console.error('Error fetching order details:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -201,7 +202,7 @@ export async function PUT(
     try {
       assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
     } catch {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: API.STATUS.FORBIDDEN });
     }
 
     // Parse and validate request body
@@ -260,7 +261,7 @@ export async function PUT(
     if (!updatedOrder) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -273,7 +274,7 @@ export async function PUT(
     console.error('Error updating order:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -311,7 +312,7 @@ export async function DELETE(
     try {
       assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
     } catch {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: API.STATUS.FORBIDDEN });
     }
 
     // Parse request body for cancellation reason
@@ -332,7 +333,7 @@ export async function DELETE(
     if (!cancelledOrder) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -345,7 +346,7 @@ export async function DELETE(
     console.error('Error cancelling order:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

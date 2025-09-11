@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { changePlan } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 export async function PATCH(
   request: NextRequest,
@@ -23,7 +24,7 @@ export async function PATCH(
     if (!['ADMIN', 'MERCHANT'].includes(user.role)) {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -52,7 +53,7 @@ export async function PATCH(
     console.error('Error changing subscription plan:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

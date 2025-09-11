@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/categories
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch categories' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
       console.log('❌ User has no merchantId - merchant access required');
       return NextResponse.json(
         { success: false, message: 'Merchant access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
       console.log('❌ Category already exists:', existingCategory);
       return NextResponse.json(
         { success: false, message: 'Category with this name already exists' },
-        { status: 409 }
+        { status: API.STATUS.CONFLICT }
       );
     }
 
@@ -214,7 +215,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { success: false, message: 'Failed to create category' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

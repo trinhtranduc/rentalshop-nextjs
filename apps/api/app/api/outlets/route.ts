@@ -10,6 +10,7 @@ import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema } from '@ren
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { OutletCreateInput, OutletUpdateInput } from '@rentalshop/types';
 import { PrismaClient } from '@prisma/client';
+import {API} from '@rentalshop/constants';
 
 const prisma = new PrismaClient();
 
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     if (!userScope.merchantId && user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'User must be associated with a merchant to view outlets' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -95,7 +96,7 @@ export async function GET(request: NextRequest) {
     console.error('Error in GET /api/outlets:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -141,10 +142,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if outlet name is unique within merchant organization
+    // Find merchant by publicId to get the CUID
+    const merchant = await prisma.merchant.findUnique({
+      where: { publicId: userMerchantId },
+      select: { id: true }
+    });
+    
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, message: 'Merchant not found' },
+        { status: 404 }
+      );
+    }
+    
     const existingOutlet = await prisma.outlet.findFirst({
       where: {
         name: validatedData.name.trim(),
-        merchantId: user.merchant!.id // Use CUID from user
+        merchantId: merchant.id // Use CUID from database
       }
     });
 
@@ -179,7 +193,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { success: false, message: 'Failed to create outlet', error: error.message },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -204,7 +218,7 @@ export async function PUT(request: NextRequest) {
       id: user.id,
       role: user.role,
       merchantId: user.merchant?.id,
-      outletId: user.outletId
+      outletId: user.outlet?.id
     });
 
     // Check if user can update outlets
@@ -213,7 +227,7 @@ export async function PUT(request: NextRequest) {
       console.error('❌ DEBUG: User does not have permission to update outlets:', user.role);
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
     
@@ -249,7 +263,15 @@ export async function PUT(request: NextRequest) {
     };
     
     if (user.merchant?.id) {
-      whereClause.merchantId = user.merchant.id;
+      // Find merchant by publicId to get the CUID
+      const merchant = await prisma.merchant.findUnique({
+        where: { publicId: user.merchant.id },
+        select: { id: true }
+      });
+      
+      if (merchant) {
+        whereClause.merchantId = merchant.id; // Use CUID for database query
+      }
     }
     // Admin users (merchantId: null) can access any outlet
     
@@ -260,7 +282,7 @@ export async function PUT(request: NextRequest) {
     if (!existingOutlet) {
       return NextResponse.json(
         { success: false, message: 'Outlet not found or access denied' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -273,7 +295,15 @@ export async function PUT(request: NextRequest) {
       
       // Only check within same merchant for non-admin users
       if (user.merchant?.id) {
-        duplicateWhereClause.merchantId = user.merchant.id;
+        // Find merchant by publicId to get the CUID
+        const merchant = await prisma.merchant.findUnique({
+          where: { publicId: user.merchant.id },
+          select: { id: true }
+        });
+        
+        if (merchant) {
+          duplicateWhereClause.merchantId = merchant.id; // Use CUID for database query
+        }
       }
       
       const duplicateOutlet = await prisma.outlet.findFirst({
@@ -309,7 +339,7 @@ export async function PUT(request: NextRequest) {
     
     return NextResponse.json(
       { success: false, message: 'Failed to update outlet', error: error.message },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -334,7 +364,7 @@ export async function DELETE(request: NextRequest) {
     } catch {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -358,17 +388,30 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if outlet exists and belongs to user's merchant
+    // Find merchant by publicId to get the CUID
+    const merchant = await prisma.merchant.findUnique({
+      where: { publicId: user.merchant!.id },
+      select: { id: true }
+    });
+    
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, message: 'Merchant not found' },
+        { status: 404 }
+      );
+    }
+    
     const existingOutlet = await prisma.outlet.findFirst({
       where: {
         publicId: outletIdNumber,
-        merchantId: user.merchant!.id // Use CUID from user
+        merchantId: merchant.id // Use CUID from database
       }
     });
 
     if (!existingOutlet) {
       return NextResponse.json(
         { success: false, message: 'Outlet not found or access denied' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -412,7 +455,7 @@ export async function DELETE(request: NextRequest) {
     console.error('Error deleting outlet:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete outlet', error: error.message },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

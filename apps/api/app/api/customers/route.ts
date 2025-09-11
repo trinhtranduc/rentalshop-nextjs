@@ -15,6 +15,7 @@ import { PrismaClient } from '@prisma/client';
 import { AuditLogger } from '../../../../packages/database/src/audit';
 import { captureAuditContext, getAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 const prisma = new PrismaClient();
 
@@ -36,11 +37,8 @@ export async function GET(request: NextRequest) {
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      console.log('Authentication failed:', authResult.message);
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
+      console.log('Authentication failed');
+      return authResult.response;
     }
 
     const user = authResult.user;
@@ -48,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     // Get merchantId from user and convert to number
     const userMerchantId = getUserScope(user as any).merchantId;
-    const userMerchantIdNumber = userMerchantId ? parseInt(userMerchantId) : undefined;
+    const userMerchantIdNumber = userMerchantId ? userMerchantId : undefined;
     console.log('User merchant ID:', userMerchantIdNumber);
 
     const { searchParams } = new URL(request.url);
@@ -68,7 +66,7 @@ export async function GET(request: NextRequest) {
       if (!customer) {
         return NextResponse.json(
           { success: false, message: 'Customer not found' },
-          { status: 404 }
+          { status: API.STATUS.NOT_FOUND }
         );
       }
       return NextResponse.json({
@@ -161,7 +159,7 @@ export async function GET(request: NextRequest) {
         console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
         return NextResponse.json(
           { success: false, message: 'Search failed', error: error instanceof Error ? error.message : 'Unknown error' },
-          { status: 500 }
+          { status: API.STATUS.INTERNAL_SERVER_ERROR }
         );
       }
     }
@@ -243,7 +241,7 @@ export async function GET(request: NextRequest) {
       }
 
       return new NextResponse(bodyString, {
-        status: 200,
+        status: API.STATUS.OK,
         headers: {
           'Content-Type': 'application/json',
           ETag: etag,
@@ -254,7 +252,7 @@ export async function GET(request: NextRequest) {
       console.error('Error in getCustomers:', error);
       return NextResponse.json(
         { success: false, message: 'Failed to fetch customers', error: error instanceof Error ? error.message : 'Unknown error' },
-        { status: 500 }
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
 
@@ -262,7 +260,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching customers:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -335,11 +333,11 @@ export async function POST(request: NextRequest) {
         description: `Customer created: ${customer.firstName} ${customer.lastName}`,
         context: {
           ...auditContext,
-          userId: user.id,
+          userId: user.id.toString(),
           userEmail: user.email,
           userRole: user.role,
-          merchantId: user.merchantId,
-          outletId: user.outletId
+          merchantId: user.merchant?.id?.toString(),
+          outletId: user.outlet?.id?.toString()
         }
       });
     } catch (auditError) {
@@ -366,7 +364,7 @@ export async function POST(request: NextRequest) {
               message: 'A customer with this phone number already exists',
               error: 'DUPLICATE_PHONE'
             },
-            { status: 409 }
+            { status: API.STATUS.CONFLICT }
           );
         } else if (error.message.includes('email')) {
           return NextResponse.json(
@@ -375,7 +373,7 @@ export async function POST(request: NextRequest) {
               message: 'A customer with this email address already exists',
               error: 'DUPLICATE_EMAIL'
             },
-            { status: 409 }
+            { status: API.STATUS.CONFLICT }
           );
         }
       }
@@ -383,7 +381,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -410,7 +408,7 @@ export async function PUT(request: NextRequest) {
     if (!userMerchantId) {
       return NextResponse.json(
         { success: false, message: 'User not associated with any merchant' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -429,7 +427,7 @@ export async function PUT(request: NextRequest) {
     if (!existingCustomer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -472,8 +470,8 @@ export async function PUT(request: NextRequest) {
         id: user.id,
         email: user.email,
         role: user.role,
-        merchantId: user.merchantId,
-        outletId: user.outletId
+        merchantId: user.merchant?.id?.toString(),
+        outletId: user.outlet?.id?.toString()
       }
     });
     
@@ -492,11 +490,11 @@ export async function PUT(request: NextRequest) {
         description: `Customer updated: ${customer.firstName} ${customer.lastName}`,
         context: {
           ...auditContext,
-          userId: user.id,
+          userId: user.id.toString(),
           userEmail: user.email,
           userRole: user.role,
-          merchantId: user.merchantId,
-          outletId: user.outletId
+          merchantId: user.merchant?.id?.toString(),
+          outletId: user.outlet?.id?.toString()
         }
       });
       console.log('✅ Customer API - Audit event logged successfully');
@@ -516,7 +514,7 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating customer:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -540,7 +538,7 @@ export async function DELETE(request: NextRequest) {
     if (!userMerchantId) {
       return NextResponse.json(
         { success: false, message: 'User not associated with any merchant' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -559,7 +557,7 @@ export async function DELETE(request: NextRequest) {
     if (!existingCustomer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -591,7 +589,7 @@ export async function DELETE(request: NextRequest) {
     console.error('Error deleting customer:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 } 

@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple, assertAnyRole, getUserScope } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 export interface AuthMiddlewareConfig {
   // Required roles for access
@@ -61,7 +62,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
         } catch {
           return NextResponse.json(
             { success: false, message: 'Insufficient permissions' },
-            { status: 403 }
+            { status: API.STATUS.FORBIDDEN }
           );
         }
       }
@@ -70,7 +71,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
       if (customAuth && !customAuth(user, request)) {
         return NextResponse.json(
           { success: false, message: 'Access denied' },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         );
       }
 
@@ -89,7 +90,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
       console.error('Auth middleware error:', error);
       return NextResponse.json(
         { success: false, message: 'Authentication failed' },
-        { status: 500 }
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
   };

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { PrismaClient } from '@prisma/client';
 import { AuditLogger } from '../../../../../packages/database/src/audit';
+import {API} from '@rentalshop/constants';
 
 // Create Prisma client instance
 const prisma = new PrismaClient();
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (user?.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching audit logs:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch audit logs' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

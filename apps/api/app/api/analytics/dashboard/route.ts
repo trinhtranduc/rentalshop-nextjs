@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthAndAuthz } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (authorizedRequest) => {
   try {
@@ -56,7 +57,7 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(body, { status: 200, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return new NextResponse(body, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
@@ -66,7 +67,7 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
         error: 'Failed to fetch dashboard statistics',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });
