@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { subscriptionsApi } from '@rentalshop/utils';
 import { 
   SubscriptionForm,
   PageWrapper,
@@ -29,27 +29,15 @@ export default function CreateSubscriptionPage() {
       setLoading(true);
       
       // Fetch plans
-      const plansResponse = await fetch('/api/plans', {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`
-        }
-      });
-      const plansData = await plansResponse.json();
-      
-      if (plansData.success) {
-        setPlans(plansData.data.plans || []);
+      const plansResult = await subscriptionsApi.getPlans();
+      if (plansResult.success && plansResult.data) {
+        setPlans(plansResult.data.plans || []);
       }
 
       // Fetch merchants
-      const merchantsResponse = await fetch('/api/merchants', {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`
-        }
-      });
-      const merchantsData = await merchantsResponse.json();
-      
-      if (merchantsData.success) {
-        setMerchants(merchantsData.data.merchants || []);
+      const merchantsResult = await subscriptionsApi.getMerchants();
+      if (merchantsResult.success && merchantsResult.data) {
+        setMerchants(merchantsResult.data.merchants || []);
       }
 
     } catch (error) {
@@ -67,18 +55,9 @@ export default function CreateSubscriptionPage() {
     try {
       setSubmitting(true);
       
-      const response = await fetch('/api/subscriptions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAuthToken()}`
-        },
-        body: JSON.stringify(data)
-      });
+      const result = await subscriptionsApi.create(data);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (result.success && result.data) {
         // Redirect to subscription detail page
         window.location.href = `/admin/subscriptions/${result.data.id}`;
       } else {

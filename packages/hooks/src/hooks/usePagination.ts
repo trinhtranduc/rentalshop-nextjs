@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from 'react';
+import { PAGINATION } from '@rentalshop/constants';
 
 export interface PaginationState {
   total: number;
@@ -30,7 +31,7 @@ export interface UsePaginationReturn {
 }
 
 export function usePagination(config: PaginationConfig = {}): UsePaginationReturn {
-  const { initialLimit = 10, initialOffset = 0 } = config;
+  const { initialLimit = PAGINATION.DEFAULT_PAGE_SIZE, initialOffset = 0 } = config;
   
   const [pagination, setPaginationState] = useState<PaginationState>({
     total: 0,

@@ -10,9 +10,7 @@ export async function GET(request: NextRequest) {
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      return NextResponse.json(
-return authResult.response;
-      );
+      return authResult.response;
     }
 
     const user = authResult.user;
@@ -73,9 +71,7 @@ export async function POST(request: NextRequest) {
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      return NextResponse.json(
-return authResult.response;
-      );
+      return authResult.response;
     }
 
     const user = authResult.user;

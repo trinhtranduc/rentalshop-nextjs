@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -61,37 +61,19 @@ export default function OutletDetailPage() {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.outlets.get(parseInt(merchantId), parseInt(outletId));
+      const data = await response.json();
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/outlets/${outletId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setOutlet(data.data);
-          setEditData(data.data);
-        } else {
-          setError(data.message || 'Failed to fetch outlet details');
-        }
+      if (data.success) {
+        setOutlet(data.data);
+        setEditData(data.data);
       } else {
-        console.error('Failed to fetch outlet details');
-        // Fallback to mock data for now
+        setError(data.message || 'Failed to fetch outlet details');
       }
     } catch (error) {
       console.error('Error fetching outlet details:', error);
       setError('Failed to fetch outlet details');
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }
@@ -99,39 +81,19 @@ export default function OutletDetailPage() {
 
   const handleSave = async () => {
     try {
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.outlets.update(parseInt(merchantId), parseInt(outletId), editData);
+      const data = await response.json();
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/outlets/${outletId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(editData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setOutlet(data.data);
-          setIsEditing(false);
-          // Show success toast
-          showSuccess('Outlet updated', 'Changes saved successfully.');
-        } else {
-          const msg = data.message || 'Failed to update outlet';
-          setError(msg);
-          showError('Update failed', msg);
-        }
+      if (data.success) {
+        setOutlet(data.data);
+        setIsEditing(false);
+        // Show success toast
+        showSuccess('Outlet updated', 'Changes saved successfully.');
       } else {
-        console.error('Failed to update outlet');
-        setError('Failed to update outlet');
-        showError('Update failed', 'Server returned an error.');
+        const msg = data.message || 'Failed to update outlet';
+        setError(msg);
+        showError('Update failed', msg);
       }
     } catch (error) {
       console.error('Error updating outlet:', error);

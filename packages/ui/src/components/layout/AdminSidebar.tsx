@@ -77,27 +77,6 @@ const adminMenuItems: MenuItem[] = [
     icon: Users,
   },
   {
-    label: 'Products',
-    href: '/products',
-    icon: Package,
-  },
-  {
-    label: 'Orders',
-    href: '/orders',
-    icon: ShoppingCart,
-    badge: '3',
-  },
-  {
-    label: 'Customers',
-    href: '/customers',
-    icon: Users,
-  },
-  {
-    label: 'Calendar',
-    href: '/calendar',
-    icon: Calendar,
-  },
-  {
     label: 'System',
     href: '/system',
     icon: Settings,

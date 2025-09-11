@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePagination } from './usePagination';
 import { customersApi } from '@rentalshop/utils';
+import { PAGINATION } from '@rentalshop/constants';
 import type { Customer, CustomerFilters as CustomerFiltersType, CustomerCreateInput, CustomerUpdateInput } from '@rentalshop/types';
 
 export interface UseCustomerManagementOptions {
@@ -68,7 +69,7 @@ export interface UseCustomerManagementReturn {
 export const useCustomerManagement = (options: UseCustomerManagementOptions = {}): UseCustomerManagementReturn => {
   const router = useRouter();
   const {
-    initialLimit = 10,
+    initialLimit = PAGINATION.DEFAULT_PAGE_SIZE,
     useSearchCustomers = false,
     enableStats = false,
     merchantId,

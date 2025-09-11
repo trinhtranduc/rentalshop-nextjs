@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -43,36 +43,18 @@ export default function ProductEditPage() {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.products.get(parseInt(merchantId), parseInt(productId));
+      const data = await response.json();
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/products/${productId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setProductData(data.data);
-        } else {
-          setError(data.message || 'Failed to fetch product details');
-        }
+      if (data.success) {
+        setProductData(data.data);
       } else {
-        console.error('Failed to fetch product details');
-        // Fallback to mock data for now
+        setError(data.message || 'Failed to fetch product details');
       }
     } catch (error) {
       console.error('Error fetching product details:', error);
       setError('Failed to fetch product details');
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }
@@ -82,38 +64,18 @@ export default function ProductEditPage() {
     try {
       setSaving(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
+      // Use centralized API client with automatic authentication and error handling
+      const response = await merchantsApi.products.update(parseInt(merchantId), parseInt(productId), formData);
+      const data = await response.json();
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/products/${productId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          showSuccess('Product updated', 'Changes saved successfully.');
-          // Navigate back to products list
-          router.push(`/merchants/${merchantId}/products`);
-        } else {
-          const msg = data.message || 'Failed to update product';
-          setError(msg);
-          showError('Update failed', msg);
-        }
+      if (data.success) {
+        showSuccess('Product updated', 'Changes saved successfully.');
+        // Navigate back to products list
+        router.push(`/merchants/${merchantId}/products`);
       } else {
-        console.error('Failed to update product');
-        setError('Failed to update product');
-        showError('Update failed', 'Server returned an error.');
+        const msg = data.message || 'Failed to update product';
+        setError(msg);
+        showError('Update failed', msg);
       }
     } catch (error) {
       console.error('Error updating product:', error);

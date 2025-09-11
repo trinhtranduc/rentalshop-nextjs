@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -67,15 +67,7 @@ export default function MerchantOrdersPage() {
       console.log('fetchOrders called with filters:', filters);
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
-
-      // Build query string
+      // Use centralized API client with automatic authentication and error handling
       const queryParams = new URLSearchParams();
       if (filters.search) queryParams.append('search', filters.search);
       if (filters.orderType) queryParams.append('orderType', filters.orderType);
@@ -85,62 +77,51 @@ export default function MerchantOrdersPage() {
       if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
       if (filters.sortOrder) queryParams.append('sortOrder', filters.sortOrder);
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/orders?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await merchantsApi.orders.list(parseInt(merchantId), queryParams.toString());
+      const data = await response.json();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Transform the API response to match OrderTable component expectations
-          const transformedOrders = (data.data.orders || []).map((order: any) => ({
-            id: order.id,
-            orderNumber: order.orderNumber,
-            orderType: order.orderType,
-            status: order.status,
-            totalAmount: order.totalAmount,
-            depositAmount: order.depositAmount,
-            pickupPlanAt: order.pickupPlanAt,
-            returnPlanAt: order.returnPlanAt,
-            createdAt: order.createdAt,
-            updatedAt: order.updatedAt,
-            // Transform nested objects to flat properties expected by OrderTable
-            customerName: order.customer?.name || 'Unknown Customer',
-            customerPhone: order.customer?.phone || '',
-            outletName: order.outlet?.name || 'Unknown Outlet',
-            merchantName: `Merchant ${merchantId}`, // Since this is merchant-specific page
-            // Keep original nested objects for other uses
-            customer: order.customer,
-            outlet: order.outlet
-          }));
+      if (data.success) {
+        // Transform the API response to match OrderTable component expectations
+        const transformedOrders = (data.data.orders || []).map((order: any) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          orderType: order.orderType,
+          status: order.status,
+          totalAmount: order.totalAmount,
+          depositAmount: order.depositAmount,
+          pickupPlanAt: order.pickupPlanAt,
+          returnPlanAt: order.returnPlanAt,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          // Transform nested objects to flat properties expected by OrderTable
+          customerName: order.customer?.name || 'Unknown Customer',
+          customerPhone: order.customer?.phone || '',
+          outletName: order.outlet?.name || 'Unknown Outlet',
+          merchantName: `Merchant ${merchantId}`, // Since this is merchant-specific page
+          // Keep original nested objects for other uses
+          customer: order.customer,
+          outlet: order.outlet
+        }));
 
-          setOrderData({
-            orders: transformedOrders,
-            total: data.data.total || 0,
-            currentPage: Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1,
-            totalPages: Math.ceil((data.data.total || 0) / (filters.limit || 20)),
-            hasMore: (filters.offset || 0) + (filters.limit || 20) < (data.data.total || 0),
-            stats: data.data.stats || {
-              total: 0,
-              active: 0,
-              completed: 0,
-              cancelled: 0
-            }
-          });
-        } else {
-          setError(data.message || 'Failed to fetch orders');
-        }
+        setOrderData({
+          orders: transformedOrders,
+          total: data.data.total || 0,
+          currentPage: Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1,
+          totalPages: Math.ceil((data.data.total || 0) / (filters.limit || 20)),
+          hasMore: (filters.offset || 0) + (filters.limit || 20) < (data.data.total || 0),
+          stats: data.data.stats || {
+            total: 0,
+            active: 0,
+            completed: 0,
+            cancelled: 0
+          }
+        });
       } else {
-        console.error('Failed to fetch orders');
-        // Fallback to mock data for now
+        setError(data.message || 'Failed to fetch orders');
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
       setError('Failed to fetch orders');
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }

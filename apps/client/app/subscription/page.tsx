@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { subscriptionsApi, plansApi } from '@rentalshop/utils';
 import {
   Card,
   CardHeader,
@@ -54,17 +54,12 @@ export default function MerchantSubscriptionPage() {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/subscriptions/status', {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`
-        }
-      });
+      // Get current user's subscription status
+      const result = await subscriptionsApi.getCurrentUserSubscriptionStatus();
       
-      const data = await response.json();
-      
-      if (data.success) {
-        setSubscription(data.data.subscription);
-        setPayments(data.data.payments || []);
+      if (result.success && result.data) {
+        setSubscription(result.data.subscription);
+        setPayments(result.data.payments || []);
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);

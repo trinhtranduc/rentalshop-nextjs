@@ -12,9 +12,10 @@ import {
 } from '@rentalshop/ui';
 import { Orders } from '../../components/Orders';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, usePagination } from '@rentalshop/hooks';
 import type { OrderSearchResult, OrderInput, OrderType, OrderStatus, OrderFilters as OrderFiltersType, OrderWithDetails } from '@rentalshop/types';
 import { ordersApi } from '@rentalshop/utils';
+import { PAGINATION } from '@rentalshop/constants';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -25,8 +26,12 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  
+  // Pagination hook
+  const { pagination, handlePageChange: paginationPageChange, updatePaginationFromResponse } = usePagination({
+    initialLimit: PAGINATION.DEFAULT_PAGE_SIZE,
+    initialOffset: 0
+  });
   
   // Initialize filters
   const [filters, setFilters] = useState<OrderFiltersType>({
@@ -64,8 +69,8 @@ export default function OrdersPage() {
         outletId: filters.outletId,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
-        limit: 10,
-        offset: (currentPage - 1) * 10
+        limit: pagination.limit,
+        offset: pagination.offset
       });
 
       const result = await ordersApi.searchOrders({
@@ -76,26 +81,26 @@ export default function OrdersPage() {
         dateRange: filters.dateRange,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
-        limit: 10,
-        offset: (currentPage - 1) * 10
+        limit: pagination.limit,
+        offset: pagination.offset
       });
 
       if (result.success && result.data) {
         const data = result.data;
         console.log('🔍 Orders API response:', data);
         
-        // Handle the API response - data is already the orders array
-        const orders = Array.isArray(data) ? data as OrderWithDetails[] : [];
-        const total = orders.length;
-        const totalPages = Math.ceil(total / 10);
-
-        setOrders(orders);
-        setTotalPages(totalPages);
+        // Handle the API response - data contains orders array and pagination info
+        const orders = Array.isArray(data.orders) ? data.orders as OrderWithDetails[] : [];
         
-        // If current page is beyond total pages after search, reset to page 1
-        if (currentPage > totalPages && totalPages > 0) {
-          setCurrentPage(1);
-        }
+        setOrders(orders);
+        
+        // Update pagination from API response
+        updatePaginationFromResponse({
+          total: data.total || orders.length,
+          limit: pagination.limit,
+          offset: pagination.offset,
+          hasMore: data.hasMore || false
+        });
       } else {
         console.error('API Error:', result.error);
       }
@@ -108,7 +113,7 @@ export default function OrdersPage() {
         setIsInitialLoad(false);
       }
     }
-  }, [currentPage, searchQuery, filters.orderType, filters.status, filters.outletId, filters.sortBy, filters.sortOrder, isInitialLoad]); // Remove setCurrentPage, setOrders, setTotalPages, setLoading, setIsSearching, hasInitializedRef dependencies
+  }, [pagination.offset, pagination.limit, searchQuery, filters.orderType, filters.status, filters.outletId, filters.sortBy, filters.sortOrder, isInitialLoad]); // Remove setCurrentPage, setOrders, setTotalPages, setLoading, setIsSearching, hasInitializedRef dependencies
 
   const fetchStats = useCallback(async () => {
     try {
@@ -135,7 +140,7 @@ export default function OrdersPage() {
     if (hasInitializedRef.current) {
       fetchOrders();
     }
-  }, [searchQuery, currentPage, filters.orderType, filters.status, filters.outletId, filters.sortBy, filters.sortOrder]); // Remove fetchOrders dependency
+  }, [searchQuery, pagination.offset, filters.orderType, filters.status, filters.outletId, filters.sortBy, filters.sortOrder]); // Remove fetchOrders dependency
 
   // Effect for stats updates
   useEffect(() => {
@@ -148,8 +153,8 @@ export default function OrdersPage() {
   const handleSearchChange = useCallback((searchValue: string) => {
     console.log('🔍 handleSearchChange called with:', searchValue);
     setSearchQuery(searchValue);
-    setCurrentPage(1); // Reset to first page when searching
-  }, []);
+    paginationPageChange(1); // Reset to first page when searching
+  }, [paginationPageChange]);
 
   // Handler for other filter changes - only reloads table data
   const handleFiltersChange = useCallback((newFilters: OrderFiltersType) => {
@@ -160,7 +165,7 @@ export default function OrdersPage() {
     
     if (hasChanged) {
       setFilters(newFilters);
-      setCurrentPage(1); // Reset to first page when filters change
+      paginationPageChange(1); // Reset to first page when filters change
     }
   }, [filters]);
 
@@ -179,7 +184,7 @@ export default function OrdersPage() {
       sortOrder: 'desc'
     });
     setSearchQuery(''); // This will trigger the search effect to reload table
-    setCurrentPage(1);
+    paginationPageChange(1);
     // Don't call fetchOrders directly - let the search effect handle it
   }, []);
 
@@ -266,8 +271,8 @@ export default function OrdersPage() {
   }, [fetchOrders, fetchStats]);
 
   const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
+    paginationPageChange(page);
+  }, [paginationPageChange]);
 
   const handleSort = useCallback((column: string) => {
     // Map column names to sort values
@@ -290,8 +295,8 @@ export default function OrdersPage() {
       sortBy: newSortBy,
       sortOrder: newSortOrder
     }));
-    setCurrentPage(1); // Reset to first page when sorting changes
-  }, [filters.sortBy, filters.sortOrder, setFilters, setCurrentPage]);
+    paginationPageChange(1); // Reset to first page when sorting changes
+  }, [filters.sortBy, filters.sortOrder, setFilters, paginationPageChange]);
 
   // Transform the data to match the refactored Orders component interface - memoized to prevent unnecessary re-renders
   // MUST be defined before any conditional returns to follow React Rules of Hooks
@@ -317,10 +322,10 @@ export default function OrdersPage() {
       orderItems: [], // Not available in OrderSearchResult
       payments: [] // Not available in OrderSearchResult
     })),
-    total: orders.length,
-    currentPage,
-    totalPages,
-    limit: 10,
+    total: pagination.total,
+    currentPage: pagination.currentPage,
+    totalPages: pagination.totalPages,
+    limit: pagination.limit,
     stats: {
       totalOrders: stats?.totalOrders || 0,
       pendingOrders: stats?.pendingOrders || 0,
@@ -333,7 +338,7 @@ export default function OrdersPage() {
       ordersThisMonth: stats?.ordersThisMonth || 0,
       revenueThisMonth: stats?.revenueThisMonth || 0
     }
-  }), [orders, currentPage, totalPages, stats]);
+  }), [orders, pagination.total, pagination.currentPage, pagination.totalPages, pagination.limit, stats]);
 
   if (loading) {
     return (

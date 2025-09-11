@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SubscriptionList } from '@rentalshop/ui';
-import { getAuthToken } from '@rentalshop/utils';
+import { subscriptionsApi, merchantsApi, plansApi } from '@rentalshop/utils';
 import type { Subscription, Plan, Merchant, SubscriptionUpdateInput } from '@rentalshop/types';
 
 export default function AdminSubscriptionPage() {
@@ -22,39 +22,21 @@ export default function AdminSubscriptionPage() {
         setLoading(true);
         
         // Fetch subscriptions
-        const subscriptionsResponse = await fetch('/api/subscriptions', {
-          headers: {
-            'Authorization': `Bearer ${getAuthToken()}`
-          }
-        });
-        const subscriptionsData = await subscriptionsResponse.json();
-        
-        if (subscriptionsData.success) {
-          setSubscriptions(subscriptionsData.data.subscriptions || []);
+        const subscriptionsResult = await subscriptionsApi.getSubscriptions();
+        if (subscriptionsResult.success && subscriptionsResult.data) {
+          setSubscriptions(subscriptionsResult.data.subscriptions || []);
         }
 
         // Fetch plans
-        const plansResponse = await fetch('/api/plans', {
-          headers: {
-            'Authorization': `Bearer ${getAuthToken()}`
-          }
-        });
-        const plansData = await plansResponse.json();
-        
-        if (plansData.success) {
-          setPlans(plansData.data.plans || []);
+        const plansResult = await plansApi.getPlans();
+        if (plansResult.success && plansResult.data) {
+          setPlans(plansResult.data.plans || []);
         }
 
         // Fetch merchants
-        const merchantsResponse = await fetch('/api/merchants', {
-          headers: {
-            'Authorization': `Bearer ${getAuthToken()}`
-          }
-        });
-        const merchantsData = await merchantsResponse.json();
-        
-        if (merchantsData.success) {
-          setMerchants(merchantsData.data.merchants || []);
+        const merchantsResult = await merchantsApi.getMerchants();
+        if (merchantsResult.success && merchantsResult.data) {
+          setMerchants(merchantsResult.data.merchants || []);
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -75,27 +57,14 @@ export default function AdminSubscriptionPage() {
     try {
       console.log('Edit subscription:', data);
       
-      // Here you would make an API call to update the subscription
-      const response = await fetch(`/api/subscriptions/${data.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAuthToken()}`
-        },
-        body: JSON.stringify(data)
-      });
+      // Update subscription using centralized API
+      const result = await subscriptionsApi.update(data.id, data);
 
-      if (response.ok) {
+      if (result.success) {
         // Refresh the subscriptions list
-        const subscriptionsResponse = await fetch('/api/subscriptions', {
-          headers: {
-            'Authorization': `Bearer ${getAuthToken()}`
-          }
-        });
-        const subscriptionsData = await subscriptionsResponse.json();
-        
-        if (subscriptionsData.success) {
-          setSubscriptions(subscriptionsData.data.subscriptions || []);
+        const subscriptionsResult = await subscriptionsApi.getSubscriptions();
+        if (subscriptionsResult.success && subscriptionsResult.data) {
+          setSubscriptions(subscriptionsResult.data.subscriptions || []);
         }
       }
     } catch (error) {

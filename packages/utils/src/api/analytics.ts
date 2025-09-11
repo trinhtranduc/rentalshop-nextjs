@@ -135,8 +135,19 @@ export const analyticsApi = {
   /**
    * Get income analytics
    */
-  async getIncomeAnalytics(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(apiUrls.analytics.income);
+  async getIncomeAnalytics(filters: AnalyticsFilters = {}): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.groupBy) params.append('groupBy', filters.groupBy);
+    
+    const queryString = params.toString();
+    const url = queryString ? `${apiUrls.analytics.income}?${queryString}` : apiUrls.analytics.income;
+    
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   },
 
@@ -215,6 +226,50 @@ export const analyticsApi = {
     params.append('format', format);
     
     const response = await authenticatedFetch(`${apiUrls.analytics.export}?${params.toString()}`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get today's operational metrics
+   */
+  async getTodayMetrics(): Promise<ApiResponse<{
+    todayPickups: number;
+    todayReturns: number;
+    overdueItems: number;
+    productUtilization: number;
+  }>> {
+    const response = await authenticatedFetch(apiUrls.analytics.todayMetrics);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get growth metrics
+   */
+  async getGrowthMetrics(): Promise<ApiResponse<{
+    customerGrowth: number;
+    revenueGrowth: number;
+    customerBase: number;
+  }>> {
+    const response = await authenticatedFetch(apiUrls.analytics.growthMetrics);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get enhanced dashboard summary with all metrics
+   */
+  async getEnhancedDashboardSummary(): Promise<ApiResponse<{
+    totalRevenue: number;
+    totalOrders: number;
+    futureIncome: number;
+    todayPickups: number;
+    todayReturns: number;
+    overdueItems: number;
+    productUtilization: number;
+    customerGrowth: number;
+    revenueGrowth: number;
+    customerBase: number;
+  }>> {
+    const response = await authenticatedFetch(apiUrls.analytics.enhancedDashboard);
     return await parseApiResponse<any>(response);
   }
 };

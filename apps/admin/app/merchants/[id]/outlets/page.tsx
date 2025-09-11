@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -57,49 +57,30 @@ export default function MerchantOutletsPage() {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
-
-      // Build query string
+      // Use centralized API client with automatic authentication and error handling
       const queryParams = new URLSearchParams();
       if (filters.search) queryParams.append('search', filters.search);
       if (filters.status) queryParams.append('isActive', filters.status === 'active' ? 'true' : 'false');
       if (filters.limit) queryParams.append('limit', filters.limit.toString());
       if (filters.offset) queryParams.append('offset', filters.offset.toString());
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/outlets?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await merchantsApi.outlets.list(parseInt(merchantId), queryParams.toString());
+      const data = await response.json();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setOutletData({
-            outlets: data.data.outlets || [],
-            total: data.data.total || 0,
-            currentPage: Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1,
-            totalPages: Math.ceil((data.data.total || 0) / (filters.limit || 20)),
-            hasMore: (filters.offset || 0) + (filters.limit || 20) < (data.data.total || 0)
-          });
-        } else {
-          setError(data.message || 'Failed to fetch outlets');
-        }
+      if (data.success) {
+        setOutletData({
+          outlets: data.data.outlets || [],
+          total: data.data.total || 0,
+          currentPage: Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1,
+          totalPages: Math.ceil((data.data.total || 0) / (filters.limit || 20)),
+          hasMore: (filters.offset || 0) + (filters.limit || 20) < (data.data.total || 0)
+        });
       } else {
-        console.error('Failed to fetch outlets');
-        // Fallback to mock data for now
+        setError(data.message || 'Failed to fetch outlets');
       }
     } catch (error) {
       console.error('Error fetching outlets:', error);
       setError('Failed to fetch outlets');
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }

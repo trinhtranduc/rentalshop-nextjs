@@ -6,20 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
 import { useThrottledSearch } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
-
-// Define constants locally to avoid import issues
-const ORDER_TYPES = {
-  RENT: 'RENT',
-  SALE: 'SALE'
-} as const;
-
-const ORDER_STATUSES = {
-  BOOKED: 'BOOKED',
-  ACTIVE: 'ACTIVE',
-  RETURNED: 'RETURNED',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED'
-} as const;
+import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 
 interface OrderFiltersProps {
   filters: OrderFiltersType;
@@ -66,18 +53,31 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
 
   // Stabilize the onSearch callback to prevent hook recreation
   const stableOnSearch = useCallback((searchQuery: string) => {
+    console.log('🔍 OrderFilters: stableOnSearch called with:', searchQuery);
     onSearchChange(searchQuery);
   }, [onSearchChange]);
 
   // Memoize the options to prevent hook recreation
   const searchOptions = useMemo(() => ({
     delay: 500, // Wait 500ms after user stops typing
-    minLength: 2, // Only search after 2+ characters
+    minLength: 0, // Allow searching from the first character
     onSearch: stableOnSearch
   }), [stableOnSearch]);
 
   // Use throttled search to prevent excessive API calls
-  const { query, handleSearchChange: throttledSearchChange } = useThrottledSearch(searchOptions);
+  const { query, handleSearchChange: throttledSearchChange, clearSearch } = useThrottledSearch(searchOptions);
+
+  // Sync the query with the filters.search value when filters change externally
+  useEffect(() => {
+    if (filters.search !== query) {
+      // Update the local query to match the filters.search value
+      if (filters.search === '') {
+        clearSearch();
+      } else {
+        throttledSearchChange(filters.search);
+      }
+    }
+  }, [filters.search, query, clearSearch, throttledSearchChange]);
 
   const handleFilterChange = (key: keyof OrderFiltersType, value: any) => {
     // For non-search filters, update immediately
@@ -92,18 +92,18 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
   // Memoize order type options
   const orderTypeOptions = useMemo(() => [
     { value: 'all', label: 'All Types' },
-    { value: ORDER_TYPES.RENT, label: 'Rental' },
-    { value: ORDER_TYPES.SALE, label: 'Sale' }
+    { value: ORDER_TYPE.RENT, label: 'Rental' },
+    { value: ORDER_TYPE.SALE, label: 'Sale' }
   ], []);
 
-  // Memoize status options
+  // Memoize status options - using correct statuses from constants
   const statusOptions = useMemo(() => [
     { value: 'all', label: 'All Status' },
-    { value: ORDER_STATUSES.BOOKED, label: 'Booked' },
-    { value: ORDER_STATUSES.ACTIVE, label: 'Active' },
-    { value: ORDER_STATUSES.RETURNED, label: 'Returned' },
-    { value: ORDER_STATUSES.COMPLETED, label: 'Completed' },
-    { value: ORDER_STATUSES.CANCELLED, label: 'Cancelled' }
+    { value: ORDER_STATUS.RESERVED, label: 'Reserved' },
+    { value: ORDER_STATUS.PICKUPED, label: 'Picked Up' },
+    { value: ORDER_STATUS.RETURNED, label: 'Returned' },
+    { value: ORDER_STATUS.COMPLETED, label: 'Completed' },
+    { value: ORDER_STATUS.CANCELLED, label: 'Cancelled' }
   ], []);
 
   return (
@@ -224,6 +224,18 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
               )}
             </div>
           </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearFilters}
+            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            Clear Filters
+          </Button>
         </div>
       </CardContent>
     </Card>

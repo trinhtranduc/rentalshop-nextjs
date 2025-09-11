@@ -9,6 +9,7 @@ import {
   type AuditLogStats 
 } from '@rentalshop/utils';
 import { usePagination } from '@rentalshop/hooks';
+import { PAGINATION } from '@rentalshop/constants';
 import { 
   Card,
   CardContent,
@@ -377,7 +378,7 @@ export default function AuditLogsPage() {
     pagination,
     handlePageChange,
     updatePaginationFromResponse
-  } = usePagination({ initialLimit: 10, initialOffset: 0 });
+  } = usePagination({ initialLimit: PAGINATION.DEFAULT_PAGE_SIZE, initialOffset: 0 });
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'logs' | 'stats'>('logs');

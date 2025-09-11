@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MerchantRegistrationForm } from '@rentalshop/ui';
 import { useRouter } from 'next/navigation';
 import { toast } from '@rentalshop/ui';
+import { merchantsApi } from '@rentalshop/utils';
 
 interface MerchantRegistrationData {
   merchantName: string;
@@ -28,12 +29,7 @@ export default function RegisterMerchantPage() {
     setLoading(true);
     
     try {
-      const response = await fetch('/api/merchants/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
+      const result = await merchantsApi.register(data);
 
       if (result.success) {
         toast({

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -50,15 +50,7 @@ export default function MerchantUsersPage() {
     try {
       setLoading(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
-
-      // Build query string
+      // Use centralized API client with automatic authentication and error handling
       const queryParams = new URLSearchParams();
       if (filters.search) queryParams.append('search', filters.search);
       if (filters.role) queryParams.append('role', filters.role);
@@ -66,34 +58,23 @@ export default function MerchantUsersPage() {
       if (filters.limit) queryParams.append('limit', filters.limit.toString());
       if (filters.offset) queryParams.append('offset', filters.offset.toString());
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}/users?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await merchantsApi.users.list(parseInt(merchantId));
+      const data = await response.json();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setUserData({
-            users: data.data.users || [],
-            total: data.data.total || 0,
-            currentPage: Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1,
-            totalPages: Math.ceil((data.data.total || 0) / (filters.limit || 20)),
-            hasMore: (filters.offset || 0) + (filters.limit || 20) < (data.data.total || 0)
-          });
-        } else {
-          setError(data.message || 'Failed to fetch users');
-        }
+      if (data.success) {
+        setUserData({
+          users: data.data.users || [],
+          total: data.data.total || 0,
+          currentPage: Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1,
+          totalPages: Math.ceil((data.data.total || 0) / (filters.limit || 20)),
+          hasMore: (filters.offset || 0) + (filters.limit || 20) < (data.data.total || 0)
+        });
       } else {
-        console.error('Failed to fetch users');
-        // Fallback to mock data for now
+        setError(data.message || 'Failed to fetch users');
       }
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Failed to fetch users');
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }

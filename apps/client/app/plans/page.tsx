@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
+import { plansApi, subscriptionsApi } from '@rentalshop/utils';
 import {
   Card,
   CardHeader,
@@ -75,28 +75,15 @@ export default function PlansPage() {
       setLoading(true);
       
       // Fetch plans
-      const plansResponse = await fetch('/api/plans', {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`
-        }
-      });
-      const plansData = await plansResponse.json();
-      
-      if (plansData.success) {
-        setPlans(plansData.data.plans || []);
+      const plansResult = await plansApi.getPlans();
+      if (plansResult.success && plansResult.data) {
+        setPlans(plansResult.data.plans || []);
       }
 
-
       // Fetch current subscription
-      const subscriptionResponse = await fetch('/api/subscriptions/status', {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`
-        }
-      });
-      const subscriptionData = await subscriptionResponse.json();
-      
-      if (subscriptionData.success) {
-        setCurrentSubscription(subscriptionData.data.subscription);
+      const subscriptionResult = await subscriptionsApi.getCurrentUserSubscriptionStatus();
+      if (subscriptionResult.success && subscriptionResult.data) {
+        setCurrentSubscription(subscriptionResult.data.subscription);
       }
 
     } catch (error) {
@@ -141,22 +128,13 @@ export default function PlansPage() {
 
   const handleConfirmPurchase = async () => {
     try {
-      const response = await fetch('/api/subscriptions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAuthToken()}`
-        },
-        body: JSON.stringify({
-          planId: selectedPlan?.publicId,
-          status: 'active',
-          period: purchaseData.billingCycle === 'monthly' ? 1 : purchaseData.billingCycle === 'quarterly' ? 3 : 12,
-          amount: selectedPlan?.basePrice,
-          currency: selectedPlan?.currency || 'USD'
-        })
+      const result = await subscriptionsApi.create({
+        planId: selectedPlan?.publicId || 0,
+        status: 'active',
+        period: purchaseData.billingCycle === 'monthly' ? 1 : purchaseData.billingCycle === 'quarterly' ? 3 : 12,
+        amount: selectedPlan?.basePrice || 0,
+        currency: selectedPlan?.currency || 'USD'
       });
-
-      const result = await response.json();
 
       if (result.success) {
         // Redirect to subscription page
