@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 interface BackupSchedule {
   id: string;
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get backup schedules'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create backup schedule'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -114,7 +115,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update backup schedule'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -144,7 +145,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete backup schedule'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 

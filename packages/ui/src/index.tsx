@@ -39,7 +39,7 @@ export * from './components/features/AuditLogs';
 // TODO: Uncomment when component files are created
 export * from './components/features/OrderDetail';
 export * from './components/features/Shops';
-// export * from './components/features/Settings';
+export * from './components/features/Settings';
 
 // ============================================================================
 // LAYOUT COMPONENTS (Page Structure & Navigation)

@@ -1,73 +1,96 @@
-import { authenticatedFetch, parseApiResponse } from '../index';
+import { authenticatedFetch, parseApiResponse } from '../common';
 import { apiUrls } from '../config/api';
-import { profileApi } from './profile';
-import type { ApiResponse } from '../index';
-import type { 
-  PersonalProfileUpdate, 
-  MerchantInfoUpdate, 
-  OutletInfoUpdate, 
-  SecurityUpdate 
-} from '@rentalshop/types';
+import type { ApiResponse } from '../common';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export interface MerchantSettings {
+  name: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  businessType?: string;
+  taxId?: string;
+  website?: string;
+  description?: string;
+}
+
+export interface UserProfile {
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}
+
+export interface OutletSettings {
+  name: string;
+  phone?: string;
+  address?: string;
+  description?: string;
+}
 
 // ============================================================================
 // SETTINGS API CLIENT
 // ============================================================================
 
 /**
- * Settings API client for user settings management
+ * Settings API client for user and merchant settings
  */
 export const settingsApi = {
   /**
-   * Update personal profile information
-   * Uses centralized profileApi for consistency
+   * Update merchant settings
    */
-  async updatePersonalProfile(data: PersonalProfileUpdate): Promise<ApiResponse<any>> {
-    console.log('🔍 DEBUG: settingsApi.updatePersonalProfile called');
-    console.log('🔍 DEBUG: Request data:', data);
+  async updateMerchantSettings(data: MerchantSettings): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.settings.merchant, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
     
-    // Use centralized profileApi to avoid duplication
-    return await profileApi.updateProfile(data);
+    const result = await parseApiResponse<any>(response);
+    return result;
   },
 
   /**
-   * Update merchant business information
+   * Update merchant information (alias for updateMerchantSettings)
    */
-  async updateMerchantInfo(data: MerchantInfoUpdate): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/settings/merchant`, {
+  async updateMerchantInfo(data: MerchantSettings): Promise<ApiResponse<any>> {
+    return this.updateMerchantSettings(data);
+  },
+
+  /**
+   * Get user profile
+   */
+  async getUserProfile(): Promise<ApiResponse<UserProfile>> {
+    const response = await authenticatedFetch(apiUrls.settings.user);
+    const result = await parseApiResponse<UserProfile>(response);
+    return result;
+  },
+
+  /**
+   * Update user profile
+   */
+  async updateUserProfile(data: UserProfile): Promise<ApiResponse<UserProfile>> {
+    const response = await authenticatedFetch(apiUrls.settings.user, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     });
-    return await parseApiResponse<any>(response);
+    const result = await parseApiResponse<UserProfile>(response);
+    return result;
   },
 
   /**
    * Update outlet information
    */
-  async updateOutletInfo(data: OutletInfoUpdate): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/settings/outlet`, {
+  async updateOutletInfo(data: OutletSettings): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.settings.outlet, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     });
-    return await parseApiResponse<any>(response);
-  },
-
-  /**
-   * Update security settings (password)
-   */
-  async updateSecurity(data: SecurityUpdate): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/auth/change-password`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    return await parseApiResponse<any>(response);
-  },
+    const result = await parseApiResponse<any>(response);
+    return result;
+  }
 };

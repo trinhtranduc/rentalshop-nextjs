@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
@@ -56,6 +57,6 @@ export async function POST(request: NextRequest) {
       success: false,
       message: 'Failed to reset password',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

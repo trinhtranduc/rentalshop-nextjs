@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * PUT /api/settings/outlet
@@ -35,7 +36,7 @@ export async function PUT(request: NextRequest) {
       });
       return NextResponse.json(
         { success: false, message: 'User does not have outlet access' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
     
@@ -99,7 +100,7 @@ export async function PUT(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { success: false, message: 'Failed to update outlet information', error: errorMessage },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

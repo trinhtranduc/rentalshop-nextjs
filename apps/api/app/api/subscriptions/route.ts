@@ -12,6 +12,7 @@ import {
 } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 import { subscriptionCreateSchema } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // GET /api/subscriptions - Search subscriptions
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
       } else {
         return NextResponse.json(
           { success: false, message: 'No merchant access' },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         );
       }
     } else if (user.role === 'MERCHANT') {
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
       } else {
         return NextResponse.json(
           { success: false, message: 'No merchant access' },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         );
       }
     }
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching subscriptions:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch subscriptions' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
     if (!['ADMIN', 'MERCHANT'].includes(user.role)) {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating subscription:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to create subscription' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

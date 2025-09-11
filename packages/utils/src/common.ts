@@ -112,24 +112,71 @@ export const createApiUrl = (endpoint: string): string => {
  * Authenticated fetch wrapper for API calls
  * Handles authentication headers and common error cases
  */
+/**
+ * Authenticated fetch wrapper for API calls
+ * 
+ * Best Practices:
+ * - Proper error handling and user feedback
+ * - Automatic token cleanup on auth failure
+ * - Consistent header management
+ * - Type-safe implementation
+ */
 export const authenticatedFetch = async (
   url: string,
   options: RequestInit = {}
 ): Promise<Response> => {
-  console.log('🔍 DEBUG: authenticatedFetch called with URL:', url);
-  console.log('🔍 DEBUG: Request options:', options);
+  console.log('🔍 FRONTEND: authenticatedFetch called with URL:', url);
+  console.log('🔍 FRONTEND: authenticatedFetch options:', options);
   
-  // Get token from localStorage or other storage
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-  console.log('🔍 DEBUG: Token found:', token ? `${token.substring(0, 50)}...` : 'null');
+  // Input validation
+  if (!url || typeof url !== 'string') {
+    console.log('🔍 FRONTEND: URL validation failed');
+    throw new Error('URL is required and must be a string');
+  }
+
+  // Get token from localStorage (client-side only) - CONSOLIDATED APPROACH
+  const token = getAuthToken();
+  console.log('🔍 FRONTEND: Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+  
+  // TEMPORARY DEBUG: Check if token is expired or invalid
+  if (token && typeof window !== 'undefined') {
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        const now = Math.floor(Date.now() / 1000);
+        console.log('🔍 FRONTEND: Token debug:', {
+          userId: payload.userId,
+          email: payload.email,
+          role: payload.role,
+          exp: payload.exp,
+          now: now,
+          expired: payload.exp < now,
+          timeUntilExpiry: payload.exp - now
+        });
+        
+        // If token is expired, clear it
+        if (payload.exp < now) {
+          console.log('🔍 FRONTEND: Token is expired, clearing auth data');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userData');
+          throw new Error('Token expired - please log in again');
+        }
+      }
+    } catch (error) {
+      console.log('🔍 FRONTEND: Token validation failed:', error);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      throw new Error('Invalid token - please log in again');
+    }
+  }
   
   // Check if user is authenticated before making the request
   if (!token && typeof window !== 'undefined') {
-    console.error('🚨 DEBUG: No auth token found, redirecting to login');
-    console.error('🚨 DEBUG: This will cause auto-redirect to login page!');
+    console.log('🔍 FRONTEND: No token found, cleaning up and throwing error');
+    // Clean up any stale auth data
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
-    // window.location.href = '/login';
     throw new Error('Authentication required');
   }
   
@@ -143,8 +190,10 @@ export const authenticatedFetch = async (
   // Add authorization header if token exists
   if (token) {
     headers[API.HEADERS.AUTHORIZATION] = `Bearer ${token}`;
+    console.log('🔍 FRONTEND: Authorization header set:', `Bearer ${token.substring(0, 20)}...`);
   }
   
+  console.log('🔍 FRONTEND: Final headers:', headers);
   
   // Set default options using API constants
   const defaultOptions: RequestInit = {
@@ -153,45 +202,42 @@ export const authenticatedFetch = async (
     ...options,
   };
   
+  console.log('🔍 FRONTEND: Final request options:', defaultOptions);
+  
   try {
-    console.log('🔍 DEBUG: Making fetch request to:', url);
+    console.log('🔍 FRONTEND: Making fetch request to:', url);
+    console.log('🔍 FRONTEND: Request body:', options.body);
     const response = await fetch(url, defaultOptions);
-    console.log('🔍 DEBUG: Response received, status:', response.status);
-    console.log('🔍 DEBUG: Response statusText:', response.statusText);
-    console.log('🔍 DEBUG: Response headers:', [...response.headers.entries()]);
+    console.log('🔍 FRONTEND: Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      url: response.url,
+      headers: Object.fromEntries(response.headers.entries())
+    });
     
     // Handle common HTTP status codes using API constants
     if (response.status === API.STATUS.UNAUTHORIZED) {
-      // Handle unauthorized - redirect to login or refresh token
+      console.log('🔍 FRONTEND: 401 Unauthorized response received');
+      // Handle unauthorized - clean up auth data and redirect
       if (typeof window !== 'undefined') {
-        console.error('🚨 DEBUG: UNAUTHORIZED RESPONSE DETECTED!');
-        console.error('🚨 DEBUG: This will trigger auto-redirect to login page!');
-        console.error('🔒 Unauthorized access - token may be expired or invalid');
-        console.error('🔒 Response status:', response.status);
-        console.error('🔒 Response URL:', url);
-        console.error('🔒 Response statusText:', response.statusText);
-        
-        // Try to get response body for more details
-        try {
-          const responseText = await response.clone().text();
-          console.error('🔒 Response body:', responseText);
-        } catch (e) {
-          console.error('🔒 Could not read response body:', e);
-        }
-        
+        console.log('🔍 FRONTEND: Cleaning up auth data and redirecting');
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
-        // Add a small delay to allow console logs to be seen before redirect
+        // Small delay to allow any error messages to be displayed
         setTimeout(() => {
-          console.error('🚨 DEBUG: REDIRECTING TO LOGIN PAGE NOW!');
           // window.location.href = '/login';
         }, 1000);
       }
-      throw new Error('Unauthorized access');
+      throw new Error('Unauthorized access - please log in again');
     }
     
     if (response.status === API.STATUS.FORBIDDEN) {
-      throw new Error('Access forbidden');
+      throw new Error('Access forbidden - insufficient permissions');
+    }
+    
+    if (response.status >= 500) {
+      throw new Error('Server error - please try again later');
     }
     
     if (response.status >= API.STATUS.INTERNAL_SERVER_ERROR) {
@@ -378,7 +424,7 @@ export const handleApiError = (error: any, redirectToLogin: boolean = true) => {
   // Check if it's an unauthorized error
   if (error?.message?.includes('Unauthorized') || 
       error?.error === 'Unauthorized' ||
-      error?.status === 401) {
+      error?.status === API.STATUS.UNAUTHORIZED) {
     
     if (redirectToLogin && typeof window !== 'undefined') {
       console.log('🔄 Redirecting to login due to unauthorized access');
@@ -419,11 +465,20 @@ export const requireAuth = (): void => {
 // AUTHENTICATION STORAGE UTILITIES (NON-DUPLICATE)
 // ============================================================================
 
+import { UserRole } from '@rentalshop/types';
+
 export interface StoredUser {
   id: number;
-  email: string;
+  firstName: string;
+  lastName: string;
   name: string;
-  role: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: Date | string;
+  emailVerified: boolean;
+  updatedAt: Date | string;
   merchantId?: number;
   outletId?: number;
   token: string;
@@ -431,11 +486,58 @@ export interface StoredUser {
 }
 
 /**
- * Get stored authentication token
+ * Get stored authentication token - CONSOLIDATED APPROACH
  */
 export const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('authToken');
+  
+  // Try new consolidated format first
+  const authData = localStorage.getItem('authData');
+  if (authData) {
+    try {
+      const parsed = JSON.parse(authData);
+      if (parsed.token && parsed.expiresAt) {
+        // Check if token is expired
+        if (Date.now() > parsed.expiresAt) {
+          console.log('🔍 Token is expired, clearing auth data');
+          clearAuthData();
+          return null;
+        }
+        return parsed.token;
+      }
+    } catch (error) {
+      console.warn('Failed to parse authData:', error);
+      clearAuthData();
+      return null;
+    }
+  }
+  
+  // Fallback to old format for backward compatibility
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    // Check if token is actually expired by decoding it
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        if (payload.exp) {
+          const now = Math.floor(Date.now() / 1000);
+          if (payload.exp < now) {
+            console.log('🔍 Token is expired, clearing auth data');
+            clearAuthData();
+            return null;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to decode JWT token for expiration check:', error);
+      clearAuthData();
+      return null;
+    }
+    return token;
+  }
+  
+  return null;
 };
 
 /**
@@ -445,18 +547,35 @@ export const getStoredUser = (): StoredUser | null => {
   if (typeof window === 'undefined') return null;
   
   try {
-    const userData = localStorage.getItem('userData');
-    if (!userData) return null;
-    
-    const user = JSON.parse(userData) as StoredUser;
-    
-    // Check if token is expired
-    if (user.expiresAt && Date.now() > user.expiresAt) {
-      clearAuthData();
-      return null;
+    // First try the new consolidated authData
+    const authData = localStorage.getItem('authData');
+    if (authData) {
+      const parsed = JSON.parse(authData);
+      if (parsed.user) {
+        // Check if token is expired
+        if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+          clearAuthData();
+          return null;
+        }
+        return parsed.user as StoredUser;
+      }
     }
     
-    return user;
+    // Fallback to old userData for backward compatibility
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const user = JSON.parse(userData) as StoredUser;
+      
+      // Check if token is expired
+      if (user.expiresAt && Date.now() > user.expiresAt) {
+        clearAuthData();
+        return null;
+      }
+      
+      return user;
+    }
+    
+    return null;
   } catch (error) {
     console.error('Failed to parse stored user data:', error);
     clearAuthData();
@@ -465,34 +584,74 @@ export const getStoredUser = (): StoredUser | null => {
 };
 
 /**
- * Store authentication data
+ * Store authentication data - CONSOLIDATED APPROACH
+ * Only stores ONE item: 'authData' with everything needed
  */
 export const storeAuthData = (token: string, user: User): void => {
   if (typeof window === 'undefined') return;
   
-  const storedUser: StoredUser = {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    merchantId: user.merchantId ? Number(user.merchantId) : undefined,
-    outletId: user.outletId ? Number(user.outletId) : undefined,
+  // Decode JWT token to get actual expiration time
+  let expiresAt = Date.now() + (24 * 60 * 60 * 1000); // Default fallback
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(atob(parts[1]));
+      if (payload.exp) {
+        expiresAt = payload.exp * 1000; // Convert to milliseconds
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to decode JWT token for expiration time:', error);
+  }
+  
+  const authData = {
     token,
-    expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+    user: {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      emailVerified: user.emailVerified,
+      updatedAt: user.updatedAt,
+      merchantId: user.merchantId ? Number(user.merchantId) : undefined,
+      outletId: user.outletId ? Number(user.outletId) : undefined,
+    },
+    expiresAt, // Use actual JWT expiration time
   };
   
-  localStorage.setItem('authToken', token);
-  localStorage.setItem('userData', JSON.stringify(storedUser));
+  // CONSOLIDATED: Only store ONE item with everything
+  localStorage.setItem('authData', JSON.stringify(authData));
+  
+  // Clean up old redundant items
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+  localStorage.removeItem('userData');
+  
+  console.log('✅ Auth data stored in consolidated format');
 };
 
 /**
- * Clear authentication data
+ * Clear authentication data - CONSOLIDATED APPROACH
  */
 export const clearAuthData = (): void => {
   if (typeof window === 'undefined') return;
   
+  console.log('🧹 Clearing auth data from localStorage');
+  
+  // Clear new consolidated format
+  localStorage.removeItem('authData');
+  
+  // Clear old redundant formats
   localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
   localStorage.removeItem('userData');
+  
+  console.log('✅ All auth data cleared');
 };
 
 /**
@@ -500,6 +659,22 @@ export const clearAuthData = (): void => {
  */
 export const getCurrentUser = (): StoredUser | null => {
   return getStoredUser();
+};
+
+/**
+ * Force clear all auth data and redirect to login
+ * Use this when you need to force a fresh login
+ */
+export const forceLogout = (): void => {
+  if (typeof window === 'undefined') return;
+  
+  console.log('🚪 Force logout - clearing all auth data');
+  clearAuthData();
+  
+  // Redirect to login page
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
 };
 
 /**

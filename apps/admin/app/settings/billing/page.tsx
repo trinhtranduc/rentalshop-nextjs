@@ -88,7 +88,10 @@ export default function BillingSettingsPage() {
   const handleSaveConfig = async () => {
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/settings/billing', {
+      // Use authenticatedFetch to ensure Authorization header is included
+      const { authenticatedFetch } = await import('@rentalshop/utils');
+      
+      const response = await authenticatedFetch('/api/settings/billing', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

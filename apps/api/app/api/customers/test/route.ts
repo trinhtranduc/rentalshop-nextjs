@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { customerCreateSchema } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * POST /api/customers/test
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     console.error('Error in test endpoint:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

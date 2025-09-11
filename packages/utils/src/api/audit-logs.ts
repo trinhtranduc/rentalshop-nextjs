@@ -5,7 +5,9 @@
  * All API requests should be made through these functions, not directly in UI components.
  */
 
-import { API_BASE_URL } from '../config/api';
+import { authenticatedFetch, parseApiResponse } from '../common';
+import { apiUrls } from '../config/api';
+import type { ApiResponse } from '../common';
 
 // Types
 export interface AuditLog {
@@ -82,58 +84,11 @@ export interface AuditLogStatsResponse {
   data: AuditLogStats;
 }
 
-/**
- * Get authentication token from localStorage
- */
-function getAuthToken(): string {
-  if (typeof window === 'undefined') return '';
-  return localStorage.getItem('authToken') || '';
-}
-
-/**
- * Make authenticated API request
- */
-async function makeAuthenticatedRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const token = getAuthToken();
-  
-  if (!token) {
-    throw new Error('No authentication token found. Please login again.');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    let errorMessage = `Request failed with status ${response.status}`;
-    
-    try {
-      const errorData = JSON.parse(errorText);
-      errorMessage = errorData.message || errorData.error || errorMessage;
-    } catch {
-      // If response is not JSON, use the text as error message
-      errorMessage = errorText || errorMessage;
-    }
-    
-    throw new Error(errorMessage);
-  }
-
-  return response.json();
-}
 
 /**
  * Get audit logs with filtering and pagination
  */
-export async function getAuditLogs(filter: AuditLogFilter = {}): Promise<AuditLogResponse> {
+export async function getAuditLogs(filter: AuditLogFilter = {}): Promise<ApiResponse<AuditLog[]>> {
   const params = new URLSearchParams();
   
   Object.entries(filter).forEach(([key, value]) => {
@@ -143,15 +98,16 @@ export async function getAuditLogs(filter: AuditLogFilter = {}): Promise<AuditLo
   });
 
   const queryString = params.toString();
-  const endpoint = `/api/audit-logs${queryString ? `?${queryString}` : ''}`;
+  const url = queryString ? `${apiUrls.auditLogs.list}?${queryString}` : apiUrls.auditLogs.list;
   
-  return makeAuthenticatedRequest<AuditLogResponse>(endpoint);
+  const response = await authenticatedFetch(url);
+  return await parseApiResponse<AuditLog[]>(response);
 }
 
 /**
  * Get audit log statistics
  */
-export async function getAuditLogStats(filter: Partial<AuditLogFilter> = {}): Promise<AuditLogStatsResponse> {
+export async function getAuditLogStats(filter: Partial<AuditLogFilter> = {}): Promise<ApiResponse<AuditLogStats>> {
   const params = new URLSearchParams();
   
   Object.entries(filter).forEach(([key, value]) => {
@@ -161,9 +117,10 @@ export async function getAuditLogStats(filter: Partial<AuditLogFilter> = {}): Pr
   });
 
   const queryString = params.toString();
-  const endpoint = `/api/audit-logs/stats${queryString ? `?${queryString}` : ''}`;
+  const url = queryString ? `${apiUrls.auditLogs.stats}?${queryString}` : apiUrls.auditLogs.stats;
   
-  return makeAuthenticatedRequest<AuditLogStatsResponse>(endpoint);
+  const response = await authenticatedFetch(url);
+  return await parseApiResponse<AuditLogStats>(response);
 }
 
 /**
@@ -179,17 +136,11 @@ export async function exportAuditLogs(filter: AuditLogFilter = {}): Promise<Blob
   });
 
   const queryString = params.toString();
-  const endpoint = `/api/audit-logs/export${queryString ? `?${queryString}` : ''}`;
+  const url = queryString ? `${apiUrls.auditLogs.export}?${queryString}` : apiUrls.auditLogs.export;
   
-  const token = getAuthToken();
-  
-  if (!token) {
-    throw new Error('No authentication token found. Please login again.');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await authenticatedFetch(url, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/octet-stream',
     },
   });
 

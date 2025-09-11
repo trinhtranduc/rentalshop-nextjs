@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getActivePlanVariants } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 export async function GET(
   request: NextRequest,
@@ -28,7 +29,7 @@ export async function GET(
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -55,7 +56,7 @@ export async function GET(
     console.error('Error fetching plan variants:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

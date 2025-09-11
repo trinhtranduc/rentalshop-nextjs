@@ -2,6 +2,8 @@
  * Subscription Error Handling Utilities
  * Provides consistent error handling for subscription-related issues
  */
+import {API} from '@rentalshop/constants';
+
 
 export interface SubscriptionErrorResponse {
   success: false;
@@ -34,7 +36,7 @@ export function handleSubscriptionError(error: unknown): SubscriptionErrorRespon
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Subscription error',
-      status: 403 // Forbidden due to subscription issue
+      status: API.STATUS.FORBIDDEN // Forbidden due to subscription issue
     };
   }
   
@@ -42,7 +44,7 @@ export function handleSubscriptionError(error: unknown): SubscriptionErrorRespon
   return {
     success: false,
     error: error instanceof Error ? error.message : 'Unknown error',
-    status: 500
+    status: API.STATUS.INTERNAL_SERVER_ERROR
   };
 }
 

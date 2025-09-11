@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 interface HealthCheck {
   name: string;
@@ -199,6 +200,6 @@ export async function GET(request: NextRequest) {
         memory: { used: 0, total: 0, percentage: 0 },
         cpu: { usage: 0 }
       }
-    }, { status: 503 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }

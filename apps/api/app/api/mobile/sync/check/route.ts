@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiConfig } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * @swagger
@@ -103,6 +104,6 @@ export async function GET(request: NextRequest) {
       success: false,
       message: 'Sync check failed',
       error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

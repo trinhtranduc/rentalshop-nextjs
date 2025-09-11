@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 export async function GET(
   request: NextRequest,
@@ -34,7 +35,7 @@ export async function GET(
     if (!merchant) {
       return NextResponse.json(
         { success: false, message: 'Merchant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -68,7 +69,7 @@ export async function GET(
     if (!outlet) {
       return NextResponse.json(
         { success: false, message: 'Outlet not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -99,7 +100,7 @@ export async function GET(
     console.error('Error fetching outlet details:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch outlet details' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -136,7 +137,7 @@ export async function PUT(
     if (!merchant) {
       return NextResponse.json(
         { success: false, message: 'Merchant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -170,7 +171,7 @@ export async function PUT(
     if (updatedOutlet.count === 0) {
       return NextResponse.json(
         { success: false, message: 'Outlet not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -228,7 +229,7 @@ export async function PUT(
     console.error('Error updating outlet:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update outlet' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

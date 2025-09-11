@@ -19,7 +19,7 @@ export const outletsApi = {
    * Get all outlets
    */
   async getOutlets(): Promise<ApiResponse<OutletsResponse>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets`);
+    const response = await authenticatedFetch(apiUrls.outlets.list);
     const result = await parseApiResponse<OutletsResponse>(response);
     return result;
   },
@@ -33,7 +33,7 @@ export const outletsApi = {
       limit: limit.toString()
     });
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.outlets.list}?${params.toString()}`);
     return await parseApiResponse<OutletsResponse>(response);
   },
 
@@ -41,7 +41,7 @@ export const outletsApi = {
    * Get outlet by ID
    */
   async getOutlet(outletId: number): Promise<ApiResponse<Outlet>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets/${outletId}`);
+    const response = await authenticatedFetch(apiUrls.outlets.get(outletId));
     return await parseApiResponse<Outlet>(response);
   },
 
@@ -49,7 +49,7 @@ export const outletsApi = {
    * Create a new outlet
    */
   async createOutlet(outletData: OutletCreateInput): Promise<ApiResponse<Outlet>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets`, {
+    const response = await authenticatedFetch(apiUrls.outlets.create, {
       method: 'POST',
       body: JSON.stringify(outletData),
     });
@@ -60,7 +60,7 @@ export const outletsApi = {
    * Update an existing outlet
    */
   async updateOutlet(outletId: number, outletData: OutletUpdateInput): Promise<ApiResponse<Outlet>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?outletId=${outletId}`, {
+    const response = await authenticatedFetch(apiUrls.outlets.update(outletId), {
       method: 'PUT',
       body: JSON.stringify(outletData),
     });
@@ -71,7 +71,7 @@ export const outletsApi = {
    * Delete an outlet
    */
   async deleteOutlet(outletId: number): Promise<ApiResponse<void>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?outletId=${outletId}`, {
+    const response = await authenticatedFetch(apiUrls.outlets.delete(outletId), {
       method: 'DELETE',
     });
     return await parseApiResponse<void>(response);
@@ -81,7 +81,7 @@ export const outletsApi = {
    * Get outlets by shop
    */
   async getOutletsByShop(shopId: number): Promise<ApiResponse<OutletsResponse>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?shopId=${shopId}`);
+    const response = await authenticatedFetch(`${apiUrls.outlets.list}?shopId=${shopId}`);
     return await parseApiResponse<OutletsResponse>(response);
   },
 
@@ -90,9 +90,9 @@ export const outletsApi = {
    */
   async getOutletsByMerchant(merchantId: number): Promise<ApiResponse<OutletsResponse>> {
     console.log('🔍 Outlets API Client: Calling getOutletsByMerchant with merchantId:', merchantId);
-    console.log('🔍 Outlets API Client: API URL:', `${apiUrls.base}/api/outlets?merchantId=${merchantId}&isActive=all`);
+    console.log('🔍 Outlets API Client: API URL:', `${apiUrls.outlets.list}?merchantId=${merchantId}&isActive=all`);
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets?merchantId=${merchantId}&isActive=all`);
+    const response = await authenticatedFetch(`${apiUrls.outlets.list}?merchantId=${merchantId}&isActive=all`);
     console.log('🔍 Outlets API Client: Raw response:', response);
     
     const result = await parseApiResponse<OutletsResponse>(response);
@@ -108,7 +108,7 @@ export const outletsApi = {
    * Get outlet statistics
    */
   async getOutletStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/outlets/stats`);
+    const response = await authenticatedFetch(apiUrls.outlets.stats);
     return await parseApiResponse<any>(response);
   }
 };

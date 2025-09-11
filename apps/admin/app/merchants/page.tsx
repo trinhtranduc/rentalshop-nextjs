@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import { useRouter } from 'next/navigation';
 import { 
   Merchants,
@@ -45,7 +46,7 @@ export default function MerchantsPage() {
       setLoading(true);
       
       // Get auth token from localStorage
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         console.error('No auth token found');
         return;

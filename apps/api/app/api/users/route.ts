@@ -6,6 +6,7 @@ import { usersQuerySchema, userCreateSchema, userUpdateSchema } from '@rentalsho
 import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 
 export interface UserFilters {
@@ -74,7 +75,7 @@ export const GET = withUserManagementAuth(async (authorizedRequest) => {
       });
     }
     return new NextResponse(body, { 
-      status: 200, 
+      status: API.STATUS.OK, 
       headers: { 
         'Content-Type': 'application/json', 
         ETag: etag, 
@@ -91,7 +92,7 @@ export const GET = withUserManagementAuth(async (authorizedRequest) => {
         error: 'Failed to fetch users',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });
@@ -139,7 +140,7 @@ export const POST = withUserManagementAuth(async (authorizedRequest) => {
       console.log('❌ User does not have merchant access');
       return NextResponse.json(
         { success: false, error: 'User does not have merchant access' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
     
@@ -168,7 +169,7 @@ export const POST = withUserManagementAuth(async (authorizedRequest) => {
       console.error('❌ createUser function is not available');
       return NextResponse.json(
         { success: false, error: 'Database function not available' },
-        { status: 500 }
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
     
@@ -183,7 +184,7 @@ export const POST = withUserManagementAuth(async (authorizedRequest) => {
       console.error('❌ Database returned no user data');
       return NextResponse.json(
         { success: false, error: 'Database error: No user data returned' },
-        { status: 500 }
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
     
@@ -274,7 +275,7 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
       console.error('Database functions not available:', { findUserById: !!findUserById, updateUser: !!updateUser });
       return NextResponse.json(
         { success: false, error: 'Database functions not available' },
-        { status: 500 }
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
     
@@ -282,7 +283,7 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
     const existingUser = await findUserByPublicId(parseInt(publicId));
     
     if (!existingUser) {
-      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'User not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
     // Validate scope access - ensure user can only update users within their scope
@@ -293,7 +294,7 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: Cannot update user from different organization' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -304,7 +305,7 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: Cannot update user from different outlet' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -322,7 +323,7 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
       success: true,
       data: updatedUser,
       message: 'User updated successfully',
-    }, { status: 200 });
+    }, { status: API.STATUS.OK });
   } catch (error) {
     console.error('Error updating user:', error);
     return NextResponse.json(
@@ -331,7 +332,7 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
         error: 'Failed to update user',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });
@@ -370,13 +371,27 @@ async function getUsers(
 
   // Apply role-based scope filtering
   if (userScope.merchantId) {
-    where.merchantId = userScope.merchantId;
-    console.log('🔍 Filtering by merchantId:', userScope.merchantId);
+    // Convert publicId to CUID for database query
+    const merchant = await prisma.merchant.findUnique({
+      where: { publicId: userScope.merchantId },
+      select: { id: true }
+    });
+    if (merchant) {
+      where.merchantId = merchant.id;
+      console.log('🔍 Filtering by merchantId:', userScope.merchantId, '-> CUID:', merchant.id);
+    }
   }
   
   if (userScope.outletId) {
-    where.outletId = userScope.outletId;
-    console.log('🔍 Filtering by outletId:', userScope.outletId);
+    // Convert publicId to CUID for database query
+    const outlet = await prisma.outlet.findUnique({
+      where: { publicId: userScope.outletId },
+      select: { id: true }
+    });
+    if (outlet) {
+      where.outletId = outlet.id;
+      console.log('🔍 Filtering by outletId:', userScope.outletId, '-> CUID:', outlet.id);
+    }
   }
 
   if (filters.role) {
@@ -552,7 +567,7 @@ export const DELETE = withUserManagementAuth(async (authorizedRequest) => {
     if (error.message.includes('not found')) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -565,7 +580,7 @@ export const DELETE = withUserManagementAuth(async (authorizedRequest) => {
 
     return NextResponse.json(
       { success: false, message: 'Failed to delete user', error: error.message },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }); 

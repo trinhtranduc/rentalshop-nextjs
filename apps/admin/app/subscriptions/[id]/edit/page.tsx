@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import { 
   SubscriptionForm,
   PageWrapper,
@@ -37,7 +38,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
       // Fetch subscription
       const subscriptionResponse = await fetch(`/api/subscriptions/${params.id}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       const subscriptionData = await subscriptionResponse.json();
@@ -49,7 +50,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
       // Fetch plans
       const plansResponse = await fetch('/api/plans', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       const plansData = await plansResponse.json();
@@ -61,7 +62,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
       // Fetch merchants
       const merchantsResponse = await fetch('/api/merchants', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       const merchantsData = await merchantsResponse.json();
@@ -89,7 +90,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify(data)
       });

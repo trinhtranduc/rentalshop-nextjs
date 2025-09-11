@@ -168,10 +168,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           throw new Error(result.error || result.message || 'Registration failed');
         }
         
-        // Store token in localStorage
+        // Store token in localStorage using consolidated function
         if (result.data?.token) {
-          localStorage.setItem('authToken', result.data.token);
-          localStorage.setItem('user', JSON.stringify(result.data.user));
+          const { storeAuthData } = await import('@rentalshop/utils');
+          storeAuthData(result.data.token, result.data.user);
         }
         
         showSuccess("Registration Complete!", "Account created successfully.");

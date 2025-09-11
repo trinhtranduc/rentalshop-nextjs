@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/categories/[id]
@@ -30,8 +31,16 @@ export async function GET(
     // Build where clause based on user role and scope
     const where: any = { publicId: categoryId };
     
-    if (user.merchantId) {
-      where.merchantId = user.merchantId;
+    if (user.merchant?.id) {
+      // Find merchant by publicId to get the CUID
+      const merchant = await prisma.merchant.findUnique({
+        where: { publicId: user.merchant.id },
+        select: { id: true }
+      });
+      
+      if (merchant) {
+        where.merchantId = merchant.id; // Use CUID for database query
+      }
     }
 
     const category = await prisma.category.findFirst({
@@ -50,7 +59,7 @@ export async function GET(
     if (!category) {
       return NextResponse.json(
         { success: false, message: 'Category not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -74,7 +83,7 @@ export async function GET(
     console.error('Error fetching category:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch category' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -100,7 +109,7 @@ export async function PUT(
     if (!user.merchantId) {
       return NextResponse.json(
         { success: false, message: 'Merchant access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -134,7 +143,7 @@ export async function PUT(
     if (!existingCategory) {
       return NextResponse.json(
         { success: false, message: 'Category not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -150,7 +159,7 @@ export async function PUT(
     if (nameConflict) {
       return NextResponse.json(
         { success: false, message: 'Category with this name already exists' },
-        { status: 409 }
+        { status: API.STATUS.CONFLICT }
       );
     }
 
@@ -194,7 +203,7 @@ export async function PUT(
     console.error('Error updating category:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update category' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -220,7 +229,7 @@ export async function DELETE(
     if (!user.merchantId) {
       return NextResponse.json(
         { success: false, message: 'Merchant access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -248,7 +257,7 @@ export async function DELETE(
     if (!existingCategory) {
       return NextResponse.json(
         { success: false, message: 'Category not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -259,7 +268,7 @@ export async function DELETE(
           success: false, 
           message: `Cannot delete category "${existingCategory.name}" because it has ${existingCategory.products.length} product(s) assigned to it. Please reassign or delete these products first.` 
         },
-        { status: 409 }
+        { status: API.STATUS.CONFLICT }
       );
     }
 
@@ -277,7 +286,7 @@ export async function DELETE(
     console.error('Error deleting category:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete category' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

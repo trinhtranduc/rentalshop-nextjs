@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import dynamic from 'next/dynamic';
 
 // Dynamically import SwaggerUI to avoid SSR issues
@@ -102,7 +103,7 @@ export default function SwaggerUIComponent({
             }}
             requestInterceptor={(request: any) => {
               // Add authentication headers if available
-              const token = localStorage.getItem('authToken');
+              const token = getAuthToken();
               if (token) {
                 request.headers.Authorization = `Bearer ${token}`;
               }

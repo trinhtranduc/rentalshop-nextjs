@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@rentalshop/auth';
 import { loginSchema } from '@rentalshop/utils';
 import { apiConfig } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * @swagger
@@ -130,6 +131,6 @@ export async function POST(request: NextRequest) {
       success: false,
       message: 'Mobile login failed',
       error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

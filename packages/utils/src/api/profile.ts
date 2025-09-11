@@ -11,7 +11,7 @@ export const profileApi = {
    * Get current user profile
    */
   async getProfile(): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/profile`);
+    const response = await authenticatedFetch(apiUrls.settings.user);
     return await parseApiResponse<User>(response);
   },
 
@@ -19,7 +19,7 @@ export const profileApi = {
    * Update current user profile
    */
   async updateProfile(profileData: ProfileUpdateInput): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/profile`, {
+    const response = await authenticatedFetch(apiUrls.settings.user, {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });
@@ -34,7 +34,7 @@ export const profileApi = {
     newPassword: string;
     confirmPassword: string;
   }): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/change-password`, {
+    const response = await authenticatedFetch(apiUrls.settings.changePassword, {
       method: 'PATCH',
       body: JSON.stringify(passwordData),
     });
@@ -48,7 +48,7 @@ export const profileApi = {
     const formData = new FormData();
     formData.append('profilePicture', file);
 
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/upload-picture`, {
+    const response = await authenticatedFetch(apiUrls.settings.uploadPicture, {
       method: 'POST',
       body: formData,
       // Don't set Content-Type header for FormData
@@ -60,7 +60,7 @@ export const profileApi = {
    * Delete profile picture
    */
   async deleteProfilePicture(): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/delete-picture`, {
+    const response = await authenticatedFetch(apiUrls.settings.deletePicture, {
       method: 'DELETE',
     });
     return await parseApiResponse<{ message: string }>(response);
@@ -70,7 +70,7 @@ export const profileApi = {
    * Get user preferences
    */
   async getPreferences(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/preferences`);
+    const response = await authenticatedFetch(apiUrls.settings.preferences);
     return await parseApiResponse<any>(response);
   },
 
@@ -78,7 +78,7 @@ export const profileApi = {
    * Update user preferences
    */
   async updatePreferences(preferences: any): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/preferences`, {
+    const response = await authenticatedFetch(apiUrls.settings.preferences, {
       method: 'PUT',
       body: JSON.stringify(preferences),
     });
@@ -94,7 +94,7 @@ export const profileApi = {
       limit: limit.toString()
     });
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/activity-log?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.settings.activityLog}?${params.toString()}`);
     return await parseApiResponse<any>(response);
   },
 
@@ -107,7 +107,7 @@ export const profileApi = {
       limit: limit.toString()
     });
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/notifications?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.settings.profileNotifications}?${params.toString()}`);
     return await parseApiResponse<any>(response);
   },
 
@@ -115,7 +115,7 @@ export const profileApi = {
    * Mark notification as read
    */
   async markNotificationAsRead(notificationId: number): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/notifications/${notificationId}/read`, {
+    const response = await authenticatedFetch(apiUrls.settings.markNotificationRead(notificationId), {
       method: 'PATCH',
     });
     return await parseApiResponse<{ message: string }>(response);
@@ -125,7 +125,7 @@ export const profileApi = {
    * Mark all notifications as read
    */
   async markAllNotificationsAsRead(): Promise<ApiResponse<{ message: string }>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/profile/notifications/mark-all-read`, {
+    const response = await authenticatedFetch(apiUrls.settings.markAllNotificationsRead, {
       method: 'PATCH',
     });
     return await parseApiResponse<{ message: string }>(response);

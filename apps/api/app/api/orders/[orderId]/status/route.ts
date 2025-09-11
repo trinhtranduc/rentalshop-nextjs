@@ -3,6 +3,7 @@ import { authenticateRequest } from '@rentalshop/auth';
 import { updateOrder } from '@rentalshop/database';
 import { assertAnyRole } from '@rentalshop/auth';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 // Schema for status update
 const statusUpdateSchema = z.object({
@@ -58,7 +59,7 @@ export async function PATCH(
     try {
       assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
     } catch {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: API.STATUS.FORBIDDEN });
     }
 
     // Parse and validate request body
@@ -144,7 +145,7 @@ export async function PATCH(
     if (!updatedOrder) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -184,7 +185,7 @@ export async function PATCH(
     console.error('Error updating order status:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import {API} from '@rentalshop/constants';
 
 const execAsync = promisify(exec);
 
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
       error: error instanceof Error ? error.message : 'Unknown error'
     };
 
-    return NextResponse.json(result, { status: 500 });
+    return NextResponse.json(result, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -176,6 +177,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to list backups'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }

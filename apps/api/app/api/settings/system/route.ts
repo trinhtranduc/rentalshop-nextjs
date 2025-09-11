@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 // Validation schemas
 const systemSettingSchema = z.object({
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching system settings:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch system settings' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
     if (existingSetting) {
       return NextResponse.json(
         { success: false, message: 'Setting with this key already exists' },
-        { status: 409 }
+        { status: API.STATUS.CONFLICT }
       );
     }
 
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating system setting:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to create system setting' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

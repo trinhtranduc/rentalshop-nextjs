@@ -9,6 +9,7 @@ import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
 import { withSubscriptionRequired, withSubscriptionOptional, hasPermission } from '../../middleware/subscription-access';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/products
@@ -41,7 +42,7 @@ export const GET = withSubscriptionOptional(async (request: NextRequest) => {
           message: 'Access denied: ' + (subscriptionAccess?.reason || 'Insufficient subscription access'),
           accessLevel: subscriptionAccess?.accessLevel
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -108,7 +109,7 @@ export const GET = withSubscriptionOptional(async (request: NextRequest) => {
 
     return NextResponse.json(
       { success: false, message: 'Failed to fetch products' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }, { requiredAction: 'canView' });
@@ -134,7 +135,7 @@ export const POST = withSubscriptionRequired(async (request: NextRequest) => {
           message: 'Access denied: ' + (subscriptionAccess?.reason || 'Cannot create products with current subscription'),
           accessLevel: subscriptionAccess?.accessLevel
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -146,7 +147,7 @@ export const POST = withSubscriptionRequired(async (request: NextRequest) => {
           message: 'Access denied: Cannot manage products with current subscription',
           accessLevel: subscriptionAccess?.accessLevel
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -206,7 +207,7 @@ export const POST = withSubscriptionRequired(async (request: NextRequest) => {
 
     return NextResponse.json(
       { success: false, message: 'Failed to create product' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }, { requiredAction: 'canCreate' });
@@ -232,7 +233,7 @@ export const PUT = withSubscriptionRequired(async (request: NextRequest) => {
           message: 'Access denied: ' + (subscriptionAccess?.reason || 'Cannot edit products with current subscription'),
           accessLevel: subscriptionAccess?.accessLevel
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -244,7 +245,7 @@ export const PUT = withSubscriptionRequired(async (request: NextRequest) => {
           message: 'Access denied: Cannot manage products with current subscription',
           accessLevel: subscriptionAccess?.accessLevel
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -299,7 +300,7 @@ export const PUT = withSubscriptionRequired(async (request: NextRequest) => {
 
     return NextResponse.json(
       { success: false, message: 'Failed to update products' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }, { requiredAction: 'canEdit' });
@@ -325,7 +326,7 @@ export const DELETE = withSubscriptionRequired(async (request: NextRequest) => {
           message: 'Access denied: ' + (subscriptionAccess?.reason || 'Cannot delete products with current subscription'),
           accessLevel: subscriptionAccess?.accessLevel
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -337,7 +338,7 @@ export const DELETE = withSubscriptionRequired(async (request: NextRequest) => {
           message: 'Access denied: Cannot manage products with current subscription',
           accessLevel: subscriptionAccess?.accessLevel
         },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -388,7 +389,7 @@ export const DELETE = withSubscriptionRequired(async (request: NextRequest) => {
     console.error('Error in DELETE /api/products:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete products' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }, { requiredAction: 'canDelete' });

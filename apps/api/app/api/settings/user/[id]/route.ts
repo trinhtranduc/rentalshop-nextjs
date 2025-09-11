@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 // Validation schemas
 const updateUserPreferenceSchema = z.object({
@@ -42,7 +43,7 @@ export async function GET(
     if (!preference) {
       return NextResponse.json(
         { success: false, message: 'Preference not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -65,7 +66,7 @@ export async function GET(
     console.error('Error fetching user preference:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch user preference' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -106,7 +107,7 @@ export async function PUT(
     if (!existingPreference) {
       return NextResponse.json(
         { success: false, message: 'Preference not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -145,7 +146,7 @@ export async function PUT(
     console.error('Error updating user preference:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update user preference' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -183,7 +184,7 @@ export async function DELETE(
     if (!existingPreference) {
       return NextResponse.json(
         { success: false, message: 'Preference not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -200,7 +201,7 @@ export async function DELETE(
     console.error('Error deleting user preference:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete user preference' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

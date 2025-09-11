@@ -1,4 +1,5 @@
 import { User } from '@rentalshop/types';
+import { getAuthToken } from '@rentalshop/utils';
 
 export interface UserApiResponse {
   success: boolean;
@@ -21,7 +22,7 @@ export class UserApiClient {
     const url = `${this.baseUrl}${endpoint}`;
     
     // Get auth token from localStorage or wherever it's stored
-    const token = localStorage.getItem('authToken') || '';
+    const token = getAuthToken() || '';
     
     const config: RequestInit = {
       headers: {

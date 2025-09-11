@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { updateMerchant, prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
-import { updateMerchant } from '@rentalshop/database';
+import { API } from '@rentalshop/constants';
 
 /**
  * PUT /api/settings/merchant
@@ -9,21 +10,35 @@ import { updateMerchant } from '@rentalshop/database';
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication using centralized middleware
+    console.log('🔍 MERCHANT API: PUT /api/settings/merchant called');
+    console.log('🔍 MERCHANT API: Request method:', request.method);
+    console.log('🔍 MERCHANT API: Request URL:', request.url);
+    console.log('🔍 MERCHANT API: Request headers:', Object.fromEntries(request.headers.entries()));
+    
+    // Verify authentication using the centralized method (same as profile API)
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
+      console.log('🔍 MERCHANT API: Authentication failed');
       return authResult.response;
     }
-    
-    const user = authResult.user;
 
-    // Check if user has merchant access
-    if (!user.merchant?.id) {
+    const user = authResult.user;
+    console.log('🔍 MERCHANT API: Authentication successful:', {
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
+
+    // Check if user has merchant role
+    if (user.role !== 'MERCHANT' && user.role !== 'ADMIN') {
+      console.log('🔍 MERCHANT API: Invalid role, returning 403');
       return NextResponse.json(
-        { success: false, message: 'User does not have merchant access' },
-        { status: 403 }
+        { success: false, message: 'Merchant access required' },
+        { status: API.STATUS.FORBIDDEN }
       );
     }
+    
+    console.log('🔍 MERCHANT API: Role check passed, proceeding with request');
 
     const body = await request.json();
     const { 
@@ -44,15 +59,38 @@ export async function PUT(request: NextRequest) {
     if (!name) {
       return NextResponse.json(
         { success: false, message: 'Business name is required' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     // Email field is disabled - users cannot change their email address
     // This ensures email uniqueness and prevents account hijacking
 
+    // Get the merchant ID from the authenticated user
+    console.log('🔍 MERCHANT API: Looking up user in database with publicId:', user.id);
+    const dbUser = await prisma.user.findUnique({
+      where: { publicId: user.id },
+      include: { merchant: true }
+    });
+
+    console.log('🔍 MERCHANT API: Database query result:', {
+      userFound: !!dbUser,
+      hasMerchant: !!(dbUser?.merchant),
+      merchantId: dbUser?.merchant?.id,
+      merchantPublicId: dbUser?.merchant?.publicId
+    });
+
+    if (!dbUser || !dbUser.merchant) {
+      console.log('🔍 MERCHANT API: User or merchant not found, returning 403');
+      return NextResponse.json(
+        { success: false, message: 'User does not have merchant access' },
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
     // Update merchant using the centralized database function
-    const updatedMerchant = await updateMerchant(user.merchant.id, {
+    console.log('🔍 MERCHANT API: Calling updateMerchant with publicId:', dbUser.merchant.publicId);
+    const updatedMerchant = await updateMerchant(dbUser.merchant.publicId, {
       name,
       phone,
       address,
@@ -66,6 +104,7 @@ export async function PUT(request: NextRequest) {
       description
     });
 
+    console.log('🔍 MERCHANT API: Update successful, returning response');
     return NextResponse.json({
       success: true,
       message: 'Merchant information updated successfully',
@@ -93,11 +132,12 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error updating merchant information:', error);
+    console.error('🔍 MERCHANT API: Error updating merchant information:', error);
+    console.error('🔍 MERCHANT API: Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { success: false, message: 'Failed to update merchant information', error: errorMessage },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

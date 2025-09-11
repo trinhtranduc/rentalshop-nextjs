@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extendSubscription } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // POST /api/subscriptions/extend - Extend subscription (Admin only)
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Admin access required' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
     console.error('Error extending subscription:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to extend subscription' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

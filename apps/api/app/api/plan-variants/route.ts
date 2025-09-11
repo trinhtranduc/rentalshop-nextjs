@@ -7,6 +7,7 @@ import {
 import { authenticateRequest } from '@rentalshop/auth';
 import { planVariantCreateSchema } from '@rentalshop/utils';
 import type { PlanVariantCreateInput } from '@rentalshop/types';
+import {API} from '@rentalshop/constants';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN.STATUS.FORBIDDEN }
       );
     }
 
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching plan variants:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

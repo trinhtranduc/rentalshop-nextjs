@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // Payment method validation
 const paymentMethodSchema = z.enum(['STRIPE', 'TRANSFER', 'MANUAL', 'CASH', 'CHECK']);
@@ -68,7 +69,7 @@ export async function POST(
     if (!merchant) {
       return NextResponse.json(
         { success: false, message: 'Merchant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -152,7 +153,7 @@ export async function POST(
       success: false,
       message: 'Failed to create payment',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -238,7 +239,7 @@ export async function GET(
       success: false,
       message: 'Failed to get payments',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
@@ -275,7 +276,7 @@ export async function PATCH(
     if (!payment) {
       return NextResponse.json(
         { success: false, message: 'Payment not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -345,6 +346,6 @@ export async function PATCH(
       success: false,
       message: 'Failed to update payment status',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }

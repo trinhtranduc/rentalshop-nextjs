@@ -28,7 +28,11 @@ export {
   handleApiResponse,
 } from '@rentalshop/utils';
 
-export const isAuthenticated = (): boolean => !!(typeof window !== 'undefined' && localStorage.getItem('authToken'));
+export const isAuthenticated = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const token = getAuthToken();
+  return !!token;
+};
 
 export const verifyTokenWithServer = async (): Promise<boolean> => {
   try {
@@ -81,9 +85,6 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
     
     const response = await fetch(apiUrls.auth.login, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ email, password }),
     });
 

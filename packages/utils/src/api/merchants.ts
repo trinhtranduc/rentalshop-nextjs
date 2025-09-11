@@ -1,5 +1,6 @@
-import { authenticatedFetch, parseApiResponse, apiUrls } from '../index';
-import type { ApiResponse } from '../index';
+import { authenticatedFetch, parseApiResponse } from '../common';
+import { apiUrls } from '../config/api';
+import type { ApiResponse } from '../common';
 
 // ============================================================================
 // TYPES
@@ -57,7 +58,7 @@ export const merchantsApi = {
    * Get all merchants
    */
   async getMerchants(): Promise<ApiResponse<MerchantsResponse>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants`);
+    const response = await authenticatedFetch(apiUrls.merchants.list);
     const result = await parseApiResponse<MerchantsResponse>(response);
     return result;
   },
@@ -66,7 +67,7 @@ export const merchantsApi = {
    * Get merchants with pagination
    */
   async getMerchantsPaginated(page: number = 1, limit: number = 50): Promise<ApiResponse<MerchantsResponse>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants?page=${page}&limit=${limit}`);
+    const response = await authenticatedFetch(`${apiUrls.merchants.list}?page=${page}&limit=${limit}`);
     const result = await parseApiResponse<MerchantsResponse>(response);
     return result;
   },
@@ -91,7 +92,7 @@ export const merchantsApi = {
     if (filters.limit) params.append('limit', filters.limit.toString());
     if (filters.offset) params.append('offset', filters.offset.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants?${params.toString()}`);
+    const response = await authenticatedFetch(`${apiUrls.merchants.list}?${params.toString()}`);
     return await parseApiResponse<MerchantsResponse>(response);
   },
 
@@ -99,7 +100,7 @@ export const merchantsApi = {
    * Get merchant by ID
    */
   async getMerchantById(id: number): Promise<ApiResponse<Merchant>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${id}`);
+    const response = await authenticatedFetch(apiUrls.merchants.get(id));
     const result = await parseApiResponse<Merchant>(response);
     return result;
   },
@@ -108,7 +109,7 @@ export const merchantsApi = {
    * Get merchant by public ID
    */
   async getMerchantByPublicId(publicId: number): Promise<ApiResponse<Merchant>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants?publicId=${publicId}`);
+    const response = await authenticatedFetch(`${apiUrls.merchants.list}?publicId=${publicId}`);
     const result = await parseApiResponse<Merchant>(response);
     return result;
   },
@@ -117,7 +118,7 @@ export const merchantsApi = {
    * Get merchant detail with full data (subscriptions, outlets, users, etc.)
    */
   async getMerchantDetail(publicId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${publicId}`);
+    const response = await authenticatedFetch(apiUrls.merchants.get(publicId));
     const result = await parseApiResponse<any>(response);
     return result;
   },
@@ -126,11 +127,8 @@ export const merchantsApi = {
    * Create new merchant
    */
   async createMerchant(merchantData: Partial<Merchant>): Promise<ApiResponse<Merchant>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants`, {
+    const response = await authenticatedFetch(apiUrls.merchants.create, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(merchantData),
     });
     const result = await parseApiResponse<Merchant>(response);
@@ -141,11 +139,8 @@ export const merchantsApi = {
    * Update merchant
    */
   async updateMerchant(id: number, merchantData: Partial<Merchant>): Promise<ApiResponse<Merchant>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${id}`, {
+    const response = await authenticatedFetch(apiUrls.merchants.update(id), {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(merchantData),
     });
     const result = await parseApiResponse<Merchant>(response);
@@ -156,7 +151,7 @@ export const merchantsApi = {
    * Delete merchant
    */
   async deleteMerchant(id: number): Promise<ApiResponse<void>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${id}`, {
+    const response = await authenticatedFetch(apiUrls.merchants.delete(id), {
       method: 'DELETE',
     });
     const result = await parseApiResponse<void>(response);
@@ -183,9 +178,6 @@ export const merchantsApi = {
   }): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/plan`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(planData),
     });
     const result = await parseApiResponse<any>(response);
@@ -207,9 +199,6 @@ export const merchantsApi = {
   async disableMerchantPlan(merchantId: number, subscriptionId: number, reason: string): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/plan`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         action: 'disable',
         subscriptionId,
@@ -226,9 +215,6 @@ export const merchantsApi = {
   async deleteMerchantPlan(merchantId: number, subscriptionId: number, reason: string): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/plan`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         action: 'delete',
         subscriptionId,
@@ -237,5 +223,147 @@ export const merchantsApi = {
     });
     const result = await parseApiResponse<any>(response);
     return result;
+  },
+
+  // ============================================================================
+  // MERCHANT-SPECIFIC ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Merchant Products
+   */
+  products: {
+    list: async (merchantId: number) => {
+      return authenticatedFetch(apiUrls.merchants.products.list(merchantId));
+    },
+
+    get: async (merchantId: number, productId: number) => {
+      return authenticatedFetch(apiUrls.merchants.products.get(merchantId, productId));
+    },
+
+    create: async (merchantId: number, data: any) => {
+      return authenticatedFetch(apiUrls.merchants.products.create(merchantId), {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+
+    update: async (merchantId: number, productId: number, data: any) => {
+      return authenticatedFetch(apiUrls.merchants.products.update(merchantId, productId), {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+
+    delete: async (merchantId: number, productId: number) => {
+      return authenticatedFetch(apiUrls.merchants.products.delete(merchantId, productId), {
+        method: 'DELETE'
+      });
+    }
+  },
+
+  /**
+   * Merchant Orders
+   */
+  orders: {
+    list: async (merchantId: number, queryParams?: string) => {
+      const url = queryParams 
+        ? `${apiUrls.merchants.orders.list(merchantId)}?${queryParams}`
+        : apiUrls.merchants.orders.list(merchantId);
+      return authenticatedFetch(url);
+    },
+
+    get: async (merchantId: number, orderId: number) => {
+      return authenticatedFetch(apiUrls.merchants.orders.get(merchantId, orderId));
+    },
+
+    create: async (merchantId: number, data: any) => {
+      return authenticatedFetch(apiUrls.merchants.orders.create(merchantId), {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+
+    update: async (merchantId: number, orderId: number, data: any) => {
+      return authenticatedFetch(apiUrls.merchants.orders.update(merchantId, orderId), {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+
+    delete: async (merchantId: number, orderId: number) => {
+      return authenticatedFetch(apiUrls.merchants.orders.delete(merchantId, orderId), {
+        method: 'DELETE'
+      });
+    }
+  },
+
+  /**
+   * Merchant Users
+   */
+  users: {
+    list: async (merchantId: number) => {
+      return authenticatedFetch(apiUrls.merchants.users.list(merchantId));
+    },
+
+    get: async (merchantId: number, userId: number) => {
+      return authenticatedFetch(apiUrls.merchants.users.get(merchantId, userId));
+    },
+
+    create: async (merchantId: number, data: any) => {
+      return authenticatedFetch(apiUrls.merchants.users.create(merchantId), {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+
+    update: async (merchantId: number, userId: number, data: any) => {
+      return authenticatedFetch(apiUrls.merchants.users.update(merchantId, userId), {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+
+    delete: async (merchantId: number, userId: number) => {
+      return authenticatedFetch(apiUrls.merchants.users.delete(merchantId, userId), {
+        method: 'DELETE'
+      });
+    }
+  },
+
+  /**
+   * Merchant Outlets
+   */
+  outlets: {
+    list: async (merchantId: number, queryParams?: string) => {
+      const url = queryParams 
+        ? `${apiUrls.merchants.outlets.list(merchantId)}?${queryParams}`
+        : apiUrls.merchants.outlets.list(merchantId);
+      return authenticatedFetch(url);
+    },
+
+    get: async (merchantId: number, outletId: number) => {
+      return authenticatedFetch(apiUrls.merchants.outlets.get(merchantId, outletId));
+    },
+
+    create: async (merchantId: number, data: any) => {
+      return authenticatedFetch(apiUrls.merchants.outlets.create(merchantId), {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+
+    update: async (merchantId: number, outletId: number, data: any) => {
+      return authenticatedFetch(apiUrls.merchants.outlets.update(merchantId, outletId), {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+
+    delete: async (merchantId: number, outletId: number) => {
+      return authenticatedFetch(apiUrls.merchants.outlets.delete(merchantId, outletId), {
+        method: 'DELETE'
+      });
+    }
   }
 };

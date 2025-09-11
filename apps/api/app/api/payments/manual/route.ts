@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // Manual payment creation schema
 const createManualPaymentSchema = z.object({
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
     if (!merchant) {
       return NextResponse.json(
         { success: false, message: 'Merchant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     if (!plan) {
       return NextResponse.json(
         { success: false, message: 'Plan not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: false, message: 'Failed to create manual payment' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

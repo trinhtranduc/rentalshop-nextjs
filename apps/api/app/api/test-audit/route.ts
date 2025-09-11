@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     console.error('❌ Test audit endpoint error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

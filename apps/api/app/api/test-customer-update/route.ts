@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { createAuditHelper } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
+import {API} from '@rentalshop/constants';
 
 const prisma = new PrismaClient();
 
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
     console.error('❌ Test customer update error:', error);
     return NextResponse.json(
       { success: false, error: error.message, stack: error.stack },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

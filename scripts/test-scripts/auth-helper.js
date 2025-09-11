@@ -17,9 +17,6 @@ async function getAdminToken() {
     
     const response = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
         email: 'admin@rentalshop.com',
         password: 'admin123'

@@ -9,6 +9,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   CreateOrderForm, 
@@ -58,7 +59,7 @@ export default function MerchantCreateOrderPage() {
         setLoading(true);
         setError(null);
 
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         if (!token) {
           setError('Authentication required');
           return;
@@ -126,7 +127,7 @@ export default function MerchantCreateOrderPage() {
     try {
       setActionLoading(true);
 
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         showError('Authentication required');
         return;

@@ -47,6 +47,9 @@ export interface ApiUrls {
     verify: string;
     refresh: string;
     logout: string;
+    forgotPassword: string;
+    resetPassword: string;
+    changePassword: string;
   };
   categories: {
     list: string;
@@ -59,24 +62,32 @@ export interface ApiUrls {
     create: string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    updateStock: (id: number) => string;
+    bulkUpdate: string;
   };
   orders: {
     list: string;
     create: string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    getByNumber: (orderNumber: string) => string;
+    updateStatus: (id: number) => string;
+    stats: string;
   };
   customers: {
     list: string;
     create: string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    stats: string;
   };
   outlets: {
     list: string;
     create: string;
+    get: (id: number) => string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    stats: string;
   };
   users: {
     list: string;
@@ -142,6 +153,75 @@ export interface ApiUrls {
     topProducts: string;
     topCustomers: string;
     recentOrders: string;
+    inventory: string;
+    outletPerformance: string;
+    seasonalTrends: string;
+    export: string;
+  };
+  merchants: {
+    list: string;
+    create: string;
+    get: (id: number) => string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+    products: {
+      list: (merchantId: number) => string;
+      get: (merchantId: number, productId: number) => string;
+      create: (merchantId: number) => string;
+      update: (merchantId: number, productId: number) => string;
+      delete: (merchantId: number, productId: number) => string;
+    };
+    orders: {
+      list: (merchantId: number) => string;
+      get: (merchantId: number, orderId: number) => string;
+      create: (merchantId: number) => string;
+      update: (merchantId: number, orderId: number) => string;
+      delete: (merchantId: number, orderId: number) => string;
+    };
+    users: {
+      list: (merchantId: number) => string;
+      get: (merchantId: number, userId: number) => string;
+      create: (merchantId: number) => string;
+      update: (merchantId: number, userId: number) => string;
+      delete: (merchantId: number, userId: number) => string;
+    };
+    outlets: {
+      list: (merchantId: number) => string;
+      get: (merchantId: number, outletId: number) => string;
+      create: (merchantId: number) => string;
+      update: (merchantId: number, outletId: number) => string;
+      delete: (merchantId: number, outletId: number) => string;
+    };
+  };
+  settings: {
+    merchant: string;
+    user: string;
+    outlet: string;
+    changePassword: string;
+    uploadPicture: string;
+    deletePicture: string;
+    preferences: string;
+    activityLog: string;
+    profileNotifications: string;
+    markNotificationRead: (id: number) => string;
+    markAllNotificationsRead: string;
+  };
+  notifications: {
+    list: string;
+    get: (id: number) => string;
+    markRead: (id: number) => string;
+    markUnread: (id: number) => string;
+    markAllRead: string;
+    delete: (id: number) => string;
+    deleteAllRead: string;
+    unreadCount: string;
+    preferences: string;
+    test: string;
+  };
+  auditLogs: {
+    list: string;
+    stats: string;
+    export: string;
   };
 }
 
@@ -350,6 +430,9 @@ function createApiUrls(): ApiUrls {
       verify: `${base}/api/auth/verify`,
       refresh: `${base}/api/auth/refresh`,
       logout: `${base}/api/auth/logout`,
+      forgotPassword: `${base}/api/auth/forgot-password`,
+      resetPassword: `${base}/api/auth/reset-password`,
+      changePassword: `${base}/api/auth/change-password`,
     },
     categories: {
       list: `${base}/api/categories`,
@@ -362,24 +445,32 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/products`,
       update: (id: number) => `${base}/api/products/${id}`,
       delete: (id: number) => `${base}/api/products/${id}`,
+      updateStock: (id: number) => `${base}/api/products/${id}/stock`,
+      bulkUpdate: `${base}/api/products/bulk-update`,
     },
     orders: {
       list: `${base}/api/orders`,
       create: `${base}/api/orders`,
       update: (id: number) => `${base}/api/orders/${id}`,
       delete: (id: number) => `${base}/api/orders/${id}`,
+      getByNumber: (orderNumber: string) => `${base}/api/orders/by-number/${orderNumber}`,
+      updateStatus: (id: number) => `${base}/api/orders/${id}/status`,
+      stats: `${base}/api/orders/stats`,
     },
     customers: {
       list: `${base}/api/customers`,
       create: `${base}/api/customers`,
       update: (id: number) => `${base}/api/customers/${id}`,
       delete: (id: number) => `${base}/api/customers/${id}`,
+      stats: `${base}/api/customers/stats`,
     },
     outlets: {
       list: `${base}/api/outlets`,
       create: `${base}/api/outlets`,
+      get: (id: number) => `${base}/api/outlets/${id}`,
       update: (id: number) => `${base}/api/outlets?outletId=${id}`,
       delete: (id: number) => `${base}/api/outlets?outletId=${id}`,
+      stats: `${base}/api/outlets/stats`,
     },
     users: {
       list: `${base}/api/users`,
@@ -445,6 +536,75 @@ function createApiUrls(): ApiUrls {
       topProducts: `${base}/api/analytics/top-products`,
       topCustomers: `${base}/api/analytics/top-customers`,
       recentOrders: `${base}/api/analytics/recent-orders`,
+      inventory: `${base}/api/analytics/inventory`,
+      outletPerformance: `${base}/api/analytics/outlet-performance`,
+      seasonalTrends: `${base}/api/analytics/seasonal-trends`,
+      export: `${base}/api/analytics/export`,
+    },
+    merchants: {
+      list: `${base}/api/merchants`,
+      create: `${base}/api/merchants`,
+      get: (id: number) => `${base}/api/merchants/${id}`,
+      update: (id: number) => `${base}/api/merchants/${id}`,
+      delete: (id: number) => `${base}/api/merchants/${id}`,
+      products: {
+        list: (merchantId: number) => `${base}/api/merchants/${merchantId}/products`,
+        get: (merchantId: number, productId: number) => `${base}/api/merchants/${merchantId}/products/${productId}`,
+        create: (merchantId: number) => `${base}/api/merchants/${merchantId}/products`,
+        update: (merchantId: number, productId: number) => `${base}/api/merchants/${merchantId}/products/${productId}`,
+        delete: (merchantId: number, productId: number) => `${base}/api/merchants/${merchantId}/products/${productId}`,
+      },
+      orders: {
+        list: (merchantId: number) => `${base}/api/merchants/${merchantId}/orders`,
+        get: (merchantId: number, orderId: number) => `${base}/api/merchants/${merchantId}/orders/${orderId}`,
+        create: (merchantId: number) => `${base}/api/merchants/${merchantId}/orders`,
+        update: (merchantId: number, orderId: number) => `${base}/api/merchants/${merchantId}/orders/${orderId}`,
+        delete: (merchantId: number, orderId: number) => `${base}/api/merchants/${merchantId}/orders/${orderId}`,
+      },
+      users: {
+        list: (merchantId: number) => `${base}/api/merchants/${merchantId}/users`,
+        get: (merchantId: number, userId: number) => `${base}/api/merchants/${merchantId}/users/${userId}`,
+        create: (merchantId: number) => `${base}/api/merchants/${merchantId}/users`,
+        update: (merchantId: number, userId: number) => `${base}/api/merchants/${merchantId}/users/${userId}`,
+        delete: (merchantId: number, userId: number) => `${base}/api/merchants/${merchantId}/users/${userId}`,
+      },
+      outlets: {
+        list: (merchantId: number) => `${base}/api/merchants/${merchantId}/outlets`,
+        get: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}`,
+        create: (merchantId: number) => `${base}/api/merchants/${merchantId}/outlets`,
+        update: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}`,
+        delete: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}`,
+      },
+    },
+  settings: {
+    merchant: `${base}/api/settings/merchant`,
+    user: `${base}/api/users/profile`,
+    outlet: `${base}/api/settings/outlet`,
+    changePassword: `${base}/api/profile/change-password`,
+    uploadPicture: `${base}/api/profile/upload-picture`,
+    deletePicture: `${base}/api/profile/delete-picture`,
+    preferences: `${base}/api/profile/preferences`,
+    activityLog: `${base}/api/profile/activity-log`,
+    profileNotifications: `${base}/api/profile/notifications`,
+    markNotificationRead: (id: number) => `${base}/api/profile/notifications/${id}/read`,
+    markAllNotificationsRead: `${base}/api/profile/notifications/mark-all-read`,
+  },
+    notifications: {
+      list: `${base}/api/notifications`,
+      get: (id: number) => `${base}/api/notifications/${id}`,
+      markRead: (id: number) => `${base}/api/notifications/${id}/read`,
+      markUnread: (id: number) => `${base}/api/notifications/${id}/unread`,
+      markAllRead: `${base}/api/notifications/mark-all-read`,
+      delete: (id: number) => `${base}/api/notifications/${id}`,
+      deleteAllRead: `${base}/api/notifications/delete-read`,
+      unreadCount: `${base}/api/notifications/unread-count`,
+      preferences: `${base}/api/notifications/preferences`,
+      test: `${base}/api/notifications/test`,
+    },
+    auditLogs: {
+      list: `${base}/api/audit-logs`,
+      stats: `${base}/api/audit-logs/stats`,
+      export: `${base}/api/audit-logs/export`,
     },
   };
 }

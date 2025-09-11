@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { findUserByPublicId } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 
 /**
@@ -56,7 +57,7 @@ export async function GET(
       console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions to view users' }, 
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -104,30 +105,30 @@ export async function GET(
       console.log('❌ User not found in database for ID:', id);
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
     // Validate scope access - ensure user can only view users within their scope
-    if (userScope.merchantId && user.merchantId && parseInt(user.merchantId) !== userScope.merchantId) {
+    if (userScope.merchantId && user.merchant?.id && user.merchant.id !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to access user from different merchant', {
-        userMerchantId: user.merchantId,
+        userMerchantId: user.merchant.id,
         userScopeMerchantId: userScope.merchantId
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: User not in your organization' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
-    if (userScope.outletId && user.outletId && parseInt(user.outletId) !== userScope.outletId) {
+    if (userScope.outletId && user.outlet?.id && user.outlet.id !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to access user from different outlet', {
-        userOutletId: user.outletId,
+        userOutletId: user.outlet.id,
         userScopeOutletId: userScope.outletId
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: User not in your outlet' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -186,7 +187,7 @@ export async function GET(
         error: 'Failed to fetch user',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -250,7 +251,7 @@ export async function PUT(
       console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions to update users' }, 
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -292,7 +293,7 @@ export async function PUT(
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -304,7 +305,7 @@ export async function PUT(
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: Cannot update user from different organization' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -315,7 +316,7 @@ export async function PUT(
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: Cannot update user from different outlet' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -390,7 +391,7 @@ export async function PUT(
         error: 'Failed to update user',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -454,7 +455,7 @@ export async function PATCH(
       console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions to activate/deactivate users' }, 
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -516,7 +517,7 @@ export async function PATCH(
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: Cannot modify user from different organization' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -527,7 +528,7 @@ export async function PATCH(
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: Cannot modify user from different outlet' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -573,7 +574,7 @@ export async function PATCH(
         error: 'Failed to update user status',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -637,7 +638,7 @@ export async function DELETE(
       console.log('❌ Access denied for user:', { role: currentUser.role, merchantId: currentUser.merchantId, outletId: currentUser.outletId });
       return NextResponse.json(
         { success: false, message: 'Insufficient permissions to delete users' }, 
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -678,7 +679,7 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -690,7 +691,7 @@ export async function DELETE(
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: Cannot delete user from different organization' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -701,7 +702,7 @@ export async function DELETE(
       });
       return NextResponse.json(
         { success: false, message: 'Access denied: Cannot delete user from different outlet' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -787,7 +788,7 @@ export async function DELETE(
         error: 'Failed to delete user',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withOrderExportAuth } from '@rentalshop/auth';
 import { searchOrders } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/orders/export
@@ -95,7 +96,7 @@ export const GET = withOrderExportAuth(async (authorizedRequest) => {
 
     // Return CSV file
     return new NextResponse(csvContent, {
-      status: 200,
+      status: API.STATUS.OK,
       headers: {
         'Content-Type': 'text/csv',
         'Content-Disposition': `attachment; filename="orders-export-${new Date().toISOString().split('T')[0]}.csv"`,
@@ -107,7 +108,7 @@ export const GET = withOrderExportAuth(async (authorizedRequest) => {
     console.error('Error exporting orders:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to export orders' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });

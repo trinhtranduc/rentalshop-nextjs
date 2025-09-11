@@ -25,7 +25,9 @@ export {
   canManageOrders,
   canExportOrders,
   canExportProducts,
-  canExportCustomers
+  canExportCustomers,
+  assertAnyRole,
+  hasAnyRole
 } from './core';
 
 export {

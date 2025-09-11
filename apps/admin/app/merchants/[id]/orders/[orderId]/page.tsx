@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -37,7 +38,7 @@ export default function MerchantOrderDetailPage() {
         setError(null);
 
         // Get auth token from localStorage
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         if (!token) {
           setError('Authentication required');
           return;
@@ -92,7 +93,7 @@ export default function MerchantOrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         showError('Authentication required');
         return;
@@ -122,7 +123,7 @@ export default function MerchantOrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         showError('Authentication required');
         return;
@@ -152,7 +153,7 @@ export default function MerchantOrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         showError('Authentication required');
         return;
@@ -187,7 +188,7 @@ export default function MerchantOrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         showError('Authentication required');
         return;

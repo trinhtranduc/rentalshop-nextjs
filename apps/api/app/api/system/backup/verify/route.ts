@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import {API} from '@rentalshop/constants';
 
 const execAsync = promisify(exec);
 
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: false,
           verification
-        }, { status: 404 });
+        }, { status: API.STATUS.NOT_FOUND });
       }
     }
 
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 

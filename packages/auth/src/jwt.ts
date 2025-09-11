@@ -11,7 +11,11 @@ export interface JWTPayload {
 }
 
 export const generateToken = (payload: JWTPayload): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  console.log('🔍 JWT GENERATE: Creating token with payload:', JSON.stringify(payload, null, 2));
+  console.log('🔍 JWT GENERATE: Using JWT_SECRET:', JWT_SECRET ? `${JWT_SECRET.substring(0, 10)}...` : 'UNDEFINED');
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  console.log('🔍 JWT GENERATE: Generated token:', token ? `${token.substring(0, 20)}...` : 'FAILED');
+  return token;
 };
 
 export const verifyToken = (token: string): JWTPayload => {
@@ -20,7 +24,11 @@ export const verifyToken = (token: string): JWTPayload => {
 
 export const verifyTokenSimple = async (token: string) => {
   try {
+    console.log('🔍 JWT: verifyTokenSimple called with token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
     const payload = verifyToken(token);
+    console.log('🔍 JWT: Token payload:', payload);
+    console.log('🔍 JWT: Looking for user with publicId:', payload.userId);
+    
     const user = await prisma.user.findUnique({
       where: { publicId: payload.userId }, // Now payload.userId is number (publicId)
       include: {
@@ -29,7 +37,18 @@ export const verifyTokenSimple = async (token: string) => {
       },
     });
 
+    console.log('🔍 JWT: Database query result:', {
+      userFound: !!user,
+      userId: user?.id,
+      publicId: user?.publicId,
+      email: user?.email,
+      role: user?.role,
+      hasMerchant: !!user?.merchant,
+      hasOutlet: !!user?.outlet
+    });
+
     if (!user) {
+      console.log('🔍 JWT: User not found, returning null');
       return null;
     }
 
@@ -60,7 +79,11 @@ export const verifyTokenSimple = async (token: string) => {
 
     return user;
   } catch (error) {
-    console.error('JWT verification - Error:', error);
+    console.error('🔍 JWT: JWT verification - Error:', error);
+    console.error('🔍 JWT: Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return null;
   }
 };

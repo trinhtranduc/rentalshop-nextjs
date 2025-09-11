@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import {API} from '@rentalshop/constants';
 
 const prisma = new PrismaClient();
 
@@ -75,14 +76,14 @@ export async function POST(request: NextRequest) {
         error: 'Database audit log creation failed',
         details: dbError.message,
         stack: dbError.stack
-      }, { status: 500 });
+      }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
     }
     
   } catch (error) {
     console.error('❌ Direct database audit test error:', error);
     return NextResponse.json(
       { success: false, error: error.message, stack: error.stack },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

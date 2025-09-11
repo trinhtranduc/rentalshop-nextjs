@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, getUserScope } from '@rentalshop/auth';
 import { getOrderStats, getOverdueRentals } from '@rentalshop/database';
 import type { OrderSearchResult } from '@rentalshop/types';
+import {API} from '@rentalshop/constants';
 
 // GET /api/orders/stats - Get order statistics
 export async function GET(request: NextRequest) {
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
     console.error('Error getting order stats:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 } 

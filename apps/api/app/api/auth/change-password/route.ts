@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
+import {API} from '@rentalshop/constants';
 
 /**
  * POST /api/auth/change-password
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
         error: 'Failed to change password',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

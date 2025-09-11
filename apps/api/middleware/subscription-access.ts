@@ -10,6 +10,7 @@ import {
   checkSubscriptionAccess,
   type SubscriptionAccessResult
 } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // MIDDLEWARE TYPES
@@ -106,7 +107,7 @@ export async function withSubscriptionAccess(
             requiresPayment: accessResult.requiresPayment,
             upgradeRequired: accessResult.upgradeRequired
           },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         )
       };
     }
@@ -125,7 +126,7 @@ export async function withSubscriptionAccess(
               message: error instanceof Error ? error.message : 'Insufficient permissions',
               accessLevel: accessResult.accessLevel
             },
-            { status: 403 }
+            { status: API.STATUS.FORBIDDEN }
           )
         };
       }
@@ -142,7 +143,7 @@ export async function withSubscriptionAccess(
             message: 'Read-only access not allowed for this operation',
             accessLevel: accessResult.accessLevel
           },
-          { status: 403 }
+          { status: API.STATUS.FORBIDDEN }
         )
       };
     }
@@ -163,7 +164,7 @@ export async function withSubscriptionAccess(
       },
       response: NextResponse.json(
         { success: false, message: 'Internal server error' },
-        { status: 500 }
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
       )
     };
   }

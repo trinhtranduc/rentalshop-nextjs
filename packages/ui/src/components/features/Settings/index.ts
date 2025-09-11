@@ -1,8 +1,9 @@
 // ============================================================================
 // SETTINGS FEATURE COMPONENTS
 // ============================================================================
-// TODO: Export Settings component when Settings.tsx is created
-// export { default as Settings } from './Settings';
+
+export { SettingsComponent as Settings } from './Settings';
+export { default as SettingsComponent } from './Settings';
 
 // Export all components for easy access
 export * from './components';

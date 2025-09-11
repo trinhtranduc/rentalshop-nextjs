@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import {API} from '@rentalshop/constants';
 
 const execAsync = promisify(exec);
 
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: false,
           error: `Backup file not found: ${options.backupId}`
-        }, { status: 404 });
+        }, { status: API.STATUS.NOT_FOUND });
       }
     }
 
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
       error: error instanceof Error ? error.message : 'Unknown error'
     };
 
-    return NextResponse.json(result, { status: 500 });
+    return NextResponse.json(result, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 

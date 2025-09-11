@@ -13,8 +13,8 @@ import {
 import { Orders } from '../../components/Orders';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@rentalshop/hooks';
-import type { OrderSearchResult, OrderInput, OrderType, OrderStatus, OrderFilters as OrderFiltersType, OrderData } from '@rentalshop/types';
-import { authenticatedFetch } from '@rentalshop/utils';
+import type { OrderSearchResult, OrderInput, OrderType, OrderStatus, OrderFilters as OrderFiltersType, OrderWithDetails } from '@rentalshop/types';
+import { ordersApi } from '@rentalshop/utils';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function OrdersPage() {
   const { toasts, showSuccess, showError, removeToast } = useToasts();
   
   // State for orders and UI
-  const [orders, setOrders] = useState<OrderSearchResult[]>([]);
+  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,55 +57,38 @@ export default function OrdersPage() {
         setLoading(true); // Full page loading for other operations
       }
       
-      const params = new URLSearchParams({
-        offset: ((currentPage - 1) * 10).toString(),
-        limit: '10',
-        ...(searchQuery && { q: searchQuery }),
-        ...(filters.orderType && { orderType: filters.orderType }),
-        ...(filters.status && { status: filters.status }),
-        ...(filters.outletId && { outletId: filters.outletId.toString() }),
-        ...(filters.sortBy && { sortBy: filters.sortBy }),
-        ...(filters.sortOrder && { sortOrder: filters.sortOrder })
+      console.log('🔍 fetchOrders called with params:', {
+        search: searchQuery,
+        status: filters.status,
+        orderType: filters.orderType,
+        outletId: filters.outletId,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        limit: 10,
+        offset: (currentPage - 1) * 10
       });
 
-      console.log('🔍 fetchOrders called with params:', params.toString());
+      const result = await ordersApi.searchOrders({
+        search: searchQuery,
+        status: filters.status,
+        orderType: filters.orderType,
+        outletId: filters.outletId,
+        dateRange: filters.dateRange,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        limit: 10,
+        offset: (currentPage - 1) * 10
+      });
 
-      const response = await authenticatedFetch(`/api/orders?${params.toString()}`);
-
-      if (response.status === 304) {
-        return;
-      }
-
-      if (response.ok) {
-        const data = await response.json();
+      if (result.success && result.data) {
+        const data = result.data;
         console.log('🔍 Orders API response:', data);
         
-        // Handle both search response and standard listing response
-        let orders, total, totalPages;
-        
-        if (data.data.orders) {
-          // This is either a search response or standard listing
-          orders = data.data.orders;
-          total = data.data.total || orders.length;
-          
-          // Calculate totalPages based on the response structure
-          if (data.data.totalPages !== undefined) {
-            // Standard listing response
-            totalPages = data.data.totalPages;
-          } else if (data.data.limit && data.data.total) {
-            // Search response - calculate pages from limit and total
-            totalPages = Math.ceil(data.data.total / data.data.limit);
-          } else {
-            // Fallback calculation
-            totalPages = Math.ceil(total / 10);
-          }
-        } else {
-          // Fallback if data structure is unexpected
-          orders = [];
-          total = 0;
-          totalPages = 1;
-        }
-        
+        // Handle the API response - data is already the orders array
+        const orders = Array.isArray(data) ? data as OrderWithDetails[] : [];
+        const total = orders.length;
+        const totalPages = Math.ceil(total / 10);
+
         setOrders(orders);
         setTotalPages(totalPages);
         
@@ -114,7 +97,7 @@ export default function OrdersPage() {
           setCurrentPage(1);
         }
       } else {
-        console.error('API Error:', response.status, response.statusText);
+        console.error('API Error:', result.error);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -129,11 +112,10 @@ export default function OrdersPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await authenticatedFetch('/api/orders/stats');
-
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.data.stats);
+      const result = await ordersApi.getOrderStats();
+      
+      if (result.success && result.data) {
+        setStats(result.data);
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -212,15 +194,15 @@ export default function OrdersPage() {
       case 'pickup':
         // Find the order by orderNumber to get the ID for API calls
         const order = orders.find(o => o.orderNumber === orderNumber);
-        if (order) await handlePickup(order.id);
+        if (order) await handlePickup(order.publicId);
         break;
       case 'return':
         const orderForReturn = orders.find(o => o.orderNumber === orderNumber);
-        if (orderForReturn) await handleReturn(orderForReturn.id);
+        if (orderForReturn) await handleReturn(orderForReturn.publicId);
         break;
       case 'cancel':
         const orderForCancel = orders.find(o => o.orderNumber === orderNumber);
-        if (orderForCancel) await handleCancel(orderForCancel.id);
+        if (orderForCancel) await handleCancel(orderForCancel.publicId);
         break;
       case 'edit':
         router.push(`/orders/${numericOrderNumber}/edit`);
@@ -232,18 +214,14 @@ export default function OrdersPage() {
 
   const handlePickup = useCallback(async (orderId: number) => {
     try {
-      const response = await authenticatedFetch(`/api/orders?orderId=${orderId}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          status: 'ACTIVE',
-          pickedUpAt: new Date().toISOString(),
-        }),
-      });
+      const result = await ordersApi.pickupOrder(orderId);
 
-      if (response.ok) {
+      if (result.success) {
         fetchOrders();
         fetchStats();
         showSuccess('Order Confirmed', 'Order has been confirmed successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to update order');
       }
     } catch (error) {
       console.error('Error updating order:', error);
@@ -253,18 +231,14 @@ export default function OrdersPage() {
 
   const handleReturn = useCallback(async (orderId: number) => {
     try {
-      const response = await authenticatedFetch(`/api/orders?orderId=${orderId}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          status: 'COMPLETED',
-          returnedAt: new Date().toISOString(),
-        }),
-      });
+      const result = await ordersApi.returnOrder(orderId);
 
-      if (response.ok) {
+      if (result.success) {
         fetchOrders();
         fetchStats();
         showSuccess('Order Returned', 'Order has been returned successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to update order');
       }
     } catch (error) {
       console.error('Error updating order:', error);
@@ -276,17 +250,14 @@ export default function OrdersPage() {
     if (!confirm('Are you sure you want to cancel this order?')) return;
 
     try {
-      const response = await authenticatedFetch(`/api/orders?orderId=${orderId}`, {
-        method: 'DELETE',
-        body: JSON.stringify({
-          reason: 'Cancelled by staff',
-        }),
-      });
+      const result = await ordersApi.cancelOrder(orderId);
 
-      if (response.ok) {
+      if (result.success) {
         fetchOrders();
         fetchStats();
         showSuccess('Order Cancelled', 'Order has been cancelled successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to cancel order');
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
@@ -329,16 +300,7 @@ export default function OrdersPage() {
       id: order.id,
       orderNumber: order.orderNumber,
       orderType: order.orderType,
-      status: (() => {
-        switch (order.status) {
-          case 'OVERDUE':
-            return 'ACTIVE';
-          case 'DAMAGED':
-            return 'CANCELLED';
-          default:
-            return order.status;
-        }
-      })(),
+      status: order.status,
       customerId: order.customer?.id || '',
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
       customerPhone: order.customer?.phone || '',
@@ -400,7 +362,7 @@ export default function OrdersPage() {
             <button 
               onClick={() => {
                 // TODO: Implement export functionality
-                showInfo('Export Feature', 'Export functionality coming soon!');
+                showSuccess('Export Feature', 'Export functionality coming soon!');
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
             >

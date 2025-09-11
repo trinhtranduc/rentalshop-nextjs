@@ -8,6 +8,7 @@ import { customerUpdateSchema, createAuditHelper } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { CustomerUpdateInput } from '@rentalshop/types';
 import { PrismaClient } from '@prisma/client';
+import {API} from '@rentalshop/constants';
 
 
 const prisma = new PrismaClient();
@@ -59,7 +60,7 @@ export async function GET(
     if (!customer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found or missing public ID' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -113,7 +114,7 @@ export async function GET(
     console.error('Error in GET /api/customers/[id]:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -154,7 +155,7 @@ export async function PUT(
     if (!userMerchantId) {
       return NextResponse.json(
         { success: false, message: 'User not associated with any merchant' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -163,7 +164,7 @@ export async function PUT(
     if (!existingCustomer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -195,7 +196,7 @@ export async function PUT(
     if (!updatedCustomer) {
       return NextResponse.json(
         { success: false, message: 'Failed to update customer' },
-        { status: 500 }
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
 
@@ -288,7 +289,7 @@ export async function PUT(
     console.error('Error in PUT /api/customers/[id]:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -328,7 +329,7 @@ export async function DELETE(
     if (!userMerchantId) {
       return NextResponse.json(
         { success: false, message: 'User not associated with any merchant' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -338,7 +339,7 @@ export async function DELETE(
     if (!customer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -366,7 +367,7 @@ export async function DELETE(
     console.error('Error in DELETE /api/customers/[id]:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

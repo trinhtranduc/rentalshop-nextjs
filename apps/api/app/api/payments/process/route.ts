@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPaymentGatewayManager, PaymentGatewayConfig } from '@rentalshop/utils';
 import { authenticateRequest } from '@rentalshop/auth';
 import { createSubscriptionPayment } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // TYPES
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
     console.error('Error processing payment:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to process payment' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -186,7 +187,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching payment gateways:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch payment gateways' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

@@ -14,6 +14,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   CreateOrderForm, 
@@ -61,7 +62,7 @@ export default function MerchantOrderEditPage() {
         setError(null);
 
         // Get auth token from localStorage
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         if (!token) {
           setError('Authentication required');
           return;
@@ -119,7 +120,7 @@ export default function MerchantOrderEditPage() {
 
     const fetchFormData = async () => {
       try {
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         if (!token) {
           return;
         }
@@ -186,7 +187,7 @@ export default function MerchantOrderEditPage() {
     try {
       setActionLoading(true);
 
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         showError('Authentication required');
         return;

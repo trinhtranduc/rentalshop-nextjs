@@ -19,9 +19,6 @@ export const authApi = {
   async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     const response = await fetch(apiUrls.auth.login, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(credentials),
     });
     return await parseApiResponse<AuthResponse>(response);
@@ -33,9 +30,6 @@ export const authApi = {
   async register(userData: RegisterData): Promise<ApiResponse<AuthResponse>> {
     const response = await fetch(apiUrls.auth.register, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(userData),
     });
     return await parseApiResponse<AuthResponse>(response);
@@ -71,11 +65,8 @@ export const authApi = {
    * Request password reset
    */
   async requestPasswordReset(email: string): Promise<ApiResponse<void>> {
-    const response = await fetch(`${apiUrls.base}/api/auth/forgot-password`, {
+    const response = await fetch(apiUrls.auth.forgotPassword, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ email }),
     });
     return await parseApiResponse<void>(response);
@@ -85,11 +76,8 @@ export const authApi = {
    * Reset password with token
    */
   async resetPassword(token: string, newPassword: string): Promise<ApiResponse<void>> {
-    const response = await fetch(`${apiUrls.base}/api/auth/reset-password`, {
+    const response = await fetch(apiUrls.auth.resetPassword, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ token, newPassword }),
     });
     return await parseApiResponse<void>(response);
@@ -99,7 +87,7 @@ export const authApi = {
    * Change password (authenticated)
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<void>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/auth/change-password`, {
+    const response = await authenticatedFetch(apiUrls.auth.changePassword, {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword }),
     });

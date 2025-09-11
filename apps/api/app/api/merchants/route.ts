@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 // Force TypeScript refresh - address field added
+import {API} from '@rentalshop/constants';
 
 export async function GET(request: NextRequest) {
   try {
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
       isActive: merchant.isActive,
       planId: merchant.planId,
       subscriptionStatus: merchant.subscriptionStatus,
-      trialEndsAt: merchant.trialEndsAt,
+      trialEndsAt: (merchant as any).trialEndsAt,
       outletsCount: merchant._count.outlets,
       usersCount: merchant._count.users,
       productsCount: merchant._count.products,
@@ -188,7 +189,7 @@ export async function GET(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { success: false, message: 'Failed to fetch merchants', error: errorMessage },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -259,7 +260,7 @@ export async function POST(request: NextRequest) {
         isActive: merchant.isActive,
         planId: merchant.planId,
         subscriptionStatus: merchant.subscriptionStatus,
-        trialEndsAt: merchant.trialEndsAt,
+        trialEndsAt: (merchant as any).trialEndsAt,
         outletsCount: 0,
         usersCount: 0,
         productsCount: 0,
@@ -273,7 +274,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating merchant:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to create merchant', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

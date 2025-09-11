@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import {API} from '@rentalshop/constants';
 
 const prisma = new PrismaClient();
 
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Error checking audit logs:', error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

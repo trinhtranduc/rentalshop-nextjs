@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, handleSubscriptionError } from '@rentalshop/auth';
 import { findUserById, updateUser, prisma } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/users/profile
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
       console.log('❌ User not found with publicId:', user.id);
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -329,7 +330,7 @@ export async function PUT(request: NextRequest) {
         error: 'Failed to update user profile',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 } 

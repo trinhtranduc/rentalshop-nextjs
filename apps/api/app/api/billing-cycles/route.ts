@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { withAdminAuth } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 export const GET = withAdminAuth(async (authorizedRequest) => {
   try {
@@ -69,7 +70,7 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
     console.error('Error fetching billing cycles:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });
@@ -145,7 +146,7 @@ export const POST = withAdminAuth(async (authorizedRequest) => {
     console.error('Error creating billing cycle:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 export async function GET(
   request: NextRequest,
@@ -111,7 +112,7 @@ export async function GET(
     if (!merchant) {
       return NextResponse.json(
         { success: false, message: 'Merchant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -229,7 +230,7 @@ export async function GET(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { success: false, message: 'Failed to fetch merchant details', error: errorMessage },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -263,7 +264,7 @@ export async function DELETE(
     if (!merchant) {
       return NextResponse.json(
         { success: false, message: 'Merchant not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -291,7 +292,7 @@ export async function DELETE(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { success: false, message: 'Failed to deactivate merchant', error: errorMessage },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -407,7 +408,7 @@ export async function PUT(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { success: false, message: 'Failed to update merchant', error: errorMessage },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

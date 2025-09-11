@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { getUserScope } from '@rentalshop/auth';
 import { getCustomerByPublicId } from '@rentalshop/database';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/customers/[id]/orders
@@ -40,7 +41,7 @@ export async function GET(
     if (!userMerchantId) {
       return NextResponse.json(
         { success: false, message: 'User not associated with any merchant' },
-        { status: 403 }
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -50,7 +51,7 @@ export async function GET(
     if (!customer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found' },
-        { status: 404 }
+        { status: API.STATUS.NOT_FOUND }
       );
     }
 
@@ -128,7 +129,7 @@ export async function GET(
     console.error('Error in GET /api/customers/[id]/orders:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

@@ -84,7 +84,7 @@ export const ordersApi = {
    * Get order by order number (e.g., "ORD-2110")
    */
   async getOrderByNumber(orderNumber: string): Promise<ApiResponse<Order>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/orders/by-number/${orderNumber}`);
+    const response = await authenticatedFetch(apiUrls.orders.getByNumber(orderNumber));
     return await parseApiResponse<Order>(response);
   },
 
@@ -148,7 +148,7 @@ export const ordersApi = {
    * Update order status
    */
   async updateOrderStatus(orderId: number, status: string): Promise<ApiResponse<Order>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/orders/${orderId}/status`, {
+    const response = await authenticatedFetch(apiUrls.orders.updateStatus(orderId), {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
@@ -197,7 +197,7 @@ export const ordersApi = {
    * Get order statistics
    */
   async getOrderStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/orders/stats`);
+    const response = await authenticatedFetch(apiUrls.orders.stats);
     return await parseApiResponse<any>(response);
   },
 };

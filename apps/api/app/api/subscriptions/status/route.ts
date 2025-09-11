@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSubscriptionByMerchantId } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
+import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // GET /api/subscriptions/status - Get current user's subscription status
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching subscription status:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch subscription status' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

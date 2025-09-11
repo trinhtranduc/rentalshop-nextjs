@@ -129,7 +129,7 @@ export const customersApi = {
    * Get customer statistics
    */
   async getCustomerStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/customers/stats`);
+    const response = await authenticatedFetch(apiUrls.customers.stats);
     return await parseApiResponse<any>(response);
   }
 };

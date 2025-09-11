@@ -3,6 +3,7 @@ import {
   searchProducts
 } from '@rentalshop/database';
 import type { ProductSearchFilter } from '@rentalshop/types';
+import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/mobile/products
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
         error: 'Failed to fetch products',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 } 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { authenticateRequest } from '@rentalshop/auth';
 import { z } from 'zod';
+import {API} from '@rentalshop/constants';
 
 // Validation schemas
 const userPreferenceSchema = z.object({
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching user preferences:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch user preferences' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
     if (existingPreference) {
       return NextResponse.json(
         { success: false, message: 'Preference with this key already exists' },
-        { status: 409 }
+        { status: API.STATUS.CONFLICT }
       );
     }
 
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating user preference:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to create user preference' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
