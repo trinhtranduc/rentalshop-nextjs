@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { 
   PageWrapper,
   PageContent,
@@ -58,14 +58,17 @@ export const Users: React.FC<UsersProps> = ({
   onExport,
   className = ""
 }) => {
+  console.log('🔄 Users component re-rendered');
+  console.log('🔄 Props:', { title, subtitle, showExportButton, showAddButton, addButtonText, exportButtonText, showStats, useSearchUsers, initialLimit, currentUser: !!currentUser, onExport: !!onExport, className });
+  
   const { toasts, addToast, removeToast } = useToasts();
   
-  // Use the shared user management hook
-  const userManagementOptions: UseUserManagementOptions = {
+  // Use the shared user management hook - memoize options to prevent re-mounts
+  const userManagementOptions: UseUserManagementOptions = useMemo(() => ({
     initialLimit,
     useSearchUsers,
     enableStats: showStats
-  };
+  }), [initialLimit, useSearchUsers, showStats]);
   
   const {
     users,
@@ -218,14 +221,32 @@ export const Users: React.FC<UsersProps> = ({
         />
 
         {/* Users List */}
-        <UserTable
-          users={filteredUsers}
-          onUserAction={handleUserRowAction}
-          className="py-4"
-        />
+        {filteredUsers.length > 0 ? (
+          <div className="mb-6">
+            <UserTable
+              users={filteredUsers}
+              onUserAction={handleUserRowAction}
+              className="py-4"
+            />
+          </div>
+        ) : (
+          <div className="mb-6">
+            <EmptyState
+              icon={UserIcon}
+              title="No users found"
+              description={
+                filters.search || filters.role || filters.status
+                  ? 'Try adjusting your search or filters'
+                  : 'Get started by adding your first user'
+              }
+              actionLabel="Add User"
+              onAction={() => setShowCreateForm(true)}
+            />
+          </div>
+        )}
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
+        {/* Pagination - only show when there are results */}
+        {filteredUsers.length > 0 && pagination.totalPages > 1 && (
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
@@ -233,21 +254,6 @@ export const Users: React.FC<UsersProps> = ({
             limit={pagination.limit}
             onPageChange={handlePageChangeWithFetch}
             itemName="users"
-          />
-        )}
-
-        {/* Empty State */}
-        {filteredUsers.length === 0 && (
-          <EmptyState
-            icon={UserIcon}
-            title="No users found"
-            description={
-              filters.search || filters.role || filters.status
-                ? 'Try adjusting your search or filters'
-                : 'Get started by adding your first user'
-            }
-            actionLabel="Add User"
-            onAction={() => setShowCreateForm(true)}
           />
         )}
       </PageContent>

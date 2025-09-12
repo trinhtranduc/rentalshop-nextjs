@@ -241,6 +241,20 @@ export async function updateCustomer(
 // ============================================================================
 
 /**
+ * Build order by clause for customer queries
+ */
+function buildCustomerOrderByClause(sortBy?: string, sortOrder?: string): any {
+  const validSortFields = [
+    'createdAt', 'updatedAt', 'firstName', 'lastName', 'email', 'phone'
+  ];
+  
+  const field = validSortFields.includes(sortBy || '') ? sortBy : 'createdAt';
+  const order = sortOrder === 'asc' ? 'asc' : 'desc';
+  
+  return { [field as string]: order };
+}
+
+/**
  * Search customers - follows dual ID system
  * Input: publicIds (numbers), Output: publicIds (numbers)
  */
@@ -256,7 +270,9 @@ export async function searchCustomers(
     country,
     idType,
     limit = 20,
-    offset = 0
+    offset = 0,
+    sortBy,
+    sortOrder
   } = filters;
 
   // Build where conditions
@@ -323,7 +339,7 @@ export async function searchCustomers(
         }
       }
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: buildCustomerOrderByClause(sortBy, sortOrder),
     take: limit,
     skip: offset
   });
@@ -359,9 +375,11 @@ export async function searchCustomers(
     data: {
       customers: transformedCustomers as any, // Type assertion to handle CustomerWithMerchant mismatch
       total,
+      page: Math.floor(offset / limit) + 1,
       limit,
       offset,
       hasMore: offset + limit < total,
+      totalPages: Math.ceil(total / limit),
     },
   };
 }

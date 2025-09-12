@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
+import { useThrottledSearch } from './useThrottledSearch';
 import { productsApi } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
 import type { Product, ProductWithDetails, ProductWithStock, ProductFilters, ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
@@ -77,7 +78,6 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
   // State
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [outletFilter, setOutletFilter] = useState<string>('all');
   const [availabilityFilter, setAvailabilityFilter] = useState<string>('all');
@@ -93,8 +93,18 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     initialLimit
   });
 
-  // Fetch products function
-  const fetchProducts = useCallback(async (page: number = pagination.currentPage) => {
+  // Throttled search for better performance
+  const { query: searchTerm, handleSearchChange: throttledSearchChange } = useThrottledSearch({
+    delay: 300,
+    minLength: 0,
+    onSearch: (query: string) => {
+      // Trigger search when throttled search completes
+      fetchProducts(1, query, categoryFilter, outletFilter, availabilityFilter, statusFilter);
+    }
+  });
+
+  // Fetch products function - stable reference to prevent multiple calls
+  const fetchProducts = useCallback(async (page: number = pagination.currentPage, searchQuery: string = '', category: string = 'all', outlet: string = 'all', availability: string = 'all', status: string = 'all') => {
     try {
       setLoading(true);
       
@@ -103,12 +113,16 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       if (useSearchProducts) {
         // Admin page uses searchMerchantProducts with filters
         const filters: ProductFilters = {
-          search: searchTerm || undefined,
-          categoryId: categoryFilter !== 'all' ? parseInt(categoryFilter) : undefined,
-          outletId: outletFilter !== 'all' ? parseInt(outletFilter) : undefined,
-          available: availabilityFilter === 'in-stock' ? true : 
-                    availabilityFilter === 'out-of-stock' ? false : undefined,
-          status: statusFilter !== 'all' ? (statusFilter as 'active' | 'inactive') : undefined
+          search: searchQuery || undefined,
+          categoryId: category !== 'all' ? parseInt(category) : undefined,
+          outletId: outlet !== 'all' ? parseInt(outlet) : undefined,
+          available: availability === 'in-stock' ? true : 
+                    availability === 'out-of-stock' ? false : undefined,
+          status: status !== 'all' ? (status as 'active' | 'inactive') : undefined,
+          // Add pagination parameters
+          limit: pagination.limit,
+          offset: (page - 1) * pagination.limit,
+          page: page
         };
         
         // Use merchant-specific API for admin context
@@ -165,22 +179,17 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     } finally {
       setLoading(false);
     }
-  }, [pagination.currentPage, pagination.limit, searchTerm, categoryFilter, outletFilter, availabilityFilter, statusFilter, useSearchProducts, updatePaginationFromResponse]);
+  }, [pagination.limit, useSearchProducts, updatePaginationFromResponse, merchantId]);
 
-  // Initial fetch
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // Refetch products when filters change (reset to page 1)
+  // Initial fetch and refetch when filters change
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       handlePageChange(1);
-      fetchProducts(1);
+      fetchProducts(1, searchTerm, categoryFilter, outletFilter, availabilityFilter, statusFilter);
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, categoryFilter, outletFilter, availabilityFilter, statusFilter, handlePageChange, fetchProducts]);
+  }, [categoryFilter, outletFilter, availabilityFilter, statusFilter, handlePageChange]);
 
   // Filter products based on current filters
   const filteredProducts = useMemo(() => {
@@ -383,23 +392,22 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
   }, [handlePageChange]);
 
   const handleSearchChange = useCallback((searchValue: string) => {
-    setSearchTerm(searchValue);
-    handlePageChange(1);
-  }, [handlePageChange]);
+    throttledSearchChange(searchValue);
+  }, [throttledSearchChange]);
 
   const handleClearFilters = useCallback(() => {
-    setSearchTerm('');
+    throttledSearchChange('');
     setCategoryFilter('all');
     setOutletFilter('all');
     setAvailabilityFilter('all');
     setStatusFilter('all');
     handlePageChange(1);
-  }, [handlePageChange]);
+  }, [throttledSearchChange, handlePageChange]);
 
   const handlePageChangeWithFetch = useCallback((page: number) => {
     handlePageChange(page);
-    fetchProducts(page);
-  }, [handlePageChange, fetchProducts]);
+    fetchProducts(page, searchTerm, categoryFilter, outletFilter, availabilityFilter, statusFilter);
+  }, [handlePageChange, fetchProducts, searchTerm, categoryFilter, outletFilter, availabilityFilter, statusFilter]);
 
   const handleProductCreated = useCallback(async (productData: ProductCreateInput) => {
     try {
@@ -450,7 +458,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     pagination,
     
     // Actions
-    setSearchTerm,
+    setSearchTerm: throttledSearchChange, // Use throttled search for better performance
     setCategoryFilter,
     setOutletFilter,
     setAvailabilityFilter,

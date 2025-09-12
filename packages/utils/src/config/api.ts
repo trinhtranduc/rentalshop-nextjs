@@ -157,6 +157,9 @@ export interface ApiUrls {
     outletPerformance: string;
     seasonalTrends: string;
     export: string;
+    todayMetrics: string;
+    growthMetrics: string;
+    enhancedDashboard: string;
   };
   merchants: {
     list: string;

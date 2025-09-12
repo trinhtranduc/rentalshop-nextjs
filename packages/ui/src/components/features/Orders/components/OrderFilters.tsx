@@ -65,19 +65,21 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
   }), [stableOnSearch]);
 
   // Use throttled search to prevent excessive API calls
-  const { query, handleSearchChange: throttledSearchChange, clearSearch } = useThrottledSearch(searchOptions);
+  const { query, handleSearchChange: throttledSearchChange, clearSearch, setQuery } = useThrottledSearch(searchOptions);
 
   // Sync the query with the filters.search value when filters change externally
+  // Only update when filters.search changes from external sources (not from user typing)
   useEffect(() => {
-    if (filters.search !== query) {
-      // Update the local query to match the filters.search value
-      if (filters.search === '') {
+    const searchValue = filters.search || '';
+    if (searchValue !== query) {
+      // Only sync if the external search value is different
+      if (searchValue === '') {
         clearSearch();
       } else {
-        throttledSearchChange(filters.search);
+        setQuery(searchValue);
       }
     }
-  }, [filters.search, query, clearSearch, throttledSearchChange]);
+  }, [filters.search]); // Only depend on filters.search, not query
 
   const handleFilterChange = (key: keyof OrderFiltersType, value: any) => {
     // For non-search filters, update immediately

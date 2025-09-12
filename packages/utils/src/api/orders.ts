@@ -8,9 +8,9 @@ export interface OrdersResponse {
   total: number;
   page: number;
   limit: number;
-  totalPages: number;
+  offset: number;
   hasMore: boolean;
-  currentPage: number;
+  totalPages: number;
 }
 
 /**
@@ -45,7 +45,7 @@ export const ordersApi = {
   async searchOrders(filters: OrderFilters): Promise<ApiResponse<OrdersResponse>> {
     const params = new URLSearchParams();
     
-    if (filters.search) params.append('search', filters.search);
+    if (filters.search) params.append('q', filters.search);
     if (filters.status) {
       // Handle both single status and array of statuses
       if (Array.isArray(filters.status)) {
@@ -69,6 +69,15 @@ export const ordersApi = {
     }
     
     if (filters.orderType) params.append('orderType', filters.orderType);
+    
+    // Add pagination parameters
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.page) params.append('page', filters.page.toString());
+    
+    // Add sorting parameters
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
     
     const response = await authenticatedFetch(`${apiUrls.orders.list}?${params.toString()}`);
     return await parseApiResponse<OrdersResponse>(response);

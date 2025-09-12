@@ -8,6 +8,8 @@ export interface ProductsResponse {
   total: number;
   page: number;
   limit: number;
+  offset: number;
+  hasMore: boolean;
   totalPages: number;
 }
 
@@ -43,13 +45,23 @@ export const productsApi = {
   async searchProducts(filters: ProductFilters): Promise<ApiResponse<Product[]>> {
     const params = new URLSearchParams();
     
-    if (filters.search) params.append('search', filters.search);
+    if (filters.search) params.append('q', filters.search); // Use 'q' parameter like orders
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.available !== undefined) params.append('available', filters.available.toString());
     if (filters.status) params.append('status', filters.status);
     if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+    
+    // Add pagination parameters
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+    // Add page parameter for consistency with user/customer search
+    if (filters.page) params.append('page', filters.page.toString());
+    
+    // Add sorting parameters
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
     
     const response = await authenticatedFetch(`${apiUrls.products.list}?${params.toString()}`);
     return await parseApiResponse<Product[]>(response);
@@ -68,6 +80,12 @@ export const productsApi = {
     if (filters.status) params.append('status', filters.status);
     if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+    
+    // Add pagination parameters
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+    // Add page parameter for consistency with user/customer search
+    if (filters.page) params.append('page', filters.page.toString());
     
     const response = await authenticatedFetch(`${apiUrls.merchants.products.list(merchantId)}?${params.toString()}`);
     return await parseApiResponse<Product[]>(response);

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePagination } from './usePagination';
+import { useThrottledSearch } from './useThrottledSearch';
 import { customersApi } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
 import type { Customer, CustomerFilters as CustomerFiltersType, CustomerCreateInput, CustomerUpdateInput } from '@rentalshop/types';
@@ -79,7 +80,6 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
   // State
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState<string>('');
   const [stateFilter, setStateFilter] = useState<string>('');
   const [countryFilter, setCountryFilter] = useState<string>('');
@@ -95,8 +95,18 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
     initialLimit
   });
 
-  // Fetch customers function
-  const fetchCustomers = useCallback(async (page: number = pagination.currentPage) => {
+  // Throttled search for better performance
+  const { query: searchTerm, handleSearchChange: throttledSearchChange } = useThrottledSearch({
+    delay: 300,
+    minLength: 0,
+    onSearch: (query: string) => {
+      // Trigger search when throttled search completes
+      fetchCustomers(1, query, cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter);
+    }
+  });
+
+  // Fetch customers function - stable reference to prevent multiple calls
+  const fetchCustomers = useCallback(async (page: number = pagination.currentPage, searchQuery: string = '', city: string = '', state: string = '', country: string = '', idType: string = 'all', status: string = 'all') => {
     try {
       setLoading(true);
       
@@ -105,14 +115,18 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
       if (useSearchCustomers) {
         // Admin page uses searchCustomers with filters
         const filters: CustomerFiltersType = {
-          search: searchTerm || undefined,
-          city: cityFilter || undefined,
-          state: stateFilter || undefined,
-          country: countryFilter || undefined,
-          idType: idTypeFilter !== 'all' ? (idTypeFilter as any) : undefined,
-          isActive: statusFilter !== 'all' ? (statusFilter === 'active') : undefined,
+          search: searchQuery || undefined,
+          city: city || undefined,
+          state: state || undefined,
+          country: country || undefined,
+          idType: idType !== 'all' ? (idType as any) : undefined,
+          isActive: status !== 'all' ? (status === 'active') : undefined,
           merchantId: merchantId,
-          outletId: outletId
+          outletId: outletId,
+          // Add pagination parameters
+          page: page,
+          limit: pagination.limit,
+          offset: (page - 1) * pagination.limit
         };
         
         response = await customersApi.searchCustomers(filters);
@@ -123,16 +137,22 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
       
       if (response.success && response.data) {
         if (useSearchCustomers) {
-          // searchCustomers returns Customer[] directly
-          const customersData = Array.isArray(response.data) ? response.data : [];
+          // searchCustomers now returns CustomerSearchResponse with pagination info
+          const searchResponse = response.data as any;
+          const customersData = searchResponse.customers || [];
+          const total = searchResponse.total || 0;
+          const totalPagesCount = searchResponse.totalPages || 1;
+          const currentPage = searchResponse.page || 1;
+          const hasMore = searchResponse.hasMore || false;
+          
           setCustomers(customersData);
           
-          // For search, we don't have pagination info, so use current pagination
+          // Update pagination state with proper search response data
           updatePaginationFromResponse({
-            total: customersData.length,
+            total,
             limit: pagination.limit,
-            offset: (page - 1) * pagination.limit,
-            hasMore: false
+            offset: (currentPage - 1) * pagination.limit,
+            hasMore
           });
         } else {
           // getCustomersPaginated returns CustomersResponse with nested structure
@@ -161,22 +181,17 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
     } finally {
       setLoading(false);
     }
-  }, [pagination.currentPage, pagination.limit, searchTerm, cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter, useSearchCustomers, merchantId, outletId, updatePaginationFromResponse]);
+  }, [pagination.currentPage, pagination.limit, useSearchCustomers, merchantId, outletId, updatePaginationFromResponse]);
 
-  // Initial fetch
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  // Refetch customers when filters change (reset to page 1)
+  // Initial fetch and refetch when filters change
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       handlePageChange(1);
-      fetchCustomers(1);
+      fetchCustomers(1, searchTerm, cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter);
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter, handlePageChange, fetchCustomers]);
+  }, [cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter, handlePageChange]);
 
   // Filter customers based on current filters
   const filteredCustomers = useMemo(() => {
@@ -328,24 +343,23 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
   }, [handlePageChange]);
 
   const handleSearchChange = useCallback((searchValue: string) => {
-    setSearchTerm(searchValue);
-    handlePageChange(1);
-  }, [handlePageChange]);
+    throttledSearchChange(searchValue);
+  }, [throttledSearchChange]);
 
   const handleClearFilters = useCallback(() => {
-    setSearchTerm('');
+    throttledSearchChange('');
     setCityFilter('');
     setStateFilter('');
     setCountryFilter('');
     setIdTypeFilter('all');
     setStatusFilter('all');
     handlePageChange(1);
-  }, [handlePageChange]);
+  }, [throttledSearchChange, handlePageChange]);
 
   const handlePageChangeWithFetch = useCallback((page: number) => {
     handlePageChange(page);
-    fetchCustomers(page);
-  }, [handlePageChange, fetchCustomers]);
+    fetchCustomers(page, searchTerm, cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter);
+  }, [handlePageChange, fetchCustomers, searchTerm, cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter]);
 
   const handleCustomerCreated = useCallback(async (customerData: CustomerCreateInput) => {
     try {
@@ -396,7 +410,7 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
     pagination,
     
     // Actions
-    setSearchTerm,
+    setSearchTerm: throttledSearchChange, // Use throttled search for better performance
     setCityFilter,
     setStateFilter,
     setCountryFilter,

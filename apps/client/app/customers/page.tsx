@@ -19,7 +19,7 @@ export default function CustomersPage() {
       addButtonText="Add Customer"
       exportButtonText="Export"
       showStats={false} // Client page typically doesn't show stats overview
-      useSearchCustomers={false} // Client page uses getCustomersPaginated
+      useSearchCustomers={true} // Enable search across all pages
       initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
       currentUser={currentUser}
     />

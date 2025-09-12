@@ -994,6 +994,17 @@ export async function searchOrders(
     where.isReadyToDeliver = filters.isReadyToDeliver;
   }
 
+  // Handle search query (q) - search across order number, customer name, and customer phone
+  if (filters.q && filters.q.trim()) {
+    const searchQuery = filters.q.toLowerCase().trim();
+    where.OR = [
+      { orderNumber: { contains: searchQuery } },
+      { customer: { firstName: { contains: searchQuery } } },
+      { customer: { lastName: { contains: searchQuery } } },
+      { customer: { phone: { contains: searchQuery } } }
+    ];
+  }
+
   // Execute query
   const [orders, total] = await Promise.all([
     prisma.order.findMany({
@@ -1121,9 +1132,11 @@ export async function searchOrders(
     data: {
       orders: transformedOrders,
       total,
+      page: Math.floor(offset / limit) + 1,
       limit,
       offset,
       hasMore: offset + limit < total,
+      totalPages: Math.ceil(total / limit),
     },
   };
 }

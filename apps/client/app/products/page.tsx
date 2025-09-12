@@ -33,7 +33,7 @@ export default function ProductsPage() {
       addButtonText="Add Product"
       exportButtonText="Export Products"
       showStats={false}
-      useSearchProducts={false}
+      useSearchProducts={true}
       initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
       currentUser={currentUser}
       onProductAction={handleProductAction}

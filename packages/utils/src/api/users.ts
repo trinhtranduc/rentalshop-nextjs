@@ -52,7 +52,11 @@ export const usersApi = {
     if (filters.page) params.append('page', filters.page.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
     
-    const response = await authenticatedFetch(`${apiUrls.users.list}?${params.toString()}`);
+    const url = `${apiUrls.users.list}?${params.toString()}`;
+    console.log('🔍 usersApi.searchUsers: Calling URL:', url);
+    console.log('🔍 usersApi.searchUsers: Filters:', filters);
+    
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<UsersResponse>(response);
   },
 

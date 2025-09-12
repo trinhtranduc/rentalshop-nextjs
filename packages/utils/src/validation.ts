@@ -57,10 +57,18 @@ export const productUpdateSchema = z.object({
 });
 
 export const productsQuerySchema = z.object({
-  search: z.string().optional(),
+  q: z.string().optional(), // Search query parameter (consistent with orders)
+  search: z.string().optional(), // Keep for backward compatibility
   categoryId: z.coerce.number().int().positive().optional(), // Changed from string to number
+  outletId: z.coerce.number().int().positive().optional(), // Add outlet filtering
+  available: z.coerce.boolean().optional(), // Add availability filter
+  minPrice: z.coerce.number().nonnegative().optional(), // Add price range filters
+  maxPrice: z.coerce.number().nonnegative().optional(), // Add price range filters
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0), // Add offset for pagination consistency
+  sortBy: z.string().optional(), // Add sorting support
+  sortOrder: z.enum(['asc', 'desc']).optional(), // Add sorting support
 });
 
 // Rental validation schemas
@@ -105,19 +113,23 @@ export const customerUpdateSchema = customerCreateSchema.partial().extend({
 });
 
 export const customersQuerySchema = z.object({
+  q: z.string().optional(), // Search query parameter (consistent with orders)
+  search: z.string().optional(), // Keep for backward compatibility
   merchantId: z.coerce.number().int().positive().optional(), // Changed from string to number
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;
     if (v === undefined) return undefined;
     return v === 'true';
   }).optional(),
-  search: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   country: z.string().optional(),
   idType: z.enum(['passport', 'drivers_license', 'national_id', 'other']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0), // Add offset for pagination consistency
+  sortBy: z.string().optional(), // Add sorting support
+  sortOrder: z.enum(['asc', 'desc']).optional(), // Add sorting support
 });
 
 // ============================================================================

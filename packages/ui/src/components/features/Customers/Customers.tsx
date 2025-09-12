@@ -261,8 +261,8 @@ export const Customers: React.FC<CustomersProps> = ({
           onCustomerAction={handleCustomerRowAction}
         />
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
+        {/* Pagination - only show when there are results */}
+        {filteredCustomers.length > 0 && pagination.totalPages > 1 && (
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
@@ -273,24 +273,7 @@ export const Customers: React.FC<CustomersProps> = ({
           />
         )}
 
-        {/* Empty State */}
-        {filteredCustomers.length === 0 && (
-          <EmptyState
-            icon={UserIcon}
-            title="No customers found"
-            description={
-              filters.search || filters.city || filters.state || filters.country || filters.idType || filters.isActive !== undefined
-                ? 'Try adjusting your search or filters'
-                : 'Get started by adding your first customer'
-            }
-            actionLabel="Add Customer"
-            onAction={() => setShowCreateForm(true)}
-          />
-        )}
       </PageContent>
-
-
-
       {/* Customer Edit Dialog */}
       {selectedCustomer && (
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
