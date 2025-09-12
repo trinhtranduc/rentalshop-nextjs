@@ -21,9 +21,12 @@ export function OrderStats({ stats }: OrderStatsProps) {
     const total = stats.totalOrders;
     if (total === 0) return [];
     
+    // Calculate reserved orders (total - active - completed - cancelled)
+    const reservedOrders = Math.max(0, total - stats.activeRentals - stats.completedOrders - stats.cancelledOrders);
+    
     return [
-      { label: 'Reserved', count: stats.pendingOrders, percentage: (stats.pendingOrders / total) * 100, color: 'bg-red-500' },
-      { label: 'Pickuped', count: stats.activeOrders, percentage: (stats.activeOrders / total) * 100, color: 'bg-orange-500' },
+      { label: 'Reserved', count: reservedOrders, percentage: (reservedOrders / total) * 100, color: 'bg-red-500' },
+      { label: 'Pickuped', count: stats.activeRentals, percentage: (stats.activeRentals / total) * 100, color: 'bg-orange-500' },
       { label: 'Completed', count: stats.completedOrders, percentage: (stats.completedOrders / total) * 100, color: 'bg-green-500' },
       { label: 'Cancelled', count: stats.cancelledOrders, percentage: (stats.cancelledOrders / total) * 100, color: 'bg-red-700' }
     ];
@@ -98,10 +101,10 @@ export function OrderStats({ stats }: OrderStatsProps) {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">This Month Revenue</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Overdue Rentals</span>
                 <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                    {formatCurrency(stats.revenueThisMonth)}
+                  <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                    {stats.overdueRentals} orders
                   </Badge>
                 </div>
               </div>
@@ -123,25 +126,25 @@ export function OrderStats({ stats }: OrderStatsProps) {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">This Month</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Active Rentals</span>
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    {stats.ordersThisMonth} orders
+                    {stats.activeRentals} orders
                   </Badge>
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Pickuped Orders</span>
-                <span className="font-medium text-orange-600 dark:text-orange-400">
-                  {stats.activeOrders}
+                <span className="text-sm text-gray-600 dark:text-gray-400">Completed Orders</span>
+                <span className="font-medium text-green-600 dark:text-green-400">
+                  {stats.completedOrders}
                 </span>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Reserved Orders</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Cancelled Orders</span>
                 <span className="font-medium text-red-600 dark:text-red-400">
-                  {stats.pendingOrders}
+                  {stats.cancelledOrders}
                 </span>
               </div>
             </div>
@@ -158,10 +161,10 @@ export function OrderStats({ stats }: OrderStatsProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {stats.totalOrders > 0 ? ((stats.activeOrders / stats.totalOrders) * 100).toFixed(1) : 0}%
+                {stats.totalOrders > 0 ? ((stats.activeRentals / stats.totalOrders) * 100).toFixed(1) : 0}%
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Pickuped Order Rate
+                Active Rental Rate
               </div>
             </div>
             

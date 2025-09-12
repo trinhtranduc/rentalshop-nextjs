@@ -9,18 +9,34 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
     // User is already authenticated and authorized to view analytics
     const { user, userScope, request } = authorizedRequest;
 
-    // Get top customers in the last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Get query parameters for date filtering
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    // Set default date range if not provided (last 30 days)
+    let dateStart: Date;
+    let dateEnd: Date;
+    
+    if (startDate && endDate) {
+      dateStart = new Date(startDate);
+      dateEnd = new Date(endDate);
+    } else {
+      // Default to last 30 days
+      dateEnd = new Date();
+      dateStart = new Date();
+      dateStart.setDate(dateStart.getDate() - 30);
+    }
 
     const topCustomers = await prisma.order.groupBy({
       by: ['customerId'],
       where: {
         customerId: { not: null },
         createdAt: {
-          gte: thirtyDaysAgo
+          gte: dateStart,
+          lte: dateEnd
         },
-        status: { in: ['BOOKED', 'ACTIVE', 'COMPLETED'] }
+        status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] }
       },
       _count: {
         customerId: true
@@ -36,33 +52,60 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
       take: 10
     });
 
-    // Get customer details for each top customer
-    const topCustomersWithDetails = await Promise.all(
-      topCustomers.map(async (item) => {
-        const customer = await prisma.customer.findUnique({
-          where: { id: item.customerId! },
-          select: {
-            id: true,
-            publicId: true, // Include publicId to use as the external ID
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            address: true,
-          },
-        });
+    // Get customer details for each top customer in order
+    const topCustomersWithDetails = [];
+    for (const item of topCustomers) {
+      const customer = await prisma.customer.findUnique({
+        where: { id: item.customerId! },
+        select: {
+          id: true,
+          publicId: true, // Include publicId to use as the external ID
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          address: true,
+        },
+      });
 
-        return {
-          id: customer?.publicId || 0, // Use publicId (number) as the external ID
-          name: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
-          email: customer?.email || '',
-          phone: customer?.phone || '',
-          location: customer?.address || '',
-          orderCount: item._count.customerId,
-          totalSpent: item._sum.totalAmount || 0,
-        };
-      })
-    );
+    // Get rental count for this customer (only RENT orders)
+    const rentalCount = await prisma.order.count({
+      where: {
+        customerId: item.customerId!,
+        createdAt: {
+          gte: dateStart,
+          lte: dateEnd
+        },
+        status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] },
+        orderType: 'RENT'
+      }
+    });
+
+    // Get sale count for this customer (only SALE orders)
+    const saleCount = await prisma.order.count({
+      where: {
+        customerId: item.customerId!,
+        createdAt: {
+          gte: dateStart,
+          lte: dateEnd
+        },
+        status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] },
+        orderType: 'SALE'
+      }
+    });
+
+      topCustomersWithDetails.push({
+        id: customer?.publicId || 0, // Use publicId (number) as the external ID
+        name: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
+        email: customer?.email || '',
+        phone: customer?.phone || '',
+        location: customer?.address || '',
+        orderCount: item._count.customerId, // Total orders (rental + sale)
+        rentalCount: rentalCount, // Only rental orders
+        saleCount: saleCount, // Only sale orders
+        totalSpent: item._sum.totalAmount || 0,
+      });
+    }
 
     const body = JSON.stringify({ success: true, data: topCustomersWithDetails });
     const etag = crypto.createHash('sha1').update(body).digest('hex');

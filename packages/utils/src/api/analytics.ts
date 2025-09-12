@@ -162,24 +162,39 @@ export const analyticsApi = {
   /**
    * Get top products
    */
-  async getTopProducts(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(apiUrls.analytics.topProducts);
+  async getTopProducts(filters?: AnalyticsFilters): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    
+    const url = `${apiUrls.analytics.topProducts}${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   },
 
   /**
    * Get top customers
    */
-  async getTopCustomers(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(apiUrls.analytics.topCustomers);
+  async getTopCustomers(filters?: AnalyticsFilters): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    
+    const url = `${apiUrls.analytics.topCustomers}${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   },
 
   /**
    * Get recent orders
    */
-  async getRecentOrders(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(apiUrls.analytics.recentOrders);
+  async getRecentOrders(filters?: AnalyticsFilters): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    
+    const url = `${apiUrls.analytics.recentOrders}${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   },
 
@@ -238,26 +253,34 @@ export const analyticsApi = {
     overdueItems: number;
     productUtilization: number;
   }>> {
-    const response = await authenticatedFetch(apiUrls.analytics.todayMetrics);
+    // Add timestamp to bypass cache
+    const url = `${apiUrls.analytics.todayMetrics}?t=${Date.now()}`;
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   },
 
   /**
    * Get growth metrics
    */
-  async getGrowthMetrics(): Promise<ApiResponse<{
+  async getGrowthMetrics(filters?: AnalyticsFilters): Promise<ApiResponse<{
     customerGrowth: number;
     revenueGrowth: number;
     customerBase: number;
   }>> {
-    const response = await authenticatedFetch(apiUrls.analytics.growthMetrics);
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    params.append('t', Date.now().toString()); // Add timestamp to bypass cache
+    
+    const url = `${apiUrls.analytics.growthMetrics}?${params.toString()}`;
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   },
 
   /**
    * Get enhanced dashboard summary with all metrics
    */
-  async getEnhancedDashboardSummary(): Promise<ApiResponse<{
+  async getEnhancedDashboardSummary(filters?: AnalyticsFilters): Promise<ApiResponse<{
     totalRevenue: number;
     totalOrders: number;
     futureIncome: number;
@@ -269,7 +292,13 @@ export const analyticsApi = {
     revenueGrowth: number;
     customerBase: number;
   }>> {
-    const response = await authenticatedFetch(apiUrls.analytics.enhancedDashboard);
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    params.append('t', Date.now().toString()); // Add timestamp to bypass cache
+    
+    const url = `${apiUrls.analytics.enhancedDashboard}?${params.toString()}`;
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   }
 };

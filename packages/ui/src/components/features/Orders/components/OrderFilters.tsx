@@ -110,20 +110,7 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
 
   return (
     <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 backdrop-blur-sm">
-      <CardHeader className="pb-6 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div>
-              <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                Order Search & Filters
-              </CardTitle>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Find and filter orders with precision
-              </p>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
+    
       
       <CardContent className="pt-6 space-y-6">
         {/* Primary Filters */}
@@ -226,18 +213,6 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
               )}
             </div>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            Clear Filters
-          </Button>
         </div>
       </CardContent>
     </Card>

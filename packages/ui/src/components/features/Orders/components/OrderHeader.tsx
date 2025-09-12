@@ -8,6 +8,9 @@ interface OrderHeaderProps {
 }
 
 export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
+  console.log('OrderHeader received stats:', stats);
+  console.log('OrderHeader received totalOrders:', totalOrders);
+  
   const formatCurrency = (amount: number | undefined): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

@@ -1,47 +1,148 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthAndAuthz } from '@rentalshop/auth';
+import { authenticateRequest, getUserScope } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
-export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (authorizedRequest) => {
+export async function GET(request: NextRequest) {
   try {
-    // User is already authenticated and authorized to view analytics
-    const { user, userScope, request } = authorizedRequest;
+    // Authenticate the request
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.response;
+    }
 
-    // Get current year and month
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
+    // Get user scope for data filtering
+    const userScope = getUserScope(authResult.user);
 
-    // Generate data for the last 12 months
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const groupBy = searchParams.get('groupBy') || 'month';
+
+    if (!startDate || !endDate) {
+      return NextResponse.json(
+        { success: false, error: 'startDate and endDate are required' },
+        { status: API.STATUS.BAD_REQUEST }
+      );
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Generate data based on groupBy parameter
     const orderData = [];
     
-    for (let i = 11; i >= 0; i--) {
-      const targetDate = new Date(currentYear, currentMonth - i, 1);
-      const monthName = targetDate.toLocaleString('default', { month: 'short' });
-      const year = targetDate.getFullYear();
-      const month = targetDate.getMonth();
+    if (groupBy === 'month') {
+      // Generate monthly data
+      const current = new Date(start.getFullYear(), start.getMonth(), 1);
+      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
       
-      // Calculate start and end of month
-      const startOfMonth = new Date(year, month, 1);
-      const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+      while (current <= endMonth) {
+        const monthName = current.toLocaleString('default', { month: 'short' });
+        const year = current.getFullYear();
+        const month = current.getMonth();
+        
+        // Calculate start and end of month
+        const startOfMonth = new Date(year, month, 1);
+        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
-      // Get order count for this month
-      const orderCount = await prisma.order.count({
-        where: {
+        // Build where clause for user scope
+        const whereClause: any = {
           createdAt: {
             gte: startOfMonth,
             lte: endOfMonth
           }
-        }
-      });
+        };
 
-      orderData.push({
-        month: monthName,
-        year: year,
-        orderCount: orderCount
-      });
+        // Add user scope filtering
+        if (userScope.merchantId) {
+          const merchant = await prisma.merchant.findUnique({
+            where: { publicId: userScope.merchantId },
+            include: { outlets: { select: { id: true } } }
+          });
+          if (merchant) {
+            whereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+          }
+        } else if (userScope.outletId) {
+          const outlet = await prisma.outlet.findUnique({
+            where: { publicId: userScope.outletId }
+          });
+          if (outlet) {
+            whereClause.outletId = outlet.id;
+          }
+        }
+
+        // Get order count for this month
+        const orderCount = await prisma.order.count({
+          where: whereClause
+        });
+
+        orderData.push({
+          month: monthName,
+          year: year,
+          orderCount: orderCount
+        });
+
+        // Move to next month
+        current.setMonth(current.getMonth() + 1);
+      }
+    } else if (groupBy === 'day') {
+      // Generate daily data
+      const current = new Date(start);
+      const endDay = new Date(end);
+      
+      while (current <= endDay) {
+        const monthName = current.toLocaleString('default', { month: 'short' });
+        const year = current.getFullYear();
+        const month = current.getMonth();
+        const day = current.getDate();
+        
+        // Calculate start and end of day
+        const startOfDay = new Date(year, month, day, 0, 0, 0);
+        const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
+
+        // Build where clause for user scope
+        const whereClause: any = {
+          createdAt: {
+            gte: startOfDay,
+            lte: endOfDay
+          }
+        };
+
+        // Add user scope filtering
+        if (userScope.merchantId) {
+          const merchant = await prisma.merchant.findUnique({
+            where: { publicId: userScope.merchantId },
+            include: { outlets: { select: { id: true } } }
+          });
+          if (merchant) {
+            whereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+          }
+        } else if (userScope.outletId) {
+          const outlet = await prisma.outlet.findUnique({
+            where: { publicId: userScope.outletId }
+          });
+          if (outlet) {
+            whereClause.outletId = outlet.id;
+          }
+        }
+
+        // Get order count for this day
+        const orderCount = await prisma.order.count({
+          where: whereClause
+        });
+
+        orderData.push({
+          month: `${monthName} ${day}`,
+          year: year,
+          orderCount: orderCount
+        });
+
+        // Move to next day
+        current.setDate(current.getDate() + 1);
+      }
     }
 
     const body = JSON.stringify({ success: true, data: orderData });
@@ -63,6 +164,6 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-});
+}
 
 export const runtime = 'nodejs';

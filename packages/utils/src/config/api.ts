@@ -94,6 +94,14 @@ export interface ApiUrls {
     create: string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    updateRole: (id: number) => string;
+    updateStatus: (id: number) => string;
+    assignOutlet: (id: number) => string;
+    deleteAccount: string;
+    updateByPublicId: (id: number) => string;
+    activateByPublicId: (id: number) => string;
+    deactivateByPublicId: (id: number) => string;
+    deleteByPublicId: (id: number) => string;
   };
   plans: {
     list: string;
@@ -168,6 +176,10 @@ export interface ApiUrls {
     get: (id: number) => string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    updatePlan: (id: number) => string;
+    getPlan: (id: number) => string;
+    extendPlan: (id: number) => string;
+    cancelPlan: (id: number) => string;
     products: {
       list: (merchantId: number) => string;
       get: (merchantId: number, productId: number) => string;
@@ -481,6 +493,14 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/users`,
       update: (id: number) => `${base}/api/users/${id}`,
       delete: (id: number) => `${base}/api/users/${id}`,
+      updateRole: (id: number) => `${base}/api/users/${id}/role`,
+      updateStatus: (id: number) => `${base}/api/users/${id}/status`,
+      assignOutlet: (id: number) => `${base}/api/users/${id}/assign-outlet`,
+      deleteAccount: `${base}/api/users/delete-account`,
+      updateByPublicId: (id: number) => `${base}/api/users/${id}`,
+      activateByPublicId: (id: number) => `${base}/api/users/${id}`,
+      deactivateByPublicId: (id: number) => `${base}/api/users/${id}`,
+      deleteByPublicId: (id: number) => `${base}/api/users/${id}`,
     },
     plans: {
       list: `${base}/api/plans`,
@@ -555,6 +575,10 @@ function createApiUrls(): ApiUrls {
       get: (id: number) => `${base}/api/merchants/${id}`,
       update: (id: number) => `${base}/api/merchants/${id}`,
       delete: (id: number) => `${base}/api/merchants/${id}`,
+      updatePlan: (id: number) => `${base}/api/merchants/${id}/plan`,
+      getPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
+      extendPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
+      cancelPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
       products: {
         list: (merchantId: number) => `${base}/api/merchants/${merchantId}/products`,
         get: (merchantId: number, productId: number) => `${base}/api/merchants/${merchantId}/products/${productId}`,

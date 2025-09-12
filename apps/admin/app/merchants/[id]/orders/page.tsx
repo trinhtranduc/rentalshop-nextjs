@@ -14,21 +14,9 @@ import {
   ToastContainer
 } from '@rentalshop/ui';
 import { ArrowLeft, Plus } from 'lucide-react';
-import type { Order, OrderFilters, OrdersData } from '@rentalshop/types';
+import type { Order, OrderFilters, OrderListData, OrderStats } from '@rentalshop/types';
 
-interface OrderData {
-  orders: Order[];
-  total: number;
-  currentPage: number;
-  totalPages: number;
-  hasMore: boolean;
-  stats?: {
-    total: number;
-    active: number;
-    completed: number;
-    cancelled: number;
-  };
-}
+// Use the proper OrderListData interface from types
 
 export default function MerchantOrdersPage() {
   const params = useParams();
@@ -36,17 +24,22 @@ export default function MerchantOrdersPage() {
   const { toasts, showInfo, removeToast } = useToasts();
   const merchantId = params.id as string;
   
-  const [orderData, setOrderData] = useState<OrderData>({
+  const [orderData, setOrderData] = useState<OrderListData>({
     orders: [],
     total: 0,
     currentPage: 1,
     totalPages: 1,
+    limit: 20,
     hasMore: false,
     stats: {
-      total: 0,
-      active: 0,
-      completed: 0,
-      cancelled: 0
+      totalOrders: 0,
+      totalRevenue: 0,
+      totalDeposits: 0,
+      activeRentals: 0,
+      overdueRentals: 0,
+      completedOrders: 0,
+      cancelledOrders: 0,
+      averageOrderValue: 0
     }
   });
   const [loading, setLoading] = useState(true);
@@ -71,7 +64,11 @@ export default function MerchantOrdersPage() {
       const queryParams = new URLSearchParams();
       if (filters.search) queryParams.append('search', filters.search);
       if (filters.orderType) queryParams.append('orderType', filters.orderType);
-      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.status) {
+        // Handle both single status and array of statuses
+        const statusValue = Array.isArray(filters.status) ? filters.status.join(',') : filters.status;
+        queryParams.append('status', statusValue);
+      }
       if (filters.limit) queryParams.append('limit', filters.limit.toString());
       if (filters.offset) queryParams.append('offset', filters.offset.toString());
       if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
@@ -103,19 +100,27 @@ export default function MerchantOrdersPage() {
           outlet: order.outlet
         }));
 
-        setOrderData({
+        const orderData = {
           orders: transformedOrders,
           total: data.data.total || 0,
           currentPage: Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1,
           totalPages: Math.ceil((data.data.total || 0) / (filters.limit || 20)),
+          limit: filters.limit || 20,
           hasMore: (filters.offset || 0) + (filters.limit || 20) < (data.data.total || 0),
           stats: data.data.stats || {
-            total: 0,
-            active: 0,
-            completed: 0,
-            cancelled: 0
+            totalOrders: 0,
+            totalRevenue: 0,
+            totalDeposits: 0,
+            activeRentals: 0,
+            overdueRentals: 0,
+            completedOrders: 0,
+            cancelledOrders: 0,
+            averageOrderValue: 0
           }
-        });
+        };
+        
+        console.log('Setting order data with stats:', orderData.stats);
+        setOrderData(orderData);
       } else {
         setError(data.message || 'Failed to fetch orders');
       }
@@ -144,7 +149,7 @@ export default function MerchantOrdersPage() {
     });
   };
 
-  const handleOrderAction = (action: string, orderId: string) => {
+  const handleOrderAction = (action: string, orderId: number) => {
     switch (action) {
       case 'view':
         router.push(`/merchants/${merchantId}/orders/${orderId}`);

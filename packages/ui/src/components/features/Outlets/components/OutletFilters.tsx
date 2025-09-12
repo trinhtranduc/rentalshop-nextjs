@@ -91,20 +91,6 @@ export function OutletFilters({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Clear Filters */}
-          <div className="flex items-end">
-            {hasActiveFilters && (
-              <Button 
-                variant="outline" 
-                onClick={handleClearFilters}
-                className="w-full"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Clear Filters
-              </Button>
-            )}
-          </div>
         </div>
       </CardContent>
     </Card>

@@ -9,11 +9,58 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
     // User is already authenticated and authorized to view analytics
     const { user, userScope, request } = authorizedRequest;
 
-    // Get recent orders (last 20 orders)
+    // Get query parameters for date filtering
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    // Set default date range if not provided (last 30 days)
+    let dateStart: Date;
+    let dateEnd: Date;
+    
+    if (startDate && endDate) {
+      dateStart = new Date(startDate);
+      dateEnd = new Date(endDate);
+    } else {
+      // Default to last 30 days
+      dateEnd = new Date();
+      dateStart = new Date();
+      dateStart.setDate(dateStart.getDate() - 30);
+    }
+
+    // Build where clause with date filtering
+    const whereClause: any = {
+      status: { not: 'CANCELLED' },
+      createdAt: {
+        gte: dateStart,
+        lte: dateEnd
+      }
+    };
+
+    // Add scope filtering based on user role
+    if (userScope.outletId) {
+      // Find outlet by publicId to get CUID
+      const outlet = await prisma.outlet.findUnique({
+        where: { publicId: userScope.outletId },
+        select: { id: true }
+      });
+      if (outlet) {
+        whereClause.outletId = outlet.id;
+      }
+    } else if (userScope.merchantId) {
+      // Find merchant by publicId to get CUID
+      const merchant = await prisma.merchant.findUnique({
+        where: { publicId: userScope.merchantId },
+        select: { id: true, outlets: { select: { id: true } } }
+      });
+      if (merchant) {
+        whereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+      }
+    }
+
+    // Get recent orders with date filtering
     const recentOrders = await prisma.order.findMany({
-      where: {
-        status: { not: 'CANCELLED' }
-      },
+      where: whereClause,
       include: {
         customer: true,
         orderItems: { include: { product: true } },
