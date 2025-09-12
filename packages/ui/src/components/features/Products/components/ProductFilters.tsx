@@ -82,20 +82,7 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
     fetchData();
   }, []);
 
-  // Stabilize the onSearch callback to prevent hook recreation
-  const stableOnSearch = useCallback((searchQuery: string) => {
-    onSearchChange(searchQuery);
-  }, [onSearchChange]);
-
-  // Memoize the options to prevent hook recreation
-  const searchOptions = useMemo(() => ({
-    delay: 500, // Wait 500ms after user stops typing
-    minLength: 2, // Only search after 2+ characters
-    onSearch: stableOnSearch
-  }), [stableOnSearch]);
-
-  // Use throttled search to prevent excessive API calls
-  const { query, handleSearchChange: throttledSearchChange } = useThrottledSearch(searchOptions);
+  // Let the parent hook handle throttling
 
   const handleFilterChange = (key: keyof ProductFiltersType, value: any) => {
     // For non-search filters, update immediately
@@ -123,8 +110,8 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
             </label>
             <Input
               placeholder="Search by name, barcode..."
-              value={query} // Use the throttled query state
-              onChange={(e) => throttledSearchChange(e.target.value)} // Use throttled handler
+              value={filters.search || ''} // Use the search term from filters
+              onChange={(e) => onSearchChange(e.target.value)} // Use direct handler
             />
           </div>
           

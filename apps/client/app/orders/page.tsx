@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { 
   OrdersLoading,
   PageWrapper,
@@ -12,182 +12,44 @@ import {
 } from '@rentalshop/ui';
 import { Orders } from '../../components/Orders';
 import { useRouter } from 'next/navigation';
-import { useAuth, usePagination } from '@rentalshop/hooks';
-import type { OrderSearchResult, OrderInput, OrderType, OrderStatus, OrderFilters as OrderFiltersType, OrderWithDetails } from '@rentalshop/types';
-import { ordersApi } from '@rentalshop/utils';
+import { useAuth, useOrderManagement } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
 
 export default function OrdersPage() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { toasts, showSuccess, showError, removeToast } = useToasts();
   
-  // State for orders and UI
-  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-  
-  // Pagination hook
-  const { pagination, handlePageChange: paginationPageChange, updatePaginationFromResponse } = usePagination({
+  // Use the order management hook
+  const {
+    orders,
+    loading,
+    searchTerm,
+    statusFilter,
+    orderTypeFilter,
+    outletFilter,
+    dateRangeFilter,
+    sortBy,
+    sortOrder,
+    pagination,
+    stats,
+    handleSearchChange,
+    handleFiltersChange,
+    handleClearFilters,
+    handlePageChange,
+    handleSort,
+    handlePickupOrder,
+    handleReturnOrder,
+    handleCancelOrder,
+    refreshOrders,
+    refreshStats
+  } = useOrderManagement({
     initialLimit: PAGINATION.DEFAULT_PAGE_SIZE,
-    initialOffset: 0
-  });
-  
-  // Initialize filters
-  const [filters, setFilters] = useState<OrderFiltersType>({
-    search: '',
-    status: undefined,
-    orderType: undefined,
-    outletId: undefined,
-    dateRange: {
-      start: '',
-      end: ''
-    },
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
+    useSearchOrders: true,
+    enableStats: true
   });
 
-  // Separate search state to prevent unnecessary re-renders
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const hasInitializedRef = useRef(false);
-
-  const fetchOrders = useCallback(async () => {
-    try {
-      // Show appropriate loading state
-      if (searchQuery !== undefined && hasInitializedRef.current) {
-        setIsSearching(true); // Table-only loading for search operations
-      } else if (!isInitialLoad) {
-        setLoading(true); // Full page loading for other operations
-      }
-      
-      console.log('🔍 fetchOrders called with params:', {
-        search: searchQuery,
-        status: filters.status,
-        orderType: filters.orderType,
-        outletId: filters.outletId,
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder,
-        limit: pagination.limit,
-        offset: pagination.offset
-      });
-
-      const result = await ordersApi.searchOrders({
-        search: searchQuery,
-        status: filters.status,
-        orderType: filters.orderType,
-        outletId: filters.outletId,
-        dateRange: filters.dateRange,
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder,
-        limit: pagination.limit,
-        offset: pagination.offset
-      });
-
-      if (result.success && result.data) {
-        const data = result.data;
-        console.log('🔍 Orders API response:', data);
-        
-        // Handle the API response - data contains orders array and pagination info
-        const orders = Array.isArray(data.orders) ? data.orders as OrderWithDetails[] : [];
-        
-        setOrders(orders);
-        
-        // Update pagination from API response
-        updatePaginationFromResponse({
-          total: data.total || orders.length,
-          limit: pagination.limit,
-          offset: pagination.offset,
-          hasMore: data.hasMore || false
-        });
-      } else {
-        console.error('API Error:', result.error);
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    } finally {
-      setLoading(false);
-      setIsSearching(false);
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
-      }
-    }
-  }, [pagination.offset, pagination.limit, searchQuery, filters.orderType, filters.status, filters.outletId, filters.sortBy, filters.sortOrder, isInitialLoad]); // Remove setCurrentPage, setOrders, setTotalPages, setLoading, setIsSearching, hasInitializedRef dependencies
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const result = await ordersApi.getOrderStats();
-      
-      if (result.success && result.data) {
-        setStats(result.data);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  }, []);
-
-  // Effect for initial load - only runs once
-  useEffect(() => {
-    fetchOrders();
-    fetchStats();
-    // Mark as initialized after first load
-    hasInitializedRef.current = true;
-  }, []); // Remove fetchOrders and fetchStats dependencies
-
-  // Effect for all data changes - intelligently handles search vs. other operations
-  useEffect(() => {
-    if (hasInitializedRef.current) {
-      fetchOrders();
-    }
-  }, [searchQuery, pagination.offset, filters.orderType, filters.status, filters.outletId, filters.sortBy, filters.sortOrder]); // Remove fetchOrders dependency
-
-  // Effect for stats updates
-  useEffect(() => {
-    if (hasInitializedRef.current) {
-      fetchStats();
-    }
-  }, []); // Remove fetchStats dependency
-
-  // Separate handler for search changes - only updates search state
-  const handleSearchChange = useCallback((searchValue: string) => {
-    console.log('🔍 handleSearchChange called with:', searchValue);
-    setSearchQuery(searchValue);
-    paginationPageChange(1); // Reset to first page when searching
-  }, [paginationPageChange]);
-
-  // Handler for other filter changes - only reloads table data
-  const handleFiltersChange = useCallback((newFilters: OrderFiltersType) => {
-    // Check if the filters actually changed to prevent unnecessary updates
-    const hasChanged = Object.keys(newFilters).some(key => 
-      newFilters[key as keyof OrderFiltersType] !== filters[key as keyof OrderFiltersType]
-    );
-    
-    if (hasChanged) {
-      setFilters(newFilters);
-      paginationPageChange(1); // Reset to first page when filters change
-    }
-  }, [filters]);
-
-  // Handler for clearing all filters - only reloads table data
-  const handleClearFilters = useCallback(() => {
-    setFilters({
-      search: '',
-      status: undefined,
-      orderType: undefined,
-      outlet: '',
-      dateRange: {
-        start: '',
-        end: ''
-      },
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
-    setSearchQuery(''); // This will trigger the search effect to reload table
-    paginationPageChange(1);
-    // Don't call fetchOrders directly - let the search effect handle it
-  }, []);
-
+  // Enhanced order action handlers with toast notifications
   const handleOrderAction = useCallback(async (action: string, orderNumber: string) => {
     // Extract numeric part for URL (e.g., "2110" from "ORD-2110")
     const numericOrderNumber = orderNumber.replace(/^ORD-/, '');
@@ -199,15 +61,37 @@ export default function OrdersPage() {
       case 'pickup':
         // Find the order by orderNumber to get the ID for API calls
         const order = orders.find(o => o.orderNumber === orderNumber);
-        if (order) await handlePickup(order.publicId);
+        if (order) {
+          const result = await handlePickupOrder(order.publicId);
+          if (result.success) {
+            showSuccess('Order Confirmed', 'Order has been confirmed successfully!');
+          } else {
+            showError('Update Failed', result.error || 'An error occurred while updating the order');
+          }
+        }
         break;
       case 'return':
         const orderForReturn = orders.find(o => o.orderNumber === orderNumber);
-        if (orderForReturn) await handleReturn(orderForReturn.publicId);
+        if (orderForReturn) {
+          const result = await handleReturnOrder(orderForReturn.publicId);
+          if (result.success) {
+            showSuccess('Order Returned', 'Order has been returned successfully!');
+          } else {
+            showError('Update Failed', result.error || 'An error occurred while updating the order');
+          }
+        }
         break;
       case 'cancel':
         const orderForCancel = orders.find(o => o.orderNumber === orderNumber);
-        if (orderForCancel) await handleCancel(orderForCancel.publicId);
+        if (orderForCancel) {
+          if (!confirm('Are you sure you want to cancel this order?')) return;
+          const result = await handleCancelOrder(orderForCancel.publicId);
+          if (result.success) {
+            showSuccess('Order Cancelled', 'Order has been cancelled successfully!');
+          } else {
+            showError('Cancellation Failed', result.error || 'An error occurred while cancelling the order');
+          }
+        }
         break;
       case 'edit':
         router.push(`/orders/${numericOrderNumber}/edit`);
@@ -215,91 +99,10 @@ export default function OrdersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [orders, router]);
+  }, [orders, router, handlePickupOrder, handleReturnOrder, handleCancelOrder, showSuccess, showError]);
 
-  const handlePickup = useCallback(async (orderId: number) => {
-    try {
-      const result = await ordersApi.pickupOrder(orderId);
-
-      if (result.success) {
-        fetchOrders();
-        fetchStats();
-        showSuccess('Order Confirmed', 'Order has been confirmed successfully!');
-      } else {
-        throw new Error(result.error || 'Failed to update order');
-      }
-    } catch (error) {
-      console.error('Error updating order:', error);
-      showError('Update Failed', 'An error occurred while updating the order');
-    }
-  }, [fetchOrders, fetchStats]);
-
-  const handleReturn = useCallback(async (orderId: number) => {
-    try {
-      const result = await ordersApi.returnOrder(orderId);
-
-      if (result.success) {
-        fetchOrders();
-        fetchStats();
-        showSuccess('Order Returned', 'Order has been returned successfully!');
-      } else {
-        throw new Error(result.error || 'Failed to update order');
-      }
-    } catch (error) {
-      console.error('Error updating order:', error);
-      showError('Update Failed', 'An error occurred while updating the order');
-    }
-  }, [fetchOrders, fetchStats]);
-
-  const handleCancel = useCallback(async (orderId: number) => {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
-
-    try {
-      const result = await ordersApi.cancelOrder(orderId);
-
-      if (result.success) {
-        fetchOrders();
-        fetchStats();
-        showSuccess('Order Cancelled', 'Order has been cancelled successfully!');
-      } else {
-        throw new Error(result.error || 'Failed to cancel order');
-      }
-    } catch (error) {
-      console.error('Error cancelling order:', error);
-      showError('Cancellation Failed', 'An error occurred while cancelling the order');
-    }
-  }, [fetchOrders, fetchStats]);
-
-  const handlePageChange = useCallback((page: number) => {
-    paginationPageChange(page);
-  }, [paginationPageChange]);
-
-  const handleSort = useCallback((column: string) => {
-    // Map column names to sort values
-    const columnMapping: Record<string, 'orderNumber' | 'createdAt' | 'pickupPlanAt' | 'returnPlanAt' | 'status' | 'totalAmount' | 'customerName' | 'orderType'> = {
-      'orderNumber': 'orderNumber',
-      'customerName': 'customerName',
-      'orderType': 'orderType',
-      'status': 'status',
-      'totalAmount': 'totalAmount',
-      'pickupPlanAt': 'pickupPlanAt',
-      'returnPlanAt': 'returnPlanAt',
-      'createdAt': 'createdAt'
-    };
-    
-    const newSortBy = columnMapping[column] || 'createdAt';
-    const newSortOrder = filters.sortBy === newSortBy && filters.sortOrder === 'asc' ? 'desc' : 'asc';
-    
-    setFilters(prev => ({
-      ...prev,
-      sortBy: newSortBy,
-      sortOrder: newSortOrder
-    }));
-    paginationPageChange(1); // Reset to first page when sorting changes
-  }, [filters.sortBy, filters.sortOrder, setFilters, paginationPageChange]);
 
   // Transform the data to match the refactored Orders component interface - memoized to prevent unnecessary re-renders
-  // MUST be defined before any conditional returns to follow React Rules of Hooks
   const orderData = useMemo(() => ({
     orders: orders.map(order => ({
       id: order.id,
@@ -339,6 +142,17 @@ export default function OrdersPage() {
       revenueThisMonth: stats?.revenueThisMonth || 0
     }
   }), [orders, pagination.total, pagination.currentPage, pagination.totalPages, pagination.limit, stats]);
+
+  // Create filters object for the Orders component
+  const filters = useMemo(() => ({
+    search: searchTerm,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    orderType: orderTypeFilter !== 'all' ? orderTypeFilter : undefined,
+    outletId: outletFilter !== 'all' ? parseInt(outletFilter) : undefined,
+    dateRange: dateRangeFilter,
+    sortBy,
+    sortOrder
+  }), [searchTerm, statusFilter, orderTypeFilter, outletFilter, dateRangeFilter, sortBy, sortOrder]);
 
   if (loading) {
     return (

@@ -8,6 +8,8 @@ export interface CustomersResponse {
   total: number;
   page: number;
   limit: number;
+  offset: number;
+  hasMore: boolean;
   totalPages: number;
 }
 
@@ -40,17 +42,32 @@ export const customersApi = {
   /**
    * Search customers with filters
    */
-  async searchCustomers(filters: CustomerFilters): Promise<ApiResponse<Customer[]>> {
+  async searchCustomers(filters: CustomerFilters): Promise<ApiResponse<CustomersResponse>> {
     const params = new URLSearchParams();
     
-    if (filters.search) params.append('search', filters.search);
+    if (filters.q) params.append('q', filters.q); // Use 'q' parameter like orders
+    if (filters.search) params.append('q', filters.search); // Fallback for backward compatibility
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.status) params.append('status', filters.status);
     if (filters.phone) params.append('phone', filters.phone);
     if (filters.email) params.append('email', filters.email);
+    if (filters.city) params.append('city', filters.city);
+    if (filters.state) params.append('state', filters.state);
+    if (filters.country) params.append('country', filters.country);
+    if (filters.idType) params.append('idType', filters.idType);
+    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+    
+    // Add pagination parameters
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.page) params.append('page', filters.page.toString());
+    
+    // Add sorting parameters
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
     
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
-    return await parseApiResponse<Customer[]>(response);
+    return await parseApiResponse<CustomersResponse>(response);
   },
 
   /**

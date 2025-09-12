@@ -18,6 +18,7 @@ export interface ThrottledSearchReturn {
   handleSearchChange: (value: string) => void;
   clearSearch: () => void;
   cleanup: () => void;
+  setQuery: (value: string) => void;
 }
 
 // ============================================================================
@@ -38,6 +39,7 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
   // ============================================================================
 
   const handleSearchChange = useCallback((value: string) => {
+    console.log('🔍 useThrottledSearch: handleSearchChange called with:', value);
     setQuery(value);
     
     // Clear existing timeout
@@ -47,16 +49,19 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
 
     // Only search if query meets minimum length
     if (value.length >= minLength) {
+      console.log('🔍 useThrottledSearch: Query meets minLength, setting up timeout');
       setIsSearching(true);
       isSearchingRef.current = true;
       
       // Set new timeout for debounced search
       timeoutRef.current = setTimeout(() => {
+        console.log('🔍 useThrottledSearch: Timeout executing, calling onSearch with:', value);
         onSearch(value);
         setIsSearching(false);
         isSearchingRef.current = false;
       }, delay);
     } else if (value.length === 0) {
+      console.log('🔍 useThrottledSearch: Query is empty, clearing search');
       // Clear search when query is empty
       setIsSearching(false);
       isSearchingRef.current = false;
@@ -64,6 +69,7 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
         onSearch('');
       }
     } else {
+      console.log('🔍 useThrottledSearch: Query too short, not searching');
       // Query too short, not searching
       setIsSearching(false);
       isSearchingRef.current = false;
@@ -113,5 +119,6 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
     handleSearchChange,
     clearSearch,
     cleanup,
+    setQuery,
   };
 }

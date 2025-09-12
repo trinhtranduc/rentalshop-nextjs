@@ -112,6 +112,20 @@ export async function getProductByBarcode(barcode: string, merchantId: number) {
 // ============================================================================
 
 /**
+ * Build order by clause for product queries
+ */
+function buildProductOrderByClause(sortBy?: string, sortOrder?: string): any {
+  const validSortFields = [
+    'createdAt', 'updatedAt', 'name', 'rentPrice', 'salePrice', 'totalStock'
+  ];
+  
+  const field = validSortFields.includes(sortBy || '') ? sortBy : 'createdAt';
+  const order = sortOrder === 'asc' ? 'asc' : 'desc';
+  
+  return { [field as string]: order };
+}
+
+/**
  * Search products - follows dual ID system
  * Input: publicIds (numbers), Output: publicIds (numbers)
  */
@@ -121,12 +135,20 @@ export async function searchProducts(filters: ProductSearchFilter) {
     outletId,
     categoryId,
     search,
+    q, // Add q parameter support
     page = 1,
     limit = 20,
-    isActive = true
+    offset, // Add offset support
+    isActive = true,
+    available,
+    minPrice,
+    maxPrice,
+    sortBy,
+    sortOrder
   } = filters;
 
-  const skip = (page - 1) * limit;
+  // Use offset if provided, otherwise calculate from page
+  const skip = offset !== undefined ? offset : (page - 1) * limit;
 
   // Build where clause
   const where: any = {
@@ -157,11 +179,14 @@ export async function searchProducts(filters: ProductSearchFilter) {
     }
   }
 
-  if (search) {
+  // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
+  const searchQuery = q || search;
+  if (searchQuery) {
+    const searchTerm = searchQuery.toLowerCase().trim();
     where.OR = [
-      { name: { contains: search } },
-      { description: { contains: search } },
-      { barcode: { equals: search } }
+      { name: { contains: searchTerm } },
+      { description: { contains: searchTerm } },
+      { barcode: { equals: searchTerm } }
     ];
   }
 
@@ -181,6 +206,30 @@ export async function searchProducts(filters: ProductSearchFilter) {
         }
       };
     }
+  }
+
+  // Add availability filter
+  if (available !== undefined) {
+    if (available) {
+      where.outletStock = {
+        some: {
+          available: { gt: 0 }
+        }
+      };
+    } else {
+      where.outletStock = {
+        none: {
+          available: { gt: 0 }
+        }
+      };
+    }
+  }
+
+  // Add price range filters
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.rentPrice = {};
+    if (minPrice !== undefined) where.rentPrice.gte = minPrice;
+    if (maxPrice !== undefined) where.rentPrice.lte = maxPrice;
   }
 
   const [products, total] = await Promise.all([
@@ -231,7 +280,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
           }
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: buildProductOrderByClause(sortBy, sortOrder),
       take: limit,
       skip: skip
     }),
@@ -280,9 +329,11 @@ export async function searchProducts(filters: ProductSearchFilter) {
   return {
     products: transformedProducts,
     total,
-    page,
+    page: offset !== undefined ? Math.floor(offset / limit) + 1 : page,
     limit,
+    offset: skip,
     hasMore: skip + limit < total,
+    totalPages: Math.ceil(total / limit),
   };
 }
 

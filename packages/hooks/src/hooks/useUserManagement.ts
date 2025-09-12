@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
+import { useThrottledSearch } from './useThrottledSearch';
 import { usersApi } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
 import type { User, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
@@ -58,6 +59,7 @@ export interface UseUserManagementReturn {
 }
 
 export const useUserManagement = (options: UseUserManagementOptions = {}): UseUserManagementReturn => {
+  console.log('🔍 useUserManagement: Hook called with options:', options);
   const {
     initialLimit = PAGINATION.DEFAULT_PAGE_SIZE,
     useSearchUsers = false,
@@ -67,7 +69,6 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
   // State
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -80,23 +81,53 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
     initialLimit
   });
 
-  // Fetch users function
-  const fetchUsers = useCallback(async (page: number = pagination.currentPage) => {
+  // Throttled search for better performance
+  const { query: searchTerm, handleSearchChange: throttledSearchChange } = useThrottledSearch({
+    delay: 300,
+    minLength: 0,
+    onSearch: (query: string) => {
+      console.log('🔍 useUserManagement: onSearch called with query:', query);
+      console.log('🔍 useUserManagement: current filters:', { roleFilter, statusFilter });
+      console.log('🔍 useUserManagement: useSearchUsers flag:', useSearchUsers);
+      // Trigger search when throttled search completes
+      fetchUsers(1, query, roleFilter, statusFilter);
+    }
+  });
+
+  // Log state changes
+  console.log('🔍 useUserManagement: Current state:', { 
+    usersCount: users.length, 
+    loading, 
+    roleFilter, 
+    statusFilter,
+    searchTerm 
+  });
+
+  // Fetch users function - stable reference to prevent multiple calls
+  const fetchUsers = useCallback(async (page: number = 1, searchQuery: string = '', role: string = 'all', status: string = 'all') => {
+    console.log('🔍 useUserManagement: fetchUsers called with params:', { page, searchQuery, role, status });
+    console.log('🔍 useUserManagement: current pagination:', pagination);
+    console.log('🔍 useUserManagement: useSearchUsers flag in fetchUsers:', useSearchUsers);
     try {
       setLoading(true);
+      console.log('🔍 useUserManagement: setLoading(true) called');
       
       let response;
       
       if (useSearchUsers) {
         // Admin page uses searchUsers with filters
         const filters: UserFiltersType = {
-          search: searchTerm || undefined,
-          role: roleFilter !== 'all' ? (roleFilter as any) : undefined,
-          status: statusFilter !== 'all' ? (statusFilter as 'active' | 'inactive') : undefined,
+          search: searchQuery || undefined,
+          role: role !== 'all' ? (role as any) : undefined,
+          status: status !== 'all' ? (status as 'active' | 'inactive') : undefined,
           page: page,
           limit: pagination.limit
         };
         
+        console.log('🔍 useUserManagement: Calling searchUsers with filters:', filters);
+        console.log('🔍 useUserManagement: searchQuery value:', searchQuery);
+        console.log('🔍 useUserManagement: searchQuery type:', typeof searchQuery);
+        console.log('🔍 useUserManagement: searchQuery length:', searchQuery?.length);
         response = await usersApi.searchUsers(filters);
       } else {
         // Client page uses getUsersPaginated
@@ -104,11 +135,13 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
       
       if (response.success && response.data) {
+        console.log('🔍 useUserManagement: API response success, data:', response.data);
         // Extract users array and pagination info from the nested response structure
         const usersData = response.data.users || [];
         const total = response.data.total || 0;
         const totalPagesCount = response.data.totalPages || 1;
         
+        console.log('🔍 useUserManagement: setting users data:', { usersCount: usersData.length, total, totalPagesCount });
         setUsers(usersData);
         
         // Update pagination state using the hook
@@ -126,24 +159,25 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       console.error('Error fetching users:', error);
       setUsers([]);
     } finally {
+      console.log('🔍 useUserManagement: fetchUsers completed, setLoading(false)');
       setLoading(false);
     }
-  }, [pagination.currentPage, pagination.limit, searchTerm, roleFilter, statusFilter, useSearchUsers, updatePaginationFromResponse]);
+  }, [pagination.limit, useSearchUsers, updatePaginationFromResponse]);
 
-  // Initial fetch
+  // Single effect to handle all data fetching
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  // Refetch users when filters change (reset to page 1)
-  useEffect(() => {
+    console.log('🔍 useUserManagement: useEffect triggered with dependencies:', { searchTerm, roleFilter, statusFilter });
     const timeoutId = setTimeout(() => {
-      handlePageChange(1);
-      fetchUsers(1);
+      console.log('🔍 useUserManagement: useEffect timeout executing fetchUsers');
+      // Fetch users with current filters
+      fetchUsers(1, searchTerm, roleFilter, statusFilter);
     }, 300); // Debounce search
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, roleFilter, statusFilter, handlePageChange, fetchUsers]);
+    return () => {
+      console.log('🔍 useUserManagement: useEffect cleanup - clearing timeout');
+      clearTimeout(timeoutId);
+    };
+  }, [searchTerm, roleFilter, statusFilter]);
 
   // Filter users based on current filters
   const filteredUsers = useMemo(() => {
@@ -191,10 +225,8 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
   const filters: UserFiltersType = useMemo(() => ({
     search: searchTerm,
     role: roleFilter === 'all' ? undefined : roleFilter as any,
-    status: statusFilter === 'all' ? undefined : statusFilter as any,
-    page: pagination.currentPage,
-    limit: pagination.limit
-  }), [searchTerm, roleFilter, statusFilter, pagination.currentPage, pagination.limit]);
+    status: statusFilter === 'all' ? undefined : statusFilter as any
+  }), [searchTerm, roleFilter, statusFilter]);
 
   // Event handlers
   const handleViewUser = useCallback((user: User) => {
@@ -269,21 +301,22 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
   }, [handlePageChange]);
 
   const handleSearchChange = useCallback((searchValue: string) => {
-    setSearchTerm(searchValue);
-    handlePageChange(1);
-  }, [handlePageChange]);
+    console.log('🔍 useUserManagement: handleSearchChange called with:', searchValue);
+    console.log('🔍 useUserManagement: throttledSearchChange function:', typeof throttledSearchChange);
+    throttledSearchChange(searchValue);
+  }, [throttledSearchChange]);
 
   const handleClearFilters = useCallback(() => {
-    setSearchTerm('');
+    throttledSearchChange('');
     setRoleFilter('all');
     setStatusFilter('all');
     handlePageChange(1);
-  }, [handlePageChange]);
+  }, [throttledSearchChange, handlePageChange]);
 
   const handlePageChangeWithFetch = useCallback((page: number) => {
     handlePageChange(page);
-    fetchUsers(page);
-  }, [handlePageChange, fetchUsers]);
+    fetchUsers(page, searchTerm, roleFilter, statusFilter);
+  }, [handlePageChange, fetchUsers, searchTerm, roleFilter, statusFilter]);
 
   const handleUserCreated = useCallback(async (userData: UserCreateInput) => {
     try {
@@ -331,7 +364,7 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
     pagination,
     
     // Actions
-    setSearchTerm,
+    setSearchTerm: throttledSearchChange, // Use throttled search for better performance
     setRoleFilter,
     setStatusFilter,
     setSelectedUser,

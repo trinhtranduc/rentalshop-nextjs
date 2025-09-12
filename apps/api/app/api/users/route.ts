@@ -345,7 +345,7 @@ async function getUsers(
   options: UserListOptions = {},
   userScope: { merchantId?: number; outletId?: number } = {}
 ) {
-  const { prisma } = await import('@rentalshop/database');
+  // Use the already imported prisma client
   
   const {
     page = 1,

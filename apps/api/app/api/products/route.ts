@@ -8,7 +8,6 @@ import { searchRateLimiter } from '@rentalshop/middleware';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import { prisma } from '@rentalshop/database';
-import { withSubscriptionRequired, withSubscriptionOptional } from '../../middleware/subscription-access';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -51,21 +50,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid query', error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { page, limit, search, categoryId } = parsed.data;
-    console.log('Parsed filters:', { page, limit, search, categoryId });
+    const { 
+      page, 
+      limit, 
+      offset,
+      q, 
+      search, 
+      categoryId, 
+      outletId: queryOutletId,
+      available,
+      minPrice,
+      maxPrice,
+      sortBy,
+      sortOrder
+    } = parsed.data;
+    console.log('Parsed filters:', { page, limit, offset, q, search, categoryId, queryOutletId, available, minPrice, maxPrice, sortBy, sortOrder });
 
-    const { merchantId, outletId } = getUserScope(user as any);
+    const { merchantId, outletId: userOutletId } = getUserScope(user as any);
     console.log('Merchant ID from scope:', merchantId);
-    console.log('Outlet ID from scope:', outletId);
+    console.log('Outlet ID from scope:', userOutletId);
     
     const filters = {
       merchantId: merchantId ? parseInt(merchantId.toString()) : undefined,
-      outletId: outletId ? parseInt(outletId.toString()) : undefined, // Add outlet filtering for role-based access
+      outletId: queryOutletId || (userOutletId ? parseInt(userOutletId.toString()) : undefined), // Use query outletId or user's outletId
       categoryId: categoryId ? parseInt(categoryId.toString()) : undefined,
-      search,
+      search: q || search, // Use 'q' parameter first, fallback to 'search' for backward compatibility
       page,
       limit,
-      isActive: true
+      offset,
+      isActive: true,
+      available,
+      minPrice,
+      maxPrice,
+      sortBy,
+      sortOrder
     } as const;
     
     console.log('Final filters:', filters);
@@ -85,7 +103,9 @@ export async function GET(request: NextRequest) {
       total: result.total,
       page: result.page,
       limit: result.limit,
-      totalPages: Math.ceil(result.total / result.limit)
+      offset: result.offset,
+      hasMore: result.hasMore,
+      totalPages: result.totalPages
     };
 
     // Caching headers (ETag and short-lived private cache)

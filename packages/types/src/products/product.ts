@@ -52,14 +52,20 @@ export interface ProductUpdateInput {
 }
 
 export interface ProductFilters {
+  q?: string;           // Search query parameter (consistent with orders)
   merchantId?: number;  // Changed from string to number
   categoryId?: number;  // Changed from string to number
   outletId?: number;    // Added outletId for filtering by outlet
   available?: boolean;
   status?: 'all' | 'active' | 'inactive';  // Added missing status property
-  search?: string;
+  search?: string;      // Keep for backward compatibility
   minPrice?: number;
   maxPrice?: number;
+  limit?: number;       // Add pagination support
+  offset?: number;      // Add pagination support
+  page?: number;        // Add page parameter for consistency
+  sortBy?: string;      // Add sorting support
+  sortOrder?: 'asc' | 'desc';  // Add sorting support
 }
 
 export interface ProductSearchResult {
@@ -123,13 +129,20 @@ export interface ProductWithDetails extends Product {
 }
 
 export interface ProductSearchFilter {
+  q?: string;           // Search query parameter (consistent with orders)
   merchantId?: number;  // Changed from string to number
   categoryId?: number;  // Changed from string to number
   outletId?: number;    // Added outletId for filtering by outlet
-  search?: string;
+  search?: string;      // Keep for backward compatibility
   page?: number;
   limit?: number;
+  offset?: number;      // Add offset for pagination consistency
   isActive?: boolean;
+  sortBy?: string;      // Add sorting support
+  sortOrder?: 'asc' | 'desc';  // Add sorting support
+  available?: boolean;  // Add availability filter
+  minPrice?: number;    // Add price range filters
+  maxPrice?: number;    // Add price range filters
 }
 
 export interface ProductSearchResponse {
@@ -137,9 +150,11 @@ export interface ProductSearchResponse {
   data: {
     products: ProductWithStock[];
     total: number;
+    page: number;
     limit: number;
     offset: number;
     hasMore: boolean;
+    totalPages: number;
   };
 }
 

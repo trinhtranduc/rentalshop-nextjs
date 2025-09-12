@@ -73,6 +73,7 @@ export interface OrderFilters {
   // Pagination properties
   limit?: number;
   offset?: number;
+  page?: number;
   
   // UI-specific filter properties
   sortBy?: string;
@@ -219,9 +220,11 @@ export interface OrderSearchResponse {
   data: {
     orders: OrderSearchResult[];
     total: number;
+    page: number;
     limit: number;
     offset: number;
     hasMore: boolean;
+    totalPages: number;
   };
 }
 

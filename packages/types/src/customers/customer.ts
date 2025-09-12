@@ -72,7 +72,8 @@ export interface CustomerInput {
 }
 
 export interface CustomerFilters {
-  search?: string;
+  q?: string;          // Search query parameter (consistent with orders)
+  search?: string;     // Keep for backward compatibility
   merchantId?: number;  // Changed from string to number
   outletId?: number;   // Changed from string to number
   city?: string;
@@ -84,6 +85,11 @@ export interface CustomerFilters {
   email?: string;      // Added missing email property
   // Additional filter options for UI components
   status?: 'active' | 'inactive' | 'blocked';
+  // Pagination parameters
+  limit?: number;
+  offset?: number;
+  page?: number;
+  // Sorting parameters
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -125,7 +131,7 @@ export interface CustomerWithMerchant extends Customer {
 // which includes id as number (representing publicId) and merchantId as string
 
 export interface CustomerSearchFilter {
-  q?: string;
+  q?: string;           // Search query parameter (consistent with orders)
   merchantId?: number;  // Changed from string to number
   isActive?: boolean;
   city?: string;
@@ -134,6 +140,8 @@ export interface CustomerSearchFilter {
   idType?: 'passport' | 'drivers_license' | 'national_id' | 'other';
   limit?: number;
   offset?: number;
+  sortBy?: string;      // Add sorting support
+  sortOrder?: 'asc' | 'desc';  // Add sorting support
 }
 
 export interface CustomerSearchResponse {
@@ -141,9 +149,11 @@ export interface CustomerSearchResponse {
   data: {
     customers: CustomerWithMerchant[];
     total: number;
+    page: number;
     limit: number;
     offset: number;
     hasMore: boolean;
+    totalPages: number;
   };
 }
 

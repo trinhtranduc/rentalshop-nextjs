@@ -18,7 +18,7 @@ export default function UsersPage() {
       addButtonText="Add User"
       exportButtonText="Export"
       showStats={false}
-      useSearchUsers={false}
+      useSearchUsers={true}
       initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
       currentUser={currentUser}
     />

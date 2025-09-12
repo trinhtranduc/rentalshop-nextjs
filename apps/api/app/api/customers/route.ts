@@ -12,7 +12,7 @@ import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { CustomerFilters, CustomerInput, CustomerUpdateInput, CustomerSearchFilter } from '@rentalshop/types';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { PrismaClient } from '@prisma/client';
-import { AuditLogger } from '../../../../packages/database/src/audit';
+// import { AuditLogger } from '../../../../packages/database/src/audit';
 import { captureAuditContext, getAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         );
       }
       
-      const customer = await getCustomerByPublicId(customerIdNumber, userMerchantIdNumber);
+      const customer = await getCustomerByPublicId(customerIdNumber, userMerchantIdNumber || 0);
       if (!customer) {
         return NextResponse.json(
           { success: false, message: 'Customer not found' },
@@ -170,7 +170,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid query', error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { merchantId, isActive, search, city, state, country, idType, page, limit } = parsed.data as any;
+    const { 
+      merchantId, 
+      isActive, 
+      q, 
+      search, 
+      city, 
+      state, 
+      country, 
+      idType, 
+      page, 
+      limit, 
+      offset,
+      sortBy,
+      sortOrder
+    } = parsed.data as any;
 
     // Build filters
     const filters: CustomerFilters = {};
@@ -186,8 +200,8 @@ export async function GET(request: NextRequest) {
       filters.isActive = Boolean(isActive);
     }
 
-    if (search) {
-      filters.search = search;
+    if (q || search) {
+      filters.search = q || search; // Use 'q' parameter first, fallback to 'search' for backward compatibility
     }
 
     if (city) {
@@ -205,6 +219,15 @@ export async function GET(request: NextRequest) {
     if (idType) {
       filters.idType = idType;
     }
+
+    // Add pagination parameters
+    if (limit) filters.limit = limit;
+    if (offset !== undefined) filters.offset = offset;
+    if (page) filters.page = page;
+
+    // Add sorting parameters
+    if (sortBy) filters.sortBy = sortBy;
+    if (sortOrder) filters.sortOrder = sortOrder;
 
     try {
       // Authorization: ADMIN, MERCHANT, OUTLET team can read
@@ -225,9 +248,11 @@ export async function GET(request: NextRequest) {
         data: {
           customers: transformedCustomers,
           total: result.data.total,
+          page: result.data.page,
           limit: result.data.limit,
           offset: result.data.offset,
-          hasMore: result.data.hasMore
+          hasMore: result.data.hasMore,
+          totalPages: result.data.totalPages
         }
       });
       const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
@@ -340,7 +365,7 @@ export async function POST(request: NextRequest) {
           outletId: user.outlet?.id?.toString()
         }
       });
-    } catch (auditError) {
+    } catch (auditError: any) {
       console.error('Failed to log customer creation audit:', auditError);
       // Don't fail the request if audit logging fails
     }
@@ -498,7 +523,7 @@ export async function PUT(request: NextRequest) {
         }
       });
       console.log('✅ Customer API - Audit event logged successfully');
-    } catch (auditError) {
+    } catch (auditError: any) {
       console.error('❌ Customer API - Failed to log customer update audit:', auditError);
       console.error('❌ Customer API - Audit error stack:', auditError.stack);
       // Don't fail the request if audit logging fails

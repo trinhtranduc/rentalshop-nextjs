@@ -429,8 +429,8 @@ export function Products({
           </div>
         )}
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
+        {/* Pagination - only show when there are results */}
+        {filteredProducts.length > 0 && pagination.totalPages > 1 && (
           <div className="mb-6">
             <Pagination
               currentPage={pagination.currentPage}
