@@ -186,7 +186,7 @@ export const merchantsApi = {
    * Get merchant statistics
    */
   async getMerchantStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/stats`);
+    const response = await authenticatedFetch(`${apiUrls.merchants.list}/stats`);
     const result = await parseApiResponse<any>(response);
     return result;
   },
@@ -200,7 +200,7 @@ export const merchantsApi = {
     effectiveDate?: string;
     notifyMerchant?: boolean;
   }): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/plan`, {
+    const response = await authenticatedFetch(apiUrls.merchants.updatePlan(merchantId), {
       method: 'PUT',
       body: JSON.stringify(planData),
     });
@@ -212,7 +212,7 @@ export const merchantsApi = {
    * Get merchant plan history
    */
   async getMerchantPlanHistory(merchantId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/plan`);
+    const response = await authenticatedFetch(apiUrls.merchants.getPlan(merchantId));
     const result = await parseApiResponse<any>(response);
     return result;
   },
@@ -221,7 +221,7 @@ export const merchantsApi = {
    * Disable merchant plan
    */
   async disableMerchantPlan(merchantId: number, subscriptionId: number, reason: string): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/plan`, {
+    const response = await authenticatedFetch(apiUrls.merchants.extendPlan(merchantId), {
       method: 'PATCH',
       body: JSON.stringify({
         action: 'disable',
@@ -237,7 +237,7 @@ export const merchantsApi = {
    * Delete merchant plan
    */
   async deleteMerchantPlan(merchantId: number, subscriptionId: number, reason: string): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/merchants/${merchantId}/plan`, {
+    const response = await authenticatedFetch(apiUrls.merchants.cancelPlan(merchantId), {
       method: 'PATCH',
       body: JSON.stringify({
         action: 'delete',

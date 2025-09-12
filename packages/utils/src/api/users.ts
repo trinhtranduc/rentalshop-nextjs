@@ -136,7 +136,7 @@ export const usersApi = {
    * Update user role
    */
   async updateUserRole(userId: number, role: string): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${userId}/role`, {
+    const response = await authenticatedFetch(apiUrls.users.updateRole(userId), {
       method: 'PATCH',
       body: JSON.stringify({ role }),
     });
@@ -147,7 +147,7 @@ export const usersApi = {
    * Update user status
    */
   async updateUserStatus(userId: number, status: string): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${userId}/status`, {
+    const response = await authenticatedFetch(apiUrls.users.updateStatus(userId), {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
@@ -158,7 +158,7 @@ export const usersApi = {
    * Assign user to outlet
    */
   async assignUserToOutlet(userId: number, outletId: number): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${userId}/assign-outlet`, {
+    const response = await authenticatedFetch(apiUrls.users.assignOutlet(userId), {
       method: 'PATCH',
       body: JSON.stringify({ outletId }),
     });
@@ -169,7 +169,7 @@ export const usersApi = {
    * Get user statistics
    */
   async getUserStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/stats`);
+    const response = await authenticatedFetch(`${apiUrls.users.list}/stats`);
     return await parseApiResponse<any>(response);
   },
 
@@ -193,7 +193,7 @@ export const usersApi = {
    * Delete current user account (soft delete)
    */
   async deleteAccount(userId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/delete-account`, {
+    const response = await authenticatedFetch(apiUrls.users.deleteAccount, {
       method: 'POST',
       body: JSON.stringify({ userId }),
     });
@@ -204,7 +204,7 @@ export const usersApi = {
    * Update user by public ID (number)
    */
   async updateUserByPublicId(publicId: number, userData: UserUpdateInput): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${publicId}`, {
+    const response = await authenticatedFetch(apiUrls.users.updateByPublicId(publicId), {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
@@ -215,7 +215,7 @@ export const usersApi = {
    * Activate user by public ID (number)
    */
   async activateUserByPublicId(publicId: number): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${publicId}`, {
+    const response = await authenticatedFetch(apiUrls.users.activateByPublicId(publicId), {
       method: 'PATCH',
       body: JSON.stringify({ action: 'activate' }),
     });
@@ -226,7 +226,7 @@ export const usersApi = {
    * Deactivate user by public ID (number)
    */
   async deactivateUserByPublicId(publicId: number): Promise<ApiResponse<User>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${publicId}`, {
+    const response = await authenticatedFetch(apiUrls.users.deactivateByPublicId(publicId), {
       method: 'PATCH',
       body: JSON.stringify({ action: 'deactivate' }),
     });
@@ -237,7 +237,7 @@ export const usersApi = {
    * Delete user by public ID (number)
    */
   async deleteUserByPublicId(publicId: number): Promise<ApiResponse<void>> {
-    const response = await authenticatedFetch(`${apiUrls.base}/api/users/${publicId}`, {
+    const response = await authenticatedFetch(apiUrls.users.deleteByPublicId(publicId), {
       method: 'DELETE',
     });
     return await parseApiResponse<void>(response);

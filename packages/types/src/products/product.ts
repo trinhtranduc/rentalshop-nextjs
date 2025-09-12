@@ -183,3 +183,14 @@ export interface OutletStockInput {
   available?: number;
   renting?: number;
 }
+
+// Top Product interface for analytics
+export interface TopProduct {
+  id: number;
+  name: string;
+  rentPrice: number;
+  category: string;
+  rentalCount: number;
+  totalRevenue: number;
+  image?: string | null;
+}

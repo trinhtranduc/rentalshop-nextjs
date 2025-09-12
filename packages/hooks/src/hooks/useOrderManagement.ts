@@ -175,10 +175,15 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
     if (!enableStats) return;
     
     try {
+      console.log('Fetching order stats...');
       const response = await ordersApi.getOrderStats();
+      console.log('Order stats response:', response);
       
       if (response.success && response.data) {
+        console.log('Setting stats:', response.data);
         setStats(response.data);
+      } else {
+        console.error('Stats API failed:', response);
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -277,13 +282,19 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
 
   const handleFiltersChange = useCallback((newFilters: Partial<OrderFilters>) => {
     if (newFilters.status !== undefined) {
-      setStatusFilter(newFilters.status === 'all' ? 'all' : (Array.isArray(newFilters.status) ? newFilters.status[0] : newFilters.status) as string);
+      // Handle 'all' case for UI filter state (not part of OrderStatus type)
+      const statusValue = newFilters.status as any;
+      setStatusFilter(statusValue === 'all' ? 'all' : (Array.isArray(newFilters.status) ? newFilters.status[0] : newFilters.status) as string);
     }
     if (newFilters.orderType !== undefined) {
-      setOrderTypeFilter(newFilters.orderType === 'all' ? 'all' : newFilters.orderType as string);
+      // Handle 'all' case for UI filter state (not part of OrderType type)
+      const orderTypeValue = newFilters.orderType as any;
+      setOrderTypeFilter(orderTypeValue === 'all' ? 'all' : newFilters.orderType as string);
     }
     if (newFilters.outletId !== undefined) {
-      setOutletFilter(newFilters.outletId === 'all' ? 'all' : newFilters.outletId.toString());
+      // Handle 'all' case for UI filter state (outletId is number, not string)
+      const outletIdValue = newFilters.outletId as any;
+      setOutletFilter(outletIdValue === 'all' ? 'all' : newFilters.outletId.toString());
     }
     if (newFilters.startDate !== undefined || newFilters.endDate !== undefined) {
       setDateRangeFilter({

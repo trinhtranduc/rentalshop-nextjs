@@ -102,6 +102,10 @@ export default function OrdersPage() {
   }, [orders, router, handlePickupOrder, handleReturnOrder, handleCancelOrder, showSuccess, showError]);
 
 
+  // Debug stats
+  console.log('Client orders page - stats received:', stats);
+  console.log('Client orders page - orders count:', orders.length);
+
   // Transform the data to match the refactored Orders component interface - memoized to prevent unnecessary re-renders
   const orderData = useMemo(() => ({
     orders: orders.map(order => ({
@@ -130,16 +134,16 @@ export default function OrdersPage() {
     totalPages: pagination.totalPages,
     limit: pagination.limit,
     stats: {
-      totalOrders: stats?.totalOrders || 0,
-      pendingOrders: stats?.pendingOrders || 0,
-      activeOrders: stats?.activeOrders || 0,
-      completedOrders: stats?.completedOrders || 0,
-      cancelledOrders: stats?.cancelledOrders || 0,
-      totalRevenue: stats?.totalRevenue || 0,
-      totalDeposits: stats?.totalDeposits || 0,
-      averageOrderValue: stats?.averageOrderValue || 0,
-      ordersThisMonth: stats?.ordersThisMonth || 0,
-      revenueThisMonth: stats?.revenueThisMonth || 0
+      totalOrders: stats?.stats?.totalOrders || 0,
+      pendingOrders: stats?.stats?.pendingOrders || 0,
+      activeOrders: stats?.stats?.activeRentals || 0, // Map activeRentals to activeOrders
+      completedOrders: stats?.stats?.completedOrders || 0,
+      cancelledOrders: stats?.stats?.cancelledOrders || 0,
+      totalRevenue: stats?.stats?.totalRevenue || 0,
+      totalDeposits: stats?.stats?.totalDeposits || 0,
+      averageOrderValue: stats?.stats?.averageOrderValue || 0,
+      ordersThisMonth: stats?.stats?.ordersThisMonth || 0,
+      revenueThisMonth: stats?.stats?.revenueThisMonth || 0
     }
   }), [orders, pagination.total, pagination.currentPage, pagination.totalPages, pagination.limit, stats]);
 

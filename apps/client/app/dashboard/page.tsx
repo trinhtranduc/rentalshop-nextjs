@@ -14,6 +14,7 @@ import {
   OrderChart,
   SubscriptionStatusBanner
 } from '@rentalshop/ui';
+import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
   PackageCheck,
@@ -25,7 +26,7 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
-import { analyticsApi } from '@rentalshop/utils';
+import { analyticsApi, ordersApi } from '@rentalshop/utils';
 
 // ============================================================================
 // TYPES
@@ -61,25 +62,6 @@ interface OrderData {
   count: number;
 }
 
-interface TopProduct {
-  id: number;
-  name: string;
-  category: string;
-  rentalCount: number;
-  revenue: number;
-  availability: number;
-  image: string;
-}
-
-interface TopCustomer {
-  id: number;
-  name: string;
-  location: string;
-  rentalCount: number;
-  totalSpent: number;
-  lastRental: string;
-  avatar: string;
-}
 
 interface RecentOrder {
   id: number;
@@ -201,23 +183,65 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []); // Only fetch on initial load
+  }, [timePeriod]); // Fetch when time period changes
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing dashboard data...');
+      fetchDashboardData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [timePeriod]);
 
   const fetchDashboardData = async () => {
     try {
       setLoadingCharts(true);
 
       // Fetch all dashboard data in parallel using centralized APIs
-      // Create default date range for analytics
+      // Create date range based on selected time period
       const today = new Date();
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      let startDate: Date;
+      let endDate: Date;
+      let groupBy: 'day' | 'month' | 'year';
+
+      switch (timePeriod) {
+        case 'today':
+          // For today, we want to include the entire current day
+          // Use UTC to avoid timezone issues
+          const todayUTC = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+          startDate = new Date(todayUTC.getFullYear(), todayUTC.getMonth(), todayUTC.getDate());
+          endDate = new Date(todayUTC.getFullYear(), todayUTC.getMonth(), todayUTC.getDate() + 1);
+          groupBy = 'day';
+          break;
+        case 'month':
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          groupBy = 'day';
+          break;
+        case 'year':
+          startDate = new Date(today.getFullYear(), 0, 1);
+          endDate = new Date(today.getFullYear(), 11, 31);
+          groupBy = 'month';
+          break;
+        default:
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          groupBy = 'day';
+      }
       
       const defaultFilters = {
-        startDate: startOfMonth.toISOString().split('T')[0],
-        endDate: endOfMonth.toISOString().split('T')[0],
-        groupBy: 'day' as const
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        groupBy: groupBy
       };
+
+      console.log(`📊 Fetching dashboard data for ${timePeriod} period:`, {
+        startDate: defaultFilters.startDate,
+        endDate: defaultFilters.endDate,
+        groupBy: defaultFilters.groupBy
+      });
 
       const [
         statsResponse,
@@ -229,39 +253,58 @@ export default function DashboardPage() {
         topCustomersResponse,
         recentOrdersResponse
       ] = await Promise.all([
-        analyticsApi.getEnhancedDashboardSummary(),
+        analyticsApi.getEnhancedDashboardSummary(defaultFilters),
         analyticsApi.getTodayMetrics(),
-        analyticsApi.getGrowthMetrics(),
+        analyticsApi.getGrowthMetrics(defaultFilters),
         analyticsApi.getIncomeAnalytics(defaultFilters),
         analyticsApi.getOrderAnalytics(defaultFilters),
-        analyticsApi.getTopProducts(),
-        analyticsApi.getTopCustomers(),
-        analyticsApi.getRecentOrders()
+        analyticsApi.getTopProducts(defaultFilters),
+        analyticsApi.getTopCustomers(defaultFilters),
+        analyticsApi.getRecentOrders(defaultFilters)
       ]);
 
       // Process responses
+      console.log('Dashboard API responses:', {
+        statsResponse,
+        todayMetricsResponse,
+        growthMetricsResponse,
+        incomeResponse,
+        ordersResponse,
+        topProductsResponse,
+        topCustomersResponse,
+        recentOrdersResponse
+      });
+
       if (statsResponse.success && statsResponse.data) {
         // Transform API data to match our DashboardStats interface
-        const apiStats = statsResponse.data;
-        const todayMetrics = todayMetricsResponse.success ? todayMetricsResponse.data : {};
-        const growthMetrics = growthMetricsResponse.success ? growthMetricsResponse.data : {};
+        const apiStats = statsResponse.data as any;
+        const todayMetrics = todayMetricsResponse.success ? (todayMetricsResponse.data as any) : {};
+        const growthMetrics = growthMetricsResponse.success ? (growthMetricsResponse.data as any) : {};
+        
+        console.log('Setting dashboard stats:', {
+          apiStats,
+          todayMetrics,
+          growthMetrics
+        });
         
         setStats({
           todayRevenue: apiStats.totalRevenue || 0,
           todayRentals: apiStats.totalOrders || 0,
-          activeRentals: apiStats.totalOrders || 0,
+          activeRentals: apiStats.activeRentals || 0,
           todayPickups: todayMetrics.todayPickups || 0,
           todayReturns: todayMetrics.todayReturns || 0,
           overdueItems: todayMetrics.overdueItems || 0,
           productUtilization: todayMetrics.productUtilization || 0,
           totalRevenue: apiStats.totalRevenue || 0,
           totalRentals: apiStats.totalOrders || 0,
-          completedRentals: apiStats.totalOrders || 0,
+          completedRentals: apiStats.completedOrders || 0,
           customerGrowth: growthMetrics.customerGrowth || 0,
           futureRevenue: apiStats.futureIncome || 0,
           revenueGrowth: growthMetrics.revenueGrowth || 0,
           customerBase: growthMetrics.customerBase || 0
         });
+      } else {
+        console.error('Stats API failed:', statsResponse);
       }
 
       if (incomeResponse.success && incomeResponse.data) {
@@ -315,165 +358,36 @@ export default function DashboardPage() {
   };
 
   const getStats = () => {
-    // Return different stats based on the selected period
-    switch (timePeriod) {
-      case 'today':
-        return stats;
-      case 'month':
-        return {
-          ...stats,
-          todayRevenue: 0,
-          todayRentals: 0,
-          activeRentals: 89,
-          todayPickups: 0,
-          todayReturns: 0,
-          overdueItems: 3,
-          productUtilization: 78,
-          totalRevenue: 45678.90,
-          totalRentals: 156,
-          completedRentals: 142,
-          customerGrowth: 23,
-          futureRevenue: 15000,
-          revenueGrowth: 8,
-          customerBase: 0
-        };
-      case 'year':
-        return {
-          ...stats,
-          todayRevenue: 0,
-          todayRentals: 0,
-          activeRentals: 45,
-          todayPickups: 0,
-          todayReturns: 0,
-          overdueItems: 3,
-          productUtilization: 78,
-          totalRevenue: 544043.16,
-          totalRentals: 1847,
-          completedRentals: 1756,
-          customerGrowth: 234,
-          futureRevenue: 180000,
-          revenueGrowth: 18,
-          customerBase: 234
-        };
-      default:
-        return stats;
-    }
+    // Always return the actual stats from API - no hardcoded data
+    return stats;
   };
 
   const getRevenueData = () => {
-    // Return different revenue data based on the selected period
-    switch (timePeriod) {
-      case 'today':
-        return incomeData;
-      case 'month':
-        return [
-          { period: 'Week 1', actual: 12000, projected: 8000 },
-          { period: 'Week 2', actual: 15000, projected: 10000 },
-          { period: 'Week 3', actual: 18000, projected: 12000 },
-          { period: 'Week 4', actual: 22000, projected: 15000 }
-        ];
-      case 'year':
-        return [
-          { period: 'Jan', actual: 45000, projected: 12000 },
-          { period: 'Feb', actual: 52000, projected: 15000 },
-          { period: 'Mar', actual: 48000, projected: 18000 },
-          { period: 'Apr', actual: 61000, projected: 22000 },
-          { period: 'May', actual: 55000, projected: 19000 },
-          { period: 'Jun', actual: 68000, projected: 25000 },
-          { period: 'Jul', actual: 72000, projected: 28000 },
-          { period: 'Aug', actual: 65000, projected: 24000 },
-          { period: 'Sep', actual: 58000, projected: 21000 },
-          { period: 'Oct', actual: 62000, projected: 23000 },
-          { period: 'Nov', actual: 70000, projected: 26000 },
-          { period: 'Dec', actual: 75000, projected: 30000 }
-        ];
-      default:
-        return incomeData;
-    }
+    // Transform income data to match chart component expectations
+    return incomeData.map((item: any) => ({
+      period: `${item.month} ${item.year}`,
+      actual: item.realIncome || 0,
+      projected: item.futureIncome || 0
+    }));
   };
 
   const getOrderData = () => {
-    // Return different order data based on the selected period
-    switch (timePeriod) {
-      case 'today':
-        return orderData;
-      case 'month':
-        return [
-          { period: 'Week 1', count: 45 },
-          { period: 'Week 2', count: 52 },
-          { period: 'Week 3', count: 48 },
-          { period: 'Week 4', count: 61 }
-        ];
-      case 'year':
-        return [
-          { period: 'Jan', count: 156 },
-          { period: 'Feb', count: 142 },
-          { period: 'Mar', count: 168 },
-          { period: 'Apr', count: 189 },
-          { period: 'May', count: 175 },
-          { period: 'Jun', count: 203 },
-          { period: 'Jul', count: 218 },
-          { period: 'Aug', count: 195 },
-          { period: 'Sep', count: 182 },
-          { period: 'Oct', count: 198 },
-          { period: 'Nov', count: 215 },
-          { period: 'Dec', count: 234 }
-        ];
-      default:
-        return orderData;
-    }
+    // Transform order data to match chart component expectations
+    return orderData.map((item: any) => ({
+      period: `${item.month} ${item.year}`,
+      actual: item.orderCount || 0,
+      projected: item.orderCount || 0 // Use same value for both actual and projected
+    }));
   };
 
   const getTopProducts = () => {
-    // Return different product data based on the selected period
-    switch (timePeriod) {
-      case 'today':
-        return topProducts;
-      case 'month':
-        return [
-          { id: '1', name: 'iPhone 15 Pro', category: 'Electronics', rentalCount: 45, revenue: 12500, availability: 3, image: '📱' },
-          { id: '2', name: 'MacBook Air M2', category: 'Electronics', rentalCount: 32, revenue: 8900, availability: 1, image: '💻' },
-          { id: '3', name: 'Canon EOS R6', category: 'Photography', rentalCount: 28, revenue: 6700, availability: 2, image: '📷' },
-          { id: '4', name: 'DJI Mini 3 Pro', category: 'Drones', rentalCount: 22, revenue: 5400, availability: 0, image: '🚁' },
-          { id: '5', name: 'GoPro Hero 11', category: 'Action Cameras', rentalCount: 18, revenue: 4200, availability: 4, image: '🎥' }
-        ];
-      case 'year':
-        return [
-          { id: '1', name: 'iPhone 15 Pro', category: 'Electronics', rentalCount: 156, revenue: 45000, availability: 3, image: '📱' },
-          { id: '2', name: 'MacBook Air M2', category: 'Electronics', rentalCount: 142, revenue: 38000, availability: 1, image: '💻' },
-          { id: '3', name: 'Canon EOS R6', category: 'Photography', rentalCount: 128, revenue: 32000, availability: 2, image: '📷' },
-          { id: '4', name: 'DJI Mini 3 Pro', category: 'Drones', rentalCount: 98, revenue: 25000, availability: 0, image: '🚁' },
-          { id: '5', name: 'GoPro Hero 11', category: 'Action Cameras', rentalCount: 87, revenue: 18000, availability: 4, image: '🎥' }
-        ];
-      default:
-        return topProducts;
-    }
+    // Always return the actual top products data from API - no hardcoded data
+    return topProducts;
   };
 
   const getTopCustomers = () => {
-    // Return different customer data based on the selected period
-    switch (timePeriod) {
-      case 'today':
-        return topCustomers;
-      case 'month':
-        return [
-          { id: '1', name: 'John Smith', location: 'New York', rentalCount: 15, totalSpent: 2500, lastRental: '2 hours ago', avatar: '👨‍💼' },
-          { id: '2', name: 'Sarah Johnson', location: 'Los Angeles', rentalCount: 12, totalSpent: 2100, lastRental: '1 day ago', avatar: '👩‍💻' },
-          { id: '3', name: 'Mike Wilson', location: 'Chicago', rentalCount: 10, totalSpent: 1800, lastRental: '3 days ago', avatar: '👨‍🎨' },
-          { id: '4', name: 'Emily Davis', location: 'Miami', rentalCount: 8, totalSpent: 1500, lastRental: '1 week ago', avatar: '👩‍🎤' },
-          { id: '5', name: 'David Brown', location: 'Seattle', rentalCount: 7, totalSpent: 1200, lastRental: '2 weeks ago', avatar: '👨‍🔬' }
-        ];
-      case 'year':
-        return [
-          { id: '1', name: 'John Smith', location: 'New York', rentalCount: 156, totalSpent: 45000, lastRental: '2 hours ago', avatar: '👨‍💼' },
-          { id: '2', name: 'Sarah Johnson', location: 'Los Angeles', rentalCount: 142, totalSpent: 38000, lastRental: '1 day ago', avatar: '👩‍💻' },
-          { id: '3', name: 'Mike Wilson', location: 'Chicago', rentalCount: 128, totalSpent: 32000, lastRental: '3 days ago', avatar: '👨‍🎨' },
-          { id: '4', name: 'Emily Davis', location: 'Miami', rentalCount: 98, totalSpent: 25000, lastRental: '1 week ago', avatar: '👩‍🎤' },
-          { id: '5', name: 'David Brown', location: 'Seattle', rentalCount: 87, totalSpent: 18000, lastRental: '2 weeks ago', avatar: '👨‍🔬' }
-        ];
-      default:
-        return topCustomers;
-    }
+    // Always return the actual top customers data from API - no hardcoded data
+    return topCustomers;
   };
 
   const currentStats = getStats();
@@ -485,7 +399,21 @@ export default function DashboardPage() {
   return (
     <PageWrapper>
       <PageHeader>
-        <PageTitle>Dashboard</PageTitle>
+        <div className="flex items-center justify-between">
+          <PageTitle>Dashboard</PageTitle>
+          <button
+            onClick={() => {
+              console.log('🔄 Manual refresh triggered');
+              fetchDashboardData();
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+        </div>
       </PageHeader>
       <PageContent>
         {/* Welcome Header */}
@@ -552,40 +480,40 @@ export default function DashboardPage() {
               <StatCard
                 title="Today's Revenue"
                 value={currentStats.todayRevenue}
-                change="+15% from yesterday"
+                change="Real-time data"
                 description="Cash in hand"
                 tooltip="Total revenue collected from completed rentals and payments today"
                 color="text-green-600"
-                trend="up"
+                trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
                 title="New Rentals"
                 value={currentStats.todayRentals}
-                change="+2 from yesterday"
+                change="Real-time data"
                 description="Orders created today"
                 tooltip="Number of new rental orders created today"
                 color="text-blue-600"
-                trend="up"
+                trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
                 title="Active Rentals"
                 value={currentStats.activeRentals}
-                change="+3 from yesterday"
+                change="Real-time data"
                 description="Currently rented"
                 tooltip="Total number of items currently being rented out"
                 color="text-purple-600"
-                trend="up"
+                trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
                 title="Overdue Items"
                 value={currentStats.overdueItems}
-                change="+0 from yesterday"
+                change="Real-time data"
                 description="Need attention"
                 tooltip="Number of items that are overdue for return"
                 color="text-red-600"
@@ -604,35 +532,41 @@ export default function DashboardPage() {
                 </CardHeaderClean>
                 <CardContentClean>
                   {loadingCharts ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg animate-pulse">
-                          <div className="w-5 h-5 bg-gray-200 rounded"></div>
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-24"></div>
-                            <div className="h-3 bg-gray-200 rounded w-32"></div>
-                            <div className="h-3 bg-gray-200 rounded w-20"></div>
+                        <div key={i} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg animate-pulse">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                            <div>
+                              <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                              <div className="h-3 bg-gray-200 rounded w-32"></div>
+                            </div>
                           </div>
-                          <div className="text-right space-y-1">
-                            <div className="h-4 bg-gray-200 rounded w-16"></div>
+                          <div className="text-right">
+                            <div className="h-4 bg-gray-200 rounded w-16 mb-1"></div>
                             <div className="h-3 bg-gray-200 rounded w-12"></div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  ) : (recentOrders || []).filter(order => order.status === 'book').slice(0, 6).length > 0 ? (
-                    <div className="space-y-3">
-                      {(recentOrders || []).filter(order => order.status === 'book').slice(0, 6).map(order => (
-                        <div key={order.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                          <Package className="w-5 h-5 text-blue-600" />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{order.orderNumber}</div>
-                            <div className="text-xs text-gray-600">{order.customerName} - {order.productCount || 0} items</div>
-                            <div className="text-xs text-gray-500">{order.createdAt}</div>
+                  ) : (recentOrders || []).filter(order => order.status === 'RESERVED').slice(0, 6).length > 0 ? (
+                    <div className="space-y-2">
+                      {(recentOrders || []).filter(order => order.status === 'RESERVED').slice(0, 6).map(order => (
+                        <div key={order.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <Package className="w-4 h-4 text-blue-600" />
+                            <div>
+                              <div className="font-medium text-sm">{order.orderNumber}</div>
+                              <div className="text-xs text-gray-600">
+                                {order.pickupPlanAt ? new Date(order.pickupPlanAt).toLocaleDateString() : 'N/A'} • 
+                                {order.returnPlanAt ? new Date(order.returnPlanAt).toLocaleDateString() : 'N/A'}
+                              </div>
+                              <div className="text-xs text-gray-500">{order.productNames || 'N/A'}</div>
+                            </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold text-blue-600">${(order.amount || 0).toLocaleString()}</div>
-                            <div className="text-xs text-gray-500">Book</div>
+                            <div className="font-semibold text-blue-600">${(order.totalAmount || 0).toLocaleString()}</div>
+                            <div className="text-xs text-gray-500">{order.status}</div>
                           </div>
                         </div>
                       ))}
@@ -654,10 +588,10 @@ export default function DashboardPage() {
                 <CardContentClean>
                   <div className="space-y-4">
                     {[
-                      { status: 'Book', count: (recentOrders || []).filter(o => o.status === 'book').length, color: 'bg-blue-500' },
-                      { status: 'Pickup', count: (recentOrders || []).filter(o => o.status === 'pickup').length, color: 'bg-green-500' },
-                      { status: 'Return', count: (recentOrders || []).filter(o => o.status === 'return').length, color: 'bg-gray-500' },
-                      { status: 'Cancel', count: (recentOrders || []).filter(o => o.status === 'cancel').length, color: 'bg-red-500' }
+                      { status: 'Reserved', count: (recentOrders || []).filter(o => o.status === 'RESERVED').length, color: 'bg-blue-500' },
+                      { status: 'Active', count: (recentOrders || []).filter(o => o.status === 'ACTIVE').length, color: 'bg-green-500' },
+                      { status: 'Completed', count: (recentOrders || []).filter(o => o.status === 'COMPLETED').length, color: 'bg-gray-500' },
+                      { status: 'Cancelled', count: (recentOrders || []).filter(o => o.status === 'CANCELLED').length, color: 'bg-red-500' }
                     ].map((item, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
@@ -686,44 +620,44 @@ export default function DashboardPage() {
               <StatCard
                 title="Total Revenue"
                 value={currentStats.totalRevenue}
-                change={timePeriod === 'month' ? '+8% from last month' : '+12% from last year'}
+                change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}% growth` : 'No growth data'}
                 description={timePeriod === 'month' ? 'This month' : 'This year'}
                 tooltip="Total revenue from all completed rentals and payments"
                 color="text-green-600"
-                trend="up"
+                trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
                 title="Total Rentals"
                 value={currentStats.totalRentals}
-                change={timePeriod === 'month' ? '+12% from last month' : '+5% from last year'}
+                change="Real-time data"
                 description="All rentals"
                 tooltip="Total number of rental orders created"
                 color="text-blue-600"
-                trend="up"
+                trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
                 title="Completed Rentals"
                 value={currentStats.completedRentals}
-                change={timePeriod === 'month' ? '+10% from last month' : '+8% from last year'}
+                change="Real-time data"
                 description="Successfully completed"
                 tooltip="Number of rentals that have been successfully completed"
                 color="text-purple-600"
-                trend="up"
+                trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
                 title="Future Revenue"
                 value={currentStats.futureRevenue}
-                change={timePeriod === 'month' ? '+5% from last month' : '+8% from last year'}
+                change="Real-time data"
                 description="Booked revenue"
                 tooltip="Expected revenue from upcoming and ongoing rentals"
                 color="text-orange-600"
-                trend="up"
+                trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
@@ -756,11 +690,7 @@ export default function DashboardPage() {
                 </CardHeaderClean>
                 <CardContentClean>
                   <OrderChart 
-                    data={currentOrderData.map(order => ({
-                      period: order.period,
-                      actual: order.count,
-                      projected: order.count * 1.1 // Estimate 10% growth
-                    }))} 
+                    data={currentOrderData} 
                     loading={loadingCharts} 
                   />
                 </CardContentClean>
@@ -800,8 +730,8 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{product.category}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-green-600">${(product.revenue || 0).toLocaleString()}</p>
-                            <p className="text-xs text-gray-500">{product.rentalCount || 0} rentals</p>
+                            <p className="font-semibold text-green-600 text-lg">${(product.totalRevenue || 0).toLocaleString()}</p>
+                            <p className="text-sm text-gray-500">{product.rentalCount || 0} total orders</p>
                           </div>
                         </div>
                       ))}
@@ -846,8 +776,11 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{customer.location}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-blue-600">{customer.rentalCount || 0} rentals</p>
-                            <p className="text-xs text-gray-500">{customer.lastRental || 'N/A'}</p>
+                            <p className="font-semibold text-green-600 text-lg">${(customer.totalSpent || 0).toLocaleString()}</p>
+                            <p className="text-sm text-gray-500">{customer.orderCount || 0} total orders</p>
+                            <p className="text-xs text-gray-400">
+                              {customer.rentalCount || 0} rentals • {customer.saleCount || 0} sales
+                            </p>
                           </div>
                         </div>
                       ))}

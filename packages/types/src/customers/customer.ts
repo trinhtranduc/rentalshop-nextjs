@@ -171,7 +171,13 @@ export interface CustomerStats {
 }
 
 export interface TopCustomer {
-  customer: Customer;
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
   orderCount: number;
+  rentalCount: number;
+  saleCount: number;
   totalSpent: number;
 }
