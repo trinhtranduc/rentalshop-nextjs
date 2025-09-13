@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import ClientLayout from './components/ClientLayout'
 import { CurrencyProvider } from '@rentalshop/hooks'
+import { AuthProvider } from './providers/AuthProvider'
+import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
 import Script from 'next/script'
 
@@ -23,11 +25,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans`}>
-        <CurrencyProvider>
-          <ClientLayout>
-            {children}
-          </ClientLayout>
-        </CurrencyProvider>
+        <AuthProvider>
+          <CurrencyProvider>
+            <ToastProvider>
+              <ClientLayout>
+                {children}
+              </ClientLayout>
+            </ToastProvider>
+          </CurrencyProvider>
+        </AuthProvider>
         <Script src="/mobile-menu.js" />
       </body>
     </html>

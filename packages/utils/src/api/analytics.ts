@@ -127,8 +127,29 @@ export const analyticsApi = {
   /**
    * Get system analytics (admin only)
    */
-  async getSystemAnalytics(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(apiUrls.analytics.system);
+  async getSystemAnalytics(filters?: AnalyticsFilters): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.groupBy) params.append('groupBy', filters.groupBy);
+    params.append('t', Date.now().toString()); // Add timestamp to bypass cache
+    
+    const url = `${apiUrls.analytics.system}?${params.toString()}`;
+    const response = await authenticatedFetch(url);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get recent system activities (admin only)
+   */
+  async getRecentActivities(limit?: number, offset?: number): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (offset) params.append('offset', offset.toString());
+    params.append('t', Date.now().toString()); // Add timestamp to bypass cache
+    
+    const url = `${apiUrls.analytics.recentActivities}?${params.toString()}`;
+    const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   },
 

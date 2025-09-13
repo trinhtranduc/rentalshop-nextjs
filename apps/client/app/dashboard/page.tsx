@@ -25,7 +25,7 @@ import {
   ArrowDownRight,
   Minus
 } from 'lucide-react';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useToastHandler } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi } from '@rentalshop/utils';
 
 // ============================================================================
@@ -154,6 +154,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 // ============================================================================
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { showError, showSuccess } = useToastHandler();
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>('today');
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -329,6 +330,8 @@ export default function DashboardPage() {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch dashboard data';
+      showError('Error', errorMessage);
       
       // Set default data if API fails to prevent crashes
       setStats({

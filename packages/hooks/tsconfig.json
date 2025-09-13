@@ -7,7 +7,8 @@
     "paths": {
       "@rentalshop/auth": ["../../packages/auth/src"],
       "@rentalshop/ui": ["../../packages/ui/src"],
-      "@rentalshop/utils": ["../../packages/utils/src"]
+      "@rentalshop/utils": ["../../packages/utils/src"],
+      "@rentalshop/types": ["../../packages/types/src"]
     }
   },
   "include": ["src/**/*"]

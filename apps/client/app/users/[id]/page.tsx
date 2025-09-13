@@ -22,14 +22,16 @@ import {
   Key
 } from 'lucide-react';
 import { usersApi } from "@rentalshop/utils";
-import { useAuth } from '@rentalshop/hooks';
-import type { User, UserUpdateInput } from '@rentalshop/ui';
+import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
 import { useToasts } from '@rentalshop/ui';
+import type { User, UserUpdateInput } from '@rentalshop/ui';
 
 export default function UserPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const { handleError } = useSimpleErrorHandler();
+  const { showSuccess } = useToasts();
   const userId = params.id as string;
   
   console.log('🔍 UserPage: Component rendered with params:', params);
@@ -45,7 +47,6 @@ export default function UserPage() {
   // Section visibility states
   const [showEditSection, setShowEditSection] = useState(false);
   
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
   
   // Fetch user data
   useEffect(() => {
@@ -80,6 +81,7 @@ export default function UserPage() {
         
       } catch (error) {
         console.error('❌ UserPage: Error fetching user:', error);
+        handleError(error);
         // Show error state
         setUserData(null);
       } finally {
@@ -109,6 +111,7 @@ export default function UserPage() {
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
+      handleError(error);
     }
   };
 

@@ -9,8 +9,7 @@ import {
   Building2,
   Store
 } from 'lucide-react';
-import { ToastContainer, useToasts } from '@rentalshop/ui';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useToastHandler } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
 
 // Import components
@@ -75,7 +74,7 @@ const settingsMenuItems = [
 
 export const SettingsComponent: React.FC = () => {
   const { user, logout, loading } = useAuth();
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { showSuccess, showError } = useToastHandler();
   
   // Navigation state
   const [activeSection, setActiveSection] = useState('profile');
@@ -414,7 +413,6 @@ export const SettingsComponent: React.FC = () => {
         onConfirm={handleDeleteAccount}
       />
       
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </>
   );
 };
