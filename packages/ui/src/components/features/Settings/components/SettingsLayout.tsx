@@ -65,30 +65,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
     );
   }
 
-  // Show error state if user is not loaded
-  if (!user) {
-    return (
-      <PageWrapper>
-        <PageHeader>
-          <PageTitle>Settings</PageTitle>
-          <p>Manage your account settings and preferences</p>
-        </PageHeader>
-        <div className="flex justify-center items-center py-12">
-          <div className="text-center">
-            <p className="text-red-600 mb-4">You need to be logged in to access settings</p>
-            <div className="space-x-4">
-              <Button onClick={() => window.location.href = '/login'}>
-                Go to Login
-              </Button>
-              <Button variant="outline" onClick={() => window.location.reload()}>
-                Retry
-              </Button>
-            </div>
-          </div>
-        </div>
-      </PageWrapper>
-    );
-  }
+  // Show basic settings UI even if user is not loaded (keep UI as is)
+  // This prevents the infinite loading state and shows the settings interface
 
   return (
     <PageWrapper>

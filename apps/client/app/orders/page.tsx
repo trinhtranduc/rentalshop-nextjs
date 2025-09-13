@@ -6,19 +6,17 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent,
-  useToasts,
-  ToastContainer
+  PageContent
 } from '@rentalshop/ui';
 import { Orders } from '../../components/Orders';
 import { useRouter } from 'next/navigation';
-import { useAuth, useOrderManagement } from '@rentalshop/hooks';
+import { useAuth, useOrderManagement, useToastHandler } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
 
 export default function OrdersPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { showSuccess, showError } = useToastHandler();
   
   // Use the order management hook
   const {
@@ -220,7 +218,6 @@ export default function OrdersPage() {
         />
       </PageContent>
     </PageWrapper>
-    <ToastContainer toasts={toasts} onClose={removeToast} />
   </>
   );
 } 

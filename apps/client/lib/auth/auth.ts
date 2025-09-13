@@ -1,13 +1,9 @@
 /**
  * Authentication utilities for client app (reusing shared package)
  */
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  role: string;
-  phone?: string;
-}
+// Use shared User type from @rentalshop/types
+import type { User } from '@rentalshop/types';
+export type { User };
 
 export interface AuthResponse {
   success: boolean;
@@ -30,6 +26,7 @@ export {
 
 export const isAuthenticated = (): boolean => {
   if (typeof window === 'undefined') return false;
+  const { getAuthToken } = require('@rentalshop/utils');
   const token = getAuthToken();
   return !!token;
 };
@@ -123,7 +120,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/utils');
     const data = await handleApiResponse(await authenticatedFetch('/api/auth/me'));
-    return data.success ? data.data : null;
+    return data.success ? (data.data as User) : null;
   } catch (error) {
     console.error('Failed to get current user:', error);
     return null;

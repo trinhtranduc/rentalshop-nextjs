@@ -8,7 +8,6 @@ import {
   CustomerPageHeader, 
   CustomerInfoCard, 
   ConfirmationDialog,
-  ToastContainer,
   PageWrapper,
   PageHeader,
   PageContent
@@ -27,15 +26,14 @@ import {
   X
 } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
 import type { Customer } from '@rentalshop/types';
 import type { EditCustomerFormRef } from '@rentalshop/ui';
-import { useToasts } from '@rentalshop/ui';
-
 export default function CustomerPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const { handleError } = useSimpleErrorHandler();
   const customerId = params.id as string;
   
   console.log('🔍 CustomerPage: Component rendered with params:', params);
@@ -52,7 +50,6 @@ export default function CustomerPage() {
   const [showOrdersSection, setShowOrdersSection] = useState(false);
   
   const editCustomerFormRef = React.useRef<EditCustomerFormRef>(null);
-  const { toasts, showSuccess, removeToast } = useToasts();
 
   
   // Fetch customer data
@@ -88,6 +85,8 @@ export default function CustomerPage() {
         
       } catch (error) {
         console.error('❌ CustomerPage: Error fetching customer:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch customer details';
+        showError('Error', errorMessage);
         // Show error state
         setCustomer(null);
       } finally {
@@ -366,9 +365,6 @@ export default function CustomerPage() {
         confirmText={customer.isActive ? 'Deactivate' : 'Activate'}
         onConfirm={handleToggleCustomerStatus}
       />
-      
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 }

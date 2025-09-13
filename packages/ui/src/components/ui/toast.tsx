@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -112,8 +112,21 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose 
   );
 };
 
-// Hook for managing toasts
-export const useToasts = () => {
+// Toast Context
+interface ToastContextType {
+  toasts: ToastProps[];
+  addToast: (type: ToastType, title: string, message?: string, duration?: number) => string;
+  removeToast: (id: string) => void;
+  showSuccess: (title: string, message?: string) => string;
+  showError: (title: string, message?: string) => string;
+  showWarning: (title: string, message?: string) => string;
+  showInfo: (title: string, message?: string) => string;
+}
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+// Toast Provider Component
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastProps[]>([]);
 
   const addToast = (type: ToastType, title: string, message?: string, duration?: number) => {
@@ -140,7 +153,7 @@ export const useToasts = () => {
   const showWarning = (title: string, message?: string) => addToast('warning', title, message);
   const showInfo = (title: string, message?: string) => addToast('info', title, message);
 
-  return {
+  const value = {
     toasts,
     addToast,
     removeToast,
@@ -149,4 +162,20 @@ export const useToasts = () => {
     showWarning,
     showInfo,
   };
+
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+    </ToastContext.Provider>
+  );
+};
+
+// Hook for managing toasts
+export const useToasts = () => {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error('useToasts must be used within a ToastProvider');
+  }
+  return context;
 };

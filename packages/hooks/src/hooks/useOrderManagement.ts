@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
 import { useThrottledSearch } from './useThrottledSearch';
+import { useSimpleErrorHandler } from './useToast';
 import { ordersApi } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
 import type { Order, OrderWithDetails, OrderFilters, OrderCreateInput, OrderUpdateInput, OrderType, OrderStatus } from '@rentalshop/types';
@@ -70,6 +71,8 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
     merchantId,
     outletId
   } = options;
+
+  const { handleError } = useSimpleErrorHandler();
 
   // State
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
@@ -165,6 +168,7 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
+      handleError(error);
     } finally {
       setLoading(false);
     }
@@ -187,6 +191,7 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+      handleError(error);
     }
   }, [enableStats]);
 
@@ -228,6 +233,7 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error picking up order:', error);
+      handleError(error);
       return { success: false, error: (error as Error).message };
     }
   }, [fetchOrders, fetchStats, pagination.currentPage, searchTerm, statusFilter, orderTypeFilter, outletFilter, dateRangeFilter, sortBy, sortOrder, enableStats]);
@@ -247,6 +253,7 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error returning order:', error);
+      handleError(error);
       return { success: false, error: (error as Error).message };
     }
   }, [fetchOrders, fetchStats, pagination.currentPage, searchTerm, statusFilter, orderTypeFilter, outletFilter, dateRangeFilter, sortBy, sortOrder, enableStats]);
@@ -266,6 +273,7 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
+      handleError(error);
       return { success: false, error: (error as Error).message };
     }
   }, [fetchOrders, fetchStats, pagination.currentPage, searchTerm, statusFilter, orderTypeFilter, outletFilter, dateRangeFilter, sortBy, sortOrder, enableStats]);

@@ -86,7 +86,7 @@ export function useAuth() {
       loading: false,
       error: null,
     });
-    window.location.href = '/login';
+    // window.location.href = '/login';
   }, []);
 
   const refreshUser = useCallback(async () => {

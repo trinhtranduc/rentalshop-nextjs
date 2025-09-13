@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { subscriptionsApi, plansApi } from '@rentalshop/utils';
+import { useToastHandler } from '@rentalshop/hooks';
 import {
   Card,
   CardHeader,
@@ -43,6 +44,7 @@ import {
 import type { Subscription, Plan, Payment } from '@rentalshop/types';
 
 export default function MerchantSubscriptionPage() {
+  const { showError, showSuccess } = useToastHandler();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,8 @@ export default function MerchantSubscriptionPage() {
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch subscription data';
+      showError('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -139,6 +143,7 @@ export default function MerchantSubscriptionPage() {
   const handleBillingSettings = () => {
     setShowBillingModal(true);
   };
+
 
   if (loading) {
     return (

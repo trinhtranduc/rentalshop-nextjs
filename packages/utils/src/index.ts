@@ -22,6 +22,7 @@ export * from './validation';
 
 // Error handling
 export * from './errors';
+export * from './error-handling';
 
 // Public ID utilities
 export * from './publicId';

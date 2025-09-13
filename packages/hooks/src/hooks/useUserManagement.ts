@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
 import { useThrottledSearch } from './useThrottledSearch';
+import { useSimpleErrorHandler } from './useToast';
 import { usersApi } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
 import type { User, UserFilters as UserFiltersType, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
@@ -65,6 +66,9 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
     useSearchUsers = false,
     enableStats = false
   } = options;
+
+  // Add error handling
+  const { handleError } = useSimpleErrorHandler();
 
   // State
   const [users, setUsers] = useState<User[]>([]);
@@ -157,12 +161,13 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
     } catch (error) {
       console.error('Error fetching users:', error);
+      handleError(error); // Show error toast
       setUsers([]);
     } finally {
       console.log('🔍 useUserManagement: fetchUsers completed, setLoading(false)');
       setLoading(false);
     }
-  }, [pagination.limit, useSearchUsers, updatePaginationFromResponse]);
+  }, [pagination.limit, useSearchUsers, updatePaginationFromResponse, handleError]);
 
   // Single effect to handle all data fetching
   useEffect(() => {
@@ -252,8 +257,9 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
     } catch (error) {
       console.error('Error updating user status:', error);
+      handleError(error); // Show error toast
     }
-  }, [fetchUsers]);
+  }, [fetchUsers, handleError]);
 
   const handleUserUpdated = useCallback((updatedUser: User) => {
     setShowEditDialog(false);
@@ -329,9 +335,10 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
     } catch (error) {
       console.error('Error creating user:', error);
+      handleError(error); // Show error toast
       throw error; // Re-throw to let the form handle the error
     }
-  }, [fetchUsers]);
+  }, [fetchUsers, handleError]);
 
   const handleUserUpdatedAsync = useCallback(async (userData: UserUpdateInput) => {
     if (!selectedUser) return;
@@ -346,9 +353,10 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
     } catch (error) {
       console.error('Error updating user:', error);
+      handleError(error); // Show error toast
       throw error; // Re-throw to let the form handle the error
     }
-  }, [selectedUser, fetchUsers]);
+  }, [selectedUser, fetchUsers, handleError]);
 
   return {
     // State

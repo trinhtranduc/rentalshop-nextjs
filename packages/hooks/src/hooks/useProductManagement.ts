@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
 import { useThrottledSearch } from './useThrottledSearch';
+import { useSimpleErrorHandler } from './useToast';
 import { productsApi } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
 import type { Product, ProductWithDetails, ProductWithStock, ProductFilters, ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
@@ -74,6 +75,9 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     merchantId,
     outletId
   } = options;
+
+  // Add error handling
+  const { handleError } = useSimpleErrorHandler();
 
   // State
   const [products, setProducts] = useState<Product[]>([]);
@@ -175,6 +179,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       }
     } catch (error) {
       console.error('Error fetching products:', error);
+      handleError(error); // Show error toast
       setProducts([]);
     } finally {
       setLoading(false);
@@ -293,6 +298,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       }
     } catch (error) {
       console.error('Error fetching product details:', error);
+      handleError(error); // Show error toast
       // Fallback to basic product info
       setSelectedProduct(product);
       setShowProductDetail(true);
@@ -321,6 +327,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       }
     } catch (error) {
       console.error('Error updating product status:', error);
+      handleError(error); // Show error toast
     }
   }, [fetchProducts]);
 
@@ -420,6 +427,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       }
     } catch (error) {
       console.error('Error creating product:', error);
+      handleError(error); // Show error toast
       throw error; // Re-throw to let the form handle the error
     }
   }, [fetchProducts]);

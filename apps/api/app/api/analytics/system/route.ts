@@ -8,10 +8,25 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
     // User is already authenticated and authorized as ADMIN
     const { user, userScope, request } = authorizedRequest;
 
-    // Get current date for calculations
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    // Get query parameters for date filtering
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const groupBy = searchParams.get('groupBy') || 'month';
+
+    // Set default date range if not provided (current month)
+    let dateStart: Date;
+    let dateEnd: Date;
+    
+    if (startDate && endDate) {
+      dateStart = new Date(startDate);
+      dateEnd = new Date(endDate);
+    } else {
+      // Default to current month
+      const now = new Date();
+      dateStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
 
     // Fetch system metrics in parallel
     const [
@@ -44,67 +59,119 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
       // Total orders
       prisma.order.count(),
       
-      // Active merchants (with recent activity)
+      // Active merchants (with recent activity in date range)
       prisma.merchant.count({ 
         where: { 
           isActive: true,
           outlets: {
             some: {
               orders: {
-                some: { createdAt: { gte: startOfMonth } }
+                some: { 
+                  createdAt: { 
+                    gte: dateStart,
+                    lte: dateEnd
+                  }
+                }
               }
             }
           }
         }
       }),
       
-      // New merchants this month
+      // New merchants in date range
       prisma.merchant.count({ 
         where: { 
           isActive: true,
-          createdAt: { gte: startOfMonth }
+          createdAt: { 
+            gte: dateStart,
+            lte: dateEnd
+          }
         }
       }),
       
-      // New merchants this year
+      // New merchants this year (keep for comparison)
       prisma.merchant.count({ 
         where: { 
           isActive: true,
-          createdAt: { gte: startOfYear }
+          createdAt: { 
+            gte: new Date(new Date().getFullYear(), 0, 1)
+          }
         }
       }),
       
-      // Total revenue (sum of all order amounts)
+      // Revenue in date range
       prisma.order.aggregate({
+        where: {
+          createdAt: {
+            gte: dateStart,
+            lte: dateEnd
+          }
+        },
         _sum: { totalAmount: true }
       })
     ]);
 
-    // Get merchant registration trends for the last 12 months
+    // Get merchant registration trends based on groupBy parameter
     const merchantTrends = [];
-    for (let i = 11; i >= 0; i--) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      
-      const newMerchants = await prisma.merchant.count({
-        where: {
-          isActive: true,
-          createdAt: { gte: monthStart, lte: monthEnd }
-        }
-      });
-      
-      const activeMerchants = await prisma.merchant.count({
-        where: {
-          isActive: true,
-          createdAt: { lte: monthEnd }
-        }
-      });
-      
-      merchantTrends.push({
-        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
-        newMerchants,
-        activeMerchants
-      });
+    
+    if (groupBy === 'month') {
+      // Generate trends for each month in the date range
+      const current = new Date(dateStart);
+      while (current <= dateEnd) {
+        const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
+        const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
+        
+        const newMerchants = await prisma.merchant.count({
+          where: {
+            isActive: true,
+            createdAt: { gte: monthStart, lte: monthEnd }
+          }
+        });
+        
+        const activeMerchants = await prisma.merchant.count({
+          where: {
+            isActive: true,
+            createdAt: { lte: monthEnd }
+          }
+        });
+        
+        merchantTrends.push({
+          month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+          newMerchants,
+          activeMerchants
+        });
+        
+        current.setMonth(current.getMonth() + 1);
+      }
+    } else if (groupBy === 'day') {
+      // Generate trends for each day in the date range
+      const current = new Date(dateStart);
+      while (current <= dateEnd) {
+        const dayStart = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+        const dayEnd = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
+        
+        const newMerchants = await prisma.merchant.count({
+          where: {
+            isActive: true,
+            createdAt: { gte: dayStart, lte: dayEnd }
+          }
+        });
+        
+        const activeMerchants = await prisma.merchant.count({
+          where: {
+            isActive: true,
+            createdAt: { lte: dayEnd }
+          }
+        });
+        
+        merchantTrends.push({
+          month: dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          newMerchants,
+          activeMerchants
+        });
+        
+        current.setDate(current.getDate() + 1);
+      }
     }
 
     const systemMetrics = {
@@ -116,7 +183,7 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
       totalOrders,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
       activeMerchants,
-      newMerchantsThisMonth,
+      newMerchantsThisMonth: newMerchantsThisMonth, // New merchants in date range
       newMerchantsThisYear,
       merchantTrends
     };

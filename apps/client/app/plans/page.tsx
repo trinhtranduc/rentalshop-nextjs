@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { plansApi, subscriptionsApi } from '@rentalshop/utils';
+import { useToastHandler } from '@rentalshop/hooks';
 import {
   Card,
   CardHeader,
@@ -49,6 +50,7 @@ import {
 import type { Plan, Subscription } from '@rentalshop/types';
 
 export default function PlansPage() {
+  const { showError, showSuccess } = useToastHandler();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,6 +90,8 @@ export default function PlansPage() {
 
     } catch (error) {
       console.error('Error fetching data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch plans data';
+      showError('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -140,11 +144,12 @@ export default function PlansPage() {
         // Redirect to subscription page
         window.location.href = '/subscription';
       } else {
-        alert(`Error purchasing plan: ${result.message}`);
+        showError('Error', `Error purchasing plan: ${result.message}`);
       }
     } catch (error) {
       console.error('Error purchasing plan:', error);
-      alert('Error purchasing plan. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Error purchasing plan';
+      showError('Error', errorMessage);
     }
   };
 

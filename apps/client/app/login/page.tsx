@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoginForm } from '@rentalshop/ui';
 import { loginUser } from '../../lib/auth/auth';
+import { useAuth } from '../providers/AuthProvider';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,8 +24,10 @@ export default function LoginPage() {
       
       if (result.success) {
         console.log('✅ Login successful:', result);
-        console.log('🔄 Redirecting to dashboard...');
-        // Small delay to ensure token is stored
+        console.log('🔄 Updating auth context and redirecting to dashboard...');
+        // Update the auth context
+        login(result.user, result.token);
+        // Small delay to ensure context is updated
         setTimeout(() => {
           router.push('/dashboard');
         }, 100);

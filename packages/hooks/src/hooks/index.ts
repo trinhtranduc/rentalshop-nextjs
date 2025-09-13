@@ -3,6 +3,8 @@
 // ============================================================================
 
 export { useAuth } from './useAuth';
+export { useAuthErrorHandler } from './useAuthErrorHandler';
+export { useErrorHandler, useSimpleErrorHandler, useToastHandler, type UseErrorHandlerOptions, type UseErrorHandlerReturn } from './useToast';
 export { useProductAvailability } from './useProductAvailability';
 export { useThrottledSearch } from './useThrottledSearch';
 export { useCurrency, CurrencyProvider } from './useCurrency';

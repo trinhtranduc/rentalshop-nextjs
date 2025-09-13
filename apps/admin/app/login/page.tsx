@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@rentalshop/ui';
 import { Eye, EyeOff, Mail, Lock, Store } from 'lucide-react';
 import { authApi, storeAuthData } from '@rentalshop/utils';
+import { useAuth } from '../providers/AuthProvider';
 
 interface LoginFormData {
   email: string;
@@ -20,6 +21,7 @@ interface LoginFormProps {
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
@@ -40,6 +42,8 @@ export default function AdminLoginPage() {
       if (response.success && response.data) {
         // Store auth data using centralized function
         storeAuthData(response.data.token, response.data.user);
+        // Update the auth context
+        login(response.data.user, response.data.token);
         // Redirect to dashboard
         router.push('/dashboard');
       } else {

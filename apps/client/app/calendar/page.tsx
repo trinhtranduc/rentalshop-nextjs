@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars } from '@rentalshop/ui';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
 import { ordersApi } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
 export default function CalendarPage() {
   const { authenticated } = useAuth();
+  const { handleError } = useSimpleErrorHandler();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +58,14 @@ export default function CalendarPage() {
           console.log(`✅ Successfully fetched ${orders.length} orders for ${currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`);
         }
       } else {
-        setError(result.error || 'Failed to fetch orders');
+        const errorMessage = result.error || 'Failed to fetch orders';
+        setError(errorMessage);
+        handleError(new Error(errorMessage));
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
       setError('Failed to fetch pickup orders. Please try again.');
+      handleError(error);
     } finally {
       setLoading(false);
     }

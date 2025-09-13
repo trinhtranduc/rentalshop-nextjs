@@ -158,25 +158,26 @@ export const authenticatedFetch = async (
         // If token is expired, clear it
         if (payload.exp < now) {
           console.log('🔍 FRONTEND: Token is expired, clearing auth data');
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userData');
+          clearAuthData();
           throw new Error('Token expired - please log in again');
         }
       }
     } catch (error) {
       console.log('🔍 FRONTEND: Token validation failed:', error);
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
+      clearAuthData();
       throw new Error('Invalid token - please log in again');
     }
   }
   
   // Check if user is authenticated before making the request
   if (!token && typeof window !== 'undefined') {
-    console.log('🔍 FRONTEND: No token found, cleaning up and throwing error');
+    console.log('🔍 FRONTEND: No token found, cleaning up and redirecting to login');
     // Clean up any stale auth data
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
+    clearAuthData();
+    // Redirect to login page
+    setTimeout(() => {
+      // window.location.href = '/login';
+    }, 100);
     throw new Error('Authentication required');
   }
   
@@ -219,17 +220,14 @@ export const authenticatedFetch = async (
     // Handle common HTTP status codes using API constants
     if (response.status === API.STATUS.UNAUTHORIZED) {
       console.log('🔍 FRONTEND: 401 Unauthorized response received');
-      // Handle unauthorized - clean up auth data and redirect
+      // Handle unauthorized - clean up auth data and redirect immediately
       if (typeof window !== 'undefined') {
-        console.log('🔍 FRONTEND: Cleaning up auth data and redirecting');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        // Small delay to allow any error messages to be displayed
-        setTimeout(() => {
-          // window.location.href = '/login';
-        }, 1000);
+        console.log('🔍 FRONTEND: Cleaning up auth data and redirecting to login');
+        clearAuthData();
+        // Immediate redirect on 401 error
+        // window.location.href = '/login';
       }
-      throw new Error('Unauthorized access - please log in again');
+      throw new Error('Unauthorized access - redirecting to login');
     }
     
     if (response.status === API.STATUS.FORBIDDEN) {
@@ -310,13 +308,10 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
           console.error('🔒 parseApiResponse - Could not read response body:', e);
         }
         
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        // Add a small delay to allow console logs to be seen before redirect
-        setTimeout(() => {
-          console.error('🚨 DEBUG: parseApiResponse - REDIRECTING TO LOGIN PAGE NOW!');
-          // window.location.href = '/login';
-        }, 1000);
+        clearAuthData();
+        // Immediate redirect on 401 error
+        console.error('🚨 DEBUG: parseApiResponse - REDIRECTING TO LOGIN PAGE NOW!');
+        // window.location.href = '/login';
       }
       throw new Error('Unauthorized access - redirecting to login');
     }
@@ -343,9 +338,36 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
       // Handle API error responses with error field (most common case)
       if (errorData.success === false && errorData.error) {
         console.log('🔍 parseApiResponse: API error response detected');
+        
+        // Check if this is a subscription-related "Invalid token" error
+        const isSubscriptionInvalidToken = (
+          errorData.error === 'Invalid token' && (
+            // Check for subscription-related context
+            errorData.subscriptionError === true ||
+            errorData.context === 'subscription' ||
+            errorData.context === 'plan' ||
+            errorData.subscriptionStatus === 'cancelled' ||
+            errorData.subscriptionStatus === 'expired' ||
+            // Check if this came from a subscription-related endpoint
+            response.url.includes('/subscription') ||
+            response.url.includes('/plan') ||
+            response.url.includes('/billing') ||
+            // Check for subscription-specific error codes
+            errorData.errorCode === 'SUBSCRIPTION_CANCELLED' ||
+            errorData.errorCode === 'PLAN_CANCELLED' ||
+            errorData.errorCode === 'SUBSCRIPTION_EXPIRED'
+          )
+        );
+        
         const result = {
           success: false,
           error: errorData.error, // Use the error message directly
+          // Add subscription context if detected
+          ...(isSubscriptionInvalidToken && {
+            subscriptionError: true,
+            context: 'subscription',
+            errorCode: errorData.errorCode || 'SUBSCRIPTION_CANCELLED'
+          })
         };
         console.log('🔍 parseApiResponse: Returning API error:', result);
         return result;
@@ -353,9 +375,36 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
       
       // Handle legacy error responses
       console.log('🔍 parseApiResponse: Legacy error response detected');
+      
+      // Check if this is a subscription-related "Invalid token" error using message field
+      const isSubscriptionInvalidTokenMessage = (
+        errorData.message === 'Invalid token' && (
+          // Check for subscription-related context
+          errorData.subscriptionError === true ||
+          errorData.context === 'subscription' ||
+          errorData.context === 'plan' ||
+          errorData.subscriptionStatus === 'cancelled' ||
+          errorData.subscriptionStatus === 'expired' ||
+          // Check if this came from a subscription-related endpoint
+          response.url.includes('/subscription') ||
+          response.url.includes('/plan') ||
+          response.url.includes('/billing') ||
+          // Check for subscription-specific error codes
+          errorData.errorCode === 'SUBSCRIPTION_CANCELLED' ||
+          errorData.errorCode === 'PLAN_CANCELLED' ||
+          errorData.errorCode === 'SUBSCRIPTION_EXPIRED'
+        )
+      );
+      
       const result = {
         success: false,
         error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+        // Add subscription context if detected
+        ...(isSubscriptionInvalidTokenMessage && {
+          subscriptionError: true,
+          context: 'subscription',
+          errorCode: errorData.errorCode || 'SUBSCRIPTION_CANCELLED'
+        })
       };
       console.log('🔍 parseApiResponse: Returning legacy error:', result);
       return result;
@@ -415,29 +464,7 @@ export const executeWithDataRefresh = async <T>(
   }
 };
 
-/**
- * Handle API errors and redirect to login if unauthorized
- */
-export const handleApiError = (error: any, redirectToLogin: boolean = true) => {
-  console.error('API Error:', error);
-  
-  // Check if it's an unauthorized error
-  if (error?.message?.includes('Unauthorized') || 
-      error?.error === 'Unauthorized' ||
-      error?.status === API.STATUS.UNAUTHORIZED) {
-    
-    if (redirectToLogin && typeof window !== 'undefined') {
-      console.log('🔄 Redirecting to login due to unauthorized access');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-      // window.location.href = '/login';
-      return;
-    }
-  }
-  
-  // Re-throw the error for other handling
-  throw error;
-};
+// handleApiError is now exported from ./error-handling.ts for centralized error handling
 
 /**
  * Check if user is authenticated
@@ -445,7 +472,7 @@ export const handleApiError = (error: any, redirectToLogin: boolean = true) => {
 export const isAuthenticated = (): boolean => {
   if (typeof window === 'undefined') return false;
   
-  const token = localStorage.getItem('authToken');
+  const token = getAuthToken();
   return !!token;
 };
 
@@ -456,6 +483,7 @@ export const requireAuth = (): void => {
   if (!isAuthenticated()) {
     if (typeof window !== 'undefined') {
       console.log('🔒 User not authenticated, redirecting to login');
+      clearAuthData();
       // window.location.href = '/login';
     }
   }
@@ -671,10 +699,8 @@ export const forceLogout = (): void => {
   console.log('🚪 Force logout - clearing all auth data');
   clearAuthData();
   
-  // Redirect to login page
-  if (window.location.pathname !== '/login') {
-    window.location.href = '/login';
-  }
+  // Immediate redirect to login page
+  // window.location.href = '/login';
 };
 
 /**

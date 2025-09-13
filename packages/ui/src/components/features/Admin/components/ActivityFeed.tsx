@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Activity, User, Settings, Database, CreditCard, ShoppingCart, Building2, AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 interface ActivityItem {
   id: string;
@@ -10,7 +10,7 @@ interface ActivityItem {
   user: string;
   action: string;
   description: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   type: 'success' | 'warning' | 'error' | 'info';
 }
 
@@ -42,6 +42,44 @@ export default function ActivityFeed({
     }
   };
 
+  const getDefaultIcon = (action: string, type: string): LucideIcon => {
+    const actionLower = action.toLowerCase();
+    
+    // Map actions to icons
+    if (actionLower.includes('create') || actionLower.includes('add')) {
+      return Building2;
+    } else if (actionLower.includes('update') || actionLower.includes('edit')) {
+      return Settings;
+    } else if (actionLower.includes('delete') || actionLower.includes('remove')) {
+      return AlertCircle;
+    } else if (actionLower.includes('login') || actionLower.includes('auth')) {
+      return User;
+    } else if (actionLower.includes('payment') || actionLower.includes('billing')) {
+      return CreditCard;
+    } else if (actionLower.includes('order') || actionLower.includes('purchase')) {
+      return ShoppingCart;
+    } else if (actionLower.includes('backup') || actionLower.includes('system')) {
+      return Database;
+    } else if (actionLower.includes('error') || actionLower.includes('fail')) {
+      return AlertCircle;
+    } else if (actionLower.includes('success') || actionLower.includes('complete')) {
+      return CheckCircle;
+    }
+    
+    // Default based on type
+    switch (type) {
+      case 'success':
+        return CheckCircle;
+      case 'warning':
+        return AlertCircle;
+      case 'error':
+        return AlertCircle;
+      case 'info':
+      default:
+        return Info;
+    }
+  };
+
   const displayActivities = activities.slice(0, maxItems);
 
   return (
@@ -52,7 +90,7 @@ export default function ActivityFeed({
       <CardContent>
         <div className="space-y-4">
           {displayActivities.map((activity) => {
-            const Icon = activity.icon;
+            const Icon = activity.icon || getDefaultIcon(activity.action, activity.type);
             return (
               <div key={activity.id} className="flex items-start gap-3">
                 <div className={`p-2 rounded-full ${getTypeColor(activity.type)}`}>
