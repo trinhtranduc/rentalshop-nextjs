@@ -4,17 +4,16 @@ import React from 'react';
 import { 
   OrderHeader,
   OrderFilters,
-  OrderListActions,
   OrderStats,
   OrderPagination
 } from '@rentalshop/ui';
 import { OrderTable } from './OrderTable';
-import type { OrdersData, OrderFilters } from '@rentalshop/types';
+import type { OrderListData, OrderFilters as OrderFiltersType } from '@rentalshop/types';
 
 interface OrdersProps {
-  data: OrdersData;
-  filters: OrderFilters;
-  onFiltersChange: (filters: OrderFilters) => void;
+  data: OrderListData;
+  filters: OrderFiltersType;
+  onFiltersChange: (filters: OrderFiltersType) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
   onOrderAction: (action: string, orderId: string) => void;

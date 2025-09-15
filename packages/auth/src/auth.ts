@@ -1,7 +1,7 @@
 import { prisma } from '@rentalshop/database';
 import { comparePassword, hashPassword } from './password';
 import { generateToken } from './jwt';
-import type { LoginCredentials, RegisterData, AuthResponse } from './types';
+import type { LoginCredentials, RegisterData, AuthResponse, AuthUser } from './types';
 
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   const user = await prisma.user.findUnique({
@@ -40,6 +40,8 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
       name: `${user.firstName} ${user.lastName}`,
       role: user.role,
       phone: user.phone || undefined,
+      merchantId: user.merchantId ? Number(user.merchantId) : undefined,
+      outletId: user.outletId ? Number(user.outletId) : undefined,
       merchant: user.merchant ? {
         id: user.merchant.publicId, // Return merchant publicId as "id" to frontend (number)
         name: user.merchant.name,
@@ -50,7 +52,6 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
         name: user.outlet.name,
         address: user.outlet.address || undefined,
       } : undefined,
-      
     },
     token,
   };
@@ -97,6 +98,8 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
       name: `${user.firstName} ${user.lastName}`,
       role: user.role,
       phone: user.phone || undefined,
+      merchantId: user.merchantId ? Number(user.merchantId) : undefined,
+      outletId: user.outletId ? Number(user.outletId) : undefined,
     },
     token,
   };

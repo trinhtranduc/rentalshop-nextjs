@@ -214,6 +214,7 @@ export interface ApiUrls {
     merchant: string;
     user: string;
     outlet: string;
+    billing: string;
     changePassword: string;
     uploadPicture: string;
     deletePicture: string;
@@ -222,6 +223,14 @@ export interface ApiUrls {
     profileNotifications: string;
     markNotificationRead: (id: number) => string;
     markAllNotificationsRead: string;
+  };
+  system: {
+    backup: string;
+    backupSchedule: string;
+    backupVerify: string;
+    stats: string;
+    health: string;
+    logs: string;
   };
   notifications: {
     list: string;
@@ -614,6 +623,7 @@ function createApiUrls(): ApiUrls {
     merchant: `${base}/api/settings/merchant`,
     user: `${base}/api/users/profile`,
     outlet: `${base}/api/settings/outlet`,
+    billing: `${base}/api/settings/billing`,
     changePassword: `${base}/api/profile/change-password`,
     uploadPicture: `${base}/api/profile/upload-picture`,
     deletePicture: `${base}/api/profile/delete-picture`,
@@ -622,6 +632,14 @@ function createApiUrls(): ApiUrls {
     profileNotifications: `${base}/api/profile/notifications`,
     markNotificationRead: (id: number) => `${base}/api/profile/notifications/${id}/read`,
     markAllNotificationsRead: `${base}/api/profile/notifications/mark-all-read`,
+  },
+  system: {
+    backup: `${base}/api/system/backup`,
+    backupSchedule: `${base}/api/system/backup/schedule`,
+    backupVerify: `${base}/api/system/backup/verify`,
+    stats: `${base}/api/system/stats`,
+    health: `${base}/api/system/health`,
+    logs: `${base}/api/system/logs`,
   },
     notifications: {
       list: `${base}/api/notifications`,

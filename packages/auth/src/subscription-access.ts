@@ -94,15 +94,7 @@ export async function checkSubscriptionAccess(
         };
 
       case SUBSCRIPTION_STATUS.TRIAL:
-        // Check if trial has expired
-        if (subscription.trialEnd && new Date(subscription.trialEnd) < now) {
-          return {
-            hasAccess: false,
-            accessLevel: 'denied',
-            reason: 'Trial period has expired',
-            upgradeRequired: true
-          };
-        }
+        // Trial users have full access
         return {
           hasAccess: true,
           accessLevel: 'full'
@@ -120,7 +112,7 @@ export async function checkSubscriptionAccess(
 
       case SUBSCRIPTION_STATUS.CANCELLED:
         // Check if cancellation is at period end
-        if (subscription.cancelAtPeriodEnd && subscription.currentPeriodEnd) {
+        if (subscription.currentPeriodEnd) {
           const periodEnd = new Date(subscription.currentPeriodEnd);
           if (periodEnd > now) {
             // Grace period - limited access
@@ -150,13 +142,12 @@ export async function checkSubscriptionAccess(
           canExportData: true
         };
 
-      case SUBSCRIPTION_STATUS.DISABLED:
-      case SUBSCRIPTION_STATUS.DELETED:
+      case SUBSCRIPTION_STATUS.EXPIRED:
         // No access
         return {
           hasAccess: false,
           accessLevel: 'denied',
-          reason: 'Subscription has been disabled',
+          reason: 'Subscription has expired',
           canExportData: true
         };
 

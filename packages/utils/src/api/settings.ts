@@ -33,6 +33,21 @@ export interface OutletSettings {
   description?: string;
 }
 
+export interface BillingInterval {
+  id: string;
+  name: string;
+  duration: number;
+  unit: 'days' | 'weeks' | 'months' | 'years';
+  isActive: boolean;
+}
+
+export interface BillingSettings {
+  intervals: BillingInterval[];
+  defaultInterval?: string;
+  autoRenewal: boolean;
+  gracePeriod: number; // in days
+}
+
 // ============================================================================
 // SETTINGS API CLIENT
 // ============================================================================
@@ -92,5 +107,43 @@ export const settingsApi = {
     });
     const result = await parseApiResponse<any>(response);
     return result;
+  },
+
+  /**
+   * Get billing settings
+   */
+  async getBillingSettings(): Promise<ApiResponse<BillingSettings>> {
+    const response = await authenticatedFetch(apiUrls.settings.billing);
+    return await parseApiResponse<BillingSettings>(response);
+  },
+
+  /**
+   * Update billing settings
+   */
+  async updateBillingSettings(data: BillingSettings): Promise<ApiResponse<BillingSettings>> {
+    const response = await authenticatedFetch(apiUrls.settings.billing, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return await parseApiResponse<BillingSettings>(response);
+  },
+
+  /**
+   * Get billing intervals
+   */
+  async getBillingIntervals(): Promise<ApiResponse<BillingInterval[]>> {
+    const response = await authenticatedFetch(`${apiUrls.settings.billing}/intervals`);
+    return await parseApiResponse<BillingInterval[]>(response);
+  },
+
+  /**
+   * Update billing intervals
+   */
+  async updateBillingIntervals(intervals: BillingInterval[]): Promise<ApiResponse<BillingInterval[]>> {
+    const response = await authenticatedFetch(`${apiUrls.settings.billing}/intervals`, {
+      method: 'POST',
+      body: JSON.stringify({ intervals }),
+    });
+    return await parseApiResponse<BillingInterval[]>(response);
   }
 };

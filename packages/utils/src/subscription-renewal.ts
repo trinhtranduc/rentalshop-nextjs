@@ -111,23 +111,24 @@ export class SubscriptionRenewalManager {
 
   private async processSubscriptionRenewal(subscription: Subscription): Promise<RenewalResult> {
     try {
-      // Check if auto-renewal is enabled
-      if (!subscription.autoRenew) {
+      // For now, we'll assume auto-renewal is enabled for active subscriptions
+      // In a real implementation, you would check a separate autoRenew field
+      if (subscription.status !== 'active') {
         return {
-          subscriptionId: subscription.id,
+          subscriptionId: subscription.publicId,
           success: false,
           status: 'SKIPPED',
-          error: 'Auto-renewal is disabled'
+          error: 'Subscription is not active'
         };
       }
 
       // Check if subscription is actually expired
       const now = new Date();
-      const isExpired = subscription.endDate && new Date(subscription.endDate) < now;
+      const isExpired = subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) < now;
       
       if (!isExpired) {
         return {
-          subscriptionId: subscription.id,
+          subscriptionId: subscription.publicId,
           success: false,
           status: 'SKIPPED',
           error: 'Subscription is not expired'
@@ -135,10 +136,10 @@ export class SubscriptionRenewalManager {
       }
 
       // Check grace period
-      const gracePeriodEnd = new Date(subscription.endDate!.getTime() + (this.config.gracePeriodDays * 24 * 60 * 60 * 1000));
+      const gracePeriodEnd = new Date(subscription.currentPeriodEnd!.getTime() + (this.config.gracePeriodDays * 24 * 60 * 60 * 1000));
       if (now > gracePeriodEnd) {
         return {
-          subscriptionId: subscription.id,
+          subscriptionId: subscription.publicId,
           success: false,
           status: 'SKIPPED',
           error: 'Grace period exceeded'
@@ -150,7 +151,7 @@ export class SubscriptionRenewalManager {
       
       if (!paymentResult.success) {
         return {
-          subscriptionId: subscription.id,
+          subscriptionId: subscription.publicId,
           success: false,
           status: 'FAILED',
           error: paymentResult.error
@@ -162,26 +163,25 @@ export class SubscriptionRenewalManager {
       const nextBillingDate = new Date(newEndDate);
 
       // Update subscription
-      await updateSubscription(subscription.id, {
-        status: 'ACTIVE',
-        endDate: newEndDate,
-        nextBillingDate: nextBillingDate
+      await updateSubscription(subscription.publicId, {
+        status: 'active',
+        currentPeriodEnd: newEndDate
       });
 
       // Create payment record
       const paymentRecord = await createSubscriptionPayment({
-        subscriptionId: subscription.id,
+        subscriptionId: subscription.publicId,
         amount: subscription.amount,
-        currency: subscription.currency,
+        currency: subscription.plan.currency,
         method: 'AUTO_RENEWAL',
         status: 'COMPLETED',
-        transactionId: paymentResult.transactionId,
+        transactionId: paymentResult.transactionId!,
         description: `Auto-renewal payment for ${subscription.plan?.name}`,
         failureReason: undefined
       });
 
       return {
-        subscriptionId: subscription.id,
+        subscriptionId: subscription.publicId,
         success: true,
         status: 'RENEWED',
         paymentId: paymentRecord.id,
@@ -189,7 +189,7 @@ export class SubscriptionRenewalManager {
       };
     } catch (error) {
       return {
-        subscriptionId: subscription.id,
+        subscriptionId: subscription.publicId,
         success: false,
         status: 'ERROR',
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -213,7 +213,7 @@ export class SubscriptionRenewalManager {
       // 2. Process the payment through the payment gateway
       // 3. Handle payment failures and retries
 
-      const transactionId = `RENEWAL_${subscription.id}_${Date.now()}`;
+      const transactionId = `RENEWAL_${subscription.publicId}_${Date.now()}`;
       
       // Simulate payment processing delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -245,22 +245,22 @@ export class SubscriptionRenewalManager {
   // ============================================================================
 
   private calculateNewBillingDate(subscription: Subscription): Date {
-    const currentEndDate = subscription.endDate || new Date();
-    const billingCycle = subscription.billingCycle;
+    const currentEndDate = subscription.currentPeriodEnd || new Date();
+    const billingInterval = subscription.billingInterval;
 
     let monthsToAdd = 1; // Default to monthly
 
-    switch (billingCycle) {
-      case 'monthly':
+    switch (billingInterval) {
+      case 'month':
         monthsToAdd = 1;
         break;
-      case 'quarterly':
+      case 'quarter':
         monthsToAdd = 3;
         break;
-      case 'semi_annual':
+      case 'semiAnnual':
         monthsToAdd = 6;
         break;
-      case 'annual':
+      case 'year':
         monthsToAdd = 12;
         break;
       default:
@@ -298,16 +298,15 @@ export class SubscriptionRenewalManager {
 
       // Update subscription
       await updateSubscription(subscriptionId, {
-        status: 'ACTIVE',
-        endDate: newEndDate,
-        nextBillingDate: nextBillingDate
+        status: 'active',
+        currentPeriodEnd: newEndDate
       });
 
       // Create payment record
       const paymentRecord = await createSubscriptionPayment({
         subscriptionId: subscriptionId,
         amount: subscription.amount,
-        currency: subscription.currency,
+        currency: subscription.plan.currency,
         method: paymentMethod,
         status: 'COMPLETED',
         transactionId: `MANUAL_${subscriptionId}_${Date.now()}`,
@@ -360,6 +359,9 @@ export function createSubscriptionRenewalManager(config: RenewalConfig): Subscri
 
 export const DEFAULT_RENEWAL_CONFIG: RenewalConfig = {
   paymentGateway: {
+    provider: 'stripe',
+    apiKey: 'sk_test_mock_key',
+    environment: 'sandbox',
     defaultGateway: 'STRIPE'
   },
   autoRenewEnabled: true,

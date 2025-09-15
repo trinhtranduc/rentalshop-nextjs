@@ -174,5 +174,27 @@ export const subscriptionsApi = {
   async getSubscriptionStats(): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(apiUrls.subscriptions.stats);
     return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Pause/Suspend subscription
+   */
+  async suspend(id: number, data: { reason?: string } = {}): Promise<ApiResponse<Subscription>> {
+    const response = await authenticatedFetch(`${apiUrls.subscriptions.get(id)}/pause`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return await parseApiResponse<Subscription>(response);
+  },
+
+  /**
+   * Resume subscription
+   */
+  async resume(id: number, data: { reason?: string } = {}): Promise<ApiResponse<Subscription>> {
+    const response = await authenticatedFetch(`${apiUrls.subscriptions.get(id)}/resume`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return await parseApiResponse<Subscription>(response);
   }
 };

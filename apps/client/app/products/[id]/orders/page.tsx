@@ -25,14 +25,14 @@ import {
   categoriesApi,
   outletsApi
 } from "@rentalshop/utils";
-import type { ProductWithDetails } from '@rentalshop/ui';
+import type { ProductWithStock } from '@rentalshop/types';
 
 export default function ProductOrdersPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
   
-  const [product, setProduct] = useState<ProductWithDetails | null>(null);
+  const [product, setProduct] = useState<ProductWithStock | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,8 +45,8 @@ export default function ProductOrdersPage() {
         setError(null);
 
         // Fetch product details
-        const productResponse = await productsApi.getProductById(productId);
-        setProduct(productResponse.data);
+        const productResponse = await productsApi.getProductById(parseInt(productId));
+        setProduct(productResponse.data || null);
 
       } catch (err) {
         console.error('Error fetching product:', err);

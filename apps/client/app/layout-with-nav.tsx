@@ -33,7 +33,6 @@ export default function LayoutWithNav({ children, variant = 'client' }: LayoutWi
         currentPage={pathname}
         notificationsCount={3}
         cartItemsCount={5}
-        onSearch={handleSearch}
         onLogout={handleLogout}
         onProfileClick={handleProfileClick}
       />

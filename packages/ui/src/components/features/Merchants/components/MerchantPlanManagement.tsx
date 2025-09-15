@@ -829,16 +829,6 @@ export function MerchantPlanManagement({
             >
               {isSubmitting ? 'Changing...' : 'Change Plan'}
             </Button>
-            {/* Debug info - remove in production */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="text-xs text-gray-500 mt-2 space-y-1">
-                <div>Debug: selectedPlanId={selectedPlanId || 'EMPTY'}</div>
-                <div>changeReason={changeReason || 'EMPTY'}</div>
-                <div>changeBillingInterval={changeBillingInterval || 'EMPTY'}</div>
-                <div>isSubmitting={isSubmitting.toString()}</div>
-                <div>Button disabled: {(!selectedPlanId || !changeReason.trim() || !changeBillingInterval || isSubmitting).toString()}</div>
-              </div>
-            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

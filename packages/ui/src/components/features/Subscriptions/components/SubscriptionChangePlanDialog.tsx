@@ -62,10 +62,10 @@ export function SubscriptionChangePlanDialog({
 
   const getFeatureComparison = (current: any, selected: any) => {
     const features = [
-      { key: 'maxOutlets', label: 'Max Outlets', current: current?.maxOutlets, selected: selected?.maxOutlets },
-      { key: 'maxUsers', label: 'Max Users', current: current?.maxUsers, selected: selected?.maxUsers },
-      { key: 'maxProducts', label: 'Max Products', current: current?.maxProducts, selected: selected?.maxProducts },
-      { key: 'maxCustomers', label: 'Max Customers', current: current?.maxCustomers, selected: selected?.maxCustomers }
+      { key: 'outlets', label: 'Max Outlets', current: current?.limits?.outlets, selected: selected?.limits?.outlets },
+      { key: 'users', label: 'Max Users', current: current?.limits?.users, selected: selected?.limits?.users },
+      { key: 'products', label: 'Max Products', current: current?.limits?.products, selected: selected?.limits?.products },
+      { key: 'customers', label: 'Max Customers', current: current?.limits?.customers, selected: selected?.limits?.customers }
     ];
 
     return features.map(feature => ({

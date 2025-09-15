@@ -6,7 +6,6 @@ import {
   OutletFilters, 
   OutletGrid, 
   OutletTable, 
-  OutletActions, 
   OutletPagination,
 } from './components';
 import { 
@@ -46,7 +45,7 @@ export function Outlets({
   onPageChange,
   onSort,
   // Enhanced props
-  merchantId = '',
+  merchantId,
   onOutletCreated,
   onOutletUpdated,
   onError
@@ -91,6 +90,7 @@ export function Outlets({
           currentPage={data.currentPage}
           totalPages={data.totalPages}
           total={data.total}
+          limit={filters.limit || 20}
           onPageChange={onPageChange}
         />
       )}

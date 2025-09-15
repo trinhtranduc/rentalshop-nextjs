@@ -185,6 +185,38 @@ export default function MerchantDetailPage() {
     }
   };
 
+  const handleSuspend = async (subscription: any, reason: string) => {
+    try {
+      const response = await subscriptionsApi.suspend(subscription.id, { reason });
+
+      if (response.success) {
+        console.log('Subscription suspended successfully');
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to suspend subscription:', response.message);
+      }
+    } catch (error) {
+      console.error('Error suspending subscription:', error);
+    }
+  };
+
+  const handleReactivate = async (subscription: any) => {
+    try {
+      const response = await subscriptionsApi.resume(subscription.id, { 
+        reason: 'Subscription reactivated by admin' 
+      });
+
+      if (response.success) {
+        console.log('Subscription reactivated successfully');
+        fetchMerchantDetails();
+      } else {
+        console.error('Failed to reactivate subscription:', response.message);
+      }
+    } catch (error) {
+      console.error('Error reactivating subscription:', error);
+    }
+  };
+
   if (loading) {
     return (
       <PageWrapper>
@@ -281,6 +313,8 @@ export default function MerchantDetailPage() {
           onPlanChange={handlePlanChange}
           onExtend={handleExtend}
           onCancel={handleCancel}
+          onSuspend={handleSuspend}
+          onReactivate={handleReactivate}
         />
       </PageContent>
     </PageWrapper>

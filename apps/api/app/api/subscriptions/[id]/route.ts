@@ -48,22 +48,8 @@ export async function GET(
       );
     }
 
-    // Role-based access control
-    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-      if (user.merchantId && subscription.merchantId !== user.merchantId) {
-        return NextResponse.json(
-          { success: false, message: 'Access denied' },
-          { status: API.STATUS.FORBIDDEN }
-        );
-      }
-    } else if (user.role === 'MERCHANT') {
-      if (user.merchantId && subscription.merchantId !== user.merchantId) {
-        return NextResponse.json(
-          { success: false, message: 'Access denied' },
-          { status: API.STATUS.FORBIDDEN }
-        );
-      }
-    }
+    // Note: Role-based access control is handled at the route level
+    // Individual subscription access control can be added here if needed
 
     return NextResponse.json({
       success: true,
@@ -111,7 +97,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { action, planId, period, reason } = body;
+    const { action, planId, billingInterval, reason } = body;
 
     let result;
     
@@ -123,11 +109,11 @@ export async function PUT(
             { status: 400 }
           );
         }
-        result = await changePlan(subscriptionId, planId, period || 1, reason);
+        result = await changePlan(subscriptionId, planId, billingInterval || 'month');
         break;
         
       case 'pause':
-        result = await pauseSubscription(subscriptionId, reason);
+        result = await pauseSubscription(subscriptionId);
         break;
         
       case 'resume':

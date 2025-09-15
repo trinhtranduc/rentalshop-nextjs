@@ -58,7 +58,19 @@ export function useSubscriptionAccess(): UseSubscriptionAccessReturn {
       setLoading(true);
       setError(null);
       
-      const result = await checkSubscriptionAccess(user);
+      // Convert User to AuthUser format
+      const authUser = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        name: user.name,
+        merchantId: typeof user.merchantId === 'string' ? parseInt(user.merchantId) : user.merchantId,
+        outletId: typeof user.outletId === 'string' ? parseInt(user.outletId) : user.outletId
+      };
+      
+      const result = await checkSubscriptionAccess(authUser);
       setAccessResult(result);
     } catch (err) {
       console.error('Error checking subscription access:', err);

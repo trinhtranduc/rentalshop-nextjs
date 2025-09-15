@@ -832,10 +832,12 @@ async function createPlans() {
         basePrice: plan.basePrice,
         currency: 'USD',
         trialDays: plan.trialDays,
-        maxOutlets: plan.maxOutlets,
-        maxUsers: plan.maxUsers,
-        maxProducts: plan.maxProducts,
-        maxCustomers: plan.maxCustomers,
+        limits: JSON.stringify({
+          outlets: plan.maxOutlets,
+          users: plan.maxUsers,
+          products: plan.maxProducts,
+          customers: plan.maxCustomers
+        }),
         features: plan.features,
         isActive: true,
         isPopular: plan.isPopular,

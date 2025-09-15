@@ -13,7 +13,7 @@ import {
 } from '@rentalshop/ui';
 import { 
   Building2, 
-  Grid3X3, 
+  Grid, 
   List, 
   Plus 
 } from 'lucide-react';
@@ -51,7 +51,7 @@ export function OutletHeader({
               onClick={() => onViewModeChange('grid')}
               className="h-8 w-8 p-0"
             >
-              <Grid3X3 className="w-4 h-4" />
+              <Grid className="w-4 h-4" />
             </Button>
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}

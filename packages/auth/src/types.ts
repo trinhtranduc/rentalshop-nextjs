@@ -14,13 +14,15 @@ export interface RegisterData {
 }
 
 export interface AuthUser {
-  id: number;
+  id: number; // publicId for frontend compatibility
   email: string;
   firstName: string;
   lastName: string;
   name: string;
   role: string;
   phone?: string;
+  merchantId?: number; // For quick access to merchant ID
+  outletId?: number;   // For quick access to outlet ID
   merchant?: {
     id: number;
     name: string;

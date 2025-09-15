@@ -497,6 +497,7 @@ import { UserRole } from '@rentalshop/types';
 
 export interface StoredUser {
   id: number;
+  publicId: number; // Same as id, for consistency with User type
   firstName: string;
   lastName: string;
   name: string;
@@ -636,6 +637,7 @@ export const storeAuthData = (token: string, user: User): void => {
     token,
     user: {
       id: user.id,
+      publicId: user.publicId, // Include publicId for consistency
       firstName: user.firstName,
       lastName: user.lastName,
       name: user.name,

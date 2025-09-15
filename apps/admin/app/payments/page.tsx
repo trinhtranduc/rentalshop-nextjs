@@ -168,23 +168,16 @@ export default function PaymentsPage() {
     try {
       setFormLoading(true);
       
-      // Import authenticatedFetch dynamically to avoid SSR issues
-      const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/utils');
+      const { paymentsApi } = await import('@rentalshop/utils');
       
-      // Call the manual payment API with proper authentication
-      const response = await authenticatedFetch('/api/payments/manual', {
-        method: 'POST',
-        body: JSON.stringify(formData)
-      });
-      
-      const result = await handleApiResponse(response);
+      const result = await paymentsApi.createManualPayment(formData);
       
       if (result.success) {
         addToast('success', 'Payment Created', `Successfully created payment for ${formData.amount} ${formData.currency}`);
         setShowPaymentForm(false);
         fetchPayments(); // Refresh the payments list
       } else {
-        throw new Error(result.message || 'Failed to create payment');
+        throw new Error(result.error || 'Failed to create payment');
       }
     } catch (error) {
       console.error('Error creating payment:', error);

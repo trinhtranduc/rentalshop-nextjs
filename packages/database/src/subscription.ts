@@ -1,74 +1,56 @@
 // ============================================================================
-// MODERN SUBSCRIPTION DATABASE FUNCTIONS (Following Stripe/Shopify Patterns)
+// SIMPLIFIED SUBSCRIPTION DATABASE FUNCTIONS
 // ============================================================================
 
 import { prisma } from './client';
-import { calculatePricing, PRICING_CONFIG } from '@rentalshop/types';
+import { calculateSubscriptionPrice, getPricingBreakdown } from '@rentalshop/utils';
 import type { 
   Subscription, 
   Plan, 
+  PlanLimits,
   SubscriptionCreateInput, 
   SubscriptionUpdateInput,
   SubscriptionStatus,
-  BillingInterval,
-  BillingPeriod,
-  PricingCalculation
+  BillingInterval
 } from '@rentalshop/types';
 
 // ============================================================================
 // PRICING UTILITIES
 // ============================================================================
 
-export function calculatePlanPricing(basePrice: number): {
-  monthly: {
-    price: number;
-    discount: number;
-    savings: number;
-    interval: 'month';
-    intervalCount: 1;
-  };
-  quarterly: {
-    price: number;
-    discount: number;
-    savings: number;
-    interval: 'quarter';
-    intervalCount: 3;
-  };
-  yearly: {
-    price: number;
-    discount: number;
-    savings: number;
-    interval: 'year';
-    intervalCount: 1;
-  };
-} {
-  const monthly = calculatePricing(basePrice, 1);
-  const quarterly = calculatePricing(basePrice, 3);
-  const yearly = calculatePricing(basePrice, 12);
+export function calculatePlanPricing(plan: Plan): Record<BillingInterval, number> {
+  const pricing: Record<BillingInterval, number> = {} as any;
+  
+  const intervals: BillingInterval[] = ['month', 'quarter', 'semiAnnual', 'year'];
+  
+  for (const interval of intervals) {
+    pricing[interval] = calculateSubscriptionPrice(plan, interval);
+  }
+  
+  return pricing;
+}
 
-  return {
-    monthly: {
-      price: monthly.finalPrice,
-      discount: monthly.discount,
-      savings: monthly.savings,
-      interval: 'month' as const,
-      intervalCount: 1 as const
-    },
-    quarterly: {
-      price: quarterly.finalPrice,
-      discount: quarterly.discount,
-      savings: quarterly.savings,
-      interval: 'quarter' as const,
-      intervalCount: 3 as const
-    },
-    yearly: {
-      price: yearly.finalPrice,
-      discount: yearly.discount,
-      savings: yearly.savings,
-      interval: 'year' as const,
-      intervalCount: 1 as const
-    }
-  };
+export function calculatePeriodEnd(startDate: Date, billingInterval: BillingInterval): Date {
+  const endDate = new Date(startDate);
+  
+  switch (billingInterval) {
+    case 'month':
+      endDate.setMonth(endDate.getMonth() + 1);
+      break;
+    case 'quarter':
+      endDate.setMonth(endDate.getMonth() + 3);
+      break;
+    case 'semiAnnual':
+      endDate.setMonth(endDate.getMonth() + 6);
+      break;
+    case 'year':
+      endDate.setFullYear(endDate.getFullYear() + 1);
+      break;
+    default:
+      endDate.setMonth(endDate.getMonth() + 1);
+  }
+  
+  return endDate;
 }
 
 // ============================================================================
@@ -110,20 +92,10 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
+    billingInterval: subscription.interval as BillingInterval,
     currentPeriodStart: subscription.currentPeriodStart,
     currentPeriodEnd: subscription.currentPeriodEnd,
-    trialStart: subscription.trialStart || undefined,
-    trialEnd: subscription.trialEnd || undefined,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    canceledAt: subscription.canceledAt || undefined,
-    cancelReason: subscription.cancelReason || undefined,
     amount: subscription.amount,
-    currency: subscription.currency,
-    interval: subscription.interval as BillingInterval,
-    intervalCount: subscription.intervalCount,
-    period: subscription.period as BillingPeriod,
-    discount: subscription.discount,
-    savings: subscription.savings,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
@@ -135,19 +107,13 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
       basePrice: subscription.plan.basePrice,
       currency: subscription.plan.currency,
       trialDays: subscription.plan.trialDays,
-      limits: {
-        outlets: subscription.plan.maxOutlets,
-        users: subscription.plan.maxUsers,
-        products: subscription.plan.maxProducts,
-        customers: subscription.plan.maxCustomers
-      },
-      features: JSON.parse(subscription.plan.features || '[]'),
+      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
+      features: JSON.parse(subscription.plan.features as string) as string[],
       isActive: subscription.plan.isActive,
       isPopular: subscription.plan.isPopular,
       sortOrder: subscription.plan.sortOrder,
       createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt,
-      pricing: calculatePlanPricing(subscription.plan.basePrice)
+      updatedAt: subscription.plan.updatedAt
     }
   };
 }
@@ -175,20 +141,10 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
     merchantId: sub.merchantId,
     planId: sub.planId,
     status: sub.status as SubscriptionStatus,
+    billingInterval: sub.interval as BillingInterval,
     currentPeriodStart: sub.currentPeriodStart,
     currentPeriodEnd: sub.currentPeriodEnd,
-    trialStart: sub.trialStart || undefined,
-    trialEnd: sub.trialEnd || undefined,
-    cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-    canceledAt: sub.canceledAt || undefined,
-    cancelReason: sub.cancelReason || undefined,
     amount: sub.amount,
-    currency: sub.currency,
-    interval: sub.interval as BillingInterval,
-    intervalCount: sub.intervalCount,
-    period: sub.period as BillingPeriod,
-    discount: sub.discount,
-    savings: sub.savings,
     createdAt: sub.createdAt,
     updatedAt: sub.updatedAt,
     merchant: sub.merchant,
@@ -200,19 +156,13 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
       basePrice: sub.plan.basePrice,
       currency: sub.plan.currency,
       trialDays: sub.plan.trialDays,
-      limits: {
-        outlets: sub.plan.maxOutlets,
-        users: sub.plan.maxUsers,
-        products: sub.plan.maxProducts,
-        customers: sub.plan.maxCustomers
-      },
-      features: JSON.parse(sub.plan.features || '[]'),
+      limits: JSON.parse(sub.plan.limits as string) as PlanLimits,
+      features: JSON.parse(sub.plan.features as string) as string[],
       isActive: sub.plan.isActive,
       isPopular: sub.plan.isPopular,
       sortOrder: sub.plan.sortOrder,
       createdAt: sub.plan.createdAt,
-      updatedAt: sub.plan.updatedAt,
-      pricing: calculatePlanPricing(sub.plan.basePrice)
+      updatedAt: sub.plan.updatedAt
     }
   }));
 }
@@ -293,20 +243,10 @@ export async function searchSubscriptions(filters: {
       merchantId: sub.merchantId,
       planId: sub.planId,
       status: sub.status as SubscriptionStatus,
+      billingInterval: sub.interval as BillingInterval,
       currentPeriodStart: sub.currentPeriodStart,
       currentPeriodEnd: sub.currentPeriodEnd,
-      trialStart: sub.trialStart || undefined,
-      trialEnd: sub.trialEnd || undefined,
-      cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-      canceledAt: sub.canceledAt || undefined,
-      cancelReason: sub.cancelReason || undefined,
       amount: sub.amount,
-      currency: sub.currency,
-      interval: sub.interval as BillingInterval,
-      intervalCount: sub.intervalCount,
-      period: sub.period as BillingPeriod,
-      discount: sub.discount,
-      savings: sub.savings,
       createdAt: sub.createdAt,
       updatedAt: sub.updatedAt,
       merchant: sub.merchant,
@@ -318,19 +258,13 @@ export async function searchSubscriptions(filters: {
         basePrice: sub.plan.basePrice,
         currency: sub.plan.currency,
         trialDays: sub.plan.trialDays,
-        limits: {
-          outlets: sub.plan.maxOutlets,
-          users: sub.plan.maxUsers,
-          products: sub.plan.maxProducts,
-          customers: sub.plan.maxCustomers
-        },
-        features: JSON.parse(sub.plan.features || '[]'),
+        limits: JSON.parse(sub.plan.limits as string) as PlanLimits,
+        features: JSON.parse(sub.plan.features as string) as string[],
         isActive: sub.plan.isActive,
         isPopular: sub.plan.isPopular,
         sortOrder: sub.plan.sortOrder,
         createdAt: sub.plan.createdAt,
-        updatedAt: sub.plan.updatedAt,
-        pricing: calculatePlanPricing(sub.plan.basePrice)
+        updatedAt: sub.plan.updatedAt
       }
     })),
     total,
@@ -370,17 +304,18 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
     throw new Error('Merchant already has a subscription');
   }
 
-  // Calculate pricing based on period
-  const period = data.period || 1;
-  const pricing = calculatePricing(plan.basePrice, period);
+  // Calculate pricing based on billing interval
+  const billingInterval = data.billingInterval || 'month';
+  const amount = calculateSubscriptionPrice({
+    ...plan,
+    limits: JSON.parse(plan.limits as string) as PlanLimits,
+    features: JSON.parse(plan.features as string) as string[],
+    deletedAt: plan.deletedAt || undefined
+  }, billingInterval);
   
   // Calculate dates
-  const now = new Date();
-  const trialStart = plan.trialDays > 0 ? now : undefined;
-  const trialEnd = plan.trialDays > 0 ? new Date(now.getTime() + (plan.trialDays * 24 * 60 * 60 * 1000)) : undefined;
-  
-  const currentPeriodStart = trialEnd || now;
-  const currentPeriodEnd = new Date(currentPeriodStart.getTime() + (period * 30 * 24 * 60 * 60 * 1000));
+  const startDate = data.startDate || new Date();
+  const currentPeriodEnd = calculatePeriodEnd(startDate, billingInterval);
 
   // Generate publicId
   const lastSubscription = await prisma.subscription.findFirst({
@@ -394,17 +329,10 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
       merchantId: merchant.id,
       planId: plan.id,
       status: data.status || 'trial',
-      currentPeriodStart,
-      currentPeriodEnd,
-      trialStart,
-      trialEnd,
-      amount: pricing.finalPrice,
-      currency: data.currency || plan.currency,
-      interval: pricing.interval,
-      intervalCount: pricing.intervalCount,
-      period: period,
-      discount: pricing.discount,
-      savings: pricing.savings
+      interval: billingInterval,
+      currentPeriodStart: startDate,
+      currentPeriodEnd: currentPeriodEnd,
+      amount: amount
     },
     include: {
       merchant: {
@@ -424,7 +352,6 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
   await prisma.merchant.update({
     where: { id: merchant.id },
     data: {
-      planId: plan.id,
       subscriptionStatus: subscription.status
     }
   });
@@ -435,20 +362,10 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
+    billingInterval: subscription.interval as BillingInterval,
     currentPeriodStart: subscription.currentPeriodStart,
     currentPeriodEnd: subscription.currentPeriodEnd,
-    trialStart: subscription.trialStart || undefined,
-    trialEnd: subscription.trialEnd || undefined,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    canceledAt: subscription.canceledAt || undefined,
-    cancelReason: subscription.cancelReason || undefined,
     amount: subscription.amount,
-    currency: subscription.currency,
-    interval: subscription.interval as BillingInterval,
-    intervalCount: subscription.intervalCount,
-    period: subscription.period as BillingPeriod,
-    discount: subscription.discount,
-    savings: subscription.savings,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
@@ -460,19 +377,13 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
       basePrice: subscription.plan.basePrice,
       currency: subscription.plan.currency,
       trialDays: subscription.plan.trialDays,
-      limits: {
-        outlets: subscription.plan.maxOutlets,
-        users: subscription.plan.maxUsers,
-        products: subscription.plan.maxProducts,
-        customers: subscription.plan.maxCustomers
-      },
-      features: JSON.parse(subscription.plan.features || '[]'),
+      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
+      features: JSON.parse(subscription.plan.features as string) as string[],
       isActive: subscription.plan.isActive,
       isPopular: subscription.plan.isPopular,
       sortOrder: subscription.plan.sortOrder,
       createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt,
-      pricing: calculatePlanPricing(subscription.plan.basePrice)
+      updatedAt: subscription.plan.updatedAt
     }
   };
 }
@@ -495,19 +406,14 @@ export async function getAllPlans(): Promise<Plan[]> {
     basePrice: plan.basePrice,
     currency: plan.currency,
     trialDays: plan.trialDays,
-    limits: {
-      outlets: plan.maxOutlets,
-      users: plan.maxUsers,
-      products: plan.maxProducts,
-      customers: plan.maxCustomers
-    },
-    features: JSON.parse(plan.features || '[]'),
+    limits: JSON.parse(plan.limits as string) as PlanLimits,
+    features: JSON.parse(plan.features as string) as string[],
     isActive: plan.isActive,
     isPopular: plan.isPopular,
     sortOrder: plan.sortOrder,
     createdAt: plan.createdAt,
     updatedAt: plan.updatedAt,
-    pricing: calculatePlanPricing(plan.basePrice)
+    deletedAt: plan.deletedAt || undefined
   }));
 }
 
@@ -526,31 +432,25 @@ export async function getPlanById(planId: number): Promise<Plan | null> {
     basePrice: plan.basePrice,
     currency: plan.currency,
     trialDays: plan.trialDays,
-    limits: {
-      outlets: plan.maxOutlets,
-      users: plan.maxUsers,
-      products: plan.maxProducts,
-      customers: plan.maxCustomers
-    },
-    features: JSON.parse(plan.features || '[]'),
+    limits: JSON.parse(plan.limits as string) as PlanLimits,
+    features: JSON.parse(plan.features as string) as string[],
     isActive: plan.isActive,
     isPopular: plan.isPopular,
     sortOrder: plan.sortOrder,
     createdAt: plan.createdAt,
     updatedAt: plan.updatedAt,
-    pricing: calculatePlanPricing(plan.basePrice)
+    deletedAt: plan.deletedAt || undefined
   };
 }
 
 // ============================================================================
-// SUBSCRIPTION ACTIONS (Modern SaaS Actions)
+// SUBSCRIPTION ACTIONS
 // ============================================================================
 
 export async function changePlan(
   subscriptionId: number, 
   newPlanId: number, 
-  period: BillingPeriod = 1,
-  reason?: string
+  billingInterval: BillingInterval = 'month'
 ): Promise<Subscription> {
   const subscription = await prisma.subscription.findUnique({
     where: { publicId: subscriptionId }
@@ -568,19 +468,26 @@ export async function changePlan(
     throw new Error('Plan not found');
   }
 
-  const pricing = calculatePricing(plan.basePrice, period);
+  const amount = calculateSubscriptionPrice({
+    ...plan,
+    limits: JSON.parse(plan.limits as string) as PlanLimits,
+    features: JSON.parse(plan.features as string) as string[],
+    deletedAt: plan.deletedAt || undefined
+  }, billingInterval);
+
+  // Calculate new period dates
+  const now = new Date();
+  const newPeriodStart = now;
+  const newPeriodEnd = new Date(now.getTime() + (billingInterval === 'year' ? 365 : 30) * 24 * 60 * 60 * 1000);
 
   const updatedSubscription = await prisma.subscription.update({
     where: { publicId: subscriptionId },
     data: {
       planId: plan.id,
-      amount: pricing.finalPrice,
-      currency: plan.currency,
-      interval: pricing.interval,
-      intervalCount: pricing.intervalCount,
-      period: period,
-      discount: pricing.discount,
-      savings: pricing.savings,
+      interval: billingInterval,
+      amount: amount,
+      currentPeriodStart: newPeriodStart,
+      currentPeriodEnd: newPeriodEnd,
       updatedAt: new Date()
     },
     include: {
@@ -597,10 +504,10 @@ export async function changePlan(
     }
   });
 
-  // Update merchant's plan reference
+  // Update merchant's subscription status
   await prisma.merchant.update({
     where: { id: subscription.merchantId },
-    data: { planId: plan.id }
+    data: { subscriptionStatus: updatedSubscription.status }
   });
 
   return {
@@ -609,20 +516,10 @@ export async function changePlan(
     merchantId: updatedSubscription.merchantId,
     planId: updatedSubscription.planId,
     status: updatedSubscription.status as SubscriptionStatus,
+    billingInterval: updatedSubscription.interval as BillingInterval,
     currentPeriodStart: updatedSubscription.currentPeriodStart,
     currentPeriodEnd: updatedSubscription.currentPeriodEnd,
-    trialStart: updatedSubscription.trialStart || undefined,
-    trialEnd: updatedSubscription.trialEnd || undefined,
-    cancelAtPeriodEnd: updatedSubscription.cancelAtPeriodEnd,
-    canceledAt: updatedSubscription.canceledAt || undefined,
-    cancelReason: updatedSubscription.cancelReason || undefined,
     amount: updatedSubscription.amount,
-    currency: updatedSubscription.currency,
-    interval: updatedSubscription.interval as BillingInterval,
-    intervalCount: updatedSubscription.intervalCount,
-    period: updatedSubscription.period as BillingPeriod,
-    discount: updatedSubscription.discount,
-    savings: updatedSubscription.savings,
     createdAt: updatedSubscription.createdAt,
     updatedAt: updatedSubscription.updatedAt,
     merchant: updatedSubscription.merchant,
@@ -634,32 +531,22 @@ export async function changePlan(
       basePrice: updatedSubscription.plan.basePrice,
       currency: updatedSubscription.plan.currency,
       trialDays: updatedSubscription.plan.trialDays,
-      limits: {
-        outlets: updatedSubscription.plan.maxOutlets,
-        users: updatedSubscription.plan.maxUsers,
-        products: updatedSubscription.plan.maxProducts,
-        customers: updatedSubscription.plan.maxCustomers
-      },
-      features: JSON.parse(updatedSubscription.plan.features || '[]'),
+      limits: JSON.parse(updatedSubscription.plan.limits as string) as PlanLimits,
+      features: JSON.parse(updatedSubscription.plan.features as string) as string[],
       isActive: updatedSubscription.plan.isActive,
       isPopular: updatedSubscription.plan.isPopular,
       sortOrder: updatedSubscription.plan.sortOrder,
       createdAt: updatedSubscription.plan.createdAt,
-      updatedAt: updatedSubscription.plan.updatedAt,
-      pricing: calculatePlanPricing(updatedSubscription.plan.basePrice)
+      updatedAt: updatedSubscription.plan.updatedAt
     }
   };
 }
 
-export async function pauseSubscription(
-  subscriptionId: number, 
-  reason?: string
-): Promise<Subscription> {
+export async function pauseSubscription(subscriptionId: number): Promise<Subscription> {
   const subscription = await prisma.subscription.update({
     where: { publicId: subscriptionId },
     data: {
       status: 'paused',
-      cancelReason: reason,
       updatedAt: new Date()
     },
     include: {
@@ -682,20 +569,10 @@ export async function pauseSubscription(
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
+    billingInterval: subscription.interval as BillingInterval,
     currentPeriodStart: subscription.currentPeriodStart,
     currentPeriodEnd: subscription.currentPeriodEnd,
-    trialStart: subscription.trialStart || undefined,
-    trialEnd: subscription.trialEnd || undefined,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    canceledAt: subscription.canceledAt || undefined,
-    cancelReason: subscription.cancelReason || undefined,
     amount: subscription.amount,
-    currency: subscription.currency,
-    interval: subscription.interval as BillingInterval,
-    intervalCount: subscription.intervalCount,
-    period: subscription.period as BillingPeriod,
-    discount: subscription.discount,
-    savings: subscription.savings,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
@@ -707,19 +584,13 @@ export async function pauseSubscription(
       basePrice: subscription.plan.basePrice,
       currency: subscription.plan.currency,
       trialDays: subscription.plan.trialDays,
-      limits: {
-        outlets: subscription.plan.maxOutlets,
-        users: subscription.plan.maxUsers,
-        products: subscription.plan.maxProducts,
-        customers: subscription.plan.maxCustomers
-      },
-      features: JSON.parse(subscription.plan.features || '[]'),
+      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
+      features: JSON.parse(subscription.plan.features as string) as string[],
       isActive: subscription.plan.isActive,
       isPopular: subscription.plan.isPopular,
       sortOrder: subscription.plan.sortOrder,
       createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt,
-      pricing: calculatePlanPricing(subscription.plan.basePrice)
+      updatedAt: subscription.plan.updatedAt
     }
   };
 }
@@ -729,7 +600,6 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
     where: { publicId: subscriptionId },
     data: {
       status: 'active',
-      cancelAtPeriodEnd: false,
       updatedAt: new Date()
     },
     include: {
@@ -752,20 +622,10 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
+    billingInterval: subscription.interval as BillingInterval,
     currentPeriodStart: subscription.currentPeriodStart,
     currentPeriodEnd: subscription.currentPeriodEnd,
-    trialStart: subscription.trialStart || undefined,
-    trialEnd: subscription.trialEnd || undefined,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    canceledAt: subscription.canceledAt || undefined,
-    cancelReason: subscription.cancelReason || undefined,
     amount: subscription.amount,
-    currency: subscription.currency,
-    interval: subscription.interval as BillingInterval,
-    intervalCount: subscription.intervalCount,
-    period: subscription.period as BillingPeriod,
-    discount: subscription.discount,
-    savings: subscription.savings,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
@@ -777,49 +637,23 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
       basePrice: subscription.plan.basePrice,
       currency: subscription.plan.currency,
       trialDays: subscription.plan.trialDays,
-      limits: {
-        outlets: subscription.plan.maxOutlets,
-        users: subscription.plan.maxUsers,
-        products: subscription.plan.maxProducts,
-        customers: subscription.plan.maxCustomers
-      },
-      features: JSON.parse(subscription.plan.features || '[]'),
+      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
+      features: JSON.parse(subscription.plan.features as string) as string[],
       isActive: subscription.plan.isActive,
       isPopular: subscription.plan.isPopular,
       sortOrder: subscription.plan.sortOrder,
       createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt,
-      pricing: calculatePlanPricing(subscription.plan.basePrice)
+      updatedAt: subscription.plan.updatedAt
     }
   };
 }
 
-export async function cancelSubscription(
-  subscriptionId: number, 
-  reason?: string,
-  user?: any
-): Promise<{ success: boolean; message: string; data?: Subscription; statusCode?: number }> {
+export async function cancelSubscription(subscriptionId: number): Promise<{ success: boolean; message: string; data?: Subscription; statusCode?: number }> {
   try {
-    // First check if subscription exists
-    const existingSubscription = await prisma.subscription.findUnique({
-      where: { publicId: subscriptionId }
-    });
-
-    if (!existingSubscription) {
-      return {
-        success: false,
-        message: 'Subscription not found',
-        statusCode: 404
-      };
-    }
-
     const subscription = await prisma.subscription.update({
       where: { publicId: subscriptionId },
       data: {
         status: 'cancelled',
-        cancelAtPeriodEnd: true,
-        cancelReason: reason,
-        canceledAt: new Date(),
         updatedAt: new Date()
       },
       include: {
@@ -836,52 +670,36 @@ export async function cancelSubscription(
       }
     });
 
-  const result: Subscription = {
-    id: subscription.id,
-    publicId: subscription.publicId,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    trialStart: subscription.trialStart || undefined,
-    trialEnd: subscription.trialEnd || undefined,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    canceledAt: subscription.canceledAt || undefined,
-    cancelReason: subscription.cancelReason || undefined,
-    amount: subscription.amount,
-    currency: subscription.currency,
-    interval: subscription.interval as BillingInterval,
-    intervalCount: subscription.intervalCount,
-    period: subscription.period as BillingPeriod,
-    discount: subscription.discount,
-    savings: subscription.savings,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: {
-      id: subscription.plan.id,
-      publicId: subscription.plan.publicId,
-      name: subscription.plan.name,
-      description: subscription.plan.description,
-      basePrice: subscription.plan.basePrice,
-      currency: subscription.plan.currency,
-      trialDays: subscription.plan.trialDays,
-      limits: {
-        outlets: subscription.plan.maxOutlets,
-        users: subscription.plan.maxUsers,
-        products: subscription.plan.maxProducts,
-        customers: subscription.plan.maxCustomers
-      },
-      features: JSON.parse(subscription.plan.features || '[]'),
-      isActive: subscription.plan.isActive,
-      isPopular: subscription.plan.isPopular,
-      sortOrder: subscription.plan.sortOrder,
-      createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt,
-      pricing: calculatePlanPricing(subscription.plan.basePrice)
-    }
-  };
+    const result: Subscription = {
+      id: subscription.id,
+      publicId: subscription.publicId,
+      merchantId: subscription.merchantId,
+      planId: subscription.planId,
+      status: subscription.status as SubscriptionStatus,
+      billingInterval: subscription.interval as BillingInterval,
+      currentPeriodStart: subscription.currentPeriodStart,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      amount: subscription.amount,
+      createdAt: subscription.createdAt,
+      updatedAt: subscription.updatedAt,
+      merchant: subscription.merchant,
+      plan: {
+        id: subscription.plan.id,
+        publicId: subscription.plan.publicId,
+        name: subscription.plan.name,
+        description: subscription.plan.description,
+        basePrice: subscription.plan.basePrice,
+        currency: subscription.plan.currency,
+        trialDays: subscription.plan.trialDays,
+        limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
+        features: JSON.parse(subscription.plan.features as string) as string[],
+        isActive: subscription.plan.isActive,
+        isPopular: subscription.plan.isPopular,
+        sortOrder: subscription.plan.sortOrder,
+        createdAt: subscription.plan.createdAt,
+        updatedAt: subscription.plan.updatedAt
+      }
+    };
 
     return {
       success: true,
@@ -898,4 +716,253 @@ export async function cancelSubscription(
   }
 }
 
+// ============================================================================
+// SUBSCRIPTION RENEWAL FUNCTIONS
+// ============================================================================
 
+export async function getExpiredSubscriptions(): Promise<Subscription[]> {
+  const now = new Date();
+  
+  const subscriptions = await prisma.subscription.findMany({
+    where: {
+      currentPeriodEnd: {
+        lt: now
+      },
+      status: {
+        in: ['active', 'trial']
+      }
+    },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+          email: true,
+          subscriptionStatus: true
+        }
+      },
+      plan: true
+    },
+    orderBy: { currentPeriodEnd: 'asc' }
+  });
+
+  return subscriptions.map(sub => ({
+    id: sub.id,
+    publicId: sub.publicId,
+    merchantId: sub.merchantId,
+    planId: sub.planId,
+    status: sub.status as SubscriptionStatus,
+    billingInterval: sub.interval as BillingInterval,
+    currentPeriodStart: sub.currentPeriodStart,
+    currentPeriodEnd: sub.currentPeriodEnd,
+    amount: sub.amount,
+    createdAt: sub.createdAt,
+    updatedAt: sub.updatedAt,
+    merchant: sub.merchant,
+    plan: {
+      id: sub.plan.id,
+      publicId: sub.plan.publicId,
+      name: sub.plan.name,
+      description: sub.plan.description,
+      basePrice: sub.plan.basePrice,
+      currency: sub.plan.currency,
+      trialDays: sub.plan.trialDays,
+      limits: JSON.parse(sub.plan.limits as string) as PlanLimits,
+      features: JSON.parse(sub.plan.features as string) as string[],
+      isActive: sub.plan.isActive,
+      isPopular: sub.plan.isPopular,
+      sortOrder: sub.plan.sortOrder,
+      createdAt: sub.plan.createdAt,
+      updatedAt: sub.plan.updatedAt
+    }
+  }));
+}
+
+export async function getSubscriptionByPublicId(publicId: number): Promise<Subscription | null> {
+  const subscription = await prisma.subscription.findUnique({
+    where: { publicId },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+          email: true,
+          subscriptionStatus: true
+        }
+      },
+      plan: true
+    }
+  });
+
+  if (!subscription) return null;
+
+  return {
+    id: subscription.id,
+    publicId: subscription.publicId,
+    merchantId: subscription.merchantId,
+    planId: subscription.planId,
+    status: subscription.status as SubscriptionStatus,
+    billingInterval: subscription.interval as BillingInterval,
+    currentPeriodStart: subscription.currentPeriodStart,
+    currentPeriodEnd: subscription.currentPeriodEnd,
+    amount: subscription.amount,
+    createdAt: subscription.createdAt,
+    updatedAt: subscription.updatedAt,
+    merchant: subscription.merchant,
+    plan: {
+      id: subscription.plan.id,
+      publicId: subscription.plan.publicId,
+      name: subscription.plan.name,
+      description: subscription.plan.description,
+      basePrice: subscription.plan.basePrice,
+      currency: subscription.plan.currency,
+      trialDays: subscription.plan.trialDays,
+      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
+      features: JSON.parse(subscription.plan.features as string) as string[],
+      isActive: subscription.plan.isActive,
+      isPopular: subscription.plan.isPopular,
+      sortOrder: subscription.plan.sortOrder,
+      createdAt: subscription.plan.createdAt,
+      updatedAt: subscription.plan.updatedAt
+    }
+  };
+}
+
+export async function updateSubscription(
+  subscriptionId: number, 
+  data: Partial<{
+    status: SubscriptionStatus;
+    currentPeriodStart: Date;
+    currentPeriodEnd: Date;
+    amount: number;
+  }>
+): Promise<Subscription> {
+  const subscription = await prisma.subscription.update({
+    where: { publicId: subscriptionId },
+    data: {
+      ...data,
+      updatedAt: new Date()
+    },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+          email: true,
+          subscriptionStatus: true
+        }
+      },
+      plan: true
+    }
+  });
+
+  return {
+    id: subscription.id,
+    publicId: subscription.publicId,
+    merchantId: subscription.merchantId,
+    planId: subscription.planId,
+    status: subscription.status as SubscriptionStatus,
+    billingInterval: subscription.interval as BillingInterval,
+    currentPeriodStart: subscription.currentPeriodStart,
+    currentPeriodEnd: subscription.currentPeriodEnd,
+    amount: subscription.amount,
+    createdAt: subscription.createdAt,
+    updatedAt: subscription.updatedAt,
+    merchant: subscription.merchant,
+    plan: {
+      id: subscription.plan.id,
+      publicId: subscription.plan.publicId,
+      name: subscription.plan.name,
+      description: subscription.plan.description,
+      basePrice: subscription.plan.basePrice,
+      currency: subscription.plan.currency,
+      trialDays: subscription.plan.trialDays,
+      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
+      features: JSON.parse(subscription.plan.features as string) as string[],
+      isActive: subscription.plan.isActive,
+      isPopular: subscription.plan.isPopular,
+      sortOrder: subscription.plan.sortOrder,
+      createdAt: subscription.plan.createdAt,
+      updatedAt: subscription.plan.updatedAt
+    }
+  };
+}
+
+// ============================================================================
+// SUBSCRIPTION PAYMENT FUNCTIONS
+// ============================================================================
+
+export interface SubscriptionPaymentCreateInput {
+  subscriptionId: number;
+  amount: number;
+  currency: string;
+  method: string;
+  status: string;
+  transactionId: string;
+  description?: string;
+  failureReason?: string;
+}
+
+export interface SubscriptionPayment {
+  id: number;
+  subscriptionId: number;
+  amount: number;
+  currency: string;
+  method: string;
+  status: string;
+  transactionId: string;
+  description?: string;
+  failureReason?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export async function createSubscriptionPayment(data: SubscriptionPaymentCreateInput): Promise<SubscriptionPayment> {
+  // Find subscription by publicId to get the CUID
+  const subscription = await prisma.subscription.findUnique({
+    where: { publicId: data.subscriptionId },
+    select: { id: true }
+  });
+
+  if (!subscription) {
+    throw new Error('Subscription not found');
+  }
+
+  // Generate publicId for payment
+  const lastPayment = await prisma.payment.findFirst({
+    orderBy: { publicId: 'desc' }
+  });
+  const publicId = (lastPayment?.publicId || 0) + 1;
+
+  const payment = await prisma.payment.create({
+    data: {
+      publicId,
+      subscriptionId: subscription.id,
+      amount: data.amount,
+      currency: data.currency,
+      method: data.method,
+      type: 'SUBSCRIPTION',
+      status: data.status,
+      transactionId: data.transactionId,
+      description: data.description,
+      failureReason: data.failureReason
+    }
+  });
+
+  return {
+    id: payment.publicId,
+    subscriptionId: data.subscriptionId,
+    amount: payment.amount,
+    currency: payment.currency,
+    method: payment.method,
+    status: payment.status,
+    transactionId: payment.transactionId || '',
+    description: payment.description || undefined,
+    failureReason: payment.failureReason || undefined,
+    createdAt: payment.createdAt,
+    updatedAt: payment.updatedAt
+  };
+}

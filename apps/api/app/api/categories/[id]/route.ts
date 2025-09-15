@@ -132,11 +132,24 @@ export async function PUT(
       );
     }
 
+    // Find merchant by publicId to get the CUID
+    const merchant = await prisma.merchant.findUnique({
+      where: { publicId: user.merchantId },
+      select: { id: true }
+    });
+    
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, message: 'Merchant not found' },
+        { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
     // Find category by publicId and verify ownership
     const existingCategory = await prisma.category.findFirst({
       where: {
         publicId: categoryId,
-        merchantId: user.merchantId
+        merchantId: merchant.id // Use CUID for database query
       }
     });
 
@@ -151,7 +164,7 @@ export async function PUT(
     const nameConflict = await prisma.category.findFirst({
       where: {
         name: name.trim(),
-        merchantId: user.merchantId,
+        merchantId: merchant.id, // Use CUID for database query
         publicId: { not: categoryId }
       }
     });
@@ -241,11 +254,24 @@ export async function DELETE(
       );
     }
 
+    // Find merchant by publicId to get the CUID
+    const merchant = await prisma.merchant.findUnique({
+      where: { publicId: user.merchantId },
+      select: { id: true }
+    });
+    
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, message: 'Merchant not found' },
+        { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
     // Find category by publicId and verify ownership
     const existingCategory = await prisma.category.findFirst({
       where: {
         publicId: categoryId,
-        merchantId: user.merchantId
+        merchantId: merchant.id // Use CUID for database query
       },
       include: {
         products: {

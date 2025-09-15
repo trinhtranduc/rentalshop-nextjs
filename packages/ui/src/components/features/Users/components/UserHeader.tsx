@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '../../../ui/button';
-import { Grid3X3, List, Plus } from 'lucide-react';
+import { Grid, List, Plus } from 'lucide-react';
 
 interface UserHeaderProps {
   viewMode: 'grid' | 'table';
@@ -37,7 +37,7 @@ export function UserHeader({ viewMode, onViewModeChange, onAddUser }: UserHeader
           onClick={() => onViewModeChange('grid')}
           className="flex items-center gap-2"
         >
-          <Grid3X3 className="w-4 h-4" />
+          <Grid className="w-4 h-4" />
           Grid
         </Button>
       </div>

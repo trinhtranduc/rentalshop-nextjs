@@ -10,7 +10,12 @@ const planChangeSchema = z.object({
   planId: z.number().positive('Plan ID is required'),
   planVariantId: z.number().positive().optional(),
   reason: z.string().optional(),
-  effectiveDate: z.string().datetime().optional(),
+  effectiveDate: z.string().optional().transform((val) => {
+    if (!val) return undefined;
+    // Handle both datetime-local format (2025-01-15T10:30) and full ISO format
+    const date = new Date(val);
+    return isNaN(date.getTime()) ? undefined : date.toISOString();
+  }),
   notifyMerchant: z.boolean().default(true)
 });
 
@@ -51,8 +56,8 @@ export async function PUT(
       // 1. Get merchant
       const merchant = await tx.merchant.findUnique({
         where: { publicId: merchantId },
-        include: { plan: true, subscription: true }
-      });
+        include: { Plan: true, subscription: true } as any
+      }) as any;
 
       if (!merchant) {
         throw new Error('Merchant not found');
@@ -92,7 +97,7 @@ export async function PUT(
       }
 
       // 4. Check if merchant is already on this plan
-      if (merchant.planId === newPlan.id) {
+      if (merchant.PlanId === newPlan.id) {
         throw new Error('Merchant is already on this plan');
       }
 
@@ -107,33 +112,55 @@ export async function PUT(
       const durationMonths = 1;
       const endDate = new Date(effectiveDate.getTime() + (durationMonths * 30 * 24 * 60 * 60 * 1000));
 
-      // 7. Create new subscription
-      const lastSubscription = await tx.subscription.findFirst({
-        orderBy: { publicId: 'desc' }
-      });
-      const subscriptionPublicId = (lastSubscription?.publicId || 0) + 1;
+      // 7. Update existing subscription or create new one
+      let newSubscription;
+      
+      if (currentSubscription) {
+        // Update existing subscription
+        newSubscription = await tx.subscription.update({
+          where: { id: currentSubscription.id },
+          data: {
+            planId: newPlan.id,
+            status: 'ACTIVE',
+            currentPeriodStart: effectiveDate,
+            currentPeriodEnd: endDate,
+            amount: finalPrice,
+            currency: newPlan.currency,
+            interval: 'month',
+            intervalCount: 1,
+            cancelAtPeriodEnd: false,
+            updatedAt: new Date()
+          } as any
+        });
+      } else {
+        // Create new subscription if none exists
+        const lastSubscription = await tx.subscription.findFirst({
+          orderBy: { publicId: 'desc' }
+        });
+        const subscriptionPublicId = (lastSubscription?.publicId || 0) + 1;
 
-      const newSubscription = await tx.subscription.create({
-        data: {
-          publicId: subscriptionPublicId,
-          merchantId: merchant.id,
-          planId: newPlan.id,
-          status: 'ACTIVE',
-          currentPeriodStart: effectiveDate,
-          currentPeriodEnd: endDate,
-          amount: finalPrice,
-          currency: newPlan.currency,
-          interval: 'month',
-          intervalCount: 1,
-          cancelAtPeriodEnd: false
-        }
-      });
+        newSubscription = await tx.subscription.create({
+          data: {
+            publicId: subscriptionPublicId,
+            merchantId: merchant.id,
+            planId: newPlan.id,
+            status: 'ACTIVE',
+            currentPeriodStart: effectiveDate,
+            currentPeriodEnd: endDate,
+            amount: finalPrice,
+            currency: newPlan.currency,
+            interval: 'month',
+            intervalCount: 1,
+            cancelAtPeriodEnd: false
+          } as any
+        });
+      }
 
       // 8. Calculate proration for plan changes
       let prorationAmount = 0;
       let prorationNotes = '';
       
-      if (currentSubscription && merchant.plan) {
+      if (currentSubscription && merchant.Plan) {
         const currentPrice = currentSubscription.amount;
         const proration = calculateProration(
           {
@@ -162,10 +189,10 @@ export async function PUT(
       let paymentStatus = 'COMPLETED';
       let paymentMethod = 'MANUAL';
       let paymentAmount = finalPrice;
-      let paymentNotes = `Plan change from ${merchant.plan?.name || 'None'} to ${newPlan.name}`;
+      let paymentNotes = `Plan change from ${merchant.Plan?.name || 'None'} to ${newPlan.name}`;
       
       // Check if this is a free upgrade (trial to paid, or downgrade)
-      const isFreeUpgrade = finalPrice === 0 || (merchant.plan && newPlan.basePrice <= merchant.plan.basePrice);
+      const isFreeUpgrade = finalPrice === 0 || (merchant.Plan && newPlan.basePrice <= merchant.Plan.basePrice);
       const isTrialToPaid = merchant.subscriptionStatus === 'trial' && newPlan.basePrice > 0;
       
       if (isFreeUpgrade) {
@@ -202,10 +229,10 @@ export async function PUT(
           reference: `PLAN-CHANGE-${merchant.publicId}-${newSubscription.publicId}`,
           notes: paymentNotes,
           processedAt: paymentStatus === 'COMPLETED' ? new Date() : null,
-          processedBy: user.id,
+          processedBy: user.databaseId,
           subscriptionId: newSubscription.id,
           merchantId: merchant.id
-        }
+        } as any
       });
 
       // 9. Update merchant plan
@@ -216,7 +243,7 @@ export async function PUT(
           subscriptionStatus: 'active',
           updatedAt: new Date()
         },
-        include: { plan: true }
+        include: { Plan: true } as any
       });
 
       // 10. Create audit log
@@ -226,8 +253,8 @@ export async function PUT(
           entityId: merchant.id,
           action: 'PLAN_CHANGED',
           details: JSON.stringify({
-            oldPlanId: merchant.plan?.publicId || null,
-            oldPlanName: merchant.plan?.name || 'None',
+            oldPlanId: merchant.Plan?.publicId || null,
+            oldPlanName: merchant.Plan?.name || 'None',
             newPlanId: newPlan.publicId,
             newPlanName: newPlan.name,
             planVariantId: null,
@@ -236,26 +263,30 @@ export async function PUT(
             durationMonths: durationMonths,
             reason: validatedData.reason,
             effectiveDate: effectiveDate.toISOString(),
-            changedBy: user.id,
+            changedBy: user.databaseId,
             changedByEmail: user.email
           }),
-          userId: user.id,
+          userId: user.databaseId,
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown'
         }
       });
 
       return {
-        merchant: updatedMerchant,
-        subscription: newSubscription,
-        planChange: {
-          from: merchant.plan?.name || 'None',
-          to: newPlan.name,
-          variant: null,
-          price: finalPrice,
-          duration: durationMonths,
-          effectiveDate: effectiveDate.toISOString(),
-          reason: validatedData.reason
+        merchant: {
+          id: updatedMerchant.publicId,
+          name: updatedMerchant.name,
+          email: updatedMerchant.email,
+          subscriptionStatus: updatedMerchant.subscriptionStatus,
+          currentPlan: {
+            id: newPlan.publicId,
+            name: newPlan.name,
+            description: newPlan.description,
+            basePrice: newPlan.basePrice,
+            currency: newPlan.currency,
+            limits: JSON.parse(newPlan.limits),
+            features: JSON.parse(newPlan.features)
+          }
         }
       };
     });
@@ -350,12 +381,12 @@ export async function GET(
     const merchant = await prisma.merchant.findUnique({
       where: { publicId: merchantId },
       include: {
-        plan: true,
+        Plan: true,
         subscription: {
-          include: { plan: true }
+          include: { plan: true } as any
         }
-      }
-    });
+      } as any
+    }) as any;
 
     if (!merchant) {
       return NextResponse.json(
@@ -382,24 +413,17 @@ export async function GET(
           id: merchant.publicId,
           name: merchant.name,
           email: merchant.email,
-          currentPlan: merchant.plan ? {
-            id: merchant.plan.publicId,
-            name: merchant.plan.name,
-            price: merchant.plan.basePrice,
-            currency: merchant.plan.currency
-          } : null,
-          subscriptionStatus: merchant.subscriptionStatus
+          subscriptionStatus: merchant.subscriptionStatus,
+          currentPlan: merchant.Plan ? {
+            id: merchant.Plan.publicId,
+            name: merchant.Plan.name,
+            description: merchant.Plan.description,
+            basePrice: merchant.Plan.basePrice,
+            currency: merchant.Plan.currency,
+            limits: JSON.parse(merchant.Plan.limits),
+            features: JSON.parse(merchant.Plan.features)
+          } : null
         },
-        subscription: merchant.subscription ? {
-          id: merchant.subscription.publicId,
-          planName: merchant.subscription.plan.name,
-          status: merchant.subscription.status,
-          startDate: merchant.subscription.currentPeriodStart,
-          endDate: merchant.subscription.currentPeriodEnd,
-          amount: merchant.subscription.amount,
-          currency: merchant.subscription.currency,
-          changeReason: 'plan_change'
-        } : null,
         planChangeHistory: planChangeLogs.map(log => ({
           id: log.id,
           action: log.action,
@@ -496,7 +520,7 @@ export async function PATCH(
             status: 'DISABLED',
             cancelReason: reason,
             canceledAt: new Date(),
-          }
+          } as any
         });
         auditAction = 'PLAN_DISABLED';
       } else if (action === 'delete') {
@@ -507,7 +531,7 @@ export async function PATCH(
             status: 'DELETED',
             cancelReason: reason,
             canceledAt: new Date(),
-          }
+          } as any
         });
         auditAction = 'PLAN_DELETED';
       } else {
@@ -525,10 +549,10 @@ export async function PATCH(
             planId: subscription.planId,
             action: action,
             reason: reason,
-            changedBy: user.id,
+            changedBy: user.databaseId,
             changedByEmail: user.email
           }),
-          userId: user.id,
+          userId: user.databaseId,
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown'
         }

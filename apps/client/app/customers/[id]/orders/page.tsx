@@ -144,17 +144,17 @@ export default function CustomerOrdersPage() {
         console.log('🔒 CustomerOrdersPage: User outlet ID:', user?.outletId);
 
         console.log('🔍 CustomerOrdersPage: API filters:', apiFilters);
-        console.log('🔍 CustomerOrdersPage: API endpoint will be:', `/api/orders?customerId=${customer.id}&limit=10&offset=${(currentPage - 1) * 10}${filters.status !== undefined ? `&status=${filters.status}` : ''}${filters.orderType !== undefined ? `&orderType=${filters.orderType}` : ''}${filters.outlet ? `&outlet=${filters.outlet}` : ''}${filters.dateRange.start && filters.dateRange.end ? `&startDate=${filters.dateRange.start}&endDate=${filters.dateRange.end}` : ''}${filters.search ? `&q=${filters.search}` : ''}&sortBy=${filters.sortBy}&sortOrder=${filters.sortOrder}`);
+        console.log('🔍 CustomerOrdersPage: API endpoint will be:', `/api/orders?customerId=${customer.id}&limit=10&offset=${(currentPage - 1) * 10}${filters.status !== undefined ? `&status=${filters.status}` : ''}${filters.orderType !== undefined ? `&orderType=${filters.orderType}` : ''}${filters.outlet ? `&outlet=${filters.outlet}` : ''}${filters.dateRange?.start && filters.dateRange?.end ? `&startDate=${filters.dateRange.start}&endDate=${filters.dateRange.end}` : ''}${filters.search ? `&q=${filters.search}` : ''}&sortBy=${filters.sortBy}&sortOrder=${filters.sortOrder}`);
 
         const response = await ordersApi.searchOrders(apiFilters);
         
         if (response.success && response.data) {
           console.log('✅ CustomerOrdersPage: Orders fetched successfully:', response.data);
           console.log('🔍 CustomerOrdersPage: Orders data:', response.data);
-          console.log('🔍 CustomerOrdersPage: Setting orders state with:', response.data?.length || 0, 'orders');
-          setOrders(response.data || []);
-          setTotalOrders(response.data?.length || 0);
-          setTotalPages(Math.ceil((response.data?.length || 0) / 10));
+          console.log('🔍 CustomerOrdersPage: Setting orders state with:', response.data?.orders?.length || 0, 'orders');
+          setOrders(response.data?.orders || []);
+          setTotalOrders(response.data?.total || 0);
+          setTotalPages(Math.ceil((response.data?.total || 0) / 10));
         } else {
           console.error('❌ CustomerOrdersPage: API error:', response.error);
           setOrders([]);
@@ -422,7 +422,7 @@ export default function CustomerOrdersPage() {
                           </td>
                           <td className="p-4 align-middle text-sm font-medium">
                             <button
-                              onClick={() => handleOrderAction('view', order.id)}
+                              onClick={() => handleOrderAction('view', parseInt(order.id))}
                               className="text-blue-600 hover:text-blue-900"
                             >
                               View
@@ -441,7 +441,7 @@ export default function CustomerOrdersPage() {
                    <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Found</h3>
                    <p className="text-gray-600 mb-6">
-                     {filters.search || filters.status !== undefined || filters.orderType !== undefined || filters.outlet || filters.dateRange.start || filters.dateRange.end
+                      {filters.search || filters.status !== undefined || filters.orderType !== undefined || filters.outlet || filters.dateRange?.start || filters.dateRange?.end
                        ? 'No orders match your current filters. Try adjusting your search criteria.'
                        : 'This customer hasn\'t placed any orders yet.'
                      }

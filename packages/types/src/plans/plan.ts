@@ -2,6 +2,13 @@
 // PLAN TYPES
 // ============================================================================
 
+export interface PlanLimits {
+  outlets: number;             // Maximum number of outlets allowed (-1 for unlimited)
+  users: number;               // Maximum number of users allowed (-1 for unlimited)
+  products: number;            // Maximum number of products allowed (-1 for unlimited)
+  customers: number;           // Maximum number of customers allowed (-1 for unlimited)
+}
+
 export interface Plan {
   id: string;                    // Database CUID
   publicId: number;              // Public ID for external use
@@ -10,43 +17,14 @@ export interface Plan {
   basePrice: number;             // Base price for monthly calculations
   currency: string;              // Currency code (USD, VND)
   trialDays: number;             // Number of trial days
-  limits: {                      // Plan limits
-    outlets: number;             // Maximum number of outlets allowed
-    users: number;               // Maximum number of users allowed
-    products: number;            // Maximum number of products allowed
-    customers: number;           // Maximum number of customers allowed
-  };
-  features: string[];            // Array of feature strings
+  limits: PlanLimits;            // Plan limits (stored as JSON)
+  features: string[];            // Array of feature strings (stored as JSON)
   isActive: boolean;             // Whether the plan is active
   isPopular: boolean;            // Whether to highlight this plan
   sortOrder: number;             // Display order
   createdAt: Date;
   updatedAt: Date;
-  
-  // Modern pricing structure
-  pricing: {
-    monthly: {
-      price: number;
-      discount: number;
-      savings: number;
-      interval: 'month';
-      intervalCount: 1;
-    };
-    quarterly: {
-      price: number;
-      discount: number;
-      savings: number;
-      interval: 'quarter';
-      intervalCount: 3;
-    };
-    yearly: {
-      price: number;
-      discount: number;
-      savings: number;
-      interval: 'year';
-      intervalCount: 1;
-    };
-  };
+  deletedAt?: Date;              // Soft delete timestamp
 }
 
 export type BillingCycle = 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
@@ -64,12 +42,7 @@ export interface PlanCreateInput {
   basePrice: number;             // Base price for monthly calculations
   currency?: string;
   trialDays: number;
-  limits: {
-    outlets: number;
-    users: number;
-    products: number;
-    customers: number;
-  };
+  limits: PlanLimits;
   features: string[];
   isActive?: boolean;
   isPopular?: boolean;
@@ -83,12 +56,7 @@ export interface PlanUpdateInput {
   basePrice?: number;            // Base price for monthly calculations
   currency?: string;
   trialDays?: number;
-  limits?: {
-    outlets?: number;
-    users?: number;
-    products?: number;
-    customers?: number;
-  };
+  limits?: Partial<PlanLimits>;
   features?: string[];
   isActive?: boolean;
   isPopular?: boolean;

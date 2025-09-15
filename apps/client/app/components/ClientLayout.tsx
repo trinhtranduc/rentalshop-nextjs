@@ -83,7 +83,6 @@ export default function ClientLayout({
               onCollapseToggle={() => setIsCollapsed(!isCollapsed)}
               notificationsCount={notificationsCount}
               cartItemsCount={cartItemsCount}
-              onSearch={handleSearch}
               onNavigate={navigateTo}
               onPrefetch={prefetchRoute}
             />

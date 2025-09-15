@@ -7,7 +7,7 @@ import { SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
 
 // Re-export types from centralized constants
 export type { SubscriptionStatus, BillingInterval };
-export type BillingPeriod = 1 | 3 | 12; // months
+export type BillingPeriod = 1 | 3 | 6 | 12; // months
 
 export interface Subscription {
   id: string;
@@ -15,20 +15,10 @@ export interface Subscription {
   merchantId: string;
   planId: string;
   status: SubscriptionStatus;
+  billingInterval: BillingInterval; // month, quarter, semiAnnual, year
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
-  trialStart?: Date;
-  trialEnd?: Date;
-  cancelAtPeriodEnd: boolean;
-  canceledAt?: Date;
-  cancelReason?: string;
-  amount: number;
-  currency: string;
-  interval: BillingInterval;
-  intervalCount: number; // 1 for month/year, 3 for quarter
-  period: BillingPeriod; // 1, 3, or 12 months
-  discount: number; // Applied discouotnt percentage
-  savings: number; // Amount saved due to discount
+  amount: number; // Calculated price based on plan and interval
   createdAt: Date;
   updatedAt: Date;
   
@@ -46,28 +36,17 @@ export interface Subscription {
 export interface SubscriptionCreateInput {
   merchantId: number;
   planId: number;
+  billingInterval?: BillingInterval; // month, quarter, semiAnnual, year
   status?: SubscriptionStatus;
-  period?: BillingPeriod; // 1, 3, or 12 months
-  amount?: number;
-  currency?: string;
-  interval?: BillingInterval;
+  startDate?: Date;
 }
 
 export interface SubscriptionUpdateInput {
   id: number;
   planId?: number;
-  planVariantId?: number;
-  status?: 'TRIAL' | 'ACTIVE' | 'CANCELLED' | 'SUSPENDED' | 'EXPIRED';
-  startDate?: Date | string;
+  billingInterval?: BillingInterval;
+  status?: SubscriptionStatus;
   endDate?: Date | string;
-  trialEndDate?: Date | string;
-  nextBillingDate?: Date | string;
-  amount?: number;
-  currency?: string;
-  autoRenew?: boolean;
-  cancellationReason?: string;
-  cancelAtPeriodEnd?: boolean;
-  cancelReason?: string;
 }
 
 export interface SubscriptionFilters {

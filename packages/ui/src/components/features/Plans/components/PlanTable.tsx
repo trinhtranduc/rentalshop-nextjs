@@ -226,22 +226,22 @@ export const PlanTable: React.FC<PlanTableProps> = ({
                       <div className="flex items-center gap-2">
                         <Package className="w-3 h-3 text-text-tertiary" />
                         <span className="text-text-secondary">Outlets:</span>
-                        <span className="font-medium">{getLimitText(plan.maxOutlets)}</span>
+                        <span className="font-medium">{getLimitText(plan.limits.outlets)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="w-3 h-3 text-text-tertiary" />
                         <span className="text-text-secondary">Users:</span>
-                        <span className="font-medium">{getLimitText(plan.maxUsers)}</span>
+                        <span className="font-medium">{getLimitText(plan.limits.users)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CreditCard className="w-3 h-3 text-text-tertiary" />
                         <span className="text-text-secondary">Products:</span>
-                        <span className="font-medium">{getLimitText(plan.maxProducts)}</span>
+                        <span className="font-medium">{getLimitText(plan.limits.products)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="w-3 h-3 text-text-tertiary" />
                         <span className="text-text-secondary">Customers:</span>
-                        <span className="font-medium">{getLimitText(plan.maxCustomers)}</span>
+                        <span className="font-medium">{getLimitText(plan.limits.customers)}</span>
                       </div>
                     </div>
                   </td>

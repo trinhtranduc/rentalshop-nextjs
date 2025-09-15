@@ -140,7 +140,8 @@ export const paymentsApi = {
     
     const response = await authenticatedFetch(url);
     return await parseApiResponse<{ downloadUrl: string }>(response);
-  }
+  },
+
 };
 
 // Manual payment types

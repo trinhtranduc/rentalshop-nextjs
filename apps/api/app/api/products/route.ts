@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     }
     
     const user = authResult.user;
+    // Note: Subscription validation is already handled in authenticateRequest()
 
     console.log('User merchant ID:', user.merchant?.id);
 
@@ -167,6 +168,7 @@ export async function POST(request: NextRequest) {
     }
     
     const user = authResult.user;
+    // Note: Subscription validation is already handled in authenticateRequest()
 
     // Authorization: Only merchant-level roles can create products
     try {

@@ -7,7 +7,8 @@ import { ordersApi } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
 export default function CalendarPage() {
-  const { authenticated } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const authenticated = !!user;
   const { handleError } = useSimpleErrorHandler();
 
   const [loading, setLoading] = useState(false);
@@ -37,11 +38,11 @@ export default function CalendarPage() {
       console.log('📅 Fetching orders for month:', { currentMonth, currentYear });
       console.log('📅 Date range:', { startOfMonth, endOfMonth });
       
-      const result = await ordersApi.getCalendarOrders({
+      const result = await ordersApi.searchOrders({
         startDate: startOfMonth.toISOString(),
         endDate: endOfMonth.toISOString(),
         orderType: 'RENT',
-        status: ['BOOKED', 'ACTIVE'],
+        status: ['RESERVED', 'PICKUPED'],
         limit: 100
       });
       

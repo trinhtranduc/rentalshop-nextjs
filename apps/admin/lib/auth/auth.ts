@@ -154,9 +154,9 @@ export const logoutUser = (): void => {
  */
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const { authenticatedFetch, handleApiResponse } = await import('@rentalshop/utils');
-    const data = await handleApiResponse(await authenticatedFetch('/api/auth/me'));
-    return data.success ? (data.data as User) : null;
+    const { profileApi } = await import('@rentalshop/utils');
+    const result = await profileApi.getProfile();
+    return result.success ? result.data : null;
   } catch (error) {
     console.error('Failed to get current user:', error);
     return null;

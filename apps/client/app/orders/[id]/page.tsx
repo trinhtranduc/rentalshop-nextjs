@@ -7,13 +7,13 @@ import { Button, OrderDetail, useToasts } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { ordersApi } from '@rentalshop/utils';
 
-import type { OrderDetailData } from '@rentalshop/types';
+import type { Order } from '@rentalshop/types';
 
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { showSuccess, showError } = useToasts();
-  const [order, setOrder] = useState<OrderDetailData | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -33,7 +33,7 @@ export default function OrderDetailPage() {
 
         const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderId}`);
 
-        if (result.success) {
+        if (result.success && result.data) {
           setOrder(result.data);
         } else {
           setError(result.error || 'Failed to fetch order details');
@@ -64,7 +64,7 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const result = await ordersApi.deleteOrder(order.id);
+      const result = await ordersApi.cancelOrder(parseInt(order.id));
 
       if (result.success) {
         // Refresh the order data
@@ -87,9 +87,7 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const result = await ordersApi.updateOrder(order.id, {
-        status: newStatus
-      });
+      const result = await ordersApi.updateOrderStatus(parseInt(order.id), newStatus);
 
       if (result.success) {
         // Refresh the order data
@@ -115,21 +113,14 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const response = await authenticatedFetch(`/api/orders/${orderId}/pickup`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const result = await ordersApi.pickupOrder(parseInt(orderId));
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to pickup order');
-      }
-
-      const result = await response.json();
       if (result.success) {
         // Refresh the order data
         router.refresh();
         showSuccess('Order Pickup', 'Order has been picked up successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to pickup order');
       }
     } catch (err) {
       console.error('Error picking up order:', err);
@@ -147,21 +138,14 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const response = await authenticatedFetch(`/api/orders/${orderId}/return`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const result = await ordersApi.returnOrder(parseInt(orderId));
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to return order');
-      }
-
-      const result = await response.json();
       if (result.success) {
         // Refresh the order data
         router.refresh();
         showSuccess('Order Return', 'Order has been returned successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to return order');
       }
     } catch (err) {
       console.error('Error returning order:', err);
@@ -195,7 +179,7 @@ export default function OrderDetailPage() {
         notes: data.notes
       };
 
-      const result = await ordersApi.updateOrderSettings(order.publicId, updateData);
+      const result = await ordersApi.updateOrderSettings(parseInt(order.id), updateData);
 
       if (result.success) {
         // Refresh the order data
@@ -241,7 +225,7 @@ export default function OrderDetailPage() {
           
           {/* Order Detail Skeleton */}
           <OrderDetail
-            order={{} as OrderDetailData}
+            order={{} as Order}
             loading={true}
             showActions={false}
           />
