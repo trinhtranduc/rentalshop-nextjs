@@ -28,24 +28,6 @@ export async function GET(
     const merchant = await prisma.merchant.findUnique({
       where: { publicId: merchantId },
       include: {
-        plan: {
-          select: {
-            id: true,
-            publicId: true,
-            name: true,
-            description: true,
-            basePrice: true,
-            currency: true,
-            trialDays: true,
-            maxOutlets: true,
-            maxUsers: true,
-            maxProducts: true,
-            maxCustomers: true,
-            features: true,
-            isActive: true,
-            isPopular: true
-          }
-        },
         subscription: {
           select: {
             id: true,
@@ -53,7 +35,6 @@ export async function GET(
             status: true,
             currentPeriodStart: true,
             currentPeriodEnd: true,
-            trialStart: true,
             trialEnd: true,
             amount: true,
             currency: true,
@@ -68,11 +49,17 @@ export async function GET(
                 id: true,
                 publicId: true,
                 name: true,
+                description: true,
                 basePrice: true,
-                currency: true
+                currency: true,
+                trialDays: true,
+                limits: true,
+                features: true,
+                isActive: true,
+                isPopular: true
               }
             }
-          }
+          } as any
         },
         _count: {
           select: {
@@ -84,12 +71,19 @@ export async function GET(
       }
     });
 
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, message: 'Merchant not found' },
+        { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
     // Get basic order statistics without fetching all orders
     const orderStats = await prisma.order.groupBy({
       by: ['status'],
       where: {
         outlet: {
-          merchantId: merchant!.id
+          merchantId: merchant.id
         }
       },
       _count: {
@@ -139,30 +133,12 @@ export async function GET(
       planId: merchantData.planId,
       subscriptionStatus: merchantData.subscriptionStatus,
       trialEndsAt: (currentSubscription as any)?.trialEnd || null,
-      outletsCount: merchantData._count?.outlets || 0,
-      usersCount: merchantData._count?.users || 0,
-      productsCount: merchantData._count?.products || 0,
+      outletsCount: (merchant as any)._count?.outlets || 0,
+      usersCount: (merchant as any)._count?.users || 0,
+      productsCount: (merchant as any)._count?.products || 0,
       totalRevenue: merchantData.totalRevenue || 0,
       createdAt: merchantData.createdAt,
       lastActiveAt: merchantData.lastActiveAt,
-      // Enhanced plan and subscription info
-      plan: merchantData.plan ? {
-        id: merchantData.plan.publicId,
-        name: merchantData.plan.name,
-        description: merchantData.plan.description,
-        basePrice: merchantData.plan.basePrice,
-        currency: merchantData.plan.currency,
-        trialDays: merchantData.plan.trialDays,
-        limits: {
-          outlets: merchantData.plan.maxOutlets,
-          users: merchantData.plan.maxUsers,
-          products: merchantData.plan.maxProducts,
-          customers: merchantData.plan.maxCustomers
-        },
-        features: merchantData.plan.features ? JSON.parse(merchantData.plan.features) : [],
-        isActive: merchantData.plan.isActive,
-        isPopular: merchantData.plan.isPopular
-      } : null,
       currentSubscription: currentSubscription ? {
         id: currentSubscription.publicId,
         status: currentSubscription.status,
@@ -180,8 +156,19 @@ export async function GET(
         plan: currentSubscription.plan ? {
           id: currentSubscription.plan.publicId,
           name: currentSubscription.plan.name,
+          description: currentSubscription.plan.description,
           basePrice: currentSubscription.plan.basePrice,
-          currency: currentSubscription.plan.currency
+          currency: currentSubscription.plan.currency,
+          trialDays: currentSubscription.plan.trialDays,
+          limits: currentSubscription.plan.limits ? JSON.parse(currentSubscription.plan.limits) : {
+            outlets: 0,
+            users: 0,
+            products: 0,
+            customers: 0
+          },
+          features: currentSubscription.plan.features ? JSON.parse(currentSubscription.plan.features) : [],
+          isActive: currentSubscription.plan.isActive,
+          isPopular: currentSubscription.plan.isPopular
         } : null
       } : {
         // Fallback for merchants without active subscriptions
@@ -191,19 +178,14 @@ export async function GET(
         endDate: null,
         trialEndDate: merchantData.trialEndsAt,
         nextBillingDate: null,
-        amount: merchantData.plan?.basePrice || 0,
-        currency: merchantData.plan?.currency || 'USD',
+        amount: 0,
+        currency: 'USD',
         autoRenew: false,
         interval: 'month',
         intervalCount: 1,
         discount: 0,
         savings: 0,
-        plan: merchantData.plan ? {
-          id: merchantData.plan.publicId,
-          name: merchantData.plan.name,
-          basePrice: merchantData.plan.basePrice,
-          currency: merchantData.plan.currency
-        } : null
+        plan: null
       }
     };
 
@@ -213,9 +195,9 @@ export async function GET(
       data: {
         merchant: transformedMerchant,
         stats: {
-          totalOutlets: merchant._count.outlets,
-          totalUsers: merchant._count.users,
-          totalProducts: merchant._count.products,
+          totalOutlets: (merchant as any)._count.outlets,
+          totalUsers: (merchant as any)._count.users,
+          totalProducts: (merchant as any)._count.products,
           totalOrders: stats.totalOrders,
           totalRevenue: merchant.totalRevenue || 0,
           activeOrders: stats.activeOrders,

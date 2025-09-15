@@ -24,7 +24,7 @@ import {
   categoriesApi 
 } from '@rentalshop/utils';
 import { useAuth } from '@rentalshop/hooks';
-import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category } from '@rentalshop/types';
+import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category, Customer, Product } from '@rentalshop/types';
 import type { OrderInput } from '@rentalshop/types';
 
 export default function EditOrderPage() {
@@ -130,7 +130,7 @@ export default function EditOrderPage() {
           // Handle both possible API response structures:
           // 1. { data: { customers: [...] } } - paginated response
           // 2. { data: [...] } - direct array response
-          let customersArray: CustomerSearchResult[] = [];
+          let customersArray: Customer[] = [];
           const data = customersResult.data;
           
           if (data && typeof data === 'object' && 'customers' in data && Array.isArray(data.customers)) {
@@ -222,7 +222,7 @@ export default function EditOrderPage() {
           // Handle both possible API response structures:
           // 1. { data: { products: [...] } } - paginated response
           // 2. { data: [...] } - direct array response
-          let productsArray: ProductWithStock[] = [];
+          let productsArray: Product[] = [];
           const data = productsResult.data;
           
           if (data && typeof data === 'object' && 'products' in data && Array.isArray(data.products)) {

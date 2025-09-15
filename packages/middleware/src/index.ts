@@ -26,6 +26,16 @@ export * from './rate-limit';
 export * from './auth';
 
 // ============================================================================
+// SUBSCRIPTION MANAGEMENT MIDDLEWARE (UNIFIED)
+// ============================================================================
+export * from './subscription-manager';
+
+// ============================================================================
+// SUBSCRIPTION MIDDLEWARE FOR API ROUTES
+// ============================================================================
+export * from './subscription-middleware';
+
+// ============================================================================
 // CONVENIENCE EXPORTS
 // ============================================================================
 
@@ -64,3 +74,29 @@ export {
   outletAuth,
   optionalAuth
 } from './auth';
+
+// Subscription management exports
+export type { 
+  SubscriptionValidationResult, 
+  SubscriptionValidationOptions,
+  SubscriptionManagerConfig 
+} from './subscription-manager';
+export { 
+  validateSubscriptionAccess,
+  checkSubscriptionExpiry,
+  withSubscriptionValidation,
+  canPerformOperation,
+  getSubscriptionErrorMessage,
+  getAllowedOperations,
+  manualExpiryCheck,
+  DEFAULT_CONFIG
+} from './subscription-manager';
+
+// Subscription middleware exports
+export { 
+  requiresSubscriptionValidation,
+  validateSubscriptionForRoute,
+  withSubscriptionValidation as withSubscriptionValidationWrapper,
+  subscriptionRequiredRoutes,
+  subscriptionExemptRoutes
+} from './subscription-middleware';

@@ -88,23 +88,14 @@ export default function BillingSettingsPage() {
   const handleSaveConfig = async () => {
     setIsSubmitting(true);
     try {
-      // Use centralized API client with automatic authentication and error handling
-      const { authenticatedFetch } = await import('@rentalshop/utils');
+      const { settingsApi } = await import('@rentalshop/utils');
       
-      const response = await authenticatedFetch('/api/settings/billing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ intervals: billingIntervals }),
-      });
-
-      const result = await response.json();
+      const result = await settingsApi.updateBillingIntervals(billingIntervals);
       
       if (result.success) {
         alert('Billing configuration saved successfully!');
       } else {
-        alert(`Error: ${result.message}`);
+        alert(`Error: ${result.error || 'Failed to save billing configuration'}`);
       }
     } catch (error) {
       console.error('Error saving billing config:', error);

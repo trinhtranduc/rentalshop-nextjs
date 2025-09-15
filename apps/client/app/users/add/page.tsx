@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AddUserForm, UserPageHeader, UserInfoCard, ToastContainer } from '@rentalshop/ui';
+import { UserForm, UserPageHeader, UserCard, ToastContainer } from '@rentalshop/ui';
 import { usersApi } from "@rentalshop/utils";
 import type { UserCreateInput } from '@rentalshop/ui';
 import { useToasts } from '@rentalshop/ui';
@@ -46,7 +46,8 @@ export default function AddUserPage() {
     return null;
   }
 
-  const handleSave = async (userData: UserCreateInput) => {
+  // Internal function that only handles UserCreateInput
+  const handleCreateUser = async (userData: UserCreateInput) => {
     try {
       setIsSubmitting(true);
       
@@ -81,6 +82,18 @@ export default function AddUserPage() {
     }
   };
 
+  // Wrapper function that satisfies UserForm's interface but only handles UserCreateInput
+  const handleSave = async (userData: any) => {
+    // Type guard to ensure we only handle UserCreateInput in this add page
+    if (!('password' in userData && 'role' in userData)) {
+      console.error('❌ AddUserPage: Invalid user data type for creation');
+      showError('Error', 'Invalid user data for creation');
+      return;
+    }
+    
+    await handleCreateUser(userData as UserCreateInput);
+  };
+
   const handleCancel = () => {
     router.push('/users');
   };
@@ -103,14 +116,12 @@ export default function AddUserPage() {
         </div>
 
         {/* Add User Form */}
-        <UserInfoCard title="User Information">
-          <AddUserForm
-            onSave={handleSave}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-            currentUser={currentUser}
-          />
-        </UserInfoCard>
+        <UserForm
+          onSave={handleSave}
+          onCancel={handleCancel}
+          isSubmitting={isSubmitting}
+          mode="create"
+        />
       </div>
       
       {/* Toast Container for notifications */}

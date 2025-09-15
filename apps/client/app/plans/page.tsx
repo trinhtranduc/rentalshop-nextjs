@@ -133,11 +133,11 @@ export default function PlansPage() {
   const handleConfirmPurchase = async () => {
     try {
       const result = await subscriptionsApi.create({
+        merchantId: 1, // TODO: Get from user context
         planId: selectedPlan?.publicId || 0,
         status: 'active',
-        period: purchaseData.billingCycle === 'monthly' ? 1 : purchaseData.billingCycle === 'quarterly' ? 3 : 12,
-        amount: selectedPlan?.basePrice || 0,
-        currency: selectedPlan?.currency || 'USD'
+        billingInterval: purchaseData.billingCycle === 'monthly' ? 'month' : 
+                        purchaseData.billingCycle === 'quarterly' ? 'quarter' : 'year'
       });
 
       if (result.success) {

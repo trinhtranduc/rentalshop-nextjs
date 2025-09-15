@@ -30,7 +30,7 @@ export async function PATCH(
 
     // Parse request body
     const body = await request.json();
-    const { newPlanId, period, reason } = body;
+    const { newPlanId, billingInterval } = body;
 
     if (!newPlanId) {
       return NextResponse.json(
@@ -41,7 +41,7 @@ export async function PATCH(
 
     // Change the subscription plan
     const subscriptionId = parseInt(params.id);
-    const result = await changePlan(subscriptionId, newPlanId, period || 1, reason);
+    const result = await changePlan(subscriptionId, newPlanId, billingInterval || 'month');
 
     return NextResponse.json({
       success: true,

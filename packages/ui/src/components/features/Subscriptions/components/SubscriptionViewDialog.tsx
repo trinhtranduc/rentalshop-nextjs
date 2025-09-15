@@ -33,6 +33,8 @@ interface SubscriptionViewDialogProps {
   onEdit?: (subscription: Subscription) => void;
   onCancel?: (subscription: Subscription) => void;
   onExtend?: (subscription: Subscription) => void;
+  onSuspend?: (subscription: Subscription, reason: string) => void;
+  onReactivate?: (subscription: Subscription) => void;
   onChangePlan?: (subscription: Subscription) => void;
 }
 
@@ -43,6 +45,8 @@ export function SubscriptionViewDialog({
   onEdit,
   onCancel,
   onExtend,
+  onSuspend,
+  onReactivate,
   onChangePlan
 }: SubscriptionViewDialogProps) {
   if (!subscription) return null;
@@ -138,16 +142,16 @@ export function SubscriptionViewDialog({
                 <div>
                   <label className="text-sm font-medium text-gray-500">Amount</label>
                   <p className="text-sm font-medium">
-                    {formatCurrency(subscription.amount, subscription.currency as any)}
+                    {formatCurrency(subscription.amount, (subscription.plan?.currency || 'USD') as any)}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Cancel at Period End</label>
-                  <p className="text-sm">{subscription.cancelAtPeriodEnd ? 'Yes' : 'No'}</p>
+                  <label className="text-sm font-medium text-gray-500">Billing Interval</label>
+                  <p className="text-sm">{subscription.billingInterval || 'month'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Currency</label>
-                  <p className="text-sm">{subscription.currency}</p>
+                  <p className="text-sm">{subscription.plan?.currency || 'USD'}</p>
                 </div>
               </div>
             </CardContent>
@@ -198,20 +202,20 @@ export function SubscriptionViewDialog({
                 <div>
                   <label className="text-sm font-medium text-gray-500">Plan Price</label>
                   <p className="text-sm font-medium">
-                    {subscription.plan ? formatCurrency(subscription.plan.basePrice, subscription.currency as any) : 'Unknown'}
+                    {subscription.plan ? formatCurrency(subscription.plan.basePrice, subscription.plan.currency as any) : 'Unknown'}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Interval</label>
-                  <p className="text-sm">{subscription.interval || 'Unknown'}</p>
+                  <label className="text-sm font-medium text-gray-500">Billing Interval</label>
+                  <p className="text-sm">{subscription.billingInterval || 'month'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Interval Count</label>
-                  <p className="text-sm">{subscription.intervalCount || '1'}</p>
+                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <p className="text-sm">{subscription.status || 'Unknown'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Period</label>
-                  <p className="text-sm">{subscription.period || 'Unknown'}</p>
+                  <label className="text-sm font-medium text-gray-500">Plan ID</label>
+                  <p className="text-sm">{subscription.planId || 'Unknown'}</p>
                 </div>
               </div>
             </CardContent>
@@ -234,11 +238,11 @@ export function SubscriptionViewDialog({
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Trial Start</label>
-                  <p className="text-sm">{subscription.trialStart ? formatDate(subscription.trialStart) : 'No trial'}</p>
+                  <p className="text-sm">No trial data available</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Trial End</label>
-                  <p className="text-sm">{subscription.trialEnd ? formatDate(subscription.trialEnd) : 'No trial'}</p>
+                  <p className="text-sm">No trial data available</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Created At</label>
@@ -253,7 +257,7 @@ export function SubscriptionViewDialog({
           </Card>
 
           {/* Cancellation Information */}
-          {subscription.canceledAt && (
+          {subscription.status === 'cancelled' && (
             <Card>
               <CardHeader>
                 <CardTitle>Cancellation Information</CardTitle>
@@ -262,11 +266,11 @@ export function SubscriptionViewDialog({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-500">Cancelled At</label>
-                    <p className="text-sm">{formatDate(subscription.canceledAt)}</p>
+                    <p className="text-sm">{formatDate(subscription.updatedAt)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Cancellation Reason</label>
-                    <p className="text-sm">{subscription.cancelReason || 'No reason provided'}</p>
+                    <p className="text-sm">No reason provided</p>
                   </div>
                 </div>
               </CardContent>
@@ -296,6 +300,26 @@ export function SubscriptionViewDialog({
               >
                 <ArrowRight className="h-4 w-4" />
                 Change Plan
+              </Button>
+            )}
+            {isActiveStatus && onSuspend && (
+              <Button 
+                variant="outline" 
+                onClick={() => onSuspend(subscription, 'Paused from subscription view')}
+                className="flex items-center gap-2 text-orange-600 hover:text-orange-700"
+              >
+                <Pause className="h-4 w-4" />
+                Pause Subscription
+              </Button>
+            )}
+            {subscription.status === 'paused' && onReactivate && (
+              <Button 
+                variant="outline" 
+                onClick={() => onReactivate(subscription)}
+                className="flex items-center gap-2 text-green-600 hover:text-green-700"
+              >
+                <Play className="h-4 w-4" />
+                Resume Subscription
               </Button>
             )}
             {canCancel && onCancel && (

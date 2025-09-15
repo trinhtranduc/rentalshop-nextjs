@@ -13,10 +13,7 @@ export async function GET(request: NextRequest) {
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
+      return authResult.response;
     }
 
     const user = authResult.user;

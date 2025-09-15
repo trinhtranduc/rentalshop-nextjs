@@ -5,6 +5,7 @@ interface OutletPaginationProps {
   currentPage: number;
   totalPages: number;
   total: number;
+  limit: number;
   onPageChange: (page: number) => void;
 }
 
@@ -12,6 +13,7 @@ export function OutletPagination({
   currentPage,
   totalPages,
   total,
+  limit,
   onPageChange
 }: OutletPaginationProps) {
   return (
@@ -19,6 +21,7 @@ export function OutletPagination({
       currentPage={currentPage}
       totalPages={totalPages}
       total={total}
+      limit={limit}
       onPageChange={onPageChange}
     />
   );

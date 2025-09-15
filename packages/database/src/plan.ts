@@ -25,19 +25,13 @@ export async function getPlanByPublicId(publicId: number): Promise<Plan | null> 
       basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      limits: {
-        outlets: plan.maxOutlets,
-        users: plan.maxUsers,
-        products: plan.maxProducts,
-        customers: plan.maxCustomers
-      },
+      limits: JSON.parse(plan.limits as string),
       features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      pricing: calculatePlanPricing(plan.basePrice)
     };
   } catch (error) {
     console.error('Error getting plan by public ID:', error);
@@ -63,19 +57,13 @@ export async function getAllPlans(): Promise<Plan[]> {
       basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      limits: {
-        outlets: plan.maxOutlets,
-        users: plan.maxUsers,
-        products: plan.maxProducts,
-        customers: plan.maxCustomers
-      },
+      limits: JSON.parse(plan.limits as string),
       features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      pricing: calculatePlanPricing(plan.basePrice)
     }));
   } catch (error) {
     console.error('Error getting all plans:', error);
@@ -125,19 +113,13 @@ export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: P
       basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      limits: {
-        outlets: plan.maxOutlets,
-        users: plan.maxUsers,
-        products: plan.maxProducts,
-        customers: plan.maxCustomers
-      },
+      limits: JSON.parse(plan.limits as string),
       features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      pricing: calculatePlanPricing(plan.basePrice)
     }));
 
     return {
@@ -170,10 +152,7 @@ export async function createPlan(data: PlanCreateInput): Promise<Plan> {
         basePrice: data.basePrice,
         currency: data.currency || 'USD',
         trialDays: data.trialDays,
-        maxOutlets: data.limits.outlets,
-        maxUsers: data.limits.users,
-        maxProducts: data.limits.products,
-        maxCustomers: data.limits.customers,
+        limits: JSON.stringify(data.limits),
         features: JSON.stringify(data.features),
         isActive: data.isActive ?? true,
         isPopular: data.isPopular ?? false,
@@ -189,19 +168,13 @@ export async function createPlan(data: PlanCreateInput): Promise<Plan> {
       basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      limits: {
-        outlets: plan.maxOutlets,
-        users: plan.maxUsers,
-        products: plan.maxProducts,
-        customers: plan.maxCustomers
-      },
+      limits: JSON.parse(plan.limits as string),
       features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      pricing: calculatePlanPricing(plan.basePrice)
     };
   } catch (error) {
     console.error('Error creating plan:', error);
@@ -223,10 +196,7 @@ export async function updatePlan(publicId: number, data: PlanUpdateInput): Promi
         ...(data.currency && { currency: data.currency }),
         ...(data.trialDays && { trialDays: data.trialDays }),
         ...(data.limits && {
-          maxOutlets: data.limits.outlets,
-          maxUsers: data.limits.users,
-          maxProducts: data.limits.products,
-          maxCustomers: data.limits.customers
+          limits: JSON.stringify(data.limits)
         }),
         ...(data.features && { features: JSON.stringify(data.features) }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
@@ -243,19 +213,13 @@ export async function updatePlan(publicId: number, data: PlanUpdateInput): Promi
       basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      limits: {
-        outlets: plan.maxOutlets,
-        users: plan.maxUsers,
-        products: plan.maxProducts,
-        customers: plan.maxCustomers
-      },
+      limits: JSON.parse(plan.limits as string),
       features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      pricing: calculatePlanPricing(plan.basePrice)
     };
   } catch (error) {
     console.error('Error updating plan:', error);
@@ -303,19 +267,13 @@ export async function getActivePlans(): Promise<Plan[]> {
       basePrice: plan.basePrice,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      limits: {
-        outlets: plan.maxOutlets,
-        users: plan.maxUsers,
-        products: plan.maxProducts,
-        customers: plan.maxCustomers
-      },
+      limits: JSON.parse(plan.limits as string),
       features: JSON.parse(plan.features || '[]'),
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
-      pricing: calculatePlanPricing(plan.basePrice)
     }));
   } catch (error) {
     console.error('Error getting active plans:', error);

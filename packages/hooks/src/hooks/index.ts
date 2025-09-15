@@ -14,3 +14,4 @@ export { useCustomerManagement, type UseCustomerManagementOptions } from './useC
 export { useProductManagement, type UseProductManagementOptions } from './useProductManagement';
 export { useOrderManagement, type UseOrderManagementOptions } from './useOrderManagement';
 export { useSubscriptionAccess, useCanPerform, useSubscriptionStatusInfo } from './useSubscriptionAccess';
+export { useSubscriptionError, type SubscriptionError, type UseSubscriptionErrorReturn } from './useSubscriptionError';

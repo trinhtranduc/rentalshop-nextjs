@@ -60,7 +60,7 @@ model Merchant {
   updatedAt          DateTime      @updatedAt
   categories         Category[]
   customers          Customer[]
-  plan               Plan?         @relation(fields: [planId], references: [id])
+  Plan               Plan?         @relation(fields: [planId], references: [id])
   outlets            Outlet[]
   payments           Payment[]
   products           Product[]
@@ -70,8 +70,8 @@ model Merchant {
   @@index([name])
   @@index([email])
   @@index([publicId])
-  @@index([planId])
   @@index([subscriptionStatus])
+  @@index([planId])
 }
 
 model Outlet {
@@ -296,18 +296,15 @@ model Plan {
   basePrice     Float
   currency      String         @default("USD")
   trialDays     Int            @default(14)
-  maxOutlets    Int            @default(-1)
-  maxUsers      Int            @default(-1)
-  maxProducts   Int            @default(-1)
-  maxCustomers  Int            @default(-1)
-  features      String
+  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}") // JSON object: {"outlets": 5, "users": 10, "products": 100, "customers": 500}
+  features      String         @default("[]") // JSON array: ["feature1", "feature2", "feature3"]
   isActive      Boolean        @default(true)
   isPopular     Boolean        @default(false)
   sortOrder     Int            @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   deletedAt     DateTime?
-  merchants     Merchant[]
+  Merchant      Merchant[]
   subscriptions Subscription[]
 
   @@index([publicId])
@@ -339,8 +336,8 @@ model Subscription {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   payments           Payment[]
-  plan               Plan      @relation(fields: [planId], references: [id])
   merchant           Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  plan               Plan      @relation(fields: [planId], references: [id])
 
   @@index([merchantId])
   @@index([planId])
@@ -364,4 +361,55 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model plans_backup {
+  id           String?
+  publicId     Int?
+  name         String?
+  description  String?
+  basePrice    Float?
+  currency     String?
+  trialDays    Int?
+  maxOutlets   Int?
+  maxUsers     Int?
+  maxProducts  Int?
+  maxCustomers Int?
+  features     String?
+  isActive     Unsupported("num")?
+  isPopular    Unsupported("num")?
+  sortOrder    Int?
+  createdAt    Unsupported("num")?
+  updatedAt    Unsupported("num")?
+  deletedAt    Unsupported("num")?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model subscriptions_backup {
+  id                 String?
+  publicId           Int?
+  merchantId         String?
+  planId             String?
+  status             String?
+  currentPeriodStart Unsupported("num")?
+  currentPeriodEnd   Unsupported("num")?
+  trialStart         Unsupported("num")?
+  trialEnd           Unsupported("num")?
+  cancelAtPeriodEnd  Unsupported("num")?
+  canceledAt         Unsupported("num")?
+  cancelReason       String?
+  amount             Float?
+  currency           String?
+  interval           String?
+  intervalCount      Int?
+  period             Int?
+  discount           Float?
+  savings            Float?
+  createdAt          Unsupported("num")?
+  updatedAt          Unsupported("num")?
+
+  @@ignore
 }

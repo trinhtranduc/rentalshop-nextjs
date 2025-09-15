@@ -3,8 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoginForm } from '@rentalshop/ui';
-import { loginUser } from '../../lib/auth/auth';
-import { useAuth } from '../providers/AuthProvider';
+import { useAuth } from '@rentalshop/hooks';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,22 +17,16 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
       
-      console.log('📞 Calling loginUser function...');
-      const result = await loginUser(data.email, data.password);
-      console.log('📥 Login result received:', result);
+      console.log('📞 Calling login function from useAuth hook...');
+      const success = await login(data.email, data.password);
+      console.log('📥 Login result received:', success);
       
-      if (result.success) {
-        console.log('✅ Login successful:', result);
-        console.log('🔄 Updating auth context and redirecting to dashboard...');
-        // Update the auth context
-        login(result.user, result.token);
-        // Small delay to ensure context is updated
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 100);
+      if (success) {
+        console.log('✅ Login successful, redirecting to dashboard...');
+        router.push('/dashboard');
       } else {
-        console.log('❌ Login failed:', result.message);
-        throw new Error(result.message || 'Login failed');
+        console.log('❌ Login failed');
+        setError('Login failed. Please check your credentials.');
       }
       
     } catch (error: any) {

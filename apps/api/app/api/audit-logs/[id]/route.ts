@@ -25,8 +25,8 @@ export async function GET(
       );
     }
 
-    const logId = parseInt(params.id);
-    if (isNaN(logId)) {
+    const logId = params.id;
+    if (!logId) {
       return NextResponse.json(
         { success: false, message: 'Invalid audit log ID' },
         { status: 400 }
@@ -34,7 +34,7 @@ export async function GET(
     }
 
     const auditLog = await prisma.auditLog.findUnique({
-      where: { publicId: logId },
+      where: { id: logId },
       include: {
         user: {
           select: {
@@ -43,18 +43,6 @@ export async function GET(
             firstName: true,
             lastName: true,
             role: true
-          }
-        },
-        merchant: {
-          select: {
-            publicId: true,
-            name: true
-          }
-        },
-        outlet: {
-          select: {
-            publicId: true,
-            name: true
           }
         }
       }
@@ -69,36 +57,19 @@ export async function GET(
 
     // Transform the audit log to include parsed JSON fields
     const transformedLog = {
-      id: auditLog.publicId,
+      id: auditLog.id,
       action: auditLog.action,
       entityType: auditLog.entityType,
       entityId: auditLog.entityId,
-      entityName: auditLog.entityName,
+      details: auditLog.details,
       user: auditLog.user ? {
         id: auditLog.user.publicId,
         email: auditLog.user.email,
         name: `${auditLog.user.firstName} ${auditLog.user.lastName}`,
         role: auditLog.user.role
       } : null,
-      merchant: auditLog.merchant ? {
-        id: auditLog.merchant.publicId,
-        name: auditLog.merchant.name
-      } : null,
-      outlet: auditLog.outlet ? {
-        id: auditLog.outlet.publicId,
-        name: auditLog.outlet.name
-      } : null,
-      oldValues: auditLog.oldValues ? JSON.parse(auditLog.oldValues) : null,
-      newValues: auditLog.newValues ? JSON.parse(auditLog.newValues) : null,
-      changes: auditLog.changes ? JSON.parse(auditLog.changes) : null,
       ipAddress: auditLog.ipAddress,
       userAgent: auditLog.userAgent,
-      sessionId: auditLog.sessionId,
-      requestId: auditLog.requestId,
-      metadata: auditLog.metadata ? JSON.parse(auditLog.metadata) : null,
-      severity: auditLog.severity,
-      category: auditLog.category,
-      description: auditLog.description,
       createdAt: auditLog.createdAt
     };
 

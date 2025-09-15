@@ -116,6 +116,7 @@ export default function OrdersPage() {
       customerPhone: order.customer?.phone || '',
       outletId: order.outlet?.id || '',
       outletName: order.outlet?.name || '',
+      merchantName: order.outlet?.merchant?.name || 'Unknown',
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
       pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
@@ -131,6 +132,7 @@ export default function OrdersPage() {
     currentPage: pagination.currentPage,
     totalPages: pagination.totalPages,
     limit: pagination.limit,
+    hasMore: pagination.currentPage < pagination.totalPages,
     stats: {
       totalOrders: stats?.stats?.totalOrders || 0,
       pendingOrders: stats?.stats?.pendingOrders || 0,
@@ -141,15 +143,17 @@ export default function OrdersPage() {
       totalDeposits: stats?.stats?.totalDeposits || 0,
       averageOrderValue: stats?.stats?.averageOrderValue || 0,
       ordersThisMonth: stats?.stats?.ordersThisMonth || 0,
-      revenueThisMonth: stats?.stats?.revenueThisMonth || 0
+      revenueThisMonth: stats?.stats?.revenueThisMonth || 0,
+      activeRentals: stats?.stats?.activeRentals || 0,
+      overdueRentals: stats?.stats?.overdueRentals || 0
     }
   }), [orders, pagination.total, pagination.currentPage, pagination.totalPages, pagination.limit, stats]);
 
   // Create filters object for the Orders component
   const filters = useMemo(() => ({
     search: searchTerm,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    orderType: orderTypeFilter !== 'all' ? orderTypeFilter : undefined,
+    status: statusFilter !== 'all' ? statusFilter as any : undefined,
+    orderType: orderTypeFilter !== 'all' ? orderTypeFilter as any : undefined,
     outletId: outletFilter !== 'all' ? parseInt(outletFilter) : undefined,
     dateRange: dateRangeFilter,
     sortBy,

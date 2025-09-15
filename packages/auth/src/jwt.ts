@@ -44,7 +44,8 @@ export const verifyTokenSimple = async (token: string) => {
       email: user?.email,
       role: user?.role,
       hasMerchant: !!user?.merchant,
-      hasOutlet: !!user?.outlet
+      hasOutlet: !!user?.outlet,
+      merchantSubscriptionStatus: user?.merchant?.subscriptionStatus
     });
 
     if (!user) {
@@ -54,11 +55,23 @@ export const verifyTokenSimple = async (token: string) => {
 
     // Check subscription status for merchants
     if (user.merchant) {
+      // First check merchant's subscriptionStatus field
+      const merchantStatus = user.merchant.subscriptionStatus?.toLowerCase();
+      console.log('🔍 JWT: Merchant subscription status:', merchantStatus);
+      
+      // If merchant status is paused/cancelled/expired, block access
+      if (merchantStatus && ['cancelled', 'expired', 'suspended', 'past_due', 'paused'].includes(merchantStatus)) {
+        console.log('🔍 JWT: Merchant subscription blocked due to status:', merchantStatus);
+        const errorMessage = getSubscriptionStatusMessage(merchantStatus);
+        throw new Error(errorMessage);
+      }
+
+      // Also check the subscription table for additional validation
       const currentSubscription = await prisma.subscription.findFirst({
         where: {
           merchantId: user.merchant.id,
           status: {
-            in: ['active', 'trial', 'cancelled', 'expired', 'suspended', 'past_due']
+            in: ['active', 'trial', 'cancelled', 'expired', 'suspended', 'past_due', 'paused']
           }
         },
         orderBy: {
@@ -68,9 +81,11 @@ export const verifyTokenSimple = async (token: string) => {
 
       if (currentSubscription) {
         const subscriptionStatus = currentSubscription.status.toLowerCase();
+        console.log('🔍 JWT: Subscription table status:', subscriptionStatus);
         
-        // If subscription is cancelled, expired, or suspended, throw error
-        if (['cancelled', 'expired', 'suspended', 'past_due'].includes(subscriptionStatus)) {
+        // If subscription is cancelled, expired, suspended, or paused, throw error
+        if (['cancelled', 'expired', 'suspended', 'past_due', 'paused'].includes(subscriptionStatus)) {
+          console.log('🔍 JWT: Subscription blocked due to status:', subscriptionStatus);
           const errorMessage = getSubscriptionStatusMessage(subscriptionStatus);
           throw new Error(errorMessage);
         }
@@ -96,7 +111,8 @@ const getSubscriptionStatusMessage = (status: string): string => {
     'cancelled': 'Your subscription has been cancelled. Please contact support to reactivate your account.',
     'expired': 'Your subscription has expired. Please renew to continue using our services.',
     'suspended': 'Your subscription has been suspended. Please contact support for assistance.',
-    'past_due': 'Your subscription payment is past due. Please update your payment method.'
+    'past_due': 'Your subscription payment is past due. Please update your payment method.',
+    'paused': 'Your subscription is paused. Please contact support to reactivate your account.'
   };
   
   return statusMessages[status.toLowerCase()] || 'There is an issue with your subscription. Please contact support.';

@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { 
   Button, 
-  EditUserForm, 
+  UserForm, 
   UserPageHeader, 
-  UserInfoCard, 
-  UserReadOnlyInfo, 
+  UserCard, 
+  UserDisplayInfo, 
   AccountManagementCard,
   ConfirmationDialog,
   ToastContainer,
@@ -31,7 +31,7 @@ export default function UserPage() {
   const params = useParams();
   const { user } = useAuth();
   const { handleError } = useSimpleErrorHandler();
-  const { showSuccess } = useToasts();
+  const { showSuccess, showError, toasts, removeToast } = useToasts();
   const userId = params.id as string;
   
   console.log('🔍 UserPage: Component rendered with params:', params);
@@ -282,13 +282,19 @@ export default function UserPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <UserPageHeader
-          title={userData.name}
-          subtitle={userData.email}
-          onBack={() => router.push('/users')}
-          backText="Back to Users"
-        >
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{userData.name}</h1>
+            <p className="text-gray-600">{userData.email}</p>
+          </div>
           <div className="flex gap-2">
+            <Button 
+              onClick={() => router.push('/users')}
+              variant="outline"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Users
+            </Button>
             <Button 
               onClick={handleEdit} 
               variant={showEditSection ? "outline" : "default"}
@@ -307,20 +313,19 @@ export default function UserPage() {
               Change Password
             </Button>
           </div>
-        </UserPageHeader>
+        </div>
 
         {/* User Information - Read Only OR Edit Form */}
         {!showEditSection ? (
-          <UserInfoCard title="User Information">
-            <UserReadOnlyInfo user={userData} />
-          </UserInfoCard>
+          <UserCard user={userData} onUserAction={() => {}} />
         ) : (
           <div className="mt-8">
-            <EditUserForm
+            <UserForm
               user={userData}
               onSave={handleSave}
               onCancel={() => setShowEditSection(false)}
               isSubmitting={isUpdating}
+              mode="edit"
             />
           </div>
         )}
@@ -368,8 +373,8 @@ export default function UserPage() {
       <ChangePasswordDialog
         open={showChangePassword}
         onOpenChange={setShowChangePassword}
-        userId={user.id}
-        userName={user.name}
+        userId={user?.id ? parseInt(user.id.toString()) : 0}
+        userName={user?.name || ''}
         onSuccess={handlePasswordChangeSuccess}
         onError={handlePasswordChangeError}
       />

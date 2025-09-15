@@ -26,6 +26,8 @@ const publicRoutes = [
   '/api/plans/public',
 ];
 
+// Note: Subscription validation routes are now defined in @rentalshop/middleware
+
 // Admin-only routes
 const adminRoutes = [
   '/api/admin',
@@ -128,6 +130,10 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-user-id', payload.userId.toString());
     requestHeaders.set('x-user-email', payload.email);
     requestHeaders.set('x-user-role', payload.role);
+
+    // Note: Subscription validation is handled in the centralized authenticateRequest function
+    // in packages/auth/src/core.ts, which is called by each API route
+    // This ensures subscription validation happens in Node.js runtime, not Edge Runtime
 
     console.log('🔍 MIDDLEWARE: Headers set, forwarding to API endpoint');
     console.log('🔍 MIDDLEWARE: x-user-id:', payload.userId.toString());

@@ -61,7 +61,8 @@ export default function MerchantSubscriptionPage() {
       
       if (result.success && result.data) {
         setSubscription(result.data.subscription);
-        setPayments(result.data.payments || []);
+        // Payments will be fetched separately if needed
+        setPayments([]);
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
@@ -78,15 +79,15 @@ export default function MerchantSubscriptionPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'TRIAL': { variant: 'warning' as const, label: 'Trial', icon: Clock },
-      'ACTIVE': { variant: 'success' as const, label: 'Active', icon: CheckCircle },
-      'CANCELLED': { variant: 'destructive' as const, label: 'Cancelled', icon: AlertTriangle },
-      'EXPIRED': { variant: 'destructive' as const, label: 'Expired', icon: AlertTriangle },
-      'SUSPENDED': { variant: 'warning' as const, label: 'Suspended', icon: AlertTriangle }
+      'TRIAL': { variant: 'outline' as const, label: 'Trial', icon: Clock },
+      'ACTIVE': { variant: 'solid' as const, label: 'Active', icon: CheckCircle },
+      'CANCELLED': { variant: 'outline' as const, label: 'Cancelled', icon: AlertTriangle },
+      'EXPIRED': { variant: 'outline' as const, label: 'Expired', icon: AlertTriangle },
+      'SUSPENDED': { variant: 'outline' as const, label: 'Suspended', icon: AlertTriangle }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || { 
-      variant: 'secondary' as const, 
+      variant: 'default' as const, 
       label: status, 
       icon: Clock 
     };
@@ -95,7 +96,7 @@ export default function MerchantSubscriptionPage() {
     return (
       <div className="flex items-center space-x-2">
         <Icon className="h-4 w-4" />
-        <StatusBadge variant={config.variant}>{config.label}</StatusBadge>
+        <StatusBadge status={config.label} variant={config.variant} />
       </div>
     );
   };
@@ -129,11 +130,7 @@ export default function MerchantSubscriptionPage() {
   };
 
   const getPlanFeatures = (plan: Plan) => {
-    try {
-      return JSON.parse(plan.features || '[]');
-    } catch {
-      return [];
-    }
+    return plan.features || [];
   };
 
   const handleUpgrade = () => {
@@ -203,19 +200,19 @@ export default function MerchantSubscriptionPage() {
       </div>
 
       {/* Status Alert */}
-      {(isExpiringSoon(subscription.endDate) || isExpired(subscription.endDate)) && (
+      {(isExpiringSoon(subscription.currentPeriodEnd) || isExpired(subscription.currentPeriodEnd)) && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-5 w-5 text-orange-600" />
               <div>
                 <h3 className="font-medium text-orange-800">
-                  {isExpired(subscription.endDate) ? 'Subscription Expired' : 'Subscription Expiring Soon'}
+                  {isExpired(subscription.currentPeriodEnd) ? 'Subscription Expired' : 'Subscription Expiring Soon'}
                 </h3>
                 <p className="text-sm text-orange-700">
-                  {isExpired(subscription.endDate) 
-                    ? `Your subscription expired on ${formatDate(subscription.endDate!)}. Please renew to continue using the service.`
-                    : `Your subscription expires on ${formatDate(subscription.endDate!)}. Consider renewing to avoid service interruption.`
+                  {isExpired(subscription.currentPeriodEnd) 
+                    ? `Your subscription expired on ${formatDate(subscription.currentPeriodEnd!)}. Please renew to continue using the service.`
+                    : `Your subscription expires on ${formatDate(subscription.currentPeriodEnd!)}. Consider renewing to avoid service interruption.`
                   }
                 </p>
               </div>
@@ -244,20 +241,20 @@ export default function MerchantSubscriptionPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold">
-                      {formatCurrency(subscription.amount, subscription.currency)}
+                      {formatCurrency(subscription.amount, subscription.plan.currency)}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {subscription.planVariant?.name || 'per month'}
+                      per {subscription.billingInterval}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   {getStatusBadge(subscription.status)}
-                  {isExpiringSoon(subscription.endDate) && (
-                    <Badge variant="warning">Expiring Soon</Badge>
+                  {isExpiringSoon(subscription.currentPeriodEnd) && (
+                    <Badge variant="outline">Expiring Soon</Badge>
                   )}
-                  {isExpired(subscription.endDate) && (
+                  {isExpired(subscription.currentPeriodEnd) && (
                     <Badge variant="destructive">Expired</Badge>
                   )}
                 </div>
@@ -291,27 +288,27 @@ export default function MerchantSubscriptionPage() {
             <CardContent className="space-y-3">
               <div>
                 <Label className="text-sm font-medium text-gray-600">Start Date</Label>
-                <p className="text-sm">{formatDate(subscription.startDate)}</p>
+                <p className="text-sm">{formatDate(subscription.currentPeriodStart)}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600">End Date</Label>
                 <p className="text-sm">
-                  {subscription.endDate ? formatDate(subscription.endDate) : 'No end date'}
+                  {subscription.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : 'No end date'}
                 </p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600">Next Billing</Label>
-                <p className="text-sm">{formatDate(subscription.nextBillingDate)}</p>
+                <p className="text-sm">{formatDate(subscription.currentPeriodEnd)}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600">Auto Renew</Label>
                 <div className="flex items-center space-x-1">
-                  {subscription.autoRenew ? (
+                  {true ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : (
                     <Clock className="h-4 w-4 text-gray-400" />
                   )}
-                  <span className="text-sm">{subscription.autoRenew ? 'Yes' : 'No'}</span>
+                  <span className="text-sm">Yes</span>
                 </div>
               </div>
             </CardContent>
@@ -392,11 +389,10 @@ export default function MerchantSubscriptionPage() {
                     <TableCell>{payment.method}</TableCell>
                     <TableCell>
                       <StatusBadge 
-                        variant={payment.status === 'COMPLETED' ? 'success' : 
-                               payment.status === 'FAILED' ? 'destructive' : 'warning'}
-                      >
-                        {payment.status}
-                      </StatusBadge>
+                        status={payment.status}
+                        variant={payment.status === 'COMPLETED' ? 'solid' : 
+                                payment.status === 'FAILED' ? 'outline' : 'default'}
+                      />
                     </TableCell>
                     <TableCell className="font-mono text-sm">
                       {payment.reference || 'N/A'}

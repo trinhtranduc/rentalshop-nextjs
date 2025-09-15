@@ -73,11 +73,8 @@ export async function POST(request: NextRequest) {
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      console.log('❌ Authentication failed:', authResult.message);
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
+      console.log('❌ Authentication failed');
+      return authResult.response;
     }
 
     const user = authResult.user;
@@ -116,13 +113,27 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Validation passed - proceeding with category creation');
 
+    // Find merchant by publicId to get the CUID
+    const merchant = await prisma.merchant.findUnique({
+      where: { publicId: user.merchantId },
+      select: { id: true }
+    });
+    
+    if (!merchant) {
+      console.log('❌ Merchant not found for publicId:', user.merchantId);
+      return NextResponse.json(
+        { success: false, message: 'Merchant not found' },
+        { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
     // Check if category name already exists for this merchant
     console.log('🔍 Checking for existing category with name:', name.trim(), 'for merchant:', user.merchantId);
     
     const existingCategory = await prisma.category.findFirst({
       where: {
         name: name.trim(),
-        merchantId: user.merchantId
+        merchantId: merchant.id // Use CUID for database query
       }
     });
 
@@ -153,7 +164,7 @@ export async function POST(request: NextRequest) {
       publicId: nextPublicId,
       name: name.trim(),
       description: description?.trim() || null,
-      merchantId: user.merchantId,
+      merchantId: merchant.id, // Use CUID for database query
       isActive: true
     });
 
@@ -162,7 +173,7 @@ export async function POST(request: NextRequest) {
         publicId: nextPublicId,
         name: name.trim(),
         description: description?.trim() || null,
-        merchantId: user.merchantId,
+        merchantId: merchant.id, // Use CUID for database query
         isActive: true
       },
       select: {

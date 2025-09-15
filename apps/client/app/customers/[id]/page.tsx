@@ -12,6 +12,7 @@ import {
   PageHeader,
   PageContent
 } from '@rentalshop/ui';
+import { useToastHandler } from '@rentalshop/hooks';
 import { 
   ArrowLeft,
   Edit,
@@ -34,6 +35,7 @@ export default function CustomerPage() {
   const params = useParams();
   const { user } = useAuth();
   const { handleError } = useSimpleErrorHandler();
+  const { showError, showSuccess } = useToastHandler();
   const customerId = params.id as string;
   
   console.log('🔍 CustomerPage: Component rendered with params:', params);

@@ -52,6 +52,8 @@ interface SubscriptionListProps {
   onDelete?: (subscription: Subscription) => void;
   onExtend?: (subscription: Subscription) => void;
   onCancel?: (subscription: Subscription, reason: string) => void;
+  onSuspend?: (subscription: Subscription, reason: string) => void;
+  onReactivate?: (subscription: Subscription) => void;
   onChangePlan?: (subscription: Subscription, newPlanId: number, period: BillingPeriod) => void;
   loading?: boolean;
   pagination?: {
@@ -71,6 +73,8 @@ export function SubscriptionList({
   onDelete,
   onExtend,
   onCancel,
+  onSuspend,
+  onReactivate,
   onChangePlan,
   loading = false,
   pagination
@@ -446,6 +450,8 @@ export function SubscriptionList({
         onEdit={handleEdit}
         onCancel={handleCancel}
         onExtend={handleExtend}
+        onSuspend={onSuspend}
+        onReactivate={onReactivate}
         onChangePlan={handleChangePlan}
       />
 

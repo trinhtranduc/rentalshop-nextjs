@@ -13,8 +13,6 @@ export const SUBSCRIPTION_STATUS = {
   PAST_DUE: 'past_due',
   CANCELLED: 'cancelled',
   PAUSED: 'paused',
-  DISABLED: 'disabled',
-  DELETED: 'deleted',
   EXPIRED: 'expired'
 } as const;
 
@@ -127,6 +125,7 @@ export type ProductAvailabilityStatus = typeof PRODUCT_AVAILABILITY_STATUS[keyof
 export const BILLING_INTERVAL = {
   MONTH: 'month',
   QUARTER: 'quarter',
+  SEMI_ANNUAL: 'semiAnnual',
   YEAR: 'year'
 } as const;
 
@@ -256,8 +255,6 @@ export function getStatusColor(status: string, type: 'subscription' | 'order' | 
         case SUBSCRIPTION_STATUS.PAST_DUE:
           return 'text-yellow-600 bg-yellow-100';
         case SUBSCRIPTION_STATUS.CANCELLED:
-        case SUBSCRIPTION_STATUS.DISABLED:
-        case SUBSCRIPTION_STATUS.DELETED:
         case SUBSCRIPTION_STATUS.EXPIRED:
           return 'text-red-600 bg-red-100';
         case SUBSCRIPTION_STATUS.PAUSED:

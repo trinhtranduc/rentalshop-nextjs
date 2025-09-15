@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { authenticatedFetch } from '@rentalshop/utils';
+import { systemApi } from '@rentalshop/utils';
 import { 
   Card, 
   CardHeader, 
@@ -74,13 +74,12 @@ export default function BackupManagementPage() {
 
   const fetchBackups = async () => {
     try {
-      const response = await authenticatedFetch('/api/system/backup');
-      const data = await response.json();
+      const result = await systemApi.getBackups();
       
-      if (data.success) {
-        setBackups(data.backups || []);
+      if (result.success) {
+        setBackups(result.data?.backups || []);
       } else {
-        setError(data.error || 'Failed to fetch backups');
+        setError(result.error || 'Failed to fetch backups');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch backups');
@@ -89,13 +88,12 @@ export default function BackupManagementPage() {
 
   const fetchSchedules = async () => {
     try {
-      const response = await authenticatedFetch('/api/system/backup/schedule');
-      const data = await response.json();
+      const result = await systemApi.getBackupSchedules();
       
-      if (data.success) {
-        setSchedules(data.schedules || []);
+      if (result.success) {
+        setSchedules(result.data?.schedules || []);
       } else {
-        setError(data.error || 'Failed to fetch schedules');
+        setError(result.error || 'Failed to fetch schedules');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch schedules');
@@ -105,19 +103,13 @@ export default function BackupManagementPage() {
   const createBackup = async (type: 'full' | 'incremental' | 'schema-only' = 'full') => {
     try {
       setLoading(true);
-      const response = await authenticatedFetch('/api/system/backup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, compress: true })
-      });
+      const result = await systemApi.createBackup(type as 'full' | 'incremental');
       
-      const data = await response.json();
-      
-      if (data.success) {
+      if (result.success) {
         await fetchBackups();
         setError(null);
       } else {
-        setError(data.error || 'Failed to create backup');
+        setError(result.error || 'Failed to create backup');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create backup');
@@ -129,19 +121,13 @@ export default function BackupManagementPage() {
   const verifyBackup = async (backupId: string) => {
     try {
       setLoading(true);
-      const response = await authenticatedFetch('/api/system/backup/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ backupId, performRestoreTest: true })
-      });
+      const result = await systemApi.verifyBackup(backupId);
       
-      const data = await response.json();
-      
-      if (data.success) {
-        setVerification(data.verification);
+      if (result.success) {
+        setVerification(result.data);
         setActiveTab('verification');
       } else {
-        setError(data.error || 'Failed to verify backup');
+        setError(result.error || 'Failed to verify backup');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify backup');

@@ -152,6 +152,13 @@ export {
   getAllPlans,
   getPlanById,
   calculatePlanPricing,
+  // Subscription renewal functions
+  getExpiredSubscriptions,
+  getSubscriptionByPublicId,
+  updateSubscription,
+  createSubscriptionPayment,
+  type SubscriptionPaymentCreateInput,
+  type SubscriptionPayment,
 } from './subscription';
 
 // Merchant registration with trial enrollment
