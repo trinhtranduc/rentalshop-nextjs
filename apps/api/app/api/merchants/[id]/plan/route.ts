@@ -9,6 +9,7 @@ import {API} from '@rentalshop/constants';
 const planChangeSchema = z.object({
   planId: z.number().positive('Plan ID is required'),
   planVariantId: z.number().positive().optional(),
+  billingInterval: z.enum(['month', 'quarter', 'semiAnnual', 'year']).default('month'),
   reason: z.string().optional(),
   effectiveDate: z.string().optional().transform((val) => {
     if (!val) return undefined;
@@ -107,10 +108,33 @@ export async function PUT(
         ? new Date(validatedData.effectiveDate)
         : new Date();
 
-      // 6. Calculate pricing and duration
+      // 6. Calculate pricing and duration based on billing interval
       const finalPrice = newPlan.basePrice;
-      const durationMonths = 1;
-      const endDate = new Date(effectiveDate.getTime() + (durationMonths * 30 * 24 * 60 * 60 * 1000));
+      
+      // Use provided billing interval or current subscription's interval as default
+      const billingInterval = validatedData.billingInterval || 
+        (currentSubscription?.interval as string) || 
+        'month';
+      
+      console.log('🔍 Plan change billing interval:', {
+        provided: validatedData.billingInterval,
+        currentSubscription: currentSubscription?.interval,
+        final: billingInterval
+      });
+      
+      // Calculate period duration in days based on billing interval
+      const getPeriodDays = (interval: string): number => {
+        switch (interval) {
+          case 'month': return 30;
+          case 'quarter': return 90;
+          case 'semiAnnual': return 180;
+          case 'year': return 365;
+          default: return 30;
+        }
+      };
+      
+      const periodDays = getPeriodDays(billingInterval);
+      const endDate = new Date(effectiveDate.getTime() + periodDays * 24 * 60 * 60 * 1000);
 
       // 7. Update existing subscription or create new one
       let newSubscription;
@@ -126,7 +150,7 @@ export async function PUT(
             currentPeriodEnd: endDate,
             amount: finalPrice,
             currency: newPlan.currency,
-            interval: 'month',
+            interval: billingInterval,
             intervalCount: 1,
             cancelAtPeriodEnd: false,
             updatedAt: new Date()
@@ -149,7 +173,7 @@ export async function PUT(
             currentPeriodEnd: endDate,
             amount: finalPrice,
             currency: newPlan.currency,
-            interval: 'month',
+            interval: billingInterval,
             intervalCount: 1,
             cancelAtPeriodEnd: false
           } as any
@@ -260,7 +284,8 @@ export async function PUT(
             planVariantId: null,
             planVariantName: null,
             finalPrice: finalPrice,
-            durationMonths: durationMonths,
+            billingInterval: billingInterval,
+            periodDays: periodDays,
             reason: validatedData.reason,
             effectiveDate: effectiveDate.toISOString(),
             changedBy: user.databaseId,
@@ -286,6 +311,16 @@ export async function PUT(
             currency: newPlan.currency,
             limits: JSON.parse(newPlan.limits),
             features: JSON.parse(newPlan.features)
+          },
+          subscriptionPeriod: {
+            startDate: newSubscription.currentPeriodStart,
+            endDate: newSubscription.currentPeriodEnd,
+            duration: newSubscription.interval,
+            billingInterval: newSubscription.interval,
+            isActive: newSubscription.status === 'active',
+            daysRemaining: Math.ceil((newSubscription.currentPeriodEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+            nextBillingDate: newSubscription.currentPeriodEnd,
+            isTrial: newSubscription.status === 'trial',
           }
         }
       };

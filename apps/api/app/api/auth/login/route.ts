@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@rentalshop/auth';
-import { loginSchema } from '@rentalshop/utils';
+import { loginSchema, SubscriptionError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -101,6 +101,22 @@ import {API} from '@rentalshop/constants';
  *                 message:
  *                   type: string
  *                   example: "Account is deactivated. Please contact support."
+ *       402:
+ *         description: Subscription issue (expired, cancelled, paused, etc.)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Your subscription has expired. Please renew to continue using our services."
+ *                 errorCode:
+ *                   type: string
+ *                   example: "SUBSCRIPTION_ERROR"
  *       500:
  *         description: Internal server error
  *         content:
@@ -159,6 +175,15 @@ export async function POST(request: NextRequest) {
         success: false,
         message: 'Account is deactivated. Please contact support.'
       }, { status: API.STATUS.FORBIDDEN });
+    }
+    
+    // Handle subscription errors (402 Payment Required)
+    if (SubscriptionError.isSubscriptionError(error)) {
+      return NextResponse.json({
+        success: false,
+        message: error.message,
+        errorCode: API.ERROR_CODES.SUBSCRIPTION_ERROR
+      }, { status: API.STATUS.PAYMENT_REQUIRED });
     }
     
     // Generic error

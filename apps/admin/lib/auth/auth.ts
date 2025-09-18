@@ -104,16 +104,20 @@ export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
 // handleApiResponse re-exported from @rentalshop/auth
 
 /**
- * Login user
+ * Login user - DEPRECATED: Use useAuth hook instead
+ * @deprecated Use the useAuth hook from @rentalshop/hooks for authentication
  */
 export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
+  console.warn('⚠️ loginUser is deprecated. Use useAuth hook instead.');
+  
   try {
     console.log('🔐 loginUser called with:', { email });
     
-    // Use relative path; Next.js rewrites route to API server
-    console.log('🌐 Making request to API: /api/auth/login');
+    // Use centralized API URL configuration
+    const { apiUrls } = await import('@rentalshop/utils');
+    console.log('🌐 Making request to API:', apiUrls.auth.login);
     
-    const response = await fetch(`/api/auth/login`, {
+    const response = await fetch(apiUrls.auth.login, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

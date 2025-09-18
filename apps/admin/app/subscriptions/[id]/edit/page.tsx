@@ -120,7 +120,6 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
     status: subscription.status as 'TRIAL' | 'ACTIVE' | 'CANCELLED' | 'SUSPENDED',
     startDate: new Date(subscription.startDate),
     endDate: subscription.endDate ? new Date(subscription.endDate) : undefined,
-    trialEndDate: subscription.trialEndDate ? new Date(subscription.trialEndDate) : undefined,
     nextBillingDate: new Date(subscription.nextBillingDate),
     amount: subscription.amount,
     currency: subscription.currency,

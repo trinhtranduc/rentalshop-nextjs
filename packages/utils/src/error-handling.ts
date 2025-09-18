@@ -9,6 +9,7 @@
  */
 
 import { clearAuthData } from './common';
+import { isSubscriptionError } from './errors';
 import CONSTANTS from '@rentalshop/constants';
 
 const API = CONSTANTS.API;
@@ -57,30 +58,6 @@ export const isPermissionError = (error: any): boolean => {
   );
 };
 
-/**
- * Check if an error is subscription/plan-related
- * This includes cases where APIs return "Invalid token" due to cancelled/expired plans
- */
-export const isSubscriptionError = (error: any): boolean => {
-  return (
-    error?.message?.includes('subscription') ||
-    error?.message?.includes('plan') ||
-    error?.message?.includes('expired') ||
-    error?.message?.includes('insufficient') ||
-    error?.message?.includes('trial') ||
-    error?.message?.includes('billing') ||
-    error?.message?.includes('payment') ||
-    error?.message?.includes('cancelled') ||
-    error?.message?.includes('canceled') ||
-    error?.errorCode === 'SUBSCRIPTION_EXPIRED' ||
-    error?.errorCode === 'PLAN_INSUFFICIENT' ||
-    error?.errorCode === 'TRIAL_EXPIRED' ||
-    error?.errorCode === 'SUBSCRIPTION_CANCELLED' ||
-    error?.errorCode === 'PLAN_CANCELLED' ||
-    // Check if this is a subscription-related "Invalid token" error
-    isSubscriptionInvalidToken(error)
-  );
-};
 
 /**
  * Check if this is a subscription-related "Invalid token" error
@@ -210,26 +187,7 @@ export const getToastType = (errorType: ErrorType): 'error' | 'warning' | 'info'
   }
 };
 
-/**
- * Handle authentication errors consistently
- * Automatically clears storage and redirects to login
- */
-export const handleAuthError = (error: any): void => {
-  if (!isAuthError(error)) {
-    return;
-  }
-
-  console.error('🔒 Authentication error detected:', error);
-  
-  // Clear all authentication data
-  clearAuthData();
-  
-  // Redirect to login immediately
-  if (typeof window !== 'undefined') {
-    console.log('🔄 Redirecting to login due to authentication error');
-    // window.location.href = '/login';
-  }
-};
+// handleAuthError is now exported from common.ts to avoid duplication
 
 /**
  * Handle API errors with proper authentication error handling
@@ -242,7 +200,10 @@ export const handleApiError = (error: any, redirectToLogin: boolean = true): Err
   
   // Only automatically redirect for authentication errors, not subscription errors
   if (errorInfo.type === 'auth' && redirectToLogin) {
-    handleAuthError(error);
+    // Import and call handleAuthError from common.ts
+    import('./common').then(({ handleAuthError }) => {
+      handleAuthError(error);
+    });
   }
   // Subscription errors should NOT auto-redirect - let user choose to login
   // Permission errors should NOT auto-redirect - let user choose to login with different account

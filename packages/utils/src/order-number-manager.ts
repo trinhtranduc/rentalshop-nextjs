@@ -1,46 +1,14 @@
 /**
- * Order Number Manager
+ * Order Number Manager Utilities
  * 
  * Utility functions for managing order number generation across the application.
  * Provides easy-to-use functions for different order number formats.
  */
 
 import { 
-  generateOrderNumber, 
-  validateOrderNumber, 
-  parseOrderNumber,
   getOutletOrderStats,
-  createOrderNumber,
   createOrderNumberWithFormat,
-  generateTestOrderNumbers,
-  analyzeOrderNumber,
-  ORDER_NUMBER_CONFIG,
-  FORMAT_CONFIGS,
-  getOrderNumberConfig,
-  updateOrderNumberConfig,
-  getFormatInfo,
-  getAllFormats,
-  validateOrderNumberConfig,
-  getRecommendedFormat,
-  type OrderNumberFormat,
-  type OrderNumberConfig,
-  type OrderNumberResult
-} from '@rentalshop/database';
-
-// Re-export functions from the main generator for convenience
-export {
-  createOrderNumber,
-  createOrderNumberWithFormat,
-  generateTestOrderNumbers,
-  analyzeOrderNumber,
-  ORDER_NUMBER_CONFIG,
-  FORMAT_CONFIGS,
-  getOrderNumberConfig,
-  updateOrderNumberConfig,
-  getFormatInfo,
-  getAllFormats,
-  validateOrderNumberConfig,
-  getRecommendedFormat
+  type OrderNumberFormat
 } from '@rentalshop/database';
 
 /**

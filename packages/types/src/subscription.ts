@@ -9,6 +9,16 @@ import { SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
 export type { SubscriptionStatus, BillingInterval };
 export type BillingPeriod = 1 | 3 | 6 | 12; // months
 
+export interface SubscriptionPeriod {
+  startDate: Date;
+  endDate: Date;
+  duration: string;
+  isActive: boolean;
+  daysRemaining: number;
+  nextBillingDate: Date;
+  isTrial?: boolean;
+}
+
 export interface Subscription {
   id: string;
   publicId: number;
@@ -21,6 +31,9 @@ export interface Subscription {
   amount: number; // Calculated price based on plan and interval
   createdAt: Date;
   updatedAt: Date;
+  
+  // Enhanced subscription period information
+  subscriptionPeriod?: SubscriptionPeriod;
   
   // Relations
   merchant: {

@@ -1,5 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 import { prisma } from '@rentalshop/database';
+import { SubscriptionError, getSubscriptionError } from '@rentalshop/utils';
 
 // Get JWT secret from environment or use a fallback
 const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SECRET_LOCAL || 'local-jwt-secret-key-change-this';
@@ -59,36 +60,11 @@ export const verifyTokenSimple = async (token: string) => {
       const merchantStatus = user.merchant.subscriptionStatus?.toLowerCase();
       console.log('🔍 JWT: Merchant subscription status:', merchantStatus);
       
-      // If merchant status is paused/cancelled/expired, block access
-      if (merchantStatus && ['cancelled', 'expired', 'suspended', 'past_due', 'paused'].includes(merchantStatus)) {
-        console.log('🔍 JWT: Merchant subscription blocked due to status:', merchantStatus);
-        const errorMessage = getSubscriptionStatusMessage(merchantStatus);
-        throw new Error(errorMessage);
-      }
-
-      // Also check the subscription table for additional validation
-      const currentSubscription = await prisma.subscription.findFirst({
-        where: {
-          merchantId: user.merchant.id,
-          status: {
-            in: ['active', 'trial', 'cancelled', 'expired', 'suspended', 'past_due', 'paused']
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      });
-
-      if (currentSubscription) {
-        const subscriptionStatus = currentSubscription.status.toLowerCase();
-        console.log('🔍 JWT: Subscription table status:', subscriptionStatus);
-        
-        // If subscription is cancelled, expired, suspended, or paused, throw error
-        if (['cancelled', 'expired', 'suspended', 'past_due', 'paused'].includes(subscriptionStatus)) {
-          console.log('🔍 JWT: Subscription blocked due to status:', subscriptionStatus);
-          const errorMessage = getSubscriptionStatusMessage(subscriptionStatus);
-          throw new Error(errorMessage);
-        }
+      // Use centralized subscription check
+      const subscriptionError = await getSubscriptionError(user);
+      if (subscriptionError) {
+        console.log('🔍 JWT: Subscription blocked:', subscriptionError.message);
+        throw subscriptionError;
       }
     }
 
@@ -102,18 +78,3 @@ export const verifyTokenSimple = async (token: string) => {
     return null;
   }
 };
-
-/**
- * Get subscription status message
- */
-const getSubscriptionStatusMessage = (status: string): string => {
-  const statusMessages: Record<string, string> = {
-    'cancelled': 'Your subscription has been cancelled. Please contact support to reactivate your account.',
-    'expired': 'Your subscription has expired. Please renew to continue using our services.',
-    'suspended': 'Your subscription has been suspended. Please contact support for assistance.',
-    'past_due': 'Your subscription payment is past due. Please update your payment method.',
-    'paused': 'Your subscription is paused. Please contact support to reactivate your account.'
-  };
-  
-  return statusMessages[status.toLowerCase()] || 'There is an issue with your subscription. Please contact support.';
-}; 

@@ -1,9 +1,13 @@
 // ============================================================================
-// PRICING CALCULATOR UTILITY
+// REFACTORED PRICING CALCULATOR SYSTEM
 // ============================================================================
 
 import { Plan } from '@rentalshop/types';
 import { BillingInterval } from '@rentalshop/constants';
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 export interface PricingBreakdown {
   basePrice: number;
@@ -31,104 +35,85 @@ export interface PricingConfig {
   };
 }
 
-// Default pricing configuration
-export const DEFAULT_PRICING_CONFIG: PricingConfig = {
-  discounts: {
-    month: 0,        // 0% discount
-    quarter: 10,     // 10% discount
-    semiAnnual: 15,  // 15% discount
-    year: 20         // 20% discount
-  },
-  intervals: {
-    month: { interval: 'month' as const, intervalCount: 1 },
-    quarter: { interval: 'month' as const, intervalCount: 3 },
-    semiAnnual: { interval: 'month' as const, intervalCount: 6 },
-    year: { interval: 'year' as const, intervalCount: 1 }
-  }
-};
+// ============================================================================
+// DISCOUNT CALCULATOR
+// ============================================================================
 
-export class PricingCalculator {
+export class DiscountCalculator {
   private config: PricingConfig;
 
-  constructor(config: PricingConfig = DEFAULT_PRICING_CONFIG) {
+  constructor(config: PricingConfig) {
     this.config = config;
   }
 
   /**
-   * Calculate subscription price based on plan and billing interval
+   * Calculate discount amount for billing interval
    */
-  calculateSubscriptionPrice(
-    plan: Plan,
-    billingInterval: BillingInterval
-  ): number {
-    const breakdown = this.getPricingBreakdown(plan, billingInterval);
-    return breakdown.finalPrice;
-  }
-
-  /**
-   * Get detailed pricing breakdown
-   */
-  getPricingBreakdown(
-    plan: Plan,
-    billingInterval: BillingInterval
-  ): PricingBreakdown {
-    const totalMonths = this.getTotalMonths(billingInterval);
-    const totalPrice = plan.basePrice * totalMonths;
-    const discount = this.getDiscount(billingInterval);
-    const discountAmount = (totalPrice * discount) / 100;
-    const finalPrice = totalPrice - discountAmount;
-    const monthlyEquivalent = finalPrice / totalMonths;
-
-    return {
-      basePrice: plan.basePrice,
-      totalPrice,
-      discount,
-      discountAmount,
-      finalPrice,
-      monthlyEquivalent,
-      billingInterval,
-      totalMonths
-    };
-  }
-
-  /**
-   * Get all pricing options for a plan
-   */
-  getAllPricingOptions(plan: Plan): Record<BillingInterval, PricingBreakdown> {
-    const intervals: BillingInterval[] = ['month', 'quarter', 'semiAnnual', 'year'];
-    const pricing: Record<BillingInterval, PricingBreakdown> = {} as any;
-
-    for (const interval of intervals) {
-      pricing[interval] = this.getPricingBreakdown(plan, interval);
-    }
-
-    return pricing;
-  }
-
-  /**
-   * Get pricing comparison between two plans
-   */
-  getPricingComparison(
-    plan1: Plan,
-    plan2: Plan,
-    billingInterval: BillingInterval
-  ): {
-    plan1: PricingBreakdown;
-    plan2: PricingBreakdown;
-    difference: number;
-    savings: number;
+  calculateDiscount(totalPrice: number, billingInterval: BillingInterval): {
+    discount: number;
+    discountAmount: number;
   } {
-    const plan1Pricing = this.getPricingBreakdown(plan1, billingInterval);
-    const plan2Pricing = this.getPricingBreakdown(plan2, billingInterval);
-    const difference = plan2Pricing.finalPrice - plan1Pricing.finalPrice;
-    const savings = Math.abs(difference);
+    const discountPercentage = this.getDiscountPercentage(billingInterval);
+    const discountAmount = (totalPrice * discountPercentage) / 100;
 
     return {
-      plan1: plan1Pricing,
-      plan2: plan2Pricing,
-      difference,
-      savings
+      discount: discountPercentage,
+      discountAmount
     };
+  }
+
+  /**
+   * Get discount percentage for billing interval
+   */
+  private getDiscountPercentage(billingInterval: BillingInterval): number {
+    return this.config.discounts[billingInterval] || 0;
+  }
+}
+
+// ============================================================================
+// BILLING INTERVAL CALCULATOR
+// ============================================================================
+
+export class BillingIntervalCalculator {
+  private config: PricingConfig;
+
+  constructor(config: PricingConfig) {
+    this.config = config;
+  }
+
+  /**
+   * Get total months for billing interval
+   */
+  getTotalMonths(billingInterval: BillingInterval): number {
+    const intervalMap = {
+      month: 1,
+      quarter: 3,
+      semiAnnual: 6,
+      year: 12
+    };
+
+    return intervalMap[billingInterval] || 1;
+  }
+
+  /**
+   * Get all available billing intervals
+   */
+  getAllIntervals(): BillingInterval[] {
+    return ['month', 'quarter', 'semiAnnual', 'year'];
+  }
+}
+
+// ============================================================================
+// PRORATION CALCULATOR
+// ============================================================================
+
+export class ProrationCalculator {
+  private discountCalculator: DiscountCalculator;
+  private intervalCalculator: BillingIntervalCalculator;
+
+  constructor(config: PricingConfig) {
+    this.discountCalculator = new DiscountCalculator(config);
+    this.intervalCalculator = new BillingIntervalCalculator(config);
   }
 
   /**
@@ -144,12 +129,12 @@ export class PricingCalculator {
     newPlanCharge: number;
     netAmount: number;
   } {
-    const currentPricing = this.getPricingBreakdown(currentPlan, billingInterval);
-    const newPricing = this.getPricingBreakdown(newPlan, billingInterval);
+    // Calculate total months for the billing interval
+    const totalMonths = this.intervalCalculator.getTotalMonths(billingInterval);
 
     // Calculate daily rates
-    const currentDailyRate = currentPricing.finalPrice / currentPricing.totalMonths / 30;
-    const newDailyRate = newPricing.finalPrice / newPricing.totalMonths / 30;
+    const currentDailyRate = (currentPlan.basePrice * totalMonths) / (totalMonths * 30);
+    const newDailyRate = (newPlan.basePrice * totalMonths) / (totalMonths * 30);
 
     // Calculate refund for current plan
     const currentPlanRefund = currentDailyRate * daysRemaining;
@@ -166,28 +151,13 @@ export class PricingCalculator {
       netAmount
     };
   }
+}
 
-  /**
-   * Get total months for billing interval
-   */
-  private getTotalMonths(billingInterval: BillingInterval): number {
-    const intervalMap = {
-      month: 1,
-      quarter: 3,
-      semiAnnual: 6,
-      year: 12
-    };
+// ============================================================================
+// PRICE FORMATTER
+// ============================================================================
 
-    return intervalMap[billingInterval] || 1;
-  }
-
-  /**
-   * Get discount percentage for billing interval
-   */
-  private getDiscount(billingInterval: BillingInterval): number {
-    return this.config.discounts[billingInterval] || 0;
-  }
-
+export class PriceFormatter {
   /**
    * Format price for display
    */
@@ -223,6 +193,218 @@ export class PricingCalculator {
     return intervalMap[interval] || interval;
   }
 }
+
+// ============================================================================
+// PRICING COMPARISON ENGINE
+// ============================================================================
+
+export class PricingComparisonEngine {
+  private discountCalculator: DiscountCalculator;
+  private intervalCalculator: BillingIntervalCalculator;
+
+  constructor(config: PricingConfig) {
+    this.discountCalculator = new DiscountCalculator(config);
+    this.intervalCalculator = new BillingIntervalCalculator(config);
+  }
+
+  /**
+   * Get pricing comparison between two plans
+   */
+  getPricingComparison(
+    plan1: Plan,
+    plan2: Plan,
+    billingInterval: BillingInterval
+  ): {
+    plan1: PricingBreakdown;
+    plan2: PricingBreakdown;
+    difference: number;
+    savings: number;
+  } {
+    const plan1Pricing = this.calculatePricingBreakdown(plan1, billingInterval);
+    const plan2Pricing = this.calculatePricingBreakdown(plan2, billingInterval);
+    const difference = plan2Pricing.finalPrice - plan1Pricing.finalPrice;
+    const savings = Math.abs(difference);
+
+    return {
+      plan1: plan1Pricing,
+      plan2: plan2Pricing,
+      difference,
+      savings
+    };
+  }
+
+  /**
+   * Calculate pricing breakdown for a plan
+   */
+  private calculatePricingBreakdown(plan: Plan, billingInterval: BillingInterval): PricingBreakdown {
+    const totalMonths = this.intervalCalculator.getTotalMonths(billingInterval);
+    const totalPrice = plan.basePrice * totalMonths;
+    const discountInfo = this.discountCalculator.calculateDiscount(totalPrice, billingInterval);
+    const finalPrice = totalPrice - discountInfo.discountAmount;
+    const monthlyEquivalent = finalPrice / totalMonths;
+
+    return {
+      basePrice: plan.basePrice,
+      totalPrice,
+      discount: discountInfo.discount,
+      discountAmount: discountInfo.discountAmount,
+      finalPrice,
+      monthlyEquivalent,
+      billingInterval,
+      totalMonths
+    };
+  }
+}
+
+// ============================================================================
+// MAIN PRICING CALCULATOR (SIMPLIFIED)
+// ============================================================================
+
+export class PricingCalculator {
+  private config: PricingConfig;
+  private discountCalculator: DiscountCalculator;
+  private intervalCalculator: BillingIntervalCalculator;
+  private prorationCalculator: ProrationCalculator;
+  private comparisonEngine: PricingComparisonEngine;
+
+  constructor(config: PricingConfig = DEFAULT_PRICING_CONFIG) {
+    this.config = config;
+    this.discountCalculator = new DiscountCalculator(config);
+    this.intervalCalculator = new BillingIntervalCalculator(config);
+    this.prorationCalculator = new ProrationCalculator(config);
+    this.comparisonEngine = new PricingComparisonEngine(config);
+  }
+
+  /**
+   * Calculate subscription price based on plan and billing interval
+   */
+  calculateSubscriptionPrice(plan: Plan, billingInterval: BillingInterval): number {
+    const breakdown = this.getPricingBreakdown(plan, billingInterval);
+    return breakdown.finalPrice;
+  }
+
+  /**
+   * Get detailed pricing breakdown
+   */
+  getPricingBreakdown(plan: Plan, billingInterval: BillingInterval): PricingBreakdown {
+    const totalMonths = this.intervalCalculator.getTotalMonths(billingInterval);
+    const totalPrice = plan.basePrice * totalMonths;
+    const discountInfo = this.discountCalculator.calculateDiscount(totalPrice, billingInterval);
+    const finalPrice = totalPrice - discountInfo.discountAmount;
+    const monthlyEquivalent = finalPrice / totalMonths;
+
+    return {
+      basePrice: plan.basePrice,
+      totalPrice,
+      discount: discountInfo.discount,
+      discountAmount: discountInfo.discountAmount,
+      finalPrice,
+      monthlyEquivalent,
+      billingInterval,
+      totalMonths
+    };
+  }
+
+  /**
+   * Get all pricing options for a plan
+   */
+  getAllPricingOptions(plan: Plan): Record<BillingInterval, PricingBreakdown> {
+    const intervals = this.intervalCalculator.getAllIntervals();
+    const pricing: Record<BillingInterval, PricingBreakdown> = {} as any;
+
+    for (const interval of intervals) {
+      pricing[interval] = this.getPricingBreakdown(plan, interval);
+    }
+
+    return pricing;
+  }
+
+  /**
+   * Get pricing comparison between two plans
+   */
+  getPricingComparison(plan1: Plan, plan2: Plan, billingInterval: BillingInterval) {
+    return this.comparisonEngine.getPricingComparison(plan1, plan2, billingInterval);
+  }
+
+  /**
+   * Calculate prorated amount for plan changes
+   */
+  calculateProratedAmount(
+    currentPlan: Plan,
+    newPlan: Plan,
+    billingInterval: BillingInterval,
+    daysRemaining: number
+  ) {
+    return this.prorationCalculator.calculateProratedAmount(
+      currentPlan,
+      newPlan,
+      billingInterval,
+      daysRemaining
+    );
+  }
+
+  /**
+   * Update configuration
+   */
+  updateConfig(newConfig: PricingConfig): void {
+    this.config = newConfig;
+    this.discountCalculator = new DiscountCalculator(newConfig);
+    this.intervalCalculator = new BillingIntervalCalculator(newConfig);
+    this.prorationCalculator = new ProrationCalculator(newConfig);
+    this.comparisonEngine = new PricingComparisonEngine(newConfig);
+  }
+
+  getConfig(): PricingConfig {
+    return { ...this.config };
+  }
+}
+
+// ============================================================================
+// FACTORY FUNCTIONS
+// ============================================================================
+
+export function createPricingCalculator(config?: PricingConfig): PricingCalculator {
+  return new PricingCalculator(config);
+}
+
+export function createDiscountCalculator(config: PricingConfig): DiscountCalculator {
+  return new DiscountCalculator(config);
+}
+
+export function createBillingIntervalCalculator(config: PricingConfig): BillingIntervalCalculator {
+  return new BillingIntervalCalculator(config);
+}
+
+export function createProrationCalculator(config: PricingConfig): ProrationCalculator {
+  return new ProrationCalculator(config);
+}
+
+export function createPricingComparisonEngine(config: PricingConfig): PricingComparisonEngine {
+  return new PricingComparisonEngine(config);
+}
+
+// ============================================================================
+// DEFAULT CONFIG
+// ============================================================================
+
+export const DEFAULT_PRICING_CONFIG: PricingConfig = {
+  discounts: {
+    month: 0,        // 0% discount
+    quarter: 10,     // 10% discount
+    semiAnnual: 15,  // 15% discount
+    year: 20         // 20% discount
+  },
+  intervals: {
+    month: { interval: 'month' as const, intervalCount: 1 },
+    quarter: { interval: 'month' as const, intervalCount: 3 },
+    semiAnnual: { interval: 'month' as const, intervalCount: 6 },
+    year: { interval: 'year' as const, intervalCount: 1 }
+  }
+};
+
+// ============================================================================
+// CONVENIENCE FUNCTIONS
+// ============================================================================
 
 // Export default instance
 export const pricingCalculator = new PricingCalculator();

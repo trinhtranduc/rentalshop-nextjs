@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AdminSidebar } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
-import { useAuth } from '../providers/AuthProvider';
+import { useAuth } from '@rentalshop/hooks';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -33,12 +33,20 @@ export default function AdminLayout({
     );
   }
 
+  // Check if we're on the login page - hide sidebar on login page
+  const isLoginPage = pathname === '/login';
+
+  // Redirect to login if not authenticated (except on login page)
+  if (!user && !isLoginPage) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return null;
+  }
+
   const handleLogout = () => {
     logout();
   };
-
-  // Check if we're on the login page - hide sidebar on login page
-  const isLoginPage = pathname === '/login';
   const showSidebar = !isLoginPage;
 
   return (

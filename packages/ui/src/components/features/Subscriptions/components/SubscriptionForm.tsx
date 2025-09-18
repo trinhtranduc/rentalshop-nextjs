@@ -187,13 +187,13 @@ export function SubscriptionForm({
   // Calculate trial end date when start date or plan changes
   useEffect(() => {
     if (selectedPlan && formData.status === 'trial' && selectedPlan.trialDays > 0) {
-      const trialEndDate = new Date(formData.startDate || formData.currentPeriodStart);
-      trialEndDate.setDate(trialEndDate.getDate() + selectedPlan.trialDays);
+      const endDate = new Date(formData.startDate || formData.currentPeriodStart);
+      endDate.setDate(endDate.getDate() + selectedPlan.trialDays);
       
       setFormData(prev => ({
         ...prev,
-        trialEndDate,
-        nextBillingDate: trialEndDate,
+        endDate,
+        nextBillingDate: endDate,
         amount: 0 // Trial is free
       }));
     }
@@ -236,8 +236,8 @@ export function SubscriptionForm({
       newErrors.amount = 'Amount cannot be negative';
     }
 
-    if (formData.status === 'TRIAL' && !formData.trialEndDate) {
-      newErrors.trialEndDate = 'Trial end date is required for trial subscriptions';
+    if (formData.status === 'TRIAL' && !formData.endDate) {
+      newErrors.endDate = 'End date is required for trial subscriptions';
     }
 
     setErrors(newErrors);
@@ -256,7 +256,6 @@ export function SubscriptionForm({
         ...formData,
         startDate: formData.startDate,
         endDate: formData.endDate,
-        trialEndDate: formData.trialEndDate,
         nextBillingDate: formData.nextBillingDate
       };
 
@@ -463,23 +462,23 @@ export function SubscriptionForm({
           </div>
 
           {/* Trial End Date (for trial subscriptions) */}
-          {formData.status === 'TRIAL' && formData.trialEndDate && (
+          {formData.status === 'TRIAL' && formData.endDate && (
             <div className="space-y-2">
-              <Label htmlFor="trialEndDate" className="flex items-center space-x-2">
+              <Label htmlFor="endDate" className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4" />
                 <span>Trial End Date</span>
               </Label>
               <Input
                 type="datetime-local"
-                value={formData.trialEndDate.toISOString().slice(0, 16)}
-                onChange={(e) => handleInputChange('trialEndDate', new Date(e.target.value))}
+                value={formData.endDate.toISOString().slice(0, 16)}
+                onChange={(e) => handleInputChange('endDate', new Date(e.target.value))}
                 disabled={mode === 'view'}
-                className={errors.trialEndDate ? 'border-red-500' : ''}
+                className={errors.endDate ? 'border-red-500' : ''}
               />
-              {errors.trialEndDate && (
+              {errors.endDate && (
                 <p className="text-sm text-red-500 flex items-center space-x-1">
                   <AlertCircle className="h-4 w-4" />
-                  <span>{errors.trialEndDate}</span>
+                  <span>{errors.endDate}</span>
                 </p>
               )}
             </div>

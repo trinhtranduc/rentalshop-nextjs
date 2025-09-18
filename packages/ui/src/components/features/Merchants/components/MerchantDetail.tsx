@@ -22,6 +22,10 @@ interface MerchantDetailProps {
     reason?: string;
     effectiveDate?: string;
     notifyMerchant?: boolean;
+    billingInterval?: string;
+    duration?: number;
+    discount?: number;
+    totalPrice?: number;
   }) => Promise<void>;
   onExtend?: (extendData: { subscription: Subscription; duration: number; billingInterval: string; discount: number; totalPrice: number; }) => Promise<void>;
   onCancel?: (subscription: Subscription, reason: string, cancelType: 'immediate' | 'end_of_period') => Promise<void>;

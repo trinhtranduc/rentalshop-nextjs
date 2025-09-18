@@ -199,6 +199,10 @@ export const merchantsApi = {
     reason?: string;
     effectiveDate?: string;
     notifyMerchant?: boolean;
+    billingInterval?: string;
+    duration?: number;
+    discount?: number;
+    totalPrice?: number;
   }): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(apiUrls.merchants.updatePlan(merchantId), {
       method: 'PUT',

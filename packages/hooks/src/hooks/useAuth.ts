@@ -40,12 +40,39 @@ export function useAuth() {
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      setState(prev => ({ ...prev, loading: true, error: null }));
+      setState(prev => ({ ...prev, loading: true }));
 
-      const response = await fetch('/api/auth/login', {
+      // Use centralized API URL configuration
+      const { apiUrls } = await import('@rentalshop/utils');
+      const response = await fetch(apiUrls.auth.login, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ email, password }),
       });
+
+      // Handle subscription errors (402 Payment Required)
+      if (response.status === 402) {
+        const errorData = await response.json();
+        setState(prev => ({ 
+          ...prev, 
+          error: errorData.message || 'Subscription issue detected',
+          loading: false 
+        }));
+        return false;
+      }
+
+      // Handle authentication errors (401 Unauthorized)
+      if (response.status === 401) {
+        const errorData = await response.json();
+        setState(prev => ({ 
+          ...prev, 
+          error: errorData.message || 'Invalid credentials',
+          loading: false 
+        }));
+        return false;
+      }
 
       const data: LoginResponse = await response.json();
 
@@ -89,6 +116,10 @@ export function useAuth() {
     // window.location.href = '/login';
   }, []);
 
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
+  }, []);
+
   const refreshUser = useCallback(async () => {
     try {
       // Use consolidated getAuthToken function
@@ -102,11 +133,9 @@ export function useAuth() {
       }
 
       console.log('🌐 Fetching user profile from API...');
-      const response = await fetch('/api/users/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      // Use centralized API URL and authenticatedFetch
+      const { apiUrls, authenticatedFetch } = await import('@rentalshop/utils');
+      const response = await authenticatedFetch(apiUrls.settings.user);
 
       console.log('📥 Profile API response:', {
         ok: response.ok,
@@ -130,17 +159,42 @@ export function useAuth() {
           console.error('❌ API returned success:false:', data);
           throw new Error('Failed to refresh user');
         }
+      } else if (response.status === 402) {
+        // Handle subscription errors (402 Payment Required)
+        try {
+          const errorData = await response.clone().json();
+          console.log('⚠️ Subscription error detected, not logging out');
+          // Don't logout for subscription errors - just show error
+          setState(prev => ({ 
+            ...prev, 
+            loading: false, 
+            error: errorData.message || 'Subscription issue detected' 
+          }));
+          return;
+        } catch (parseError) {
+          console.log('🔍 Could not parse 402 error response');
+          setState(prev => ({ 
+            ...prev, 
+            loading: false, 
+            error: 'Subscription issue detected' 
+          }));
+          return;
+        }
       } else if (response.status === 401) {
-        console.log('🔒 Token expired, logging out');
-        // Token expired or invalid
+        // Handle authentication errors (401 Unauthorized)
+        console.log('🔒 Token expired, logging out and redirecting to login');
+        // Token expired or invalid - logout will clear data
         logout();
+        // Redirect to login page
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       } else {
         console.error('❌ API error:', response.status, response.statusText);
         // If we have a token but API fails, clear corrupted data
         if (getAuthToken()) {
           console.log('🧹 Clearing corrupted auth data...');
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
+          clearAuthData();
           setState(prev => ({ ...prev, user: null, loading: false }));
         }
         throw new Error('Failed to refresh user');
@@ -150,8 +204,7 @@ export function useAuth() {
       // If we have a token but refresh fails, clear corrupted data
       if (getAuthToken()) {
         console.log('🧹 Clearing corrupted auth data due to error...');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
+        clearAuthData();
         setState(prev => ({ ...prev, user: null, loading: false }));
       }
     }
@@ -178,17 +231,59 @@ export function useAuth() {
       console.log('✅ Found stored user data:', storedUser);
       setState(prev => ({ ...prev, user: storedUser as User, loading: false }));
       
-      // Refresh user data from API to get latest merchant/outlet info
-      console.log('🔄 Calling refreshUser...');
-      refreshUser();
+      // Only refresh user data if we don't have complete user info
+      // This prevents unnecessary API calls that might fail
+      if (!storedUser.merchantId && !storedUser.outletId) {
+        console.log('🔄 User data incomplete - refreshing from API...');
+        refreshUser();
+      } else {
+        console.log('✅ User data complete - no need to refresh');
+      }
     } else if (token && !storedUser) {
       console.log('🔄 Token exists but no user data - refreshing from API...');
       // We have a token but no user data, try to refresh from API
       refreshUser();
     } else {
       console.log('❌ No auth data found - user not authenticated');
-      setState(prev => ({ ...prev, loading: false }));
+      setState(prev => ({ ...prev, user: null, loading: false }));
     }
+  }, [refreshUser]);
+
+  // ============================================================================
+  // MODERN PATTERN: Automatic Token Refresh
+  // ============================================================================
+  
+  useEffect(() => {
+    // Modern pattern: Auto-refresh tokens before they expire
+    const checkTokenExpiry = () => {
+      const token = getAuthToken();
+      if (!token) return;
+
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          const now = Math.floor(Date.now() / 1000);
+          const timeUntilExpiry = payload.exp - now;
+          
+          // Refresh token if it expires in less than 5 minutes
+          if (timeUntilExpiry < 300 && timeUntilExpiry > 0) {
+            console.log('🔄 Token expires soon, refreshing...');
+            refreshUser();
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to check token expiry:', error);
+      }
+    };
+
+    // Check every minute
+    const interval = setInterval(checkTokenExpiry, 60000);
+    
+    // Initial check
+    checkTokenExpiry();
+
+    return () => clearInterval(interval);
   }, [refreshUser]);
 
   // ============================================================================
@@ -202,5 +297,6 @@ export function useAuth() {
     login,
     logout,
     refreshUser,
+    clearError,
   };
 }

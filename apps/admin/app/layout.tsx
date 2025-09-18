@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import AdminLayout from './components/AdminLayout'
-import { AuthProvider } from './providers/AuthProvider'
+// AuthProvider removed - using centralized useAuth hook from @rentalshop/hooks
 import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
 
@@ -23,13 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans`}>
-        <AuthProvider>
-          <ToastProvider>
-            <AdminLayout>
-              {children}
-            </AdminLayout>
-          </ToastProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AdminLayout>
+            {children}
+          </AdminLayout>
+        </ToastProvider>
       </body>
     </html>
   )

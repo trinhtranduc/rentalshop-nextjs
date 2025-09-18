@@ -150,7 +150,6 @@ export const subscriptionsApi = {
     status: string;
     planName: string;
     endDate?: Date | string;
-    trialEndDate?: Date | string;
     nextBillingDate?: Date | string;
     amount: number;
     currency: string;

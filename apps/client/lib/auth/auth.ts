@@ -70,9 +70,12 @@ export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
 };
 
 /**
- * Login user
+ * Login user - DEPRECATED: Use useAuth hook instead
+ * @deprecated Use the useAuth hook from @rentalshop/hooks for authentication
  */
 export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
+  console.warn('⚠️ loginUser is deprecated. Use useAuth hook instead.');
+  
   try {
     console.log('🔐 loginUser called with:', { email });
     
@@ -82,6 +85,9 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
     
     const response = await fetch(apiUrls.auth.login, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ email, password }),
     });
 

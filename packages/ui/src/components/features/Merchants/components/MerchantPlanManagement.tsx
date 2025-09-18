@@ -31,6 +31,8 @@ import {
   Plus,
   X
 } from 'lucide-react';
+import { SubscriptionPeriodCard } from '../../Subscriptions/SubscriptionPeriodCard';
+import { formatSubscriptionPeriod } from '@rentalshop/utils';
 // Billing configuration (following Stripe's modern practices)
 const BILLING_INTERVALS = [
   {
@@ -50,7 +52,7 @@ const BILLING_INTERVALS = [
     isActive: true
   },
   {
-    id: '6months',
+    id: 'semiAnnual',
     name: '6 Months',
     months: 6,
     discountPercentage: 10,
@@ -143,6 +145,19 @@ export function MerchantPlanManagement({
   onReactivate,
   loading = false
 }: MerchantPlanManagementProps) {
+  // Debug: Log subscription status values
+  console.log('🔍 MerchantPlanManagement Debug:', {
+    merchantId: merchant.id,
+    merchantName: merchant.name,
+    subscriptionStatus: merchant.subscriptionStatus,
+    currentSubscription: subscriptions[0],
+    subscriptionStatusFromSubscription: subscriptions[0]?.status
+  });
+
+  // Normalize subscription status to lowercase for consistent comparison
+  const normalizedStatus = merchant.subscriptionStatus?.toLowerCase() || 'unknown';
+  const isActiveStatus = normalizedStatus === 'trial' || normalizedStatus === 'active';
+  const isPausedStatus = normalizedStatus === 'paused' || normalizedStatus === 'cancelled' || normalizedStatus === 'expired';
   const [showChangeDialog, setShowChangeDialog] = useState(false);
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [extendDuration, setExtendDuration] = useState<string>('1');
@@ -268,13 +283,23 @@ export function MerchantPlanManagement({
   const handleChangePlan = async () => {
     if (!selectedPlanId || !changeReason.trim()) return;
 
+    console.log('🔍 Form submission started');
+    console.log('🔍 Current state values:', {
+      selectedPlanId,
+      changeReason,
+      changeBillingInterval,
+      changeDuration,
+      effectiveDate,
+      notifyMerchant
+    });
+
     setIsSubmitting(true);
     try {
       const selectedPlan = plans.find(p => p.id.toString() === selectedPlanId);
       const discount = getDiscountPercentage(changeBillingInterval);
       const duration = parseInt(changeDuration) || 1;
       
-      await onPlanChange?.({
+      const planChangeData = {
         planId: Number(selectedPlanId),
         reason: changeReason.trim(),
         effectiveDate: effectiveDate || new Date().toISOString(),
@@ -283,7 +308,13 @@ export function MerchantPlanManagement({
         duration: duration,
         discount: discount,
         totalPrice: selectedPlan ? calculateDiscountedPrice(selectedPlan.basePrice, changeBillingInterval, duration) : 0
-      });
+      };
+      
+      console.log('🔍 Plan change data being sent:', planChangeData);
+      console.log('🔍 Billing interval value:', changeBillingInterval);
+      console.log('🔍 Billing interval in data:', planChangeData.billingInterval);
+      
+      await onPlanChange?.(planChangeData);
       setShowChangeDialog(false);
       setSelectedPlanId('');
       setChangeReason('');
@@ -381,27 +412,33 @@ export function MerchantPlanManagement({
               </div>
 
               {currentSubscription && (
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <Label className="text-gray-500">Start Date</Label>
-                    <p className="font-medium">{formatDate((currentSubscription as any).startDate)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-gray-500">End Date</Label>
-                    <p className="font-medium">{(currentSubscription as any).endDate ? formatDate((currentSubscription as any).endDate) : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-gray-500">Next Billing</Label>
-                    <p className="font-medium">{formatDate((currentSubscription as any).nextBillingDate)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-gray-500">Auto Renew</Label>
-                    <p className="font-medium">{(currentSubscription as any).autoRenew ? 'Yes' : 'No'}</p>
-                  </div>
-                </div>
+                <SubscriptionPeriodCard
+                  period={{
+                    startDate: new Date((currentSubscription as any).startDate),
+                    endDate: new Date((currentSubscription as any).endDate || new Date()),
+                    duration: (currentSubscription as any).interval || 'month',
+                    isActive: (currentSubscription as any).status === 'active',
+                    daysRemaining: (currentSubscription as any).subscriptionPeriod?.daysRemaining || 0,
+                    nextBillingDate: new Date((currentSubscription as any).nextBillingDate || new Date()),
+                    isTrial: (currentSubscription as any).status === 'trial',
+                  }}
+                  planName={currentSubscription.plan?.name}
+                  amount={currentSubscription.amount}
+                  currency={currentSubscription.currency}
+                  className="mt-4"
+                />
               )}
 
               <div className="flex flex-wrap items-center gap-3 pt-4">
+                {/* Debug: Show current status and button visibility */}
+                <div className="w-full text-xs text-gray-500 mb-2">
+                  Debug: Original = "{merchant.subscriptionStatus}" | Normalized = "{normalizedStatus}" | 
+                  Extend: {currentSubscription && isActiveStatus ? 'YES' : 'NO'} | 
+                  Pause: {isActiveStatus ? 'YES' : 'NO'} | 
+                  Resume: {isPausedStatus ? 'YES' : 'NO'} | 
+                  Cancel: {isActiveStatus || isPausedStatus ? 'YES' : 'NO'}
+                </div>
+                
                 {/* Change Plan - Always Available */}
                 <Button
                   variant="outline"
@@ -414,7 +451,7 @@ export function MerchantPlanManagement({
                 </Button>
                 
                 {/* Extend Plan */}
-                {currentSubscription && (merchant.subscriptionStatus === 'trial' || merchant.subscriptionStatus === 'active') && (
+                {currentSubscription && isActiveStatus && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -429,7 +466,7 @@ export function MerchantPlanManagement({
                 {/* Pause/Resume Plan */}
                 {currentSubscription && (
                   <>
-                    {(merchant.subscriptionStatus === 'trial' || merchant.subscriptionStatus === 'active') ? (
+                    {isActiveStatus ? (
                       <Button
                         variant="outline"
                         size="sm"
@@ -455,7 +492,7 @@ export function MerchantPlanManagement({
                 )}
                 
                 {/* Cancel Plan (Permanent) */}
-                {currentSubscription && (merchant.subscriptionStatus === 'trial' || merchant.subscriptionStatus === 'active' || merchant.subscriptionStatus === 'paused') && (
+                {currentSubscription && (isActiveStatus || isPausedStatus) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -604,7 +641,7 @@ export function MerchantPlanManagement({
                         const currentEndDate = (currentSubscription as any)?.endDate ? new Date((currentSubscription as any).endDate) : new Date();
                         const duration = parseInt(extendDuration) || 1;
                         const interval = extendBillingInterval;
-                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === '6months' ? 6 : 12;
+                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === 'semiAnnual' ? 6 : 12;
                         const newEndDate = new Date(currentEndDate);
                         newEndDate.setMonth(newEndDate.getMonth() + (months * duration));
                         return formatDate(newEndDate);
@@ -711,8 +748,9 @@ export function MerchantPlanManagement({
                 <Select 
                   value={changeBillingInterval || 'month'} 
                   onValueChange={(value) => {
-                    console.log('Setting billing interval to:', value);
+                    console.log('🔍 Setting billing interval to:', value);
                     setChangeBillingInterval(value);
+                    console.log('🔍 Billing interval state updated to:', value);
                   }}
                 >
                   <SelectTrigger>
@@ -766,7 +804,7 @@ export function MerchantPlanManagement({
                         if (!selectedPlan) return '$0.00';
                         const duration = parseInt(changeDuration) || 1;
                         const interval = changeBillingInterval;
-                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === '6months' ? 6 : 12;
+                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === 'semiAnnual' ? 6 : 12;
                         const totalMonths = months * duration;
                         const discount = getDiscountPercentage(changeBillingInterval);
                         const discountedPrice = selectedPlan.basePrice * (1 - discount / 100);
@@ -779,7 +817,7 @@ export function MerchantPlanManagement({
                         const startDate = effectiveDate ? new Date(effectiveDate) : new Date();
                         const duration = parseInt(changeDuration) || 1;
                         const interval = changeBillingInterval;
-                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === '6months' ? 6 : 12;
+                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === 'semiAnnual' ? 6 : 12;
                         const endDate = new Date(startDate);
                         endDate.setMonth(endDate.getMonth() + (months * duration));
                         return formatDate(endDate);

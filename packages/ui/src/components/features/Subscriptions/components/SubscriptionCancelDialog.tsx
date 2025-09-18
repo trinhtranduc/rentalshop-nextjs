@@ -127,7 +127,7 @@ export function SubscriptionCancelDialog({
                     <li>Access will continue until {formatDate(subscription.endDate!)}</li>
                   )}
                   {isTrial && (
-                    <li>Trial access will continue until {formatDate(subscription.trialEndDate!)}</li>
+                    <li>Trial access will continue until {formatDate(subscription.endDate!)}</li>
                   )}
                   <li>No further charges will be made</li>
                   <li>Subscription can be reactivated later if needed</li>
@@ -180,7 +180,7 @@ export function SubscriptionCancelDialog({
                 <Calendar className="h-4 w-4" />
                 <span>
                   {isTrial 
-                    ? `Trial ends on ${formatDate(subscription.trialEndDate!)}`
+                    ? `Trial ends on ${formatDate(subscription.endDate!)}`
                     : `Subscription ends on ${formatDate(subscription.endDate!)}`
                   }
                 </span>

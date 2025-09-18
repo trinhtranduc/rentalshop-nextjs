@@ -331,6 +331,26 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch dashboard data';
+      
+      // Check if it's a subscription error (don't redirect to login)
+      if (error instanceof Error && (
+        error.message.includes('subscription') ||
+        error.message.includes('paused') ||
+        error.message.includes('expired') ||
+        error.message.includes('trial')
+      )) {
+        console.log('⚠️ Subscription error detected, showing error instead of redirecting');
+        showError('Subscription Issue', errorMessage);
+        return;
+      }
+      
+      // Handle other 401 errors using centralized utility
+      if (error instanceof Error) {
+        const { handleAuthError } = await import('@rentalshop/utils');
+        handleAuthError(error);
+        return;
+      }
+      
       showError('Error', errorMessage);
       
       // Set default data if API fails to prevent crashes
