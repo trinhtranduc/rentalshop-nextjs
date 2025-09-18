@@ -96,13 +96,23 @@ export default function MerchantDetailPage() {
     reason?: string;
     effectiveDate?: string;
     notifyMerchant?: boolean;
+    billingInterval?: string;
+    duration?: number;
+    discount?: number;
+    totalPrice?: number;
   }) => {
     try {
+      console.log('🔍 Admin: Plan change data received:', planData);
+      
       const response = await merchantsApi.updateMerchantPlan(Number(merchantId), {
         planId: planData.planId,
         reason: planData.reason,
         effectiveDate: planData.effectiveDate,
-        notifyMerchant: planData.notifyMerchant
+        notifyMerchant: planData.notifyMerchant,
+        billingInterval: planData.billingInterval,
+        duration: planData.duration,
+        discount: planData.discount,
+        totalPrice: planData.totalPrice
       });
 
       if (response.success) {

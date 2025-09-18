@@ -15,7 +15,6 @@ export interface Merchant {
   description?: string;
   planId?: number;               // Reference to Plan publicId
   subscriptionStatus: string;    // Current subscription status
-  trialEndsAt?: Date;            // Trial end date
   totalRevenue: number;          // Total revenue generated
   lastActiveAt?: Date;           // Last activity date
   isActive: boolean;             // Whether merchant account is active
@@ -54,7 +53,6 @@ export interface CurrentSubscription {
   status: string;
   startDate: Date;
   endDate?: Date;
-  trialEndDate?: Date;
   nextBillingDate?: Date;
   amount: number;
   currency: string;
@@ -105,7 +103,6 @@ export interface MerchantStats {
   isActive: boolean;
   subscriptionStatus: string;
   planName?: string;
-  trialEndDate?: Date;
   subscriptionEndDate?: Date;
   totalRevenue: number;
   totalOrders: number;

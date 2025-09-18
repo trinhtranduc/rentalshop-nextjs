@@ -5,67 +5,9 @@ const API = CONSTANTS.API;
 
 // formatCurrency is now exported from ./currency.ts for centralized currency management
 
-export const formatPhoneNumber = (phone: string): string => {
-  // Remove all non-digit characters
-  const cleaned = phone.replace(/\D/g, '');
-  
-  // Format Vietnamese phone number
-  if (cleaned.length === 10) {
-    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
-  } else if (cleaned.length === 11) {
-    return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`;
-  }
-  
-  return phone;
-};
-
-export const generateSlug = (text: string): string => {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
-
-export const truncateText = (text: string, maxLength: number): string => {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + '...';
-};
-
-export const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-};
-
-export const throttle = <T extends (...args: any[]) => any>(
-  func: T,
-  limit: number
-): ((...args: Parameters<T>) => void) => {
-  let inThrottle: boolean;
-  return (...args: Parameters<T>) => {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
-    }
-  };
-};
-
-export const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-export const isValidPhone = (phone: string): boolean => {
-  const phoneRegex = /^(\+84|84|0)[3|5|7|8|9][0-9]{8}$/;
-  return phoneRegex.test(phone.replace(/\s/g, ''));
-};
+// String utilities are now exported from ./string-utils.ts
+// Function utilities are now exported from ./function-utils.ts
+// This file focuses on API utilities and authentication functions
 
 // ============================================================================
 // API UTILITIES
@@ -217,15 +159,32 @@ export const authenticatedFetch = async (
       headers: Object.fromEntries(response.headers.entries())
     });
     
-    // Handle common HTTP status codes using API constants
+    // Handle subscription errors (402 Payment Required)
+    if (response.status === API.STATUS.PAYMENT_REQUIRED) {
+      console.log('🔍 FRONTEND: 402 Payment Required response received (subscription error)');
+      
+      try {
+        const errorData = await response.clone().json();
+        console.log('🔍 FRONTEND: 402 Error details:', errorData);
+        
+        // Don't redirect to login for subscription errors - let the app handle it
+        throw new Error(errorData.message || 'Subscription issue detected');
+      } catch (parseError) {
+        console.log('🔍 FRONTEND: Could not parse 402 error response');
+        throw new Error('Subscription issue detected');
+      }
+    }
+    
+    // Handle authentication errors (401 Unauthorized)
     if (response.status === API.STATUS.UNAUTHORIZED) {
       console.log('🔍 FRONTEND: 401 Unauthorized response received');
+      
       // Handle unauthorized - clean up auth data and redirect immediately
       if (typeof window !== 'undefined') {
         console.log('🔍 FRONTEND: Cleaning up auth data and redirecting to login');
         clearAuthData();
         // Immediate redirect on 401 error
-        // window.location.href = '/login';
+        window.location.href = '/login';
       }
       throw new Error('Unauthorized access - redirecting to login');
     }
@@ -254,20 +213,6 @@ export const authenticatedFetch = async (
 
 
 
-/**
- * Get subscription status message
- * Centralized error messages for subscription issues
- */
-const getSubscriptionStatusMessage = (status: string): string => {
-  const statusMessages: Record<string, string> = {
-    'cancelled': 'Your subscription has been cancelled. Please contact support to reactivate your account.',
-    'expired': 'Your subscription has expired. Please renew to continue using our services.',
-    'suspended': 'Your subscription has been suspended. Please contact support for assistance.',
-    'past_due': 'Your subscription payment is past due. Please update your payment method.'
-  };
-  
-  return statusMessages[status.toLowerCase()] || 'There is an issue with your subscription. Please contact support.';
-};
 
 /**
  * Parse API response
@@ -710,4 +655,30 @@ export const forceLogout = (): void => {
  */
 export const handleApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   return await parseApiResponse<T>(response);
+};
+
+/**
+ * Handle 401 authentication errors - MODERN PATTERN
+ * Automatically redirects to login page and clears auth data
+ */
+export const handleAuthError = (error: Error): void => {
+  const errorMessage = error.message.toLowerCase();
+  
+  // Check if it's an authentication error
+  if (errorMessage.includes('unauthorized') || 
+      errorMessage.includes('authentication required') ||
+      errorMessage.includes('token expired') ||
+      errorMessage.includes('invalid token')) {
+    
+    console.log('🔒 Authentication error detected:', error.message);
+    
+    // Clear auth data
+    clearAuthData();
+    
+    // Redirect to login page
+    if (typeof window !== 'undefined') {
+      console.log('🔄 Redirecting to login page...');
+      window.location.href = '/login';
+    }
+  }
 }; 

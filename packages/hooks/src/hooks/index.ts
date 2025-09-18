@@ -13,5 +13,6 @@ export { useUserManagement, type UseUserManagementOptions } from './useUserManag
 export { useCustomerManagement, type UseCustomerManagementOptions } from './useCustomerManagement';
 export { useProductManagement, type UseProductManagementOptions } from './useProductManagement';
 export { useOrderManagement, type UseOrderManagementOptions } from './useOrderManagement';
-export { useSubscriptionAccess, useCanPerform, useSubscriptionStatusInfo } from './useSubscriptionAccess';
 export { useSubscriptionError, type SubscriptionError, type UseSubscriptionErrorReturn } from './useSubscriptionError';
+export { useSubscriptionStatusInfo, type SubscriptionStatusInfo, type UseSubscriptionStatusInfoOptions } from './useSubscriptionStatusInfo';
+export { useCanPerform, type ActionType, type ActionPermission } from './useCanPerform';

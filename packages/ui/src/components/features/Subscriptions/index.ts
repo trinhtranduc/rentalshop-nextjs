@@ -10,6 +10,7 @@ export { SubscriptionEditDialog } from './components/SubscriptionEditDialog';
 export { SubscriptionPreviewPage } from './components/SubscriptionPreviewPage';
 export { PlanSelectionModal } from './components/PlanSelectionModal';
 export { SubscriptionStatusBanner, SubscriptionStatusCard } from './components/SubscriptionStatusBanner';
+export { SubscriptionPeriodCard } from './SubscriptionPeriodCard';
 export { RestrictedButton, RestrictedAction, RestrictedSection } from './components/RestrictedButton';
 
 // Re-export types for convenience

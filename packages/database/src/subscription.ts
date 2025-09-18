@@ -475,10 +475,23 @@ export async function changePlan(
     deletedAt: plan.deletedAt || undefined
   }, billingInterval);
 
-  // Calculate new period dates
+  // Calculate new period dates based on billing interval
   const now = new Date();
   const newPeriodStart = now;
-  const newPeriodEnd = new Date(now.getTime() + (billingInterval === 'year' ? 365 : 30) * 24 * 60 * 60 * 1000);
+  
+  // Calculate period duration in days based on billing interval
+  const getPeriodDays = (interval: BillingInterval): number => {
+    switch (interval) {
+      case 'month': return 30;
+      case 'quarter': return 90;
+      case 'semiAnnual': return 180;
+      case 'year': return 365;
+      default: return 30;
+    }
+  };
+  
+  const periodDays = getPeriodDays(billingInterval);
+  const newPeriodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000);
 
   const updatedSubscription = await prisma.subscription.update({
     where: { publicId: subscriptionId },
@@ -522,6 +535,15 @@ export async function changePlan(
     amount: updatedSubscription.amount,
     createdAt: updatedSubscription.createdAt,
     updatedAt: updatedSubscription.updatedAt,
+    // Enhanced subscription period information
+    subscriptionPeriod: {
+      startDate: updatedSubscription.currentPeriodStart,
+      endDate: updatedSubscription.currentPeriodEnd,
+      duration: updatedSubscription.interval,
+      isActive: updatedSubscription.status === 'active',
+      daysRemaining: Math.ceil((updatedSubscription.currentPeriodEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+      nextBillingDate: updatedSubscription.currentPeriodEnd
+    },
     merchant: updatedSubscription.merchant,
     plan: {
       id: updatedSubscription.plan.id,

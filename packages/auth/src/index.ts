@@ -2,8 +2,6 @@
 export * from './auth';
 export * from './password';
 export * from './jwt';
-export * from './subscription-access';
-export * from './subscription-errors';
 
 // Export consolidated authorization system (single source of truth)
 export * from './core';

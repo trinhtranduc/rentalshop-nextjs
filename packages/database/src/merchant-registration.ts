@@ -157,7 +157,7 @@ export async function registerMerchantWithTrial(
 
       // 8. Create trial subscription
       const subscriptionStartDate = new Date();
-      const trialEndDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
+      const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
       
       const lastSubscription = await tx.subscription.findFirst({
         orderBy: { publicId: 'desc' }
@@ -171,9 +171,8 @@ export async function registerMerchantWithTrial(
           planId: trialPlan.id,
           status: 'trial',
           currentPeriodStart: subscriptionStartDate,
-          currentPeriodEnd: trialEndDate,
+          currentPeriodEnd: endDate,
           trialStart: subscriptionStartDate,
-          trialEnd: trialEndDate,
           amount: 0, // Free trial
           currency: trialPlan.currency,
           interval: 'month',

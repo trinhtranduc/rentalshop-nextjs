@@ -15,7 +15,6 @@ export interface Merchant {
   isActive: boolean;
   subscriptionPlan?: string;
   subscriptionStatus: 'active' | 'trial' | 'expired' | 'cancelled';
-  trialEndsAt?: string;
   outletsCount: number;
   usersCount: number;
   productsCount: number;
@@ -43,7 +42,6 @@ export interface Merchant {
     status: string;
     startDate: string;
     endDate?: string;
-    trialEndDate?: string;
     nextBillingDate?: string;
     amount: number;
     currency: string;

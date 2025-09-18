@@ -18,6 +18,7 @@ interface LoginFormProps {
   error?: string | null;
   loading?: boolean;
   isAdmin?: boolean;
+  onInputChange?: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
@@ -26,6 +27,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   error,
   loading = false,
   isAdmin = false,
+  onInputChange,
 }) => {
   const [viewPass, setViewPass] = useState(false);
 
@@ -118,7 +120,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       type="email"
                       placeholder="Enter your email"
                       className="pl-10"
-                      onChange={validation.handleChange}
+                      onChange={(e) => {
+                        validation.handleChange(e);
+                        onInputChange?.();
+                      }}
                       onBlur={validation.handleBlur}
                       value={validation.values.email || ""}
                       name="email"
@@ -142,7 +147,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       type={viewPass ? "text" : "password"}
                       placeholder="Enter your password"
                       className="pl-10 pr-10"
-                      onChange={validation.handleChange}
+                      onChange={(e) => {
+                        validation.handleChange(e);
+                        onInputChange?.();
+                      }}
                       onBlur={validation.handleBlur}
                       value={validation.values.password || ""}
                       name="password"

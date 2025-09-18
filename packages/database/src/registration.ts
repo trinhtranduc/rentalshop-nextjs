@@ -244,7 +244,7 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
 
   // 7. Create trial subscription
   const subscriptionStartDate = new Date();
-  const trialEndDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
+  const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
   
   const lastSubscription = await tx.subscription.findFirst({
     orderBy: { publicId: 'desc' }
@@ -262,9 +262,9 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
       interval: 'month', // Default to monthly for trial
       intervalCount: 1, // 1 month intervals
       currentPeriodStart: subscriptionStartDate,
-      currentPeriodEnd: trialEndDate,
+      currentPeriodEnd: endDate,
       trialStart: subscriptionStartDate,
-      trialEnd: trialEndDate,
+      trialEnd: endDate,
       cancelAtPeriodEnd: false
     }
   });

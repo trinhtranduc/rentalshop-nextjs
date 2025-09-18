@@ -35,7 +35,6 @@ export async function GET(
             status: true,
             currentPeriodStart: true,
             currentPeriodEnd: true,
-            trialEnd: true,
             amount: true,
             currency: true,
             interval: true,
@@ -132,7 +131,6 @@ export async function GET(
       isActive: merchantData.isActive,
       planId: merchantData.planId,
       subscriptionStatus: merchantData.subscriptionStatus,
-      trialEndsAt: (currentSubscription as any)?.trialEnd || null,
       outletsCount: (merchant as any)._count?.outlets || 0,
       usersCount: (merchant as any)._count?.users || 0,
       productsCount: (merchant as any)._count?.products || 0,
@@ -144,7 +142,6 @@ export async function GET(
         status: currentSubscription.status,
         startDate: currentSubscription.currentPeriodStart,
         endDate: currentSubscription.currentPeriodEnd,
-        trialEndDate: currentSubscription.trialEnd,
         nextBillingDate: currentSubscription.currentPeriodEnd,
         amount: currentSubscription.amount,
         currency: currentSubscription.currency,
@@ -153,6 +150,16 @@ export async function GET(
         intervalCount: currentSubscription.intervalCount,
         discount: currentSubscription.discount,
         savings: currentSubscription.savings,
+        // Enhanced subscription period information
+        subscriptionPeriod: {
+          startDate: currentSubscription.currentPeriodStart,
+          endDate: currentSubscription.currentPeriodEnd,
+          duration: currentSubscription.interval,
+          isActive: currentSubscription.status === 'active',
+          daysRemaining: Math.ceil((currentSubscription.currentPeriodEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+          nextBillingDate: currentSubscription.currentPeriodEnd,
+          isTrial: currentSubscription.status === 'trial',
+        },
         plan: currentSubscription.plan ? {
           id: currentSubscription.plan.publicId,
           name: currentSubscription.plan.name,
@@ -176,7 +183,6 @@ export async function GET(
         status: merchantData.subscriptionStatus || 'inactive',
         startDate: null,
         endDate: null,
-        trialEndDate: merchantData.trialEndsAt,
         nextBillingDate: null,
         amount: 0,
         currency: 'USD',
@@ -185,6 +191,15 @@ export async function GET(
         intervalCount: 1,
         discount: 0,
         savings: 0,
+        subscriptionPeriod: {
+          startDate: null,
+          endDate: null,
+          duration: 'month',
+          isActive: false,
+          daysRemaining: 0,
+          nextBillingDate: null,
+          isTrial: false,
+        },
         plan: null
       }
     };

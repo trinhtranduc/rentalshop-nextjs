@@ -1,152 +1,257 @@
+import type { 
+  CustomerInput, 
+  CustomerUpdateInput, 
+  CustomerFilters, 
+  CustomerSearchFilter 
+} from '@rentalshop/types';
 import { authenticatedFetch, parseApiResponse } from '../common';
 import { apiUrls } from '../config/api';
-import type { ApiResponse } from '../common';
-import type { Customer, CustomerCreateInput, CustomerUpdateInput, CustomerFilters } from '@rentalshop/types';
 
-export interface CustomersResponse {
-  customers: Customer[];
+// ============================================================================
+// CUSTOMER API TYPES
+// ============================================================================
+
+export interface CustomerApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: any;
+}
+
+export interface CustomerSearchResponse {
+  customers: any[];
   total: number;
-  page: number;
   limit: number;
   offset: number;
   hasMore: boolean;
-  totalPages: number;
 }
 
-/**
- * Customers API client for customer management operations
- */
+export interface CustomerListResponse {
+  customers: any[];
+  total: number;
+  page: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+// ============================================================================
+// CUSTOMER API (MERGED FUNCTIONALITY)
+// ============================================================================
+
 export const customersApi = {
+  // ============================================================================
+  // CUSTOMER CRUD OPERATIONS
+  // ============================================================================
+
   /**
    * Get all customers
    */
-  async getCustomers(): Promise<ApiResponse<Customer[]>> {
+  async getCustomers(): Promise<CustomerApiResponse> {
     const response = await authenticatedFetch(apiUrls.customers.list);
-    const result = await parseApiResponse<Customer[]>(response);
-    return result;
+    return await parseApiResponse<CustomerApiResponse>(response);
   },
 
   /**
    * Get customers with pagination
    */
-  async getCustomersPaginated(page: number = 1, limit: number = 50): Promise<ApiResponse<CustomersResponse>> {
+  async getCustomersPaginated(page: number = 1, limit: number = 50): Promise<CustomerApiResponse<CustomerListResponse>> {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString()
     });
     
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
-    return await parseApiResponse<CustomersResponse>(response);
+    const result = await parseApiResponse<CustomerListResponse>(response);
+    return {
+      success: result.success,
+      data: result.data,
+      message: result.message,
+      error: result.error
+    };
   },
 
   /**
-   * Search customers with filters
+   * Get customers with filtering and pagination
    */
-  async searchCustomers(filters: CustomerFilters): Promise<ApiResponse<CustomersResponse>> {
+  async getCustomersWithFilters(
+    filters: CustomerFilters = {}, 
+    page = 1, 
+    limit = 20
+  ): Promise<CustomerApiResponse<CustomerListResponse>> {
     const params = new URLSearchParams();
     
-    if (filters.q) params.append('q', filters.q); // Use 'q' parameter like orders
-    if (filters.search) params.append('q', filters.search); // Fallback for backward compatibility
-    if (filters.outletId) params.append('outletId', filters.outletId.toString());
-    if (filters.status) params.append('status', filters.status);
-    if (filters.phone) params.append('phone', filters.phone);
-    if (filters.email) params.append('email', filters.email);
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+    if (filters.search) params.append('search', filters.search);
     if (filters.city) params.append('city', filters.city);
     if (filters.state) params.append('state', filters.state);
     if (filters.country) params.append('country', filters.country);
     if (filters.idType) params.append('idType', filters.idType);
-    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
     
-    // Add pagination parameters
-    if (filters.limit) params.append('limit', filters.limit.toString());
-    if (filters.offset) params.append('offset', filters.offset.toString());
-    if (filters.page) params.append('page', filters.page.toString());
-    
-    // Add sorting parameters
-    if (filters.sortBy) params.append('sortBy', filters.sortBy);
-    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
-    
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
-    return await parseApiResponse<CustomersResponse>(response);
+    const result = await parseApiResponse<CustomerListResponse>(response);
+    return {
+      success: result.success,
+      data: result.data,
+      message: result.message,
+      error: result.error
+    };
+  },
+
+  /**
+   * Search customers with advanced filters
+   */
+  async searchCustomers(filters: CustomerSearchFilter = {}): Promise<CustomerApiResponse<CustomerSearchResponse>> {
+    const params = new URLSearchParams();
+    
+    if (filters.q) params.append('q', filters.q);
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+    if (filters.city) params.append('city', filters.city);
+    if (filters.state) params.append('state', filters.state);
+    if (filters.country) params.append('country', filters.country);
+    if (filters.idType) params.append('idType', filters.idType);
+    
+    params.append('limit', (filters.limit || 20).toString());
+    params.append('offset', (filters.offset || 0).toString());
+
+    const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
+    const result = await parseApiResponse<CustomerSearchResponse>(response);
+    return {
+      success: result.success,
+      data: result.data,
+      message: result.message,
+      error: result.error
+    };
   },
 
   /**
    * Get customer by ID
    */
-  async getCustomer(customerId: number): Promise<ApiResponse<Customer>> {
+  async getCustomerById(customerId: number): Promise<CustomerApiResponse> {
     const response = await authenticatedFetch(apiUrls.customers.update(customerId));
-    return await parseApiResponse<Customer>(response);
+    return await parseApiResponse<CustomerApiResponse>(response);
   },
 
   /**
-   * Get customer by public ID (number)
+   * Create new customer
    */
-  async getCustomerByPublicId(publicId: number): Promise<ApiResponse<Customer>> {
-    const response = await authenticatedFetch(apiUrls.customers.update(publicId));
-    return await parseApiResponse<Customer>(response);
-  },
-
-  /**
-   * Create a new customer
-   */
-  async createCustomer(customerData: CustomerCreateInput): Promise<ApiResponse<Customer>> {
+  async createCustomer(customerData: CustomerInput): Promise<CustomerApiResponse> {
     const response = await authenticatedFetch(apiUrls.customers.create, {
       method: 'POST',
       body: JSON.stringify(customerData),
     });
-    return await parseApiResponse<Customer>(response);
+    return await parseApiResponse<CustomerApiResponse>(response);
   },
 
   /**
-   * Update an existing customer
+   * Update customer
    */
-  async updateCustomer(customerId: number, customerData: CustomerUpdateInput): Promise<ApiResponse<Customer>> {
+  async updateCustomer(customerId: number, customerData: CustomerUpdateInput): Promise<CustomerApiResponse> {
     const response = await authenticatedFetch(apiUrls.customers.update(customerId), {
       method: 'PUT',
       body: JSON.stringify(customerData),
     });
-    return await parseApiResponse<Customer>(response);
+    return await parseApiResponse<CustomerApiResponse>(response);
   },
 
   /**
-   * Delete a customer
+   * Delete customer
    */
-  async deleteCustomer(customerId: number): Promise<ApiResponse<void>> {
+  async deleteCustomer(customerId: number): Promise<CustomerApiResponse> {
     const response = await authenticatedFetch(apiUrls.customers.delete(customerId), {
       method: 'DELETE',
     });
-    return await parseApiResponse<void>(response);
+    return await parseApiResponse<CustomerApiResponse>(response);
+  },
+
+  // ============================================================================
+  // TESTING AND DEBUG ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Test customer creation payload validation
+   */
+  async testCustomerPayload(customerData: CustomerInput): Promise<CustomerApiResponse> {
+    const response = await authenticatedFetch('/api/customers/test', {
+      method: 'POST',
+      body: JSON.stringify(customerData)
+    });
+    return await parseApiResponse<CustomerApiResponse>(response);
   },
 
   /**
-   * Get customers by outlet
+   * Debug customer creation payload
    */
-  async getCustomersByOutlet(outletId: number): Promise<ApiResponse<Customer[]>> {
-    const response = await authenticatedFetch(`${apiUrls.customers.list}?outletId=${outletId}`);
-    return await parseApiResponse<Customer[]>(response);
+  async debugCustomerPayload(customerData: CustomerInput): Promise<CustomerApiResponse> {
+    const response = await authenticatedFetch('/api/customers/debug', {
+      method: 'POST',
+      body: JSON.stringify(customerData)
+    });
+    return await parseApiResponse<CustomerApiResponse>(response);
+  },
+
+  // ============================================================================
+  // UTILITY METHODS
+  // ============================================================================
+
+  /**
+   * Validate customer data before sending to API
+   */
+  validateCustomerData(data: CustomerInput): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!data.firstName?.trim()) errors.push('First name is required');
+    if (!data.lastName?.trim()) errors.push('Last name is required');
+    if (!data.email?.trim()) errors.push('Email is required');
+    if (!data.phone?.trim()) errors.push('Phone is required');
+    if (!data.merchantId) errors.push('Merchant ID is required');
+
+    // Email validation
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.push('Invalid email format');
+    }
+
+    // Phone validation
+    if (data.phone && !/^[0-9+\-\s()]+$/.test(data.phone)) {
+      errors.push('Phone number contains invalid characters');
+    }
+
+    if (data.phone && data.phone.length < 8) {
+      errors.push('Phone number must be at least 8 characters');
+    }
+
+    // ID Type validation
+    if (data.idType && !['passport', 'drivers_license', 'national_id', 'other'].includes(data.idType)) {
+      errors.push('Invalid ID type');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
   },
 
   /**
-   * Get customer by phone number
+   * Format customer data for API submission
    */
-  async getCustomerByPhone(phone: string): Promise<ApiResponse<Customer | null>> {
-    const response = await authenticatedFetch(`${apiUrls.customers.list}?phone=${phone}`);
-    return await parseApiResponse<Customer | null>(response);
-  },
-
-  /**
-   * Get customer by email
-   */
-  async getCustomerByEmail(email: string): Promise<ApiResponse<Customer | null>> {
-    const response = await authenticatedFetch(`${apiUrls.customers.list}?email=${email}`);
-    return await parseApiResponse<Customer | null>(response);
-  },
-
-  /**
-   * Get customer statistics
-   */
-  async getCustomerStats(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(apiUrls.customers.stats);
-    return await parseApiResponse<any>(response);
+  formatCustomerData(data: CustomerInput): CustomerInput {
+    return {
+      ...data,
+      firstName: data.firstName?.trim(),
+      lastName: data.lastName?.trim(),
+      email: data.email?.toLowerCase().trim(),
+      phone: data.phone?.trim(),
+      address: data.address?.trim(),
+      city: data.city?.trim(),
+      state: data.state?.trim(),
+      zipCode: data.zipCode?.trim(),
+      country: data.country?.trim(),
+      idNumber: data.idNumber?.trim(),
+      notes: data.notes?.trim()
+    };
   }
 };

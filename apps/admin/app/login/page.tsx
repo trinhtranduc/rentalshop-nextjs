@@ -4,8 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@rentalshop/ui';
 import { Eye, EyeOff, Mail, Lock, Store } from 'lucide-react';
-import { authApi, storeAuthData } from '@rentalshop/utils';
-import { useAuth } from '../providers/AuthProvider';
+import { useAuth } from '@rentalshop/hooks';
 
 interface LoginFormData {
   email: string;
@@ -21,45 +20,39 @@ interface LoginFormProps {
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, error: authError, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
   });
   const [viewPass, setViewPass] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
+    setLocalError(null);
 
     try {
-      // Use centralized auth API
-      const response = await authApi.login(formData);
+      // Use centralized useAuth hook
+      const success = await login(formData.email, formData.password);
 
-      if (response.success && response.data) {
-        // Store auth data using centralized function
-        storeAuthData(response.data.token, response.data.user);
-        // Update the auth context
-        login(response.data.user, response.data.token);
-        // Redirect to dashboard
-        router.push('/dashboard');
+      if (success) {
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
       } else {
-        setError(response.message || 'Login failed');
+        // Don't set local error - let authError from useAuth handle it
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
+      setLocalError('Network error. Please try again.');
     }
   };
 
   const handleInputChange = (field: keyof LoginFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (error) setError(null);
+    if (localError) setLocalError(null);
   };
 
   return (
@@ -78,7 +71,7 @@ export default function AdminLoginPage() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
+          {(authError || localError) && (
             <div className="bg-action-danger/10 border border-action-danger/20 rounded-md p-4">
               <div className="flex">
                 <div className="ml-3">
@@ -86,7 +79,7 @@ export default function AdminLoginPage() {
                     Login Error
                   </h3>
                   <div className="mt-2 text-sm text-action-danger">
-                    {error}
+                    {authError || localError}
                   </div>
                 </div>
               </div>
@@ -153,10 +146,10 @@ export default function AdminLoginPage() {
           <div>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={authLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-text-inverted bg-action-primary hover:bg-action-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-action-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {authLoading ? 'Signing in...' : 'Sign in'}
             </Button>
           </div>
 

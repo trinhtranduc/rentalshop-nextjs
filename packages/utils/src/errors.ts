@@ -124,6 +124,29 @@ export const DATABASE_ERROR_CODES = {
 } as const;
 
 /**
+ * Subscription-related error codes
+ */
+export const SUBSCRIPTION_ERROR_CODES = {
+  // Subscription status errors
+  SUBSCRIPTION_EXPIRED: 'SUBSCRIPTION_EXPIRED',
+  SUBSCRIPTION_PAUSED: 'SUBSCRIPTION_PAUSED',
+  SUBSCRIPTION_CANCELLED: 'SUBSCRIPTION_CANCELLED',
+  SUBSCRIPTION_SUSPENDED: 'SUBSCRIPTION_SUSPENDED',
+  SUBSCRIPTION_PAST_DUE: 'SUBSCRIPTION_PAST_DUE',
+  
+  // Subscription access errors
+  SUBSCRIPTION_ACCESS_DENIED: 'SUBSCRIPTION_ACCESS_DENIED',
+  SUBSCRIPTION_TRIAL_EXPIRED: 'SUBSCRIPTION_TRIAL_EXPIRED',
+  SUBSCRIPTION_PAYMENT_REQUIRED: 'SUBSCRIPTION_PAYMENT_REQUIRED',
+  
+  // Subscription management errors
+  SUBSCRIPTION_NOT_FOUND: 'SUBSCRIPTION_NOT_FOUND',
+  SUBSCRIPTION_ALREADY_ACTIVE: 'SUBSCRIPTION_ALREADY_ACTIVE',
+  SUBSCRIPTION_CANNOT_BE_CANCELLED: 'SUBSCRIPTION_CANNOT_BE_CANCELLED',
+  SUBSCRIPTION_CANNOT_BE_PAUSED: 'SUBSCRIPTION_CANNOT_BE_PAUSED',
+} as const;
+
+/**
  * API-related error codes
  */
 export const API_ERROR_CODES = {
@@ -154,6 +177,7 @@ export const ERROR_CODES = {
   ...ORDER_ERROR_CODES,
   ...PAYMENT_ERROR_CODES,
   ...DATABASE_ERROR_CODES,
+  ...SUBSCRIPTION_ERROR_CODES,
   ...API_ERROR_CODES,
 } as const;
 
@@ -238,6 +262,67 @@ export class ForbiddenError extends AppError {
     super(message, 'FORBIDDEN', 403, details);
     this.name = 'ForbiddenError';
   }
+}
+
+export class SubscriptionError extends AppError {
+  public readonly subscriptionStatus?: string;
+
+  constructor(
+    message: string,
+    code: ErrorCode = SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_ACCESS_DENIED,
+    subscriptionStatus?: string,
+    details?: string
+  ) {
+    super(message, code, 402, details);
+    this.name = 'SubscriptionError';
+    this.subscriptionStatus = subscriptionStatus;
+  }
+
+  /**
+   * Check if an error is a SubscriptionError
+   */
+  static isSubscriptionError(error: unknown): error is SubscriptionError {
+    return error instanceof SubscriptionError;
+  }
+
+  /**
+   * Get subscription status message for UI display
+   */
+  static getStatusMessage(status: string): string {
+    const statusMessages: Record<string, string> = {
+      'cancelled': 'Your subscription has been cancelled. Please contact support to reactivate your account.',
+      'expired': 'Your subscription has expired. Please renew to continue using our services.',
+      'suspended': 'Your subscription has been suspended. Please contact support for assistance.',
+      'past_due': 'Your subscription payment is past due. Please update your payment method.',
+      'paused': 'Your subscription is paused. Please contact support to reactivate your account.'
+    };
+    
+    return statusMessages[status.toLowerCase()] || 'There is an issue with your subscription. Please contact support.';
+  }
+
+  /**
+   * Create a SubscriptionError from a status
+   */
+  static fromStatus(status: string): SubscriptionError {
+    const message = SubscriptionError.getStatusMessage(status);
+    const code = getSubscriptionErrorCode(status);
+    return new SubscriptionError(message, code, status);
+  }
+}
+
+/**
+ * Get subscription error code from status
+ */
+function getSubscriptionErrorCode(status: string): ErrorCode {
+  const statusMap: Record<string, ErrorCode> = {
+    'cancelled': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_CANCELLED,
+    'expired': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_EXPIRED,
+    'suspended': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_SUSPENDED,
+    'past_due': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAST_DUE,
+    'paused': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAUSED,
+  };
+  
+  return statusMap[status.toLowerCase()] || SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_ACCESS_DENIED;
 }
 
 // ============================================================================
@@ -421,6 +506,20 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [PAYMENT_ERROR_CODES.PAYMENT_ALREADY_PROCESSED]: 400,
   [PAYMENT_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH]: 400,
   
+  // Subscription errors
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_EXPIRED]: 402,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAUSED]: 402,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_CANCELLED]: 402,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_SUSPENDED]: 402,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAST_DUE]: 402,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_ACCESS_DENIED]: 402,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_TRIAL_EXPIRED]: 402,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAYMENT_REQUIRED]: 402,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_NOT_FOUND]: 404,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_ALREADY_ACTIVE]: 400,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_CANNOT_BE_CANCELLED]: 400,
+  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_CANNOT_BE_PAUSED]: 400,
+  
   // Database errors
   [DATABASE_ERROR_CODES.CONNECTION_FAILED]: 503,
   [DATABASE_ERROR_CODES.CONNECTION_TIMEOUT]: 504,
@@ -450,4 +549,28 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
  */
 export const getErrorStatusCode = (code: ErrorCode): number => {
   return ERROR_STATUS_CODES[code] || 500;
-}; 
+};
+
+/**
+ * Check if an error is subscription-related
+ */
+export function isSubscriptionError(error: unknown): boolean {
+  if (SubscriptionError.isSubscriptionError(error)) {
+    return true;
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes('subscription') ||
+      message.includes('paused') ||
+      message.includes('expired') ||
+      message.includes('cancelled') ||
+      message.includes('suspended') ||
+      message.includes('past_due') ||
+      message.includes('trial')
+    );
+  }
+
+  return false;
+} 

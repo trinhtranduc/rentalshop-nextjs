@@ -1,6 +1,7 @@
 import { prisma } from '@rentalshop/database';
 import { comparePassword, hashPassword } from './password';
 import { generateToken } from './jwt';
+import { getSubscriptionError } from '@rentalshop/utils';
 import type { LoginCredentials, RegisterData, AuthResponse, AuthUser } from './types';
 
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
@@ -23,6 +24,18 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
 
   if (!user.isActive) {
     throw new Error('Account is deactivated');
+  }
+
+  // Check subscription status before allowing login
+  // This prevents users with expired/cancelled subscriptions from logging in
+  const subscriptionError = await getSubscriptionError({
+    role: user.role,
+    merchant: user.merchant
+  });
+  
+  if (subscriptionError) {
+    console.log('🔍 LOGIN: Subscription check failed:', subscriptionError.message);
+    throw subscriptionError; // This will be caught and return 402 status
   }
 
   const token = generateToken({

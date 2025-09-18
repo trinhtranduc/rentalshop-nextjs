@@ -6,7 +6,7 @@ import { usePagination } from './usePagination';
 import { useThrottledSearch } from './useThrottledSearch';
 import { customersApi } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
-import type { Customer, CustomerFilters as CustomerFiltersType, CustomerCreateInput, CustomerUpdateInput } from '@rentalshop/types';
+import type { Customer, CustomerFilters as CustomerFiltersType, CustomerCreateInput, CustomerUpdateInput, CustomerInput } from '@rentalshop/types';
 
 export interface UseCustomerManagementOptions {
   initialLimit?: number;
@@ -363,7 +363,13 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
 
   const handleCustomerCreated = useCallback(async (customerData: CustomerCreateInput) => {
     try {
-      const response = await customersApi.createCustomer(customerData);
+      // Convert CustomerCreateInput to CustomerInput by adding merchantId
+      const customerInput: CustomerInput = {
+        ...customerData,
+        merchantId: 1 // TODO: Get from user context or props
+      };
+      
+      const response = await customersApi.createCustomer(customerInput);
       if (response.success) {
         setShowCreateForm(false);
         fetchCustomers(); // Refresh the list

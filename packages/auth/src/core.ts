@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
+import { SubscriptionError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // ============================================================================
@@ -143,7 +144,34 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     }
 
     // Verify token and get user
-    const user = await verifyTokenSimple(token);
+    let user;
+    try {
+      user = await verifyTokenSimple(token);
+    } catch (error) {
+      // Check if it's a subscription error
+      if (SubscriptionError.isSubscriptionError(error)) {
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
+              message: error.message,
+              errorCode: 'SUBSCRIPTION_ERROR'
+            },
+            { status: 402 } // Payment Required for subscription issues
+          )
+        };
+      }
+      
+      // For other errors, treat as authentication failure
+      return {
+        success: false,
+        response: NextResponse.json(
+          { success: false, message: 'Invalid token' },
+          { status: 401 }
+        )
+      };
+    }
     
     if (!user) {
       return {
