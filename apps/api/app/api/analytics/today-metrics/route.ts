@@ -15,13 +15,13 @@ export async function GET(request: NextRequest) {
     const user = authResult.user;
     const userScope = getUserScope(user);
 
-    // Convert publicIds to CUIDs for database queries
+    // Convert ids to CUIDs for database queries
     let merchantCuid: string | null = null;
     let outletCuid: string | null = null;
     
     if (userScope.merchantId) {
       const merchant = await prisma.merchant.findUnique({
-        where: { publicId: userScope.merchantId },
+        where: { id: userScope.merchantId },
         select: { id: true }
       });
       if (merchant) {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     
     if (userScope.outletId) {
       const outlet = await prisma.outlet.findUnique({
-        where: { publicId: userScope.outletId },
+        where: { id: userScope.outletId },
         select: { id: true }
       });
       if (outlet) {

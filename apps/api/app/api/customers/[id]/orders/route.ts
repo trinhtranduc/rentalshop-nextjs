@@ -104,10 +104,10 @@ export async function GET(
     const endIndex = startIndex + limit;
     const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
     
-    // Transform orders to use publicId as id for frontend
+    // Transform orders to use id as id for frontend
     const transformedOrders = paginatedOrders.map(order => ({
-      id: order.publicId, // Frontend expects 'id' to be the publicId
-      publicId: order.publicId, // Keep publicId for backward compatibility
+      id: order.id, // Frontend expects 'id' to be the id
+      id: order.id, // Keep id for backward compatibility
       orderNumber: order.orderNumber,
       status: order.status,
       totalAmount: order.totalAmount,

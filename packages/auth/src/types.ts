@@ -14,7 +14,7 @@ export interface RegisterData {
 }
 
 export interface AuthUser {
-  id: number; // publicId for frontend compatibility
+  id: number; // id for frontend compatibility
   email: string;
   firstName: string;
   lastName: string;

@@ -107,7 +107,7 @@ export default function SubscriptionsPage() {
         // Convert API subscriptions to UI subscriptions
         const uiSubscriptions: Subscription[] = subscriptionsArray.map((apiSub: ApiSubscription) => ({
           id: apiSub.id,
-          publicId: apiSub.publicId,
+          id: apiSub.id,
           merchantId: apiSub.merchantId,
           planId: apiSub.planId,
           status: apiSub.status as 'trial' | 'active' | 'past_due' | 'cancelled' | 'paused',
@@ -270,10 +270,10 @@ export default function SubscriptionsPage() {
       
       switch (type) {
         case 'cancel':
-          result = await subscriptionsApi.cancel(subscription.publicId, reason);
+          result = await subscriptionsApi.cancel(subscription.id, reason);
           break;
         case 'changePlan':
-          result = await subscriptionsApi.changePlan(subscription.publicId, data.newPlanId);
+          result = await subscriptionsApi.changePlan(subscription.id, data.newPlanId);
           break;
         default:
           return;

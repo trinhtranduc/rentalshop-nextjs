@@ -56,7 +56,7 @@ export async function PUT(
     const result = await prisma.$transaction(async (tx) => {
       // 1. Get merchant
       const merchant = await tx.merchant.findUnique({
-        where: { publicId: merchantId },
+        where: { id: merchantId },
         include: { Plan: true, subscription: true } as any
       }) as any;
 
@@ -66,7 +66,7 @@ export async function PUT(
 
       // 2. Get new plan
       const newPlan = await tx.plan.findUnique({
-        where: { publicId: validatedData.planId }
+        where: { id: validatedData.planId }
       });
 
       if (!newPlan) {
@@ -81,7 +81,7 @@ export async function PUT(
       let planVariant = null;
       if (validatedData.planVariantId) {
         // planVariant = await tx.planVariant.findUnique({
-        //   where: { publicId: validatedData.planVariantId }
+        //   where: { id: validatedData.planVariantId }
         // });
 
         // if (!planVariant) {
@@ -159,13 +159,13 @@ export async function PUT(
       } else {
         // Create new subscription if none exists
         const lastSubscription = await tx.subscription.findFirst({
-          orderBy: { publicId: 'desc' }
+          orderBy: { id: 'desc' }
         });
-        const subscriptionPublicId = (lastSubscription?.publicId || 0) + 1;
+        const subscriptionPublicId = (lastSubscription?.id || 0) + 1;
 
         newSubscription = await tx.subscription.create({
           data: {
-            publicId: subscriptionPublicId,
+            id: subscriptionPublicId,
             merchantId: merchant.id,
             planId: newPlan.id,
             status: 'ACTIVE',
@@ -205,9 +205,9 @@ export async function PUT(
 
       // 9. Create payment record for plan change
       const lastPayment = await tx.payment.findFirst({
-        orderBy: { publicId: 'desc' }
+        orderBy: { id: 'desc' }
       });
-      const paymentPublicId = (lastPayment?.publicId || 0) + 1;
+      const paymentPublicId = (lastPayment?.id || 0) + 1;
 
       // Determine payment status based on plan change type
       let paymentStatus = 'COMPLETED';
@@ -245,12 +245,12 @@ export async function PUT(
 
       const paymentRecord = await tx.payment.create({
         data: {
-          publicId: paymentPublicId,
+          id: paymentPublicId,
           amount: paymentAmount,
           method: paymentMethod,
           type: 'PLAN_CHANGE',
           status: paymentStatus,
-          reference: `PLAN-CHANGE-${merchant.publicId}-${newSubscription.publicId}`,
+          reference: `PLAN-CHANGE-${merchant.id}-${newSubscription.id}`,
           notes: paymentNotes,
           processedAt: paymentStatus === 'COMPLETED' ? new Date() : null,
           processedBy: user.databaseId,
@@ -277,9 +277,9 @@ export async function PUT(
           entityId: merchant.id,
           action: 'PLAN_CHANGED',
           details: JSON.stringify({
-            oldPlanId: merchant.Plan?.publicId || null,
+            oldPlanId: merchant.Plan?.id || null,
             oldPlanName: merchant.Plan?.name || 'None',
-            newPlanId: newPlan.publicId,
+            newPlanId: newPlan.id,
             newPlanName: newPlan.name,
             planVariantId: null,
             planVariantName: null,
@@ -299,12 +299,12 @@ export async function PUT(
 
       return {
         merchant: {
-          id: updatedMerchant.publicId,
+          id: updatedMerchant.id,
           name: updatedMerchant.name,
           email: updatedMerchant.email,
           subscriptionStatus: updatedMerchant.subscriptionStatus,
           currentPlan: {
-            id: newPlan.publicId,
+            id: newPlan.id,
             name: newPlan.name,
             description: newPlan.description,
             basePrice: newPlan.basePrice,
@@ -414,7 +414,7 @@ export async function GET(
 
     // Get merchant with current plan and subscription history
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantId },
+      where: { id: merchantId },
       include: {
         Plan: true,
         subscription: {
@@ -445,12 +445,12 @@ export async function GET(
       success: true,
       data: {
         merchant: {
-          id: merchant.publicId,
+          id: merchant.id,
           name: merchant.name,
           email: merchant.email,
           subscriptionStatus: merchant.subscriptionStatus,
           currentPlan: merchant.Plan ? {
-            id: merchant.Plan.publicId,
+            id: merchant.Plan.id,
             name: merchant.Plan.name,
             description: merchant.Plan.description,
             basePrice: merchant.Plan.basePrice,
@@ -524,7 +524,7 @@ export async function PATCH(
     const result = await prisma.$transaction(async (tx) => {
       // Get merchant
       const merchant = await tx.merchant.findUnique({
-        where: { publicId: merchantId }
+        where: { id: merchantId }
       });
 
       if (!merchant) {
@@ -533,7 +533,7 @@ export async function PATCH(
 
       // Get subscription
       const subscription = await tx.subscription.findUnique({
-        where: { publicId: subscriptionId }
+        where: { id: subscriptionId }
       });
 
       if (!subscription) {
@@ -580,7 +580,7 @@ export async function PATCH(
           entityId: subscription.id,
           action: auditAction,
           details: JSON.stringify({
-            subscriptionId: subscription.publicId,
+            subscriptionId: subscription.id,
             planId: subscription.planId,
             action: action,
             reason: reason,

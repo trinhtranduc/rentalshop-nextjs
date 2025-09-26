@@ -229,7 +229,10 @@ export function useAuth() {
 
     if (token && storedUser) {
       console.log('✅ Found stored user data:', storedUser);
-      setState(prev => ({ ...prev, user: storedUser as User, loading: false }));
+      setState(prev => ({ ...prev, user: {
+        ...storedUser,
+        id: storedUser.id, // Keep as number
+      } as User, loading: false }));
       
       // Only refresh user data if we don't have complete user info
       // This prevents unnecessary API calls that might fail

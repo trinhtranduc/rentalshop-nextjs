@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
         hasSubscription: true,
         subscription: {
           id: subscription.id,
-          publicId: subscription.publicId,
           merchantId: subscription.merchantId,
           planId: subscription.planId,
           status: subscription.status,

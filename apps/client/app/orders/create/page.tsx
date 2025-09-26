@@ -84,7 +84,7 @@ export default function CreateOrderPage() {
           outletsArray.forEach((outlet: any, index: number) => {
             console.log(`🔍 Outlet ${index}:`, {
               id: outlet.id,
-              publicId: outlet.publicId,
+              id: outlet.id,
               name: outlet.name,
               merchantId: outlet.merchantId,
               merchant: outlet.merchant,
@@ -92,7 +92,7 @@ export default function CreateOrderPage() {
             });
           });
           
-          // The API already returns outlets with id field (which is the publicId)
+          // The API already returns outlets with id field (which is the id)
           // No need to remap - use the data as-is
           const mapped = outletsArray.map((o: any) => ({ 
             id: o.id, // Use the id field that's already provided by the API

@@ -26,9 +26,9 @@ export async function GET(
       );
     }
 
-    // Find the merchant by publicId to get the actual CUID
+    // Find the merchant by id to get the actual CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantPublicId },
+      where: { id: merchantPublicId },
       select: { id: true }
     });
 
@@ -42,12 +42,12 @@ export async function GET(
     // Get outlet with statistics
     const outlet = await prisma.outlet.findFirst({
       where: {
-        publicId: outletPublicId,
+        id: outletPublicId,
         merchantId: merchant.id
       },
       select: {
         id: true,
-        publicId: true,
+        id: true,
         name: true,
         address: true,
         description: true,
@@ -75,7 +75,7 @@ export async function GET(
 
     // Transform data for frontend
     const transformedOutlet = {
-      id: outlet.publicId,
+      id: outlet.id,
       name: outlet.name,
       address: outlet.address || '',
       phone: outlet.phone || '',
@@ -128,9 +128,9 @@ export async function PUT(
       );
     }
 
-    // Find the merchant by publicId to get the actual CUID
+    // Find the merchant by id to get the actual CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantPublicId },
+      where: { id: merchantPublicId },
       select: { id: true }
     });
 
@@ -156,7 +156,7 @@ export async function PUT(
     // Update outlet
     const updatedOutlet = await prisma.outlet.updateMany({
       where: {
-        publicId: outletPublicId,
+        id: outletPublicId,
         merchantId: merchant.id
       },
       data: {
@@ -178,12 +178,12 @@ export async function PUT(
     // Get updated outlet with statistics
     const outlet = await prisma.outlet.findFirst({
       where: {
-        publicId: outletPublicId,
+        id: outletPublicId,
         merchantId: merchant.id
       },
       select: {
         id: true,
-        publicId: true,
+        id: true,
         name: true,
         address: true,
         description: true,
@@ -204,7 +204,7 @@ export async function PUT(
 
     // Transform data for frontend
     const transformedOutlet = {
-      id: outlet!.publicId,
+      id: outlet!.id,
       name: outlet!.name,
       address: outlet!.address || '',
       phone: outlet!.phone || '',

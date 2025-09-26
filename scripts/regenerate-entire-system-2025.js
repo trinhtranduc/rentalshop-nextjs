@@ -55,11 +55,11 @@ const PAYMENT_STATUSES = ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELL
 const SUBSCRIPTION_STATUSES = ['ACTIVE', 'TRIAL', 'CANCELLED', 'EXPIRED', 'PAUSED'];
 
 // Global counter for public IDs
-let publicIdCounter = 1000; // Start from 1000 to avoid conflicts
+let idCounter = 1000; // Start from 1000 to avoid conflicts
 
 // Helper function to get next public ID
 function getNextPublicId() {
-  return ++publicIdCounter;
+  return ++idCounter;
 }
 
 // Helper function to generate random date within range
@@ -191,7 +191,7 @@ async function createMerchants() {
     
     const merchant = await prisma.merchant.create({
       data: {
-        publicId: i,
+        id: i,
         name: business.name,
         email: `merchant${i}@example.com`,
         phone: business.phone,
@@ -209,12 +209,12 @@ async function createMerchants() {
       }
     });
     
-    console.log(`✅ Created merchant: ${merchant.name} (ID: ${merchant.publicId})`);
+    console.log(`✅ Created merchant: ${merchant.name} (ID: ${merchant.id})`);
     
     // Create default outlet for this merchant immediately with all merchant info
     const defaultOutlet = await prisma.outlet.create({
       data: {
-        publicId: outletId++,
+        id: outletId++,
         name: `${business.name} - Main Branch`,
         address: business.address,
         phone: business.phone,
@@ -247,12 +247,12 @@ async function createMerchantAccounts(merchants) {
     const merchantPassword = await hashPassword('merchant123');
     const merchantUser = await prisma.user.create({
       data: {
-        publicId: getNextPublicId(),
-        email: `merchant${merchant.publicId}@example.com`,
+        id: getNextPublicId(),
+        email: `merchant${merchant.id}@example.com`,
         password: merchantPassword,
         firstName: `Merchant`,
-        lastName: `${merchant.publicId}`,
-        phone: `+1-555-${String(merchant.publicId).padStart(4, '0')}`,
+        lastName: `${merchant.id}`,
+        phone: `+1-555-${String(merchant.id).padStart(4, '0')}`,
         role: 'MERCHANT',
         isActive: true,
         merchantId: merchant.id
@@ -273,7 +273,7 @@ async function createSuperAdmin() {
   const adminPassword = await hashPassword('admin123');
   const superAdmin = await prisma.user.create({
     data: {
-      publicId: getNextPublicId(),
+      id: getNextPublicId(),
       email: 'admin@rentalshop.com',
       password: adminPassword,
       firstName: 'Super',
@@ -303,7 +303,7 @@ async function createAdditionalOutlets(merchants) {
     for (let i = 2; i <= SYSTEM_CONFIG.OUTLETS_PER_MERCHANT; i++) {
       const outlet = await prisma.outlet.create({
         data: {
-          publicId: outletId++,
+          id: outletId++,
           name: `Outlet ${i} - ${merchant.name}`,
           address: `Address for Outlet ${i} of ${merchant.name}`,
           phone: `+1-555-${String(outletId).padStart(4, '0')}`,
@@ -338,11 +338,11 @@ async function createOutletUsers(outlets) {
     const adminPassword = await hashPassword('admin123');
     const adminUser = await prisma.user.create({
       data: {
-        publicId: getNextPublicId(),
-        email: `admin.outlet${outlet.publicId}@example.com`,
+        id: getNextPublicId(),
+        email: `admin.outlet${outlet.id}@example.com`,
         password: adminPassword,
         firstName: `Admin`,
-        lastName: `Outlet ${outlet.publicId}`,
+        lastName: `Outlet ${outlet.id}`,
         phone: `+1-555-${String(phoneCounter++).padStart(4, '0')}`,
         role: 'OUTLET_ADMIN',
         isActive: true,
@@ -355,11 +355,11 @@ async function createOutletUsers(outlets) {
     const staffPassword = await hashPassword('staff123');
     const staffUser = await prisma.user.create({
       data: {
-        publicId: getNextPublicId(),
-        email: `staff.outlet${outlet.publicId}@example.com`,
+        id: getNextPublicId(),
+        email: `staff.outlet${outlet.id}@example.com`,
         password: staffPassword,
         firstName: `Staff`,
-        lastName: `Outlet ${outlet.publicId}`,
+        lastName: `Outlet ${outlet.id}`,
         phone: `+1-555-${String(phoneCounter++).padStart(4, '0')}`,
         role: 'OUTLET_STAFF',
         isActive: true,
@@ -399,7 +399,7 @@ async function createCategories(merchants) {
     for (let i = 0; i < SYSTEM_CONFIG.PRODUCTS_PER_MERCHANT; i++) {
       const category = await prisma.category.create({
         data: {
-          publicId: categoryId++,
+          id: categoryId++,
           name: categoryNames[i % categoryNames.length],
           description: `Category ${i + 1} for ${merchant.name}`,
           isActive: true,
@@ -425,7 +425,7 @@ async function createProducts(categories, outlets) {
   for (const category of categories) {
     const product = await prisma.product.create({
       data: {
-        publicId: productId++,
+        id: productId++,
         name: `Product ${productId} - ${category.name}`,
         description: `Description for Product ${productId} in category ${category.name}`,
         barcode: `BAR${String(productId).padStart(6, '0')}`,
@@ -505,7 +505,7 @@ async function createCustomers(merchants) {
       
       const customer = await prisma.customer.create({
         data: {
-          publicId: customerId++,
+          id: customerId++,
           firstName,
           lastName,
           email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i + 1}@example.com`,
@@ -632,13 +632,13 @@ async function createOrders(outlets, customers, products, outletUsers) {
       }
       
       // Generate order number (without prefix)
-      const orderNumber = `ORD-${outlet.publicId.toString().padStart(3, '0')}-${(i + 1).toString().padStart(4, '0')}`;
+      const orderNumber = `ORD-${outlet.id.toString().padStart(3, '0')}-${(i + 1).toString().padStart(4, '0')}`;
       
       try {
         // Create the order
         const order = await prisma.order.create({
           data: {
-            publicId: orderPublicId++,
+            id: orderPublicId++,
             orderNumber,
             orderType,
             status,
@@ -728,7 +728,7 @@ async function createBillingCycles() {
   for (const cycle of cycleData) {
     const billingCycle = await prisma.billingCycle.create({
       data: {
-        publicId: cycleId++,
+        id: cycleId++,
         name: cycle.name,
         value: cycle.value,
         months: cycle.months,
@@ -826,7 +826,7 @@ async function createPlans() {
   for (const plan of planData) {
     const subscriptionPlan = await prisma.plan.create({
       data: {
-        publicId: planId++,
+        id: planId++,
         name: plan.name,
         description: plan.description,
         basePrice: plan.basePrice,
@@ -923,7 +923,7 @@ async function createSubscriptions(merchants, plans, planVariants) {
     
     const subscription = await prisma.subscription.create({
       data: {
-        publicId: subscriptionId++,
+        id: subscriptionId++,
         merchantId: merchant.id,
         planId: plan.id,
         status: status,
@@ -1011,7 +1011,7 @@ async function main() {
     
     // Get all outlets (default + additional)
     const allOutlets = await prisma.outlet.findMany({
-      orderBy: { publicId: 'asc' }
+      orderBy: { id: 'asc' }
     });
     console.log(`📊 Total outlets created: ${allOutlets.length} (${merchants.length} default + ${additionalOutlets.length} additional)`);
     
@@ -1149,14 +1149,14 @@ async function createSubscriptionPayments(subscriptions) {
     try {
       // Get next payment public ID
       const lastPayment = await prisma.payment.findFirst({
-        orderBy: { publicId: 'desc' }
+        orderBy: { id: 'desc' }
       });
-      const paymentPublicId = (lastPayment?.publicId || 0) + 1;
+      const paymentPublicId = (lastPayment?.id || 0) + 1;
       
       // Create payment record for subscription
       const payment = await prisma.payment.create({
         data: {
-          publicId: paymentPublicId,
+          id: paymentPublicId,
           subscriptionId: subscription.id,
           merchantId: subscription.merchantId,
           amount: subscription.amount,
@@ -1164,17 +1164,17 @@ async function createSubscriptionPayments(subscriptions) {
           method: 'STRIPE', // Default to Stripe for demo
           type: 'SUBSCRIPTION_PAYMENT',
           status: 'COMPLETED',
-          reference: `sub_${subscription.publicId}_${Date.now()}`,
+          reference: `sub_${subscription.id}_${Date.now()}`,
           description: `Payment for ${subscription.plan?.name} subscription`,
           processedAt: new Date()
         }
       });
       
       payments.push(payment);
-      console.log(`    ✅ Created payment for subscription ${subscription.publicId}`);
+      console.log(`    ✅ Created payment for subscription ${subscription.id}`);
       
     } catch (error) {
-      console.error(`    ❌ Error creating payment for subscription ${subscription.publicId}:`, error.message);
+      console.error(`    ❌ Error creating payment for subscription ${subscription.id}:`, error.message);
     }
   }
   

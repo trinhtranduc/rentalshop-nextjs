@@ -1,6 +1,6 @@
-import { authenticatedFetch, parseApiResponse } from '../common';
+import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
-import type { ApiResponse } from '../common';
+import type { ApiResponse } from '../core';
 import type { Order, OrderCreateInput, OrderUpdateInput, OrderFilters } from '@rentalshop/types';
 
 export interface OrdersResponse {

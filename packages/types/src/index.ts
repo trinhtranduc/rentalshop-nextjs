@@ -1,39 +1,50 @@
 // ============================================================================
-// TYPES PACKAGE EXPORTS
+// TYPES PACKAGE EXPORTS - CONSOLIDATED & DRY
 // ============================================================================
 
-// Authentication types
-export * from './auth';
+// ============================================================================
+// CORE ENTITIES - CONSOLIDATED (PRIMARY EXPORTS)
+// ============================================================================
+export * from './entities';
 
-// User types
-export * from './users';
+// ============================================================================
+// AUTHENTICATION & AUTHORIZATION
+// ============================================================================
+// Note: Auth types are now consolidated in entities/user.ts
+// These exports are maintained for backward compatibility
+export * from './auth/permissions';
 
-// Product types
-export * from './products';
-
-// Order types
-export * from './orders';
-
-// Customer types
-export * from './customers';
-
-// Merchant types
-export * from './merchants';
-
-// Outlet types
-export * from './outlets';
-
-// Category types
-export * from './categories';
-
-// Plan types
+// ============================================================================
+// BUSINESS DOMAIN TYPES
+// ============================================================================
 export * from './plans';
-
-// Subscription types
 export * from './subscription';
-
-// Settings types
 export * from './settings';
 
-// Common types
-export * from './common';
+// ============================================================================
+// DASHBOARD & ANALYTICS
+// ============================================================================
+export * from './dashboard';
+export * from './calendar';
+
+// ============================================================================
+// COMMON UTILITIES
+// ============================================================================
+// Note: Common types are now consolidated in entities/common/base.ts
+// These exports are maintained for backward compatibility
+export * from './common/currency';
+export * from './common/search';
+
+// ============================================================================
+// LEGACY SUPPORT - DEPRECATED
+// ============================================================================
+// These exports are maintained for backward compatibility
+// Consider migrating to the new consolidated types above
+
+// Legacy individual exports (deprecated - use entities/* instead)
+// Note: These are commented out to avoid export conflicts
+// export * from './user-data'; // DEPRECATED: Use entities/user instead
+// export * from './outlet-data'; // DEPRECATED: Use entities/outlet instead
+// export * from './merchants'; // DEPRECATED: Use entities/merchant instead
+// export * from './product-view'; // DEPRECATED: Use entities/product instead
+// export * from './order-detail'; // DEPRECATED: Use entities/order instead

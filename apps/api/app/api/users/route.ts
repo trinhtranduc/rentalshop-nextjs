@@ -151,7 +151,7 @@ export const POST = withUserManagementAuth(async (authorizedRequest) => {
       lastName: p.lastName.trim(),
       phone: p.phone?.trim(),
       role: p.role || 'OUTLET_STAFF',
-      merchantId: merchantId, // Include merchant ID for uniqueness checking
+      merchantId: merchantId ? parseInt(merchantId) : undefined, // Include merchant ID for uniqueness checking
     };
     
     console.log('🔄 Creating user with processed data:', {
@@ -257,11 +257,11 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
     const { user, userScope, request } = authorizedRequest;
 
     const body = await request.json();
-    const { publicId, ...updateData } = body;
+    const { id, ...updateData } = body;
     
-    // Always use publicId for API operations
-    if (!publicId) {
-      return NextResponse.json({ success: false, message: 'Public ID is required' }, { status: 400 });
+    // Always use id for API operations
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'ID is required' }, { status: 400 });
     }
 
     // Validate update data
@@ -279,17 +279,17 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
       );
     }
     
-    // Check if user exists using publicId
-    const existingUser = await findUserByPublicId(parseInt(publicId));
+    // Check if user exists using id
+    const existingUser = await findUserById(id);
     
     if (!existingUser) {
       return NextResponse.json({ success: false, message: 'User not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
     // Validate scope access - ensure user can only update users within their scope
-    if (userScope.merchantId && existingUser.merchant?.publicId !== userScope.merchantId) {
+    if (userScope.merchantId && existingUser.merchant?.id !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to update user from different merchant', {
-        existingUserMerchantId: existingUser.merchant?.publicId,
+        existingUserMerchantId: existingUser.merchant?.id,
         userScopeMerchantId: userScope.merchantId
       });
       return NextResponse.json(
@@ -298,9 +298,9 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
       );
     }
 
-    if (userScope.outletId && existingUser.outlet?.publicId !== userScope.outletId) {
+    if (userScope.outletId && existingUser.outlet?.id !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to update user from different outlet', {
-        existingUserOutletId: existingUser.outlet?.publicId,
+        existingUserOutletId: existingUser.outlet?.id,
         userScopeOutletId: userScope.outletId
       });
       return NextResponse.json(
@@ -312,12 +312,15 @@ export const PUT = withUserManagementAuth(async (authorizedRequest) => {
     console.log('✅ Scope validation passed - user can update this user data');
 
     // Prepare update data for database - firstName and lastName are already in the correct format
-    const updateDataForDB = { ...parsed.data };
+    const updateDataForDB = { 
+      id: parseInt(id),
+      ...parsed.data 
+    };
     
     console.log('Final update data for database:', updateDataForDB);
     
-    // Update user using the publicId from existingUser
-    const updatedUser = await updateUser(existingUser.publicId, updateDataForDB);
+    // Update user using the id from existingUser
+    const updatedUser = await updateUser(existingUser.id, updateDataForDB);
 
     return NextResponse.json({
       success: true,
@@ -367,13 +370,13 @@ async function getUsers(
   const skip = (page - 1) * limit;
 
   // Build where clause
-  const where: any = {};
+  const where: Record<string, any> = {};
 
   // Apply role-based scope filtering
   if (userScope.merchantId) {
-    // Convert publicId to CUID for database query
+    // Convert id to CUID for database query
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: userScope.merchantId },
+      where: { id: userScope.merchantId },
       select: { id: true }
     });
     if (merchant) {
@@ -383,9 +386,9 @@ async function getUsers(
   }
   
   if (userScope.outletId) {
-    // Convert publicId to CUID for database query
+    // Convert id to CUID for database query
     const outlet = await prisma.outlet.findUnique({
-      where: { publicId: userScope.outletId },
+      where: { id: userScope.outletId },
       select: { id: true }
     });
     if (outlet) {
@@ -420,12 +423,11 @@ async function getUsers(
   // Get total count
   const total = await prisma.user.count({ where });
 
-  // Get users - expose publicId as "id" to the client
+  // Get users - expose id as "id" to the client
   const users = await prisma.user.findMany({
     where,
     select: {
       id: true, // Internal ID for database operations
-      publicId: true,
       email: true,
       firstName: true,
       lastName: true,
@@ -437,19 +439,16 @@ async function getUsers(
       merchant: {
         select: {
           id: true, // Internal ID for database operations
-          publicId: true,
           name: true,
         }
       },
       outlet: {
         select: {
           id: true, // Internal ID for database operations
-          publicId: true,
           name: true,
           merchant: {
             select: { 
-              id: true, // Internal ID for database operations
-              publicId: true, 
+              id: true, // Internal ID for database operations 
               name: true 
             }
           }
@@ -461,7 +460,7 @@ async function getUsers(
     take: limit,
   });
 
-  // Transform the response to expose publicId as "id" to the client
+  // Transform the response to expose id to the client
   const transformedUsers = users.map((user: any) => ({
             id: user.id, // Return id to frontend
     email: user.email,
@@ -473,14 +472,14 @@ async function getUsers(
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     merchant: user.merchant ? {
-                id: user.merchant.publicId, // Return merchant publicId as "id" to frontend
+                id: user.merchant.id, // Return merchant id as "id" to frontend
       name: user.merchant.name,
     } : undefined,
     outlet: user.outlet ? {
-                id: user.outlet.publicId, // Return outlet publicId as "id" to frontend
+                id: user.outlet.id, // Return outlet id as "id" to frontend
       name: user.outlet.name,
       merchant: user.outlet.merchant ? {
-                  id: user.outlet.merchant.publicId, // Return merchant publicId as "id" to frontend
+                  id: user.outlet.merchant.id, // Return merchant id as "id" to frontend
         name: user.outlet.merchant.name,
       } : undefined,
     } : undefined,
@@ -546,32 +545,32 @@ export const DELETE = withUserManagementAuth(async (authorizedRequest) => {
     console.log('✅ User soft deleted successfully:', {
       deletedUserId: userId,
       deletedBy: user.id,
-      deletedUser: deletedUser.publicId
+      deletedUser: deletedUser.id
     });
 
     return NextResponse.json({
       success: true,
       message: 'User deleted successfully',
       data: {
-        id: deletedUser.publicId,
+        id: deletedUser.id,
         email: deletedUser.email,
         isActive: deletedUser.isActive,
         deletedAt: deletedUser.deletedAt
       }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Error in DELETE /api/users:', error);
 
     // Handle specific error cases
-    if (error.message.includes('not found')) {
+    if (error instanceof Error && error.message.includes('not found')) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: API.STATUS.NOT_FOUND }
       );
     }
 
-    if (error.message.includes('already deleted')) {
+    if (error instanceof Error && error.message.includes('already deleted')) {
       return NextResponse.json(
         { success: false, message: 'User is already deleted' },
         { status: 400 }
@@ -579,7 +578,7 @@ export const DELETE = withUserManagementAuth(async (authorizedRequest) => {
     }
 
     return NextResponse.json(
-      { success: false, message: 'Failed to delete user', error: error.message },
+      { success: false, message: 'Failed to delete user', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }

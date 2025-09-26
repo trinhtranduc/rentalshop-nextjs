@@ -45,17 +45,17 @@ export async function GET(request: NextRequest) {
 
     // Add scope filtering based on user role
     if (userScope.outletId) {
-      // Find outlet by publicId to get CUID
+      // Find outlet by id to get CUID
       const outlet = await prisma.outlet.findUnique({
-        where: { publicId: userScope.outletId }
+        where: { id: userScope.outletId }
       });
       if (outlet) {
         orderWhere.outletId = outlet.id;
       }
     } else if (userScope.merchantId) {
-      // Find merchant by publicId to get CUID, then filter by outlet
+      // Find merchant by id to get CUID, then filter by outlet
       const merchant = await prisma.merchant.findUnique({
-        where: { publicId: userScope.merchantId },
+        where: { id: userScope.merchantId },
         include: { outlets: { select: { id: true } } }
       });
       if (merchant) {
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
         where: { id: item.productId },
         select: {
           id: true,
-          publicId: true, // Include publicId to use as the external ID
+          id: true, // Include id to use as the external ID
           name: true,
           rentPrice: true,
           images: true,
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       });
 
       topProductsWithDetails.push({
-        id: product?.publicId || 0, // Use publicId (number) as the external ID
+        id: product?.id || 0, // Use id (number) as the external ID
         name: product?.name || 'Unknown Product',
         rentPrice: product?.rentPrice || 0,
         category: product?.category?.name || 'Uncategorized',

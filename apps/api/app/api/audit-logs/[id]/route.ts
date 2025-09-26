@@ -38,7 +38,7 @@ export async function GET(
       include: {
         user: {
           select: {
-            publicId: true,
+            id: true,
             email: true,
             firstName: true,
             lastName: true,
@@ -63,7 +63,7 @@ export async function GET(
       entityId: auditLog.entityId,
       details: auditLog.details,
       user: auditLog.user ? {
-        id: auditLog.user.publicId,
+        id: auditLog.user.id,
         email: auditLog.user.email,
         name: `${auditLog.user.firstName} ${auditLog.user.lastName}`,
         role: auditLog.user.role

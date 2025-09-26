@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is trying to delete their own account
-    if (user.publicId !== userId) {
+    if (user.id !== userId) {
       return NextResponse.json(
         { success: false, message: 'You can only delete your own account' },
         { status: API.STATUS.FORBIDDEN }
@@ -41,14 +41,14 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ User account soft deleted successfully:', {
       deletedUserId: userId,
-      deletedUser: deletedUser.publicId
+      deletedUser: deletedUser.id
     });
 
     return NextResponse.json({
       success: true,
       message: 'Account deleted successfully',
       data: {
-        id: deletedUser.publicId,
+        id: deletedUser.id,
         email: deletedUser.email,
         isActive: deletedUser.isActive,
         deletedAt: deletedUser.deletedAt

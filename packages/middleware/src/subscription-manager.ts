@@ -75,10 +75,9 @@ export async function validateSubscriptionAccess(
   try {
     // Get merchant information with subscription
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: user.merchantId },
+      where: { id: user.merchantId },
       select: {
         id: true,
-        publicId: true,
         name: true,
         email: true,
         subscriptionStatus: true,
@@ -225,7 +224,6 @@ export async function checkSubscriptionExpiry(config: SubscriptionManagerConfig 
         merchant: {
           select: {
             id: true,
-            publicId: true,
             name: true,
             email: true
           }

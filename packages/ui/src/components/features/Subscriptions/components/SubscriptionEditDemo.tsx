@@ -5,10 +5,9 @@ import type { Subscription, Plan, Merchant, SubscriptionUpdateInput } from '@ren
 
 // Mock data for demo
 const mockSubscription: Subscription = {
-  id: 'sub_123',
-  publicId: 1,
-  merchantId: 'merchant_123',
-  planId: 'plan_123',
+  id: 1,
+  merchantId: 1,
+  planId: 1,
   status: 'active',
   currentPeriodStart: new Date('2024-01-01'),
   currentPeriodEnd: new Date('2024-02-01'),
@@ -25,15 +24,13 @@ const mockSubscription: Subscription = {
   createdAt: new Date('2023-12-01'),
   updatedAt: new Date('2024-01-01'),
   merchant: {
-    id: 'merchant_123',
-    publicId: 1,
+    id: 1,
     name: 'Demo Merchant',
     email: 'demo@merchant.com',
     subscriptionStatus: 'active'
   },
   plan: {
-    id: 'plan_123',
-    publicId: 1,
+    id: 1,
     name: 'Professional Plan',
     description: 'Professional features for growing businesses',
     basePrice: 29.99,
@@ -55,8 +52,7 @@ const mockSubscription: Subscription = {
 
 const mockPlans: Plan[] = [
   {
-    id: 'plan_123',
-    publicId: 1,
+    id: 1,
     name: 'Professional Plan',
     description: 'Professional features for growing businesses',
     basePrice: 29.99,
@@ -75,8 +71,7 @@ const mockPlans: Plan[] = [
     updatedAt: new Date('2024-01-01')
   },
   {
-    id: 'plan_456',
-    publicId: 2,
+    id: 2,
     name: 'Enterprise Plan',
     description: 'Enterprise features for large businesses',
     basePrice: 99.99,

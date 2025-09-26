@@ -2,9 +2,9 @@
 // NEW: CORRECT DUAL ID PRODUCT FUNCTIONS
 // ============================================================================
 // This file contains only the correct product functions that follow the dual ID system:
-// - Input: publicId (number)
-// - Database: queries by publicId, uses CUIDs for relationships
-// - Return: includes both id (CUID) and publicId (number)
+// - Input: id (number)
+// - Database: queries by id, uses CUIDs for relationships
+// - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
 import type { ProductSearchFilter } from '@rentalshop/types';
@@ -14,37 +14,35 @@ import type { ProductSearchFilter } from '@rentalshop/types';
 // ============================================================================
 
 /**
- * Get product by publicId (number) - follows dual ID system
+ * Get product by id (number) - follows dual ID system
  * SECURITY: Enforces merchant isolation to prevent cross-tenant access
  */
-export async function getProductByPublicId(publicId: number, merchantId: number) {
-  // Find merchant by publicId to get the CUID
+export async function getProductById(id: number, merchantId: number) {
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   return await prisma.product.findFirst({
     where: { 
-      publicId,
+      id,
       merchantId: merchant.id // Use CUID for merchant isolation
     },
     include: {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       category: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -56,8 +54,7 @@ export async function getProductByPublicId(publicId: number, merchantId: number)
           renting: true,
           outlet: {
             select: {
-              id: true,
-              publicId: true,
+      id: true,
               name: true,
               address: true,
             },
@@ -73,14 +70,14 @@ export async function getProductByPublicId(publicId: number, merchantId: number)
  * SECURITY: Enforces merchant isolation to prevent cross-tenant access
  */
 export async function getProductByBarcode(barcode: string, merchantId: number) {
-  // Find merchant by publicId to get the CUID
+  // Find merchant by id to get the CUID
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   return await prisma.product.findFirst({
@@ -92,14 +89,12 @@ export async function getProductByBarcode(barcode: string, merchantId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       category: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -127,7 +122,7 @@ function buildProductOrderByClause(sortBy?: string, sortOrder?: string): any {
 
 /**
  * Search products - follows dual ID system
- * Input: publicIds (numbers), Output: publicIds (numbers)
+ * Input: ids (numbers), Output: ids (numbers)
  */
 export async function searchProducts(filters: ProductSearchFilter) {
   const {
@@ -156,9 +151,9 @@ export async function searchProducts(filters: ProductSearchFilter) {
   };
 
   if (merchantId) {
-    // Find merchant by publicId
+    // Find merchant by id
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantId },
+      where: { id: merchantId },
       select: { id: true }
     });
     
@@ -168,9 +163,9 @@ export async function searchProducts(filters: ProductSearchFilter) {
   }
 
   if (categoryId) {
-    // Find category by publicId
+    // Find category by id
     const category = await prisma.category.findUnique({
-      where: { publicId: categoryId },
+      where: { id: categoryId },
       select: { id: true }
     });
     
@@ -192,9 +187,9 @@ export async function searchProducts(filters: ProductSearchFilter) {
 
   // If outletId is specified, only show products that have stock at that outlet
   if (outletId) {
-    // Find outlet by publicId
+    // Find outlet by id
     const outlet = await prisma.outlet.findUnique({
-      where: { publicId: outletId },
+      where: { id: outletId },
       select: { id: true }
     });
     
@@ -236,8 +231,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
     prisma.product.findMany({
       where,
       select: {
-        id: true,
-        publicId: true,
+      id: true,
         name: true,
         description: true,
         barcode: true,
@@ -251,15 +245,13 @@ export async function searchProducts(filters: ProductSearchFilter) {
         updatedAt: true,
         category: {
           select: {
-            id: true,
-            publicId: true,
+      id: true,
             name: true
           }
         },
         merchant: {
           select: {
-            id: true,
-            publicId: true,
+      id: true,
             name: true
           }
         },
@@ -271,8 +263,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
             renting: true,
             outlet: {
               select: {
-                id: true,
-                publicId: true,
+      id: true,
                 name: true,
                 address: true
               }
@@ -288,9 +279,8 @@ export async function searchProducts(filters: ProductSearchFilter) {
   ]);
 
   // Transform to match expected types
-  const transformedProducts = products.map(product => ({
-    id: product.publicId, // Return publicId (number) for external use
-    publicId: product.publicId,
+  const transformedProducts = products.map((product: any) => ({
+    id: product.id, // Return id (number) for external use
     name: product.name,
     description: product.description,
     barcode: product.barcode,
@@ -303,23 +293,20 @@ export async function searchProducts(filters: ProductSearchFilter) {
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
     category: {
-      id: product.category.publicId, // Return publicId (number)
-      publicId: product.category.publicId,
+      id: product.category.id, // Return id (number)
       name: product.category.name,
     },
     merchant: {
-      id: product.merchant.publicId, // Return publicId (number)
-      publicId: product.merchant.publicId,
+      id: product.merchant.id, // Return id (number)
       name: product.merchant.name,
     },
-    outletStock: product.outletStock.map(stock => ({
+    outletStock: product.outletStock.map((stock: any) => ({
       id: stock.id, // Keep CUID for internal use
       stock: stock.stock,
       available: stock.available,
       renting: stock.renting,
       outlet: {
-        id: stock.outlet.publicId, // Return publicId (number)
-        publicId: stock.outlet.publicId,
+        id: stock.outlet.id, // Return id (number)
         name: stock.outlet.name,
         address: stock.outlet.address,
       },
@@ -343,40 +330,40 @@ export async function searchProducts(filters: ProductSearchFilter) {
 
 /**
  * Create new product - follows dual ID system
- * Input: publicIds (numbers), Output: publicId (number)
+ * Input: ids (numbers), Output: id (number)
  */
 export async function createProduct(input: any): Promise<any> {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: input.merchantId }
+    where: { id: input.merchantId }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${input.merchantId} not found`);
+    throw new Error(`Merchant with id ${input.merchantId} not found`);
   }
 
-  // Find category by publicId if provided
+  // Find category by id if provided
   let category = null;
   if (input.categoryId) {
     category = await prisma.category.findUnique({
-      where: { publicId: input.categoryId }
+      where: { id: input.categoryId }
     });
     
     if (!category) {
-      throw new Error(`Category with publicId ${input.categoryId} not found`);
+      throw new Error(`Category with id ${input.categoryId} not found`);
     }
   }
 
-  // Generate next product publicId
+  // Generate next product id
   const lastProduct = await prisma.product.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  const nextPublicId = (lastProduct?.publicId || 0) + 1;
+  const nextPublicId = (lastProduct?.id || 0) + 1;
 
   // Create product
   const productData: any = {
-    publicId: nextPublicId,
+    id: nextPublicId,
     name: input.name,
     description: input.description,
     barcode: input.barcode,
@@ -400,14 +387,12 @@ export async function createProduct(input: any): Promise<any> {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       category: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -423,19 +408,19 @@ export async function createProduct(input: any): Promise<any> {
 
 /**
  * Update product - follows dual ID system
- * Input: publicId (number), Output: publicId (number)
+ * Input: id (number), Output: id (number)
  */
 export async function updateProduct(
-  publicId: number,
+  id: number,
   input: any
 ): Promise<any> {
-  // Find product by publicId
+  // Find product by id
   const existingProduct = await prisma.product.findUnique({
-    where: { publicId }
+    where: { id }
   });
 
   if (!existingProduct) {
-    throw new Error(`Product with publicId ${publicId} not found`);
+    throw new Error(`Product with id ${id} not found`);
   }
 
   // Handle category update if categoryId is provided
@@ -445,13 +430,13 @@ export async function updateProduct(
       // Remove category
       categoryId = null;
     } else {
-      // Find category by publicId
+      // Find category by id
       const category = await prisma.category.findUnique({
-        where: { publicId: input.categoryId }
+        where: { id: input.categoryId }
       });
       
       if (!category) {
-        throw new Error(`Category with publicId ${input.categoryId} not found`);
+        throw new Error(`Category with id ${input.categoryId} not found`);
       }
       
       categoryId = category.id; // Use CUID for database
@@ -475,20 +460,18 @@ export async function updateProduct(
 
   // Update product
   const updatedProduct = await prisma.product.update({
-    where: { publicId },
+    where: { id },
     data: updateData,
     include: {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       category: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -506,14 +489,14 @@ export async function updateProduct(
  * Get products by merchant - follows dual ID system
  */
 export async function getProductsByMerchant(merchantId: number) {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   return await prisma.product.findMany({
@@ -522,7 +505,6 @@ export async function getProductsByMerchant(merchantId: number) {
       category: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -535,14 +517,14 @@ export async function getProductsByMerchant(merchantId: number) {
  * Get products by category - follows dual ID system
  */
 export async function getProductsByCategory(categoryId: number) {
-  // Find category by publicId
+  // Find category by id
   const category = await prisma.category.findUnique({
-    where: { publicId: categoryId },
+    where: { id: categoryId },
     select: { id: true }
   });
   
   if (!category) {
-    throw new Error(`Category with publicId ${categoryId} not found`);
+    throw new Error(`Category with id ${categoryId} not found`);
   }
 
   return await prisma.product.findMany({
@@ -551,7 +533,6 @@ export async function getProductsByCategory(categoryId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -568,24 +549,24 @@ export async function updateProductStock(
   outletId: number,
   stockChange: number
 ): Promise<any> {
-  // Find product by publicId
+  // Find product by id
   const product = await prisma.product.findUnique({
-    where: { publicId: productId },
+    where: { id: productId },
     select: { id: true }
   });
   
   if (!product) {
-    throw new Error(`Product with publicId ${productId} not found`);
+    throw new Error(`Product with id ${productId} not found`);
   }
 
-  // Find outlet by publicId
+  // Find outlet by id
   const outlet = await prisma.outlet.findUnique({
-    where: { publicId: outletId },
+    where: { id: outletId },
     select: { id: true }
   });
   
   if (!outlet) {
-    throw new Error(`Outlet with publicId ${outletId} not found`);
+    throw new Error(`Outlet with id ${outletId} not found`);
   }
 
   // Update or create outlet stock
@@ -614,24 +595,22 @@ export async function updateProductStock(
 
 /**
  * Delete product - follows dual ID system
- * Input: publicId (number), Output: deleted product data
+ * Input: id (number), Output: deleted product data
  */
-export async function deleteProduct(publicId: number): Promise<any> {
-  // Find product by publicId
+export async function deleteProduct(id: number): Promise<any> {
+  // Find product by id
   const product = await prisma.product.findUnique({
-    where: { publicId },
+    where: { id },
     include: {
       category: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -639,24 +618,22 @@ export async function deleteProduct(publicId: number): Promise<any> {
   });
   
   if (!product) {
-    throw new Error(`Product with publicId ${publicId} not found`);
+    throw new Error(`Product with id ${id} not found`);
   }
 
   // Delete the product (this will cascade to outletStock due to Prisma schema)
   const deletedProduct = await prisma.product.delete({
-    where: { publicId },
+    where: { id },
     include: {
       category: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -665,8 +642,7 @@ export async function deleteProduct(publicId: number): Promise<any> {
 
   // Transform to match expected types
   return {
-    id: deletedProduct.publicId,
-    publicId: deletedProduct.publicId,
+    id: deletedProduct.id,
     name: deletedProduct.name,
     description: deletedProduct.description,
     barcode: deletedProduct.barcode,
@@ -679,13 +655,11 @@ export async function deleteProduct(publicId: number): Promise<any> {
     createdAt: deletedProduct.createdAt,
     updatedAt: deletedProduct.updatedAt,
     category: {
-      id: deletedProduct.category.publicId,
-      publicId: deletedProduct.category.publicId,
+      id: deletedProduct.category.id,
       name: deletedProduct.category.name,
     },
     merchant: {
-      id: deletedProduct.merchant.publicId,
-      publicId: deletedProduct.merchant.publicId,
+      id: deletedProduct.merchant.id,
       name: deletedProduct.merchant.name,
     },
   };

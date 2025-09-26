@@ -183,25 +183,20 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       };
     }
 
-    // Transform the database user object to match AuthUser interface
+    // Transform the JWT payload to match AuthUser interface
+    // Note: JWT only contains basic info, full user data should be fetched from database in API routes
     const transformedUser: AuthUser = {
-      id: user.publicId,
+      id: user.id,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      name: `${user.firstName} ${user.lastName}`,
+      firstName: '', // Will be populated from database in API routes
+      lastName: '',  // Will be populated from database in API routes
+      name: user.email, // Use email as fallback name
       role: user.role,
-      phone: user.phone || undefined,
-      merchant: user.merchant ? {
-        id: user.merchant.publicId,
-        name: user.merchant.name,
-        description: user.merchant.description || undefined
-      } : undefined,
-      outlet: user.outlet ? {
-        id: user.outlet.publicId,
-        name: user.outlet.name,
-        address: user.outlet.address || undefined
-      } : undefined
+      phone: undefined, // Will be populated from database in API routes
+      merchantId: user.merchantId,
+      outletId: user.outletId,
+      merchant: undefined, // Will be populated from database in API routes
+      outlet: undefined   // Will be populated from database in API routes
     };
 
     return {

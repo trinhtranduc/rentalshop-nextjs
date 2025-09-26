@@ -13,9 +13,7 @@ import {
   createOrder, 
   searchOrders, 
   getOrderStats,
-  getOrderByPublicId,
-  updateOrder,
-  cancelOrder
+  updateOrder
 } from '@rentalshop/database';
 import type { OrderInput, OrderSearchFilter, OrderUpdateInput, OrderType, OrderStatus } from '@rentalshop/types';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
@@ -58,9 +56,9 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
 
     // If productId is provided, get orders for that specific product
     if (productId) {
-      // Convert publicId to CUID for database query
+      // Use id directly for database query
       const product = await prisma.product.findUnique({
-        where: { publicId: parseInt(productId) },
+        where: { id: parseInt(productId) },
         select: { id: true }
       });
       
@@ -89,7 +87,6 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
           customer: {
             select: {
               id: true,
-              publicId: true,
               firstName: true,
               lastName: true,
               phone: true,
@@ -99,12 +96,10 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
           outlet: {
             select: {
               id: true,
-              publicId: true,
               name: true,
               merchant: {
                 select: {
                   id: true,
-                  publicId: true,
                   name: true,
                   email: true,
                   phone: true
@@ -120,7 +115,6 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
               product: {
                 select: {
                   id: true,
-                  publicId: true,
                   name: true
                 }
               }
@@ -157,8 +151,8 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
       return NextResponse.json({
         success: true,
         data: {
-          orders: orders.map(order => ({
-            id: order.publicId,                    // Return publicId as "id" to frontend
+          orders: orders.map((order: any) => ({
+            id: order.id,                          // Return id directly to frontend
             orderNumber: order.orderNumber,
             orderType: order.orderType,
             status: order.status,
@@ -172,33 +166,33 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
             returnedAt: order.returnedAt,
             isReadyToDeliver: order.isReadyToDeliver,
             customer: order.customer ? {
-              id: order.customer.publicId,         // Use publicId for customer
+              id: order.customer.id,               // Use id for customer
               firstName: order.customer.firstName,
               lastName: order.customer.lastName,
               phone: order.customer.phone,
               email: order.customer.email
             } : null,
             outlet: {
-              id: order.outlet.publicId,           // Use publicId for outlet
+              id: order.outlet.id,                 // Use id for outlet
               name: order.outlet.name,
               merchant: order.outlet.merchant ? {
-                id: order.outlet.merchant.publicId,  // Use publicId for merchant
+                id: order.outlet.merchant.id,      // Use id for merchant
                 name: order.outlet.merchant.name,
                 email: order.outlet.merchant.email,
                 phone: order.outlet.merchant.phone
               } : null
             },
-            orderItems: order.orderItems.map(item => ({
+            orderItems: order.orderItems.map((item: any) => ({
               id: 0,                              // Placeholder for compatibility
-              orderId: order.publicId,            // Use publicId for order
-              productId: item.product.publicId,   // Product public ID
+              orderId: order.id,                  // Use id for order
+              productId: item.product.id,         // Product id
               quantity: item.quantity,
               unitPrice: 0,                       // Placeholder for compatibility
               totalPrice: 0                       // Placeholder for compatibility
             })),
-            payments: order.payments.map(payment => ({
+            payments: order.payments.map((payment: any) => ({
               id: 0,                              // Placeholder for compatibility
-              orderId: order.publicId,            // Use publicId for order
+              orderId: order.id,                  // Use id for order
               amount: payment.amount,
               method: payment.method,
               status: payment.status,
@@ -229,11 +223,11 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
     };
 
     // Use the searchOrders function for proper filtering and pagination
-    const result = await searchOrders(searchFilters, getUserScope(user as any));
+    const result = await searchOrders(searchFilters);
     
-    // Transform the result to use publicId as id and remove internal CUIDs
+    // Transform the result to use id directly
     const transformedOrders = result.data.orders.map((order: any) => ({
-      id: order.publicId,                    // Use publicId as id
+      id: order.id,                          // Use id directly
       orderNumber: order.orderNumber,
       orderType: order.orderType,
       status: order.status,
@@ -251,19 +245,19 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
       discountValue: order.discountValue,
       discountAmount: order.discountAmount,
       customer: order.customer ? {
-        id: order.customer.publicId,         // Use publicId as id
+        id: order.customer.id,               // Use id directly
         firstName: order.customer.firstName,
         lastName: order.customer.lastName,
         email: order.customer.email,
         phone: order.customer.phone,
       } : null,
       outlet: {
-        id: order.outlet.publicId,           // Use publicId as id
+        id: order.outlet.id,                 // Use id directly
         name: order.outlet.name,
         address: order.outlet.address,
-        merchantId: order.outlet.merchant.publicId, // Use publicId as id
+        merchantId: order.outlet.merchant.id, // Use id directly
         merchant: {
-          id: order.outlet.merchant.publicId,       // Use publicId as id
+          id: order.outlet.merchant.id,      // Use id directly
           name: order.outlet.merchant.name,
           email: order.outlet.merchant.email,
           phone: order.outlet.merchant.phone
@@ -271,20 +265,20 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
       },
       // Creator information
       createdBy: order.createdBy ? {
-        id: order.createdBy.publicId,        // Use publicId as id
+        id: order.createdBy.id,              // Use id directly
         firstName: order.createdBy.firstName,
         lastName: order.createdBy.lastName,
         email: order.createdBy.email,
         role: order.createdBy.role,
       } : null,
       orderItems: order.orderItems.map((item: any) => ({
-        id: item.publicId || 0,              // Use publicId as id (fallback to 0 if not available)
-        productId: item.product.publicId,    // Use publicId as id
+        id: item.id || 0,                    // Use id directly (fallback to 0 if not available)
+        productId: item.product.id,          // Use id directly
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
         product: {
-          id: item.product.publicId,         // Use publicId as id
+          id: item.product.id,               // Use id directly
           name: item.product.name,
           description: item.product.description,
           images: item.product.images,
@@ -292,7 +286,7 @@ export const GET = withOrderViewAuth(async (authorizedRequest) => {
         },
       })),
       payments: order.payments?.map((payment: any) => ({
-        id: payment.publicId || 0,           // Use publicId as id (fallback to 0 if not available)
+        id: payment.id || 0,                 // Use id directly (fallback to 0 if not available)
         amount: payment.amount,
         method: payment.method,
         status: payment.status,
@@ -360,6 +354,7 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
       orderType: p.orderType,
       customerId: p.customerId,
       outletId: parseInt(p.outletId.toString()), // Convert string to number for Prisma
+      createdById: user.id, // Add createdById from user
       pickupPlanAt: p.pickupPlanAt,
       returnPlanAt: p.returnPlanAt,
       rentalDuration: p.rentalDuration,
@@ -417,7 +412,9 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
       }
 
       // Calculate rental duration in days
-      const rentalDurationMs = orderInput.returnPlanAt.getTime() - orderInput.pickupPlanAt.getTime();
+      const pickupDate = new Date(orderInput.pickupPlanAt);
+      const returnDate = new Date(orderInput.returnPlanAt);
+      const rentalDurationMs = returnDate.getTime() - pickupDate.getTime();
       const rentalDurationDays = Math.ceil(rentalDurationMs / (1000 * 60 * 60 * 24));
       
       // Validate rental duration if provided
@@ -541,7 +538,7 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
     if (userScope.merchantId) {
       // For MERCHANT role, verify the outlet belongs to their merchant
       const outlet = await prisma.outlet.findUnique({
-        where: { publicId: orderInput.outletId }, // Now outletId is already a number
+        where: { id: orderInput.outletId }, // Use id directly
         select: { merchantId: true }
       });
       
@@ -553,14 +550,9 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
         }, { status: 400 });
       }
       
-      // Since userScope.merchantId is a number (publicId) and outlet.merchantId is a string (CUID),
-      // we need to find the merchant by publicId to compare
-      const userMerchant = await prisma.merchant.findUnique({
-        where: { publicId: userScope.merchantId },
-        select: { id: true }
-      });
-      
-      if (!userMerchant || outlet.merchantId !== userMerchant.id) {
+      // Since userScope.merchantId is a number and outlet.merchantId is also a number,
+      // we can compare directly
+      if (outlet.merchantId !== userScope.merchantId) {
         return NextResponse.json({
           success: false,
           message: 'You can only create orders for outlets in your merchant organization',
@@ -574,7 +566,7 @@ export const POST = withOrderCreateAuth(async (authorizedRequest) => {
     console.log('🔍 Business validation passed, calling createOrder function...');
 
     // Create the order
-    const order = await createOrder(orderInput, user.id);
+    const order = await createOrder(orderInput);
     
     console.log('✅ Order created successfully:', {
       orderId: order.id,
@@ -732,6 +724,12 @@ export const PUT = withOrderUpdateAuth(async (authorizedRequest) => {
 
     const u = parsed.data;
     const updateInput: OrderUpdateInput = {
+      orderType: 'RENT', // Default value
+      outletId: 0, // Default value
+      createdById: user.id, // Required field
+      orderItems: [], // Default empty array
+      subtotal: 0, // Default value
+      totalAmount: 0, // Default value
       ...(u.status !== undefined && { status: u.status as any }),
       ...(u.pickupPlanAt !== undefined && { pickupPlanAt: u.pickupPlanAt }),
       ...(u.returnPlanAt !== undefined && { returnPlanAt: u.returnPlanAt }),
@@ -750,7 +748,7 @@ export const PUT = withOrderUpdateAuth(async (authorizedRequest) => {
     };
 
     // Update the order
-    const updatedOrder = await updateOrder(parseInt(orderId), updateInput, user.id);
+    const updatedOrder = await updateOrder(parseInt(orderId), updateInput);
 
     // Log audit event for order update
     try {
@@ -817,8 +815,17 @@ export const DELETE = withOrderDeleteAuth(async (authorizedRequest) => {
     const body = await request.json();
     const reason = body.reason || 'Order cancelled by user';
 
-    // Cancel the order
-    const cancelledOrder = await cancelOrder(parseInt(orderId), user.id, reason);
+    // Cancel the order by updating status
+    const cancelledOrder = await updateOrder(parseInt(orderId), {
+      orderType: 'RENT', // Default value
+      outletId: 0, // Default value
+      createdById: user.id, // Required field
+      orderItems: [], // Default empty array
+      subtotal: 0, // Default value
+      totalAmount: 0, // Default value
+      status: 'CANCELLED',
+      notes: reason
+    });
 
     // Log audit event for order cancellation
     try {
@@ -828,7 +835,7 @@ export const DELETE = withOrderDeleteAuth(async (authorizedRequest) => {
         entityId: cancelledOrder?.id.toString() || orderId,
         entityName: cancelledOrder?.orderNumber || `Order ${orderId}`,
         oldValues: {}, // We don't have the old values in this context
-        newValues: cancelledOrder,
+        newValues: cancelledOrder || {},
         description: `Order cancelled: ${cancelledOrder?.orderNumber || orderId} - ${reason}`,
         context: {
           ...auditContext,

@@ -20,10 +20,9 @@ export interface OrderItemFormData {
   id?: string;          // Database CUID (only present when editing existing items)
   
   // Product information
-  productId: number;    // Frontend uses publicId (number) for product selection
+  productId: number;    // Frontend uses id (number) for product selection
   product: {
-    id: number;         // Frontend uses publicId (number) for display
-    publicId: number;   // Keep publicId for reference
+    id: number;         // Frontend uses id (number) for display
     name: string;
     description?: string;
     images?: string[] | null;

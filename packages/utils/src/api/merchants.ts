@@ -1,6 +1,6 @@
-import { authenticatedFetch, parseApiResponse } from '../common';
+import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
-import type { ApiResponse } from '../common';
+import type { ApiResponse } from '../core';
 
 // ============================================================================
 // TYPES
@@ -105,20 +105,12 @@ export const merchantsApi = {
     return result;
   },
 
-  /**
-   * Get merchant by public ID
-   */
-  async getMerchantByPublicId(publicId: number): Promise<ApiResponse<Merchant>> {
-    const response = await authenticatedFetch(`${apiUrls.merchants.list}?publicId=${publicId}`);
-    const result = await parseApiResponse<Merchant>(response);
-    return result;
-  },
 
   /**
    * Get merchant detail with full data (subscriptions, outlets, users, etc.)
    */
-  async getMerchantDetail(publicId: number): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(apiUrls.merchants.get(publicId));
+  async getMerchantDetail(id: number): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.merchants.get(id));
     const result = await parseApiResponse<any>(response);
     return result;
   },

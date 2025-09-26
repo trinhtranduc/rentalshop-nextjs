@@ -141,8 +141,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform data to match frontend expectations
-    const transformedMerchants = merchants.map(merchant => ({
-      id: merchant.publicId,
+    const transformedMerchants = merchants.map((merchant: any) => ({
+      id: merchant.id,
       name: merchant.name,
       email: merchant.email,
       phone: merchant.phone,
@@ -227,16 +227,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new merchant
-    // Generate publicId
+    // Generate id
     const lastMerchant = await prisma.merchant.findFirst({
-      orderBy: { publicId: 'desc' },
-      select: { publicId: true }
+      orderBy: { id: 'desc' },
+      select: { id: true }
     });
-    const nextPublicId = (lastMerchant?.publicId || 0) + 1;
+    const nextPublicId = (lastMerchant?.id || 0) + 1;
 
     const merchant = await prisma.merchant.create({
       data: {
-        publicId: nextPublicId,
+        id: nextPublicId,
         name,
         email,
         phone,
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Merchant created successfully',
       data: {
-        id: merchant.publicId,
+        id: merchant.id,
         name: merchant.name,
         email: merchant.email,
         phone: merchant.phone,

@@ -9,17 +9,16 @@ import { calculatePlanPricing } from './subscription';
 /**
  * Get plan by public ID
  */
-export async function getPlanByPublicId(publicId: number): Promise<Plan | null> {
+export async function getPlanById(id: number): Promise<Plan | null> {
   try {
     const plan = await prisma.plan.findUnique({
-      where: { publicId }
+      where: { id }
     });
 
     if (!plan) return null;
 
     return {
       id: plan.id,
-      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
       basePrice: plan.basePrice,
@@ -49,9 +48,8 @@ export async function getAllPlans(): Promise<Plan[]> {
       orderBy: { sortOrder: 'asc' }
     });
 
-    return plans.map(plan => ({
+    return plans.map((plan: any) => ({
       id: plan.id,
-      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
       basePrice: plan.basePrice,
@@ -105,9 +103,8 @@ export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: P
       skip: filters.offset || 0
     });
 
-    const transformedPlans = plans.map(plan => ({
+    const transformedPlans = plans.map((plan: any) => ({
       id: plan.id,
-      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
       basePrice: plan.basePrice,
@@ -138,15 +135,8 @@ export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: P
  */
 export async function createPlan(data: PlanCreateInput): Promise<Plan> {
   try {
-    // Generate next publicId
-    const lastPlan = await prisma.plan.findFirst({
-      orderBy: { publicId: 'desc' }
-    });
-    const nextPublicId = (lastPlan?.publicId || 0) + 1;
-
     const plan = await prisma.plan.create({
       data: {
-        publicId: nextPublicId,
         name: data.name,
         description: data.description,
         basePrice: data.basePrice,
@@ -162,7 +152,6 @@ export async function createPlan(data: PlanCreateInput): Promise<Plan> {
 
     return {
       id: plan.id,
-      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
       basePrice: plan.basePrice,
@@ -185,10 +174,10 @@ export async function createPlan(data: PlanCreateInput): Promise<Plan> {
 /**
  * Update a plan
  */
-export async function updatePlan(publicId: number, data: PlanUpdateInput): Promise<Plan | null> {
+export async function updatePlan(id: number, data: PlanUpdateInput): Promise<Plan | null> {
   try {
     const plan = await prisma.plan.update({
-      where: { publicId },
+      where: { id },
       data: {
         ...(data.name && { name: data.name }),
         ...(data.description && { description: data.description }),
@@ -207,7 +196,6 @@ export async function updatePlan(publicId: number, data: PlanUpdateInput): Promi
 
     return {
       id: plan.id,
-      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
       basePrice: plan.basePrice,
@@ -230,10 +218,10 @@ export async function updatePlan(publicId: number, data: PlanUpdateInput): Promi
 /**
  * Delete a plan (soft delete)
  */
-export async function deletePlan(publicId: number): Promise<boolean> {
+export async function deletePlan(id: number): Promise<boolean> {
   try {
     await prisma.plan.update({
-      where: { publicId },
+      where: { id },
       data: { 
         isActive: false,
         deletedAt: new Date()
@@ -259,9 +247,8 @@ export async function getActivePlans(): Promise<Plan[]> {
       orderBy: { sortOrder: 'asc' }
     });
 
-    return plans.map(plan => ({
+    return plans.map((plan: any) => ({
       id: plan.id,
-      publicId: plan.publicId,
       name: plan.name,
       description: plan.description,
       basePrice: plan.basePrice,

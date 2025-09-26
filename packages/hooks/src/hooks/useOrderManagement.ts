@@ -147,7 +147,7 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
           totalPagesCount = 1;
         } else if (response.data.orders) {
           // Nested response structure
-          ordersData = response.data.orders as OrderWithDetails[];
+          ordersData = response.data.orders as unknown as OrderWithDetails[];
           total = response.data.total || 0;
           totalPagesCount = response.data.totalPages || 1;
         } else {

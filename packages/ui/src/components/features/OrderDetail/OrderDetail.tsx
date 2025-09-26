@@ -427,7 +427,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const handlePickupOrder = async () => {
     try {
       setIsPickupLoading(true);
-      await ordersApi.pickupOrder(order.publicId);
+      await ordersApi.pickupOrder(order.id);
       showSuccess('Pickup Successful', 'Order pickup has been processed.');
       onStatusChange && onStatusChange(order.id, 'PICKUPED');
       setIsCollectionModalOpen(false); // Close modal after successful pickup
@@ -446,7 +446,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const handleReturnOrder = async () => {
     try {
       setIsReturnLoading(true);
-      await ordersApi.returnOrder(order.publicId);
+      await ordersApi.returnOrder(order.id);
       showSuccess('Return Successful', 'Order return has been processed.');
       onStatusChange && onStatusChange(order.id, 'RETURNED');
       setIsReturnModalOpen(false); // Close modal after successful return
@@ -465,7 +465,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const handleCancelOrder = async () => {
     try {
       setIsCancelLoading(true);
-      await ordersApi.cancelOrder(order.publicId);
+      await ordersApi.cancelOrder(order.id);
       showSuccess('Cancellation Successful', 'Order has been cancelled.');
       onStatusChange && onStatusChange(order.id, 'CANCELLED');
       

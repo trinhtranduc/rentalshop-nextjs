@@ -236,15 +236,15 @@ export async function generateOrderNumber(
 
   // Validate outlet exists
   const outlet = await prisma.outlet.findUnique({
-    where: { publicId: outletId },
-    select: { id: true, publicId: true, name: true }
+    where: { id: outletId },
+    select: { id: true, name: true }
   });
 
   if (!outlet) {
-    throw new Error(`Outlet with publicId ${outletId} not found`);
+    throw new Error(`Outlet with id ${outletId} not found`);
   }
 
-  const outletIdStr = outlet.publicId.toString().padStart(3, '0');
+  const outletIdStr = outlet.id.toString().padStart(3, '0');
   const generatedAt = new Date();
 
   switch (format) {
@@ -286,7 +286,7 @@ async function generateSequentialNumber(
   while (retryCount < maxRetries) {
     try {
       // Use atomic increment with retry logic
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: any) => {
         // Get current sequence for this outlet
         const lastOrder = await tx.order.findFirst({
           where: { 
@@ -352,7 +352,7 @@ async function generateDateBasedNumber(
 ): Promise<OrderNumberResult> {
   const dateStr = generatedAt.toISOString().split('T')[0].replace(/-/g, '');
   
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: any) => {
     // Get last order for this outlet on this date
     const lastOrder = await tx.order.findFirst({
       where: { 
@@ -626,12 +626,12 @@ export async function getOutletOrderStats(outletId: number): Promise<{
   lastOrderDate?: Date;
 }> {
   const outlet = await prisma.outlet.findUnique({
-    where: { publicId: outletId },
+    where: { id: outletId },
     select: { id: true }
   });
 
   if (!outlet) {
-    throw new Error(`Outlet with publicId ${outletId} not found`);
+    throw new Error(`Outlet with id ${outletId} not found`);
   }
 
   const today = new Date();

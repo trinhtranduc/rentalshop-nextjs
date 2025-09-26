@@ -1,18 +1,13 @@
 'use client';
 
 import { useCallback } from 'react';
+import type { Product } from '@rentalshop/types';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export interface Product {
-  id: number;
-  name: string;
-  stock: number;
-  renting: number;
-  available: number;
-}
+// Product interface is now imported from @rentalshop/types
 
 export interface Order {
   id: number;

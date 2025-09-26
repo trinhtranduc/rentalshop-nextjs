@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loginUser } from '@rentalshop/auth';
+import { prisma } from '@rentalshop/database';
+import { comparePassword, generateToken } from '@rentalshop/auth';
 import { loginSchema, SubscriptionError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
@@ -138,17 +139,65 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = loginSchema.parse(body);
     
-    // Login user
-    const result = await loginUser({
-      email: validatedData.email,
-      password: validatedData.password,
+    // Find user in database
+    const user = await prisma.user.findUnique({
+      where: { email: validatedData.email },
+      include: {
+        merchant: true,
+        outlet: true,
+      },
     });
-    
-    return NextResponse.json({
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return NextResponse.json(
+        { success: false, message: 'Account is deactivated. Please contact support.' },
+        { status: 403 }
+      );
+    }
+
+    // Verify password
+    const isPasswordValid = await comparePassword(validatedData.password, user.password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Generate token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      merchantId: user.merchantId,
+      outletId: user.outletId,
+    });
+
+    const result = {
       success: true,
       message: 'Login successful',
-      data: result
-    });
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.firstName + ' ' + user.lastName,
+          role: user.role,
+          merchantId: user.merchantId,
+          outletId: user.outletId,
+        },
+        token,
+      },
+    };
+    
+    return NextResponse.json(result);
     
   } catch (error: any) {
     console.error('Login error:', error);

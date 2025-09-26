@@ -2,16 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
 import { 
   getCustomerByPublicId, 
-  updateCustomer
+  updateCustomer,
+  prisma
 } from '@rentalshop/database';
 import { customerUpdateSchema, createAuditHelper } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { CustomerUpdateInput } from '@rentalshop/types';
-import { PrismaClient } from '@prisma/client';
 import {API} from '@rentalshop/constants';
-
-
-const prisma = new PrismaClient();
 
 /**
  * GET /api/customers/[id]
@@ -67,11 +64,10 @@ export async function GET(
     // No need to check merchant access since getCustomerByPublicId already filters by merchant
     // The customer returned is guaranteed to belong to the user's merchant
 
-    // Transform the response to ensure publicId is properly exposed
+    // Transform the response to ensure id is properly exposed
     const transformedCustomer = {
-      // Expose publicId as the main ID for frontend
-      id: customer.publicId, // Frontend expects 'id' to be the publicId
-      publicId: customer.publicId, // Keep publicId for backward compatibility
+      // Expose id directly for frontend
+      id: customer.id, // Frontend expects 'id' to be the id
       firstName: customer.firstName,
       lastName: customer.lastName,
       email: customer.email,
@@ -88,16 +84,14 @@ export async function GET(
       isActive: customer.isActive,
       createdAt: customer.createdAt,
       updatedAt: customer.updatedAt,
-      // Transform merchant to use publicId
+      // Transform merchant to use id
       merchant: {
-        id: customer.merchant.publicId, // Use publicId for frontend
-        publicId: customer.merchant.publicId,
+        id: customer.merchant.id, // Use id for frontend
         name: customer.merchant.name
       },
-      // Transform orders to use publicId as id
-      orders: customer.orders?.map(order => ({
-        id: order.publicId, // Use publicId as id for frontend
-        publicId: order.publicId,
+      // Transform orders to use id
+      orders: customer.orders?.map((order) => ({
+        id: order.id, // Use id for frontend
         orderNumber: order.orderNumber,
         status: order.status,
         totalAmount: order.totalAmount,
@@ -186,6 +180,7 @@ export async function PUT(
 
     // Convert string dates to Date objects for the update function
     const updateData: CustomerUpdateInput = {
+      id: customerId, // Add required id field
       ...validationResult.data,
       dateOfBirth: validationResult.data.dateOfBirth ? new Date(validationResult.data.dateOfBirth) : undefined
     };
@@ -219,11 +214,11 @@ export async function PUT(
       
       // Create simplified audit context
       const auditContext = {
-        userId: user.id,
+        userId: user.id?.toString() || '',
         userEmail: user.email,
         userRole: user.role,
-        merchantId: user.merchantId || undefined,
-        outletId: user.outletId || undefined,
+        merchantId: user.merchantId?.toString(),
+        outletId: user.outletId?.toString(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1',
         userAgent: request.headers.get('user-agent') || 'Unknown',
         requestId: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -250,11 +245,10 @@ export async function PUT(
       // Don't fail the request if audit logging fails
     }
 
-    // Transform the response to ensure publicId is properly exposed
+    // Transform the response to ensure id is properly exposed
     const transformedCustomer = {
-      // Expose publicId as the main ID for frontend
-      id: updatedCustomer.publicId, // Frontend expects 'id' to be the publicId
-      publicId: updatedCustomer.publicId, // Keep publicId for backward compatibility
+      // Expose id directly for frontend
+      id: updatedCustomer.id, // Frontend expects 'id' to be the id
       firstName: updatedCustomer.firstName,
       lastName: updatedCustomer.lastName,
       email: updatedCustomer.email,
@@ -271,10 +265,9 @@ export async function PUT(
       isActive: updatedCustomer.isActive,
       createdAt: updatedCustomer.createdAt,
       updatedAt: updatedCustomer.updatedAt,
-      // Transform merchant to use publicId
+      // Transform merchant to use id
       merchant: {
-        id: updatedCustomer.merchant.publicId, // Use publicId for frontend
-        publicId: updatedCustomer.merchant.publicId,
+        id: updatedCustomer.merchant.id, // Use id for frontend
         name: updatedCustomer.merchant.name
       }
     };

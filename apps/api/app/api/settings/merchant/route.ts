@@ -67,9 +67,9 @@ export async function PUT(request: NextRequest) {
     // This ensures email uniqueness and prevents account hijacking
 
     // Get the merchant ID from the authenticated user
-    console.log('🔍 MERCHANT API: Looking up user in database with publicId:', user.id);
+    console.log('🔍 MERCHANT API: Looking up user in database with id:', user.id);
     const dbUser = await prisma.user.findUnique({
-      where: { publicId: user.id },
+      where: { id: user.id },
       include: { merchant: true }
     });
 
@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest) {
       userFound: !!dbUser,
       hasMerchant: !!(dbUser?.merchant),
       merchantId: dbUser?.merchant?.id,
-      merchantPublicId: dbUser?.merchant?.publicId
+      merchantPublicId: dbUser?.merchant?.id
     });
 
     if (!dbUser || !dbUser.merchant) {
@@ -89,8 +89,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update merchant using the centralized database function
-    console.log('🔍 MERCHANT API: Calling updateMerchant with publicId:', dbUser.merchant.publicId);
-    const updatedMerchant = await updateMerchant(dbUser.merchant.publicId, {
+    console.log('🔍 MERCHANT API: Calling updateMerchant with id:', dbUser.merchant.id);
+    const updatedMerchant = await updateMerchant(dbUser.merchant.id, {
       name,
       phone,
       address,
@@ -109,7 +109,7 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: 'Merchant information updated successfully',
       data: {
-        id: updatedMerchant.publicId,
+        id: updatedMerchant.id,
         name: updatedMerchant.name,
         email: updatedMerchant.email,
         phone: updatedMerchant.phone,

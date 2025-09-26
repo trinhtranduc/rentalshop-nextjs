@@ -1,5 +1,5 @@
-import { User } from '@rentalshop/types';
-import { authenticatedFetch, parseApiResponse } from '../common';
+import { User, UserCreateInput } from '@rentalshop/types';
+import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 
 // ============================================================================
@@ -94,7 +94,7 @@ export const usersApi = {
   /**
    * Create new user
    */
-  async createUser(userData: Partial<User>): Promise<UserApiResponse> {
+  async createUser(userData: UserCreateInput): Promise<UserApiResponse> {
     const response = await authenticatedFetch(apiUrls.users.create, {
       method: 'POST',
       body: JSON.stringify(userData),

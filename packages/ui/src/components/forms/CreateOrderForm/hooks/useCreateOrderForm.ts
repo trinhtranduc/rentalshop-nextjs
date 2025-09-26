@@ -73,10 +73,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     if (isEditMode && initialOrder?.orderItems) {
       return initialOrder.orderItems.map((item: any) => ({
         id: item.id, // Keep database CUID for existing items
-        productId: item.product?.publicId || item.productId || 0, // Frontend uses publicId (number)
+        productId: item.product?.id || item.productId || 0, // Frontend uses id (number)
         product: {
-          id: item.product?.publicId || item.productId || 0, // Frontend uses publicId (number)
-          publicId: item.product?.publicId || item.productId || 0, // Keep publicId for reference
+          id: item.product?.id || item.productId || 0, // Frontend uses id (number)
           name: item.product?.name || 'Unknown Product',
           description: item.product?.description || '',
           images: item.product?.images || null,
@@ -169,10 +168,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       if (initialOrder.orderItems) {
         const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => ({
           id: item.id, // Keep database CUID for existing items
-          productId: item.product?.publicId || item.productId || 0, // Frontend uses publicId (number)
+          productId: item.product?.id || item.productId || 0, // Frontend uses id (number)
           product: {
-            id: item.product?.publicId || item.productId || 0, // Frontend uses publicId (number)
-            publicId: item.product?.publicId || item.productId || 0, // Keep publicId for reference
+            id: item.product?.id || item.productId || 0, // Frontend uses id (number)
             name: item.product?.name || 'Unknown Product',
             description: item.product?.description || '',
             images: item.product?.images || null,
@@ -224,7 +222,6 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         productId: productIdNumber,
         product: {
           id: productIdNumber,
-          publicId: productIdNumber,
           name: product.name || 'Unknown Product',
           description: product.description || '',
           images: product.images || null,
@@ -397,7 +394,6 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         productId: item.productId || 0,
         product: {
           id: item.product?.id || item.productId || 0,
-          publicId: item.product?.publicId || item.productId || 0,
           name: item.product?.name || 'Unknown Product',
           description: item.product?.description || '',
           images: item.product?.images || null,

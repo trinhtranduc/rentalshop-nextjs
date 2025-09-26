@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Get current user from database to verify current password
     const user = await prisma.user.findUnique({
-      where: { publicId: currentUser.id },
+      where: { id: currentUser.id },
       select: { id: true, password: true, email: true }
     });
 

@@ -220,7 +220,7 @@ export const PaymentDetailDialog: React.FC<PaymentDetailDialogProps> = ({
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-600">Merchant ID:</span>
-                      <span className="text-sm text-gray-900">#{payment.subscription.merchant.publicId}</span>
+                      <span className="text-sm text-gray-900">#{payment.subscription.merchant.id}</span>
                     </div>
                   </div>
                 </div>

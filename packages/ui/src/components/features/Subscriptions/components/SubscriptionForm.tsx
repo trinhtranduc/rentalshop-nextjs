@@ -167,7 +167,7 @@ export function SubscriptionForm({
 
   // Update selected plan when planId changes
   useEffect(() => {
-    const plan = plans.find(p => p.publicId === formData.planId);
+    const plan = plans.find(p => p.id === formData.planId);
     setSelectedPlan(plan || null);
     
     if (plan) {

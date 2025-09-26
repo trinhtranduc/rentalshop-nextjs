@@ -2,9 +2,9 @@
 // NEW: CORRECT DUAL ID CUSTOMER FUNCTIONS
 // ============================================================================
 // This file contains only the correct customer functions that follow the dual ID system:
-// - Input: publicId (number)
-// - Database: queries by publicId, uses CUIDs for relationships
-// - Return: includes both id (CUID) and publicId (number)
+// - Input: id (number)
+// - Database: queries by id, uses CUIDs for relationships
+// - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
 import type { 
@@ -21,36 +21,34 @@ import type {
 
 /**
  * Get customer by public ID and merchant - follows dual ID system
- * Input: publicId (number) and merchantId (number), Output: Customer with relations
+ * Input: id (number) and merchantId (number), Output: Customer with relations
  */
-export async function getCustomerByPublicId(publicId: number, merchantId: number) {
-  // Find merchant by publicId
+export async function getCustomerByPublicId(id: number, merchantId: number) {
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   return await prisma.customer.findFirst({
     where: { 
-      publicId,
+      id,
       merchantId: merchant.id // Use CUID for merchant
     },
     include: {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       orders: {
         select: {
           id: true,
-          publicId: true,
           orderNumber: true,
           status: true,
           totalAmount: true,
@@ -65,14 +63,14 @@ export async function getCustomerByPublicId(publicId: number, merchantId: number
  * Get customer by email and merchant - follows dual ID system
  */
 export async function getCustomerByEmail(email: string, merchantId: number) {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   return await prisma.customer.findFirst({
@@ -84,7 +82,6 @@ export async function getCustomerByEmail(email: string, merchantId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -96,14 +93,14 @@ export async function getCustomerByEmail(email: string, merchantId: number) {
  * Get customer by phone and merchant - follows dual ID system
  */
 export async function getCustomerByPhone(phone: string, merchantId: number) {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   return await prisma.customer.findFirst({
@@ -115,7 +112,6 @@ export async function getCustomerByPhone(phone: string, merchantId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -129,29 +125,29 @@ export async function getCustomerByPhone(phone: string, merchantId: number) {
 
 /**
  * Create new customer - follows dual ID system
- * Input: publicIds (numbers), Output: publicId (number)
+ * Input: ids (numbers), Output: id (number)
  */
 export async function createCustomer(input: CustomerInput): Promise<any> {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: input.merchantId }
+    where: { id: input.merchantId }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${input.merchantId} not found`);
+    throw new Error(`Merchant with id ${input.merchantId} not found`);
   }
 
-  // Generate next customer publicId
+  // Generate next customer id
   const lastCustomer = await prisma.customer.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  const nextPublicId = (lastCustomer?.publicId || 0) + 1;
+  const nextPublicId = (lastCustomer?.id || 0) + 1;
 
   // Create customer
   const customer = await prisma.customer.create({
     data: {
-      publicId: nextPublicId,
+      id: nextPublicId,
       firstName: input.firstName,
       lastName: input.lastName,
       email: input.email,
@@ -172,7 +168,6 @@ export async function createCustomer(input: CustomerInput): Promise<any> {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -188,24 +183,24 @@ export async function createCustomer(input: CustomerInput): Promise<any> {
 
 /**
  * Update customer - follows dual ID system
- * Input: publicId (number), Output: publicId (number)
+ * Input: id (number), Output: id (number)
  */
 export async function updateCustomer(
-  publicId: number,
+  id: number,
   input: CustomerUpdateInput
 ): Promise<any> {
-  // Find customer by publicId
+  // Find customer by id
   const existingCustomer = await prisma.customer.findUnique({
-    where: { publicId }
+    where: { id }
   });
 
   if (!existingCustomer) {
-    throw new Error(`Customer with publicId ${publicId} not found`);
+    throw new Error(`Customer with id ${id} not found`);
   }
 
   // Update customer
   const updatedCustomer = await prisma.customer.update({
-    where: { publicId },
+    where: { id },
     data: {
       firstName: input.firstName,
       lastName: input.lastName,
@@ -226,7 +221,6 @@ export async function updateCustomer(
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -256,7 +250,7 @@ function buildCustomerOrderByClause(sortBy?: string, sortOrder?: string): any {
 
 /**
  * Search customers - follows dual ID system
- * Input: publicIds (numbers), Output: publicIds (numbers)
+ * Input: ids (numbers), Output: ids (numbers)
  */
 export async function searchCustomers(
   filters: CustomerSearchFilter
@@ -279,9 +273,9 @@ export async function searchCustomers(
   const where: any = {};
 
   if (merchantId) {
-    // Find merchant by publicId
+    // Find merchant by id
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantId },
+      where: { id: merchantId },
       select: { id: true }
     });
     
@@ -334,7 +328,6 @@ export async function searchCustomers(
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true
         }
       }
@@ -345,8 +338,8 @@ export async function searchCustomers(
   });
 
   // Transform to match CustomerSearchResult type
-  const transformedCustomers: CustomerSearchResult[] = customers.map(customer => ({
-    id: customer.publicId, // Use publicId (number) as required by CustomerSearchResult
+  const transformedCustomers: CustomerSearchResult[] = customers.map((customer: any) => ({
+    id: customer.id, // Use id (number) as required by CustomerSearchResult
     firstName: customer.firstName,
     lastName: customer.lastName,
     email: customer.email || '',
@@ -363,9 +356,9 @@ export async function searchCustomers(
     isActive: customer.isActive,
     createdAt: customer.createdAt,
     updatedAt: customer.updatedAt,
-    merchantId: customer.merchant.publicId, // Add merchantId as required
+    merchantId: customer.merchant.id, // Add merchantId as required
     merchant: {
-      id: customer.merchant.publicId, // Use publicId (number) as required
+      id: customer.merchant.id, // Use id (number) as required
       name: customer.merchant.name,
     },
   }));
@@ -392,14 +385,14 @@ export async function searchCustomers(
  * Get customers by merchant - follows dual ID system
  */
 export async function getCustomersByMerchant(merchantId: number) {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   return await prisma.customer.findMany({
@@ -408,7 +401,6 @@ export async function getCustomersByMerchant(merchantId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -421,14 +413,14 @@ export async function getCustomersByMerchant(merchantId: number) {
  * Check if customer exists by email - follows dual ID system
  */
 export async function customerExistsByEmail(email: string, merchantId: number): Promise<boolean> {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   const customer = await prisma.customer.findFirst({
@@ -445,14 +437,14 @@ export async function customerExistsByEmail(email: string, merchantId: number): 
  * Check if customer exists by phone - follows dual ID system
  */
 export async function customerExistsByPhone(phone: string, merchantId: number): Promise<boolean> {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   const customer = await prisma.customer.findFirst({

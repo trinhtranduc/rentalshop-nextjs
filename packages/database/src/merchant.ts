@@ -6,10 +6,10 @@ import { prisma } from './index';
 
 /**
  * Update merchant - follows dual ID system
- * Input: publicId (number), Output: publicId (number)
+ * Input: id (number), Output: id (number)
  */
 export async function updateMerchant(
-  publicId: number,
+  id: number,
   input: {
     name?: string;
     phone?: string;
@@ -24,13 +24,13 @@ export async function updateMerchant(
     description?: string;
   }
 ): Promise<any> {
-  // Find merchant by publicId
+  // Find merchant by id
   const existingMerchant = await prisma.merchant.findUnique({
-    where: { publicId }
+    where: { id }
   });
 
   if (!existingMerchant) {
-    throw new Error(`Merchant with publicId ${publicId} not found`);
+    throw new Error(`Merchant with id ${id} not found`);
   }
 
   // Update merchant - only update fields that are provided
@@ -53,7 +53,7 @@ export async function updateMerchant(
   // Note: email updates are disabled for security reasons
 
   const updatedMerchant = await prisma.merchant.update({
-    where: { publicId },
+    where: { id },
     data: updateData,
   });
 

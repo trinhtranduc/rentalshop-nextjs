@@ -7,11 +7,10 @@ async function main() {
 
   // Create merchants
   const merchant1 = await prisma.merchant.upsert({
-    where: { id: 'merchant1' },
+    where: { id: 1 },
     update: {},
     create: {
-      id: 'merchant1',
-      publicId: 1,
+      id: 1,
       name: 'Rental Shop Demo',
       email: 'merchant@rentalshop.com',
       description: 'Demo rental shop for testing with multiple outlets',
@@ -20,11 +19,10 @@ async function main() {
   });
 
   const merchant2 = await prisma.merchant.upsert({
-    where: { id: 'merchant2' },
+    where: { id: 2 },
     update: {},
     create: {
-      id: 'merchant2',
-      publicId: 2,
+      id: 2,
       name: 'Outdoor Equipment Co.',
       email: 'merchant@outdoor.com',
       description: 'Outdoor equipment rental company with beach and mountain outlets',
@@ -39,11 +37,10 @@ async function main() {
 
   // Create outlets for merchant 1
   const outlet1 = await prisma.outlet.upsert({
-    where: { id: 'outlet1' },
+    where: { id: 1 },
     update: {},
     create: {
-      id: 'outlet1',
-      publicId: 1,
+      id: 1,
       name: 'Main Branch',
       address: '123 Main Street, City Center',
       description: 'Main rental outlet in city center',
@@ -53,11 +50,10 @@ async function main() {
   });
 
   const outlet2 = await prisma.outlet.upsert({
-    where: { id: 'outlet2' },
+    where: { id: 2 },
     update: {},
     create: {
-      id: 'outlet2',
-      publicId: 2,
+      id: 2,
       name: 'Downtown Branch',
       address: '456 Downtown Ave, Business District',
       description: 'Downtown rental outlet for business customers',
@@ -68,11 +64,10 @@ async function main() {
 
   // Create outlets for merchant 2
   const outlet3 = await prisma.outlet.upsert({
-    where: { id: 'outlet3' },
+    where: { id: 3 },
     update: {},
     create: {
-      id: 'outlet3',
-      publicId: 3,
+      id: 3,
       name: 'Beach Branch',
       address: '789 Beach Road, Coastal Area',
       description: 'Beach equipment rental for water sports',
@@ -82,11 +77,10 @@ async function main() {
   });
 
   const outlet4 = await prisma.outlet.upsert({
-    where: { id: 'outlet4' },
+    where: { id: 4 },
     update: {},
     create: {
-      id: 'outlet4',
-      publicId: 4,
+      id: 4,
       name: 'Mountain Branch',
       address: '321 Mountain Trail, Highland Area',
       description: 'Mountain equipment rental for hiking and climbing',
@@ -99,11 +93,10 @@ async function main() {
 
   // Create categories for merchant 1
   const campingCategory = await prisma.category.upsert({
-    where: { id: 'category1' },
+    where: { id: 1 },
     update: {},
     create: {
-      id: 'category1',
-      publicId: 1,
+      id: 1,
       name: 'Camping',
       description: 'Camping and outdoor equipment',
       merchantId: merchant1.id,
@@ -112,11 +105,10 @@ async function main() {
   });
 
   const partyCategory = await prisma.category.upsert({
-    where: { id: 'category2' },
+    where: { id: 2 },
     update: {},
     create: {
-      id: 'category2',
-      publicId: 2,
+      id: 2,
       name: 'Party',
       description: 'Party and event equipment',
       merchantId: merchant1.id,
@@ -125,11 +117,10 @@ async function main() {
   });
 
   const toolsCategory = await prisma.category.upsert({
-    where: { id: 'category3' },
+    where: { id: 3 },
     update: {},
     create: {
-      id: 'category3',
-      publicId: 3,
+      id: 3,
       name: 'Tools',
       description: 'Tools and construction equipment',
       merchantId: merchant1.id,
@@ -139,11 +130,10 @@ async function main() {
 
   // Create categories for merchant 2
   const waterSportsCategory = await prisma.category.upsert({
-    where: { id: 'category4' },
+    where: { id: 4 },
     update: {},
     create: {
-      id: 'category4',
-      publicId: 4,
+      id: 4,
       name: 'Water Sports',
       description: 'Water sports and beach equipment',
       merchantId: merchant2.id,
@@ -152,11 +142,10 @@ async function main() {
   });
 
   const hikingCategory = await prisma.category.upsert({
-    where: { id: 'category5' },
+    where: { id: 5 },
     update: {},
     create: {
-      id: 'category5',
-      publicId: 5,
+      id: 5,
       name: 'Hiking',
       description: 'Hiking and mountain equipment',
       merchantId: merchant2.id,
@@ -172,11 +161,10 @@ async function main() {
 
   // 1. SYSTEM ADMIN (No merchant or outlet assignment)
   const systemAdmin = await prisma.user.upsert({
-    where: { id: 'system_admin' },
+    where: { id: 1 },
     update: {},
     create: {
-      id: 'system_admin',
-      publicId: 1,
+      id: 1,
       email: 'admin@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'System',
@@ -190,11 +178,10 @@ async function main() {
 
   // 2. MERCHANT OWNERS (Assigned to merchant, no outlet)
   const merchantOwner1 = await prisma.user.upsert({
-    where: { id: 'merchant_owner_1' },
+    where: { id: 2 },
     update: {},
     create: {
-      id: 'merchant_owner_1',
-      publicId: 2,
+      id: 2,
       email: 'merchant@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Rental',
@@ -208,11 +195,10 @@ async function main() {
   });
 
   const merchantOwner2 = await prisma.user.upsert({
-    where: { id: 'merchant_owner_2' },
+    where: { id: 3 },
     update: {},
     create: {
-      id: 'merchant_owner_2',
-      publicId: 3,
+      id: 3,
       email: 'merchant@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Outdoor',
@@ -227,11 +213,10 @@ async function main() {
 
   // 3. OUTLET ADMINS (Assigned to both merchant and specific outlet)
   const outletAdminMain = await prisma.user.upsert({
-    where: { id: 'outlet_admin_main' },
+    where: { id: 4 },
     update: {},
     create: {
-      id: 'outlet_admin_main',
-      publicId: 4,
+      id: 4,
       email: 'outlet_admin_main@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Main',
@@ -245,11 +230,10 @@ async function main() {
   });
 
   const outletAdminDowntown = await prisma.user.upsert({
-    where: { id: 'outlet_admin_downtown' },
+    where: { id: 5 },
     update: {},
     create: {
-      id: 'outlet_admin_downtown',
-      publicId: 5,
+      id: 5,
       email: 'outlet_admin_downtown@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Downtown',
@@ -263,11 +247,10 @@ async function main() {
   });
 
   const outletAdminBeach = await prisma.user.upsert({
-    where: { id: 'outlet_admin_beach' },
+    where: { id: 6 },
     update: {},
     create: {
-      id: 'outlet_admin_beach',
-      publicId: 6,
+      id: 6,
       email: 'outlet_admin_beach@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Beach',
@@ -281,11 +264,10 @@ async function main() {
   });
 
   const outletAdminMountain = await prisma.user.upsert({
-    where: { id: 'outlet_admin_mountain' },
+    where: { id: 7 },
     update: {},
     create: {
-      id: 'outlet_admin_mountain',
-      publicId: 7,
+      id: 7,
       email: 'outlet_admin_mountain@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Mountain',
@@ -300,11 +282,11 @@ async function main() {
 
   // 4. OUTLET STAFF (Assigned to both merchant and specific outlet)
   const outletStaffMain = await prisma.user.upsert({
-    where: { id: 'outlet_staff_main' },
+    where: { id: 8 },
     update: {},
     create: {
       id: 'outlet_staff_main',
-      publicId: 8,
+      id: 8,
       email: 'outlet_staff_main@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Main',
@@ -318,11 +300,11 @@ async function main() {
   });
 
   const outletStaffDowntown = await prisma.user.upsert({
-    where: { id: 'outlet_staff_downtown' },
+    where: { id: 9 },
     update: {},
     create: {
       id: 'outlet_staff_downtown',
-      publicId: 9,
+      id: 9,
       email: 'outlet_staff_downtown@rentalshop.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Downtown',
@@ -336,11 +318,11 @@ async function main() {
   });
 
   const outletStaffBeach = await prisma.user.upsert({
-    where: { id: 'outlet_staff_beach' },
+    where: { id: 10 },
     update: {},
     create: {
       id: 'outlet_staff_beach',
-      publicId: 10,
+      id: 10,
       email: 'outlet_staff_beach@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Beach',
@@ -354,11 +336,11 @@ async function main() {
   });
 
   const outletStaffMountain = await prisma.user.upsert({
-    where: { id: 'outlet_staff_mountain' },
+    where: { id: 11 },
     update: {},
     create: {
       id: 'outlet_staff_mountain',
-      publicId: 11,
+      id: 11,
       email: 'outlet_staff_mountain@outdoor.com',
       password: '$2b$10$I7uXDvyRITy0eHewELxK9OZAF1rFGoIbahgNGSTlVJfTTMx.iXWNG', // password123
       firstName: 'Mountain',
@@ -401,7 +383,7 @@ async function main() {
       update: {},
       create: {
         id: `customer${i}`,
-        publicId: i,
+        id: i,
         firstName: `Customer${i}`,
         lastName: `Demo${i}`,
         email: `customer${i}@example.com`,
@@ -427,7 +409,7 @@ async function main() {
       update: {},
       create: {
         id: `product1_${i}`,
-        publicId: i,
+        id: i,
         name: `Product ${i} - ${category.name}`,
         description: `High-quality ${category.name.toLowerCase()} for rent`,
         barcode: `PROD1_${i.toString().padStart(3, '0')}`,
@@ -471,7 +453,7 @@ async function main() {
       update: {},
       create: {
         id: `product2_${i}`,
-        publicId: i + 30, // Continue from where merchant 1 left off
+        id: i + 30, // Continue from where merchant 1 left off
         name: `Outdoor Product ${i} - ${category.name}`,
         description: `Professional ${category.name.toLowerCase()} for outdoor activities`,
         barcode: `PROD2_${i.toString().padStart(3, '0')}`,

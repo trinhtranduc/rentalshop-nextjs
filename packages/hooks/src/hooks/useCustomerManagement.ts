@@ -272,6 +272,7 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
     try {
       // Use updateCustomer to toggle the isActive status
       const response = await customersApi.updateCustomer(customer.id, {
+        id: customer.id,
         isActive: !customer.isActive
       });
       
@@ -296,6 +297,7 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
   }, []);
 
   const handleCustomerRowAction = useCallback((action: string, customerId: number) => {
+    // Find customer by id (number) - Frontend always uses id
     const customer = customers.find(c => c.id === customerId);
     if (!customer) return;
 
@@ -307,7 +309,7 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
         handleEditCustomer(customer);
         break;
       case 'viewOrders':
-        // Navigate to customer orders page
+        // Navigate to customer orders page using id
         console.log('🔄 Navigating to customer orders page:', `/customers/${customerId}/orders`);
         router.push(`/customers/${customerId}/orders`);
         break;
@@ -316,13 +318,13 @@ export const useCustomerManagement = (options: UseCustomerManagementOptions = {}
         handleToggleStatus(customer);
         break;
       case 'delete':
-        // Handle delete action
+        // Handle delete action using id
         console.log('Delete customer:', customerId);
         break;
       default:
         console.log('Unknown action:', action);
     }
-  }, [customers, handleViewCustomer, handleEditCustomer, handleToggleStatus]);
+  }, [customers, handleViewCustomer, handleEditCustomer, handleToggleStatus, router]);
 
   const handleAddCustomer = useCallback(() => {
     setShowCreateForm(true);

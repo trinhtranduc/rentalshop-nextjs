@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
           merchant: {
             select: {
               name: true,
-              publicId: true
+              id: true
             }
           },
           subscription: {
@@ -83,17 +83,17 @@ export async function GET(request: NextRequest) {
     // Transform data for frontend
     const transformedPayments = payments.map(payment => {
       return {
-        id: payment.publicId,
-        merchantId: payment.merchant?.publicId || payment.subscription?.merchant?.publicId || 0,
+        id: payment.id,
+        merchantId: payment.merchant?.id || payment.subscription?.merchant?.id || 0,
         merchantName: payment.merchant?.name || payment.subscription?.merchant?.name || 'Unknown Merchant',
         planName: payment.subscription?.plan?.name || 'Manual Payment',
         amount: payment.amount,
         currency: payment.currency || 'USD',
         status: payment.status.toLowerCase(),
         paymentMethod: payment.method.toLowerCase(),
-        invoiceNumber: payment.invoiceNumber || payment.reference || `PAY-${payment.publicId}`,
+        invoiceNumber: payment.invoiceNumber || payment.reference || `PAY-${payment.id}`,
         description: payment.description || payment.notes || 'Payment',
-        transactionId: payment.transactionId || payment.reference || `txn_${payment.publicId}`,
+        transactionId: payment.transactionId || payment.reference || `txn_${payment.id}`,
         createdAt: payment.createdAt.toISOString(),
         processedAt: payment.processedAt?.toISOString(),
         failureReason: payment.failureReason

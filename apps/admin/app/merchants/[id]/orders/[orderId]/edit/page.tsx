@@ -194,7 +194,7 @@ export default function MerchantOrderEditPage() {
       }
 
       // Ensure we have the order ID for the update
-      const orderPublicId = order.id; // In admin context, order.id should be the publicId
+      const orderPublicId = order.id; // In admin context, order.id should be the id
       if (!orderPublicId) {
         throw new Error('Order ID not found');
       }

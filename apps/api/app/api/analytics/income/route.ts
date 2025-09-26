@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         // Add user scope filtering for payments
         if (userScope.merchantId) {
           const merchant = await prisma.merchant.findUnique({
-            where: { publicId: userScope.merchantId }
+            where: { id: userScope.merchantId }
           });
           if (merchant) {
             paymentWhereClause.merchantId = merchant.id;
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         } else if (userScope.outletId) {
           // For outlet scope, filter through orders
           const outlet = await prisma.outlet.findUnique({
-            where: { publicId: userScope.outletId }
+            where: { id: userScope.outletId }
           });
           if (outlet) {
             paymentWhereClause.order = {
@@ -95,15 +95,15 @@ export async function GET(request: NextRequest) {
         // Add user scope filtering for orders
         if (userScope.merchantId) {
           const merchant = await prisma.merchant.findUnique({
-            where: { publicId: userScope.merchantId },
+            where: { id: userScope.merchantId },
             include: { outlets: { select: { id: true } } }
           });
           if (merchant) {
-            orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+            orderWhereClause.outletId = { in: merchant.outlets.map((outlet: any) => outlet.id) };
           }
         } else if (userScope.outletId) {
           const outlet = await prisma.outlet.findUnique({
-            where: { publicId: userScope.outletId }
+            where: { id: userScope.outletId }
           });
           if (outlet) {
             orderWhereClause.outletId = outlet.id;
@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
         // Add user scope filtering for payments
         if (userScope.merchantId) {
           const merchant = await prisma.merchant.findUnique({
-            where: { publicId: userScope.merchantId }
+            where: { id: userScope.merchantId }
           });
           if (merchant) {
             paymentWhereClause.merchantId = merchant.id;
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
         } else if (userScope.outletId) {
           // For outlet scope, filter through orders
           const outlet = await prisma.outlet.findUnique({
-            where: { publicId: userScope.outletId }
+            where: { id: userScope.outletId }
           });
           if (outlet) {
             paymentWhereClause.order = {
@@ -211,15 +211,15 @@ export async function GET(request: NextRequest) {
         // Add user scope filtering for orders
         if (userScope.merchantId) {
           const merchant = await prisma.merchant.findUnique({
-            where: { publicId: userScope.merchantId },
+            where: { id: userScope.merchantId },
             include: { outlets: { select: { id: true } } }
           });
           if (merchant) {
-            orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+            orderWhereClause.outletId = { in: merchant.outlets.map((outlet: any) => outlet.id) };
           }
         } else if (userScope.outletId) {
           const outlet = await prisma.outlet.findUnique({
-            where: { publicId: userScope.outletId }
+            where: { id: userScope.outletId }
           });
           if (outlet) {
             orderWhereClause.outletId = outlet.id;

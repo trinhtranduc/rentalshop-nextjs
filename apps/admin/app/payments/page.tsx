@@ -44,7 +44,6 @@ import { paymentsApi } from '@rentalshop/utils';
 
 interface Payment {
   id: number;
-  publicId: number;
   subscriptionId: string;
   amount: number;
   currency: string;
@@ -59,7 +58,6 @@ interface Payment {
   updatedAt: string;
   subscription?: {
     id: string;
-    publicId: number;
     merchantId: string;
     planId: string;
     status: string;
@@ -67,20 +65,17 @@ interface Payment {
     currency: string;
     merchant?: {
       id: string;
-      publicId: number;
       name: string;
       email: string;
     };
     plan?: {
       id: string;
-      publicId: number;
       name: string;
       price: number;
       currency: string;
     };
     billingCycle?: {
       id: string;
-      publicId: number;
       name: string;
       months: number;
       discount: number;
@@ -159,7 +154,7 @@ export default function PaymentsPage() {
         { id: 3, name: 'Semi-Annual', months: 6, discount: 10 },
         { id: 4, name: 'Annual', months: 12, discount: 20 }
       ]);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching form data:', error);
     }
   };
@@ -179,9 +174,9 @@ export default function PaymentsPage() {
       } else {
         throw new Error(result.error || 'Failed to create payment');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating payment:', error);
-      addToast('error', 'Error', `Failed to create payment: ${error.message}`);
+      addToast('error', 'Error', `Failed to create payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setFormLoading(false);
     }
@@ -201,7 +196,7 @@ export default function PaymentsPage() {
       
       setShowPaymentDetail(false);
       fetchPayments(); // Refresh the payments list
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error processing payment:', error);
       addToast('error', 'Error', 'Failed to process payment. Please try again.');
     }
@@ -216,7 +211,7 @@ export default function PaymentsPage() {
       
       setShowPaymentDetail(false);
       fetchPayments(); // Refresh the payments list
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error refunding payment:', error);
       addToast('error', 'Error', 'Failed to refund payment. Please try again.');
     }
@@ -228,7 +223,7 @@ export default function PaymentsPage() {
       console.log('Downloading receipt for payment:', paymentId);
       
       addToast('info', 'Receipt Downloaded', 'Payment receipt has been downloaded');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error downloading receipt:', error);
       addToast('error', 'Error', 'Failed to download receipt. Please try again.');
     }
@@ -247,12 +242,11 @@ export default function PaymentsPage() {
         const paymentsArray = Array.isArray(response.data) ? response.data : response.data.payments || [];
         const transformedPayments = paymentsArray.map((payment: any) => ({
           ...payment,
-          publicId: payment.publicId || payment.id,
+          id: payment.id,
           // Transform the API response to match our interface
           method: payment.paymentMethod?.toUpperCase() || 'UNKNOWN',
           subscription: {
             id: `sub_${payment.id}`,
-            publicId: payment.id,
             merchantId: `merchant_${payment.id}`,
             planId: `plan_${payment.id}`,
             status: 'ACTIVE',
@@ -260,20 +254,17 @@ export default function PaymentsPage() {
             currency: payment.currency,
             merchant: {
               id: `merchant_${payment.id}`,
-              publicId: payment.id,
               name: payment.merchantName,
               email: `${payment.merchantName.toLowerCase().replace(/\s+/g, '')}@example.com`
             },
             plan: {
               id: `plan_${payment.id}`,
-              publicId: payment.id,
               name: payment.planName,
               price: payment.amount,
               currency: payment.currency
             },
             billingCycle: {
               id: `bc_${payment.id}`,
-              publicId: payment.id,
               name: payment.billingCycle === 'monthly' ? 'Monthly' : 'Unknown',
               months: 1,
               discount: 0
@@ -285,7 +276,7 @@ export default function PaymentsPage() {
         console.error('Failed to fetch payments:', response.message);
         // No fallback needed - just log the error
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching payments:', error);
       // No fallback needed - just log the error
     } finally {

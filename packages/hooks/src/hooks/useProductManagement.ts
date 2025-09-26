@@ -315,6 +315,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
   const handleToggleStatus = useCallback(async (product: Product) => {
     try {
       const updateData: ProductUpdateInput = {
+        id: product.id,
         isActive: !product.isActive
       };
       

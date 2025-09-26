@@ -39,14 +39,14 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
   }
 
   const token = generateToken({
-    userId: user.publicId, // Use publicId (number) for JWT token consistency
+    userId: user.id, // Use id (number) for JWT token consistency
     email: user.email,
     role: user.role,
   });
 
   return {
     user: {
-      id: user.publicId, // Return publicId as "id" to frontend (number)
+      id: user.id, // Return id to frontend (number)
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -56,12 +56,12 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
       merchantId: user.merchantId ? Number(user.merchantId) : undefined,
       outletId: user.outletId ? Number(user.outletId) : undefined,
       merchant: user.merchant ? {
-        id: user.merchant.publicId, // Return merchant publicId as "id" to frontend (number)
+        id: user.merchant.id, // Return merchant id to frontend (number)
         name: user.merchant.name,
         description: user.merchant.description || undefined,
       } : undefined,
       outlet: user.outlet ? {
-        id: user.outlet.publicId, // Return outlet publicId as "id" to frontend (number)
+        id: user.outlet.id, // Return outlet id to frontend (number)
         name: user.outlet.name,
         address: user.outlet.address || undefined,
       } : undefined,
@@ -81,12 +81,8 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
 
   const hashedPassword = await hashPassword(data.password);
 
-  // Generate a unique publicId for the new user
-  const publicId = Math.floor(Math.random() * 1000000) + 100000; // 6-digit number
-
   const user = await prisma.user.create({
     data: {
-      publicId, // Set the generated publicId
       email: data.email,
       password: hashedPassword,
       firstName: data.firstName || data.name?.split(' ')[0] || '',
@@ -97,14 +93,14 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
   });
 
   const token = generateToken({
-    userId: user.publicId, // Use publicId (number) for JWT token consistency
+    userId: user.id, // Use id (number) for JWT token consistency
     email: user.email,
     role: user.role,
   });
 
   return {
     user: {
-      id: user.publicId, // Return publicId as "id" to frontend (number)
+      id: user.id, // Return id to frontend (number)
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,

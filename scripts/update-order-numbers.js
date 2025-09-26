@@ -20,14 +20,14 @@ async function updateOrderNumbers() {
       include: {
         outlet: {
           select: {
-            publicId: true,
+            id: true,
             name: true
           }
         }
       },
       orderBy: [
         { outletId: 'asc' },
-        { publicId: 'asc' }
+        { id: 'asc' }
       ]
     });
 
@@ -41,7 +41,7 @@ async function updateOrderNumbers() {
     const outletOrders = {};
     
     for (const order of orders) {
-      const outletId = order.outlet.publicId;
+      const outletId = order.outlet.id;
       if (!outletOrders[outletId]) {
         outletOrders[outletId] = [];
       }

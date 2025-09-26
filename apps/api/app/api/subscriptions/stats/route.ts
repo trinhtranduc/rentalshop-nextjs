@@ -73,16 +73,16 @@ export async function GET(request: NextRequest) {
     });
 
     // Get plan names for distribution
-    const planIds = planDistribution.map(p => p.planId);
+    const planIds = planDistribution.map((p: any) => p.planId);
     const plans = await prisma.plan.findMany({
       where: { id: { in: planIds } },
-      select: { id: true, publicId: true, name: true }
+      select: { id: true, name: true }
     });
 
-    const planDistributionWithNames = planDistribution.map(dist => {
-      const plan = plans.find(p => p.id === dist.planId);
+    const planDistributionWithNames = planDistribution.map((dist: any) => {
+      const plan = plans.find((p: any) => p.id === dist.planId);
       return {
-        planId: plan?.publicId || 0,
+        planId: plan?.id || 0,
         planName: plan?.name || 'Unknown',
         count: dist._count.id
       };

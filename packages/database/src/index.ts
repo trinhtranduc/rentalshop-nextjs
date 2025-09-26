@@ -38,15 +38,14 @@ export {
   convertOrderPublicIdToDatabaseId,
 } from './utils';
 
-// Dual ID order functions (RECOMMENDED)
+// Single ID order functions
 export {
-  getOrderByPublicId,
-  getOrderByNumber,
+  getOrderById,
   createOrder,
   updateOrder,
   searchOrders,
+  getOrderByNumber,
   getOrderStats,
-  cancelOrder,
   getOverdueRentals,
 } from './order';
 
@@ -86,9 +85,9 @@ export {
   customerExistsByPhone,
 } from './customer';
 
-// Dual ID product functions (RECOMMENDED)
+// Single ID product functions
 export {
-  getProductByPublicId,
+  getProductById,
   getProductByBarcode,
   searchProducts,
   createProduct,
@@ -112,7 +111,7 @@ export {
 // Dual ID user functions (RECOMMENDED)
 export {
   findUserById,
-  getUserByPublicId,
+  getUserById,
   createUser,
   updateUser,
   getUsersByMerchant,
@@ -126,9 +125,9 @@ export {
   updateMerchant,
 } from './merchant';
 
-// Dual ID plan functions (RECOMMENDED)
+// Single ID plan functions
 export {
-  getPlanByPublicId,
+  getPlanById,
   searchPlans,
   createPlan,
   updatePlan,
@@ -136,6 +135,9 @@ export {
   getActivePlans,
   getPlanStats,
 } from './plan';
+
+// Plan function aliases for API compatibility
+export { getPlanById as getPlanByPublicId } from './plan';
 
 // Plan variant functions removed - Using modern subscription system with dynamic pricing
 
@@ -150,11 +152,10 @@ export {
   resumeSubscription,
   cancelSubscription,
   getAllPlans,
-  getPlanById,
   calculatePlanPricing,
   // Subscription renewal functions
   getExpiredSubscriptions,
-  getSubscriptionByPublicId,
+  getSubscriptionById,
   updateSubscription,
   createSubscriptionPayment,
   type SubscriptionPaymentCreateInput,

@@ -143,7 +143,7 @@ export function SubscriptionFormSimple({
 
   // Update selected plan when planId changes
   useEffect(() => {
-    const plan = plans.find(p => p.publicId === formData.planId);
+    const plan = plans.find(p => p.id === formData.planId);
     setSelectedPlan(plan || null);
   }, [formData.planId, plans]);
 
@@ -318,7 +318,7 @@ export function SubscriptionFormSimple({
               <SelectContent>
                 {plans.length > 0 ? (
                   plans.map(plan => (
-                    <SelectItem key={plan.id} value={plan.publicId.toString()}>
+                    <SelectItem key={plan.id} value={plan.id.toString()}>
                       <div className="flex flex-col">
                         <span className="font-medium">{plan.name}</span>
                         <span className="text-sm text-gray-500">

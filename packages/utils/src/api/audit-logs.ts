@@ -5,9 +5,9 @@
  * All API requests should be made through these functions, not directly in UI components.
  */
 
-import { authenticatedFetch, parseApiResponse } from '../common';
+import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
-import type { ApiResponse } from '../common';
+import type { ApiResponse } from '../core';
 
 // Types
 export interface AuditLog {

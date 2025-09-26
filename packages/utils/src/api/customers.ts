@@ -4,7 +4,7 @@ import type {
   CustomerFilters, 
   CustomerSearchFilter 
 } from '@rentalshop/types';
-import { authenticatedFetch, parseApiResponse } from '../common';
+import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 
 // ============================================================================

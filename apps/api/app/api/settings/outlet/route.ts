@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest) {
     console.log('🔍 DEBUG: Updating outlet with ID:', outletId);
     
     const updatedOutlet = await prisma.outlet.update({
-      where: { publicId: outletId },
+      where: { id: outletId },
       data: {
         name,
         address,
@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: 'Outlet information updated successfully',
       data: {
-        id: updatedOutlet.publicId,
+        id: updatedOutlet.id,
         name: updatedOutlet.name,
         address: updatedOutlet.address,
         phone: updatedOutlet.phone,

@@ -30,20 +30,20 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id: idParam } = params;
     
     // Check if the ID is numeric
-    if (!/^\d+$/.test(id)) {
+    if (!/^\d+$/.test(idParam)) {
       return NextResponse.json(
         { success: false, message: 'Invalid plan ID format' },
         { status: 400 }
       );
     }
 
-    const publicId = parseInt(id);
+    const id = parseInt(idParam);
     
     // Get plan using database function
-    const plan = await getPlanByPublicId(publicId);
+    const plan = await getPlanByPublicId(id);
 
     if (!plan) {
       return NextResponse.json(
@@ -94,24 +94,24 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id: idParam } = params;
     
     // Check if the ID is numeric
-    if (!/^\d+$/.test(id)) {
+    if (!/^\d+$/.test(idParam)) {
       return NextResponse.json(
         { success: false, message: 'Invalid plan ID format' },
         { status: 400 }
       );
     }
 
-    const publicId = parseInt(id);
+    const id = parseInt(idParam);
 
     // Parse and validate request body
     const body = await request.json();
     const validatedData = planUpdateSchema.parse(body);
 
     // Update plan using database function
-    const plan = await updatePlan(publicId, validatedData);
+    const plan = await updatePlan(id, validatedData);
 
     return NextResponse.json({
       success: true,
@@ -171,20 +171,20 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id: idParam } = params;
     
     // Check if the ID is numeric
-    if (!/^\d+$/.test(id)) {
+    if (!/^\d+$/.test(idParam)) {
       return NextResponse.json(
         { success: false, message: 'Invalid plan ID format' },
         { status: 400 }
       );
     }
 
-    const publicId = parseInt(id);
+    const id = parseInt(idParam);
 
     // Delete plan using database function (permanent delete)
-    const result = await deletePlan(publicId);
+    const result = await deletePlan(id);
 
     return NextResponse.json({
       success: true,

@@ -24,9 +24,9 @@ export async function GET(
       );
     }
 
-    // Find the merchant by publicId to get the actual CUID
+    // Find the merchant by id to get the actual CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantPublicId },
+      where: { id: merchantPublicId },
       select: { id: true }
     });
 
@@ -108,7 +108,7 @@ export async function GET(
       skip: offset,
       select: {
         id: true,
-        publicId: true,
+        id: true,
         orderNumber: true,
         orderType: true,
         status: true,
@@ -121,7 +121,7 @@ export async function GET(
         customer: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             firstName: true,
             lastName: true,
             phone: true
@@ -130,7 +130,7 @@ export async function GET(
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true
           }
         },
@@ -144,7 +144,7 @@ export async function GET(
 
     // Transform data for frontend
     const transformedOrders = orders.map(order => ({
-      id: order.publicId,
+      id: order.id,
       orderNumber: order.orderNumber,
       orderType: order.orderType,
       status: order.status,
@@ -155,12 +155,12 @@ export async function GET(
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
       customer: order.customer ? {
-        id: order.customer.publicId,
+        id: order.customer.id,
         name: `${order.customer.firstName} ${order.customer.lastName}`,
         phone: order.customer.phone
       } : null,
       outlet: order.outlet ? {
-        id: order.outlet.publicId,
+        id: order.outlet.id,
         name: order.outlet.name
       } : null,
       itemCount: order._count.orderItems

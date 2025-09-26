@@ -39,7 +39,7 @@ export async function GET(
       offset: 0 
     });
 
-    const subscription = result.subscriptions.find(sub => sub.publicId === subscriptionId);
+    const subscription = result.subscriptions.find(sub => sub.id === subscriptionId);
     
     if (!subscription) {
       return NextResponse.json(

@@ -1,6 +1,6 @@
-import { authenticatedFetch, parseApiResponse } from '../common';
+import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
-import type { ApiResponse } from '../common';
+import type { ApiResponse } from '../core';
 import type { User, LoginCredentials, RegisterData } from '@rentalshop/types';
 
 // Local type definitions for missing types

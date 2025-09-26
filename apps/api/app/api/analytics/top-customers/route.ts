@@ -59,7 +59,7 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
         where: { id: item.customerId! },
         select: {
           id: true,
-          publicId: true, // Include publicId to use as the external ID
+          id: true, // Include id to use as the external ID
           firstName: true,
           lastName: true,
           email: true,
@@ -95,7 +95,7 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
     });
 
       topCustomersWithDetails.push({
-        id: customer?.publicId || 0, // Use publicId (number) as the external ID
+        id: customer?.id || 0, // Use id (number) as the external ID
         name: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
         email: customer?.email || '',
         phone: customer?.phone || '',

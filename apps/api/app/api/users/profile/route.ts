@@ -22,15 +22,15 @@ export async function GET(request: NextRequest) {
     console.log('✅ Token verification result: Success', { id: user.id, role: user.role });
 
     // Get user profile with complete merchant and outlet data
-    // Note: user.id is the publicId, we need to find by publicId
-    console.log('🔍 Searching for user with publicId:', user.id);
+    // Note: user.id is the id, we need to find by id
+    console.log('🔍 Searching for user with id:', user.id);
     const userProfile = await prisma.user.findUnique({
-      where: { publicId: user.id },
+      where: { id: user.id },
       include: {
         merchant: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
             email: true,
             phone: true,
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
             address: true,
             phone: true,
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
             merchant: {
               select: {
                 id: true,
-                publicId: true,
+                id: true,
                 name: true,
               }
             }
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!userProfile) {
-      console.log('❌ User not found with publicId:', user.id);
+      console.log('❌ User not found with id:', user.id);
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: API.STATUS.NOT_FOUND }
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ User profile found:', { 
       id: userProfile.id, 
-      publicId: userProfile.publicId, 
+      id: userProfile.id, 
       email: userProfile.email,
       hasMerchant: !!userProfile.merchant,
       hasOutlet: !!userProfile.outlet
@@ -94,11 +94,11 @@ export async function GET(request: NextRequest) {
     const transformedUser = {
       ...userProfile,
       // Direct IDs for quick access
-      merchantId: userProfile.merchant?.publicId,
-      outletId: userProfile.outlet?.publicId,
+      merchantId: userProfile.merchant?.id,
+      outletId: userProfile.outlet?.id,
       // Complete merchant object with all business info
       merchant: userProfile.merchant ? {
-        id: userProfile.merchant.publicId,
+        id: userProfile.merchant.id,
         name: userProfile.merchant.name,
         email: userProfile.merchant.email,
         phone: userProfile.merchant.phone,
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
       } : undefined,
       // Complete outlet object with all outlet info  
       outlet: userProfile.outlet ? {
-        id: userProfile.outlet.publicId,
+        id: userProfile.outlet.id,
         name: userProfile.outlet.name,
         address: userProfile.outlet.address,
         phone: userProfile.outlet.phone,
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
         isDefault: userProfile.outlet.isDefault,
         createdAt: userProfile.outlet.createdAt,
         merchant: userProfile.outlet.merchant ? {
-          id: userProfile.outlet.merchant.publicId,
+          id: userProfile.outlet.merchant.id,
           name: userProfile.outlet.merchant.name,
         } : undefined,
       } : undefined,
@@ -138,8 +138,8 @@ export async function GET(request: NextRequest) {
     console.log('Profile API - User data:', {
       userId: user.id,
       role: userProfile.role,
-      merchantId: userProfile.merchant?.publicId,
-      outletId: userProfile.outlet?.publicId,
+      merchantId: userProfile.merchant?.id,
+      outletId: userProfile.outlet?.id,
       hasMerchant: !!userProfile.merchant,
       hasOutlet: !!userProfile.outlet,
       merchantName: userProfile.merchant?.name,
@@ -209,14 +209,14 @@ export async function PUT(request: NextRequest) {
     if (updateData.phone) {
       // Get the current user's merchant ID from database
       const currentUser = await prisma.user.findUnique({
-        where: { publicId: user.id },
+        where: { id: user.id },
         select: { merchantId: true, role: true }
       });
 
       // Build the where clause for phone uniqueness check
       const whereClause: any = {
         phone: updateData.phone,
-        publicId: { not: user.id }, // Exclude current user
+        id: { not: user.id }, // Exclude current user
       };
 
       // For admin users (merchantId is null), check globally
@@ -249,8 +249,8 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Update user profile using publicId
-    // Note: user.id is already the publicId (number) from the JWT token
+    // Update user profile using id
+    // Note: user.id is already the id (number) from the JWT token
     console.log('🔄 Updating user profile:', {
       userId: user.id,
       updateData,
@@ -261,7 +261,7 @@ export async function PUT(request: NextRequest) {
     const updatedUser = await updateUser(user.id, updateData);
 
     console.log('✅ Profile updated successfully:', {
-      userId: updatedUser.publicId,
+      userId: updatedUser.id,
       firstName: updatedUser.firstName,
       lastName: updatedUser.lastName,
       phone: updatedUser.phone
@@ -271,11 +271,11 @@ export async function PUT(request: NextRequest) {
     const transformedUser = {
       ...updatedUser,
       // Direct IDs for quick access
-      merchantId: updatedUser.merchant?.publicId,
-      outletId: updatedUser.outlet?.publicId,
+      merchantId: updatedUser.merchant?.id,
+      outletId: updatedUser.outlet?.id,
       // Complete merchant object with all business info
       merchant: updatedUser.merchant ? {
-        id: updatedUser.merchant.publicId,
+        id: updatedUser.merchant.id,
         name: updatedUser.merchant.name,
         email: updatedUser.merchant.email,
         phone: updatedUser.merchant.phone,
@@ -297,7 +297,7 @@ export async function PUT(request: NextRequest) {
       } : undefined,
       // Complete outlet object with all outlet info  
       outlet: updatedUser.outlet ? {
-        id: updatedUser.outlet.publicId,
+        id: updatedUser.outlet.id,
         name: updatedUser.outlet.name,
         address: updatedUser.outlet.address,
         phone: updatedUser.outlet.phone,
@@ -306,7 +306,7 @@ export async function PUT(request: NextRequest) {
         isDefault: updatedUser.outlet.isDefault,
         createdAt: updatedUser.outlet.createdAt,
         merchant: updatedUser.outlet.merchant ? {
-          id: updatedUser.outlet.merchant.publicId,
+          id: updatedUser.outlet.merchant.id,
           name: updatedUser.outlet.merchant.name,
         } : undefined,
       } : undefined,

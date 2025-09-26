@@ -130,7 +130,7 @@ export function SubscriptionEditDialog({
   };
 
   // Get selected plan for discount calculations
-  const selectedPlan = plans.find(plan => plan.publicId === formData.planId);
+  const selectedPlan = plans.find(plan => plan.id === formData.planId);
 
   if (!subscription) return null;
 
