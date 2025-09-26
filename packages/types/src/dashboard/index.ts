@@ -68,7 +68,7 @@ export interface TodaysFocus {
   status: string;
 }
 
-export interface OrderStats {
+export interface DashboardOrderStats {
   totalOrders: number;
   totalRevenue: number;
   activeOrders: number;

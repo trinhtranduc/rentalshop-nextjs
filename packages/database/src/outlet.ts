@@ -2,9 +2,9 @@
 // OUTLET DATABASE FUNCTIONS
 // ============================================================================
 // This file contains outlet functions that follow the dual ID system:
-// - Input: publicId (number)
-// - Database: queries by publicId, uses CUIDs for relationships
-// - Return: includes both id (CUID) and publicId (number)
+// - Input: id (number)
+// - Database: queries by id, uses CUIDs for relationships
+// - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
 import type { 
@@ -20,7 +20,7 @@ import type {
 
 /**
  * Search outlets - follows dual ID system
- * Input: publicIds (numbers), Output: publicIds (numbers)
+ * Input: ids (numbers), Output: ids (numbers)
  */
 export async function searchOutlets(filters: OutletSearchFilter): Promise<OutletSearchResponse> {
   const {
@@ -38,9 +38,9 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
   const where: any = {};
 
   if (merchantId) {
-    // Find merchant by publicId
+    // Find merchant by id
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantId },
+      where: { id: merchantId },
       select: { id: true }
     });
     
@@ -51,9 +51,9 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
 
   // Outlet-level filtering: Users can only see their assigned outlet
   if (outletId) {
-    // Find outlet by publicId
+    // Find outlet by id
     const outlet = await prisma.outlet.findUnique({
-      where: { publicId: outletId },
+      where: { id: outletId },
       select: { id: true }
     });
     
@@ -83,7 +83,6 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     where,
     select: {
       id: true,
-      publicId: true,
       name: true,
       address: true,
       phone: true,
@@ -95,7 +94,6 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true
         }
       }
@@ -106,8 +104,8 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
   });
 
   // Transform to match expected types
-  const transformedOutlets = outlets.map(outlet => ({
-    id: outlet.publicId, // Return publicId as "id" to frontend
+  const transformedOutlets = outlets.map((outlet: any) => ({
+    id: outlet.id, // Return id as "id" to frontend
     name: outlet.name,
     address: outlet.address || undefined,
     phone: outlet.phone || undefined,
@@ -116,9 +114,9 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     isDefault: outlet.isDefault || false,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.publicId, // Return merchant publicId
+    merchantId: outlet.merchant.id, // Return merchant id
     merchant: {
-      id: outlet.merchant.publicId,
+      id: outlet.merchant.id,
       name: outlet.merchant.name
     }
   }));
@@ -137,21 +135,20 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
  * Get outlets by merchant - follows dual ID system
  */
 export async function getOutletsByMerchant(merchantId: number) {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   const outlets = await prisma.outlet.findMany({
     where: { merchantId: merchant.id }, // Use CUID
     select: {
       id: true,
-      publicId: true,
       name: true,
       address: true,
       phone: true,
@@ -163,7 +160,6 @@ export async function getOutletsByMerchant(merchantId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true
         }
       }
@@ -172,8 +168,8 @@ export async function getOutletsByMerchant(merchantId: number) {
   });
 
   // Transform to match expected types
-  return outlets.map(outlet => ({
-    id: outlet.publicId, // Return publicId as "id" to frontend
+  return outlets.map((outlet: any) => ({
+    id: outlet.id, // Return id as "id" to frontend
     name: outlet.name,
     address: outlet.address || undefined,
     phone: outlet.phone || undefined,
@@ -182,9 +178,9 @@ export async function getOutletsByMerchant(merchantId: number) {
     isDefault: outlet.isDefault || false,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.publicId, // Return merchant publicId
+    merchantId: outlet.merchant.id, // Return merchant id
     merchant: {
-      id: outlet.merchant.publicId,
+      id: outlet.merchant.id,
       name: outlet.merchant.name
     }
   }));
@@ -193,12 +189,11 @@ export async function getOutletsByMerchant(merchantId: number) {
 /**
  * Get outlet by public ID - follows dual ID system
  */
-export async function getOutletByPublicId(publicId: number) {
+export async function getOutletByPublicId(id: number) {
   const outlet = await prisma.outlet.findUnique({
-    where: { publicId },
+    where: { id },
     select: {
       id: true,
-      publicId: true,
       name: true,
       address: true,
       phone: true,
@@ -209,7 +204,6 @@ export async function getOutletByPublicId(publicId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true
         }
       }
@@ -220,7 +214,7 @@ export async function getOutletByPublicId(publicId: number) {
 
   // Transform to match expected types
   return {
-    id: outlet.publicId, // Return publicId as "id" to frontend
+    id: outlet.id, // Return id as "id" to frontend
     name: outlet.name,
     address: outlet.address,
     phone: outlet.phone,
@@ -228,9 +222,9 @@ export async function getOutletByPublicId(publicId: number) {
     isActive: outlet.isActive,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.publicId, // Return merchant publicId
+    merchantId: outlet.merchant.id, // Return merchant id
     merchant: {
-      id: outlet.merchant.publicId,
+      id: outlet.merchant.id,
       name: outlet.merchant.name
     }
   };
@@ -240,22 +234,22 @@ export async function getOutletByPublicId(publicId: number) {
  * Create outlet - follows dual ID system
  */
 export async function createOutlet(input: OutletCreateInput, merchantId: number) {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
-  // Generate unique publicId
-  const publicId = Math.floor(Math.random() * 1000000) + 100000;
+  // Generate unique id
+  const id = Math.floor(Math.random() * 1000000) + 100000;
 
   const outlet = await prisma.outlet.create({
     data: {
-      publicId,
+      id,
       name: input.name.trim(),
       address: input.address?.trim(),
       phone: input.phone?.trim(),
@@ -265,7 +259,6 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
     },
     select: {
       id: true,
-      publicId: true,
       name: true,
       address: true,
       phone: true,
@@ -276,7 +269,6 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true
         }
       }
@@ -285,7 +277,7 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
 
   // Transform to match expected types
   return {
-    id: outlet.publicId, // Return publicId as "id" to frontend
+    id: outlet.id, // Return id as "id" to frontend
     name: outlet.name,
     address: outlet.address || undefined,
     phone: outlet.phone || undefined,
@@ -293,9 +285,9 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
     isActive: outlet.isActive,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.publicId, // Return merchant publicId
+    merchantId: outlet.merchant.id, // Return merchant id
     merchant: {
-      id: outlet.merchant.publicId,
+      id: outlet.merchant.id,
       name: outlet.merchant.name
     }
   };
@@ -304,14 +296,14 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
 /**
  * Update outlet - follows dual ID system
  */
-export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
+export async function updateOutlet(id: number, input: OutletUpdateInput) {
   const outlet = await prisma.outlet.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true, merchantId: true, name: true, isDefault: true }
   });
 
   if (!outlet) {
-    throw new Error(`Outlet with publicId ${publicId} not found`);
+    throw new Error(`Outlet with id ${id} not found`);
   }
 
   // Prevent disabling default outlets
@@ -336,7 +328,6 @@ export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true
         }
       }
@@ -345,7 +336,7 @@ export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
 
   // Transform to match expected types
   return {
-    id: updatedOutlet.publicId, // Return publicId as "id" to frontend
+    id: updatedOutlet.id, // Return id as "id" to frontend
     name: updatedOutlet.name,
     address: updatedOutlet.address || undefined,
     phone: updatedOutlet.phone || undefined,
@@ -357,9 +348,9 @@ export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
     isActive: updatedOutlet.isActive,
     createdAt: updatedOutlet.createdAt,
     updatedAt: updatedOutlet.updatedAt,
-    merchantId: updatedOutlet.merchant.publicId, // Return merchant publicId
+    merchantId: updatedOutlet.merchant.id, // Return merchant id
     merchant: {
-      id: updatedOutlet.merchant.publicId,
+      id: updatedOutlet.merchant.id,
       name: updatedOutlet.merchant.name
     }
   };
@@ -368,14 +359,14 @@ export async function updateOutlet(publicId: number, input: OutletUpdateInput) {
 /**
  * Delete outlet - follows dual ID system
  */
-export async function deleteOutlet(publicId: number) {
+export async function deleteOutlet(id: number) {
   const outlet = await prisma.outlet.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true }
   });
 
   if (!outlet) {
-    throw new Error(`Outlet with publicId ${publicId} not found`);
+    throw new Error(`Outlet with id ${id} not found`);
   }
 
   await prisma.outlet.delete({

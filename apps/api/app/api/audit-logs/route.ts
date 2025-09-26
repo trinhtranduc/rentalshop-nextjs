@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@rentalshop/database';
 import { AuditLogger } from '../../../../../packages/database/src/audit';
 import {API} from '@rentalshop/constants';
-
-// Create Prisma client instance
-const prisma = new PrismaClient();
 
 // GET /api/audit-logs - Get audit logs with filtering and pagination
 export async function GET(request: NextRequest) {

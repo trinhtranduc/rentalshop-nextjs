@@ -24,8 +24,8 @@ export async function PATCH(
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
+        { success: false, message: 'Authentication failed' },
+        { status: 401 }
       );
     }
 
@@ -61,7 +61,7 @@ export async function PATCH(
       );
     }
 
-    // Check if user exists using publicId
+    // Check if user exists using id
     const targetUser = await findUserByPublicId(numericId);
 
     if (!targetUser) {
@@ -75,8 +75,8 @@ export async function PATCH(
     // 1. Current user is admin, OR
     // 2. Current user is changing their own password
     const isAdmin = currentUser.role === 'ADMIN';
-    // For now, only allow admins to change passwords until we can get currentUser.publicId
-    const isSelf = false; // TODO: Fix when verifyTokenSimple returns publicId
+    // For now, only allow admins to change passwords until we can get currentUser.id
+    const isSelf = false; // TODO: Fix when verifyTokenSimple returns id
 
     if (!isAdmin && !isSelf) {
       return NextResponse.json(

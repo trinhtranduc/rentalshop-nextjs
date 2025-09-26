@@ -29,12 +29,12 @@ export async function GET(
     }
 
     // Build where clause based on user role and scope
-    const where: any = { publicId: categoryId };
+    const where: any = { id: categoryId };
     
     if (user.merchant?.id) {
-      // Find merchant by publicId to get the CUID
+      // Find merchant by id to get the CUID
       const merchant = await prisma.merchant.findUnique({
-        where: { publicId: user.merchant.id },
+        where: { id: user.merchant.id },
         select: { id: true }
       });
       
@@ -46,8 +46,7 @@ export async function GET(
     const category = await prisma.category.findFirst({
       where,
       select: {
-        id: true,
-        publicId: true,
+          id: true,
         name: true,
         description: true,
         isActive: true,
@@ -65,7 +64,7 @@ export async function GET(
 
     // Transform response: internal id → public id as "id"
     const transformedCategory = {
-      id: category.publicId,                    // Return publicId as "id" to frontend
+      id: category.id,                    // Return id as "id" to frontend
       name: category.name,
       description: category.description,
       isActive: category.isActive,
@@ -132,9 +131,9 @@ export async function PUT(
       );
     }
 
-    // Find merchant by publicId to get the CUID
+    // Find merchant by id to get the CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: user.merchantId },
+      where: { id: user.merchantId },
       select: { id: true }
     });
     
@@ -145,10 +144,10 @@ export async function PUT(
       );
     }
 
-    // Find category by publicId and verify ownership
+    // Find category by id and verify ownership
     const existingCategory = await prisma.category.findFirst({
       where: {
-        publicId: categoryId,
+        id: categoryId,
         merchantId: merchant.id // Use CUID for database query
       }
     });
@@ -165,7 +164,7 @@ export async function PUT(
       where: {
         name: name.trim(),
         merchantId: merchant.id, // Use CUID for database query
-        publicId: { not: categoryId }
+        id: { not: categoryId }
       }
     });
 
@@ -185,8 +184,7 @@ export async function PUT(
         isActive: isActive !== undefined ? isActive : existingCategory.isActive
       },
       select: {
-        id: true,
-        publicId: true,
+          id: true,
         name: true,
         description: true,
         isActive: true,
@@ -197,7 +195,7 @@ export async function PUT(
 
     // Transform response: internal id → public id as "id"
     const transformedCategory = {
-      id: updatedCategory.publicId,                    // Return publicId as "id" to frontend
+      id: updatedCategory.id,                    // Return id as "id" to frontend
       name: updatedCategory.name,
       description: updatedCategory.description,
       isActive: updatedCategory.isActive,
@@ -254,9 +252,9 @@ export async function DELETE(
       );
     }
 
-    // Find merchant by publicId to get the CUID
+    // Find merchant by id to get the CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: user.merchantId },
+      where: { id: user.merchantId },
       select: { id: true }
     });
     
@@ -267,10 +265,10 @@ export async function DELETE(
       );
     }
 
-    // Find category by publicId and verify ownership
+    // Find category by id and verify ownership
     const existingCategory = await prisma.category.findFirst({
       where: {
-        publicId: categoryId,
+        id: categoryId,
         merchantId: merchant.id // Use CUID for database query
       },
       include: {

@@ -1,18 +1,5 @@
 // ============================================================================
-// BUSINESS LOGIC HOOKS - Main Exports
+// BUSINESS LOGIC HOOKS - Individual Exports
 // ============================================================================
-
-export { useAuth } from './useAuth';
-export { useAuthErrorHandler } from './useAuthErrorHandler';
-export { useErrorHandler, useSimpleErrorHandler, useToastHandler, type UseErrorHandlerOptions, type UseErrorHandlerReturn } from './useToast';
-export { useProductAvailability } from './useProductAvailability';
-export { useThrottledSearch } from './useThrottledSearch';
-export { useCurrency, CurrencyProvider } from './useCurrency';
-export { usePagination } from './usePagination';
-export { useUserManagement, type UseUserManagementOptions } from './useUserManagement';
-export { useCustomerManagement, type UseCustomerManagementOptions } from './useCustomerManagement';
-export { useProductManagement, type UseProductManagementOptions } from './useProductManagement';
-export { useOrderManagement, type UseOrderManagementOptions } from './useOrderManagement';
-export { useSubscriptionError, type SubscriptionError, type UseSubscriptionErrorReturn } from './useSubscriptionError';
-export { useSubscriptionStatusInfo, type SubscriptionStatusInfo, type UseSubscriptionStatusInfoOptions } from './useSubscriptionStatusInfo';
-export { useCanPerform, type ActionType, type ActionPermission } from './useCanPerform';
+// This file is for internal organization only
+// Main exports are handled by src/index.ts

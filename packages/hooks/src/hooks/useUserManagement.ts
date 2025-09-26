@@ -124,8 +124,8 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
           search: searchQuery || undefined,
           role: role !== 'all' ? (role as any) : undefined,
           status: status !== 'all' ? (status as 'active' | 'inactive') : undefined,
-          page: page,
-          limit: pagination.limit
+          limit: pagination.limit,
+          offset: (page - 1) * pagination.limit
         };
         
         console.log('🔍 useUserManagement: Calling searchUsers with filters:', filters);

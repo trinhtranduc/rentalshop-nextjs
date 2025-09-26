@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform preferences to include typed values
-    const transformedPreferences = preferences.map(preference => ({
-      id: preference.publicId,
+    const transformedPreferences = preferences.map((preference: any) => ({
+      id: preference.id,
       key: preference.key,
       value: parseSettingValue(preference.value, preference.type),
       type: preference.type,
@@ -114,13 +114,13 @@ export async function POST(request: NextRequest) {
 
     // Get next public ID
     const lastPreference = await prisma.userPreference.findFirst({
-      orderBy: { publicId: 'desc' }
+      orderBy: { id: 'desc' }
     });
-    const nextPublicId = (lastPreference?.publicId || 0) + 1;
+    const nextPublicId = (lastPreference?.id || 0) + 1;
 
     const preference = await prisma.userPreference.create({
       data: {
-        publicId: nextPublicId,
+        id: nextPublicId,
         userId: user.id,
         key: validatedData.key,
         value: validatedData.value,
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        id: preference.publicId,
+        id: preference.id,
         key: preference.key,
         value: parseSettingValue(preference.value, preference.type),
         type: preference.type,

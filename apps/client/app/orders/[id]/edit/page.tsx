@@ -68,18 +68,18 @@ export default function EditOrderPage() {
         if (result.success && result.data) {
           setOrder(result.data as OrderWithDetails);
           
-          // Extract merchant publicId from order - API expects publicId (number), not database CUID (string)
+          // Extract merchant id from order - API expects id (number), not database CUID (string)
           let foundMerchantPublicId: number | null = null;
           const orderData = result.data as OrderWithDetails;
           
-          // Priority order for finding merchant publicId:
-          // 1. outlet.merchant.publicId (this is what we need for API calls)
-          // 2. Fallback to user's merchant publicId
-          if (orderData.outlet?.merchant?.publicId) {
-            foundMerchantPublicId = orderData.outlet.merchant.publicId;
+          // Priority order for finding merchant id:
+          // 1. outlet.merchant.id (this is what we need for API calls)
+          // 2. Fallback to user's merchant id
+          if (orderData.outlet?.merchant?.id) {
+            foundMerchantPublicId = orderData.outlet.merchant.id;
           } else {
-            // Fallback to user's merchant publicId
-            // Note: user.merchant.id is actually the publicId (number) from auth.ts
+            // Fallback to user's merchant id
+            // Note: user.merchant.id is actually the id (number) from auth.ts
             if (user?.merchant?.id) {
               foundMerchantPublicId = user.merchant.id as number;
             } else {
@@ -157,7 +157,7 @@ export default function EditOrderPage() {
         const outletsResult = await outletsApi.getOutletsByMerchant(Number(merchantId));
         if (outletsResult.success && outletsResult.data?.outlets) {
           const mappedOutlets = outletsResult.data.outlets.map((outlet: { id: number; name: string }) => ({
-            id: outlet.id, // API already returns publicId as 'id'
+            id: outlet.id, // API already returns id as 'id'
             name: outlet.name
           }));
           setOutlets(mappedOutlets);
@@ -184,7 +184,7 @@ export default function EditOrderPage() {
           }
           
           const mappedCategories = categoriesArray.map((category: Category) => ({
-            id: category.id, // API should return publicId as 'id'
+            id: category.id, // API should return id as 'id'
             name: category.name
           }));
           setCategories(mappedCategories);
@@ -266,10 +266,10 @@ export default function EditOrderPage() {
     try {
       setActionLoading(true);
 
-      // Ensure we have the order publicId for the update
-      const orderPublicId = order.publicId;
+      // Ensure we have the order id for the update
+      const orderPublicId = order.id;
       if (!orderPublicId) {
-        throw new Error('Order publicId not found');
+        throw new Error('Order id not found');
       }
 
       // Add the order ID to the update data

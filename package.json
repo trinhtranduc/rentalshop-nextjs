@@ -21,16 +21,9 @@
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",
     "test": "turbo run test",
-    "db:seed": "node scripts/reset-and-seed-database-simple.js",
-    "db:seed:full": "node scripts/reset-and-seed-database.js",
-    "db:reset": "npx prisma db push --force-reset && node scripts/reset-and-seed-database-simple.js",
-    "db:reset-orders": "node scripts/reset-orders-2025.js",
     "db:regenerate-system": "node scripts/regenerate-entire-system-2025.js",
     "db:update-order-numbers": "node scripts/update-order-numbers.js",
-    "db:add-discount-fields": "node scripts/add-discount-fields.js",
-    "db:add-billing-cycles": "node scripts/add-mock-billing-cycles.js",
-    "db:seed-payments": "node scripts/seed-payments.js",
-    "db:seed-subscriptions": "node scripts/seed-subscriptions.js"
+    "db:add-discount-fields": "node scripts/add-discount-fields.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -39,7 +32,9 @@
   },
   "packageManager": "yarn@1.22.0",
   "dependencies": {
+    "@prisma/client": "^6.16.2",
     "bcryptjs": "^3.0.2",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "prisma": "^6.16.2"
   }
 }

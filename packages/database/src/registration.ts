@@ -58,7 +58,7 @@ export async function registerUser(
 ): Promise<RegistrationResult> {
   try {
     // Start transaction to ensure all operations succeed or fail together
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Check if user email already exists
       const existingUser = await tx.user.findUnique({
         where: { email: data.email }
@@ -138,15 +138,15 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     // Auto-create trial plan if none exists (modern SaaS pattern)
     console.log('Creating trial plan automatically...');
     
-    // Get next available publicId
+    // Get next available id
     const lastPlan = await tx.plan.findFirst({
-      orderBy: { publicId: 'desc' }
+      orderBy: { id: 'desc' }
     });
-    const planPublicId = (lastPlan?.publicId || 0) + 1;
+    const planId = (lastPlan?.id || 0) + 1;
     
     trialPlan = await tx.plan.create({
       data: {
-        publicId: planPublicId,
+        id: planId,
         name: 'Trial',
         description: 'Free trial plan for new merchants to test the platform',
         basePrice: 0, // Free
@@ -173,16 +173,16 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     console.log('✅ Trial plan created automatically');
   }
 
-  // 3. Generate merchant publicId
+  // 3. Generate merchant id
   const lastMerchant = await tx.merchant.findFirst({
-    orderBy: { publicId: 'desc' }
+    orderBy: { id: 'desc' }
   });
-  const merchantPublicId = (lastMerchant?.publicId || 0) + 1;
+  const merchantId = (lastMerchant?.id || 0) + 1;
 
   // 4. Create merchant
   const merchant = await tx.merchant.create({
     data: {
-      publicId: merchantPublicId,
+      id: merchantId,
       name: data.businessName || `${data.name}'s Business`,
       email: data.email,
       phone: data.phone,
@@ -200,13 +200,13 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
   const hashedPassword = await hashPassword(data.password);
   
   const lastUser = await tx.user.findFirst({
-    orderBy: { publicId: 'desc' }
+    orderBy: { id: 'desc' }
   });
-  const userPublicId = (lastUser?.publicId || 0) + 1;
+  const userId = (lastUser?.id || 0) + 1;
 
   const user = await tx.user.create({
     data: {
-      publicId: userPublicId,
+      id: userId,
       email: data.email,
       password: hashedPassword,
       firstName: data.name.split(' ')[0] || '',
@@ -220,13 +220,13 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
 
   // 6. Create default outlet with merchant information
   const lastOutlet = await tx.outlet.findFirst({
-    orderBy: { publicId: 'desc' }
+    orderBy: { id: 'desc' }
   });
-  const outletPublicId = (lastOutlet?.publicId || 0) + 1;
+  const outletId = (lastOutlet?.id || 0) + 1;
 
   const outlet = await tx.outlet.create({
     data: {
-      publicId: outletPublicId,
+      id: outletId,
       name: data.outletName || 'Main Store',
       // Always use merchant's information as primary source, with user input as fallback
       address: merchant.address || data.address || 'Address to be updated',
@@ -247,13 +247,13 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
   const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
   
   const lastSubscription = await tx.subscription.findFirst({
-    orderBy: { publicId: 'desc' }
+    orderBy: { id: 'desc' }
   });
-  const subscriptionPublicId = (lastSubscription?.publicId || 0) + 1;
+  const subscriptionId = (lastSubscription?.id || 0) + 1;
 
   const subscription = await tx.subscription.create({
     data: {
-      publicId: subscriptionPublicId,
+      id: subscriptionId,
       merchantId: merchant.id,
       planId: trialPlan.id,
       status: 'trial',
@@ -272,17 +272,17 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
   return {
     success: true,
     user: {
-      id: user.publicId,
+      id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
       merchant: {
-        id: merchant.publicId,
+        id: merchant.id,
         name: merchant.name
       },
       outlet: {
-        id: outlet.publicId,
+        id: outlet.id,
         name: outlet.name
       }
     },
@@ -299,9 +299,9 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
     throw new Error('Merchant code is required for outlet user registration');
   }
 
-  // 1. Find merchant by code (assuming merchantCode is the merchant's publicId)
+  // 1. Find merchant by code (assuming merchantCode is the merchant's id)
   const merchant = await tx.merchant.findUnique({
-    where: { publicId: parseInt(data.merchantCode) }
+    where: { id: parseInt(data.merchantCode) }
   });
 
   if (!merchant) {
@@ -313,7 +313,7 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
   if (data.outletCode) {
     outlet = await tx.outlet.findUnique({
       where: { 
-        publicId: parseInt(data.outletCode),
+        id: parseInt(data.outletCode),
         merchantId: merchant.id 
       }
     });
@@ -333,13 +333,13 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
     if (!outlet) {
       // Create a default outlet if none exists
       const lastOutlet = await tx.outlet.findFirst({
-        orderBy: { publicId: 'desc' }
+        orderBy: { id: 'desc' }
       });
-      const outletPublicId = (lastOutlet?.publicId || 0) + 1;
+      const outletId = (lastOutlet?.id || 0) + 1;
 
       outlet = await tx.outlet.create({
         data: {
-          publicId: outletPublicId,
+          id: outletId,
           name: `${merchant.name} - Main Store`,
           address: merchant.address || 'Address to be updated',
           phone: merchant.phone,
@@ -360,13 +360,13 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
   const hashedPassword = await hashPassword(data.password);
   
   const lastUser = await tx.user.findFirst({
-    orderBy: { publicId: 'desc' }
+    orderBy: { id: 'desc' }
   });
-  const userPublicId = (lastUser?.publicId || 0) + 1;
+  const userId = (lastUser?.id || 0) + 1;
 
   const user = await tx.user.create({
     data: {
-      publicId: userPublicId,
+      id: userId,
       email: data.email,
       password: hashedPassword,
       firstName: data.name.split(' ')[0] || '',
@@ -382,17 +382,17 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
   return {
     success: true,
     user: {
-      id: user.publicId,
+      id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
       merchant: {
-        id: merchant.publicId,
+        id: merchant.id,
         name: merchant.name
       },
       outlet: {
-        id: outlet.publicId,
+        id: outlet.id,
         name: outlet.name
       }
     },
@@ -408,13 +408,13 @@ async function registerBasicUser(tx: any, data: RegistrationInput) {
   const hashedPassword = await hashPassword(data.password);
   
   const lastUser = await tx.user.findFirst({
-    orderBy: { publicId: 'desc' }
+    orderBy: { id: 'desc' }
   });
-  const userPublicId = (lastUser?.publicId || 0) + 1;
+  const userId = (lastUser?.id || 0) + 1;
 
   const user = await tx.user.create({
     data: {
-      publicId: userPublicId,
+      id: userId,
       email: data.email,
       password: hashedPassword,
       firstName: data.name.split(' ')[0] || '',
@@ -428,7 +428,7 @@ async function registerBasicUser(tx: any, data: RegistrationInput) {
   return {
     success: true,
     user: {
-      id: user.publicId,
+      id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,

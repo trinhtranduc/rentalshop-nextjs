@@ -26,12 +26,11 @@ export async function GET(
 
     // Get merchant with related data including plan and subscription info
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantId },
+      where: { id: merchantId },
       include: {
         subscription: {
           select: {
-            id: true,
-            publicId: true,
+          id: true,
             status: true,
             currentPeriodStart: true,
             currentPeriodEnd: true,
@@ -45,8 +44,7 @@ export async function GET(
             createdAt: true,
             plan: {
               select: {
-                id: true,
-                publicId: true,
+          id: true,
                 name: true,
                 description: true,
                 basePrice: true,
@@ -90,13 +88,13 @@ export async function GET(
       }
     });
 
-    const orderCounts = orderStats.reduce((acc, stat) => {
+    const orderCounts = orderStats.reduce((acc: any, stat: any) => {
       acc[stat.status] = stat._count.status;
       return acc;
     }, {} as Record<string, number>);
 
     const stats = {
-      totalOrders: Object.values(orderCounts).reduce((sum, count) => sum + count, 0),
+      totalOrders: Object.values(orderCounts).reduce((sum: any, count: any) => sum + count, 0),
       activeOrders: (orderCounts['RESERVED'] || 0) + (orderCounts['PICKUPED'] || 0),
       completedOrders: (orderCounts['COMPLETED'] || 0) + (orderCounts['RETURNED'] || 0),
       cancelledOrders: orderCounts['CANCELLED'] || 0
@@ -115,7 +113,7 @@ export async function GET(
     // Transform data for frontend (using type assertion to handle schema fields)
     const merchantData = merchant as any;
     const transformedMerchant = {
-      id: merchantData.publicId,
+      id: merchantData.id,
       name: merchantData.name,
       email: merchantData.email,
       phone: merchantData.phone,
@@ -138,7 +136,7 @@ export async function GET(
       createdAt: merchantData.createdAt,
       lastActiveAt: merchantData.lastActiveAt,
       currentSubscription: currentSubscription ? {
-        id: currentSubscription.publicId,
+        id: currentSubscription.id,
         status: currentSubscription.status,
         startDate: currentSubscription.currentPeriodStart,
         endDate: currentSubscription.currentPeriodEnd,
@@ -161,7 +159,7 @@ export async function GET(
           isTrial: currentSubscription.status === 'trial',
         },
         plan: currentSubscription.plan ? {
-          id: currentSubscription.plan.publicId,
+          id: currentSubscription.plan.id,
           name: currentSubscription.plan.name,
           description: currentSubscription.plan.description,
           basePrice: currentSubscription.plan.basePrice,
@@ -255,7 +253,7 @@ export async function DELETE(
 
     // Check if merchant exists
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantId }
+      where: { id: merchantId }
     });
 
     if (!merchant) {
@@ -267,7 +265,7 @@ export async function DELETE(
 
     // Soft delete by setting isActive to false
     const deletedMerchant = await prisma.merchant.update({
-      where: { publicId: merchantId },
+      where: { id: merchantId },
       data: {
         isActive: false,
         lastActiveAt: new Date()
@@ -278,7 +276,7 @@ export async function DELETE(
       success: true,
       message: 'Merchant deactivated successfully',
       data: {
-        id: deletedMerchant.publicId,
+        id: deletedMerchant.id,
         name: deletedMerchant.name,
         isActive: deletedMerchant.isActive
       }
@@ -339,7 +337,7 @@ export async function PUT(
       const existingMerchant = await prisma.merchant.findFirst({
         where: {
           email,
-          NOT: { publicId: merchantId }
+          NOT: { id: merchantId }
         }
       });
 
@@ -353,7 +351,7 @@ export async function PUT(
 
     // Update merchant
     const updatedMerchant = await prisma.merchant.update({
-      where: { publicId: merchantId },
+      where: { id: merchantId },
       data: {
         ...(name && { name }),
         ...(email && { email }),
@@ -378,7 +376,7 @@ export async function PUT(
       success: true,
       message: 'Merchant updated successfully',
       data: {
-        id: updatedMerchant.publicId,
+        id: updatedMerchant.id,
         name: updatedMerchant.name,
         email: updatedMerchant.email,
         phone: updatedMerchant.phone,

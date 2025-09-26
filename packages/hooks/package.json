@@ -29,8 +29,9 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "dependencies": {
-    "@rentalshop/utils": "workspace:*",
-    "@rentalshop/types": "workspace:*"
+    "@rentalshop/utils": "file:../utils",
+    "@rentalshop/types": "file:../types",
+    "@rentalshop/constants": "file:../constants"
   },
   "peerDependencies": {
     "react": "*",

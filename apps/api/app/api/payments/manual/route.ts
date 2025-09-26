@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Get merchant
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: validatedData.merchantId },
+      where: { id: validatedData.merchantId },
       include: { 
         plan: true,
         subscription: true
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Get plan and plan variant
     const plan = await prisma.plan.findUnique({
-      where: { publicId: validatedData.planId }
+      where: { id: validatedData.planId }
     });
 
     if (!plan) {
@@ -75,14 +75,14 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       // Get next payment public ID
       const lastPayment = await tx.payment.findFirst({
-        orderBy: { publicId: 'desc' }
+        orderBy: { id: 'desc' }
       });
-      const paymentPublicId = (lastPayment?.publicId || 0) + 1;
+      const paymentPublicId = (lastPayment?.id || 0) + 1;
 
       // Create payment record
       const payment = await tx.payment.create({
         data: {
-          publicId: paymentPublicId,
+          id: paymentPublicId,
           amount: validatedData.amount,
           method: validatedData.method,
           type: 'SUBSCRIPTION_PAYMENT',
@@ -119,11 +119,11 @@ export async function POST(request: NextRequest) {
           entityId: payment.id,
           action: 'MANUAL_PAYMENT_CREATED',
           details: JSON.stringify({
-            paymentId: payment.publicId,
+            paymentId: payment.id,
             amount: payment.amount,
             method: payment.method,
-            merchantId: merchant.publicId,
-            planId: plan.publicId,
+            merchantId: merchant.id,
+            planId: plan.id,
             planVariantId: null,
             startDate: validatedData.startDate,
             endDate: validatedData.endDate,
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       message: 'Manual payment created successfully',
       data: {
         payment: {
-          id: result.publicId,
+          id: result.id,
           amount: result.amount,
           method: result.method,
           type: result.type,

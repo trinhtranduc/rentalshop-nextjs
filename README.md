@@ -216,13 +216,13 @@ Our system implements a **dual ID approach** that provides both security and usa
 
 #### **Database Layer (Secure)**
 - **Primary Keys**: Use CUIDs (`String @id @default(cuid())`) for security
-- **Public IDs**: Maintain `publicId Int @unique` for user-friendly operations
+- **IDs**: Use `id Int @id @default(autoincrement())` for all operations
 - **Relationships**: All foreign keys use CUIDs internally
 
 #### **API Layer (Transform)**
-- **Input**: Frontend sends `publicId` (numbers) for all operations
-- **Processing**: API converts `publicId` to CUID for database operations
-- **Output**: API returns `publicId` (numbers) to frontend
+- **Input**: Frontend sends `id` (numbers) for all operations
+- **Processing**: API uses `id` directly for database operations
+- **Output**: API returns `id` (numbers) to frontend
 
 #### **Frontend Layer (User-Friendly)**
 - **Display**: Always works with numbers (`outletId: 123`)
@@ -251,14 +251,14 @@ const input: OrderCreateInput = {
 
 // 3️⃣ API TRANSFORMS (Numbers → CUIDs)
 const outlet = await prisma.outlet.findUnique({
-  where: { publicId: 123 }  // Find by number
+  where: { id: 123 }  // Find by number
 });
-// Result: { id: "clx123abc", publicId: 123 }
+// Result: { id: 123, name: "Outlet Name" }
 
 const customer = await prisma.customer.findUnique({
-  where: { publicId: 456 }  // Find by number
+  where: { id: 456 }  // Find by number
 });
-// Result: { id: "dme456def", publicId: 456 }
+// Result: { id: 456, name: "Customer Name" }
 
 // 4️⃣ DATABASE OPERATIONS (CUIDs)
 const order = await prisma.order.create({
@@ -268,13 +268,13 @@ const order = await prisma.order.create({
     // ... other fields
   }
 });
-// Result: { id: "fgh789ghi", publicId: 999 }
+// Result: { id: 999, orderNumber: "ORD-001-0001" }
 
-// 5️⃣ API TRANSFORMS (CUIDs → Numbers)
+// 5️⃣ API RETURNS (Numbers)
 return {
-  id: 999,              // publicId (number)
-  outletId: 123,        // publicId (number)
-  customerId: 456,      // publicId (number)
+  id: 999,              // id (number)
+  outletId: 123,        // id (number)
+  customerId: 456,      // id (number)
   orderNumber: "ORD-001-0001"
 };
 

@@ -140,7 +140,7 @@ export async function PATCH(
       );
     }
     
-    const updatedOrder = await updateOrder(orderPublicId, updateInput, user.publicId);
+    const updatedOrder = await updateOrder(orderPublicId, updateInput);
 
     if (!updatedOrder) {
       return NextResponse.json(

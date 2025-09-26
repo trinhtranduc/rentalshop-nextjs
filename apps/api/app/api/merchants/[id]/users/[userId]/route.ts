@@ -26,9 +26,9 @@ export async function GET(
       );
     }
 
-    // Find the merchant by publicId to get the actual CUID
+    // Find the merchant by id to get the actual CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantPublicId },
+      where: { id: merchantPublicId },
       select: { id: true }
     });
 
@@ -42,12 +42,12 @@ export async function GET(
     // Get user details
     const userDetails = await prisma.user.findFirst({
       where: {
-        publicId: userPublicId,
+        id: userPublicId,
         merchantId: merchant.id
       },
       select: {
         id: true,
-        publicId: true,
+        id: true,
         firstName: true,
         lastName: true,
         email: true,
@@ -59,14 +59,14 @@ export async function GET(
         merchant: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true
           }
         },
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
             address: true
           }
@@ -86,7 +86,7 @@ export async function GET(
       where: { merchantId: merchant.id },
       select: {
         id: true,
-        publicId: true,
+        id: true,
         name: true,
         address: true
       }
@@ -94,7 +94,7 @@ export async function GET(
 
     // Transform data for frontend
     const transformedUser = {
-      id: userDetails.publicId,
+      id: userDetails.id,
       firstName: userDetails.firstName,
       lastName: userDetails.lastName,
       name: `${userDetails.firstName} ${userDetails.lastName}`,
@@ -107,18 +107,18 @@ export async function GET(
       createdAt: userDetails.createdAt.toISOString(),
       updatedAt: userDetails.updatedAt.toISOString(),
       merchant: userDetails.merchant ? {
-        id: userDetails.merchant.publicId,
+        id: userDetails.merchant.id,
         name: userDetails.merchant.name
       } : null,
       outlet: userDetails.outlet ? {
-        id: userDetails.outlet.publicId,
+        id: userDetails.outlet.id,
         name: userDetails.outlet.name,
         address: userDetails.outlet.address
       } : null
     };
 
     const transformedOutlets = outlets.map(outlet => ({
-      id: outlet.publicId,
+      id: outlet.id,
       name: outlet.name,
       address: outlet.address || ''
     }));
@@ -163,9 +163,9 @@ export async function PUT(
       );
     }
 
-    // Find the merchant by publicId to get the actual CUID
+    // Find the merchant by id to get the actual CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantPublicId },
+      where: { id: merchantPublicId },
       select: { id: true }
     });
 
@@ -194,7 +194,7 @@ export async function PUT(
     if (outletId) {
       const outlet = await prisma.outlet.findFirst({
         where: { 
-          publicId: parseInt(outletId),
+          id: parseInt(outletId),
           merchantId: merchant.id
         },
         select: { id: true }
@@ -207,7 +207,7 @@ export async function PUT(
     // First, find the user to get their current CUID
     const existingUser = await prisma.user.findFirst({
       where: {
-        publicId: userPublicId,
+        id: userPublicId,
         merchantId: merchant.id
       },
       select: { id: true }
@@ -242,17 +242,17 @@ export async function PUT(
       data: updateData
     });
 
-    console.log('User updated successfully:', updatedUser.publicId);
+    console.log('User updated successfully:', updatedUser.id);
 
     // Get updated user details
     const userDetails = await prisma.user.findFirst({
       where: {
-        publicId: userPublicId,
+        id: userPublicId,
         merchantId: merchant.id
       },
       select: {
         id: true,
-        publicId: true,
+        id: true,
         firstName: true,
         lastName: true,
         email: true,
@@ -264,14 +264,14 @@ export async function PUT(
         merchant: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true
           }
         },
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
             address: true
           }
@@ -281,7 +281,7 @@ export async function PUT(
 
     // Transform data for frontend
     const transformedUser = {
-      id: userDetails!.publicId,
+      id: userDetails!.id,
       firstName: userDetails!.firstName,
       lastName: userDetails!.lastName,
       name: `${userDetails!.firstName} ${userDetails!.lastName}`,
@@ -294,11 +294,11 @@ export async function PUT(
       createdAt: userDetails!.createdAt.toISOString(),
       updatedAt: userDetails!.updatedAt.toISOString(),
       merchant: userDetails!.merchant ? {
-        id: userDetails!.merchant.publicId,
+        id: userDetails!.merchant.id,
         name: userDetails!.merchant.name
       } : null,
       outlet: userDetails!.outlet ? {
-        id: userDetails!.outlet.publicId,
+        id: userDetails!.outlet.id,
         name: userDetails!.outlet.name,
         address: userDetails!.outlet.address
       } : null

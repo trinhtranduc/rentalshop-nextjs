@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
-import { getProductByPublicId, updateProduct } from '@rentalshop/database';
+import { getProductById, updateProduct } from '@rentalshop/database';
 import { getUserScope, assertAnyRole } from '@rentalshop/auth';
 import { productUpdateSchema } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
@@ -36,7 +36,7 @@ export async function GET(
       );
     }
 
-    const publicId = parseInt(id);
+    const productId = parseInt(id);
     
     // Get user scope for merchant isolation
     const userScope = getUserScope(user as any);
@@ -50,10 +50,10 @@ export async function GET(
     }
     
     // Get product using the secure database function that enforces merchant isolation
-    const product = await getProductByPublicId(publicId, userMerchantId);
+    const product = await getProductById(productId, userMerchantId);
 
     if (!product) {
-      console.log('❌ Product not found in database for publicId:', publicId);
+      console.log('❌ Product not found in database for productId:', productId);
       return NextResponse.json(
         { success: false, message: 'Product not found' },
         { status: API.STATUS.NOT_FOUND }
@@ -64,7 +64,7 @@ export async function GET(
 
     // Transform the data to match the expected format
     const transformedProduct = {
-      id: product.publicId, // Return publicId as "id" to frontend
+      id: product.id, // Return id directly to frontend
       name: product.name,
       description: product.description,
       barcode: product.barcode,
@@ -77,15 +77,14 @@ export async function GET(
       isActive: product.isActive,
       category: product.category,
       merchant: product.merchant,
-      outletStock: product.outletStock.map(os => ({
+      outletStock: product.outletStock.map((os: any) => ({
         id: os.id,
-        outletId: os.outlet.publicId, // Use publicId for frontend
+        outletId: os.outlet.id, // Use id for frontend
         stock: os.stock,
         available: os.available,
         renting: os.renting,
         outlet: {
-          id: os.outlet.publicId, // Use publicId for frontend
-          publicId: os.outlet.publicId,
+          id: os.outlet.id, // Use id for frontend
           name: os.outlet.name,
           address: os.outlet.address || null // Include address if available
         }
@@ -130,10 +129,7 @@ export async function PUT(
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
+      return authResult.response;
     }
 
     const user = authResult.user;
@@ -169,7 +165,7 @@ export async function PUT(
       );
     }
 
-    const publicId = parseInt(id);
+    const productId = parseInt(id);
 
     // Parse and validate request body
     const body = await request.json();
@@ -180,7 +176,7 @@ export async function PUT(
     console.log('✅ Validated update data:', validatedData);
 
     // Check if product exists and user has access to it
-    const existingProduct = await getProductByPublicId(publicId, userMerchantId);
+    const existingProduct = await getProductById(productId, userMerchantId);
     if (!existingProduct) {
       return NextResponse.json(
         { success: false, message: 'Product not found' },
@@ -189,7 +185,7 @@ export async function PUT(
     }
 
     // Update the product using the database function
-    const updatedProduct = await updateProduct(publicId, validatedData);
+    const updatedProduct = await updateProduct(productId, validatedData);
     console.log('✅ Product updated successfully:', updatedProduct);
 
     // Log audit event for product update
@@ -197,18 +193,18 @@ export async function PUT(
       const auditHelper = createAuditHelper(prisma);
       await auditHelper.logUpdate({
         entityType: 'Product',
-        entityId: updatedProduct?.id.toString() || publicId.toString(),
-        entityName: updatedProduct?.name || `Product ${publicId}`,
+        entityId: updatedProduct?.id?.toString() || productId.toString(),
+        entityName: updatedProduct?.name || `Product ${productId}`,
         oldValues: {}, // We don't have the old values in this context
         newValues: updatedProduct || {},
-        description: `Product updated: ${updatedProduct?.name || publicId}`,
+        description: `Product updated: ${updatedProduct?.name || productId}`,
         context: {
           ...auditContext,
-          userId: user.id,
+          userId: user.id?.toString() || '',
           userEmail: user.email || undefined,
           userRole: user.role || undefined,
-          merchantId: user.merchantId,
-          outletId: user.outletId
+          merchantId: user.merchantId?.toString(),
+          outletId: user.outletId?.toString()
         }
       });
     } catch (auditError) {
@@ -218,7 +214,7 @@ export async function PUT(
 
     // Transform the response to match frontend expectations
     const transformedProduct = {
-      id: updatedProduct.publicId, // Return publicId as "id" to frontend
+      id: updatedProduct.id, // Return id directly to frontend
       name: updatedProduct.name,
       description: updatedProduct.description,
       barcode: updatedProduct.barcode,
@@ -266,10 +262,7 @@ export async function DELETE(
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
+      return authResult.response;
     }
 
     const user = authResult.user;

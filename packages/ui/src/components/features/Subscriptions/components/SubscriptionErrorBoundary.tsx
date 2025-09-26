@@ -43,7 +43,6 @@ export function SubscriptionErrorBoundary({
                 status: error.subscriptionStatus,
                 // Add other required fields with defaults
                 id: 0,
-                publicId: 0,
                 merchantId: 0,
                 planId: 0,
                 status: error.subscriptionStatus,

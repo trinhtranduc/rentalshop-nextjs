@@ -377,11 +377,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     console.log('🔍 handleCustomerSelect: Customer ID:', customer.id);
     console.log('🔍 handleCustomerSelect: Customer ID type:', typeof customer.id);
     console.log('🔍 handleCustomerSelect: Full customer object keys:', Object.keys(customer));
-    console.log('🔍 handleCustomerSelect: Customer publicId:', (customer as any).publicId);
-    console.log('🔍 handleCustomerSelect: Customer _id:', (customer as any)._id);
+    console.log('🔍 handleCustomerSelect: Customer id:', customer.id);
     
-    // Try to find the ID field
-    const customerId = customer.id || (customer as any).publicId || (customer as any)._id;
+    // Use customer.id (number) - frontend always uses id
+    const customerId = customer.id;
     console.log('🔍 handleCustomerSelect: Resolved customer ID:', customerId);
     
     setSelectedCustomer(customer);
@@ -402,7 +401,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       if (initialOrder.customer) {
         const customer = {
           id: parseInt(initialOrder.customerId) || 0,
-          publicId: parseInt(initialOrder.customerId) || 0, // Required by CustomerSearchResult type
           firstName: initialOrder.customer.firstName,
           lastName: initialOrder.customer.lastName,
           phone: initialOrder.customer.phone,

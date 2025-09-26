@@ -57,7 +57,7 @@ export interface AuditLogFilter {
 // Audit logger class
 export class AuditLogger {
   private prisma: PrismaClient;
-  private publicIdCounter: number = 0;
+  private idCounter: number = 0;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
@@ -73,8 +73,8 @@ export class AuditLogger {
   async log(data: AuditLogData): Promise<void> {
     try {
       console.log('🔍 AuditLogger.log - Starting audit log creation...');
-      const publicId = await this.getNextPublicId();
-      console.log('🔍 AuditLogger.log - Got publicId:', publicId);
+      const id = await this.getNextPublicId();
+      console.log('🔍 AuditLogger.log - Got id:', id);
       
       // Validate foreign key IDs to prevent constraint violations
       const validatedUserId = await this.validateUserId(data.context.userId);
@@ -82,7 +82,7 @@ export class AuditLogger {
       const validatedOutletId = await this.validateOutletId(data.context.outletId);
       
       console.log('🔍 AuditLogger.log - About to create audit log with data:', {
-        publicId,
+        id,
         action: data.action,
         entityType: data.entityType,
         entityId: data.entityId,
@@ -93,7 +93,7 @@ export class AuditLogger {
       
       // Temporarily disabled - AuditLog model not in schema
       console.log('🔍 Audit log would be created:', {
-        publicId,
+        id,
         action: data.action,
         entityType: data.entityType,
         entityId: data.entityId
@@ -322,23 +322,23 @@ export class AuditLogger {
 
     // Transform logs to include parsed JSON fields
     const transformedLogs = logs.map(log => ({
-      id: log.publicId,
+      id: log.id,
       action: log.action,
       entityType: log.entityType,
       entityId: log.entityId,
       entityName: log.entityName,
       user: log.user ? {
-        id: log.user.publicId,
+        id: log.user.id,
         email: log.user.email,
         name: `${log.user.firstName} ${log.user.lastName}`,
         role: log.user.role
       } : null,
       merchant: log.merchant ? {
-        id: log.merchant.publicId,
+        id: log.merchant.id,
         name: log.merchant.name
       } : null,
       outlet: log.outlet ? {
-        id: log.outlet.publicId,
+        id: log.outlet.id,
         name: log.outlet.name
       } : null,
       oldValues: log.oldValues ? JSON.parse(log.oldValues) : null,

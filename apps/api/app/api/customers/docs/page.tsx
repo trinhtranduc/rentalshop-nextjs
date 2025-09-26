@@ -99,7 +99,7 @@ export default function CustomerAPIDocs() {
   "success": true,
   "data": {
     "id": "string",
-    "publicId": 123,
+    "id": 123,
     "firstName": "John",
     "lastName": "Doe",
     "email": "john@example.com",

@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
       where,
       select: {
         id: true,           // Internal ID (for database operations)
-        publicId: true,     // Public ID (to expose as "id")
         name: true,
         description: true,
         isActive: true,
@@ -39,8 +38,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform response: internal id → public id as "id"
-    const transformedCategories = categories.map(category => ({
-      id: category.publicId,                    // Return publicId as "id" to frontend
+    const transformedCategories = categories.map((category: any) => ({
+      id: category.id,                    // Return id as "id" to frontend
       name: category.name,
       description: category.description,
       isActive: category.isActive,
@@ -113,14 +112,14 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Validation passed - proceeding with category creation');
 
-    // Find merchant by publicId to get the CUID
+    // Find merchant by id to get the CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: user.merchantId },
+      where: { id: user.merchantId },
       select: { id: true }
     });
     
     if (!merchant) {
-      console.log('❌ Merchant not found for publicId:', user.merchantId);
+      console.log('❌ Merchant not found for id:', user.merchantId);
       return NextResponse.json(
         { success: false, message: 'Merchant not found' },
         { status: API.STATUS.NOT_FOUND }
@@ -145,23 +144,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ No duplicate category found - proceeding to generate publicId');
+    console.log('✅ No duplicate category found - proceeding to generate id');
 
-    // Generate next category publicId
-    console.log('🔢 Finding last category to generate next publicId...');
+    // Generate next category id
+    console.log('🔢 Finding last category to generate next id...');
     
-    // Check globally across ALL merchants for the highest publicId
+    // Check globally across ALL merchants for the highest id
     const lastCategory = await prisma.category.findFirst({
-      orderBy: { publicId: 'desc' },
-      select: { publicId: true }
+      orderBy: { id: 'desc' },
+      select: { id: true }
     });
     
-    const nextPublicId = (lastCategory?.publicId || 0) + 1;
-    console.log('🔢 Generated publicId:', nextPublicId, '(last was:', lastCategory?.publicId || 0, ')');
+    const nextPublicId = (lastCategory?.id || 0) + 1;
+    console.log('🔢 Generated id:', nextPublicId, '(last was:', lastCategory?.id || 0, ')');
 
     // Create category
     console.log('💾 Creating category in database with data:', {
-      publicId: nextPublicId,
+      id: nextPublicId,
       name: name.trim(),
       description: description?.trim() || null,
       merchantId: merchant.id, // Use CUID for database query
@@ -170,15 +169,14 @@ export async function POST(request: NextRequest) {
 
     const category = await prisma.category.create({
       data: {
-        publicId: nextPublicId,
+        id: nextPublicId,
         name: name.trim(),
         description: description?.trim() || null,
         merchantId: merchant.id, // Use CUID for database query
         isActive: true
       },
       select: {
-        id: true,
-        publicId: true,
+          id: true,
         name: true,
         description: true,
         isActive: true,
@@ -191,7 +189,7 @@ export async function POST(request: NextRequest) {
 
     // Transform response: internal id → public id as "id"
     const transformedCategory = {
-      id: category.publicId,                    // Return publicId as "id" to frontend
+      id: category.id,                    // Return id as "id" to frontend
       name: category.name,
       description: category.description,
       isActive: category.isActive,

@@ -80,19 +80,19 @@ export async function GET(
 
     // Check if user exists by ID
     const user = await prisma.user.findUnique({
-      where: { publicId: numericId },
+      where: { id: numericId },
       include: {
         merchant: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
           },
         },
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
           },
         },
@@ -138,7 +138,7 @@ export async function GET(
 
     // Transform the data to match the expected format
     const transformedUser = {
-              id: (user as any).publicId, // Return publicId as "id" to frontend
+              id: (user as any).id, // Return id as "id" to frontend
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown',
       email: user.email,
       phone: user.phone || '',
@@ -193,7 +193,7 @@ export async function GET(
 }
 
 /**
- * PUT /api/users/[publicId]
+ * PUT /api/users/[id]
  * Update user information by public ID (Admin, Merchant, Outlet Admin only)
  */
 export async function PUT(
@@ -271,19 +271,19 @@ export async function PUT(
 
     // Check if user exists
     const user = await prisma.user.findUnique({
-      where: { publicId: numericId },
+      where: { id: numericId },
       include: {
         merchant: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
           },
         },
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
           },
         },
@@ -338,13 +338,13 @@ export async function PUT(
 
     console.log('✅ User updated successfully:', {
       updatedUserId: numericId,
-      updatedBy: currentUser.publicId,
-      updatedUser: updatedUser.publicId
+      updatedBy: currentUser.id,
+      updatedUser: updatedUser.id
     });
 
     // Transform the data to match the expected format
     const transformedUser = {
-      id: updatedUser.publicId, // Return publicId as "id" to frontend
+      id: updatedUser.id, // Return id as "id" to frontend
       name: `${updatedUser.firstName || ''} ${updatedUser.lastName || ''}`.trim() || 'Unknown',
       email: updatedUser.email,
       phone: updatedUser.phone || '',
@@ -397,7 +397,7 @@ export async function PUT(
 }
 
 /**
- * PATCH /api/users/[publicId]
+ * PATCH /api/users/[id]
  * Activate/Deactivate user by public ID (Admin only)
  */
 export async function PATCH(
@@ -483,19 +483,19 @@ export async function PATCH(
 
     // Check if user exists
     const user = await prisma.user.findUnique({
-      where: { publicId: numericId },
+      where: { id: numericId },
       include: {
         merchant: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
           },
         },
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
           },
         },
@@ -557,7 +557,7 @@ export async function PATCH(
     }
 
     await prisma.user.update({
-      where: { publicId: user.id },
+      where: { id: user.id },
       data: { isActive: newStatus }
     });
 
@@ -580,7 +580,7 @@ export async function PATCH(
 }
 
 /**
- * DELETE /api/users/[publicId]
+ * DELETE /api/users/[id]
  * Delete a user permanently (Admin only)
  */
 export async function DELETE(
@@ -657,19 +657,19 @@ export async function DELETE(
 
     // Check if user exists
     const user = await prisma.user.findUnique({
-      where: { publicId: numericId },
+      where: { id: numericId },
       include: {
         merchant: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
           },
         },
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true,
           },
         },
@@ -708,9 +708,9 @@ export async function DELETE(
 
     console.log('✅ Scope validation passed - user can delete this user data');
 
-    console.log('🔍 DELETE /api/users/[publicId] - User found:', {
+    console.log('🔍 DELETE /api/users/[id] - User found:', {
       userId: user.id,
-      publicId: user.publicId,
+      id: user.id,
       email: user.email,
       role: user.role,
       merchantId: user.merchantId
@@ -770,7 +770,7 @@ export async function DELETE(
 
     // Delete user
     await prisma.user.delete({
-      where: { publicId: user.id }
+      where: { id: user.id }
     });
 
     console.log('✅ User deleted successfully from database:', user.id);

@@ -34,13 +34,13 @@ export async function GET(request: NextRequest) {
       dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     }
 
-    // Convert publicIds to CUIDs for database queries
+    // Convert ids to CUIDs for database queries
     let merchantCuid: string | null = null;
     let outletCuid: string | null = null;
     
     if (userScope.merchantId) {
       const merchant = await prisma.merchant.findUnique({
-        where: { publicId: userScope.merchantId },
+        where: { id: userScope.merchantId },
         select: { id: true }
       });
       if (merchant) {
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     
     if (userScope.outletId) {
       const outlet = await prisma.outlet.findUnique({
-        where: { publicId: userScope.outletId },
+        where: { id: userScope.outletId },
         select: { id: true }
       });
       if (outlet) {

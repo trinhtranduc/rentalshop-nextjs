@@ -24,9 +24,9 @@ export async function GET(
       );
     }
 
-    // Find the merchant by publicId to get the actual CUID
+    // Find the merchant by id to get the actual CUID
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: merchantPublicId },
+      where: { id: merchantPublicId },
       select: { id: true }
     });
 
@@ -87,7 +87,7 @@ export async function GET(
       skip: offset,
       select: {
         id: true,
-        publicId: true,
+        id: true,
         firstName: true,
         lastName: true,
         email: true,
@@ -99,7 +99,7 @@ export async function GET(
         outlet: {
           select: {
             id: true,
-            publicId: true,
+            id: true,
             name: true
           }
         }
@@ -108,7 +108,7 @@ export async function GET(
 
     // Transform data for frontend
     const transformedUsers = users.map(user => ({
-      id: user.publicId,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
@@ -118,7 +118,7 @@ export async function GET(
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
       outlet: user.outlet ? {
-        id: user.outlet.publicId,
+        id: user.outlet.id,
         name: user.outlet.name
       } : null
     }));

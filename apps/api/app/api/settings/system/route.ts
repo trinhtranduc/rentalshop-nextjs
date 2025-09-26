@@ -62,8 +62,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform settings to include typed values
-    const transformedSettings = settings.map(setting => ({
-      id: setting.publicId,
+    const transformedSettings = settings.map((setting: any) => ({
+      id: setting.id,
       key: setting.key,
       value: parseSettingValue(setting.value, setting.type),
       type: setting.type,
@@ -125,13 +125,13 @@ export async function POST(request: NextRequest) {
 
     // Get next public ID
     const lastSetting = await prisma.systemSetting.findFirst({
-      orderBy: { publicId: 'desc' }
+      orderBy: { id: 'desc' }
     });
-    const nextPublicId = (lastSetting?.publicId || 0) + 1;
+    const nextPublicId = (lastSetting?.id || 0) + 1;
 
     const setting = await prisma.systemSetting.create({
       data: {
-        publicId: nextPublicId,
+        id: nextPublicId,
         key: validatedData.key,
         value: validatedData.value,
         type: validatedData.type,
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        id: setting.publicId,
+        id: setting.id,
         key: setting.key,
         value: parseSettingValue(setting.value, setting.type),
         type: setting.type,

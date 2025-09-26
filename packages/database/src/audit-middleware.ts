@@ -28,7 +28,7 @@ export class AuditablePrismaClient extends PrismaClient {
         await this.auditLogger.logCreate({
           action: 'CREATE',
           entityType: params.model || 'Unknown',
-          entityId: result.id || result.publicId?.toString() || 'unknown',
+          entityId: result.id || result.id?.toString() || 'unknown',
           entityName: this.getEntityName(params.model, result),
           newValues: this.sanitizeData(result),
           severity: 'INFO',
@@ -58,7 +58,7 @@ export class AuditablePrismaClient extends PrismaClient {
           await this.auditLogger.logUpdate({
             action: 'UPDATE',
             entityType: params.model || 'Unknown',
-            entityId: result.id || result.publicId?.toString() || 'unknown',
+            entityId: result.id || result.id?.toString() || 'unknown',
             entityName: this.getEntityName(params.model, result),
             oldValues: originalData,
             newValues: this.sanitizeData(result),
@@ -87,7 +87,7 @@ export class AuditablePrismaClient extends PrismaClient {
         await this.auditLogger.logDelete({
           action: 'DELETE',
           entityType: params.model || 'Unknown',
-          entityId: originalData?.id || originalData?.publicId?.toString() || 'unknown',
+          entityId: originalData?.id || originalData?.id?.toString() || 'unknown',
           entityName: this.getEntityName(params.model, originalData),
           oldValues: this.sanitizeData(originalData),
           severity: 'WARNING',

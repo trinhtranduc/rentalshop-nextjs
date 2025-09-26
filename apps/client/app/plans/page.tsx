@@ -134,7 +134,7 @@ export default function PlansPage() {
     try {
       const result = await subscriptionsApi.create({
         merchantId: 1, // TODO: Get from user context
-        planId: selectedPlan?.publicId || 0,
+        planId: selectedPlan?.id || 0,
         status: 'active',
         billingInterval: purchaseData.billingCycle === 'monthly' ? 'month' : 
                         purchaseData.billingCycle === 'quarterly' ? 'quarter' : 'year'

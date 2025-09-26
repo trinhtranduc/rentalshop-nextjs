@@ -39,18 +39,18 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
 
     // Add scope filtering based on user role
     if (userScope.outletId) {
-      // Find outlet by publicId to get CUID
+      // Find outlet by id to get CUID
       const outlet = await prisma.outlet.findUnique({
-        where: { publicId: userScope.outletId },
+        where: { id: userScope.outletId },
         select: { id: true }
       });
       if (outlet) {
         whereClause.outletId = outlet.id;
       }
     } else if (userScope.merchantId) {
-      // Find merchant by publicId to get CUID
+      // Find merchant by id to get CUID
       const merchant = await prisma.merchant.findUnique({
-        where: { publicId: userScope.merchantId },
+        where: { id: userScope.merchantId },
         select: { id: true, outlets: { select: { id: true } } }
       });
       if (merchant) {
@@ -88,7 +88,7 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
         : null;
 
       return {
-        id: order.publicId, // Use publicId (number) as the external ID
+        id: order.id, // Use id (number) as the external ID
         orderNumber: order.orderNumber,
         customerName,
         customerPhone,

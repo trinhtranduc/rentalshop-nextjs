@@ -20,10 +20,9 @@ export interface SubscriptionPeriod {
 }
 
 export interface Subscription {
-  id: string;
-  publicId: number;
-  merchantId: string;
-  planId: string;
+  id: number;
+  merchantId: number;
+  planId: number;
   status: SubscriptionStatus;
   billingInterval: BillingInterval; // month, quarter, semiAnnual, year
   currentPeriodStart: Date;
@@ -37,8 +36,7 @@ export interface Subscription {
   
   // Relations
   merchant: {
-    id: string;
-    publicId: number;
+    id: number;
     name: string;
     email: string;
     subscriptionStatus: string;

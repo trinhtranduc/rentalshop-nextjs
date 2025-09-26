@@ -43,7 +43,7 @@ export async function GET(
     }
 
     const setting = await prisma.systemSetting.findUnique({
-      where: { publicId: settingId }
+      where: { id: settingId }
     });
 
     if (!setting) {
@@ -56,7 +56,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
-        id: setting.publicId,
+        id: setting.id,
         key: setting.key,
         value: parseSettingValue(setting.value, setting.type),
         type: setting.type,
@@ -113,7 +113,7 @@ export async function PUT(
 
     // Check if setting exists
     const existingSetting = await prisma.systemSetting.findUnique({
-      where: { publicId: settingId }
+      where: { id: settingId }
     });
 
     if (!existingSetting) {
@@ -132,7 +132,7 @@ export async function PUT(
     }
 
     const updatedSetting = await prisma.systemSetting.update({
-      where: { publicId: settingId },
+      where: { id: settingId },
       data: {
         value: validatedData.value,
         description: validatedData.description,
@@ -165,7 +165,7 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: {
-        id: updatedSetting.publicId,
+        id: updatedSetting.id,
         key: updatedSetting.key,
         value: parseSettingValue(updatedSetting.value, updatedSetting.type),
         type: updatedSetting.type,
@@ -226,7 +226,7 @@ export async function DELETE(
 
     // Check if setting exists
     const existingSetting = await prisma.systemSetting.findUnique({
-      where: { publicId: settingId }
+      where: { id: settingId }
     });
 
     if (!existingSetting) {
@@ -245,7 +245,7 @@ export async function DELETE(
     }
 
     await prisma.systemSetting.delete({
-      where: { publicId: settingId }
+      where: { id: settingId }
     });
 
     return NextResponse.json({

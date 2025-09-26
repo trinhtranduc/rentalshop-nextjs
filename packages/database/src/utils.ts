@@ -2,9 +2,9 @@
 // NEW: CORRECT DUAL ID UTILITY FUNCTIONS
 // ============================================================================
 // This file contains only the correct functions that follow the dual ID system:
-// - Input: publicId (number)
-// - Database: queries by publicId
-// - Return: includes both id (CUID) and publicId (number)
+// - Input: id (number)
+// - Database: queries by id
+// - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
 
@@ -13,71 +13,71 @@ import { prisma } from './client';
 // ============================================================================
 
 /**
- * Find outlet by publicId (number) - follows dual ID system
+ * Find outlet by id (number) - follows dual ID system
  */
-export const findOutletByPublicId = async (publicId: number) => {
+export const findOutletByPublicId = async (id: number) => {
   return await prisma.outlet.findUnique({ 
-    where: { publicId }, 
+    where: { id }, 
     include: { merchant: true, products: true, users: true } 
   });
 };
 
 /**
- * Find customer by publicId (number) - follows dual ID system
+ * Find customer by id (number) - follows dual ID system
  */
-export const findCustomerByPublicId = async (publicId: number) => {
+export const findCustomerByPublicId = async (id: number) => {
   return await prisma.customer.findUnique({ 
-    where: { publicId }, 
+    where: { id }, 
     include: { merchant: true, orders: true } 
   });
 };
 
 /**
- * Find product by publicId (number) - follows dual ID system
+ * Find product by id (number) - follows dual ID system
  */
-export const findProductByPublicId = async (publicId: number) => {
+export const findProductByPublicId = async (id: number) => {
   return await prisma.product.findUnique({ 
-    where: { publicId }, 
+    where: { id }, 
     include: { merchant: true, category: true } 
   });
 };
 
 /**
- * Find user by publicId (number) - follows dual ID system
+ * Find user by id (number) - follows dual ID system
  */
-export const findUserByPublicId = async (publicId: number) => {
+export const findUserByPublicId = async (id: number) => {
   return await prisma.user.findUnique({ 
-    where: { publicId }, 
+    where: { id }, 
     include: { merchant: true, outlet: true } 
   });
 };
 
 /**
- * Find merchant by publicId (number) - follows dual ID system
+ * Find merchant by id (number) - follows dual ID system
  */
-export const findMerchantByPublicId = async (publicId: number) => {
+export const findMerchantByPublicId = async (id: number) => {
   return await prisma.merchant.findUnique({ 
-    where: { publicId }, 
+    where: { id }, 
     include: { users: true, outlets: true } 
   });
 };
 
 /**
- * Find category by publicId (number) - follows dual ID system
+ * Find category by id (number) - follows dual ID system
  */
-export const findCategoryByPublicId = async (publicId: number) => {
+export const findCategoryByPublicId = async (id: number) => {
   return await prisma.category.findUnique({ 
-    where: { publicId }, 
+    where: { id }, 
     include: { merchant: true, products: true } 
   });
 };
 
 /**
- * Find order by publicId (number) - follows dual ID system
+ * Find order by id (number) - follows dual ID system
  */
-export const findOrderByPublicId = async (publicId: number) => {
+export const findOrderByPublicId = async (id: number) => {
   return await prisma.order.findUnique({ 
-    where: { publicId }, 
+    where: { id }, 
     include: { 
       customer: true, 
       outlet: { include: { merchant: true } }, 
@@ -96,10 +96,10 @@ export const findOrderByPublicId = async (publicId: number) => {
  */
 export const generateNextUserPublicId = async (): Promise<number> => {
   const lastUser = await prisma.user.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  return (lastUser?.publicId || 0) + 1;
+  return (lastUser?.id || 0) + 1;
 };
 
 /**
@@ -107,10 +107,10 @@ export const generateNextUserPublicId = async (): Promise<number> => {
  */
 export const generateNextMerchantPublicId = async (): Promise<number> => {
   const lastMerchant = await prisma.merchant.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  return (lastMerchant?.publicId || 0) + 1;
+  return (lastMerchant?.id || 0) + 1;
 };
 
 /**
@@ -118,10 +118,10 @@ export const generateNextMerchantPublicId = async (): Promise<number> => {
  */
 export const generateNextOutletPublicId = async (): Promise<number> => {
   const lastOutlet = await prisma.outlet.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  return (lastOutlet?.publicId || 0) + 1;
+  return (lastOutlet?.id || 0) + 1;
 };
 
 /**
@@ -129,10 +129,10 @@ export const generateNextOutletPublicId = async (): Promise<number> => {
  */
 export const generateNextProductPublicId = async (): Promise<number> => {
   const lastProduct = await prisma.product.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  return (lastProduct?.publicId || 0) + 1;
+  return (lastProduct?.id || 0) + 1;
 };
 
 /**
@@ -140,10 +140,10 @@ export const generateNextProductPublicId = async (): Promise<number> => {
  */
 export const generateNextCustomerPublicId = async (): Promise<number> => {
   const lastCustomer = await prisma.customer.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  return (lastCustomer?.publicId || 0) + 1;
+  return (lastCustomer?.id || 0) + 1;
 };
 
 /**
@@ -151,10 +151,10 @@ export const generateNextCustomerPublicId = async (): Promise<number> => {
  */
 export const generateNextCategoryPublicId = async (): Promise<number> => {
   const lastCategory = await prisma.category.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  return (lastCategory?.publicId || 0) + 1;
+  return (lastCategory?.id || 0) + 1;
 };
 
 /**
@@ -162,10 +162,10 @@ export const generateNextCategoryPublicId = async (): Promise<number> => {
  */
 export const generateNextOrderPublicId = async (): Promise<number> => {
   const lastOrder = await prisma.order.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  return (lastOrder?.publicId || 0) + 1;
+  return (lastOrder?.id || 0) + 1;
 };
 
 // ============================================================================
@@ -185,112 +185,112 @@ export const checkDatabaseConnection = async () => {
 };
 
 /**
- * Convert outlet publicId to database id (CUID)
+ * Convert outlet id to database id (CUID)
  */
-export const convertOutletPublicIdToDatabaseId = async (publicId: number): Promise<string> => {
+export const convertOutletPublicIdToDatabaseId = async (id: number): Promise<string> => {
   const outlet = await prisma.outlet.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true }
   });
   
   if (!outlet) {
-    throw new Error(`Outlet with publicId ${publicId} not found`);
+    throw new Error(`Outlet with id ${id} not found`);
   }
   
   return outlet.id;
 };
 
 /**
- * Convert customer publicId to database id (CUID)
+ * Convert customer id to database id (CUID)
  */
-export const convertCustomerPublicIdToDatabaseId = async (publicId: number): Promise<string> => {
+export const convertCustomerPublicIdToDatabaseId = async (id: number): Promise<string> => {
   const customer = await prisma.customer.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true }
   });
   
   if (!customer) {
-    throw new Error(`Customer with publicId ${publicId} not found`);
+    throw new Error(`Customer with id ${id} not found`);
   }
   
   return customer.id;
 };
 
 /**
- * Convert product publicId to database id (CUID)
+ * Convert product id to database id (CUID)
  */
-export const convertProductPublicIdToDatabaseId = async (publicId: number): Promise<string> => {
+export const convertProductPublicIdToDatabaseId = async (id: number): Promise<string> => {
   const product = await prisma.product.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true }
   });
   
   if (!product) {
-    throw new Error(`Product with publicId ${publicId} not found`);
+    throw new Error(`Product with id ${id} not found`);
   }
   
   return product.id;
 };
 
 /**
- * Convert user publicId to database id (CUID)
+ * Convert user id to database id (CUID)
  */
-export const convertUserPublicIdToDatabaseId = async (publicId: number): Promise<string> => {
+export const convertUserPublicIdToDatabaseId = async (id: number): Promise<string> => {
   const user = await prisma.user.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true }
   });
   
   if (!user) {
-    throw new Error(`User with publicId ${publicId} not found`);
+    throw new Error(`User with id ${id} not found`);
   }
   
   return user.id;
 };
 
 /**
- * Convert merchant publicId to database id (CUID)
+ * Convert merchant id to database id (CUID)
  */
-export const convertMerchantPublicIdToDatabaseId = async (publicId: number): Promise<string> => {
+export const convertMerchantPublicIdToDatabaseId = async (id: number): Promise<string> => {
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${publicId} not found`);
+    throw new Error(`Merchant with id ${id} not found`);
   }
   
   return merchant.id;
 };
 
 /**
- * Convert category publicId to database id (CUID)
+ * Convert category id to database id (CUID)
  */
-export const convertCategoryPublicIdToDatabaseId = async (publicId: number): Promise<string> => {
+export const convertCategoryPublicIdToDatabaseId = async (id: number): Promise<string> => {
   const category = await prisma.category.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true }
   });
   
   if (!category) {
-    throw new Error(`Category with publicId ${publicId} not found`);
+    throw new Error(`Category with id ${id} not found`);
   }
   
   return category.id;
 };
 
 /**
- * Convert order publicId to database id (CUID)
+ * Convert order id to database id (CUID)
  */
-export const convertOrderPublicIdToDatabaseId = async (publicId: number): Promise<string> => {
+export const convertOrderPublicIdToDatabaseId = async (id: number): Promise<string> => {
   const order = await prisma.order.findUnique({
-    where: { publicId },
+    where: { id },
     select: { id: true }
   });
   
   if (!order) {
-    throw new Error(`Order with publicId ${publicId} not found`);
+    throw new Error(`Order with id ${id} not found`);
   }
   
   return order.id;

@@ -26,16 +26,16 @@ export async function GET(
       return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
     }
 
-    const merchant = await prisma.merchant.findUnique({ where: { publicId: merchantPublicId }, select: { id: true } });
+    const merchant = await prisma.merchant.findUnique({ where: { id: merchantPublicId }, select: { id: true } });
     if (!merchant) {
       return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
     const product = await prisma.product.findFirst({
-      where: { publicId: productPublicId, merchantId: merchant.id },
+      where: { id: productPublicId, merchantId: merchant.id },
       select: {
         id: true,
-        publicId: true,
+        id: true,
         name: true,
         description: true,
         barcode: true,
@@ -45,11 +45,11 @@ export async function GET(
         totalStock: true,
         images: true,
         isActive: true,
-        category: { select: { id: true, publicId: true, name: true } },
+        category: { select: { id: true, id: true, name: true } },
         outletStock: {
           select: {
             stock: true,
-            outlet: { select: { id: true, publicId: true, name: true } }
+            outlet: { select: { id: true, id: true, name: true } }
           }
         }
       }
@@ -63,31 +63,31 @@ export async function GET(
     const [categories, outlets] = await Promise.all([
       prisma.category.findMany({
         where: { merchantId: merchant.id, isActive: true },
-        select: { id: true, publicId: true, name: true }
+        select: { id: true, id: true, name: true }
       }),
       prisma.outlet.findMany({
         where: { merchantId: merchant.id },
-        select: { id: true, publicId: true, name: true, address: true }
+        select: { id: true, id: true, name: true, address: true }
       })
     ]);
 
     const transformed = {
       product: {
-        id: product.publicId,
+        id: product.id,
         name: product.name,
         description: product.description || '',
         barcode: product.barcode || '',
-        categoryId: product.category ? product.category.publicId : undefined,
+        categoryId: product.category ? product.category.id : undefined,
         rentPrice: product.rentPrice || 0,
         salePrice: product.salePrice || 0,
         deposit: product.deposit || 0,
         totalStock: product.totalStock || 0,
         images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []),
         isActive: product.isActive,
-        outletStock: product.outletStock.map(os => ({ outletId: os.outlet.publicId, stock: os.stock }))
+        outletStock: product.outletStock.map(os => ({ outletId: os.outlet.id, stock: os.stock }))
       },
-      categories: categories.map(c => ({ id: c.publicId, name: c.name })),
-      outlets: outlets.map(o => ({ id: o.publicId, name: o.name, address: o.address || '' }))
+      categories: categories.map(c => ({ id: c.id, name: c.name })),
+      outlets: outlets.map(o => ({ id: o.id, name: o.name, address: o.address || '' }))
     };
 
     return NextResponse.json({ success: true, data: transformed });
@@ -135,23 +135,23 @@ export async function PUT(
       outletStock
     } = body || {};
 
-    const merchant = await prisma.merchant.findUnique({ where: { publicId: merchantPublicId }, select: { id: true } });
+    const merchant = await prisma.merchant.findUnique({ where: { id: merchantPublicId }, select: { id: true } });
     if (!merchant) {
       return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
     const existing = await prisma.product.findFirst({
-      where: { publicId: productPublicId, merchantId: merchant.id },
+      where: { id: productPublicId, merchantId: merchant.id },
       select: { id: true }
     });
     if (!existing) {
       return NextResponse.json({ success: false, message: 'Product not found' }, { status: API.STATUS.NOT_FOUND });
     }
 
-    // Resolve category CUID from publicId
+    // Resolve category CUID from id
     let categoryCuid: string | undefined = undefined;
     if (typeof categoryId === 'number') {
-      const category = await prisma.category.findUnique({ where: { publicId: categoryId }, select: { id: true } });
+      const category = await prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } });
       if (category) categoryCuid = category.id;
     }
 
@@ -172,7 +172,7 @@ export async function PUT(
       },
       select: {
         id: true,
-        publicId: true,
+        id: true,
         name: true,
         description: true,
         barcode: true,
@@ -189,7 +189,7 @@ export async function PUT(
     // NOTE: For now, skip updating outletStock to keep operation simple and fast.
     // A follow-up endpoint can manage outlet stock in detail if required.
 
-    return NextResponse.json({ success: true, data: { id: updated.publicId, ...updated } });
+    return NextResponse.json({ success: true, data: { id: updated.id, ...updated } });
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json({ success: false, message: 'Failed to update product' }, { status: API.STATUS.INTERNAL_SERVER_ERROR });

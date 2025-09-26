@@ -43,7 +43,7 @@ export async function GET(
 
     const setting = await prisma.merchantSetting.findFirst({
       where: { 
-        publicId: settingId,
+        id: settingId,
         merchantId: user.merchantId
       }
     });
@@ -58,7 +58,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
-        id: setting.publicId,
+        id: setting.id,
         key: setting.key,
         value: parseSettingValue(setting.value, setting.type),
         type: setting.type,
@@ -115,7 +115,7 @@ export async function PUT(
     // Check if setting exists and belongs to user's merchant
     const existingSetting = await prisma.merchantSetting.findFirst({
       where: { 
-        publicId: settingId,
+        id: settingId,
         merchantId: user.merchantId
       }
     });
@@ -128,7 +128,7 @@ export async function PUT(
     }
 
     const updatedSetting = await prisma.merchantSetting.update({
-      where: { publicId: settingId },
+      where: { id: settingId },
       data: {
         value: validatedData.value,
         description: validatedData.description,
@@ -139,7 +139,7 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: {
-        id: updatedSetting.publicId,
+        id: updatedSetting.id,
         key: updatedSetting.key,
         value: parseSettingValue(updatedSetting.value, updatedSetting.type),
         type: updatedSetting.type,
@@ -200,7 +200,7 @@ export async function DELETE(
     // Check if setting exists and belongs to user's merchant
     const existingSetting = await prisma.merchantSetting.findFirst({
       where: { 
-        publicId: settingId,
+        id: settingId,
         merchantId: user.merchantId
       }
     });
@@ -213,7 +213,7 @@ export async function DELETE(
     }
 
     await prisma.merchantSetting.delete({
-      where: { publicId: settingId }
+      where: { id: settingId }
     });
 
     return NextResponse.json({

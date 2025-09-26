@@ -62,7 +62,7 @@ export async function POST(
 
     // Get merchant
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: parseInt(merchantId) },
+      where: { id: parseInt(merchantId) },
       include: { plan: true }
     });
 
@@ -77,14 +77,14 @@ export async function POST(
     const result = await prisma.$transaction(async (tx) => {
       // Get next payment public ID
       const lastPayment = await tx.payment.findFirst({
-        orderBy: { publicId: 'desc' }
+        orderBy: { id: 'desc' }
       });
-      const paymentPublicId = (lastPayment?.publicId || 0) + 1;
+      const paymentPublicId = (lastPayment?.id || 0) + 1;
 
       // Create payment record
       const payment = await tx.payment.create({
         data: {
-          publicId: paymentPublicId,
+          id: paymentPublicId,
           amount: validatedData.amount,
           method: validatedData.method,
           type: validatedData.type,
@@ -104,11 +104,11 @@ export async function POST(
           entityId: payment.id,
           action: 'PAYMENT_CREATED',
           details: JSON.stringify({
-            paymentId: payment.publicId,
+            paymentId: payment.id,
             amount: payment.amount,
             method: payment.method,
             type: payment.type,
-            merchantId: merchant.publicId,
+            merchantId: merchant.id,
             createdBy: user.id,
             createdByEmail: user.email
           }),
@@ -126,7 +126,7 @@ export async function POST(
       message: 'Payment created successfully',
       data: {
         payment: {
-          id: result.publicId,
+          id: result.id,
           amount: result.amount,
           method: result.method,
           type: result.type,
@@ -183,7 +183,7 @@ export async function GET(
 
     // Build where clause
     const where: any = {
-      merchant: { publicId: parseInt(merchantId) }
+      merchant: { id: parseInt(merchantId) }
     };
 
     if (status) where.status = status;
@@ -213,7 +213,7 @@ export async function GET(
       success: true,
       data: {
         payments: payments.map(payment => ({
-          id: payment.publicId,
+          id: payment.id,
           amount: payment.amount,
           method: payment.method,
           type: payment.type,
@@ -223,7 +223,7 @@ export async function GET(
           processedAt: payment.processedAt,
           createdAt: payment.createdAt,
           subscription: payment.subscription ? {
-            id: payment.subscription.publicId,
+            id: payment.subscription.id,
             plan: payment.subscription.plan?.name,
             planVariant: payment.subscription.planVariant?.name
           } : null
@@ -268,8 +268,8 @@ export async function PATCH(
     // Get payment
     const payment = await prisma.payment.findFirst({
       where: {
-        publicId: parseInt(merchantId),
-        merchant: { publicId: parseInt(merchantId) }
+        id: parseInt(merchantId),
+        merchant: { id: parseInt(merchantId) }
       }
     });
 
@@ -301,7 +301,7 @@ export async function PATCH(
           entityId: payment.id,
           action: 'PAYMENT_STATUS_UPDATED',
           details: JSON.stringify({
-            paymentId: payment.publicId,
+            paymentId: payment.id,
             oldStatus: payment.status,
             newStatus: validatedData.status,
             updatedBy: user.id,
@@ -321,7 +321,7 @@ export async function PATCH(
       message: 'Payment status updated successfully',
       data: {
         payment: {
-          id: result.publicId,
+          id: result.id,
           status: result.status,
           reference: result.reference,
           notes: result.notes,

@@ -42,7 +42,7 @@ export default function CustomerOrdersPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const publicId = params.id as string; // Fix: use params.id instead of params.publicId
+  const id = params.id as string; // Fix: use params.id instead of params.id
   
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -80,12 +80,12 @@ export default function CustomerOrdersPage() {
       try {
         setIsLoading(true);
         
-        console.log('🔍 CustomerOrdersPage: Fetching customer with public ID:', publicId);
+        console.log('🔍 CustomerOrdersPage: Fetching customer with public ID:', id);
         
         // Validate public ID format (should be numeric)
-        const numericId = parseInt(publicId);
+        const numericId = parseInt(id);
         if (isNaN(numericId) || numericId <= 0) {
-          console.error('❌ CustomerOrdersPage: Invalid public ID format:', publicId);
+          console.error('❌ CustomerOrdersPage: Invalid public ID format:', id);
           setCustomer(null);
           return;
         }
@@ -114,10 +114,10 @@ export default function CustomerOrdersPage() {
       }
     };
 
-    if (publicId) {
+    if (id) {
       fetchCustomer();
     }
-  }, [publicId]);
+  }, [id]);
 
   // Fetch customer orders
   useEffect(() => {

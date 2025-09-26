@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@rentalshop/auth';
-import { getOrderByPublicId, getOrderByNumber, updateOrder, cancelOrder } from '@rentalshop/database';
+import { updateOrder } from '@rentalshop/database';
+import { prisma } from '@rentalshop/database';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import { orderUpdateSchema } from '@rentalshop/utils';
 import type { OrderUpdateInput } from '@rentalshop/types';
@@ -26,10 +27,7 @@ export async function GET(
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, error: authResult.message },
-        { status: authResult.status }
-      );
+      return authResult.response;
     }
 
     const user = authResult.user;
@@ -46,19 +44,31 @@ export async function GET(
     // Get user scope for authorization
     const userScope = getUserScope(user as any);
     
-    // Determine if orderId is a publicId (number) or order number (string)
-    let order = null;
-    
-    // Check if orderId is a number (publicId)
-    if (/^\d+$/.test(orderId)) {
-      const publicId = parseInt(orderId);
-      order = await getOrderByPublicId(publicId);
+    // Get order by id (number)
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid order ID format',
+        error: 'INVALID_ORDER_ID'
+      }, { status: 400 });
     }
     
-    // If not found by publicId, try by order number
-    if (!order) {
-      order = await getOrderByNumber(orderId);
-    }
+    const order = await prisma.order.findUnique({
+      where: { id: orderIdNumber },
+      include: {
+        customer: true,
+        outlet: true,
+        orderItems: {
+          include: {
+            product: true
+          }
+        },
+        payments: true,
+        createdBy: true,
+        merchant: true
+      }
+    });
 
     if (!order) {
       return NextResponse.json(
@@ -77,7 +87,7 @@ export async function GET(
     }
 
     // Authorization: Users can only view orders from their own outlet or if they're admin/merchant
-    if (userScope.outletId && order.outlet.publicId !== userScope.outletId) {
+    if (userScope.outletId && order.outlet.id !== userScope.outletId) {
       // Check if user has admin or merchant role
       try {
         assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
@@ -97,7 +107,7 @@ export async function GET(
         ? `${order.customer.firstName} ${order.customer.lastName}`.trim()
         : 'Guest Customer',
       customerContact: order.customer?.phone || order.customer?.email || 'No contact info',
-      totalItems: order.orderItems.reduce((sum, item) => sum + item.quantity, 0),
+      totalItems: order.orderItems.reduce((sum: any, item: any) => sum + item.quantity, 0),
       isRental: order.orderType === 'RENT',
       isOverdue: order.status === 'PICKUPED' && order.returnPlanAt && new Date() > order.returnPlanAt,
       daysOverdue: order.status === 'PICKUPED' && order.returnPlanAt 
@@ -105,22 +115,22 @@ export async function GET(
         : 0,
       // Calculate rental duration for rental orders
       rentalDuration: order.orderType === 'RENT' && order.pickupPlanAt && order.returnPlanAt
-        ? Math.ceil((order.returnPlanAt.getTime() - order.pickupPlanAt.getTime()) / (1000 * 60 * 60 * 24))
+        ? Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24))
         : null,
       // Payment summary
       paymentSummary: {
         totalPaid: order.payments
-          .filter(p => p.status === 'COMPLETED')
-          .reduce((sum, p) => sum + p.amount, 0),
+          .filter((p: any) => p.status === 'COMPLETED')
+          .reduce((sum: any, p: any) => sum + p.amount, 0),
         totalPending: order.payments
-          .filter(p => p.status === 'PENDING')
-          .reduce((sum, p) => sum + p.amount, 0),
+          .filter((p: any) => p.status === 'PENDING')
+          .reduce((sum: any, p: any) => sum + p.amount, 0),
         totalFailed: order.payments
-          .filter(p => p.status === 'FAILED')
-          .reduce((sum, p) => sum + p.amount, 0),
+          .filter((p: any) => p.status === 'FAILED')
+          .reduce((sum: any, p: any) => sum + p.amount, 0),
         remainingBalance: order.totalAmount - order.payments
-          .filter(p => p.status === 'COMPLETED')
-          .reduce((sum, p) => sum + p.amount, 0)
+          .filter((p: any) => p.status === 'COMPLETED')
+          .reduce((sum: any, p: any) => sum + p.amount, 0)
       },
       // Status timeline (simplified - in a real app you might want a separate history table)
       statusTimeline: [
@@ -181,10 +191,7 @@ export async function PUT(
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, error: authResult.message },
-        { status: authResult.status }
-      );
+      return authResult.response;
     }
 
     const user = authResult.user;
@@ -214,6 +221,12 @@ export async function PUT(
 
     const updateData = parsed.data;
     const updateInput: OrderUpdateInput = {
+      orderType: 'RENT', // Default value
+      outletId: 0, // Default value
+      createdById: user.id, // Required field
+      orderItems: [], // Default empty array for updates
+      subtotal: 0, // Default value
+      totalAmount: 0, // Default value
       ...(updateData.status !== undefined && { status: updateData.status as any }),
       ...(updateData.customerId !== undefined && { customerId: updateData.customerId }),
       ...(updateData.outletId !== undefined && { outletId: updateData.outletId }),
@@ -247,16 +260,16 @@ export async function PUT(
       }),
     };
 
-    // Update the order - convert orderId string to number and user.id (CUID) to publicId (number)
-    const orderPublicId = parseInt(orderId);
-    if (isNaN(orderPublicId)) {
+    // Update the order
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
       return NextResponse.json(
         { success: false, error: 'Invalid order ID format' },
         { status: 400 }
       );
     }
     
-    const updatedOrder = await updateOrder(orderPublicId, updateInput, user.publicId);
+    const updatedOrder = await updateOrder(orderIdNumber, updateInput);
 
     if (!updatedOrder) {
       return NextResponse.json(
@@ -291,10 +304,7 @@ export async function DELETE(
     // Verify authentication using the centralized method
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, error: authResult.message },
-        { status: authResult.status }
-      );
+      return authResult.response;
     }
 
     const user = authResult.user;
@@ -319,16 +329,25 @@ export async function DELETE(
     const body = await request.json();
     const reason = body?.reason || 'Order cancelled by user';
 
-    // Cancel the order - convert orderId string to number and user.id (CUID) to publicId (number)
-    const orderPublicId = parseInt(orderId);
-    if (isNaN(orderPublicId)) {
+    // Cancel the order by updating status
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
       return NextResponse.json(
         { success: false, error: 'Invalid order ID format' },
         { status: 400 }
       );
     }
     
-    const cancelledOrder = await cancelOrder(orderPublicId, user.publicId, reason);
+    const cancelledOrder = await updateOrder(orderIdNumber, {
+      orderType: 'RENT', // Default value
+      outletId: 0, // Default value
+      createdById: user.id, // Required field
+      orderItems: [], // Default empty array
+      subtotal: 0, // Default value
+      totalAmount: 0, // Default value
+      status: 'CANCELLED',
+      notes: reason
+    });
 
     if (!cancelledOrder) {
       return NextResponse.json(

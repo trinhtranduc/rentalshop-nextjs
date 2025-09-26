@@ -8,8 +8,7 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  publicId      Int        @unique
+  id            Int        @id @default(autoincrement())
   email         String     @unique
   password      String
   firstName     String
@@ -19,8 +18,8 @@ model User {
   isActive      Boolean    @default(true)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-  merchantId    String?
-  outletId      String?
+  merchantId    Int?
+  outletId      Int?
   deletedAt     DateTime?
   auditLogs     AuditLog[]
   createdOrders Order[]
@@ -32,13 +31,11 @@ model User {
   @@index([email])
   @@index([merchantId])
   @@index([outletId])
-  @@index([publicId])
   @@index([deletedAt])
 }
 
 model Merchant {
-  id                 String        @id @default(cuid())
-  publicId           Int           @unique
+  id                 Int           @id @default(autoincrement())
   name               String
   email              String        @unique
   phone              String?
@@ -51,7 +48,7 @@ model Merchant {
   taxId              String?
   website            String?
   description        String?
-  planId             String?
+  planId             Int?
   subscriptionStatus String        @default("trial")
   totalRevenue       Float         @default(0)
   lastActiveAt       DateTime?
@@ -69,14 +66,12 @@ model Merchant {
 
   @@index([name])
   @@index([email])
-  @@index([publicId])
   @@index([subscriptionStatus])
   @@index([planId])
 }
 
 model Outlet {
-  id          String        @id @default(cuid())
-  publicId    Int           @unique
+  id          Int           @id @default(autoincrement())
   name        String
   address     String?
   description String?
@@ -84,7 +79,7 @@ model Outlet {
   isDefault   Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  merchantId  String
+  merchantId  Int
   phone       String?
   city        String?
   country     String?
@@ -97,30 +92,26 @@ model Outlet {
 
   @@index([merchantId])
   @@index([name])
-  @@index([publicId])
   @@index([isDefault])
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  publicId    Int       @unique
+  id          Int       @id @default(autoincrement())
   name        String
   description String?
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  merchantId  String
+  merchantId  Int
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products    Product[]
 
   @@unique([merchantId, name])
   @@index([merchantId])
-  @@index([publicId])
 }
 
 model Product {
-  id          String        @id @default(cuid())
-  publicId    Int           @unique
+  id          Int           @id @default(autoincrement())
   name        String
   description String?
   barcode     String?       @unique
@@ -132,8 +123,8 @@ model Product {
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  merchantId  String
-  categoryId  String
+  merchantId  Int
+  categoryId  Int
   orderItems  OrderItem[]
   outletStock OutletStock[]
   category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -143,18 +134,17 @@ model Product {
   @@index([categoryId])
   @@index([barcode])
   @@index([name])
-  @@index([publicId])
 }
 
 model OutletStock {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   stock     Int      @default(0)
   available Int      @default(0)
   renting   Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  productId String
-  outletId  String
+  productId Int
+  outletId  Int
   outlet    Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -164,8 +154,7 @@ model OutletStock {
 }
 
 model Customer {
-  id          String    @id @default(cuid())
-  publicId    Int       @unique
+  id          Int       @id @default(autoincrement())
   firstName   String
   lastName    String
   email       String?
@@ -182,19 +171,17 @@ model Customer {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  merchantId  String
+  merchantId  Int
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   orders      Order[]
 
   @@unique([merchantId, phone])
   @@unique([merchantId, email], map: "unique_merchant_email")
   @@index([merchantId, firstName, lastName])
-  @@index([publicId])
 }
 
 model Order {
-  id                String      @id @default(cuid())
-  publicId          Int         @unique
+  id                Int         @id @default(autoincrement())
   orderNumber       String      @unique
   orderType         String
   status            String      @default("RESERVED")
@@ -220,9 +207,9 @@ model Order {
   damageNotes       String?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
-  outletId          String
-  customerId        String?
-  createdById       String
+  outletId          Int
+  customerId        Int?
+  createdById       Int
   createdBy         User        @relation(fields: [createdById], references: [id])
   outlet            Outlet      @relation(fields: [outletId], references: [id])
   customer          Customer?   @relation(fields: [customerId], references: [id])
@@ -233,18 +220,17 @@ model Order {
   @@index([customerId, createdAt(sort: Desc)])
   @@index([pickupPlanAt, returnPlanAt])
   @@index([orderNumber])
-  @@index([publicId])
   @@index([isReadyToDeliver, outletId])
 }
 
 model OrderItem {
-  id         String  @id @default(cuid())
+  id         Int     @id @default(autoincrement())
   quantity   Int     @default(1)
   unitPrice  Float
   totalPrice Float
   deposit    Float   @default(0)
-  orderId    String
-  productId  String
+  orderId    Int
+  productId  Int
   notes      String?
   rentalDays Int?
   order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -254,8 +240,7 @@ model OrderItem {
 }
 
 model Payment {
-  id             String        @id @default(cuid())
-  publicId       Int           @unique
+  id             Int           @id @default(autoincrement())
   amount         Float
   currency       String        @default("USD")
   method         String
@@ -272,9 +257,9 @@ model Payment {
   processedBy    String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  orderId        String?
-  subscriptionId String?
-  merchantId     String?
+  orderId        Int?
+  subscriptionId Int?
+  merchantId     Int?
   merchant       Merchant?     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -289,8 +274,7 @@ model Payment {
 }
 
 model Plan {
-  id            String         @id @default(cuid())
-  publicId      Int            @unique
+  id            Int            @id @default(autoincrement())
   name          String         @unique
   description   String
   basePrice     Float
@@ -307,17 +291,15 @@ model Plan {
   Merchant      Merchant[]
   subscriptions Subscription[]
 
-  @@index([publicId])
   @@index([isActive])
   @@index([sortOrder])
   @@index([deletedAt])
 }
 
 model Subscription {
-  id                 String    @id @default(cuid())
-  publicId           Int       @unique
-  merchantId         String    @unique
-  planId             String
+  id                 Int       @id @default(autoincrement())
+  merchantId         Int       @unique
+  planId             Int
   status             String    @default("trial")
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
@@ -342,16 +324,15 @@ model Subscription {
   @@index([merchantId])
   @@index([planId])
   @@index([status])
-  @@index([publicId])
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
+  id         Int      @id @default(autoincrement())
   entityType String
   entityId   String
   action     String
   details    String
-  userId     String?
+  userId     Int?
   ipAddress  String?
   userAgent  String?
   createdAt  DateTime @default(now())

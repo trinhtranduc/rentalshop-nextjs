@@ -60,7 +60,7 @@ export default function OrdersPage() {
         // Find the order by orderNumber to get the ID for API calls
         const order = orders.find(o => o.orderNumber === orderNumber);
         if (order) {
-          const result = await handlePickupOrder(order.publicId);
+          const result = await handlePickupOrder(order.id);
           if (result.success) {
             showSuccess('Order Confirmed', 'Order has been confirmed successfully!');
           } else {
@@ -71,7 +71,7 @@ export default function OrdersPage() {
       case 'return':
         const orderForReturn = orders.find(o => o.orderNumber === orderNumber);
         if (orderForReturn) {
-          const result = await handleReturnOrder(orderForReturn.publicId);
+          const result = await handleReturnOrder(orderForReturn.id);
           if (result.success) {
             showSuccess('Order Returned', 'Order has been returned successfully!');
           } else {
@@ -83,7 +83,7 @@ export default function OrdersPage() {
         const orderForCancel = orders.find(o => o.orderNumber === orderNumber);
         if (orderForCancel) {
           if (!confirm('Are you sure you want to cancel this order?')) return;
-          const result = await handleCancelOrder(orderForCancel.publicId);
+          const result = await handleCancelOrder(orderForCancel.id);
           if (result.success) {
             showSuccess('Order Cancelled', 'Order has been cancelled successfully!');
           } else {

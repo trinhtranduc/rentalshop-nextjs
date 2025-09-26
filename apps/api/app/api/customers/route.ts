@@ -5,19 +5,17 @@ import {
   createCustomer, 
   getCustomerByPublicId, 
   updateCustomer, 
-  searchCustomers
+  searchCustomers,
+  prisma
 } from '@rentalshop/database';
 import { customersQuerySchema, customerCreateSchema, customerUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { CustomerFilters, CustomerInput, CustomerUpdateInput, CustomerSearchFilter } from '@rentalshop/types';
 import { searchRateLimiter } from '@rentalshop/middleware';
-import { PrismaClient } from '@prisma/client';
 // import { AuditLogger } from '../../../../packages/database/src/audit';
 import { captureAuditContext, getAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
-
-const prisma = new PrismaClient();
 
 /**
  * GET /api/customers
@@ -236,11 +234,10 @@ export async function GET(request: NextRequest) {
       const result = await searchCustomers(filters);
 
       // The searchCustomers function returns the correct format
-      // Transform the response to ensure publicId is properly exposed
+      // Transform the response to ensure id is properly exposed
       const transformedCustomers = result.data.customers.map(customer => ({
         ...customer,
-        publicId: customer.id, // Ensure publicId is available for backward compatibility
-        // id is already set to customer.publicId by the database function
+        // id is already set to customer.id by the database function
       }));
 
       const bodyString = JSON.stringify({ 
@@ -365,7 +362,7 @@ export async function POST(request: NextRequest) {
           outletId: user.outlet?.id?.toString()
         }
       });
-    } catch (auditError: any) {
+    } catch (auditError: unknown) {
       console.error('Failed to log customer creation audit:', auditError);
       // Don't fail the request if audit logging fails
     }
@@ -523,7 +520,7 @@ export async function PUT(request: NextRequest) {
         }
       });
       console.log('✅ Customer API - Audit event logged successfully');
-    } catch (auditError: any) {
+    } catch (auditError: unknown) {
       console.error('❌ Customer API - Failed to log customer update audit:', auditError);
       console.error('❌ Customer API - Audit error stack:', auditError.stack);
       // Don't fail the request if audit logging fails

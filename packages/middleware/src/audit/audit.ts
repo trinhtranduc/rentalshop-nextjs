@@ -268,8 +268,8 @@ function extractEntityInfo(request: NextRequest, requestBody: any): {
       entityId = pathParts[2];
     } else if (requestBody?.id) {
       entityId = requestBody.id;
-    } else if (requestBody?.publicId) {
-      entityId = requestBody.publicId;
+    } else if (requestBody?.id) {
+      entityId = requestBody.id;
     }
   }
   

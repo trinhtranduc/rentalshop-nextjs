@@ -8,7 +8,8 @@
       "@rentalshop/auth": ["../../packages/auth/src"],
       "@rentalshop/ui": ["../../packages/ui/src"],
       "@rentalshop/utils": ["../../packages/utils/src"],
-      "@rentalshop/types": ["../../packages/types/src"]
+      "@rentalshop/types": ["../../packages/types/src"],
+      "@rentalshop/constants": ["../../packages/constants"]
     }
   },
   "include": ["src/**/*"]

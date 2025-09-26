@@ -63,7 +63,7 @@ export async function registerMerchantWithTrial(
 ): Promise<MerchantRegistrationResult> {
   try {
     // Start transaction to ensure all operations succeed or fail together
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Check if merchant email already exists
       const existingMerchant = await tx.merchant.findUnique({
         where: { email: data.merchantEmail }
@@ -94,16 +94,16 @@ export async function registerMerchantWithTrial(
         throw new Error('Trial plan not found. Please contact support.');
       }
 
-      // 4. Generate merchant publicId
+      // 4. Generate merchant id
       const lastMerchant = await tx.merchant.findFirst({
-        orderBy: { publicId: 'desc' }
+        orderBy: { id: 'desc' }
       });
-      const merchantPublicId = (lastMerchant?.publicId || 0) + 1;
+      const merchantPublicId = (lastMerchant?.id || 0) + 1;
 
       // 5. Create merchant
       const merchant = await tx.merchant.create({
         data: {
-          publicId: merchantPublicId,
+          id: merchantPublicId,
           name: data.merchantName,
           email: data.merchantEmail,
           phone: data.merchantPhone,
@@ -117,13 +117,13 @@ export async function registerMerchantWithTrial(
       const hashedPassword = await hashPassword(data.userPassword);
       
       const lastUser = await tx.user.findFirst({
-        orderBy: { publicId: 'desc' }
+        orderBy: { id: 'desc' }
       });
-      const userPublicId = (lastUser?.publicId || 0) + 1;
+      const userPublicId = (lastUser?.id || 0) + 1;
 
       const user = await tx.user.create({
         data: {
-          publicId: userPublicId,
+          id: userPublicId,
           email: data.userEmail,
           password: hashedPassword,
           firstName: data.userFirstName,
@@ -139,13 +139,13 @@ export async function registerMerchantWithTrial(
       let outlet = null;
       if (data.outletName) {
         const lastOutlet = await tx.outlet.findFirst({
-          orderBy: { publicId: 'desc' }
+          orderBy: { id: 'desc' }
         });
-        const outletPublicId = (lastOutlet?.publicId || 0) + 1;
+        const outletPublicId = (lastOutlet?.id || 0) + 1;
 
         outlet = await tx.outlet.create({
           data: {
-            publicId: outletPublicId,
+            id: outletPublicId,
             name: data.outletName,
             address: data.outletAddress,
             description: data.outletDescription,
@@ -160,13 +160,13 @@ export async function registerMerchantWithTrial(
       const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
       
       const lastSubscription = await tx.subscription.findFirst({
-        orderBy: { publicId: 'desc' }
+        orderBy: { id: 'desc' }
       });
-      const subscriptionPublicId = (lastSubscription?.publicId || 0) + 1;
+      const subscriptionPublicId = (lastSubscription?.id || 0) + 1;
 
       const subscription = await tx.subscription.create({
         data: {
-          publicId: subscriptionPublicId,
+          id: subscriptionPublicId,
           merchantId: merchant.id,
           planId: trialPlan.id,
           status: 'trial',
@@ -194,26 +194,26 @@ export async function registerMerchantWithTrial(
 
       return {
         merchant: {
-          id: merchant.publicId,
+          id: merchant.id,
           name: merchant.name,
           email: merchant.email,
           subscriptionStatus: merchant.subscriptionStatus
         },
         user: {
-          id: user.publicId,
+          id: user.id,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role
         },
         subscription: {
-          id: subscription.publicId,
+          id: subscription.id,
           status: subscription.status,
           trialEnd: subscription.trialEnd!,
           planName: trialPlan.name
         },
         outlet: outlet ? {
-          id: outlet.publicId,
+          id: outlet.id,
           name: outlet.name,
           address: outlet.address || undefined
         } : undefined
@@ -245,7 +245,7 @@ export async function getTrialPlan() {
 export async function isMerchantOnTrial(merchantId: number): Promise<boolean> {
   const subscription = await prisma.subscription.findFirst({
     where: {
-      merchant: { publicId: merchantId },
+      merchant: { id: merchantId },
       status: 'TRIAL'
     },
     include: {
@@ -266,7 +266,7 @@ export async function isMerchantOnTrial(merchantId: number): Promise<boolean> {
 export async function getMerchantTrialStatus(merchantId: number) {
   const subscription = await prisma.subscription.findFirst({
     where: {
-      merchant: { publicId: merchantId },
+      merchant: { id: merchantId },
       status: 'TRIAL'
     },
     include: {

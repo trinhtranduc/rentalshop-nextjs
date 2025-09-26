@@ -6,7 +6,7 @@ import { Button } from '../../../ui/button';
 import { ConfirmationDialog } from '@rentalshop/ui';
 import { UserDetailDialog } from './UserDetailDialog';
 import type { User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
-import { formatPublicId } from '@rentalshop/utils';
+// formatPublicId removed - using single id system
 
 interface UserActionsProps {
   onAction: (action: string, userId: number) => void;
@@ -96,7 +96,7 @@ export function UserActions({
         });
         
         if (user.id && typeof user.id === 'number') {
-          const formattedId = formatPublicId('USER', user.id);
+          const formattedId = `USER-${user.id.toString().padStart(4, '0')}`;
           console.log('🔍 UserActions: Navigating to user page:', formattedId);
           console.log('🔍 Full URL:', `/users/${formattedId}`);
           router.push(`/users/${formattedId}`);

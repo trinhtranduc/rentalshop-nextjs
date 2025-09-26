@@ -4,15 +4,13 @@ import {
   searchOutlets,
   createOutlet,
   updateOutlet,
-  deleteOutlet
+  deleteOutlet,
+  prisma
 } from '@rentalshop/database';
 import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema } from '@rentalshop/utils';
 import { assertAnyRole, getUserScope } from '@rentalshop/auth';
 import type { OutletCreateInput, OutletUpdateInput } from '@rentalshop/types';
-import { PrismaClient } from '@prisma/client';
 import {API} from '@rentalshop/constants';
-
-const prisma = new PrismaClient();
 
 /**
  * GET /api/outlets
@@ -142,9 +140,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if outlet name is unique within merchant organization
-    // Find merchant by publicId to get the CUID
+    // Find merchant by id
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: userMerchantId },
+      where: { id: userMerchantId },
       select: { id: true }
     });
     
@@ -181,7 +179,7 @@ export async function POST(request: NextRequest) {
       message: 'Outlet created successfully'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating outlet:', error);
     
     if (error.code === 'P2002') {
@@ -258,14 +256,14 @@ export async function PUT(request: NextRequest) {
     // Check if outlet exists and belongs to user's merchant
     // For admin users, allow access to any outlet
     // For other users, check merchant ownership
-    const whereClause: any = {
-      publicId: outletIdNumber,
+    const whereClause: Record<string, any> = {
+      id: outletIdNumber,
     };
     
     if (user.merchant?.id) {
-      // Find merchant by publicId to get the CUID
+      // Find merchant by id
       const merchant = await prisma.merchant.findUnique({
-        where: { publicId: user.merchant.id },
+        where: { id: user.merchant.id },
         select: { id: true }
       });
       
@@ -288,16 +286,16 @@ export async function PUT(request: NextRequest) {
 
     // Check if name is being changed and if it's unique within merchant organization
     if (validatedData.name && validatedData.name !== existingOutlet.name) {
-      const duplicateWhereClause: any = {
+      const duplicateWhereClause: Record<string, any> = {
         name: validatedData.name.trim(),
         id: { not: existingOutlet.id } // Exclude current outlet
       };
       
       // Only check within same merchant for non-admin users
       if (user.merchant?.id) {
-        // Find merchant by publicId to get the CUID
+        // Find merchant by id
         const merchant = await prisma.merchant.findUnique({
-          where: { publicId: user.merchant.id },
+          where: { id: user.merchant.id },
           select: { id: true }
         });
         
@@ -319,7 +317,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Use the new database function that follows dual ID system
-    const updatedOutlet = await updateOutlet(outletIdNumber, validatedData);
+    const updatedOutlet = await updateOutlet(outletIdNumber, {
+      id: outletIdNumber,
+      ...validatedData
+    });
 
     return NextResponse.json({
       success: true,
@@ -327,7 +328,7 @@ export async function PUT(request: NextRequest) {
       message: 'Outlet updated successfully'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating outlet:', error);
     
     if (error.code === 'P2002') {
@@ -388,9 +389,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if outlet exists and belongs to user's merchant
-    // Find merchant by publicId to get the CUID
+    // Find merchant by id
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: user.merchant!.id },
+      where: { id: user.merchant!.id },
       select: { id: true }
     });
     
@@ -403,7 +404,7 @@ export async function DELETE(request: NextRequest) {
     
     const existingOutlet = await prisma.outlet.findFirst({
       where: {
-        publicId: outletIdNumber,
+        id: outletIdNumber,
         merchantId: merchant.id // Use CUID from database
       }
     });
@@ -451,7 +452,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Outlet deleted successfully'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting outlet:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete outlet', error: error.message },

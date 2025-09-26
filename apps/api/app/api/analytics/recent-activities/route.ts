@@ -37,7 +37,7 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
     });
 
     // Transform audit logs to activity format
-    const activities = auditLogs.map((log, index) => {
+    const activities = auditLogs.map((log: any, index: number) => {
       // Parse details to get description and other info
       let details = {};
       try {

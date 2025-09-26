@@ -194,8 +194,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize input depending on role
-    const merchantId = (user as any).merchant?.publicId as number;
-    const userOutletId = (user as any).outlet?.publicId as number | undefined;
+    const merchantId = (user as any).merchant?.id as number;
+    const userOutletId = (user as any).outlet?.id as number | undefined;
 
     console.log('🔍 Raw outletStock from request:', parsed.data.outletStock);
     
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Calculated totalStock:', totalStock);
 
     const productData = {
-      merchantId: merchantId, // Already a number (publicId)
+      merchantId: merchantId, // Already a number (id)
       categoryId: parsed.data.categoryId, // Already a number from validation
       name: parsed.data.name,
       description: parsed.data.description,

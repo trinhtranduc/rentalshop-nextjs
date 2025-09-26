@@ -1,36 +1,34 @@
 // ============================================================================
-// DUAL ID USER FUNCTIONS
+// USER FUNCTIONS
 // ============================================================================
-// This file contains user functions that follow the dual ID system:
-// - Input: publicId (number)
-// - Database: queries by publicId, uses CUIDs for relationships
-// - Return: includes both id (CUID) and publicId (number)
+// This file contains user functions that use integer IDs:
+// - Input: id (number)
+// - Database: queries by id (auto-incrementing integer)
+// - Return: includes id (number)
 
 import { prisma } from './client';
 import type { UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 
 // ============================================================================
-// USER LOOKUP FUNCTIONS (BY PUBLIC ID)
+// USER LOOKUP FUNCTIONS
 // ============================================================================
 
 /**
- * Find user by internal ID (CUID) - follows dual ID system
+ * Find user by ID
  */
-export async function findUserById(id: string) {
+export async function findUserById(id: number) {
   return await prisma.user.findUnique({
     where: { id },
     include: {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -39,23 +37,21 @@ export async function findUserById(id: string) {
 }
 
 /**
- * Get user by public ID - follows dual ID system
+ * Get user by ID
  */
-export async function getUserByPublicId(publicId: number) {
+export async function getUserById(id: number) {
   return await prisma.user.findUnique({
-    where: { publicId },
+    where: { id },
     include: {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -69,36 +65,36 @@ export async function getUserByPublicId(publicId: number) {
 
 /**
  * Create new user - follows dual ID system
- * Input: publicIds (numbers), Output: publicId (number)
+ * Input: ids (numbers), Output: id (number)
  */
 export async function createUser(input: UserCreateInput): Promise<any> {
-  // Generate next user publicId
+  // Generate next user id
   const lastUser = await prisma.user.findFirst({
-    orderBy: { publicId: 'desc' },
-    select: { publicId: true }
+    orderBy: { id: 'desc' },
+    select: { id: true }
   });
-  const nextPublicId = (lastUser?.publicId || 0) + 1;
+  const nextPublicId = (lastUser?.id || 0) + 1;
 
-  // Find merchant by publicId if provided
+  // Find merchant by id if provided
   let merchantId: string | undefined;
   if (input.merchantId) {
     const merchant = await prisma.merchant.findUnique({
-      where: { publicId: parseInt(input.merchantId) }
+      where: { id: input.merchantId }
     });
     if (!merchant) {
-      throw new Error(`Merchant with publicId ${input.merchantId} not found`);
+      throw new Error(`Merchant with id ${input.merchantId} not found`);
     }
     merchantId = merchant.id;
   }
 
-  // Find outlet by publicId if provided
+  // Find outlet by id if provided
   let outletId: string | undefined;
   if (input.outletId) {
     const outlet = await prisma.outlet.findUnique({
-      where: { publicId: parseInt(input.outletId) }
+      where: { id: input.outletId }
     });
     if (!outlet) {
-      throw new Error(`Outlet with publicId ${input.outletId} not found`);
+      throw new Error(`Outlet with id ${input.outletId} not found`);
     }
     outletId = outlet.id;
   }
@@ -106,7 +102,7 @@ export async function createUser(input: UserCreateInput): Promise<any> {
   // Create user
   const user = await prisma.user.create({
     data: {
-      publicId: nextPublicId,
+      id: nextPublicId,
       email: input.email,
       password: input.password,
       firstName: input.firstName,
@@ -121,14 +117,12 @@ export async function createUser(input: UserCreateInput): Promise<any> {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -144,19 +138,19 @@ export async function createUser(input: UserCreateInput): Promise<any> {
 
 /**
  * Update user - follows dual ID system
- * Input: publicId (number), Output: publicId (number)
+ * Input: id (number), Output: id (number)
  */
 export async function updateUser(
-  publicId: number,
+  id: number,
   input: UserUpdateInput
 ): Promise<any> {
-  // Find user by publicId
+  // Find user by id
   const existingUser = await prisma.user.findUnique({
-    where: { publicId }
+    where: { id }
   });
 
   if (!existingUser) {
-    throw new Error(`User with publicId ${publicId} not found`);
+    throw new Error(`User with id ${id} not found`);
   }
 
   // Update user - only update fields that are provided
@@ -167,13 +161,12 @@ export async function updateUser(
   // Note: email updates are disabled for security reasons
 
   const updatedUser = await prisma.user.update({
-    where: { publicId },
+    where: { id },
     data: updateData,
     include: {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           phone: true,
@@ -197,7 +190,6 @@ export async function updateUser(
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           address: true,
           phone: true,
@@ -208,7 +200,6 @@ export async function updateUser(
           merchant: {
             select: {
               id: true,
-              publicId: true,
               name: true,
             }
           }
@@ -228,14 +219,14 @@ export async function updateUser(
  * Get users by merchant - follows dual ID system
  */
 export async function getUsersByMerchant(merchantId: number) {
-  // Find merchant by publicId
+  // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
   if (!merchant) {
-    throw new Error(`Merchant with publicId ${merchantId} not found`);
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
   return await prisma.user.findMany({
@@ -244,14 +235,12 @@ export async function getUsersByMerchant(merchantId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -264,14 +253,14 @@ export async function getUsersByMerchant(merchantId: number) {
  * Get users by outlet - follows dual ID system
  */
 export async function getUsersByOutlet(outletId: number) {
-  // Find outlet by publicId
+  // Find outlet by id
   const outlet = await prisma.outlet.findUnique({
-    where: { publicId: outletId },
+    where: { id: outletId },
     select: { id: true }
   });
   
   if (!outlet) {
-    throw new Error(`Outlet with publicId ${outletId} not found`);
+    throw new Error(`Outlet with id ${outletId} not found`);
   }
 
   return await prisma.user.findMany({
@@ -280,14 +269,12 @@ export async function getUsersByOutlet(outletId: number) {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -304,19 +291,19 @@ export async function getUsersByOutlet(outletId: number) {
  * Soft delete user by public ID - follows dual ID system
  * Sets isActive to false and deletedAt to current timestamp
  */
-export async function softDeleteUser(publicId: number): Promise<any> {
-  // Find user by publicId
+export async function softDeleteUser(id: number): Promise<any> {
+  // Find user by id
   const user = await prisma.user.findUnique({
-    where: { publicId },
-    select: { id: true, publicId: true, email: true, isActive: true, deletedAt: true }
+    where: { id },
+    select: { id: true, email: true, isActive: true, deletedAt: true }
   });
 
   if (!user) {
-    throw new Error(`User with publicId ${publicId} not found`);
+    throw new Error(`User with id ${id} not found`);
   }
 
   if (user.deletedAt) {
-    throw new Error(`User with publicId ${publicId} is already deleted`);
+    throw new Error(`User with id ${id} is already deleted`);
   }
 
   // Soft delete the user
@@ -330,14 +317,12 @@ export async function softDeleteUser(publicId: number): Promise<any> {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
@@ -351,19 +336,19 @@ export async function softDeleteUser(publicId: number): Promise<any> {
  * Restore soft deleted user by public ID - follows dual ID system
  * Sets isActive to true and clears deletedAt
  */
-export async function restoreUser(publicId: number): Promise<any> {
-  // Find user by publicId
+export async function restoreUser(id: number): Promise<any> {
+  // Find user by id
   const user = await prisma.user.findUnique({
-    where: { publicId },
-    select: { id: true, publicId: true, email: true, isActive: true, deletedAt: true }
+    where: { id },
+    select: { id: true, email: true, isActive: true, deletedAt: true }
   });
 
   if (!user) {
-    throw new Error(`User with publicId ${publicId} not found`);
+    throw new Error(`User with id ${id} not found`);
   }
 
   if (!user.deletedAt) {
-    throw new Error(`User with publicId ${publicId} is not deleted`);
+    throw new Error(`User with id ${id} is not deleted`);
   }
 
   // Restore the user
@@ -377,14 +362,12 @@ export async function restoreUser(publicId: number): Promise<any> {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
         },
       },

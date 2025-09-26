@@ -1,10 +1,10 @@
 // ============================================================================
-// NEW: CORRECT DUAL ID ORDER FUNCTIONS
+// SINGLE ID ORDER FUNCTIONS
 // ============================================================================
-// This file contains only the correct order functions that follow the dual ID system:
-// - Input: publicId (number)
-// - Database: queries by publicId, uses CUIDs for relationships
-// - Return: includes both id (CUID) and publicId (number)
+// This file contains order functions that use single ID system:
+// - Input: id (number)
+// - Database: queries by id (integer), uses integer IDs for relationships
+// - Return: includes id (number)
 
 import { prisma } from './client';
 import type { 
@@ -17,1163 +17,726 @@ import type {
 } from '@rentalshop/types';
 
 // ============================================================================
-// ORDER LOOKUP FUNCTIONS (BY PUBLIC ID)
+// ORDER LOOKUP FUNCTIONS (BY ID)
 // ============================================================================
 
 /**
- * Get order by publicId (number) with all details - follows dual ID system
+ * Get order by id (number) with all details - follows single ID system
  */
-export async function getOrderByPublicId(publicId: number): Promise<OrderWithDetails | null> {
+export async function getOrderById(id: number): Promise<OrderWithDetails | null> {
+  // Validate id is provided and is a positive number
+  if (!id || id <= 0) {
+    throw new Error('Invalid order ID: ID must be a positive number');
+  }
+
   const order = await prisma.order.findUnique({
-    where: { publicId },
+    where: { id },
     select: {
       // Include all basic order fields
       id: true,
-      publicId: true,
       orderNumber: true,
       orderType: true,
       status: true,
+      customerId: true,
+      outletId: true,
+      createdById: true,
       totalAmount: true,
       depositAmount: true,
-      securityDeposit: true,
-      damageFee: true,
-      lateFee: true,
-      discountType: true,
-      discountValue: true,
-      discountAmount: true,
       pickupPlanAt: true,
       returnPlanAt: true,
       pickedUpAt: true,
       returnedAt: true,
-      rentalDuration: true,
-      isReadyToDeliver: true,
+      damageFee: true,
+      bailAmount: true,
+      material: true,
+      securityDeposit: true,
       collateralType: true,
       collateralDetails: true,
       notes: true,
-      pickupNotes: true,
-      returnNotes: true,
-      damageNotes: true,
-      createdAt: true,
-      updatedAt: true,
-      outletId: true,
-      customerId: true,
-      createdById: true,
-      customer: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-        },
-      },
-      outlet: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-          address: true,
-          merchantId: true,
-                          merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                  },
-                },
-        },
-      },
-      createdBy: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-        },
-      },
-      orderItems: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-              description: true,
-              images: true,
-              barcode: true,
-            },
-          },
-        },
-      },
-      payments: true,
-    },
-  });
-
-  if (!order) return null;
-
-  // Type assertion to handle included relations
-  const orderWithRelations = order as any;
-
-  // Transform the data to match OrderWithDetails interface
-  const transformedOrder = {
-    ...order,
-    // Map IDs to publicIds for frontend compatibility
-    outletId: orderWithRelations.outlet?.publicId, // Frontend expects publicId (number)
-    customerId: orderWithRelations.customer?.publicId, // Frontend expects publicId (number)
-    // Add merchantId for backward compatibility with database package
-    merchantId: orderWithRelations.outlet?.merchantId,
-    // Transform orderItems to unified OrderItemFormData format
-    orderItems: orderWithRelations.orderItems.map((item: any) => ({
-      id: item.id, // Keep database CUID for existing items
-      productId: item.product.publicId, // Frontend uses publicId (number)
-      product: {
-        id: item.product.publicId, // Frontend uses publicId (number)
-        publicId: item.product.publicId, // Keep publicId for reference
-        name: item.product.name,
-        description: item.product.description,
-        images: item.product.images,
-        barcode: item.product.barcode,
-        rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
-        deposit: item.deposit || 0, // Use actual deposit from database
-      },
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      rentalDays: item.rentalDays || 0,
-      deposit: item.deposit || 0, // Use actual deposit from database
-      notes: item.notes || '',
-    })),
-    // Transform payments to match Payment interface (database returns CUIDs, interface expects numbers)
-    payments: orderWithRelations.payments.map((payment: any) => ({
-      ...payment,
-      id: 0, // Placeholder since Payment interface expects number but database returns string
-      orderId: 0, // Placeholder since Payment interface expects number but database returns string
-    })),
-  };
-
-  return transformedOrder as any; // Type assertion to handle the transformed structure
-}
-
-/**
- * Get order by order number - follows dual ID system
- */
-export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDetails | null> {
-  const order = await prisma.order.findUnique({
-    where: { orderNumber },
-    select: {
-      // Include all basic order fields
-      id: true,
-      publicId: true,
-      orderNumber: true,
-      orderType: true,
-      status: true,
-      totalAmount: true,
-      depositAmount: true,
-      securityDeposit: true,
-      damageFee: true,
-      lateFee: true,
       discountType: true,
       discountValue: true,
       discountAmount: true,
-      pickupPlanAt: true,
-      returnPlanAt: true,
-      pickedUpAt: true,
-      returnedAt: true,
-      rentalDuration: true,
-      isReadyToDeliver: true,
-      collateralType: true,
-      collateralDetails: true,
-      notes: true,
-      pickupNotes: true,
-      returnNotes: true,
-      damageNotes: true,
       createdAt: true,
       updatedAt: true,
-      outletId: true,
-      customerId: true,
-      createdById: true,
+      
+      // Include customer details
       customer: {
         select: {
           id: true,
-          publicId: true,
           firstName: true,
           lastName: true,
           email: true,
           phone: true,
+        }
         },
-      },
+      
+      // Include outlet details
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           address: true,
-          merchantId: true,
-                          merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
                     phone: true,
-                  },
-                },
-        },
+        }
       },
-      createdBy: {
+      
+      // Include order items with product details
+      orderItems: {
         select: {
           id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-        },
-      },
-      orderItems: {
-        include: {
+          productId: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          deposit: true,
+          rentalDays: true,
+          notes: true,
           product: {
             select: {
               id: true,
-              publicId: true,
               name: true,
               description: true,
               images: true,
               barcode: true,
-            },
-          },
-        },
+              rentPrice: true,
+              deposit: true,
+            }
+          }
+        }
       },
-      payments: true,
-    },
+      
+      // Include payments
+      payments: {
+          select: {
+            id: true,
+          amount: true,
+          method: true,
+          status: true,
+          createdAt: true,
+        }
+      },
+      
+      // Include created by user
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+        }
+      },
+      
+      // Include merchant details
+                            merchant: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+        }
+      }
+    }
   });
 
   if (!order) return null;
-
-  // Type assertion to handle included relations
-  const orderWithRelations = order as any;
-
-  // Transform the data to match OrderWithDetails interface
-  const transformedOrder = {
-    ...order,
-    // Map IDs to publicIds for frontend compatibility
-    outletId: orderWithRelations.outlet?.publicId, // Frontend expects publicId (number)
-    customerId: orderWithRelations.customer?.publicId, // Frontend expects publicId (number)
-    merchantId: orderWithRelations.outlet?.merchantId,
-    orderItems: orderWithRelations.orderItems.map((item: any) => ({
-      id: item.id, // Keep database CUID for existing items
-      productId: item.product.publicId, // Frontend uses publicId (number)
-      product: {
-        id: item.product.publicId, // Frontend uses publicId (number)
-        publicId: item.product.publicId, // Keep publicId for reference
-        name: item.product.name,
-        description: item.product.description,
-        images: item.product.images,
-        barcode: item.product.barcode,
-        rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
-        deposit: item.deposit || 0, // Use actual deposit from database
-      },
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      rentalDays: item.rentalDays || 0,
-      deposit: item.deposit || 0, // Use actual deposit from database
-      notes: item.notes || '',
-    })),
-    payments: orderWithRelations.payments.map((payment: any) => ({
-      ...payment,
-      id: 0, // Placeholder since Payment interface expects number but database returns string
-      orderId: 0, // Placeholder since Payment interface expects number but database returns string
-    })),
-  };
-
-  return transformedOrder as any; // Type assertion to handle the transformed structure
-}
-
-// ============================================================================
-// ORDER CREATION FUNCTIONS
-// ============================================================================
-
-/**
- * Create new order - follows dual ID system
- * Input: publicIds (numbers), Output: publicId (number)
- */
-export async function createOrder(
-  input: OrderInput,
-  userId: number
-): Promise<OrderWithDetails> {
-  // Start transaction
-  const result = await prisma.$transaction(async (tx) => {
-    // Find outlet by publicId
-    const outlet = await tx.outlet.findUnique({
-      where: { publicId: input.outletId }
-    });
-    if (!outlet) {
-      throw new Error(`Outlet with publicId ${input.outletId} not found`);
-    }
-
-    // Find customer by publicId if provided
-    let customer = null;
-    if (input.customerId) {
-      customer = await tx.customer.findUnique({
-        where: { publicId: input.customerId }
-      });
-      if (!customer) {
-        throw new Error(`Customer with publicId ${input.customerId} not found`);
-      }
-    }
-
-    // Find user by publicId
-    const user = await tx.user.findUnique({
-      where: { publicId: userId }
-    });
-    if (!user) {
-      throw new Error(`User with publicId ${userId} not found`);
-    }
-
-    // Generate next order publicId
-    const lastOrder = await tx.order.findFirst({
-      orderBy: { publicId: 'desc' },
-      select: { publicId: true }
-    });
-    const nextPublicId = (lastOrder?.publicId || 0) + 1;
-
-    // Generate order number using the new generator with configuration
-    const { generateOrderNumber, getOrderNumberConfig } = await import('./order-number-generator');
-    
-    const config = getOrderNumberConfig();
-    const orderNumberResult = await generateOrderNumber({
-      format: config.format,
-      outletId: outlet.publicId,
-      prefix: config.prefix,
-      sequenceLength: config.sequenceLength,
-      randomLength: config.randomLength,
-      includeDate: config.includeDate
-    });
-    
-    const orderNumber = orderNumberResult.orderNumber;
-
-    // Create order
-    const order = await tx.order.create({
-      data: {
-        publicId: nextPublicId,
-        orderNumber: orderNumber,
-        orderType: input.orderType,
-        status: input.orderType === 'SALE' ? 'COMPLETED' : 'RESERVED',
-        outletId: outlet.id, // Use CUID
-        customerId: customer?.id || null, // Use CUID
-        createdById: user.id, // Use CUID of user who created the order
-        totalAmount: input.totalAmount,
-        depositAmount: input.depositAmount || 0,
-        securityDeposit: input.securityDeposit || 0,
-        damageFee: input.damageFee || 0,
-        lateFee: input.lateFee || 0,
-        discountType: input.discountType || 'amount',
-        discountValue: input.discountValue || 0,
-        discountAmount: input.discountAmount || 0,
-        pickupPlanAt: input.pickupPlanAt,
-        returnPlanAt: input.returnPlanAt,
-        notes: input.notes,
-        isReadyToDeliver: input.isReadyToDeliver || false,
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            publicId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
-        },
-        outlet: {
-          select: {
-            id: true,
-            publicId: true,
-            name: true,
-            address: true,
-            merchantId: true,
-                            merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                  },
-                },
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            publicId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true,
-          },
-        },
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                publicId: true,
-                name: true,
-                description: true,
-                images: true,
-                barcode: true,
-              },
-            },
-          },
-        },
-        payments: true,
-      },
-    });
-
-    // Create order items
-    if (input.orderItems && input.orderItems.length > 0) {
-      for (const item of input.orderItems) {
-        // Find product by publicId
-        const product = await tx.product.findUnique({
-          where: { publicId: item.productId }
-        });
-        if (!product) {
-          throw new Error(`Product with publicId ${item.productId} not found`);
-        }
-
-        // Create order item
-        await tx.orderItem.create({
-          data: {
-            orderId: order.id, // Use CUID
-            productId: product.id, // Use CUID
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice,
-            rentalDays: item.rentalDays,
-            notes: item.notes,
-          },
-        });
-
-        // Update outlet stock - check if outletStock table exists first
-        try {
-          await tx.outletStock.upsert({
-            where: {
-              productId_outletId: {
-                productId: product.id, // Use CUID
-                outletId: outlet.id, // Use CUID
-              },
-            },
-            update: {
-              renting: { increment: item.quantity },
-              available: { decrement: item.quantity },
-            },
-            create: {
-              outletId: outlet.id, // Use CUID
-              productId: product.id, // Use CUID
-              stock: 0,
-              renting: item.quantity,
-              available: -item.quantity,
-            },
-          });
-        } catch (error) {
-          // If outletStock table doesn't exist, skip stock update
-          console.warn('OutletStock table not found, skipping stock update');
-        }
-      }
-    }
-
-    // Fetch the complete order with all items and relationships
-    const completeOrder = await tx.order.findUnique({
-      where: { id: order.id },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            publicId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
-        },
-        outlet: {
-          select: {
-            id: true,
-            publicId: true,
-            name: true,
-            address: true,
-            merchantId: true,
-                            merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                  },
-                },
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            publicId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true,
-          },
-        },
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                publicId: true,
-                name: true,
-                description: true,
-                images: true,
-                barcode: true,
-              },
-            },
-          },
-        },
-        payments: true,
-      },
-    });
-
-    return completeOrder;
-  });
-
-  // Return the created order with all details
-  // The transaction returns the completeOrder with all relations
-  // We need to transform it to match the expected interface
-  if (!result) {
-    throw new Error('Failed to create order');
-  }
-
-  // Type assertion since we know the transaction returns the complete order
-  const completeOrder = result as any;
-  
-  const transformedResult = {
-    ...completeOrder,
-    merchantId: completeOrder.outlet.merchantId,
-    orderItems: completeOrder.orderItems.map((item: any) => ({
-      id: item.id, // Keep database CUID for existing items
-      publicId: 0, // TODO: Add publicId to OrderItem model if needed
-      orderId: item.orderId, // Keep database CUID
-      productId: item.productId, // Keep database CUID
-      product: {
-        id: item.product.id, // Keep database CUID
-        publicId: item.product.publicId, // Keep publicId for reference
-        name: item.product.name,
-        description: item.product.description,
-        images: item.product.images,
-        barcode: item.product.barcode,
-      },
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      rentalDays: item.rentalDays || 0,
-      deposit: item.deposit || 0,
-      notes: item.notes || '',
-    })),
-    payments: completeOrder.payments.map((payment: any) => ({
-      ...payment,
-      id: 0, // Placeholder since Payment interface expects number but database returns string
-      orderId: 0, // Placeholder since Payment interface expects number but database returns string
-    })),
-  };
-
-  return transformedResult as OrderWithDetails;
-}
-
-// ============================================================================
-// ORDER UPDATE FUNCTIONS
-// ============================================================================
-
-
-
-/**
- * Update order - follows dual ID system
- * Input: publicId (number), Output: publicId (number)
- */
-export async function updateOrder(
-  publicId: number,
-  input: OrderUpdateInput,
-  userId: number
-): Promise<OrderWithDetails | null> {
-  // Find order by publicId
-  const existingOrder = await prisma.order.findUnique({
-    where: { publicId },
-    include: {
-      orderItems: true,
-    },
-  });
-
-  if (!existingOrder) {
-    throw new Error(`Order with publicId ${publicId} not found`);
-  }
-
-  // Find user by publicId
-  const user = await prisma.user.findUnique({
-    where: { publicId: userId }
-  });
-  if (!user) {
-    throw new Error(`User with publicId ${userId} not found`);
-  }
-
-  // Update order - only update fields that exist in Prisma schema
-  const updatedOrder = await prisma.order.update({
-    where: { publicId },
-    data: {
-      status: input.status,
-      // Use nested updates for relationships
-      ...(input.customerId && {
-        customer: {
-          connect: { publicId: input.customerId }
-        }
-      }),
-      ...(input.outletId && {
-        outlet: {
-          connect: { publicId: input.outletId }
-        }
-      }),
-      pickupPlanAt: input.pickupPlanAt,
-      returnPlanAt: input.returnPlanAt,
-      pickedUpAt: input.pickedUpAt,
-      returnedAt: input.returnedAt,
-      rentalDuration: input.rentalDuration,
-      discountType: input.discountType,
-      discountValue: input.discountValue,
-      discountAmount: input.discountAmount,
-      totalAmount: input.totalAmount,
-      depositAmount: input.depositAmount,
-      securityDeposit: input.securityDeposit,
-      damageFee: input.damageFee,
-      lateFee: input.lateFee,
-      collateralType: input.collateralType,
-      collateralDetails: input.collateralDetails,
-      notes: input.notes,
-      pickupNotes: input.pickupNotes,
-      returnNotes: input.returnNotes,
-      damageNotes: input.damageNotes,
-      isReadyToDeliver: input.isReadyToDeliver,
-    },
-    include: {
-      customer: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-        },
-      },
-      outlet: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-          address: true,
-          merchantId: true,
-                          merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                  },
-                },
-        },
-      },
-      createdBy: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-        },
-      },
-      orderItems: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-              description: true,
-              images: true,
-              barcode: true,
-            },
-          },
-        },
-      },
-      payments: true,
-    },
-  });
-
-  // Handle order items update if provided
-  if (input.orderItems) {
-    // Delete existing order items
-    await prisma.orderItem.deleteMany({
-      where: { orderId: updatedOrder.id }
-    });
-
-    // Create new order items
-    for (const item of input.orderItems) {
-      // Find product by publicId first
-      const product = await prisma.product.findUnique({
-        where: { publicId: parseInt(item.productId.toString()) }
-      });
-      if (!product) {
-        throw new Error(`Product with publicId ${item.productId} not found`);
-      }
-
-      await prisma.orderItem.create({
-        data: {
-          orderId: updatedOrder.id, // Use CUID
-          productId: product.id, // Use CUID
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice || 0,
-          deposit: item.deposit || 0,
-          notes: item.notes || '',
-        }
-      });
-    }
-  }
-
-  // Fetch the updated order with all relations
-  const finalOrder = await prisma.order.findUnique({
-    where: { publicId },
-    include: {
-      customer: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-        },
-      },
-      outlet: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-          address: true,
-          merchantId: true,
-                          merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                  },
-                },
-        },
-      },
-      createdBy: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-        },
-      },
-      orderItems: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-              description: true,
-              images: true,
-              barcode: true,
-            },
-          },
-        },
-      },
-      payments: true,
-    },
-  });
-
-  if (!finalOrder) {
-    throw new Error('Failed to fetch updated order');
-  }
 
   return {
-    ...finalOrder,
-    merchantId: finalOrder.outlet.merchantId,
-    orderItems: finalOrder.orderItems.map(item => ({
-      id: item.id, // Keep database CUID for existing items
-      publicId: 0, // TODO: Add publicId to OrderItem model if needed
-      orderId: item.orderId, // Keep database CUID
-      productId: item.productId, // Keep database CUID
-      product: {
-        id: item.product.id, // Keep database CUID
-        publicId: item.product.publicId, // Keep publicId for reference
-        name: item.product.name,
-        description: item.product.description,
-        images: item.product.images,
-        barcode: item.product.barcode,
-      },
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      rentalDays: item.rentalDays || 0,
-      deposit: item.deposit || 0,
-      notes: item.notes || '',
-    })),
-    payments: finalOrder.payments.map(payment => ({
-      id: payment.publicId, // Use publicId as the numeric ID
-      publicId: payment.publicId,
-      orderId: payment.orderId ? parseInt(payment.orderId) : 0,
-      subscriptionId: payment.subscriptionId ? parseInt(payment.subscriptionId) : undefined,
-      merchantId: payment.merchantId ? parseInt(payment.merchantId) : undefined,
-      amount: payment.amount,
-      currency: payment.currency,
-      method: payment.method,
-      type: payment.type,
-      status: payment.status,
-      reference: payment.reference,
-      transactionId: payment.transactionId ? parseInt(payment.transactionId) : undefined,
-      invoiceNumber: payment.invoiceNumber,
-      description: payment.description,
-      notes: payment.notes,
-      failureReason: payment.failureReason,
-      metadata: payment.metadata,
-      processedAt: payment.processedAt,
-      processedBy: payment.processedBy,
-      createdAt: payment.createdAt,
-      updatedAt: payment.updatedAt,
-    })),
-  } as OrderWithDetails;
-}
-
-// ============================================================================
-// ORDER SEARCH FUNCTIONS
-// ============================================================================
-
-/**
- * Build orderBy clause with validation
- */
-function buildOrderByClause(sortBy?: string, sortOrder?: string): any {
-  const validSortFields = [
-    'createdAt', 'updatedAt', 'pickupPlanAt', 'returnPlanAt', 
-    'status', 'totalAmount', 'orderNumber', 'depositAmount'
-  ];
-  
-  const orderBy: any = {};
-  if (sortBy && validSortFields.includes(sortBy)) {
-    orderBy[sortBy] = sortOrder === 'asc' ? 'asc' : 'desc';
-  } else {
-    // Default to createdAt desc
-    orderBy.createdAt = 'desc';
-  }
-  
-  return orderBy;
-}
-
-/**
- * Search orders - follows dual ID system
- * Input: publicIds (numbers), Output: publicIds (numbers)
- */
-export async function searchOrders(
-  filters: OrderSearchFilter,
-  userScope: { merchantId?: number; outletId?: number }
-): Promise<OrderSearchResponse> {
-  const { limit = 20, offset = 0 } = filters;
-
-  // Build where clause
-  const where: any = {};
-
-  // Apply user scope
-  if (userScope.merchantId) {
-    // Find merchant by publicId to get the CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { publicId: userScope.merchantId },
-      select: { id: true }
-    });
-    if (merchant) {
-      where.outlet = { merchantId: merchant.id }; // Use CUID for database query
-    }
-  }
-  if (userScope.outletId) {
-    // Find outlet by publicId to get the CUID
-    const outlet = await prisma.outlet.findUnique({
-      where: { publicId: userScope.outletId },
-      select: { id: true }
-    });
-    if (outlet) {
-      where.outletId = outlet.id; // Use CUID for database query
-    }
-  }
-
-  // Apply filters
-  if (filters.outletId) {
-    // Find outlet by publicId
-    const outlet = await prisma.outlet.findUnique({
-      where: { publicId: filters.outletId },
-      select: { id: true }
-    });
-    if (outlet) {
-      where.outletId = outlet.id; // Use CUID
-    }
-  }
-
-  if (filters.customerId) {
-    // Find customer by publicId
-    const customer = await prisma.customer.findUnique({
-      where: { publicId: filters.customerId },
-      select: { id: true }
-    });
-    if (customer) {
-      where.customerId = customer.id; // Use CUID
-    }
-  }
-
-  if (filters.userId) {
-    // Find user by publicId
-    const user = await prisma.user.findUnique({
-      where: { publicId: filters.userId },
-      select: { id: true }
-    });
-    if (user) {
-      where.userId = user.id; // Use CUID
-    }
-  }
-
-  if (filters.orderType) {
-    where.orderType = filters.orderType;
-  }
-
-  if (filters.status) {
-    where.status = filters.status;
-  }
-
-  if (filters.startDate || filters.endDate) {
-    where.createdAt = {};
-    if (filters.startDate) where.createdAt.gte = filters.startDate;
-    if (filters.endDate) where.createdAt.lte = filters.endDate;
-  }
-
-  if (filters.pickupDate) {
-    where.pickupPlanAt = filters.pickupDate;
-  }
-
-  if (filters.returnDate) {
-    where.returnPlanAt = filters.returnDate;
-  }
-
-  if (filters.minAmount || filters.maxAmount) {
-    where.totalAmount = {};
-    if (filters.minAmount) where.totalAmount.gte = filters.minAmount;
-    if (filters.maxAmount) where.totalAmount.lte = filters.maxAmount;
-  }
-
-  if (filters.isReadyToDeliver !== undefined) {
-    where.isReadyToDeliver = filters.isReadyToDeliver;
-  }
-
-  // Handle search query (q) - search across order number, customer name, and customer phone
-  if (filters.q && filters.q.trim()) {
-    const searchQuery = filters.q.toLowerCase().trim();
-    where.OR = [
-      { orderNumber: { contains: searchQuery } },
-      { customer: { firstName: { contains: searchQuery } } },
-      { customer: { lastName: { contains: searchQuery } } },
-      { customer: { phone: { contains: searchQuery } } }
-    ];
-  }
-
-  // Execute query
-  const [orders, total] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      include: {
-        customer: {
-          select: {
-            id: true,
-            publicId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
-        },
-        outlet: {
-          select: {
-            id: true,
-            publicId: true,
-            name: true,
-            address: true,
-            merchantId: true,
-                            merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                  },
-                },
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            publicId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true,
-          },
-        },
-      orderItems: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-              description: true,
-              images: true,
-              barcode: true,
-            },
-          },
-        },
-      },
-      payments: true,
-    },
-      orderBy: buildOrderByClause(filters.sortBy, filters.sortOrder),
-      take: limit,
-      skip: offset,
-    }),
-    prisma.order.count({ where }),
-  ]);
-
-  // Transform to match OrderSearchResult type
-  const transformedOrders: OrderSearchResult[] = orders.map(order => ({
-    id: order.id, // Use CUID (string)
-    publicId: order.publicId,
+    id: order.id,
     orderNumber: order.orderNumber,
-    orderType: order.orderType as any,
-    status: order.status as any,
+    orderType: order.orderType,
+    status: order.status,
+    customerId: order.customerId,
+    outletId: order.outletId,
+    createdById: order.createdById,
     totalAmount: order.totalAmount,
     depositAmount: order.depositAmount,
-    createdAt: order.createdAt,
-    updatedAt: order.updatedAt,
     pickupPlanAt: order.pickupPlanAt,
     returnPlanAt: order.returnPlanAt,
     pickedUpAt: order.pickedUpAt,
     returnedAt: order.returnedAt,
-    isReadyToDeliver: order.isReadyToDeliver || false,
+    damageFee: order.damageFee,
+    bailAmount: order.bailAmount,
+    material: order.material,
+    securityDeposit: order.securityDeposit,
+    collateralType: order.collateralType,
+    collateralDetails: order.collateralDetails,
+    notes: order.notes,
+    discountType: order.discountType,
+    discountValue: order.discountValue,
+    discountAmount: order.discountAmount,
+    merchantId: order.merchant?.id || 0,
     customer: order.customer ? {
-      id: order.customer.id, // Use CUID (string)
-      publicId: order.customer.publicId,
+      id: order.customer.id,
+      name: `${order.customer.firstName} ${order.customer.lastName}`,
+      firstName: order.customer.firstName,
+      lastName: order.customer.lastName,
+      email: order.customer.email,
+      phone: order.customer.phone,
+    } : undefined,
+        outlet: {
+      id: order.outlet.id,
+      name: order.outlet.name,
+      merchantId: order.merchant?.id || 0,
+    },
+    orderItems: order.orderItems.map((item: any) => ({
+      id: item.id,
+      orderId: order.id,
+      productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      deposit: item.deposit,
+      rentalDays: item.rentalDays,
+      notes: item.notes,
+          product: {
+        id: item.product.id,
+        name: item.product.name,
+        description: item.product.description,
+        images: item.product.images,
+        barcode: item.product.barcode,
+        rentPrice: item.product.rentPrice,
+        deposit: item.product.deposit,
+      }
+    })),
+    payments: order.payments.map((payment: any) => ({
+      id: payment.id,
+      orderId: order.id,
+      amount: payment.amount,
+      method: payment.method,
+      status: payment.status,
+      createdAt: payment.createdAt,
+    })),
+    createdBy: order.createdBy ? {
+      id: order.createdBy.id,
+      name: `${order.createdBy.firstName} ${order.createdBy.lastName}`,
+      email: order.createdBy.email,
+      role: 'OUTLET_STAFF', // Default role, should be fetched from user data
+    } : undefined,
+    merchant: {
+      id: order.merchant?.id || 0,
+      name: order.merchant?.name || '',
+      email: order.merchant?.email || '',
+    },
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+  };
+}
+
+/**
+ * Search orders with filters - follows single ID system
+ */
+export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSearchResponse> {
+  const {
+    q,
+    outletId,
+    customerId,
+    userId,
+    orderType,
+    status,
+    startDate,
+    endDate,
+    pickupDate,
+    returnDate,
+    limit = 20
+  } = filters;
+  
+  const page = 1; // Default page
+
+  const where: any = {};
+
+  // Text search
+  if (q) {
+    where.OR = [
+      { orderNumber: { contains: q, mode: 'insensitive' } },
+      { customer: { firstName: { contains: q, mode: 'insensitive' } } },
+      { customer: { lastName: { contains: q, mode: 'insensitive' } } },
+      { customer: { phone: { contains: q, mode: 'insensitive' } } },
+    ];
+  }
+
+  // Filter by outlet
+  if (outletId) {
+    where.outletId = outletId;
+  }
+
+  // Filter by customer
+  if (customerId) {
+    where.customerId = customerId;
+  }
+
+  // Filter by user (created by)
+  if (userId) {
+    where.createdById = userId;
+  }
+
+  // Filter by order type
+  if (orderType) {
+    where.orderType = orderType;
+  }
+
+  // Filter by status
+  if (status) {
+    where.status = status;
+  }
+
+  // Date filters
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = startDate;
+    if (endDate) where.createdAt.lte = endDate;
+  }
+
+  if (pickupDate) {
+    where.pickupPlanAt = {
+      gte: new Date(pickupDate),
+      lt: new Date(new Date(pickupDate).getTime() + 24 * 60 * 60 * 1000)
+    };
+  }
+
+  if (returnDate) {
+    where.returnPlanAt = {
+      gte: new Date(returnDate),
+      lt: new Date(new Date(returnDate).getTime() + 24 * 60 * 60 * 1000)
+    };
+  }
+
+  const offset = (page - 1) * limit;
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        orderNumber: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          }
+        },
+        outlet: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        orderItems: {
+          select: {
+            id: true,
+            productId: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              images: true,
+              barcode: true,
+              rentPrice: true,
+              deposit: true,
+              }
+            }
+          }
+        },
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            method: true,
+            status: true,
+            createdAt: true,
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: offset,
+      take: limit,
+    }),
+    prisma.order.count({ where })
+  ]);
+
+  const results: OrderSearchResult[] = orders.map((order: any) => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    orderType: order.orderType,
+    status: order.status,
+    totalAmount: order.totalAmount,
+    depositAmount: order.depositAmount,
+    pickupPlanAt: order.pickupPlanAt,
+    returnPlanAt: order.returnPlanAt,
+    pickedUpAt: order.pickedUpAt,
+    returnedAt: order.returnedAt,
+    isReadyToDeliver: order.status === 'PICKUPED' && order.returnPlanAt && new Date(order.returnPlanAt) <= new Date(),
+    customer: order.customer ? {
+      id: order.customer.id,
       firstName: order.customer.firstName,
       lastName: order.customer.lastName,
       email: order.customer.email,
       phone: order.customer.phone,
     } : null,
     outlet: {
-      id: order.outlet.id, // Use CUID (string)
-      publicId: order.outlet.publicId,
+      id: order.outlet.id,
       name: order.outlet.name,
-      address: order.outlet.address,
-      merchantId: order.outlet.merchant.id, // Use CUID (string)
-      merchant: {
-        id: order.outlet.merchant.id, // Use CUID (string)
-        publicId: order.outlet.merchant.publicId,
-        name: order.outlet.merchant.name,
-      },
     },
-    orderItems: order.orderItems.map(item => ({
-      id: item.id, // Keep CUID for internal use
-      publicId: (item as any).publicId || 0, // Add publicId if available
-      productId: item.product.publicId, // Return publicId (number)
+    orderItems: order.orderItems.map((item: any) => ({
+      id: item.id,
+      orderId: order.id,
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
       product: {
-        id: item.product.id, // Use CUID (string)
-        publicId: item.product.publicId,
+        id: item.product.id,
         name: item.product.name,
         description: item.product.description,
         images: item.product.images,
         barcode: item.product.barcode,
-      },
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      rentalDays: item.rentalDays,
-      notes: item.notes,
+        rentPrice: item.product.rentPrice,
+        deposit: item.product.deposit,
+      }
     })),
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
   }));
 
   return {
     success: true,
     data: {
-      orders: transformedOrders,
+      orders: results,
       total,
-      page: Math.floor(offset / limit) + 1,
+      page,
       limit,
       offset,
-      hasMore: offset + limit < total,
       totalPages: Math.ceil(total / limit),
-    },
+      hasMore: offset + limit < total,
+    }
   };
 }
 
-// ============================================================================
-// ORDER STATISTICS FUNCTIONS
-// ============================================================================
+/**
+ * Create new order - follows single ID system
+ */
+export async function createOrder(orderData: OrderInput): Promise<OrderWithDetails> {
+  const order = await prisma.order.create({
+    data: {
+      orderNumber: orderData.orderNumber,
+      orderType: orderData.orderType,
+      status: orderData.status || 'RESERVED',
+      customerId: orderData.customerId,
+      outletId: orderData.outletId,
+      createdById: orderData.createdById,
+      totalAmount: orderData.totalAmount,
+      depositAmount: orderData.depositAmount || 0,
+      pickupPlanAt: orderData.pickupPlanAt,
+      returnPlanAt: orderData.returnPlanAt,
+      damageFee: orderData.damageFee,
+      bailAmount: orderData.bailAmount,
+      material: orderData.material,
+      securityDeposit: orderData.securityDeposit,
+      collateralType: orderData.collateralType,
+      collateralDetails: orderData.collateralDetails,
+      notes: orderData.notes,
+      discountType: orderData.discountType,
+      discountValue: orderData.discountValue,
+      discountAmount: orderData.discountAmount,
+      orderItems: {
+        create: orderData.orderItems?.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          deposit: item.deposit,
+          rentalDays: item.rentalDays,
+          notes: item.notes,
+        })) || []
+      }
+    },
+    include: {
+      customer: true,
+      outlet: true,
+      orderItems: {
+        include: {
+          product: true
+        }
+      },
+      payments: true,
+      createdBy: true,
+      merchant: true
+    }
+  });
+
+  // Return the created order with proper typing
+  return getOrderById(order.id) as Promise<OrderWithDetails>;
+}
 
 /**
- * Get order statistics - follows dual ID system
+ * Update order - follows single ID system
  */
-export async function getOrderStats(
-  userScope: { merchantId?: number; outletId?: number }
-): Promise<any> {
+export async function updateOrder(id: number, orderData: OrderUpdateInput): Promise<OrderWithDetails | null> {
+  // Validate id is provided and is a positive number
+  if (!id || id <= 0) {
+    throw new Error('Invalid order ID: ID must be a positive number');
+  }
+
+  const order = await prisma.order.update({
+    where: { id },
+    data: {
+      orderType: orderData.orderType,
+      status: orderData.status,
+      customerId: orderData.customerId,
+      outletId: orderData.outletId,
+      totalAmount: orderData.totalAmount,
+      depositAmount: orderData.depositAmount,
+      pickupPlanAt: orderData.pickupPlanAt,
+      returnPlanAt: orderData.returnPlanAt,
+      pickedUpAt: orderData.pickedUpAt,
+      returnedAt: orderData.returnedAt,
+      damageFee: orderData.damageFee,
+      bailAmount: orderData.bailAmount,
+      material: orderData.material,
+      securityDeposit: orderData.securityDeposit,
+      collateralType: orderData.collateralType,
+      collateralDetails: orderData.collateralDetails,
+      notes: orderData.notes,
+      discountType: orderData.discountType,
+      discountValue: orderData.discountValue,
+      discountAmount: orderData.discountAmount,
+    }
+  });
+
+  return getOrderById(order.id);
+}
+
+/**
+ * Delete order - follows single ID system
+ */
+export async function deleteOrder(id: number): Promise<boolean> {
+  // Validate id is provided and is a positive number
+  if (!id || id <= 0) {
+    throw new Error('Invalid order ID: ID must be a positive number');
+  }
+
+  try {
+    await prisma.order.delete({
+      where: { id }
+    });
+    return true;
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    return false;
+  }
+}
+
+/**
+ * Get order by order number - follows single ID system
+ */
+export async function getOrderByNumber(orderNumber: string): Promise<OrderWithDetails | null> {
+  const order = await prisma.order.findUnique({
+    where: { orderNumber },
+    select: {
+      id: true,
+      orderNumber: true,
+      orderType: true,
+      status: true,
+      customerId: true,
+      outletId: true,
+      createdById: true,
+      totalAmount: true,
+      depositAmount: true,
+      pickupPlanAt: true,
+      returnPlanAt: true,
+      pickedUpAt: true,
+      returnedAt: true,
+      damageFee: true,
+      bailAmount: true,
+      material: true,
+      securityDeposit: true,
+      collateralType: true,
+      collateralDetails: true,
+      notes: true,
+      discountType: true,
+      discountValue: true,
+      discountAmount: true,
+      createdAt: true,
+      updatedAt: true,
+      customer: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+        }
+      },
+      outlet: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          phone: true,
+        }
+      },
+      orderItems: {
+        select: {
+          id: true,
+          productId: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          deposit: true,
+          rentalDays: true,
+          notes: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              images: true,
+              barcode: true,
+              rentPrice: true,
+              deposit: true,
+            }
+          }
+        }
+      },
+      payments: {
+        select: {
+          id: true,
+          amount: true,
+          method: true,
+          status: true,
+          createdAt: true,
+        }
+      },
+      createdBy: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        }
+      },
+      merchant: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        }
+      }
+    }
+  });
+
+  if (!order) return null;
+
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    orderType: order.orderType,
+    status: order.status,
+    customerId: order.customerId,
+    outletId: order.outletId,
+    createdById: order.createdById,
+    totalAmount: order.totalAmount,
+    depositAmount: order.depositAmount,
+    pickupPlanAt: order.pickupPlanAt,
+    returnPlanAt: order.returnPlanAt,
+    pickedUpAt: order.pickedUpAt,
+    returnedAt: order.returnedAt,
+    damageFee: order.damageFee,
+    bailAmount: order.bailAmount,
+    material: order.material,
+    securityDeposit: order.securityDeposit,
+    collateralType: order.collateralType,
+    collateralDetails: order.collateralDetails,
+    notes: order.notes,
+    discountType: order.discountType,
+    discountValue: order.discountValue,
+    discountAmount: order.discountAmount,
+    merchantId: order.merchant?.id || 0,
+    customer: order.customer ? {
+      id: order.customer.id,
+      name: `${order.customer.firstName} ${order.customer.lastName}`,
+      firstName: order.customer.firstName,
+      lastName: order.customer.lastName,
+      email: order.customer.email,
+      phone: order.customer.phone,
+    } : undefined,
+    outlet: {
+      id: order.outlet.id,
+      name: order.outlet.name,
+      merchantId: order.merchant?.id || 0,
+    },
+    orderItems: order.orderItems.map((item: any) => ({
+      id: item.id,
+      orderId: order.id,
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      deposit: item.deposit,
+      rentalDays: item.rentalDays,
+      notes: item.notes,
+      product: {
+        id: item.product.id,
+        name: item.product.name,
+        description: item.product.description,
+        images: item.product.images,
+        barcode: item.product.barcode,
+        rentPrice: item.product.rentPrice,
+        deposit: item.product.deposit,
+      }
+    })),
+    payments: order.payments.map((payment: any) => ({
+      id: payment.id,
+      orderId: order.id,
+      amount: payment.amount,
+      method: payment.method,
+      status: payment.status,
+      createdAt: payment.createdAt,
+    })),
+    createdBy: order.createdBy ? {
+      id: order.createdBy.id,
+      name: `${order.createdBy.firstName} ${order.createdBy.lastName}`,
+      email: order.createdBy.email,
+      role: 'OUTLET_STAFF', // Default role, should be fetched from user data
+    } : undefined,
+    merchant: {
+      id: order.merchant?.id || 0,
+      name: order.merchant?.name || '',
+      email: order.merchant?.email || '',
+    },
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+  };
+}
+
+/**
+ * Get order statistics - follows single ID system
+ */
+export async function getOrderStats(userScope: { merchantId?: number; outletId?: number }): Promise<any> {
   const where: any = {};
 
-  // Apply user scope with proper dual ID handling
+  // Apply user scope
   if (userScope.merchantId) {
-    // Find merchant by publicId to get the CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { publicId: userScope.merchantId },
-      select: { id: true }
-    });
-    if (merchant) {
-      where.outlet = { merchantId: merchant.id }; // Use CUID for database query
-    }
+    where.outlet = { merchantId: userScope.merchantId };
   }
   
   if (userScope.outletId) {
-    // Find outlet by publicId to get the CUID
-    const outlet = await prisma.outlet.findUnique({
-      where: { publicId: userScope.outletId },
-      select: { id: true }
-    });
-    if (outlet) {
-      where.outletId = outlet.id; // Use CUID for database query
-    }
+    where.outletId = userScope.outletId;
   }
 
   const [
@@ -1187,20 +750,20 @@ export async function getOrderStats(
   ] = await Promise.all([
     prisma.order.count({ where }),
     prisma.order.aggregate({
-      where: { ...where, status: { in: ['COMPLETED', 'ACTIVE'] } },
+      where: { ...where, status: { in: ['COMPLETED', 'PICKUPED'] } },
       _sum: { totalAmount: true },
     }),
     prisma.order.aggregate({
-      where: { ...where, status: { in: ['COMPLETED', 'ACTIVE'] } },
+      where: { ...where, status: { in: ['COMPLETED', 'PICKUPED'] } },
       _sum: { depositAmount: true },
     }),
     prisma.order.count({
-      where: { ...where, status: 'ACTIVE' },
+      where: { ...where, status: 'PICKUPED' },
     }),
     prisma.order.count({
       where: {
         ...where,
-        status: 'ACTIVE',
+        status: 'PICKUPED',
         returnPlanAt: { lt: new Date() },
       },
     }),
@@ -1229,157 +792,7 @@ export async function getOrderStats(
 }
 
 /**
- * Cancel order - follows dual ID system
- * Input: publicId (number), Output: cancelled order data
- */
-export async function cancelOrder(publicId: number, userId: number, reason?: string): Promise<any> {
-  // Find order by publicId
-  const order = await prisma.order.findUnique({
-    where: { publicId },
-    include: {
-      customer: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-        },
-      },
-      outlet: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-          address: true,
-          merchantId: true,
-                          merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                  },
-                },
-        },
-      },
-      orderItems: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-              description: true,
-              images: true,
-              barcode: true,
-            },
-          },
-        },
-      },
-      payments: true,
-    },
-  });
-
-  if (!order) {
-    throw new Error(`Order with publicId ${publicId} not found`);
-  }
-
-  // Update order status to CANCELLED
-  const updatedOrder = await prisma.order.update({
-    where: { publicId },
-    data: {
-      status: 'CANCELLED',
-      updatedAt: new Date(),
-    },
-    include: {
-      customer: {
-        select: {
-          id: true,
-          publicId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-        },
-      },
-      outlet: {
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-          address: true,
-          merchantId: true,
-                          merchant: {
-                  select: {
-                    id: true,
-                    publicId: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                  },
-                },
-        },
-      },
-      orderItems: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              publicId: true,
-              name: true,
-              description: true,
-              images: true,
-              barcode: true,
-            },
-          },
-        },
-      },
-      payments: true,
-    },
-  });
-
-  // Transform to match expected types
-  return {
-    ...updatedOrder,
-    id: updatedOrder.publicId, // Return publicId as "id" for frontend
-    merchantId: updatedOrder.outlet.merchantId,
-    orderItems: updatedOrder.orderItems.map(item => ({
-      id: item.id, // Keep database CUID for existing items
-      productId: item.product.publicId, // Frontend uses publicId (number)
-      product: {
-        id: item.product.publicId, // Frontend uses publicId (number)
-        publicId: item.product.publicId, // Keep publicId for reference
-        name: item.product.name,
-        description: item.product.description,
-        images: item.product.images,
-        barcode: item.product.barcode,
-        rentPrice: 0, // Will be populated from product data
-        deposit: 0, // Will be populated from product data
-      },
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      rentalDays: item.rentalDays || 0,
-      deposit: 0, // Will be populated from product data
-      notes: item.notes || '',
-    })),
-    payments: updatedOrder.payments.map(payment => ({
-      ...payment,
-      id: 0, // Placeholder since Payment interface expects number but database returns string
-      orderId: 0, // Placeholder since Payment interface expects number but database returns string
-    })),
-  };
-}
-
-// ============================================================================
-// ORDER UTILITY FUNCTIONS
-// ============================================================================
-
-/**
- * Get overdue rentals - follows dual ID system
+ * Get overdue rentals - follows single ID system
  * Returns orders that are past their return date
  */
 export async function getOverdueRentals(outletId?: number): Promise<any[]> {
@@ -1390,14 +803,7 @@ export async function getOverdueRentals(outletId?: number): Promise<any[]> {
   };
 
   if (outletId) {
-    // Find outlet by publicId
-    const outlet = await prisma.outlet.findUnique({
-      where: { publicId: outletId },
-      select: { id: true }
-    });
-    if (outlet) {
-      where.outletId = outlet.id; // Use CUID
-    }
+    where.outletId = outletId;
   }
 
   const overdueOrders = await prisma.order.findMany({
@@ -1406,37 +812,33 @@ export async function getOverdueRentals(outletId?: number): Promise<any[]> {
       customer: {
         select: {
           id: true,
-          publicId: true,
           firstName: true,
           lastName: true,
           phone: true,
-        },
+        }
       },
       outlet: {
         select: {
           id: true,
-          publicId: true,
           name: true,
-        },
+        }
       },
       orderItems: {
         include: {
           product: {
             select: {
               id: true,
-              publicId: true,
               name: true,
-            },
-          },
-        },
+            }
+          }
+        }
       },
     },
     orderBy: { returnPlanAt: 'asc' },
   });
 
-  // Transform to use publicIds as ids
-  return overdueOrders.map(order => ({
-    id: order.publicId,                    // Use publicId as id
+  return overdueOrders.map((order: any) => ({
+    id: order.id,
     orderNumber: order.orderNumber,
     orderType: order.orderType,
     status: order.status,
@@ -1448,31 +850,27 @@ export async function getOverdueRentals(outletId?: number): Promise<any[]> {
     returnPlanAt: order.returnPlanAt,
     pickedUpAt: order.pickedUpAt,
     returnedAt: order.returnedAt,
-    isReadyToDeliver: order.isReadyToDeliver,
+    isReadyToDeliver: order.status === 'PICKUPED' && order.returnPlanAt && new Date(order.returnPlanAt) <= new Date(),
     customer: order.customer ? {
-      id: order.customer.publicId,         // Use publicId as id
+      id: order.customer.id,
       firstName: order.customer.firstName,
       lastName: order.customer.lastName,
       phone: order.customer.phone,
     } : null,
     outlet: {
-      id: order.outlet.publicId,           // Use publicId as id
+      id: order.outlet.id,
       name: order.outlet.name,
     },
-    orderItems: order.orderItems.map(item => ({
-      id: item.id,                         // Keep CUID for internal use
-      productId: item.product.publicId,    // Use publicId as id
+    orderItems: order.orderItems.map((item: any) => ({
+      id: item.id,
+      productId: item.productId,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalPrice: item.totalPrice,
       product: {
-        id: item.product.publicId,         // Use publicId as id
+        id: item.product.id,
         name: item.product.name,
-        // Map product.id (CUID) to productId for frontend compatibility
-        productId: item.product.publicId, // Frontend uses publicId (number)
-        // Map product.publicId to product.publicId for frontend display
-        publicId: item.product.publicId, // Keep publicId for reference
-      },
+      }
     })),
   }));
 }

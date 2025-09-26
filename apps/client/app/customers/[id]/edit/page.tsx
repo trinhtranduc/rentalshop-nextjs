@@ -10,7 +10,7 @@ import { useToasts } from '@rentalshop/ui';
 export default function EditCustomerPage() {
   const router = useRouter();
   const params = useParams();
-  const publicId = params.publicId as string;
+  const id = params.id as string;
   
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,17 +23,17 @@ export default function EditCustomerPage() {
       try {
         setIsLoading(true);
         
-        console.log('🔍 EditCustomerPage: Fetching customer with public ID:', publicId);
+        console.log('🔍 EditCustomerPage: Fetching customer with public ID:', id);
         
         // Validate public ID format (should be numeric)
-        const numericId = parseInt(publicId);
+        const numericId = parseInt(id);
         if (isNaN(numericId) || numericId <= 0) {
-          console.error('❌ EditCustomerPage: Invalid public ID format:', publicId);
+          console.error('❌ EditCustomerPage: Invalid public ID format:', id);
           setCustomer(null);
           return;
         }
         
-        console.log('🔍 EditCustomerPage: Making API call to /api/customers/' + publicId);
+        console.log('🔍 EditCustomerPage: Making API call to /api/customers/' + id);
         
         // Use the real API to fetch customer data by public ID
         const response = await customersApi.getCustomerByPublicId(numericId);
@@ -57,10 +57,10 @@ export default function EditCustomerPage() {
       }
     };
 
-    if (publicId) {
+    if (id) {
       fetchCustomer();
     }
-  }, [publicId]);
+  }, [id]);
 
   // Handle customer update
   const handleSave = async (customerData: CustomerUpdateInput) => {

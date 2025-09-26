@@ -58,9 +58,9 @@ export function calculatePeriodEnd(startDate: Date, billingInterval: BillingInte
 // ============================================================================
 
 export async function getSubscriptionByMerchantId(merchantId: number): Promise<Subscription | null> {
-  // First find the merchant by publicId to get the CUID
+  // Find the merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: merchantId },
+    where: { id: merchantId },
     select: { id: true }
   });
   
@@ -74,7 +74,6 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -88,7 +87,6 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
 
   return {
     id: subscription.id,
-    publicId: subscription.publicId,
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
@@ -101,7 +99,6 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
     merchant: subscription.merchant,
     plan: {
       id: subscription.plan.id,
-      publicId: subscription.plan.publicId,
       name: subscription.plan.name,
       description: subscription.plan.description,
       basePrice: subscription.plan.basePrice,
@@ -124,7 +121,6 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -135,9 +131,8 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
     orderBy: { createdAt: 'desc' }
   });
 
-  return subscriptions.map(sub => ({
+  return subscriptions.map((sub: any) => ({
     id: sub.id,
-    publicId: sub.publicId,
     merchantId: sub.merchantId,
     planId: sub.planId,
     status: sub.status as SubscriptionStatus,
@@ -150,7 +145,6 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
     merchant: sub.merchant,
     plan: {
       id: sub.plan.id,
-      publicId: sub.plan.publicId,
       name: sub.plan.name,
       description: sub.plan.description,
       basePrice: sub.plan.basePrice,
@@ -184,21 +178,11 @@ export async function searchSubscriptions(filters: {
 
   // Apply filters
   if (filters.merchantId) {
-    const merchant = await prisma.merchant.findUnique({
-      where: { publicId: filters.merchantId }
-    });
-    if (merchant) {
-      where.merchantId = merchant.id;
-    }
+    where.merchantId = filters.merchantId;
   }
 
   if (filters.planId) {
-    const plan = await prisma.plan.findUnique({
-      where: { publicId: filters.planId }
-    });
-    if (plan) {
-      where.planId = plan.id;
-    }
+    where.planId = filters.planId;
   }
 
   if (filters.status) {
@@ -221,7 +205,6 @@ export async function searchSubscriptions(filters: {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -237,9 +220,8 @@ export async function searchSubscriptions(filters: {
   const hasMore = (filters.offset || 0) + (filters.limit || 20) < total;
 
   return {
-    subscriptions: subscriptions.map(sub => ({
+    subscriptions: subscriptions.map((sub: any) => ({
       id: sub.id,
-      publicId: sub.publicId,
       merchantId: sub.merchantId,
       planId: sub.planId,
       status: sub.status as SubscriptionStatus,
@@ -252,7 +234,6 @@ export async function searchSubscriptions(filters: {
       merchant: sub.merchant,
       plan: {
         id: sub.plan.id,
-        publicId: sub.plan.publicId,
         name: sub.plan.name,
         description: sub.plan.description,
         basePrice: sub.plan.basePrice,
@@ -277,18 +258,18 @@ export async function searchSubscriptions(filters: {
 // ============================================================================
 
 export async function createSubscription(data: SubscriptionCreateInput): Promise<Subscription> {
-  // Get merchant by publicId
+  // Get merchant by id
   const merchant = await prisma.merchant.findUnique({
-    where: { publicId: data.merchantId }
+    where: { id: data.merchantId }
   });
 
   if (!merchant) {
     throw new Error('Merchant not found');
   }
 
-  // Get plan by publicId
+  // Get plan by id
   const plan = await prisma.plan.findUnique({
-    where: { publicId: data.planId }
+    where: { id: data.planId }
   });
 
   if (!plan) {
@@ -317,15 +298,8 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
   const startDate = data.startDate || new Date();
   const currentPeriodEnd = calculatePeriodEnd(startDate, billingInterval);
 
-  // Generate publicId
-  const lastSubscription = await prisma.subscription.findFirst({
-    orderBy: { publicId: 'desc' }
-  });
-  const publicId = (lastSubscription?.publicId || 0) + 1;
-
   const subscription = await prisma.subscription.create({
     data: {
-      publicId,
       merchantId: merchant.id,
       planId: plan.id,
       status: data.status || 'trial',
@@ -338,7 +312,6 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -358,7 +331,6 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
 
   return {
     id: subscription.id,
-    publicId: subscription.publicId,
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
@@ -371,7 +343,6 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
     merchant: subscription.merchant,
     plan: {
       id: subscription.plan.id,
-      publicId: subscription.plan.publicId,
       name: subscription.plan.name,
       description: subscription.plan.description,
       basePrice: subscription.plan.basePrice,
@@ -398,9 +369,8 @@ export async function getAllPlans(): Promise<Plan[]> {
     orderBy: { sortOrder: 'asc' }
   });
 
-  return plans.map(plan => ({
+  return plans.map((plan: any) => ({
     id: plan.id,
-    publicId: plan.publicId,
     name: plan.name,
     description: plan.description,
     basePrice: plan.basePrice,
@@ -419,14 +389,13 @@ export async function getAllPlans(): Promise<Plan[]> {
 
 export async function getPlanById(planId: number): Promise<Plan | null> {
   const plan = await prisma.plan.findUnique({
-    where: { publicId: planId }
+    where: { id: planId }
   });
 
   if (!plan) return null;
 
   return {
     id: plan.id,
-    publicId: plan.publicId,
     name: plan.name,
     description: plan.description,
     basePrice: plan.basePrice,
@@ -453,7 +422,7 @@ export async function changePlan(
   billingInterval: BillingInterval = 'month'
 ): Promise<Subscription> {
   const subscription = await prisma.subscription.findUnique({
-    where: { publicId: subscriptionId }
+    where: { id: subscriptionId }
   });
 
   if (!subscription) {
@@ -461,7 +430,7 @@ export async function changePlan(
   }
 
   const plan = await prisma.plan.findUnique({
-    where: { publicId: newPlanId }
+    where: { id: newPlanId }
   });
 
   if (!plan) {
@@ -494,7 +463,7 @@ export async function changePlan(
   const newPeriodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000);
 
   const updatedSubscription = await prisma.subscription.update({
-    where: { publicId: subscriptionId },
+    where: { id: subscriptionId },
     data: {
       planId: plan.id,
       interval: billingInterval,
@@ -507,7 +476,6 @@ export async function changePlan(
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -525,7 +493,6 @@ export async function changePlan(
 
   return {
     id: updatedSubscription.id,
-    publicId: updatedSubscription.publicId,
     merchantId: updatedSubscription.merchantId,
     planId: updatedSubscription.planId,
     status: updatedSubscription.status as SubscriptionStatus,
@@ -547,7 +514,6 @@ export async function changePlan(
     merchant: updatedSubscription.merchant,
     plan: {
       id: updatedSubscription.plan.id,
-      publicId: updatedSubscription.plan.publicId,
       name: updatedSubscription.plan.name,
       description: updatedSubscription.plan.description,
       basePrice: updatedSubscription.plan.basePrice,
@@ -566,7 +532,7 @@ export async function changePlan(
 
 export async function pauseSubscription(subscriptionId: number): Promise<Subscription> {
   const subscription = await prisma.subscription.update({
-    where: { publicId: subscriptionId },
+    where: { id: subscriptionId },
     data: {
       status: 'paused',
       updatedAt: new Date()
@@ -575,7 +541,6 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -587,7 +552,6 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
 
   return {
     id: subscription.id,
-    publicId: subscription.publicId,
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
@@ -600,7 +564,6 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
     merchant: subscription.merchant,
     plan: {
       id: subscription.plan.id,
-      publicId: subscription.plan.publicId,
       name: subscription.plan.name,
       description: subscription.plan.description,
       basePrice: subscription.plan.basePrice,
@@ -619,7 +582,7 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
 
 export async function resumeSubscription(subscriptionId: number): Promise<Subscription> {
   const subscription = await prisma.subscription.update({
-    where: { publicId: subscriptionId },
+    where: { id: subscriptionId },
     data: {
       status: 'active',
       updatedAt: new Date()
@@ -628,7 +591,6 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -640,7 +602,6 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
 
   return {
     id: subscription.id,
-    publicId: subscription.publicId,
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
@@ -653,7 +614,6 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
     merchant: subscription.merchant,
     plan: {
       id: subscription.plan.id,
-      publicId: subscription.plan.publicId,
       name: subscription.plan.name,
       description: subscription.plan.description,
       basePrice: subscription.plan.basePrice,
@@ -673,7 +633,7 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
 export async function cancelSubscription(subscriptionId: number): Promise<{ success: boolean; message: string; data?: Subscription; statusCode?: number }> {
   try {
     const subscription = await prisma.subscription.update({
-      where: { publicId: subscriptionId },
+      where: { id: subscriptionId },
       data: {
         status: 'cancelled',
         updatedAt: new Date()
@@ -681,8 +641,7 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
       include: {
         merchant: {
           select: {
-            id: true,
-            publicId: true,
+      id: true,
             name: true,
             email: true,
             subscriptionStatus: true
@@ -694,7 +653,6 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
 
     const result: Subscription = {
       id: subscription.id,
-      publicId: subscription.publicId,
       merchantId: subscription.merchantId,
       planId: subscription.planId,
       status: subscription.status as SubscriptionStatus,
@@ -707,7 +665,6 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
       merchant: subscription.merchant,
       plan: {
         id: subscription.plan.id,
-        publicId: subscription.plan.publicId,
         name: subscription.plan.name,
         description: subscription.plan.description,
         basePrice: subscription.plan.basePrice,
@@ -758,7 +715,6 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -769,9 +725,8 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
     orderBy: { currentPeriodEnd: 'asc' }
   });
 
-  return subscriptions.map(sub => ({
+  return subscriptions.map((sub: any) => ({
     id: sub.id,
-    publicId: sub.publicId,
     merchantId: sub.merchantId,
     planId: sub.planId,
     status: sub.status as SubscriptionStatus,
@@ -784,7 +739,6 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
     merchant: sub.merchant,
     plan: {
       id: sub.plan.id,
-      publicId: sub.plan.publicId,
       name: sub.plan.name,
       description: sub.plan.description,
       basePrice: sub.plan.basePrice,
@@ -801,14 +755,13 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
   }));
 }
 
-export async function getSubscriptionByPublicId(publicId: number): Promise<Subscription | null> {
+export async function getSubscriptionById(id: number): Promise<Subscription | null> {
   const subscription = await prisma.subscription.findUnique({
-    where: { publicId },
+    where: { id },
     include: {
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -822,7 +775,6 @@ export async function getSubscriptionByPublicId(publicId: number): Promise<Subsc
 
   return {
     id: subscription.id,
-    publicId: subscription.publicId,
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
@@ -835,7 +787,6 @@ export async function getSubscriptionByPublicId(publicId: number): Promise<Subsc
     merchant: subscription.merchant,
     plan: {
       id: subscription.plan.id,
-      publicId: subscription.plan.publicId,
       name: subscription.plan.name,
       description: subscription.plan.description,
       basePrice: subscription.plan.basePrice,
@@ -862,7 +813,7 @@ export async function updateSubscription(
   }>
 ): Promise<Subscription> {
   const subscription = await prisma.subscription.update({
-    where: { publicId: subscriptionId },
+    where: { id: subscriptionId },
     data: {
       ...data,
       updatedAt: new Date()
@@ -871,7 +822,6 @@ export async function updateSubscription(
       merchant: {
         select: {
           id: true,
-          publicId: true,
           name: true,
           email: true,
           subscriptionStatus: true
@@ -883,7 +833,6 @@ export async function updateSubscription(
 
   return {
     id: subscription.id,
-    publicId: subscription.publicId,
     merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
@@ -896,7 +845,6 @@ export async function updateSubscription(
     merchant: subscription.merchant,
     plan: {
       id: subscription.plan.id,
-      publicId: subscription.plan.publicId,
       name: subscription.plan.name,
       description: subscription.plan.description,
       basePrice: subscription.plan.basePrice,
@@ -943,9 +891,9 @@ export interface SubscriptionPayment {
 }
 
 export async function createSubscriptionPayment(data: SubscriptionPaymentCreateInput): Promise<SubscriptionPayment> {
-  // Find subscription by publicId to get the CUID
+  // Find subscription by id
   const subscription = await prisma.subscription.findUnique({
-    where: { publicId: data.subscriptionId },
+    where: { id: data.subscriptionId },
     select: { id: true }
   });
 
@@ -953,15 +901,8 @@ export async function createSubscriptionPayment(data: SubscriptionPaymentCreateI
     throw new Error('Subscription not found');
   }
 
-  // Generate publicId for payment
-  const lastPayment = await prisma.payment.findFirst({
-    orderBy: { publicId: 'desc' }
-  });
-  const publicId = (lastPayment?.publicId || 0) + 1;
-
   const payment = await prisma.payment.create({
     data: {
-      publicId,
       subscriptionId: subscription.id,
       amount: data.amount,
       currency: data.currency,
@@ -975,7 +916,7 @@ export async function createSubscriptionPayment(data: SubscriptionPaymentCreateI
   });
 
   return {
-    id: payment.publicId,
+    id: payment.id,
     subscriptionId: data.subscriptionId,
     amount: payment.amount,
     currency: payment.currency,

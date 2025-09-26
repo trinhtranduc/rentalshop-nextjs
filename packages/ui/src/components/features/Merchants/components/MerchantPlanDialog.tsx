@@ -78,7 +78,7 @@ export function MerchantPlanDialog({
   }, [isOpen]);
 
   // Calculate derived values
-  const selectedPlan = plans.find(plan => plan.publicId === selectedPlanId);
+  const selectedPlan = plans.find(plan => plan.id === selectedPlanId);
   const selectedPricing = selectedPlan?.pricing[selectedBillingCycle];
 
   // Calculate end date when effective date or billing cycle changes
@@ -207,7 +207,7 @@ export function MerchantPlanDialog({
                   .filter(plan => plan.isActive)
                   .sort((a, b) => a.sortOrder - b.sortOrder)
                   .map((plan) => (
-                    <SelectItem key={plan.publicId} value={plan.publicId.toString()}>
+                    <SelectItem key={plan.id} value={plan.id.toString()}>
                       <div className="flex items-center justify-between w-full">
                         <span className="font-medium">{plan.name}</span>
                         <div className="flex items-center gap-2 ml-4">

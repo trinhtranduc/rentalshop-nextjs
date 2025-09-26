@@ -174,7 +174,7 @@ export default function UserPage() {
     
     try {
       setIsUpdating(true);
-      // Use publicId for activation as the API expects numeric publicId
+      // Use id for activation as the API expects numeric id
       const response = await usersApi.activateUserByPublicId(userData.id);
       if (response.success) {
         // Refresh user data
@@ -203,7 +203,7 @@ export default function UserPage() {
     
     try {
       setIsUpdating(true);
-      // Use publicId for deactivation as the API expects numeric publicId
+      // Use id for deactivation as the API expects numeric id
       const response = await usersApi.deactivateUserByPublicId(userData.id);
       if (response.success) {
         // Refresh user data
@@ -226,7 +226,7 @@ export default function UserPage() {
     
     try {
       setIsUpdating(true);
-      // Use publicId for deletion as the API expects numeric publicId
+      // Use id for deletion as the API expects numeric id
       const response = await usersApi.deleteUserByPublicId(userData.id);
       if (response.success) {
         showSuccess('User Deleted', 'User account has been deleted successfully!');

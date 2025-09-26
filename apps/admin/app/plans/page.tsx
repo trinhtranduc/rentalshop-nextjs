@@ -210,7 +210,7 @@ export default function PlansPage() {
       
       if (editingPlan) {
         // Update existing plan
-        const response = await plansApi.updatePlan(editingPlan.publicId, formData as any);
+        const response = await plansApi.updatePlan(editingPlan.id, formData as any);
         if (response.success) {
           await fetchPlans(); // Refresh the list
         } else {
@@ -244,7 +244,7 @@ export default function PlansPage() {
     try {
       const { plansApi } = await import('@rentalshop/utils');
       
-      const response = await plansApi.deletePlan(deletingPlan.publicId);
+      const response = await plansApi.deletePlan(deletingPlan.id);
       if (response.success) {
         await fetchPlans(); // Refresh the list
         setDeletingPlan(null);

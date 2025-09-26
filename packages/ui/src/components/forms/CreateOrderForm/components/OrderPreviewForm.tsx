@@ -85,7 +85,6 @@ export interface OrderPreviewData {
     productId: number;
     product?: {
       id: number;
-      publicId: number;
       name: string;
       description?: string;
       images?: string[] | null;

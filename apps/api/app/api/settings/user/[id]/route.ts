@@ -35,7 +35,7 @@ export async function GET(
 
     const preference = await prisma.userPreference.findFirst({
       where: { 
-        publicId: preferenceId,
+        id: preferenceId,
         userId: user.id
       }
     });
@@ -50,7 +50,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
-        id: preference.publicId,
+        id: preference.id,
         key: preference.key,
         value: parseSettingValue(preference.value, preference.type),
         type: preference.type,
@@ -99,7 +99,7 @@ export async function PUT(
     // Check if preference exists and belongs to user
     const existingPreference = await prisma.userPreference.findFirst({
       where: { 
-        publicId: preferenceId,
+        id: preferenceId,
         userId: user.id
       }
     });
@@ -112,7 +112,7 @@ export async function PUT(
     }
 
     const updatedPreference = await prisma.userPreference.update({
-      where: { publicId: preferenceId },
+      where: { id: preferenceId },
       data: {
         value: validatedData.value,
         description: validatedData.description,
@@ -123,7 +123,7 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: {
-        id: updatedPreference.publicId,
+        id: updatedPreference.id,
         key: updatedPreference.key,
         value: parseSettingValue(updatedPreference.value, updatedPreference.type),
         type: updatedPreference.type,
@@ -176,7 +176,7 @@ export async function DELETE(
     // Check if preference exists and belongs to user
     const existingPreference = await prisma.userPreference.findFirst({
       where: { 
-        publicId: preferenceId,
+        id: preferenceId,
         userId: user.id
       }
     });
@@ -189,7 +189,7 @@ export async function DELETE(
     }
 
     await prisma.userPreference.delete({
-      where: { publicId: preferenceId }
+      where: { id: preferenceId }
     });
 
     return NextResponse.json({
