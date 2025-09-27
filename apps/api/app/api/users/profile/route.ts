@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, handleSubscriptionError } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { findUserById, updateUser, prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
@@ -7,18 +7,10 @@ import {API} from '@rentalshop/constants';
  * GET /api/users/profile
  * Get current user's profile
  */
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 Profile API called');
     
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      console.log('❌ Authentication failed');
-      return authResult.response;
-    }
-
-    const user = authResult.user;
     console.log('✅ Token verification result: Success', { id: user.id, role: user.role });
 
     // Get user profile with complete merchant and outlet data
@@ -29,7 +21,6 @@ export async function GET(request: NextRequest) {
       include: {
         merchant: {
           select: {
-            id: true,
             id: true,
             name: true,
             email: true,
@@ -54,7 +45,6 @@ export async function GET(request: NextRequest) {
         outlet: {
           select: {
             id: true,
-            id: true,
             name: true,
             address: true,
             phone: true,
@@ -64,7 +54,6 @@ export async function GET(request: NextRequest) {
             createdAt: true,
             merchant: {
               select: {
-                id: true,
                 id: true,
                 name: true,
               }
@@ -152,37 +141,21 @@ export async function GET(request: NextRequest) {
       data: transformedUser,
     });
   } catch (error) {
-    console.error('💥 Error fetching user profile:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    
-    // Handle subscription errors consistently
-    const errorResponse = handleSubscriptionError(error);
+    console.error('❌ Error fetching user profile:', error);
     return NextResponse.json(
-      { 
-        success: errorResponse.success, 
-        error: errorResponse.error
-      },
-      { status: errorResponse.status }
+      { success: false, message: 'Internal server error' },
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+});
 }
 
 /**
  * PUT /api/users/profile
  * Update current user's profile
  */
-export async function PUT(request: NextRequest) {
+export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     const body = await request.json();
     
@@ -333,4 +306,4 @@ export async function PUT(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-} 
+}); 
