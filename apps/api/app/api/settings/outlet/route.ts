@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
@@ -8,22 +8,14 @@ import {API} from '@rentalshop/constants';
  * Update current user's outlet information
  * Only accessible by users with outlet access (OUTLET_ADMIN, OUTLET_STAFF) or admin
  */
-export async function PUT(request: NextRequest) {
+export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 DEBUG: Settings outlet PUT API called');
     
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      console.error('❌ DEBUG: Authentication failed in settings outlet PUT');
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
     console.log('🔍 DEBUG: User authenticated:', {
       id: user.id,
       role: user.role,
-      merchantId: user.merchant?.id,
+      merchantId: userScope.merchantId,
       outletId: user.outletId
     });
 
@@ -103,4 +95,4 @@ export async function PUT(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
