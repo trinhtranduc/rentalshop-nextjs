@@ -1,28 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchPlans, createPlan, getPlanStats } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { planCreateSchema } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can view all plans)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-
     // Get search parameters
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
@@ -64,26 +48,10 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can create plans)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-
     // Parse and validate request body
     const body = await request.json();
     const validatedData = planCreateSchema.parse(body);
@@ -112,4 +80,4 @@ export async function POST(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

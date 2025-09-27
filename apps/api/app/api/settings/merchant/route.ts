@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateMerchant, prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -8,36 +8,19 @@ import { API } from '@rentalshop/constants';
  * Update current user's merchant business information
  * Only accessible by users with merchant role or admin
  */
-export async function PUT(request: NextRequest) {
+export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 MERCHANT API: PUT /api/settings/merchant called');
     console.log('🔍 MERCHANT API: Request method:', request.method);
     console.log('🔍 MERCHANT API: Request URL:', request.url);
     console.log('🔍 MERCHANT API: Request headers:', Object.fromEntries(request.headers.entries()));
     
-    // Verify authentication using the centralized method (same as profile API)
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      console.log('🔍 MERCHANT API: Authentication failed');
-      return authResult.response;
-    }
-
-    const user = authResult.user;
     console.log('🔍 MERCHANT API: Authentication successful:', {
       userId: user.id,
       email: user.email,
       role: user.role
     });
 
-    // Check if user has merchant role
-    if (user.role !== 'MERCHANT' && user.role !== 'ADMIN') {
-      console.log('🔍 MERCHANT API: Invalid role, returning 403');
-      return NextResponse.json(
-        { success: false, message: 'Merchant access required' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-    
     console.log('🔍 MERCHANT API: Role check passed, proceeding with request');
 
     const body = await request.json();
@@ -140,4 +123,4 @@ export async function PUT(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

@@ -10,23 +10,15 @@ import {
   markSubscriptionAsExpired,
   extendSubscription
 } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { subscriptionCreateSchema } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // GET /api/subscriptions - Search subscriptions
 // ============================================================================
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const filters = {
@@ -39,29 +31,10 @@ export async function GET(request: NextRequest) {
       offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0
     };
 
-    // Role-based filtering
-    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-      // Outlet users can only see their merchant's subscriptions
-      if (user.merchantId) {
-        filters.merchantId = user.merchantId;
-      } else {
-        return NextResponse.json(
-          { success: false, message: 'No merchant access' },
-          { status: API.STATUS.FORBIDDEN }
-        );
-      }
-    } else if (user.role === 'MERCHANT') {
-      // Merchant users can only see their own subscriptions
-      if (user.merchantId) {
-        filters.merchantId = user.merchantId;
-      } else {
-        return NextResponse.json(
-          { success: false, message: 'No merchant access' },
-          { status: API.STATUS.FORBIDDEN }
-        );
-      }
+    // Apply merchant scoping for non-admin users
+    if (user.role !== 'ADMIN') {
+      filters.merchantId = userScope.merchantId;
     }
-    // ADMIN users can see all subscriptions (no filtering)
 
     const result = await searchSubscriptions(filters);
 
@@ -82,28 +55,20 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
 
 // ============================================================================
 // POST /api/subscriptions - Create subscription
 // ============================================================================
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/subscriptions - Create subscription
+ * Requires: ADMIN or MERCHANT role
+ */
+async function handleCreateSubscription(
+  request: NextRequest,
+  { user }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Check permissions - only ADMIN and MERCHANT can create subscriptions
-    if (!['ADMIN', 'MERCHANT'].includes(user.role)) {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const body = await request.json();
     const validatedData = subscriptionCreateSchema.parse(body);
