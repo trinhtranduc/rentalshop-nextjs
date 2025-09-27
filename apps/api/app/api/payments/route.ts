@@ -1,28 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can view all payments)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN.STATUS.FORBIDDEN.STATUS.FORBIDDEN }
-      );
-    }
 
     // Get search parameters
     const { searchParams } = new URL(request.url);
@@ -84,8 +66,8 @@ export async function GET(request: NextRequest) {
     const transformedPayments = payments.map(payment => {
       return {
         id: payment.id,
-        merchantId: payment.merchant?.id || payment.subscription?.merchant?.id || 0,
-        merchantName: payment.merchant?.name || payment.subscription?.merchant?.name || 'Unknown Merchant',
+        merchantId: payment.merchant?.id || 0,
+        merchantName: payment.merchant?.name || 'Unknown Merchant',
         planName: payment.subscription?.plan?.name || 'Manual Payment',
         amount: payment.amount,
         currency: payment.currency || 'USD',
@@ -114,4 +96,4 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

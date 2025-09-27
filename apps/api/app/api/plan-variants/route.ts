@@ -4,32 +4,13 @@ import {
   createPlanVariant, 
   getPlanVariantStats 
 } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { planVariantCreateSchema } from '@rentalshop/utils';
 import type { PlanVariantCreateInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can view all plan variants)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN.STATUS.FORBIDDEN }
-      );
-    }
-
     // Get search parameters
     const { searchParams } = new URL(request.url);
     const planId = searchParams.get('planId');
@@ -78,29 +59,10 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can create plan variants)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-
     // Parse and validate request body
     const body = await request.json();
     const validatedData = planVariantCreateSchema.parse(body);
@@ -114,7 +76,7 @@ export async function POST(request: NextRequest) {
       message: 'Plan variant created successfully'
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating plan variant:', error);
     
     if (error.name === 'ZodError') {
@@ -129,4 +91,4 @@ export async function POST(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
