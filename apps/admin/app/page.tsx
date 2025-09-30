@@ -2,21 +2,25 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '../lib/auth/auth';
+import { useAuth } from '@rentalshop/hooks';
 
 export default function AdminHomePage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
+    // Don't redirect while loading to avoid race conditions
+    if (loading) return;
+    
     // Check if user is already authenticated
-    if (isAuthenticated()) {
+    if (user) {
       // Redirect to dashboard if already logged in
       router.push('/dashboard');
     } else {
       // Redirect to login if not authenticated
       router.push('/login');
     }
-  }, [router]);
+  }, [user, loading, router]);
 
   return (
     <div className="min-h-screen bg-bg-secondary flex items-center justify-center">

@@ -73,7 +73,7 @@ export default function CustomerPage() {
         console.log('🔍 CustomerPage: Making API call to /api/customers/' + customerId);
         
         // Use the real API to fetch customer data by ID
-        const response = await customersApi.getCustomerByPublicId(numericId);
+        const response = await customersApi.getCustomerById(numericId);
         
         console.log('🔍 CustomerPage: API response received:', response);
         
@@ -110,7 +110,7 @@ export default function CustomerPage() {
       const numericId = parseInt(customerId);
       if (isNaN(numericId) || numericId <= 0) return;
       
-      const response = await customersApi.getCustomerByPublicId(numericId);
+      const response = await customersApi.getCustomerById(numericId);
       
       if (response.success && response.data) {
         setCustomer(response.data);
@@ -199,7 +199,10 @@ export default function CustomerPage() {
       const newStatus = !customer.isActive;
       console.log('🔍 CustomerPage: Toggling customer status to:', newStatus);
       
-      const response = await customersApi.updateCustomer(customer.id, { isActive: newStatus });
+      const response = await customersApi.updateCustomer(customer.id, { 
+        id: customer.id,
+        isActive: newStatus 
+      });
       
       if (response.success) {
         console.log('✅ CustomerPage: Customer status updated successfully');

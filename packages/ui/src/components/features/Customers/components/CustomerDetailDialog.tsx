@@ -47,13 +47,13 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
         console.log('🔍 CustomerDetailDialog: Fetching merchant with ID:', customer.merchantId);
         
         const { merchantsApi } = await import('@rentalshop/utils');
-        const response = await merchantsApi.getMerchantByPublicId(customer.merchantId);
+        const response = await merchantsApi.getMerchantById(customer.merchantId);
         
         console.log('🔍 CustomerDetailDialog: Merchant API response:', response);
         
         if (response.success && response.data) {
           console.log('✅ CustomerDetailDialog: Merchant fetched successfully:', response.data);
-          setMerchant(response.data);
+          setMerchant(response.data as any); // TODO: Fix Merchant type compatibility between utils and types packages
         } else {
           console.error('❌ CustomerDetailDialog: Merchant API error:', response.error);
           setMerchant(null);

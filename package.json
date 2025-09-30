@@ -10,7 +10,7 @@
   "scripts": {
     "build": "turbo run build --concurrency=12",
     "dev": "turbo run dev",
-    "dev:all": "turbo run dev --concurrency=12",
+    "dev:all": "turbo run dev --concurrency=14",
     "dev:client": "cd apps/client && yarn dev",
     "dev:admin": "cd apps/admin && yarn dev",
     "dev:api": "cd apps/api && yarn dev",
@@ -33,8 +33,9 @@
   "packageManager": "yarn@1.22.0",
   "dependencies": {
     "@prisma/client": "^6.16.2",
+    "@prisma/engines": "^6.16.2",
     "bcryptjs": "^3.0.2",
     "node-fetch": "^3.3.2",
-    "prisma": "^6.16.2"
+    "prisma": "6.16.2"
   }
 }

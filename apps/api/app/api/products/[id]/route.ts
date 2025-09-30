@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
 import { getProductById, updateProduct } from '@rentalshop/database';
-import { getUserScope, assertAnyRole } from '@rentalshop/auth';
+import { assertAnyRole, withAuthRoles } from '@rentalshop/auth';
 import { productUpdateSchema } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { createAuditHelper } from '@rentalshop/utils';
@@ -12,18 +11,12 @@ import {API} from '@rentalshop/constants';
  * GET /api/products/[id]
  * Get product by ID
  */
-export async function GET(
+async function handleGetProduct(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     const { id } = params;
     console.log('🔍 GET /api/products/[id] - Looking for product with ID:', id);
@@ -39,7 +32,6 @@ export async function GET(
     const productId = parseInt(id);
     
     // Get user scope for merchant isolation
-    const userScope = getUserScope(user as any);
     const userMerchantId = userScope.merchantId;
     
     if (!userMerchantId) {
@@ -118,21 +110,14 @@ export async function GET(
  * PUT /api/products/[id]
  * Update product by ID
  */
-export async function PUT(
+async function handleUpdateProduct(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
     // Capture audit context
     const auditContext = await captureAuditContext(request);
-    
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
 
     // Authorization: Only merchant-level roles can update products
     try {
@@ -145,7 +130,6 @@ export async function PUT(
     }
 
     // Get user scope for merchant isolation
-    const userScope = getUserScope(user as any);
     const userMerchantId = userScope.merchantId;
     
     if (!userMerchantId) {
@@ -254,18 +238,12 @@ export async function PUT(
  * DELETE /api/products/[id]
  * Delete product by ID (soft delete)
  */
-export async function DELETE(
+async function handleDeleteProduct(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
 
     // Authorization: Only merchant-level roles can delete products
     try {
@@ -278,7 +256,6 @@ export async function DELETE(
     }
 
     // Get user scope for merchant isolation
-    const userScope = getUserScope(user as any);
     const userMerchantId = userScope.merchantId;
     
     if (!userMerchantId) {
@@ -316,4 +293,38 @@ export async function DELETE(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+// Export functions with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetProduct(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdateProduct(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleDeleteProduct(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

@@ -13,11 +13,11 @@ import { PrismaClient } from '@prisma/client';
 
 // Types for audit logging
 export interface AuditContext {
-  userId?: string;
+  userId?: number;
   userEmail?: string;
   userRole?: string;
-  merchantId?: string;
-  outletId?: string;
+  merchantId?: number;
+  outletId?: number;
   ipAddress?: string;
   userAgent?: string;
   sessionId?: string;
@@ -43,9 +43,9 @@ export interface AuditLogFilter {
   action?: string;
   entityType?: string;
   entityId?: string;
-  userId?: string;
-  merchantId?: string;
-  outletId?: string;
+  userId?: number;
+  merchantId?: number;
+  outletId?: number;
   severity?: string;
   category?: string;
   startDate?: Date;
@@ -108,7 +108,7 @@ export class AuditLogger {
   }
 
   // Validate foreign key IDs to prevent constraint violations
-  private async validateUserId(userId?: string): Promise<string | null> {
+  private async validateUserId(userId?: number): Promise<number | null> {
     if (!userId) return null;
     
     try {
@@ -123,7 +123,7 @@ export class AuditLogger {
     }
   }
 
-  private async validateMerchantId(merchantId?: string): Promise<string | null> {
+  private async validateMerchantId(merchantId?: number): Promise<number | null> {
     if (!merchantId) return null;
     
     try {
@@ -138,7 +138,7 @@ export class AuditLogger {
     }
   }
 
-  private async validateOutletId(outletId?: string): Promise<string | null> {
+  private async validateOutletId(outletId?: number): Promise<number | null> {
     if (!outletId) return null;
     
     try {
@@ -217,7 +217,7 @@ export class AuditLogger {
   }
 
   async logLogin(
-    userId: string,
+    userId: number,
     userEmail: string,
     userRole: string,
     context: AuditContext,
@@ -226,7 +226,7 @@ export class AuditLogger {
     await this.log({
       action: 'LOGIN',
       entityType: 'User',
-      entityId: userId,
+      entityId: userId.toString(),
       entityName: userEmail,
       newValues: { success, timestamp: new Date().toISOString() },
       severity: success ? 'INFO' : 'WARNING',
@@ -237,14 +237,14 @@ export class AuditLogger {
   }
 
   async logLogout(
-    userId: string,
+    userId: number,
     userEmail: string,
     context: AuditContext
   ): Promise<void> {
     await this.log({
       action: 'LOGOUT',
       entityType: 'User',
-      entityId: userId,
+      entityId: userId.toString(),
       entityName: userEmail,
       category: 'SECURITY',
       description: `User logged out: ${userEmail}`,

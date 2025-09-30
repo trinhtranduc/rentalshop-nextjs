@@ -79,7 +79,13 @@ async function handleCreateSubscription(
       validatedData.merchantId = user.merchantId;
     }
 
-    const subscription = await createSubscription(validatedData);
+    // Convert planId to number if it's a string
+    const subscriptionData = {
+      ...validatedData,
+      planId: typeof validatedData.planId === 'string' ? parseInt(validatedData.planId) : validatedData.planId
+    };
+
+    const subscription = await createSubscription(subscriptionData);
 
     return NextResponse.json({
       success: true,

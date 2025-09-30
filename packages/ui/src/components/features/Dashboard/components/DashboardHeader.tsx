@@ -1,9 +1,10 @@
 import React from 'react';
 import { TimePeriodSelector } from '../../../layout/TimePeriodSelector';
+import { DashboardPeriod } from '@rentalshop/types';
 
 interface DashboardHeaderProps {
-  period: 'today' | 'week' | 'month' | 'year';
-  onPeriodChange: (period: 'today' | 'week' | 'month' | 'year') => void;
+  period: DashboardPeriod;
+  onPeriodChange: (period: DashboardPeriod) => void;
 }
 
 export function DashboardHeader({ period, onPeriodChange }: DashboardHeaderProps) {

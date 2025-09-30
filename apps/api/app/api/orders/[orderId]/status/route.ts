@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { updateOrder } from '@rentalshop/database';
-import { assertAnyRole } from '@rentalshop/auth';
 import { z } from 'zod';
 import {API} from '@rentalshop/constants';
 
@@ -34,33 +33,17 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
-  try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, error: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    const { orderId } = params;
-    
-    if (!orderId) {
-      return NextResponse.json(
-        { success: false, error: 'Order ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Authorization: updating order status requires outlet team or merchant/admin
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user }) => {
     try {
-      assertAnyRole(user as any, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
-    } catch {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: API.STATUS.FORBIDDEN });
-    }
+
+      const { orderId } = params;
+      
+      if (!orderId) {
+        return NextResponse.json(
+          { success: false, error: 'Order ID is required' },
+          { status: 400 }
+        );
+      }
 
     // Parse and validate request body
     const body = await request.json();
@@ -181,13 +164,12 @@ export async function PATCH(
       message: responseMessage
     });
 
-  } catch (error) {
-    console.error('Error updating order status:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
-
-export const runtime = 'nodejs';
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      return NextResponse.json(
+        { success: false, error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+  })(request);
+}export const runtime = 'nodejs';

@@ -1,40 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
-import {API} from '@rentalshop/constants';
+import { withAuthRoles } from '@rentalshop/auth';
+import { API } from '@rentalshop/constants';
 
-// GET /api/audit-logs/[id] - Get specific audit log entry
-export async function GET(
+/**
+ * GET /api/audit-logs/[id] - Get specific audit log entry
+ * Requires: ADMIN role
+ */
+async function handleGetAuditLog(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user }: { user: any; userScope: any }, 
+  params: { id: string }
 ) {
+  console.log(`🔍 GET /api/audit-logs/${params.id} - requested`);
+  
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Only ADMIN users can access audit logs
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const logId = params.id;
-    if (!logId) {
+    if (!logId || isNaN(parseInt(logId))) {
       return NextResponse.json(
         { success: false, message: 'Invalid audit log ID' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     const auditLog = await prisma.auditLog.findUnique({
-      where: { id: logId },
+      where: { id: parseInt(logId) },
       include: {
         user: {
           select: {
@@ -62,11 +53,11 @@ export async function GET(
       entityType: auditLog.entityType,
       entityId: auditLog.entityId,
       details: auditLog.details,
-      user: auditLog.user ? {
-        id: auditLog.user.id,
-        email: auditLog.user.email,
-        name: `${auditLog.user.firstName} ${auditLog.user.lastName}`,
-        role: auditLog.user.role
+      user: (auditLog as any).user ? {
+        id: (auditLog as any).user.id,
+        email: (auditLog as any).user.email,
+        name: `${(auditLog as any).user.firstName} ${(auditLog as any).user.lastName}`,
+        role: (auditLog as any).user.role
       } : null,
       ipAddress: auditLog.ipAddress,
       userAgent: auditLog.userAgent,
@@ -85,4 +76,15 @@ export async function GET(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetAuditLog(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

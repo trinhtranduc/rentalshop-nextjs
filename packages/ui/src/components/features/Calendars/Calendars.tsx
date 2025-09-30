@@ -68,16 +68,16 @@ export function Calendars({
   const currentYear = currentDate.getFullYear();
   
   const monthOrders = orders.filter(order => {
-    const orderDate = new Date(order.pickupPlanAt);
+    const orderDate = new Date((order as any).pickupPlanAt || order.pickupDate);
     return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
   });
 
   const totalPickups = monthOrders.filter(order => 
-    new Date(order.pickupPlanAt).getMonth() === currentMonth
+    new Date((order as any).pickupPlanAt || order.pickupDate).getMonth() === currentMonth
   ).length;
 
   const totalReturns = monthOrders.filter(order => 
-    new Date(order.returnPlanAt).getMonth() === currentMonth
+    new Date((order as any).returnPlanAt || order.returnDate).getMonth() === currentMonth
   ).length;
 
   // Loading state

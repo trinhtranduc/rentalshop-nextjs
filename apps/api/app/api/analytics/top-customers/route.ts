@@ -58,7 +58,6 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
       const customer = await prisma.customer.findUnique({
         where: { id: item.customerId! },
         select: {
-          id: true,
           id: true, // Include id to use as the external ID
           firstName: true,
           lastName: true,

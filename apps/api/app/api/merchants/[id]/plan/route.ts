@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { calculateProration, shouldApplyProration } from '@rentalshop/utils';
 import { z } from 'zod';
 import {API} from '@rentalshop/constants';
@@ -20,18 +20,12 @@ const planChangeSchema = z.object({
   notifyMerchant: z.boolean().default(true)
 });
 
-export async function PUT(
+async function handleUpdateMerchantPlan(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Check if user is admin
     if (user.role !== 'ADMIN') {
@@ -383,18 +377,12 @@ export async function PUT(
 }
 
 // Get merchant's plan history
-export async function GET(
+async function handleGetMerchantPlan(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Check if user is admin
     if (user.role !== 'ADMIN') {
@@ -481,18 +469,12 @@ export async function GET(
 }
 
 // Disable or delete merchant plan
-export async function PATCH(
+async function handlePatchMerchantPlan(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Check if user is admin
     if (user.role !== 'ADMIN') {
@@ -577,7 +559,7 @@ export async function PATCH(
       await tx.auditLog.create({
         data: {
           entityType: 'SUBSCRIPTION',
-          entityId: subscription.id,
+          entityId: subscription.id.toString(),
           action: auditAction,
           details: JSON.stringify({
             subscriptionId: subscription.id,
@@ -645,4 +627,38 @@ export async function PATCH(
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
+}
+
+// Export functions with withAuthRoles wrapper
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdateMerchantPlan(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetMerchantPlan(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handlePatchMerchantPlan(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

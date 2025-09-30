@@ -1,97 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { 
-  getCustomerByPublicId, 
+  getCustomerById, 
   updateCustomer,
   prisma
 } from '@rentalshop/database';
 import { customerUpdateSchema, createAuditHelper } from '@rentalshop/utils';
-import { assertAnyRole, getUserScope } from '@rentalshop/auth';
+import { assertAnyRole } from '@rentalshop/auth';
 import type { CustomerUpdateInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/customers/[id]
  * Get a specific customer by ID
+ * REFACTORED: Now uses unified withAuthRoles pattern for business roles
  */
-export async function GET(
+async function handleGetCustomer(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
-  console.log('GET /api/customers/[id] called with ID:', params.id);
+  console.log(`👥 GET /api/customers/${params.id} - User: ${user.email}, Role: ${user.role}`);
   
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     // Check if the ID is numeric (public ID)
     if (!/^\d+$/.test(params.id)) {
       return NextResponse.json(
         { success: false, message: 'Invalid customer ID format' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     const customerId = parseInt(params.id);
 
-    // Get merchantId from user
-    const userScope = getUserScope(user as any);
+    // Get merchantId from userScope (provided by withAuthRoles)
     const userMerchantId = userScope.merchantId;
     console.log('User merchant ID:', userMerchantId);
 
     if (!userMerchantId) {
       return NextResponse.json(
         { success: false, message: 'User must be associated with a merchant' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
-    // Get customer by public ID using new dual ID system
-    const customer = await getCustomerByPublicId(customerId, userMerchantId);
+    // Check if customer exists and belongs to the user's merchant
+    const existingCustomer = await getCustomerById(customerId, userMerchantId);
     
-    if (!customer) {
+    if (!existingCustomer) {
       return NextResponse.json(
-        { success: false, message: 'Customer not found or missing public ID' },
+        { success: false, message: 'Customer not found' },
         { status: API.STATUS.NOT_FOUND }
       );
     }
 
-    // No need to check merchant access since getCustomerByPublicId already filters by merchant
-    // The customer returned is guaranteed to belong to the user's merchant
+    // Check merchant access - ensure customer belongs to user's merchant  
+    if (userMerchantId && existingCustomer.merchantId !== userMerchantId) {
+      return NextResponse.json(
+        { success: false, message: 'Customer not found' }, // Don't reveal existence 
+        { status: API.STATUS.NOT_FOUND }
+      );
+    }
 
     // Transform the response to ensure id is properly exposed
     const transformedCustomer = {
-      // Expose id directly for frontend
-      id: customer.id, // Frontend expects 'id' to be the id
-      firstName: customer.firstName,
-      lastName: customer.lastName,
-      email: customer.email,
-      phone: customer.phone,
-      address: customer.address,
-      city: customer.city,
-      state: customer.state,
-      zipCode: customer.zipCode,
-      country: customer.country,
-      dateOfBirth: customer.dateOfBirth,
-      idNumber: customer.idNumber,
-      idType: customer.idType,
-      notes: customer.notes,
-      isActive: customer.isActive,
-      createdAt: customer.createdAt,
-      updatedAt: customer.updatedAt,
-      // Transform merchant to use id
-      merchant: {
-        id: customer.merchant.id, // Use id for frontend
-        name: customer.merchant.name
-      },
-      // Transform orders to use id
-      orders: customer.orders?.map((order) => ({
-        id: order.id, // Use id for frontend
+      id: existingCustomer.id,
+      firstName: existingCustomer.firstName,
+      lastName: existingCustomer.lastName,
+      email: existingCustomer.email,
+      phone: existingCustomer.phone,
+      address: existingCustomer.address,
+      city: existingCustomer.city,
+      state: existingCustomer.state,
+      zipCode: existingCustomer.zipCode,
+      country: existingCustomer.country,
+      dateOfBirth: existingCustomer.dateOfBirth,
+      idNumber: existingCustomer.idNumber,
+      idType: existingCustomer.idType,
+      notes: existingCustomer.notes,
+      isActive: existingCustomer.isActive,
+      createdAt: existingCustomer.createdAt,
+      updatedAt: existingCustomer.updatedAt,
+      // Transform merchant if available
+      merchant: existingCustomer.merchant ? {
+        id: existingCustomer.merchant.id,
+        name: existingCustomer.merchant.name
+      } : null,
+      // Transform orders with proper typing
+      orders: existingCustomer.orders?.map((order: any) => ({
+        id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,
         totalAmount: order.totalAmount,
@@ -113,38 +110,42 @@ export async function GET(
   }
 }
 
-/**
- * PUT /api/customers/[id]
- * Update a specific customer by ID
- */
-export async function PUT(
+export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  console.log('PUT /api/customers/[id] called with ID:', params.id);
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetCustomer(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+/**
+ * PUT /api/customers/[id]
+ * Update a specific customer by ID
+ * REFACTORED: Now uses unified withAuthRoles pattern for business roles
+ */
+async function handleUpdateCustomer(
+  request: NextRequest,
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
+) {
+  console.log(`📝 PUT /api/customers/${params.id} - User: ${user.email}, Role: ${user.role}`);
   
   try {
-    
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     // Check if the ID is numeric (public ID)
     if (!/^\d+$/.test(params.id)) {
       return NextResponse.json(
         { success: false, message: 'Invalid customer ID format' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     const customerId = parseInt(params.id);
 
     // Get merchantId from user
-    const userMerchantId = getUserScope(user as any).merchantId;
+    const userMerchantId = userScope.merchantId;
 
     if (!userMerchantId) {
       return NextResponse.json(
@@ -154,7 +155,7 @@ export async function PUT(
     }
 
     // Get existing customer for audit logging
-    const existingCustomer = await getCustomerByPublicId(customerId, userMerchantId);
+    const existingCustomer = await getCustomerById(customerId, userMerchantId);
     if (!existingCustomer) {
       return NextResponse.json(
         { success: false, message: 'Customer not found' },
@@ -287,24 +288,30 @@ export async function PUT(
   }
 }
 
-/**
- * DELETE /api/customers/[id]
- * Delete a specific customer by ID
- */
-export async function DELETE(
+export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  console.log('DELETE /api/customers/[id] called with ID:', params.id);
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdateCustomer(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+/**
+ * DELETE /api/customers/[id]
+ * Delete a specific customer by ID
+ * REFACTORED: Now uses unified withAuthRoles pattern for business roles  
+ */
+async function handleDeleteCustomer(
+  request: NextRequest,
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
+) {
+  console.log(`🗑️ DELETE /api/customers/${params.id} - User: ${user.email}, Role: ${user.role}`);
   
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Check if the ID is numeric (public ID)
     if (!/^\d+$/.test(params.id)) {
@@ -317,7 +324,7 @@ export async function DELETE(
     const customerId = parseInt(params.id);
 
     // Get merchantId from user
-    const userMerchantId = getUserScope(user as any).merchantId;
+    const userMerchantId = userScope.merchantId;
 
     if (!userMerchantId) {
       return NextResponse.json(
@@ -327,7 +334,7 @@ export async function DELETE(
     }
 
     // Get customer to check ownership using new dual ID system
-    const customer = await getCustomerByPublicId(customerId, userMerchantId);
+    const customer = await getCustomerById(customerId, userMerchantId);
     
     if (!customer) {
       return NextResponse.json(
@@ -363,4 +370,15 @@ export async function DELETE(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleDeleteCustomer(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

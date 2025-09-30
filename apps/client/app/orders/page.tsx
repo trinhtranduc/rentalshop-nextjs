@@ -211,7 +211,15 @@ export default function OrdersPage() {
 
       <PageContent>
         <Orders
-          data={orderData}
+          data={{ 
+            orders: orderData.orders as any,
+            total: orderData.total,
+            hasMore: orderData.hasMore,
+            page: pagination.page,
+            limit: pagination.limit,
+            totalPages: Math.ceil(orderData.total / pagination.limit),
+            filters
+          }}
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onSearchChange={handleSearchChange}

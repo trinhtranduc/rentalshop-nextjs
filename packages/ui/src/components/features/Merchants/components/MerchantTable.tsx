@@ -124,7 +124,7 @@ export function MerchantTable({
                       <div>
                         <p className="text-gray-500 dark:text-gray-400 mb-1">Plan</p>
                         <p className="text-gray-900 dark:text-white font-medium">
-                          {merchant.subscriptionPlan?.replace(' Plan trial', '') || 'No Plan'}
+                          {merchant.plan?.name || (merchant.planId ? `Plan ${merchant.planId}` : 'No Plan')}
                         </p>
                         <p className="text-gray-500 dark:text-gray-400 capitalize">{merchant.subscriptionStatus}</p>
                       </div>
@@ -153,16 +153,13 @@ export function MerchantTable({
                         </p>
                       </div>
                       
-                      {/* Trial Expires Date */}
+                      {/* Subscription Status */}
                       <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Trial Expires</p>
-                        <p className="text-gray-900 dark:text-white">
-                          {merchant.trialEndsAt ? new Date(merchant.trialEndsAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          }) : 'N/A'}
-                        </p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Status</p>
+                        <StatusBadge
+                          status={merchant.subscriptionStatus}
+                          variant="solid"
+                        />
                       </div>
                       
                       {/* Expired At */}

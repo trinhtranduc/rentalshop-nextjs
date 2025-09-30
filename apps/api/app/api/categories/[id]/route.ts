@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
@@ -11,14 +11,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
+  return withAuthRoles()(async (request: NextRequest, { user }) => {
+    try {
 
     const categoryId = parseInt(params.id);
     if (isNaN(categoryId)) {
@@ -78,13 +72,14 @@ export async function GET(
       data: transformedCategory
     });
 
-  } catch (error) {
-    console.error('Error fetching category:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch category' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching category:', error);
+      return NextResponse.json(
+        { success: false, message: 'Failed to fetch category' },
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })(request);
 }
 
 /**
@@ -95,14 +90,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user }) => {
+    try {
 
     // Check if user can manage categories
     if (!user.merchantId) {
@@ -210,13 +199,14 @@ export async function PUT(
       message: 'Category updated successfully'
     });
 
-  } catch (error) {
-    console.error('Error updating category:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to update category' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
+    } catch (error) {
+      console.error('Error updating category:', error);
+      return NextResponse.json(
+        { success: false, message: 'Failed to update category' },
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })(request);
 }
 
 /**
@@ -227,14 +217,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user }) => {
+    try {
 
     // Check if user can manage categories
     if (!user.merchantId) {
@@ -306,11 +290,12 @@ export async function DELETE(
       message: 'Category deleted successfully'
     });
 
-  } catch (error) {
-    console.error('Error deleting category:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to delete category' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      return NextResponse.json(
+        { success: false, message: 'Failed to delete category' },
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })(request);
 }

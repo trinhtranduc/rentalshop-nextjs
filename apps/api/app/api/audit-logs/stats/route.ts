@@ -1,27 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { AuditLogger } from '../../../../../../packages/database/src/audit';
-import {API} from '@rentalshop/constants';
+import { API } from '@rentalshop/constants';
 
-// GET /api/audit-logs/stats - Get audit log statistics
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/audit-logs/stats - Get audit log statistics
+ * REFACTORED: Now uses unified withAuthRoles pattern
+ */
+export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  console.log(`📊 GET /api/audit-logs/stats - Admin: ${user.email}`);
+  
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Only ADMIN users can access audit statistics
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const { searchParams } = new URL(request.url);
     
@@ -56,4 +46,4 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

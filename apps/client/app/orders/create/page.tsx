@@ -84,7 +84,6 @@ export default function CreateOrderPage() {
           outletsArray.forEach((outlet: any, index: number) => {
             console.log(`🔍 Outlet ${index}:`, {
               id: outlet.id,
-              id: outlet.id,
               name: outlet.name,
               merchantId: outlet.merchantId,
               merchant: outlet.merchant,

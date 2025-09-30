@@ -13,7 +13,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
-
+    "./unified-auth": {
+      "types": "./dist/unified-auth.d.ts",
+      "import": "./dist/unified-auth.mjs",
+      "require": "./dist/unified-auth.js"
+    },
     "./client": {
       "types": "./dist/client.d.ts",
       "import": "./dist/client.mjs",

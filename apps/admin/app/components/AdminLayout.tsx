@@ -37,7 +37,8 @@ export default function AdminLayout({
   const isLoginPage = pathname === '/login';
 
   // Redirect to login if not authenticated (except on login page)
-  if (!user && !isLoginPage) {
+  // But don't redirect while still loading to avoid race conditions
+  if (!user && !isLoginPage && !loading) {
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }

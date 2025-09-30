@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrderByNumber } from '@rentalshop/database';
-import { withOrderViewAuth } from '@rentalshop/auth';
+import { withAuthRoles, withOrderViewAuth } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
 export const GET = withOrderViewAuth(async (
   authorizedRequest,
-  { params }: { params: { orderNumber: string } }
+  { params, user }: { params: { orderNumber: string }, user: any }
 ) => {
   try {
     console.log('🔍 [by-number] Starting order lookup for:', params.orderNumber);
     
     // User is already authenticated and authorized to view orders
-    const { user, userScope, request } = authorizedRequest;
+    // user and userScope are now available directly
     console.log('✅ [by-number] Token verified for user:', user.email);
 
     const { orderNumber } = params;

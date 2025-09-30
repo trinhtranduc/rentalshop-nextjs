@@ -10,7 +10,7 @@ import { CategoryForm } from './components/CategoryForm';
 import { CategoryView } from './components/CategoryView';
 import type { 
   Category, 
-  CategoryFilters 
+  CategoryFiltersProps 
 } from '@rentalshop/types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Pagination } from '@rentalshop/ui';
 import { Trash2 } from 'lucide-react';
@@ -23,10 +23,7 @@ interface CategoriesProps {
   onCategoryUpdated: (category: Partial<Category>) => void;
   onCategoryDeleted: (categoryId: number) => void;
   onError: (error: string) => void;
-  filters: CategoryFilters;
-  onFiltersChange: (filters: CategoryFilters) => void;
-  onSearchChange: (search: string) => void;
-  onClearFilters: () => void;
+  filters: CategoryFiltersProps;
   currentPage: number;
   totalPages: number;
   totalCategories: number;
@@ -43,9 +40,6 @@ export const Categories: React.FC<CategoriesProps> = ({
   onCategoryDeleted,
   onError,
   filters,
-  onFiltersChange,
-  onSearchChange,
-  onClearFilters,
   currentPage,
   totalPages,
   totalCategories,
@@ -164,10 +158,10 @@ export const Categories: React.FC<CategoriesProps> = ({
 
       {/* Category Filters */}
       <CategoryFiltersComponent
-        filters={filters}
-        onFiltersChange={onFiltersChange}
-        onSearchChange={onSearchChange}
-        onClearFilters={onClearFilters}
+        filters={filters.filters}
+        onFiltersChange={filters.onFiltersChange}
+        onSearchChange={filters.onSearchChange}
+        onClearFilters={filters.onClearFilters || (() => {})}
         onSortChange={handleSortChange}
         currentSort={{ field: sortField, order: sortOrder }}
       />

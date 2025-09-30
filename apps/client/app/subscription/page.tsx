@@ -385,7 +385,7 @@ export default function MerchantSubscriptionPage() {
                 {payments.map((payment) => (
                   <TableRow key={payment.id}>
                     <TableCell>{formatDate(payment.createdAt)}</TableCell>
-                    <TableCell>{formatCurrency(payment.amount, payment.currency)}</TableCell>
+                    <TableCell>{formatCurrency(payment.amount, 'IDR')}</TableCell>
                     <TableCell>{payment.method}</TableCell>
                     <TableCell>
                       <StatusBadge 
@@ -395,7 +395,7 @@ export default function MerchantSubscriptionPage() {
                       />
                     </TableCell>
                     <TableCell className="font-mono text-sm">
-                      {payment.reference || 'N/A'}
+                      {(payment as any).reference || 'N/A'}
                     </TableCell>
                   </TableRow>
                 ))}

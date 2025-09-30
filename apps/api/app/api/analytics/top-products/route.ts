@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { authenticateRequest, getUserScope } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/analytics/top-products - Get top-performing products
+ * Requires: Any authenticated user (scoped by role)
+ */
+async function handleGetTopProducts(
+  request: NextRequest,
+  { user, userScope }: { user: any; userScope: any }
+) {
   try {
-    // Authenticate the request
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    // Get user scope for data filtering
-    const userScope = getUserScope(authResult.user);
 
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
@@ -99,7 +98,6 @@ export async function GET(request: NextRequest) {
       const product = await prisma.product.findUnique({
         where: { id: item.productId },
         select: {
-          id: true,
           id: true, // Include id to use as the external ID
           name: true,
           rentPrice: true,
@@ -143,5 +141,9 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAuthRoles()((req, context) => 
+  handleGetTopProducts(req, context)
+);
 
 export const runtime = 'nodejs';

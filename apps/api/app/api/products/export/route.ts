@@ -38,7 +38,7 @@ export const GET = withProductExportAuth(async (authorizedRequest) => {
 
     // Get products
     const result = await searchProducts(filters);
-    const products = result.data.products;
+    const products = result.products;
 
     // Convert to CSV
     const csvHeaders = [
@@ -56,20 +56,44 @@ export const GET = withProductExportAuth(async (authorizedRequest) => {
       'Updated At'
     ];
 
-    const csvRows = products.map(product => [
-      product.id,
-      `"${product.name}"`,
-      product.barcode || '',
-      `"${product.description || ''}"`,
-      product.stock,
-      product.renting,
-      product.available,
-      product.rentPrice,
-      product.deposit,
-      product.outletId,
-      product.createdAt,
-      product.updatedAt
-    ]);
+    const csvRows = products.flatMap((product: any) => {
+      // If filtering by specific outlet, only export that outlet's data
+      if (userScope.outletId) {
+        const outletStock = product.outletStock.find((os: any) => os.outlet.id === userScope.outletId);
+        if (!outletStock) return []; // Skip products not in this outlet
+        
+        return [[
+          product.id,
+          `"${product.name}"`,
+          product.barcode || '',
+          `"${product.description || ''}"`,
+          outletStock.stock || 0,
+          outletStock.renting || 0,
+          outletStock.available || 0,
+          product.rentPrice,
+          product.deposit,
+          outletStock.outlet.id,
+          product.createdAt,
+          product.updatedAt
+        ]];
+      } else {
+        // If no specific outlet, create one row per outlet
+        return product.outletStock.map((outletStock: any) => [
+          product.id,
+          `"${product.name}"`,
+          product.barcode || '',
+          `"${product.description || ''}"`,
+          outletStock.stock || 0,
+          outletStock.renting || 0,
+          outletStock.available || 0,
+          product.rentPrice,
+          product.deposit,
+          outletStock.outlet.id,
+          product.createdAt,
+          product.updatedAt
+        ]);
+      }
+    });
 
     const csvContent = [
       csvHeaders.join(','),

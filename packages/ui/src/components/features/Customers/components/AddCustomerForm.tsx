@@ -111,7 +111,10 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
       setInternalIsSubmitting(true);
       setErrorMessage(null);
       
-      await onSave(formData);
+      await onSave({
+        ...formData,
+        merchantId: 1 // TODO: Get actual merchant ID from props or context
+      });
       
     } catch (error) {
       let errorMessage = 'An unexpected error occurred';

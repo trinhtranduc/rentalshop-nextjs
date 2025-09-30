@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-export async function GET(
+async function handleGetMerchantUsers(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     const merchantPublicId = parseInt(params.id);
     if (isNaN(merchantPublicId)) {
@@ -87,7 +81,6 @@ export async function GET(
       skip: offset,
       select: {
         id: true,
-        id: true,
         firstName: true,
         lastName: true,
         email: true,
@@ -98,7 +91,6 @@ export async function GET(
         updatedAt: true,
         outlet: {
           select: {
-            id: true,
             id: true,
             name: true
           }
@@ -141,4 +133,16 @@ export async function GET(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+// Export function with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetMerchantUsers(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

@@ -33,14 +33,14 @@ export const EditCustomerForm = forwardRef<EditCustomerFormRef, EditCustomerForm
     lastName: customer.lastName,
     email: customer.email,
     phone: customer.phone,
-    companyName: customer.companyName || '',
+    companyName: (customer as any).companyName || '',
     address: customer.address || '',
     city: customer.city || '',
     state: customer.state || '',
     zipCode: customer.zipCode || '',
     country: customer.country || '',
-    status: customer.status,
-    membershipLevel: customer.membershipLevel
+    status: (customer as any).status,
+    membershipLevel: (customer as any).membershipLevel
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,14 +57,14 @@ export const EditCustomerForm = forwardRef<EditCustomerFormRef, EditCustomerForm
       lastName: customer.lastName,
       email: customer.email,
       phone: customer.phone,
-      companyName: customer.companyName || '',
+      companyName: (customer as any).companyName || '',
       address: customer.address || '',
       city: customer.city || '',
       state: customer.state || '',
       zipCode: customer.zipCode || '',
       country: customer.country || '',
-      status: customer.status,
-      membershipLevel: customer.membershipLevel
+      status: (customer as any).status,
+      membershipLevel: (customer as any).membershipLevel
     });
   }, [customer]);
 
@@ -135,7 +135,7 @@ export const EditCustomerForm = forwardRef<EditCustomerFormRef, EditCustomerForm
       setErrorMessage(null);
       
       // Only send changed fields
-      const changedFields: CustomerUpdateInput = {};
+      const changedFields: CustomerUpdateInput = { id: customer.id };
       Object.keys(formData).forEach(key => {
         const field = key as keyof typeof formData;
         if (formData[field] !== customer[field as keyof Customer]) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
-import { findUserByPublicId } from '@rentalshop/database';
+
 import {API} from '@rentalshop/constants';
 
 
@@ -9,21 +9,12 @@ import {API} from '@rentalshop/constants';
  * GET /api/users/[id]
  * Get user by ID (Admin only)
  */
-export async function GET(
+async function handleGetUser(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user: currentUser, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const currentUser = authResult.user;
 
     // Check authorization based on user role
     let canAccess = false;
@@ -85,13 +76,11 @@ export async function GET(
         merchant: {
           select: {
             id: true,
-            id: true,
             name: true,
           },
         },
         outlet: {
           select: {
-            id: true,
             id: true,
             name: true,
           },
@@ -196,21 +185,12 @@ export async function GET(
  * PUT /api/users/[id]
  * Update user information by public ID (Admin, Merchant, Outlet Admin only)
  */
-export async function PUT(
+async function handleUpdateUser(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user: currentUser, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const currentUser = authResult.user;
 
     // Check authorization based on user role
     let canAccess = false;
@@ -276,13 +256,11 @@ export async function PUT(
         merchant: {
           select: {
             id: true,
-            id: true,
             name: true,
           },
         },
         outlet: {
           select: {
-            id: true,
             id: true,
             name: true,
           },
@@ -298,7 +276,7 @@ export async function PUT(
     }
 
     // Validate scope access - ensure user can only update users within their scope
-    if (userScope.merchantId && user.merchantId && parseInt(user.merchantId) !== userScope.merchantId) {
+    if (userScope.merchantId && user.merchantId && user.merchantId !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to update user from different merchant', {
         userMerchantId: user.merchantId,
         userScopeMerchantId: userScope.merchantId
@@ -309,7 +287,7 @@ export async function PUT(
       );
     }
 
-    if (userScope.outletId && user.outletId && parseInt(user.outletId) !== userScope.outletId) {
+    if (userScope.outletId && user.outletId && user.outletId !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to update user from different outlet', {
         userOutletId: user.outletId,
         userScopeOutletId: userScope.outletId
@@ -400,21 +378,12 @@ export async function PUT(
  * PATCH /api/users/[id]
  * Activate/Deactivate user by public ID (Admin only)
  */
-export async function PATCH(
+async function handlePatchUser(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user: currentUser, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const currentUser = authResult.user;
 
     // Check authorization based on user role
     let canAccess = false;
@@ -488,13 +457,11 @@ export async function PATCH(
         merchant: {
           select: {
             id: true,
-            id: true,
             name: true,
           },
         },
         outlet: {
           select: {
-            id: true,
             id: true,
             name: true,
           },
@@ -510,7 +477,7 @@ export async function PATCH(
     }
 
     // Validate scope access - ensure user can only activate/deactivate users within their scope
-    if (userScope.merchantId && user.merchantId && parseInt(user.merchantId) !== userScope.merchantId) {
+    if (userScope.merchantId && user.merchantId && user.merchantId !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to activate/deactivate user from different merchant', {
         userMerchantId: user.merchantId,
         userScopeMerchantId: userScope.merchantId
@@ -521,7 +488,7 @@ export async function PATCH(
       );
     }
 
-    if (userScope.outletId && user.outletId && parseInt(user.outletId) !== userScope.outletId) {
+    if (userScope.outletId && user.outletId && user.outletId !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to activate/deactivate user from different outlet', {
         userOutletId: user.outletId,
         userScopeOutletId: userScope.outletId
@@ -583,21 +550,12 @@ export async function PATCH(
  * DELETE /api/users/[id]
  * Delete a user permanently (Admin only)
  */
-export async function DELETE(
+async function handleDeleteUser(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user: currentUser, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const currentUser = authResult.user;
 
     // Check authorization based on user role
     let canAccess = false;
@@ -662,13 +620,11 @@ export async function DELETE(
         merchant: {
           select: {
             id: true,
-            id: true,
             name: true,
           },
         },
         outlet: {
           select: {
-            id: true,
             id: true,
             name: true,
           },
@@ -684,7 +640,7 @@ export async function DELETE(
     }
 
     // Validate scope access - ensure user can only delete users within their scope
-    if (userScope.merchantId && user.merchantId && parseInt(user.merchantId) !== userScope.merchantId) {
+    if (userScope.merchantId && user.merchantId && user.merchantId !== userScope.merchantId) {
       console.log('❌ Scope violation: User trying to delete user from different merchant', {
         userMerchantId: user.merchantId,
         userScopeMerchantId: userScope.merchantId
@@ -695,7 +651,7 @@ export async function DELETE(
       );
     }
 
-    if (userScope.outletId && user.outletId && parseInt(user.outletId) !== userScope.outletId) {
+    if (userScope.outletId && user.outletId && user.outletId !== userScope.outletId) {
       console.log('❌ Scope violation: User trying to delete user from different outlet', {
         userOutletId: user.outletId,
         userScopeOutletId: userScope.outletId
@@ -791,4 +747,49 @@ export async function DELETE(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+// Export functions with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetUser(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdateUser(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handlePatchUser(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleDeleteUser(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

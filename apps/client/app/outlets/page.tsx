@@ -113,6 +113,7 @@ export default function OutletsPage() {
       if (editingOutlet) {
         // Update existing outlet
         const result = await outletsApi.updateOutlet(editingOutlet.id, {
+          id: editingOutlet.id,
           name: formData.name,
           address: formData.address,
           phone: formData.phone,
@@ -179,7 +180,10 @@ export default function OutletsPage() {
     
     // If outlet is INACTIVE (isActive: false), enable directly (no confirmation needed)
     try {
-      const result = await outletsApi.updateOutlet(outlet.id, { isActive: true });
+      const result = await outletsApi.updateOutlet(outlet.id, { 
+        id: outlet.id,
+        isActive: true 
+      });
       if (result.success) {
         await fetchOutlets();
         showSuccess('Outlet enabled successfully', `Outlet "${outlet.name}" has been enabled`);
@@ -218,7 +222,10 @@ export default function OutletsPage() {
     if (!outletToDisable) return;
     
     try {
-      const result = await outletsApi.updateOutlet(outletToDisable.id, { isActive: false });
+      const result = await outletsApi.updateOutlet(outletToDisable.id, { 
+        id: outletToDisable.id,
+        isActive: false 
+      });
       if (result.success) {
         await fetchOutlets();
         showSuccess('Outlet disabled successfully', `Outlet "${outletToDisable.name}" has been disabled`);

@@ -1,11 +1,11 @@
 import React from 'react';
 import { Card, CardContent } from '../../../ui';
 import { Users, Building2, CreditCard, TrendingUp } from 'lucide-react';
-import type { Merchant, MerchantStats } from '@rentalshop/types';
+import type { Merchant, MerchantDetailStats } from '@rentalshop/types';
 
 interface MerchantHeaderProps {
   merchant: Merchant;
-  stats: MerchantStats;
+  stats: MerchantDetailStats;
 }
 
 export function MerchantHeader({ merchant, stats }: MerchantHeaderProps) {

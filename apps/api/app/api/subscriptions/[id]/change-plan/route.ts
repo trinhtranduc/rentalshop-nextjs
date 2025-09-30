@@ -3,30 +3,20 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { changePlan } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
-export async function PATCH(
+/**
+ * PATCH /api/subscriptions/[id]/change-plan - Change subscription plan
+ * Requires: ADMIN or MERCHANT role
+ */
+async function handleChangeSubscriptionPlan(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Check permissions - only ADMIN and MERCHANT can change plans
-    if (!['ADMIN', 'MERCHANT'].includes(user.role)) {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     // Parse request body
     const body = await request.json();
@@ -56,4 +46,15 @@ export async function PATCH(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleChangeSubscriptionPlan(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

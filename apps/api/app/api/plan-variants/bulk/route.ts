@@ -1,83 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  disableAllPlanVariants,
-  enableAllPlanVariants,
-  applyDiscountToAllVariants
-} from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
-import {API} from '@rentalshop/constants';
+import { withAuthRoles } from '@rentalshop/auth';
+import { API } from '@rentalshop/constants';
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/plan-variants/bulk - Perform bulk operations on plan variants
+ * REFACTORED: Now uses unified withAuthRoles pattern
+ * NOTE: Plan variants feature is not yet implemented in the database schema
+ */
+export const POST = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  console.log(`🔄 POST /api/plan-variants/bulk - Admin: ${user.email}`);
+  
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can perform bulk operations)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN.STATUS.FORBIDDEN.STATUS.FORBIDDEN.STATUS.FORBIDDEN.STATUS.FORBIDDEN }
-      );
-    }
-
-    // Parse request body
+    // Parse request body for validation
     const body = await request.json();
     const { action, planId, discount } = body;
 
     if (!action || !planId) {
       return NextResponse.json(
         { success: false, message: 'Action and planId are required' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
-    let result;
-
-    switch (action) {
-      case 'disable_all':
-        result = await disableAllPlanVariants(planId);
-        break;
-      
-      case 'enable_all':
-        result = await enableAllPlanVariants(planId);
-        break;
-      
-      case 'apply_discount':
-        if (discount === undefined || discount < 0 || discount > 100) {
-          return NextResponse.json(
-            { success: false, message: 'Valid discount percentage (0-100) is required' },
-            { status: 400 }
-          );
-        }
-        result = await applyDiscountToAllVariants(planId, discount);
-        break;
-      
-      default:
-        return NextResponse.json(
-          { success: false, message: 'Invalid action. Supported actions: disable_all, enable_all, apply_discount' },
-          { status: 400 }
-        );
+    // Validate supported actions
+    const supportedActions = ['disable_all', 'enable_all', 'apply_discount'];
+    if (!supportedActions.includes(action)) {
+      return NextResponse.json(
+        { success: false, message: `Invalid action. Supported actions: ${supportedActions.join(', ')}` },
+        { status: API.STATUS.BAD_REQUEST }
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: result,
-      message: `Bulk operation '${action}' completed successfully`
-    });
+    // Validate discount for apply_discount action
+    if (action === 'apply_discount' && (discount === undefined || discount < 0 || discount > 100)) {
+      return NextResponse.json(
+        { success: false, message: 'Valid discount percentage (0-100) is required' },
+        { status: API.STATUS.BAD_REQUEST }
+      );
+    }
+
+    // TODO: Implement plan variants functionality
+    // Currently returning placeholder response as PlanVariant model doesn't exist in schema
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: 'Plan variants feature is not yet implemented. Database schema missing PlanVariant model.',
+        action,
+        planId,
+        ...(action === 'apply_discount' && { discount })
+      },
+      { status: 501 } // 501 Not Implemented
+    );
 
   } catch (error) {
-    console.error('Error performing bulk operation:', error);
+    console.error('Error in plan variants bulk operation:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

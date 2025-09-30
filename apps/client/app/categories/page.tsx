@@ -12,14 +12,14 @@ import {
 import { categoriesApi } from '@rentalshop/utils';
 import { usePagination } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
-import type { Category, CategoryFilters, CategoryData } from '@rentalshop/types';
+import type { Category, CategorySearchParams, CategoryData } from '@rentalshop/types';
 
 export default function CategoriesPage() {
   // State for categories and UI
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<CategoryFilters>({ search: '' });
+  const [filters, setFilters] = useState<CategorySearchParams>({ search: '' });
   const [isClient, setIsClient] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   
@@ -128,7 +128,7 @@ export default function CategoriesPage() {
     paginationPageChange(1);
   }, [paginationPageChange]);
 
-  const handleFiltersChange = useCallback((newFilters: CategoryFilters) => {
+  const handleFiltersChange = useCallback((newFilters: CategorySearchParams) => {
     setFilters(newFilters);
     setSearchQuery(newFilters.search || '');
     // Reset pagination when filters change
@@ -221,10 +221,12 @@ export default function CategoriesPage() {
               onCategoryUpdated={handleCategoryUpdated}
               onCategoryDeleted={handleCategoryDeleted}
               onError={handleError}
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onSearchChange={handleSearchChange}
-              onClearFilters={handleClearFilters}
+              filters={{
+                filters: filters,
+                onFiltersChange: handleFiltersChange,
+                onSearchChange: handleSearchChange,
+                onClearFilters: handleClearFilters
+              }}
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
               totalCategories={pagination.total}
@@ -308,10 +310,12 @@ export default function CategoriesPage() {
             onCategoryUpdated={handleCategoryUpdated}
             onCategoryDeleted={handleCategoryDeleted}
             onError={handleError}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearchChange={handleSearchChange}
-            onClearFilters={handleClearFilters}
+            filters={{
+              filters: filters,
+              onFiltersChange: handleFiltersChange,
+              onSearchChange: handleSearchChange,
+              onClearFilters: handleClearFilters
+            }}
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
             totalCategories={pagination.total}

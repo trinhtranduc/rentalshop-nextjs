@@ -1,24 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
 // GET: Fetch product detail for editing (includes categories and outlets for the merchant)
-export async function GET(
+async function handleGetProduct(
   request: NextRequest,
-  { params }: { params: { id: string; productId: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string; productId: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
 
     const merchantPublicId = parseInt(params.id);
     const productPublicId = parseInt(params.productId);
@@ -35,7 +26,6 @@ export async function GET(
       where: { id: productPublicId, merchantId: merchant.id },
       select: {
         id: true,
-        id: true,
         name: true,
         description: true,
         barcode: true,
@@ -45,11 +35,11 @@ export async function GET(
         totalStock: true,
         images: true,
         isActive: true,
-        category: { select: { id: true, id: true, name: true } },
+        category: { select: { id: true, name: true } },
         outletStock: {
           select: {
             stock: true,
-            outlet: { select: { id: true, id: true, name: true } }
+            outlet: { select: { id: true, name: true } }
           }
         }
       }
@@ -63,11 +53,11 @@ export async function GET(
     const [categories, outlets] = await Promise.all([
       prisma.category.findMany({
         where: { merchantId: merchant.id, isActive: true },
-        select: { id: true, id: true, name: true }
+        select: { id: true, name: true }
       }),
       prisma.outlet.findMany({
         where: { merchantId: merchant.id },
-        select: { id: true, id: true, name: true, address: true }
+        select: { id: true, name: true, address: true }
       })
     ]);
 
@@ -98,21 +88,12 @@ export async function GET(
 }
 
 // PUT: Update product
-export async function PUT(
+async function handleUpdateProduct(
   request: NextRequest,
-  { params }: { params: { id: string; productId: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string; productId: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
 
     const merchantPublicId = parseInt(params.id);
     const productPublicId = parseInt(params.productId);
@@ -152,7 +133,7 @@ export async function PUT(
     let categoryCuid: string | undefined = undefined;
     if (typeof categoryId === 'number') {
       const category = await prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } });
-      if (category) categoryCuid = category.id;
+      if (category) categoryCuid = category.id.toString();
     }
 
     // Update main product fields
@@ -162,16 +143,15 @@ export async function PUT(
         name,
         description: description ?? null,
         barcode: barcode ?? null,
-        categoryId: categoryCuid ?? undefined,
+        categoryId: categoryId,
         rentPrice,
         salePrice: salePrice ?? null,
         deposit,
         totalStock,
-        images: Array.isArray(images) ? images : images ? [images] : [],
+        images: JSON.stringify(Array.isArray(images) ? images : images ? [images] : []),
         isActive: body.isActive ?? true
       },
       select: {
-        id: true,
         id: true,
         name: true,
         description: true,
@@ -189,11 +169,32 @@ export async function PUT(
     // NOTE: For now, skip updating outletStock to keep operation simple and fast.
     // A follow-up endpoint can manage outlet stock in detail if required.
 
-    return NextResponse.json({ success: true, data: { id: updated.id, ...updated } });
+    return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json({ success: false, message: 'Failed to update product' }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
 
+// Export functions with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string; productId: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetProduct(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string; productId: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdateProduct(req, context, params)
+  );
+  return authenticatedHandler(request);
+}

@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createPaymentGatewayManager, PaymentGatewayConfig } from '@rentalshop/utils';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { createSubscriptionPayment } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
@@ -26,37 +26,42 @@ interface PaymentRequest {
 // ============================================================================
 
 const getPaymentGatewayConfig = (): PaymentGatewayConfig => {
-  return {
-    stripe: process.env.STRIPE_SECRET_KEY ? {
-      secretKey: process.env.STRIPE_SECRET_KEY,
-      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
-      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
-      currency: 'USD',
-      country: 'US'
-    } : undefined,
-    paypal: process.env.PAYPAL_CLIENT_ID ? {
-      clientId: process.env.PAYPAL_CLIENT_ID,
-      clientSecret: process.env.PAYPAL_CLIENT_SECRET || '',
+  // Default to Stripe if available, otherwise PayPal
+  if (process.env.STRIPE_SECRET_KEY) {
+    return {
+      provider: 'stripe' as const,
+      apiKey: process.env.STRIPE_SECRET_KEY,
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+      environment: 'production',
+      defaultGateway: 'STRIPE'
+    };
+  } else if (process.env.PAYPAL_CLIENT_ID) {
+    return {
+      provider: 'paypal' as const,
+      apiKey: process.env.PAYPAL_CLIENT_ID,
+      webhookSecret: process.env.PAYPAL_CLIENT_SECRET,
       environment: (process.env.PAYPAL_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox',
-      currency: 'USD',
-      country: 'US'
-    } : undefined,
-    defaultGateway: 'STRIPE'
-  };
+      defaultGateway: 'PAYPAL'
+    };
+  } else {
+    // Fallback configuration
+    return {
+      provider: 'stripe' as const,
+      apiKey: 'test_key',
+      environment: 'sandbox',
+      defaultGateway: 'STRIPE'
+    };
+  }
 };
 
 // ============================================================================
 // POST /api/payments/process - Process payment
 // ============================================================================
-export async function POST(request: NextRequest) {
+async function handleProcessPayment(
+  request: NextRequest,
+  { user, userScope }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     const body: PaymentRequest = await request.json();
     const { amount, currency, gateway, subscriptionId, description, metadata } = body;
@@ -86,14 +91,6 @@ export async function POST(request: NextRequest) {
     // Create payment gateway manager
     const paymentManager = createPaymentGatewayManager(getPaymentGatewayConfig());
 
-    // Check if gateway is available
-    if (!paymentManager.isGatewayAvailable(gateway)) {
-      return NextResponse.json(
-        { success: false, message: `Payment gateway ${gateway} is not available` },
-        { status: 400 }
-      );
-    }
-
     // Add user context to metadata
     const paymentMetadata = {
       ...metadata,
@@ -103,13 +100,8 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     };
 
-    // Process payment
-    const result = await paymentManager.processPayment(
-      amount,
-      currency,
-      gateway,
-      paymentMetadata
-    );
+    // Create payment intent
+    const result = await paymentManager.createPayment(amount, currency, paymentMetadata);
 
     // If payment is for a subscription, create payment record
     if (subscriptionId && result.success) {
@@ -155,32 +147,23 @@ export async function POST(request: NextRequest) {
 // ============================================================================
 // GET /api/payments/process - Get available payment gateways
 // ============================================================================
-export async function GET(request: NextRequest) {
+async function handleGetPaymentGateways(
+  request: NextRequest,
+  { user, userScope }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Create payment gateway manager
     const paymentManager = createPaymentGatewayManager(getPaymentGatewayConfig());
 
-    // Get available gateways and their configurations
-    const availableGateways = paymentManager.getAvailableGateways();
-    const gatewayConfigs = availableGateways.reduce((configs, gateway) => {
-      configs[gateway] = paymentManager.getGatewayConfig(gateway);
-      return configs;
-    }, {} as Record<string, any>);
-
+    // Return simple payment gateway configuration
+    const config = getPaymentGatewayConfig();
     return NextResponse.json({
       success: true,
       data: {
-        availableGateways,
-        gatewayConfigs,
-        defaultGateway: paymentManager.getDefaultGateway()
+        availableGateways: [config.provider],
+        defaultGateway: config.defaultGateway || config.provider.toUpperCase(),
+        environment: config.environment
       }
     });
   } catch (error) {
@@ -191,3 +174,12 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Export functions with withAuthRoles wrapper
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(
+  (req, context) => handleProcessPayment(req, context)
+);
+
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(
+  (req, context) => handleGetPaymentGateways(req, context)
+);

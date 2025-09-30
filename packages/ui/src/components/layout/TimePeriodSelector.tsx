@@ -1,11 +1,10 @@
 import React from 'react';
 import { Button } from '../ui/button';
-
-type TimePeriod = 'today' | 'week' | 'month' | 'year';
+import { DashboardPeriod } from '@rentalshop/types';
 
 interface TimePeriodSelectorProps {
-  currentPeriod: TimePeriod;
-  onPeriodChange: (period: TimePeriod) => void;
+  currentPeriod: DashboardPeriod;
+  onPeriodChange: (period: DashboardPeriod) => void;
 }
 
 export const TimePeriodSelector: React.FC<TimePeriodSelectorProps> = ({
@@ -16,6 +15,7 @@ export const TimePeriodSelector: React.FC<TimePeriodSelectorProps> = ({
     { key: 'today', label: 'Today', icon: '📅' },
     { key: 'week', label: 'This Week', icon: '📅' },
     { key: 'month', label: 'This Month', icon: '📊' },
+    { key: 'quarter', label: 'This Quarter', icon: '📈' },
     { key: 'year', label: 'This Year', icon: '📈' }
   ] as const;
 

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { withAdminAuth } from '@rentalshop/auth';
-import {API} from '@rentalshop/constants';
+import { withAuthRoles } from '@rentalshop/auth';
+import { API } from '@rentalshop/constants';
 
-export const GET = withAdminAuth(async (authorizedRequest) => {
+/**
+ * GET /api/analytics/system - Get system analytics (Admin only)
+ * REFACTORED: Now uses unified withAuth pattern
+ */
+export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  console.log(`🔧 GET /api/analytics/system - Admin: ${user.email}`);
+  
   try {
-    // User is already authenticated and authorized as ADMIN
-    const { user, userScope, request } = authorizedRequest;
 
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);

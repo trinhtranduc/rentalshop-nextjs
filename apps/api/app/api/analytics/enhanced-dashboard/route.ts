@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { authenticateRequest, getUserScope } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { API } from '@rentalshop/constants';
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/analytics/enhanced-dashboard - Get comprehensive dashboard analytics
+ * Requires: Any authenticated user (scoped by role)
+ */
+async function handleGetEnhancedDashboard(
+  request: NextRequest,
+  { user, userScope }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-    const userScope = getUserScope(user);
 
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
@@ -35,9 +34,9 @@ export async function GET(request: NextRequest) {
       dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     }
 
-    // Convert ids to CUIDs for database queries
-    let merchantCuid: string | null = null;
-    let outletCuid: string | null = null;
+    // Use integer IDs for database queries
+    let merchantId: number | null = null;
+    let outletId: number | null = null;
     
     if (userScope.merchantId) {
       const merchant = await prisma.merchant.findUnique({
@@ -45,7 +44,7 @@ export async function GET(request: NextRequest) {
         select: { id: true }
       });
       if (merchant) {
-        merchantCuid = merchant.id;
+        merchantId = merchant.id;
       }
     }
     
@@ -55,7 +54,7 @@ export async function GET(request: NextRequest) {
         select: { id: true }
       });
       if (outlet) {
-        outletCuid = outlet.id;
+        outletId = outlet.id;
       }
     }
 
@@ -75,30 +74,30 @@ export async function GET(request: NextRequest) {
     const customerWhereClause: any = {};
     const outletStockWhereClause: any = {};
     
-    if (merchantCuid) {
+    if (merchantId) {
       // For orders, filter by outlet.merchantId
       orderWhereClause.outlet = {
-        merchantId: merchantCuid
+        merchantId: merchantId
       };
       // For payments, filter by merchantId directly
-      paymentWhereClause.merchantId = merchantCuid;
+      paymentWhereClause.merchantId = merchantId;
       // For customers, filter by merchantId directly
-      customerWhereClause.merchantId = merchantCuid;
+      customerWhereClause.merchantId = merchantId;
       // For outlet stock, filter by outlet.merchantId
       outletStockWhereClause.outlet = {
-        merchantId: merchantCuid
+        merchantId: merchantId
       };
     }
     
-    if (outletCuid) {
+    if (outletId) {
       // For orders, filter by outletId directly
-      orderWhereClause.outletId = outletCuid;
+      orderWhereClause.outletId = outletId;
       // For payments, we need to filter by orders from this outlet
       paymentWhereClause.order = {
-        outletId: outletCuid
+        outletId: outletId
       };
       // For outlet stock, filter by outletId directly
-      outletStockWhereClause.outletId = outletCuid;
+      outletStockWhereClause.outletId = outletId;
     }
 
     // Get comprehensive dashboard statistics
@@ -308,5 +307,9 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAuthRoles()((req, context) => 
+  handleGetEnhancedDashboard(req, context)
+);
 
 export const runtime = 'nodejs';

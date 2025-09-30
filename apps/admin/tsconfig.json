@@ -1,18 +1,10 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "../../",
-    "jsx": "preserve",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "allowJs": true,
-    "noEmit": true,
-    "incremental": true
-  },
+  // ============================================================================
+  // ADMIN TSCONFIG - EXTENDS SHARED NEXT.JS CONFIG
+  // ============================================================================
+  // REFACTORED: Now uses shared config instead of duplication
+  
+  "extends": "../../shared-configs/tsconfig.nextjs.json",
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",

@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 // Force TypeScript refresh - address field added
 import {API} from '@rentalshop/constants';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -191,17 +184,10 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     const body = await request.json();
     const { name, email, phone, address, planId, subscriptionStatus } = body;
@@ -275,4 +261,4 @@ export async function POST(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

@@ -1,40 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
-import { getUserScope } from '@rentalshop/auth';
-import { getCustomerByPublicId } from '@rentalshop/database';
+import { withAuthRoles } from '@rentalshop/auth';
+import { getCustomerById } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/customers/[id]/orders
  * Get orders for a specific customer
+ * REFACTORED: Now uses unified withAuthRoles pattern for business roles
  */
-export async function GET(
+async function handleGetCustomerOrders(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
-  console.log('GET /api/customers/[id]/orders called with customer ID:', params.id);
+  console.log(`📎 GET /api/customers/${params.id}/orders - User: ${user.email}, Role: ${user.role}`);
   
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     // Check if the ID is numeric (public ID)
     if (!/^\d+$/.test(params.id)) {
       return NextResponse.json(
         { success: false, message: 'Invalid customer ID format' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     const customerId = parseInt(params.id);
 
-    // Get merchantId from user
-    const userScope = getUserScope(user as any);
+    // Get merchantId from userScope (provided by withAuthRoles)
     const userMerchantId = userScope.merchantId;
     console.log('User merchant ID:', userMerchantId);
 
@@ -45,8 +37,8 @@ export async function GET(
       );
     }
 
-    // Verify customer exists and belongs to user's merchant using new dual ID system
-    const customer = await getCustomerByPublicId(customerId, userMerchantId);
+    // Verify customer exists and belongs to user's merchant
+    const customer = await getCustomerById(customerId, userMerchantId);
     
     if (!customer) {
       return NextResponse.json(
@@ -107,7 +99,7 @@ export async function GET(
     // Transform orders to use id as id for frontend
     const transformedOrders = paginatedOrders.map(order => ({
       id: order.id, // Frontend expects 'id' to be the id
-      id: order.id, // Keep id for backward compatibility
+      orderId: order.id, // Keep orderId for backward compatibility
       orderNumber: order.orderNumber,
       status: order.status,
       totalAmount: order.totalAmount,
@@ -132,4 +124,15 @@ export async function GET(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetCustomerOrders(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

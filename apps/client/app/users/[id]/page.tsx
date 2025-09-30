@@ -67,7 +67,7 @@ export default function UserPage() {
         console.log('🔍 UserPage: Making API call to /api/users/' + userId);
         
         // Use the real API to fetch user data by ID
-        const response = await usersApi.getUserByPublicId(numericId);
+        const response = await usersApi.getUserById(numericId);
         
         console.log('🔍 UserPage: API response received:', response);
         
@@ -105,7 +105,7 @@ export default function UserPage() {
         return;
       }
       
-      const response = await usersApi.getUserByPublicId(numericId);
+      const response = await usersApi.getUserById(numericId);
       if (response.success && response.data) {
         setUserData(response.data);
       }
@@ -127,17 +127,23 @@ export default function UserPage() {
     setShowEditSection(!showEditSection);
   };
 
-  const handleSave = async (updateData: UserUpdateInput) => {
+  const handleSave = async (userData: any) => {
     try {
       setIsUpdating(true);
       
-      console.log('🔍 UserPage: Updating user:', updateData);
+      console.log('🔍 UserPage: Updating user:', userData);
       
       // Validate user ID
       const numericId = parseInt(userId);
       if (isNaN(numericId) || numericId <= 0) {
         throw new Error('Invalid user ID format');
       }
+      
+      // Ensure we have an id for the update
+      const updateData: UserUpdateInput = {
+        ...userData,
+        id: numericId
+      };
       
       // Use the real API to update user by public ID
       const response = await usersApi.updateUserByPublicId(numericId, updateData);
@@ -227,7 +233,7 @@ export default function UserPage() {
     try {
       setIsUpdating(true);
       // Use id for deletion as the API expects numeric id
-      const response = await usersApi.deleteUserByPublicId(userData.id);
+      const response = await usersApi.deleteUser(userData.id);
       if (response.success) {
         showSuccess('User Deleted', 'User account has been deleted successfully!');
         router.push('/users');

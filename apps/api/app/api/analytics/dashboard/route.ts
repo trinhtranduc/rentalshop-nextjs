@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthAndAuthz } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
-import {API} from '@rentalshop/constants';
+import { API } from '@rentalshop/constants';
 
-export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (authorizedRequest) => {
+/**
+ * GET /api/analytics/dashboard - Get dashboard analytics
+ * REFACTORED: Now uses unified withAuthRoles pattern
+ */
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  console.log(`📊 GET /api/analytics/dashboard - User: ${user.email}`);
+  
   try {
-    // User is already authenticated and authorized to view analytics
-    const { user, userScope, request } = authorizedRequest;
 
     // Get dashboard statistics
     const [

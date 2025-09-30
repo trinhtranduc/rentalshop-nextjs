@@ -1,10 +1,10 @@
 // ============================================================================
 // OUTLET DATABASE FUNCTIONS
 // ============================================================================
-// This file contains outlet functions that follow the dual ID system:
+// This file contains outlet functions that use integer ID system:
 // - Input: id (number)
-// - Database: queries by id, uses CUIDs for relationships
-// - Return: includes both id (CUID) and id (number)
+// - Database: queries by id (integer), uses integer IDs for relationships
+// - Return: includes id (number)
 
 import { prisma } from './client';
 import type { 
@@ -45,7 +45,7 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     });
     
     if (merchant) {
-      where.merchantId = merchant.id; // Use CUID
+      where.merchantId = merchant.id;
     }
   }
 
@@ -58,7 +58,7 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     });
     
     if (outlet) {
-      where.id = outlet.id; // Use CUID for exact match
+      where.id = outlet.id;
     }
   }
 
@@ -146,7 +146,7 @@ export async function getOutletsByMerchant(merchantId: number) {
   }
 
   const outlets = await prisma.outlet.findMany({
-    where: { merchantId: merchant.id }, // Use CUID
+    where: { merchantId: merchant.id },
     select: {
       id: true,
       name: true,
@@ -254,7 +254,7 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
       address: input.address?.trim(),
       phone: input.phone?.trim(),
       description: input.description?.trim(),
-      merchantId: merchant.id, // Use CUID
+      merchantId: merchant.id,
       isActive: true
     },
     select: {

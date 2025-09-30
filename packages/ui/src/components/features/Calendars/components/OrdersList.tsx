@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package, User, Mail, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 import type { PickupOrder } from '@rentalshop/types';
 
 interface OrdersListProps {
@@ -61,9 +62,9 @@ export function OrdersList({
               </div>
               <div>
                 <p className="font-medium text-gray-900">
-                  {order.customer.firstName} {order.customer.lastName}
+                  {order.customerName}
                 </p>
-                <p className="text-sm text-gray-500">{order.customer.phone}</p>
+                <p className="text-sm text-gray-500">{(order as any).customerPhone || 'No phone'}</p>
               </div>
             </div>
 
@@ -71,23 +72,14 @@ export function OrdersList({
             <div className="flex items-center space-x-2 mb-3">
               <Package className="w-4 h-4 text-gray-500" />
               <span className="text-sm text-gray-700">
-                {order.orderItems[0]?.product.name}
-                {order.orderItems.length > 1 && ` +${order.orderItems.length - 1} more`}
+                {order.productName}
               </span>
             </div>
 
-            {/* Time and Amount */}
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4" />
-                <span>${order.totalAmount.toFixed(2)}</span>
-              </div>
-              {order.customer.email && (
-                <div className="flex items-center space-x-1">
-                  <Mail className="w-4 h-4" />
-                  <span className="truncate max-w-32">{order.customer.email}</span>
-                </div>
-              )}
+            {/* Order Status */}
+            <div className="flex items-center text-sm text-gray-600">
+              <Clock className="w-4 h-4 mr-2" />
+              <span className="capitalize">{order.status}</span>
             </div>
           </div>
         ))}

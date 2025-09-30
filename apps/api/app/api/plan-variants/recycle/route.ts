@@ -3,30 +3,11 @@ import {
   getDeletedPlanVariants,
   restorePlanVariant
 } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can view deleted plan variants)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-
     // Get deleted plan variants
     const deletedVariants = await getDeletedPlanVariants();
 
@@ -45,29 +26,10 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can restore plan variants)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-
     // Parse request body
     const body = await request.json();
     const { variantId } = body;
@@ -91,18 +53,20 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error restoring plan variant:', error);
     
-    if (error.message === 'Plan variant not found') {
-      return NextResponse.json(
-        { success: false, message: 'Plan variant not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
+    if (error instanceof Error) {
+      if (error.message === 'Plan variant not found') {
+        return NextResponse.json(
+          { success: false, message: 'Plan variant not found' },
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
 
-    if (error.message === 'Plan variant is already active') {
-      return NextResponse.json(
-        { success: false, message: 'Plan variant is already active' },
-        { status: 400 }
-      );
+      if (error.message === 'Plan variant is already active') {
+        return NextResponse.json(
+          { success: false, message: 'Plan variant is already active' },
+          { status: 400 }
+        );
+      }
     }
 
     return NextResponse.json(
@@ -110,4 +74,4 @@ export async function POST(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

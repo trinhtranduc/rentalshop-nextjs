@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         outlet: result.outlet,
         trialInfo: {
           planName: result.subscription.planName,
-          daysRemaining: Math.ceil((result.subscription.endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+          daysRemaining: Math.ceil((result.subscription.trialEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
         }
       }
     }, { status: 201 });

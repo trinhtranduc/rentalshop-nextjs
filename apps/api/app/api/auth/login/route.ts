@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
       role: user.role,
       merchantId: user.merchantId,
       outletId: user.outletId,
-    });
+    } as any);
 
     const result = {
       success: true,

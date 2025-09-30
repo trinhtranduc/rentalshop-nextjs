@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
+import { API } from '@rentalshop/constants';
 
 /**
- * GET /api/auth/verify
- * Verify authentication token and return user information
+ * GET /api/auth/verify - Verify authentication token and return user information
+ * REFACTORED: Now uses unified withAuthRoles pattern
  */
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  console.log(`🔍 GET /api/auth/verify - User: ${user.email}`);
+  
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
-
     // Return user information (include outlet for role-based UI)
     return NextResponse.json({
       success: true,
@@ -22,13 +17,13 @@ export async function GET(request: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          firstName: (user as any).firstName,
-          lastName: (user as any).lastName,
-          name: `${(user as any).firstName ?? ''} ${(user as any).lastName ?? ''}`.trim(),
-          role: (user as any).role,
-          phone: (user as any).phone,
-          merchant: (user as any).merchant,
-          outlet: (user as any).outlet || null,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+          role: user.role,
+          phone: user.phone || null,
+          merchant: user.merchant || null,
+          outlet: user.outlet || null,
         }
       },
       message: 'Token is valid'
@@ -38,7 +33,7 @@ export async function GET(request: NextRequest) {
     console.error('Error verifying token:', error);
     return NextResponse.json(
       { success: false, message: 'Token verification failed' },
-      { status: 401 }
+      { status: API.STATUS.UNAUTHORIZED }
     );
   }
-}
+});

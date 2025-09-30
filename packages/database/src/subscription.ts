@@ -18,6 +18,102 @@ import type {
 // PRICING UTILITIES
 // ============================================================================
 
+/**
+ * Generate pricing object from base price
+ */
+function generatePricingFromBasePrice(basePrice: number) {
+  const monthlyPrice = basePrice;
+  const quarterlyPrice = monthlyPrice * 3;
+  const yearlyPrice = monthlyPrice * 12;
+  
+  return {
+    monthly: {
+      price: monthlyPrice,
+      discount: 0,
+      savings: 0
+    },
+    quarterly: {
+      price: quarterlyPrice,
+      discount: 5, // 5% discount for quarterly
+      savings: quarterlyPrice * 0.05
+    },
+    yearly: {
+      price: yearlyPrice,
+      discount: 15, // 15% discount for yearly
+      savings: yearlyPrice * 0.15
+    }
+  };
+}
+
+/**
+ * Convert Prisma plan object to our Plan type
+ */
+function convertPrismaPlanToPlan(prismaPlan: any): Plan {
+  return {
+    id: prismaPlan.id,
+    name: prismaPlan.name,
+    description: prismaPlan.description,
+    basePrice: prismaPlan.basePrice,
+    currency: prismaPlan.currency,
+    trialDays: prismaPlan.trialDays,
+    limits: JSON.parse(prismaPlan.limits as string) as PlanLimits,
+    features: JSON.parse(prismaPlan.features as string) as string[],
+    isActive: prismaPlan.isActive,
+    isPopular: prismaPlan.isPopular,
+    sortOrder: prismaPlan.sortOrder,
+    pricing: generatePricingFromBasePrice(prismaPlan.basePrice),
+    createdAt: prismaPlan.createdAt,
+    updatedAt: prismaPlan.updatedAt,
+    deletedAt: prismaPlan.deletedAt || undefined
+  };
+}
+
+/**
+ * Helper function to generate pricing object for a plan
+ */
+function generatePlanPricing(basePrice: number) {
+  return {
+    monthly: {
+      price: basePrice,
+      discount: 0,
+      savings: 0
+    },
+    quarterly: {
+      price: basePrice * 3 * 0.95, // 5% discount for quarterly
+      discount: 5,
+      savings: basePrice * 3 * 0.05
+    },
+    yearly: {
+      price: basePrice * 12 * 0.85, // 15% discount for yearly
+      discount: 15,
+      savings: basePrice * 12 * 0.15
+    }
+  };
+}
+
+/**
+ * Helper function to transform database plan to Plan type
+ */
+function transformPlanFromDb(plan: any): Plan {
+  return {
+    id: plan.id,
+    name: plan.name,
+    description: plan.description,
+    basePrice: plan.basePrice,
+    currency: plan.currency,
+    trialDays: plan.trialDays,
+    limits: typeof plan.limits === 'string' ? JSON.parse(plan.limits) : plan.limits,
+    features: typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features,
+    isActive: plan.isActive,
+    isPopular: plan.isPopular,
+    sortOrder: plan.sortOrder,
+    pricing: generatePlanPricing(plan.basePrice),
+    createdAt: plan.createdAt,
+    updatedAt: plan.updatedAt,
+    ...(plan.deletedAt && { deletedAt: plan.deletedAt })
+  };
+}
+
 export function calculatePlanPricing(plan: Plan): Record<BillingInterval, number> {
   const pricing: Record<BillingInterval, number> = {} as any;
   
@@ -97,21 +193,7 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
-    plan: {
-      id: subscription.plan.id,
-      name: subscription.plan.name,
-      description: subscription.plan.description,
-      basePrice: subscription.plan.basePrice,
-      currency: subscription.plan.currency,
-      trialDays: subscription.plan.trialDays,
-      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
-      features: JSON.parse(subscription.plan.features as string) as string[],
-      isActive: subscription.plan.isActive,
-      isPopular: subscription.plan.isPopular,
-      sortOrder: subscription.plan.sortOrder,
-      createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
 
@@ -143,21 +225,7 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
     createdAt: sub.createdAt,
     updatedAt: sub.updatedAt,
     merchant: sub.merchant,
-    plan: {
-      id: sub.plan.id,
-      name: sub.plan.name,
-      description: sub.plan.description,
-      basePrice: sub.plan.basePrice,
-      currency: sub.plan.currency,
-      trialDays: sub.plan.trialDays,
-      limits: JSON.parse(sub.plan.limits as string) as PlanLimits,
-      features: JSON.parse(sub.plan.features as string) as string[],
-      isActive: sub.plan.isActive,
-      isPopular: sub.plan.isPopular,
-      sortOrder: sub.plan.sortOrder,
-      createdAt: sub.plan.createdAt,
-      updatedAt: sub.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(sub.plan)
   }));
 }
 
@@ -244,6 +312,7 @@ export async function searchSubscriptions(filters: {
         isActive: sub.plan.isActive,
         isPopular: sub.plan.isPopular,
         sortOrder: sub.plan.sortOrder,
+        pricing: generatePricingFromBasePrice(sub.plan.basePrice),
         createdAt: sub.plan.createdAt,
         updatedAt: sub.plan.updatedAt
       }
@@ -287,12 +356,8 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
 
   // Calculate pricing based on billing interval
   const billingInterval = data.billingInterval || 'month';
-  const amount = calculateSubscriptionPrice({
-    ...plan,
-    limits: JSON.parse(plan.limits as string) as PlanLimits,
-    features: JSON.parse(plan.features as string) as string[],
-    deletedAt: plan.deletedAt || undefined
-  }, billingInterval);
+  const convertedPlan = convertPrismaPlanToPlan(plan);
+  const amount = calculateSubscriptionPrice(convertedPlan, billingInterval);
   
   // Calculate dates
   const startDate = data.startDate || new Date();
@@ -341,21 +406,7 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
-    plan: {
-      id: subscription.plan.id,
-      name: subscription.plan.name,
-      description: subscription.plan.description,
-      basePrice: subscription.plan.basePrice,
-      currency: subscription.plan.currency,
-      trialDays: subscription.plan.trialDays,
-      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
-      features: JSON.parse(subscription.plan.features as string) as string[],
-      isActive: subscription.plan.isActive,
-      isPopular: subscription.plan.isPopular,
-      sortOrder: subscription.plan.sortOrder,
-      createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
 
@@ -369,22 +420,7 @@ export async function getAllPlans(): Promise<Plan[]> {
     orderBy: { sortOrder: 'asc' }
   });
 
-  return plans.map((plan: any) => ({
-    id: plan.id,
-    name: plan.name,
-    description: plan.description,
-    basePrice: plan.basePrice,
-    currency: plan.currency,
-    trialDays: plan.trialDays,
-    limits: JSON.parse(plan.limits as string) as PlanLimits,
-    features: JSON.parse(plan.features as string) as string[],
-    isActive: plan.isActive,
-    isPopular: plan.isPopular,
-    sortOrder: plan.sortOrder,
-    createdAt: plan.createdAt,
-    updatedAt: plan.updatedAt,
-    deletedAt: plan.deletedAt || undefined
-  }));
+  return plans.map((plan: any) => convertPrismaPlanToPlan(plan));
 }
 
 export async function getPlanById(planId: number): Promise<Plan | null> {
@@ -406,6 +442,7 @@ export async function getPlanById(planId: number): Promise<Plan | null> {
     isActive: plan.isActive,
     isPopular: plan.isPopular,
     sortOrder: plan.sortOrder,
+    pricing: generatePricingFromBasePrice(plan.basePrice),
     createdAt: plan.createdAt,
     updatedAt: plan.updatedAt,
     deletedAt: plan.deletedAt || undefined
@@ -437,12 +474,8 @@ export async function changePlan(
     throw new Error('Plan not found');
   }
 
-  const amount = calculateSubscriptionPrice({
-    ...plan,
-    limits: JSON.parse(plan.limits as string) as PlanLimits,
-    features: JSON.parse(plan.features as string) as string[],
-    deletedAt: plan.deletedAt || undefined
-  }, billingInterval);
+  const convertedPlan = convertPrismaPlanToPlan(plan);
+  const amount = calculateSubscriptionPrice(convertedPlan, billingInterval);
 
   // Calculate new period dates based on billing interval
   const now = new Date();
@@ -512,21 +545,7 @@ export async function changePlan(
       nextBillingDate: updatedSubscription.currentPeriodEnd
     },
     merchant: updatedSubscription.merchant,
-    plan: {
-      id: updatedSubscription.plan.id,
-      name: updatedSubscription.plan.name,
-      description: updatedSubscription.plan.description,
-      basePrice: updatedSubscription.plan.basePrice,
-      currency: updatedSubscription.plan.currency,
-      trialDays: updatedSubscription.plan.trialDays,
-      limits: JSON.parse(updatedSubscription.plan.limits as string) as PlanLimits,
-      features: JSON.parse(updatedSubscription.plan.features as string) as string[],
-      isActive: updatedSubscription.plan.isActive,
-      isPopular: updatedSubscription.plan.isPopular,
-      sortOrder: updatedSubscription.plan.sortOrder,
-      createdAt: updatedSubscription.plan.createdAt,
-      updatedAt: updatedSubscription.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(updatedSubscription.plan)
   };
 }
 
@@ -562,21 +581,7 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
-    plan: {
-      id: subscription.plan.id,
-      name: subscription.plan.name,
-      description: subscription.plan.description,
-      basePrice: subscription.plan.basePrice,
-      currency: subscription.plan.currency,
-      trialDays: subscription.plan.trialDays,
-      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
-      features: JSON.parse(subscription.plan.features as string) as string[],
-      isActive: subscription.plan.isActive,
-      isPopular: subscription.plan.isPopular,
-      sortOrder: subscription.plan.sortOrder,
-      createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
 
@@ -612,21 +617,7 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
-    plan: {
-      id: subscription.plan.id,
-      name: subscription.plan.name,
-      description: subscription.plan.description,
-      basePrice: subscription.plan.basePrice,
-      currency: subscription.plan.currency,
-      trialDays: subscription.plan.trialDays,
-      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
-      features: JSON.parse(subscription.plan.features as string) as string[],
-      isActive: subscription.plan.isActive,
-      isPopular: subscription.plan.isPopular,
-      sortOrder: subscription.plan.sortOrder,
-      createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
 
@@ -675,6 +666,7 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
         isActive: subscription.plan.isActive,
         isPopular: subscription.plan.isPopular,
         sortOrder: subscription.plan.sortOrder,
+        pricing: generatePricingFromBasePrice(subscription.plan.basePrice),
         createdAt: subscription.plan.createdAt,
         updatedAt: subscription.plan.updatedAt
       }
@@ -737,21 +729,7 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
     createdAt: sub.createdAt,
     updatedAt: sub.updatedAt,
     merchant: sub.merchant,
-    plan: {
-      id: sub.plan.id,
-      name: sub.plan.name,
-      description: sub.plan.description,
-      basePrice: sub.plan.basePrice,
-      currency: sub.plan.currency,
-      trialDays: sub.plan.trialDays,
-      limits: JSON.parse(sub.plan.limits as string) as PlanLimits,
-      features: JSON.parse(sub.plan.features as string) as string[],
-      isActive: sub.plan.isActive,
-      isPopular: sub.plan.isPopular,
-      sortOrder: sub.plan.sortOrder,
-      createdAt: sub.plan.createdAt,
-      updatedAt: sub.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(sub.plan)
   }));
 }
 
@@ -785,21 +763,7 @@ export async function getSubscriptionById(id: number): Promise<Subscription | nu
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
-    plan: {
-      id: subscription.plan.id,
-      name: subscription.plan.name,
-      description: subscription.plan.description,
-      basePrice: subscription.plan.basePrice,
-      currency: subscription.plan.currency,
-      trialDays: subscription.plan.trialDays,
-      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
-      features: JSON.parse(subscription.plan.features as string) as string[],
-      isActive: subscription.plan.isActive,
-      isPopular: subscription.plan.isPopular,
-      sortOrder: subscription.plan.sortOrder,
-      createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
 
@@ -843,21 +807,7 @@ export async function updateSubscription(
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
     merchant: subscription.merchant,
-    plan: {
-      id: subscription.plan.id,
-      name: subscription.plan.name,
-      description: subscription.plan.description,
-      basePrice: subscription.plan.basePrice,
-      currency: subscription.plan.currency,
-      trialDays: subscription.plan.trialDays,
-      limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
-      features: JSON.parse(subscription.plan.features as string) as string[],
-      isActive: subscription.plan.isActive,
-      isPopular: subscription.plan.isPopular,
-      sortOrder: subscription.plan.sortOrder,
-      createdAt: subscription.plan.createdAt,
-      updatedAt: subscription.plan.updatedAt
-    }
+    plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
 
