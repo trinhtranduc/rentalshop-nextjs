@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
-import { assertAnyRole } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
 // Mock API keys data - in a real implementation, this would come from a database
@@ -40,18 +39,15 @@ const mockApiKeys = [
   }
 ];
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/system/api-keys - List API keys
+ * Requires: ADMIN or MERCHANT role
+ */
+async function handleGetApiKeys(
+  request: NextRequest,
+  { user }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Check if user can manage API keys (only ADMIN and MERCHANT roles)
-    assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -99,18 +95,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/system/api-keys - Create API key
+ * Requires: ADMIN or MERCHANT role
+ */
+async function handleCreateApiKey(
+  request: NextRequest,
+  { user }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Check if user can create API keys (only ADMIN and MERCHANT roles)
-    assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
 
     const body = await request.json();
     const { name, description, permissions, expiresAt } = body;
@@ -132,7 +125,7 @@ export async function POST(request: NextRequest) {
       permissions,
       status: 'active',
       createdAt: new Date().toISOString(),
-      lastUsed: null,
+      lastUsed: '', // Empty string instead of null to match the expected type
       expiresAt: expiresAt || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year from now
     };
 
@@ -163,3 +156,11 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])((req, context) => 
+  handleGetApiKeys(req, context)
+);
+
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])((req, context) => 
+  handleCreateApiKey(req, context)
+);

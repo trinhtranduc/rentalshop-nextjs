@@ -8,29 +8,18 @@ import {
   markSubscriptionAsExpired,
   extendSubscription
 } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-// ============================================================================
-// GET /api/subscriptions/expired - Get expired subscriptions
-// ============================================================================
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/subscriptions/expired - Get expired subscriptions
+ * Requires: ADMIN role
+ */
+async function handleGetExpiredSubscriptions(
+  request: NextRequest,
+  { user }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Only ADMIN can view all expired subscriptions
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Admin access required' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const expiredSubscriptions = await getExpiredSubscriptions();
 
@@ -48,26 +37,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ============================================================================
-// POST /api/subscriptions/expired - Mark subscription as expired
-// ============================================================================
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/subscriptions/expired - Mark subscription as expired
+ * Requires: ADMIN role
+ */
+async function handleMarkSubscriptionExpired(
+  request: NextRequest,
+  { user }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Only ADMIN can mark subscriptions as expired
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Admin access required' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const body = await request.json();
     const { subscriptionId } = body;
@@ -93,3 +71,11 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAuthRoles(['ADMIN'])((req, context) => 
+  handleGetExpiredSubscriptions(req, context)
+);
+
+export const POST = withAuthRoles(['ADMIN'])((req, context) => 
+  handleMarkSubscriptionExpired(req, context)
+);

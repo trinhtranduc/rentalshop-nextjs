@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    const renewalManager = createSubscriptionRenewalManager(renewalConfig);
+    const renewalManager = createSubscriptionRenewalManager(renewalConfig as any);
 
     // Process renewals
     const stats = await renewalManager.processRenewals();

@@ -129,6 +129,14 @@ export const Customers: React.FC<CustomersProps> = ({
     }
   };
 
+  const handleEditCustomerSave = async (customerData: CustomerCreateInput | CustomerUpdateInput) => {
+    // For edit mode, we know we should have an id, so cast to CustomerUpdateInput
+    if (!('id' in customerData) || !customerData.id) {
+      throw new Error('Customer ID is required for updates');
+    }
+    await handleCustomerUpdatedWithToast(customerData as CustomerUpdateInput);
+  };
+
   const handleExportWithToast = () => {
     if (onExport) {
       onExport();
@@ -288,7 +296,7 @@ export const Customers: React.FC<CustomersProps> = ({
             <CustomerForm
               mode="edit"
               customer={selectedCustomer}
-              onSave={handleCustomerUpdatedWithToast}
+              onSave={handleEditCustomerSave}
               onCancel={() => setShowEditDialog(false)}
             />
           </DialogContent>

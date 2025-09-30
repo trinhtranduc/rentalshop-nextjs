@@ -4,29 +4,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-// ============================================================================
-// GET /api/subscriptions/stats - Get subscription statistics
-// ============================================================================
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/subscriptions/stats - Get subscription statistics
+ * Requires: ADMIN role
+ */
+async function handleGetSubscriptionStats(
+  request: NextRequest,
+  { user }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Only ADMIN can view subscription stats
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Admin access required' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     // Get subscription statistics
     const [
@@ -46,9 +35,10 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Get revenue statistics
-    const revenueStats = await prisma.subscriptionPayment.aggregate({
+    const revenueStats = await prisma.payment.aggregate({
       where: {
         status: 'COMPLETED',
+        subscriptionId: { not: null }, // Only subscription payments
         createdAt: {
           gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) // This month
         }
@@ -128,3 +118,7 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAuthRoles(['ADMIN'])((req, context) => 
+  handleGetSubscriptionStats(req, context)
+);

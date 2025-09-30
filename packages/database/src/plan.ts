@@ -7,6 +7,29 @@ import type { Plan, PlanCreateInput, PlanUpdateInput, PlanFilters } from '@renta
 import { calculatePlanPricing } from './subscription';
 
 /**
+ * Helper function to generate pricing object for a plan
+ */
+function generatePlanPricing(basePrice: number) {
+  return {
+    monthly: {
+      price: basePrice,
+      discount: 0,
+      savings: 0
+    },
+    quarterly: {
+      price: basePrice * 3 * 0.95, // 5% discount for quarterly
+      discount: 5,
+      savings: basePrice * 3 * 0.05
+    },
+    yearly: {
+      price: basePrice * 12 * 0.85, // 15% discount for yearly
+      discount: 15,
+      savings: basePrice * 12 * 0.15
+    }
+  };
+}
+
+/**
  * Get plan by public ID
  */
 export async function getPlanById(id: number): Promise<Plan | null> {
@@ -29,6 +52,7 @@ export async function getPlanById(id: number): Promise<Plan | null> {
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
     };
@@ -60,6 +84,7 @@ export async function getAllPlans(): Promise<Plan[]> {
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
     }));
@@ -115,6 +140,7 @@ export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: P
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
     }));
@@ -162,6 +188,7 @@ export async function createPlan(data: PlanCreateInput): Promise<Plan> {
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
     };
@@ -206,6 +233,7 @@ export async function updatePlan(id: number, data: PlanUpdateInput): Promise<Pla
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
     };
@@ -259,6 +287,7 @@ export async function getActivePlans(): Promise<Plan[]> {
       isActive: plan.isActive,
       isPopular: plan.isPopular,
       sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
     }));

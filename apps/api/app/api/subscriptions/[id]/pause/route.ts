@@ -3,30 +3,20 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { pauseSubscription } from '@rentalshop/database';
 import { API } from '@rentalshop/constants';
 
-export async function POST(
+/**
+ * POST /api/subscriptions/[id]/pause - Pause subscription
+ * Requires: ADMIN or MERCHANT role
+ */
+async function handlePauseSubscription(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Check permissions - only ADMIN and MERCHANT can pause subscriptions
-    if (!['ADMIN', 'MERCHANT'].includes(user.role)) {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions to pause subscription' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     // Parse request body for optional reason
     const body = await request.json().catch(() => ({}));
@@ -56,4 +46,15 @@ export async function POST(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handlePauseSubscription(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

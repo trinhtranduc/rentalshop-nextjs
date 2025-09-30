@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
 // Payment method validation
@@ -41,19 +41,12 @@ const updatePaymentStatusSchema = z.object({
 // ============================================================================
 // CREATE PAYMENT
 // ============================================================================
-export async function POST(
+async function handleCreatePayment(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     // Parse and validate request body
     const body = await request.json();
     const validatedData = createPaymentSchema.parse(body);
@@ -63,7 +56,7 @@ export async function POST(
     // Get merchant
     const merchant = await prisma.merchant.findUnique({
       where: { id: parseInt(merchantId) },
-      include: { plan: true }
+      include: { Plan: true }
     });
 
     if (!merchant) {
@@ -92,7 +85,7 @@ export async function POST(
           reference: validatedData.reference,
           notes: validatedData.notes,
           merchantId: merchant.id,
-          subscriptionId: validatedData.subscriptionId,
+          subscriptionId: validatedData.subscriptionId ? parseInt(validatedData.subscriptionId) : null,
           processedBy: user.id
         }
       });
@@ -101,7 +94,7 @@ export async function POST(
       await tx.auditLog.create({
         data: {
           entityType: 'PAYMENT',
-          entityId: payment.id,
+          entityId: payment.id.toString(),
           action: 'PAYMENT_CREATED',
           details: JSON.stringify({
             paymentId: payment.id,
@@ -141,18 +134,18 @@ export async function POST(
   } catch (error) {
     console.error('Payment creation error:', error);
     
-    if (error.name === 'ZodError') {
+    if ((error as any)?.name === 'ZodError') {
       return NextResponse.json({
         success: false,
         message: 'Validation failed',
-        errors: error.errors
+        errors: (error as any).errors
       }, { status: 400 });
     }
     
     return NextResponse.json({
       success: false,
       message: 'Failed to create payment',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
@@ -160,19 +153,12 @@ export async function POST(
 // ============================================================================
 // GET MERCHANT PAYMENTS
 // ============================================================================
-export async function GET(
+async function handleGetPayments(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     const merchantId = params.id;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -197,8 +183,7 @@ export async function GET(
         include: {
           subscription: {
             include: {
-              plan: true,
-              planVariant: true
+              plan: true
             }
           }
         },
@@ -212,7 +197,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
-        payments: payments.map(payment => ({
+        payments: payments.map((payment: any) => ({
           id: payment.id,
           amount: payment.amount,
           method: payment.method,
@@ -238,7 +223,7 @@ export async function GET(
     return NextResponse.json({
       success: false,
       message: 'Failed to get payments',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 }
@@ -246,19 +231,12 @@ export async function GET(
 // ============================================================================
 // UPDATE PAYMENT STATUS
 // ============================================================================
-export async function PATCH(
+async function handleUpdatePaymentStatus(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     // Parse and validate request body
     const body = await request.json();
     const validatedData = updatePaymentStatusSchema.parse(body);
@@ -298,7 +276,7 @@ export async function PATCH(
       await tx.auditLog.create({
         data: {
           entityType: 'PAYMENT',
-          entityId: payment.id,
+          entityId: payment.id.toString(),
           action: 'PAYMENT_STATUS_UPDATED',
           details: JSON.stringify({
             paymentId: payment.id,
@@ -334,18 +312,52 @@ export async function PATCH(
   } catch (error) {
     console.error('Update payment status error:', error);
     
-    if (error.name === 'ZodError') {
+    if ((error as any).name === 'ZodError') {
       return NextResponse.json({
         success: false,
         message: 'Validation failed',
-        errors: error.errors
+        errors: (error as any).errors
       }, { status: 400 });
     }
     
     return NextResponse.json({
       success: false,
       message: 'Failed to update payment status',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
+}
+
+// Export functions with withAuthRoles wrapper
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleCreatePayment(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetPayments(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdatePaymentStatus(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

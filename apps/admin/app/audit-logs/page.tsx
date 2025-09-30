@@ -391,12 +391,12 @@ export default function AuditLogsPage() {
       const currentFilter = newFilter || filter;
       const result = await getAuditLogs(currentFilter);
       
-      setLogs(result.data);
+      setLogs(result.data || []);
       updatePaginationFromResponse({
-        total: result.pagination?.total || 0,
-        limit: result.pagination?.limit || 10,
-        offset: result.pagination?.offset || 0,
-        hasMore: result.pagination?.hasMore || false
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false
       });
     } catch (error: any) {
       addToast('error', 'Failed to load audit logs', error.message || 'Please try again later.');
@@ -409,7 +409,7 @@ export default function AuditLogsPage() {
   const loadStats = async () => {
     try {
       const result = await getAuditLogStats();
-      setStats(result.data);
+      setStats(result.data || null);
     } catch (error: any) {
       console.error('Failed to load audit statistics:', error);
     }

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Input, Card, CardContent } from '@rentalshop/ui';
 import { Search, ArrowUpDown } from 'lucide-react';
-import type { CategoryFilters as CategoryFiltersType } from '@rentalshop/types';
+import type { CategorySearchParams as CategoryFiltersType } from '@rentalshop/types';
 
 interface CategoryFiltersProps {
   filters: CategoryFiltersType;

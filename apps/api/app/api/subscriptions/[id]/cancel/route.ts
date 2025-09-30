@@ -3,22 +3,20 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { cancelSubscription } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
-export async function POST(
+/**
+ * POST /api/subscriptions/[id]/cancel - Cancel subscription
+ * Requires: Any authenticated user
+ */
+async function handleCancelSubscription(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Parse request body
     const body = await request.json();
@@ -33,7 +31,7 @@ export async function POST(
 
     // Cancel the subscription
     const subscriptionId = parseInt(params.id);
-    const result = await cancelSubscription(subscriptionId, reason.trim(), user);
+    const result = await cancelSubscription(subscriptionId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -55,4 +53,15 @@ export async function POST(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles();
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleCancelSubscription(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

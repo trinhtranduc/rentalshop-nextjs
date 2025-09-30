@@ -7,6 +7,9 @@ export * from './jwt';
 export * from './core';
 export * from './middleware';
 
+// NEW: Unified auth wrapper (replaces all scattered auth middleware)
+export * from './unified-auth';
+
 // Re-export specific functions for backward compatibility
 export { 
   authenticateRequest,

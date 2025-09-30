@@ -64,7 +64,7 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const result = await ordersApi.cancelOrder(parseInt(order.id));
+      const result = await ordersApi.cancelOrder(order.id);
 
       if (result.success) {
         // Refresh the order data
@@ -87,7 +87,7 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const result = await ordersApi.updateOrderStatus(parseInt(order.id), newStatus);
+      const result = await ordersApi.updateOrderStatus(order.id, newStatus);
 
       if (result.success) {
         // Refresh the order data
@@ -179,7 +179,7 @@ export default function OrderDetailPage() {
         notes: data.notes
       };
 
-      const result = await ordersApi.updateOrderSettings(parseInt(order.id), updateData);
+      const result = await ordersApi.updateOrderSettings(order.id, updateData);
 
       if (result.success) {
         // Refresh the order data

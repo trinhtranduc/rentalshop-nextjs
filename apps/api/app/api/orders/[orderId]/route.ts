@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { updateOrder } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
-import { assertAnyRole, getUserScope } from '@rentalshop/auth';
+import { assertAnyRole } from '@rentalshop/auth';
 import { orderUpdateSchema } from '@rentalshop/utils';
-import type { OrderUpdateInput } from '@rentalshop/types';
+import type { OrderUpdateInput, OrderItemInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -19,18 +19,12 @@ import {API} from '@rentalshop/constants';
  * - Payment history
  * - Order notes and status updates
  */
-export async function GET(
+async function handleGetOrder(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { orderId: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
 
     const { orderId } = params;
     
@@ -41,8 +35,7 @@ export async function GET(
       );
     }
 
-    // Get user scope for authorization
-    const userScope = getUserScope(user as any);
+        // Get user scope for authorization
     
     // Get order by id (number)
     const orderIdNumber = parseInt(orderId);
@@ -58,15 +51,18 @@ export async function GET(
       where: { id: orderIdNumber },
       include: {
         customer: true,
-        outlet: true,
+        outlet: {
+          include: {
+            merchant: true
+          }
+        },
         orderItems: {
           include: {
             product: true
           }
         },
         payments: true,
-        createdBy: true,
-        merchant: true
+        createdBy: true
       }
     });
 
@@ -183,18 +179,12 @@ export async function GET(
  * PUT /api/orders/[orderId]
  * Update a specific order
  */
-export async function PUT(
+async function handleUpdateOrder(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { orderId: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
 
     const { orderId } = params;
     
@@ -222,18 +212,17 @@ export async function PUT(
     const updateData = parsed.data;
     const updateInput: OrderUpdateInput = {
       orderType: 'RENT', // Default value
-      outletId: 0, // Default value
       createdById: user.id, // Required field
-      orderItems: [], // Default empty array for updates
+      orderItems: [] as OrderItemInput[], // Default empty array for updates
       subtotal: 0, // Default value
       totalAmount: 0, // Default value
       ...(updateData.status !== undefined && { status: updateData.status as any }),
       ...(updateData.customerId !== undefined && { customerId: updateData.customerId }),
-      ...(updateData.outletId !== undefined && { outletId: updateData.outletId }),
-      ...(updateData.pickupPlanAt !== undefined && { pickupPlanAt: updateData.pickupPlanAt }),
-      ...(updateData.returnPlanAt !== undefined && { returnPlanAt: updateData.returnPlanAt }),
-      ...(updateData.pickedUpAt !== undefined && { pickedUpAt: updateData.pickedUpAt }),
-      ...(updateData.returnedAt !== undefined && { returnedAt: updateData.returnedAt }),
+      outletId: updateData.outletId || 1, // Ensure outletId is always defined
+      ...(updateData.pickupPlanAt !== undefined && { pickupPlanAt: typeof updateData.pickupPlanAt === 'string' ? new Date(updateData.pickupPlanAt) : updateData.pickupPlanAt }),
+      ...(updateData.returnPlanAt !== undefined && { returnPlanAt: typeof updateData.returnPlanAt === 'string' ? new Date(updateData.returnPlanAt) : updateData.returnPlanAt }),
+      ...(updateData.pickedUpAt !== undefined && { pickedUpAt: typeof updateData.pickedUpAt === 'string' ? new Date(updateData.pickedUpAt) : updateData.pickedUpAt }),
+      ...(updateData.returnedAt !== undefined && { returnedAt: typeof updateData.returnedAt === 'string' ? new Date(updateData.returnedAt) : updateData.returnedAt }),
       ...(updateData.rentalDuration !== undefined && { rentalDuration: updateData.rentalDuration }),
       ...(updateData.discountType !== undefined && { discountType: updateData.discountType }),
       ...(updateData.discountValue !== undefined && { discountValue: updateData.discountValue }),
@@ -250,11 +239,11 @@ export async function PUT(
       ...(updateData.returnNotes !== undefined && { returnNotes: updateData.returnNotes }),
       ...(updateData.damageNotes !== undefined && { damageNotes: updateData.damageNotes }),
       ...(updateData.isReadyToDeliver !== undefined && { isReadyToDeliver: updateData.isReadyToDeliver }),
-      // Order items management - convert productId from number to string for database
+      // Order items management - keep productId as number for type consistency
       ...(updateData.orderItems !== undefined && { 
         orderItems: updateData.orderItems.map(item => ({
           ...item,
-          productId: item.productId.toString(), // Convert number to string for database
+          productId: item.productId, // Keep as number for OrderItemInput type
           totalPrice: item.totalPrice || 0, // Ensure totalPrice is always defined
         }))
       }),
@@ -269,7 +258,7 @@ export async function PUT(
       );
     }
     
-    const updatedOrder = await updateOrder(orderIdNumber, updateInput);
+    const updatedOrder = await updateOrder(orderIdNumber, updateInput as any);
 
     if (!updatedOrder) {
       return NextResponse.json(
@@ -296,18 +285,12 @@ export async function PUT(
  * DELETE /api/orders/[orderId]
  * Cancel a specific order
  */
-export async function DELETE(
+async function handleDeleteOrder(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { orderId: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
 
     const { orderId } = params;
     
@@ -340,14 +323,13 @@ export async function DELETE(
     
     const cancelledOrder = await updateOrder(orderIdNumber, {
       orderType: 'RENT', // Default value
-      outletId: 0, // Default value
       createdById: user.id, // Required field
-      orderItems: [], // Default empty array
+      orderItems: [] as any[], // Default empty array
       subtotal: 0, // Default value
       totalAmount: 0, // Default value
       status: 'CANCELLED',
       notes: reason
-    });
+    } as any);
 
     if (!cancelledOrder) {
       return NextResponse.json(
@@ -371,3 +353,37 @@ export async function DELETE(
 }
 
 export const runtime = 'nodejs';
+
+// Export functions with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { orderId: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetOrder(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { orderId: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdateOrder(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { orderId: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleDeleteOrder(req, context, params)
+  );
+  return authenticatedHandler(request);
+}

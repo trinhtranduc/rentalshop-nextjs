@@ -126,7 +126,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const { profileApi } = await import('@rentalshop/utils');
     const result = await profileApi.getProfile();
-    return result.success ? result.data : null;
+    return result.success && result.data ? result.data : null;
   } catch (error) {
     console.error('Failed to get current user:', error);
     return null;

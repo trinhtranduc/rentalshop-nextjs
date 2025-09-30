@@ -73,7 +73,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('✅ User profile found:', { 
       id: userProfile.id, 
-      id: userProfile.id, 
       email: userProfile.email,
       hasMerchant: !!userProfile.merchant,
       hasOutlet: !!userProfile.outlet
@@ -148,13 +147,13 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     );
   }
 });
-}
 
 /**
  * PUT /api/users/profile
  * Update current user's profile
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, context: any) => {
+  const { user, userScope } = context;
   try {
 
     const body = await request.json();

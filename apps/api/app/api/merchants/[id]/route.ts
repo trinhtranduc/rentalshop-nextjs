@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-export async function GET(
+async function handleGetMerchant(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     const merchantId = parseInt(params.id);
     if (isNaN(merchantId)) {
       return NextResponse.json(
@@ -230,18 +223,12 @@ export async function GET(
   }
 }
 
-export async function DELETE(
+async function handleDeleteMerchant(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     const merchantId = parseInt(params.id);
     if (isNaN(merchantId)) {
@@ -292,18 +279,12 @@ export async function DELETE(
   }
 }
 
-export async function PUT(
+async function handleUpdateMerchant(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     const merchantId = parseInt(params.id);
     if (isNaN(merchantId)) {
@@ -406,4 +387,38 @@ export async function PUT(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+// Export functions with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetMerchant(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleDeleteMerchant(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdateMerchant(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

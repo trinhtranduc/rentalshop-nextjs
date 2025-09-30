@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui';
 import { Search, X } from 'lucide-react';
 
-interface MerchantFilters {
+interface MerchantFiltersData {
   search: string;
   status: string;
   plan: string;
@@ -11,8 +11,8 @@ interface MerchantFilters {
 }
 
 interface MerchantFiltersProps {
-  filters: MerchantFilters;
-  onFiltersChange: (filters: MerchantFilters) => void;
+  filters: MerchantFiltersData;
+  onFiltersChange: (filters: MerchantFiltersData) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
 }

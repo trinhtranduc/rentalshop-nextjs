@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import dynamic from 'next/dynamic';
 
-// Dynamically import SwaggerUI to avoid SSR issues
+// @ts-ignore - Dynamic import issue with Next.js and swagger-ui-react types
 const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
   ssr: false,
   loading: () => (

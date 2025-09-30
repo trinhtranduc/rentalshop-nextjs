@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import { OrderChart, IncomeChart } from '../../../charts';
-import { OrderData, IncomeData } from '@rentalshop/types';
+import { OrderDataPoint, IncomeData } from '@rentalshop/types';
 
 // Transform data to match chart component expectations
 interface RevenueData {
@@ -11,7 +11,7 @@ interface RevenueData {
 }
 
 interface DashboardChartsProps {
-  orderData: OrderData[];
+  orderData: OrderDataPoint[];
   incomeData: IncomeData[];
 }
 

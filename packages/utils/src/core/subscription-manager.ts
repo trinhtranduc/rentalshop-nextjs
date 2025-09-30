@@ -123,24 +123,20 @@ export class SubscriptionManager {
         return null; // No merchant = no subscription check needed
       }
 
-      let merchantId = user.merchant.id;
+      let merchantId: string | number = user.merchant.id;
 
-      // Handle CUID vs numeric ID conversion
+      // Handle string to numeric ID conversion
       if (typeof merchantId === 'string') {
-        console.log('🔍 SUBSCRIPTION: Merchant ID is CUID, converting to numeric id');
+        console.log('🔍 SUBSCRIPTION: Merchant ID is string, converting to numeric id');
         
-        const merchant = await prisma.merchant.findUnique({
-          where: { id: merchantId },
-          select: { id: true }
-        });
-        
-        if (!merchant) {
-          console.log('🔍 SUBSCRIPTION: Merchant not found for CUID:', user.merchant.id);
-          return new SubscriptionError('Merchant not found', 'SUBSCRIPTION_NOT_FOUND');
+        const numericId = parseInt(merchantId);
+        if (isNaN(numericId)) {
+          console.log('🔍 SUBSCRIPTION: Invalid merchant ID:', merchantId);
+          return new SubscriptionError('Invalid merchant ID', 'SUBSCRIPTION_NOT_FOUND');
         }
         
-        merchantId = merchant.id;
-        console.log('🔍 SUBSCRIPTION: Converted CUID to id:', merchantId);
+        merchantId = numericId;
+        console.log('🔍 SUBSCRIPTION: Converted string to id:', merchantId);
       }
 
       console.log('🔍 SUBSCRIPTION: Using merchantId:', merchantId, 'type:', typeof merchantId);

@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
 // Manual payment creation schema
@@ -29,15 +29,8 @@ const createManualPaymentSchema = z.object({
 // ============================================================================
 // POST /api/payments/manual - Create manual payment
 // ============================================================================
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Parse and validate request body
     const body = await request.json();
@@ -47,7 +40,7 @@ export async function POST(request: NextRequest) {
     const merchant = await prisma.merchant.findUnique({
       where: { id: validatedData.merchantId },
       include: { 
-        plan: true,
+        Plan: true,
         subscription: true
       }
     });
@@ -116,7 +109,7 @@ export async function POST(request: NextRequest) {
       await tx.auditLog.create({
         data: {
           entityType: 'PAYMENT',
-          entityId: payment.id,
+          entityId: payment.id.toString(),
           action: 'MANUAL_PAYMENT_CREATED',
           details: JSON.stringify({
             paymentId: payment.id,
@@ -178,4 +171,4 @@ export async function POST(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

@@ -11,14 +11,12 @@ export * from './components';
 // CALENDAR TYPES - Re-exported to avoid circular dependency
 // ============================================================================
 export type { 
-  CalendarData,
   CalendarFilters,
-  PickupOrder,
-  CalendarDay,
   CalendarEvent,
-  CalendarViewMode,
-  CalendarNavigationProps,
+  CalendarViewProps,
   CalendarGridProps,
-  CalendarSidebarProps,
-  CalendarFiltersProps
+  CalendarEventFormData
 } from './types';
+
+// Export PickupOrder from @rentalshop/types
+export type { PickupOrder } from '@rentalshop/types';

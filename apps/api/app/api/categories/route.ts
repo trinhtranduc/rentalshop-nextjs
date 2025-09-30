@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
@@ -7,15 +7,8 @@ import {API} from '@rentalshop/constants';
  * GET /api/categories
  * Get all categories
  */
-export async function GET(request: NextRequest) {
+export const GET = withAuthRoles()(async (request: NextRequest, { user }) => {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Build where clause based on user role and scope
     const where: any = { isActive: true };
@@ -59,24 +52,16 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
 
 /**
  * POST /api/categories
  * Create a new category
  */
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user }) => {
   console.log('🚀 POST /api/categories - Starting category creation...');
   
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      console.log('❌ Authentication failed');
-      return authResult.response;
-    }
-
-    const user = authResult.user;
     console.log('👤 User verification result: Success');
 
     console.log('👤 User details:', {
@@ -227,4 +212,4 @@ export async function POST(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

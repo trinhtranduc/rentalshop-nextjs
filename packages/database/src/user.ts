@@ -76,7 +76,7 @@ export async function createUser(input: UserCreateInput): Promise<any> {
   const nextPublicId = (lastUser?.id || 0) + 1;
 
   // Find merchant by id if provided
-  let merchantId: string | undefined;
+  let merchantId: number | undefined;
   if (input.merchantId) {
     const merchant = await prisma.merchant.findUnique({
       where: { id: input.merchantId }
@@ -88,7 +88,7 @@ export async function createUser(input: UserCreateInput): Promise<any> {
   }
 
   // Find outlet by id if provided
-  let outletId: string | undefined;
+  let outletId: number | undefined;
   if (input.outletId) {
     const outlet = await prisma.outlet.findUnique({
       where: { id: input.outletId }
@@ -230,7 +230,7 @@ export async function getUsersByMerchant(merchantId: number) {
   }
 
   return await prisma.user.findMany({
-    where: { merchantId: merchant.id }, // Use CUID
+    where: { merchantId: merchant.id },
     include: {
       merchant: {
         select: {
@@ -264,7 +264,7 @@ export async function getUsersByOutlet(outletId: number) {
   }
 
   return await prisma.user.findMany({
-    where: { outletId: outlet.id }, // Use CUID
+    where: { outletId: outlet.id },
     include: {
       merchant: {
         select: {

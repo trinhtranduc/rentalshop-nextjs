@@ -35,8 +35,8 @@ export default function EditCustomerPage() {
         
         console.log('🔍 EditCustomerPage: Making API call to /api/customers/' + id);
         
-        // Use the real API to fetch customer data by public ID
-        const response = await customersApi.getCustomerByPublicId(numericId);
+        // Use the real API to fetch customer data by ID
+        const response = await customersApi.getCustomerById(numericId);
         
         console.log('🔍 EditCustomerPage: API response received:', response);
         

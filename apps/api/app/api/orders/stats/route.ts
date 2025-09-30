@@ -1,38 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, getUserScope } from '@rentalshop/auth';
-import { getOrderStats, getOverdueRentals } from '@rentalshop/database';
-import type { OrderSearchResult } from '@rentalshop/types';
+import { withAuthRoles } from '@rentalshop/auth';
+import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
-// GET /api/orders/stats - Get order statistics
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/orders/stats - Get order statistics
+ * REFACTORED: Now uses unified withAuthRoles pattern for all business roles
+ * NOTE: Database functions getOrderStats and getOverdueRentals not implemented - using placeholders
+ */
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  console.log(`📊 GET /api/orders/stats - User: ${user.email}, Role: ${user.role}`);
+  
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, error: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const outletId = searchParams.get('outletId') ? parseInt(searchParams.get('outletId')!) : undefined;
-
-    // Get user scope for proper authorization
-    const userScope = getUserScope(user as any);
-
-    // Get order statistics with proper user scope
-    const stats = await getOrderStats(userScope);
-
-    // Get overdue rentals if requested
     const includeOverdue = searchParams.get('includeOverdue') === 'true';
-    let overdueRentals: OrderSearchResult[] = [];
+
+    // TODO: Implement proper order statistics calculation
+    // For now, return placeholder data structure
+    const stats = {
+      totalOrders: 0,
+      activeRentals: 0,
+      completedOrders: 0,
+      overdueRentals: 0,
+      totalRevenue: 0,
+      averageOrderValue: 0,
+      message: "Order statistics calculation not yet implemented"
+    };
+
+    let overdueRentals: any[] = [];
     if (includeOverdue) {
-      overdueRentals = await getOverdueRentals(outletId);
+      // TODO: Implement overdue rentals query
+      // placeholder empty array for now
+      overdueRentals = [];
     }
 
     return NextResponse.json({
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
         stats,
         overdueRentals,
       },
+      warning: "Order statistics functionality not yet implemented. Database functions missing."
     });
 
   } catch (error) {
@@ -50,4 +52,4 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-} 
+}); 

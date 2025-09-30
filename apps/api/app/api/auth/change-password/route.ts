@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
 import {API} from '@rentalshop/constants';
 
 /**
- * POST /api/auth/change-password
- * Change current user's password
+ * POST /api/auth/change-password - Change current user's password
+ * REFACTORED: Now uses unified withAuthRoles pattern
  */
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  console.log(`🔐 POST /api/auth/change-password - User: ${user.email}`);
+  
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const currentUser = authResult.user;
 
     const body = await request.json();
     const { currentPassword, newPassword, confirmPassword } = body;
@@ -44,12 +39,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get current user from database to verify current password
-    const user = await prisma.user.findUnique({
-      where: { id: currentUser.id },
+    const currentUser = await prisma.user.findUnique({
+      where: { id: user.id },
       select: { id: true, password: true, email: true }
     });
 
-    if (!user) {
+    if (!currentUser) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: API.STATUS.NOT_FOUND }
@@ -57,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, currentUser.password);
     if (!isCurrentPasswordValid) {
       return NextResponse.json(
         { success: false, message: 'Current password is incorrect' },
@@ -92,4 +87,4 @@ export async function POST(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

@@ -52,15 +52,12 @@ export default function MerchantsPage() {
       phone: apiMerchant.phone,
       address: apiMerchant.address,
       isActive: apiMerchant.isActive,
-      subscriptionPlan: apiMerchant.planId,
+      planId: apiMerchant.planId ? parseInt(apiMerchant.planId, 10) : undefined,
       subscriptionStatus: (apiMerchant.subscriptionStatus as 'active' | 'trial' | 'expired' | 'cancelled') || 'trial',
-      trialEndsAt: apiMerchant.trialEndsAt ? String(apiMerchant.trialEndsAt) : undefined,
-      outletsCount: 0, // Default values - these would come from a separate API call
-      usersCount: 0,
-      productsCount: 0,
       totalRevenue: apiMerchant.totalRevenue || 0,
-      createdAt: String(apiMerchant.createdAt),
       lastActiveAt: apiMerchant.lastActiveAt ? String(apiMerchant.lastActiveAt) : undefined,
+      createdAt: String(apiMerchant.createdAt),
+      updatedAt: String(apiMerchant.updatedAt || apiMerchant.createdAt),
     };
   };
 
@@ -101,7 +98,7 @@ export default function MerchantsPage() {
     const matchesStatus = statusFilter === 'all' || 
                          (statusFilter === 'active' && merchant.isActive) ||
                          (statusFilter === 'inactive' && !merchant.isActive);
-    const matchesPlan = planFilter === 'all' || merchant.subscriptionPlan === planFilter;
+    const matchesPlan = planFilter === 'all' || String(merchant.planId) === planFilter;
     
     return matchesSearch && matchesStatus && matchesPlan;
   });

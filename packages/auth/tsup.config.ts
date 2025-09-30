@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    'unified-auth': 'src/unified-auth.ts',
     client: 'src/client/index.ts',
     admin: 'src/admin/index.ts'
   },

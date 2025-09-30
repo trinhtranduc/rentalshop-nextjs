@@ -315,11 +315,11 @@ export class AuditHelper {
    */
   private transformContext(context: AuditHelperContext): AuditContext {
     return {
-      userId: context.userId,
+      userId: context.userId ? parseInt(context.userId) : undefined,
       userEmail: context.userEmail,
       userRole: context.userRole,
-      merchantId: context.merchantId,
-      outletId: context.outletId,
+      merchantId: context.merchantId ? parseInt(context.merchantId) : undefined,
+      outletId: context.outletId ? parseInt(context.outletId) : undefined,
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
       sessionId: context.sessionId,

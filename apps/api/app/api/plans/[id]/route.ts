@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPlanByPublicId, updatePlan, deletePlan } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { planUpdateSchema } from '@rentalshop/utils';
 import type { PlanUpdateInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
@@ -9,26 +9,12 @@ import {API} from '@rentalshop/constants';
  * GET /api/plans/[id]
  * Get a specific plan by ID
  */
-export async function GET(
+async function handleGetPlan(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can view individual plans)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const { id: idParam } = params;
     
@@ -40,7 +26,8 @@ export async function GET(
       );
     }
 
-    const id = parseInt(idParam);
+    // Use the ID directly as string since getPlanByPublicId expects string
+    const id = idParam;
     
     // Get plan using database function
     const plan = await getPlanByPublicId(id);
@@ -70,29 +57,12 @@ export async function GET(
  * PUT /api/plans/[id]
  * Update a specific plan
  */
-export async function PUT(
+async function handleUpdatePlan(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can update plans)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const { id: idParam } = params;
     
@@ -147,29 +117,12 @@ export async function PUT(
  * DELETE /api/plans/[id]
  * Delete a specific plan (permanent delete)
  */
-export async function DELETE(
+async function handleDeletePlan(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
-
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can delete plans)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const { id: idParam } = params;
     
@@ -214,4 +167,38 @@ export async function DELETE(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+// Export functions with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetPlan(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdatePlan(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleDeletePlan(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

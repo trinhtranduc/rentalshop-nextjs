@@ -3,25 +3,19 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { getSubscriptionByMerchantId, changePlan, pauseSubscription, resumeSubscription } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 // ============================================================================
 // GET /api/subscriptions/[id] - Get subscription by ID
 // ============================================================================
-export async function GET(
+async function handleGetSubscription(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     const subscriptionId = parseInt(params.id);
     if (isNaN(subscriptionId)) {
@@ -67,18 +61,12 @@ export async function GET(
 // ============================================================================
 // PUT /api/subscriptions/[id] - Update subscription
 // ============================================================================
-export async function PUT(
+async function handleUpdateSubscription(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Check permissions - only ADMIN and MERCHANT can update subscriptions
     if (!['ADMIN', 'MERCHANT'].includes(user.role)) {
@@ -144,18 +132,12 @@ export async function PUT(
 // ============================================================================
 // DELETE /api/subscriptions/[id] - Delete subscription (soft delete)
 // ============================================================================
-export async function DELETE(
+async function handleDeleteSubscription(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Check permissions - only ADMIN can delete subscriptions
     if (user.role !== 'ADMIN') {
@@ -186,4 +168,38 @@ export async function DELETE(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+// Export functions with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetSubscription(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdateSubscription(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleDeleteSubscription(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

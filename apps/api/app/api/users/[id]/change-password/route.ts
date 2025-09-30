@@ -1,35 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
-import { assertAnyRole } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
-import { findUserByPublicId } from '@rentalshop/database';
+import { findUserById } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 /**
  * PATCH /api/users/[id]/change-password
- * Change user password (Admin or self)
+ * Change user password (Admin only for now)
  * 
- * For admin password changes: Only requires { newPassword }
- * For self password changes: Requires { newPassword, confirmPassword }
+ * TODO: Add self password change capability when user ID matching is fixed
  */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', params.id);
-    
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: 'Authentication failed' },
-        { status: 401 }
-      );
-    }
-
-    const currentUser = authResult.user;
+  return withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
+    try {
+      console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', params.id);
+      
+      const currentUser = user;
 
     const { id } = params;
     const body = await request.json();
@@ -62,7 +52,7 @@ export async function PATCH(
     }
 
     // Check if user exists using id
-    const targetUser = await findUserByPublicId(numericId);
+    const targetUser = await findUserById(numericId);
 
     if (!targetUser) {
       return NextResponse.json(
@@ -71,19 +61,8 @@ export async function PATCH(
       );
     }
 
-    // Security check: Only allow if:
-    // 1. Current user is admin, OR
-    // 2. Current user is changing their own password
-    const isAdmin = currentUser.role === 'ADMIN';
-    // For now, only allow admins to change passwords until we can get currentUser.id
-    const isSelf = false; // TODO: Fix when verifyTokenSimple returns id
-
-    if (!isAdmin && !isSelf) {
-      return NextResponse.json(
-        { success: false, message: 'You can only change your own password' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
+    // Security check: Admin access verified by withAuthRoles
+    // TODO: Add self password change capability when user ID matching is implemented
 
     // Note: Current password verification removed - users can change their password without providing current password
 
@@ -104,14 +83,14 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('❌ Error changing password:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to change password',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
+      console.error('❌ Error changing password:', error);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Failed to change password' 
+        },
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })(request);
 }

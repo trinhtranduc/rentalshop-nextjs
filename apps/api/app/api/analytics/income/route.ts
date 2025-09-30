@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { authenticateRequest, getUserScope } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
-import {API} from '@rentalshop/constants';
+import { API } from '@rentalshop/constants';
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/analytics/income - Get income analytics
+ * REFACTORED: Now uses unified withAuthRoles pattern
+ */
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  console.log(`💰 GET /api/analytics/income - User: ${user.email}`);
+  
   try {
-    // Authenticate the request
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    // Get user scope for data filtering
-    const userScope = getUserScope(authResult.user);
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -285,6 +283,6 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';

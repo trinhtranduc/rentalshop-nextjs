@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { softDeleteUser } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 /**
  * POST /api/users/delete-account
  * Soft delete the current user's account
+ * REFACTORED: Now uses unified withAuthRoles pattern for all authenticated users
  */
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles()(async (request, { user, userScope }) => {
+  console.log(`🗑️ POST /api/users/delete-account - User: ${user.email}`);
+  
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
     // Get the user ID to delete from the request body
     const body = await request.json();
     const { userId } = body;
@@ -24,7 +19,7 @@ export async function POST(request: NextRequest) {
     if (!userId || typeof userId !== 'number') {
       return NextResponse.json(
         { success: false, message: 'Valid user ID is required' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
@@ -69,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (error.message.includes('already deleted')) {
       return NextResponse.json(
         { success: false, message: 'Account is already deleted' },
-        { status: 400 }
+        { status: API.STATUS.BAD_REQUEST }
       );
     }
 
@@ -78,4 +73,4 @@ export async function POST(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});

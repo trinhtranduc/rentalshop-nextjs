@@ -126,6 +126,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         idNumber: formData.idNumber.trim() || undefined,
         idType: formData.idType,
         notes: formData.notes.trim() || undefined,
+        merchantId: 1, // TODO: Get actual merchant ID from context
       };
 
       await onSave(customerData);

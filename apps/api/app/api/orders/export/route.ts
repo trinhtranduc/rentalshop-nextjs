@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withOrderExportAuth } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { searchOrders } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
@@ -9,12 +9,12 @@ import {API} from '@rentalshop/constants';
  * Export orders to CSV (Admin, Merchant, Outlet Admin only)
  * OUTLET_STAFF cannot export orders
  */
-export const GET = withOrderExportAuth(async (authorizedRequest) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
   try {
     // User is already authenticated and authorized to export orders
     // Only ADMIN, MERCHANT, OUTLET_ADMIN can export
     // OUTLET_STAFF will automatically get 403 Forbidden
-    const { user, userScope, request } = authorizedRequest;
+    // user and userScope are now available directly
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '1000');
@@ -78,7 +78,7 @@ export const GET = withOrderExportAuth(async (authorizedRequest) => {
       `"${order.customer?.firstName || ''} ${order.customer?.lastName || ''}"`,
       `"${order.customer?.email || ''}"`,
       `"${order.customer?.phone || ''}"`,
-      order.outletId,
+      order.outlet.id,
       order.totalAmount,
       order.depositAmount,
       order.pickupPlanAt || '',

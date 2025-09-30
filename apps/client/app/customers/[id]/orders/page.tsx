@@ -93,7 +93,7 @@ export default function CustomerOrdersPage() {
         console.log('🔍 CustomerOrdersPage: Making API call to /api/customers/' + numericId);
         
         // Use the real API to fetch customer data by public ID
-        const response = await customersApi.getCustomerByPublicId(numericId);
+        const response = await customersApi.getCustomerById(numericId);
         
         console.log('🔍 CustomerOrdersPage: API response received:', response);
         
@@ -422,7 +422,7 @@ export default function CustomerOrdersPage() {
                           </td>
                           <td className="p-4 align-middle text-sm font-medium">
                             <button
-                              onClick={() => handleOrderAction('view', parseInt(order.id))}
+                              onClick={() => handleOrderAction('view', order.id)}
                               className="text-blue-600 hover:text-blue-900"
                             >
                               View

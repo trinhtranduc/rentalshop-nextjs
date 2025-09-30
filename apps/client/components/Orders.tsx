@@ -35,7 +35,6 @@ export function Orders({
     <div className="space-y-6">
       <OrderHeader
         totalOrders={data.total}
-        stats={data.stats}
       />
       
       <OrderFilters 
@@ -45,7 +44,7 @@ export function Orders({
         onClearFilters={onClearFilters}
       />      
       <OrderTable 
-        orders={data.orders}
+        orders={data.orders as any}
         onOrderAction={onOrderAction}
         sortBy={filters.sortBy}
         sortOrder={filters.sortOrder}
@@ -53,7 +52,7 @@ export function Orders({
       />
       
       <OrderPagination 
-        currentPage={data.currentPage}
+        currentPage={data.page}
         totalPages={data.totalPages}
         total={data.total}
         onPageChange={onPageChange}

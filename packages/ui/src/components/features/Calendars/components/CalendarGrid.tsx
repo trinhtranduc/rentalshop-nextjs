@@ -44,8 +44,8 @@ export function CalendarGrid({
       
       // Get orders for this date
       const dateOrders = orders.filter(order => {
-        const pickupDate = new Date(order.pickupPlanAt);
-        const returnDate = new Date(order.returnPlanAt);
+        const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
+        const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
         return (
           pickupDate.toDateString() === tempDate.toDateString() ||
           returnDate.toDateString() === tempDate.toDateString()
@@ -53,28 +53,30 @@ export function CalendarGrid({
       });
       
       const pickupOrders = dateOrders.filter(order => {
-        const pickupDate = new Date(order.pickupPlanAt);
+        const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
         return pickupDate.toDateString() === tempDate.toDateString();
       });
       
       const returnOrders = dateOrders.filter(order => {
-        const returnDate = new Date(order.returnPlanAt);
+        const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
         return returnDate.toDateString() === tempDate.toDateString();
       });
       
       days.push({
         date: new Date(tempDate),
-        dayOfMonth,
+        events: [], // Required by CalendarDay interface
         isCurrentMonth,
         isToday,
         isSelected,
+        // Additional properties for this component
+        dayOfMonth,
         pickupOrders,
         returnOrders,
         hasEvents: dateOrders.length > 0,
         orders: dateOrders,
         pickupCount: pickupOrders.length,
         returnCount: returnOrders.length
-      });
+      } as any);
       
       tempDate.setDate(tempDate.getDate() + 1);
     }
@@ -122,16 +124,16 @@ export function CalendarGrid({
                   ${day.isToday ? 'text-blue-600 font-bold' : ''}
                 `}
               >
-                {day.dayOfMonth}
+                {(day as any).dayOfMonth}
               </span>
               
               {/* Event Indicators */}
-              {day.hasEvents && (
+              {(day as any).hasEvents && (
                 <div className="flex space-x-1">
-                  {day.pickupCount > 0 && (
+                  {(day as any).pickupCount > 0 && (
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   )}
-                  {day.returnCount > 0 && (
+                  {(day as any).returnCount > 0 && (
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   )}
                 </div>
@@ -141,7 +143,7 @@ export function CalendarGrid({
             {/* Events for this day */}
             <div className="space-y-1">
               {/* Pickup Orders */}
-              {day.pickupOrders.slice(0, 2).map(order => (
+              {(day as any).pickupOrders.slice(0, 2).map((order: any) => (
                 <div
                   key={`pickup-${order.id}`}
                   className="p-1 bg-green-50 border border-green-200 rounded text-xs text-green-700 truncate"
@@ -151,7 +153,7 @@ export function CalendarGrid({
               ))}
               
               {/* Return Orders */}
-              {day.returnOrders.slice(0, 2).map(order => (
+              {(day as any).returnOrders.slice(0, 2).map((order: any) => (
                 <div
                   key={`return-${order.id}`}
                   className="p-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 truncate"
@@ -161,9 +163,9 @@ export function CalendarGrid({
               ))}
               
               {/* Show more indicator if there are more events */}
-              {(day.pickupCount + day.returnCount) > 4 && (
+              {((day as any).pickupCount + (day as any).returnCount) > 4 && (
                 <div className="text-xs text-gray-500 text-center py-1">
-                  +{(day.pickupCount + day.returnCount) - 4} more
+                  +{((day as any).pickupCount + (day as any).returnCount) - 4} more
                 </div>
               )}
             </div>

@@ -6,36 +6,20 @@ import {
   restorePlanVariant,
   permanentlyDeletePlanVariant
 } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { planVariantUpdateSchema } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
-export async function GET(
+async function handleGetPlanVariant(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
 
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can view plan variants)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN.STATUS.FORBIDDEN }
-      );
-    }
-
-    const variantId = parseInt(params.id);
-    if (isNaN(variantId)) {
+    // Use the ID directly as string since getPlanVariantByPublicId expects string
+    const variantId = params.id;
+    if (!variantId) {
       return NextResponse.json(
         { success: false, message: 'Invalid variant ID' },
         { status: 400 }
@@ -66,32 +50,16 @@ export async function GET(
   }
 }
 
-export async function PUT(
+async function handleUpdatePlanVariant(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
 
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can update plan variants)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-
-    const variantId = parseInt(params.id);
-    if (isNaN(variantId)) {
+    // Use the ID directly as string since updatePlanVariant expects string
+    const variantId = params.id;
+    if (!variantId) {
       return NextResponse.json(
         { success: false, message: 'Invalid variant ID' },
         { status: 400 }
@@ -114,14 +82,14 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating plan variant:', error);
     
-    if (error.name === 'ZodError') {
+    if (error instanceof Error && error.name === 'ZodError') {
       return NextResponse.json(
-        { success: false, message: 'Invalid input data', error: error.errors },
+        { success: false, message: 'Invalid input data', error: (error as any).errors },
         { status: 400 }
       );
     }
 
-    if (error.message === 'Plan variant not found') {
+    if (error instanceof Error && error.message === 'Plan variant not found') {
       return NextResponse.json(
         { success: false, message: 'Plan variant not found' },
         { status: API.STATUS.NOT_FOUND }
@@ -139,32 +107,16 @@ export async function PUT(
  * DELETE /api/plan-variants/[id]
  * Delete a specific plan variant (permanent delete)
  */
-export async function DELETE(
+async function handleDeletePlanVariant(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { user, userScope }: { user: any; userScope: any },
+  params: { id: string }
 ) {
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, message: authResult.message },
-        { status: authResult.status }
-      );
-    }
 
-    const user = authResult.user;
-
-    // Check if user is ADMIN (only admins can delete plan variants)
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-
-    const variantId = parseInt(params.id);
-    if (isNaN(variantId)) {
+    // Use the ID directly as string since delete functions expect string
+    const variantId = params.id;
+    if (!variantId) {
       return NextResponse.json(
         { success: false, message: 'Invalid variant ID' },
         { status: 400 }
@@ -193,14 +145,14 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting plan variant:', error);
     
-    if (error.message === 'Plan variant not found') {
+    if (error instanceof Error && error.message === 'Plan variant not found') {
       return NextResponse.json(
         { success: false, message: 'Plan variant not found' },
         { status: API.STATUS.NOT_FOUND }
       );
     }
 
-    if (error.message === 'Cannot delete plan variant with active subscriptions') {
+    if (error instanceof Error && error.message === 'Cannot delete plan variant with active subscriptions') {
       return NextResponse.json(
         { success: false, message: 'Cannot delete plan variant with active subscriptions' },
         { status: 400 }
@@ -212,4 +164,38 @@ export async function DELETE(
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
+}
+
+// Export functions with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetPlanVariant(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleUpdatePlanVariant(req, context, params)
+  );
+  return authenticatedHandler(request);
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleDeletePlanVariant(req, context, params)
+  );
+  return authenticatedHandler(request);
 }

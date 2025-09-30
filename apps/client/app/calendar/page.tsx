@@ -48,7 +48,18 @@ export default function CalendarPage() {
       
       if (result.success) {
         const orders = result.data?.orders || [];
-        setPickupOrders(orders);
+        // Map Order[] to PickupOrder[]
+        const pickupOrders = orders.map((order: any) => ({
+          id: order.id,
+          orderNumber: order.orderNumber || '',
+          customerName: order.customer?.firstName ? `${order.customer.firstName} ${order.customer.lastName || ''}`.trim() : 'Unknown Customer',
+          productName: order.orderItems?.[0]?.product?.name || 'Unknown Product',
+          pickupDate: order.pickupPlanAt || order.createdAt,
+          returnDate: order.returnPlanAt || order.pickupPlanAt,
+          status: order.status,
+          notes: order.notes || ''
+        }));
+        setPickupOrders(pickupOrders);
         
         if (orders.length === 0) {
           // Only show error for authenticated users with no data

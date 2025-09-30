@@ -4,29 +4,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { extendSubscription } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-// ============================================================================
-// POST /api/subscriptions/extend - Extend subscription (Admin only)
-// ============================================================================
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/subscriptions/extend - Extend subscription
+ * Requires: ADMIN role
+ */
+async function handleExtendSubscription(
+  request: NextRequest,
+  { user }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
-
-    // Only ADMIN can extend subscriptions
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Admin access required' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const body = await request.json();
     const { 
@@ -70,11 +59,13 @@ export async function POST(request: NextRequest) {
     }
 
     const extendedSubscription = await extendSubscription(
-      subscriptionId,
-      endDate,
-      amount,
-      method,
-      description
+      subscriptionId.toString(),
+      {
+        endDate,
+        amount,
+        method,
+        description
+      }
     );
 
     return NextResponse.json({
@@ -90,3 +81,7 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withAuthRoles(['ADMIN'])((req, context) => 
+  handleExtendSubscription(req, context)
+);

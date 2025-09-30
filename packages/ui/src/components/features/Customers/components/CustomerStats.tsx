@@ -43,7 +43,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
         <CardContent>
           <div className="space-y-4">
             {stats.topCustomers.map((customer, index) => (
-              <div key={customer.customer.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div key={customer.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                     index === 0 ? 'bg-yellow-100 text-yellow-800' :
@@ -55,7 +55,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
                   </div>
                   <div>
                     <div className="font-medium text-gray-900 dark:text-white">
-                      {`${customer.customer.firstName} ${customer.customer.lastName}`}
+                      {customer.name}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {customer.orderCount} orders
@@ -68,7 +68,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
                     {formatCurrency(customer.totalSpent)}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Customer ID: {customer.customer.id}
+                    Customer ID: {customer.id}
                   </div>
                 </div>
               </div>

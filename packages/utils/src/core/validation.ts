@@ -390,7 +390,7 @@ export const subscriptionCreateSchema = z.object({
   planId: z.string().min(1, 'Plan ID is required'),
   planVariantId: z.string().min(1, 'Plan variant ID is required'),
   merchantId: z.coerce.number().int().positive('Merchant ID is required'),
-  status: z.enum(['active', 'inactive', 'cancelled', 'expired', 'suspended', 'past_due', 'paused']).default('active'),
+  status: z.enum(['trial', 'active', 'past_due', 'cancelled', 'paused', 'expired']).default('active'),
   billingInterval: z.enum(['month', 'quarter', 'semiAnnual', 'year']).default('month'),
   amount: z.number().nonnegative('Amount must be non-negative'),
   currency: z.string().default('USD'),

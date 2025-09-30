@@ -128,6 +128,7 @@ export default function ProductEditPage() {
       // Transform ProductInput to ProductUpdateInput format
       const updateData = {
         ...data,
+        id: productId,
         // Convert images array to string for API
         images: Array.isArray(data.images) ? data.images.join(',') : data.images || '',
         // Map totalStock to stock for API

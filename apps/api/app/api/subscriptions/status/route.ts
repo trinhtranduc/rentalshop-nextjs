@@ -4,21 +4,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSubscriptionByMerchantId } from '@rentalshop/database';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-// ============================================================================
-// GET /api/subscriptions/status - Get current user's subscription status
-// ============================================================================
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/subscriptions/status - Get current user's subscription status
+ * Requires: Any authenticated user
+ */
+async function handleGetSubscriptionStatus(
+  request: NextRequest,
+  { user }: { user: any; userScope: any }
+) {
   try {
-    // Verify authentication using centralized middleware
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-    
-    const user = authResult.user;
 
     // Check if user has a merchant
     if (!user.merchant?.id) {
@@ -90,3 +87,7 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAuthRoles()((req, context) => 
+  handleGetSubscriptionStatus(req, context)
+);

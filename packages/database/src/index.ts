@@ -1,80 +1,46 @@
 // ============================================================================
-// DATABASE PACKAGE EXPORTS - DUAL ID SYSTEM
+// DATABASE PACKAGE EXPORTS - SIMPLIFIED
 // ============================================================================
 
 // Database client
 export { prisma } from './client';
 
-// Dual ID utility functions (RECOMMENDED)
-export {
-  // Entity lookup functions
-  findOutletByPublicId,
-  findCustomerByPublicId,
-  findProductByPublicId,
-  findUserByPublicId,
-  findMerchantByPublicId,
-  findCategoryByPublicId,
-  findOrderByPublicId,
-  
-  // Public ID generation functions
-  generateNextUserPublicId,
-  generateNextMerchantPublicId,
-  generateNextOutletPublicId,
-  generateNextProductPublicId,
-  generateNextCustomerPublicId,
-  generateNextCategoryPublicId,
-  generateNextOrderPublicId,
-  
-  // Utility functions
-  checkDatabaseConnection,
-  
-  // ID conversion functions
-  convertOutletPublicIdToDatabaseId,
-  convertCustomerPublicIdToDatabaseId,
-  convertProductPublicIdToDatabaseId,
-  convertUserPublicIdToDatabaseId,
-  convertMerchantPublicIdToDatabaseId,
-  convertCategoryPublicIdToDatabaseId,
-  convertOrderPublicIdToDatabaseId,
-} from './utils';
+// NEW: Simplified Database API (Recommended)
+export { db, checkDatabaseConnection, generateOrderNumber } from './db-new';
 
-// Single ID order functions
+// Legacy utilities (deprecated - use db API instead)
+// export { checkDatabaseConnection } from './utils';
+
+// Order functions
 export {
   getOrderById,
+  getOrderByNumber,
+  getOrdersByOutlet,
+  getOrdersByCustomer,
   createOrder,
   updateOrder,
-  searchOrders,
-  getOrderByNumber,
-  getOrderStats,
-  getOverdueRentals,
+  deleteOrder,
+  getOrderCount,
+  type OrderWithRelations,
 } from './order';
 
-// Order number generation system
+// Additional order functions
 export {
-  generateOrderNumber,
-  validateOrderNumber,
-  parseOrderNumber,
+  searchOrders,
+} from './order-single-id';
+
+// Order number generator functions
+export {
   getOutletOrderStats,
-  createOrderNumber,
   createOrderNumberWithFormat,
-  generateTestOrderNumbers,
-  analyzeOrderNumber,
-  ORDER_NUMBER_CONFIG,
-  FORMAT_CONFIGS,
-  getOrderNumberConfig,
-  updateOrderNumberConfig,
-  getFormatInfo,
-  getAllFormats,
-  validateOrderNumberConfig,
-  getRecommendedFormat,
   type OrderNumberFormat,
-  type OrderNumberConfig,
-  type OrderNumberResult,
 } from './order-number-generator';
 
-// Dual ID customer functions (RECOMMENDED)
+// Note: generateOrderNumber is now exported from db-new.ts above
+
+// Customer functions
 export {
-  getCustomerByPublicId,
+  getCustomerByPublicId as getCustomerById,
   getCustomerByEmail,
   getCustomerByPhone,
   createCustomer,
@@ -85,7 +51,7 @@ export {
   customerExistsByPhone,
 } from './customer';
 
-// Single ID product functions
+// Product functions
 export {
   getProductById,
   getProductByBarcode,
@@ -98,9 +64,9 @@ export {
   updateProductStock,
 } from './product';
 
-// Dual ID outlet functions (RECOMMENDED)
+// Outlet functions
 export {
-  getOutletByPublicId,
+  getOutletByPublicId as getOutletById,
   searchOutlets,
   createOutlet,
   updateOutlet,
@@ -108,7 +74,7 @@ export {
   getOutletsByMerchant,
 } from './outlet';
 
-// Dual ID user functions (RECOMMENDED)
+// User functions
 export {
   findUserById,
   getUserById,
@@ -120,12 +86,12 @@ export {
   restoreUser,
 } from './user';
 
-// Dual ID merchant functions (RECOMMENDED)
+// Merchant functions
 export {
   updateMerchant,
 } from './merchant';
 
-// Single ID plan functions
+// Plan functions
 export {
   getPlanById,
   searchPlans,
@@ -136,12 +102,9 @@ export {
   getPlanStats,
 } from './plan';
 
-// Plan function aliases for API compatibility
-export { getPlanById as getPlanByPublicId } from './plan';
 
-// Plan variant functions removed - Using modern subscription system with dynamic pricing
 
-// Modern subscription functions (Following Stripe/Shopify patterns)
+// Subscription functions
 export {
   getSubscriptionByMerchantId,
   getAllSubscriptions,
@@ -153,7 +116,6 @@ export {
   cancelSubscription,
   getAllPlans,
   calculatePlanPricing,
-  // Subscription renewal functions
   getExpiredSubscriptions,
   getSubscriptionById,
   updateSubscription,
@@ -162,7 +124,7 @@ export {
   type SubscriptionPayment,
 } from './subscription';
 
-// Merchant registration with trial enrollment
+// Registration functions
 export {
   registerMerchantWithTrial,
   getTrialPlan,
@@ -172,14 +134,13 @@ export {
   type MerchantRegistrationResult,
 } from './merchant-registration';
 
-// Smart registration system for all user roles
 export {
   registerUser,
   type RegistrationInput,
   type RegistrationResult,
 } from './registration';
 
-// Audit logging system
+// Audit functions
 export {
   AuditLogger,
   getAuditLogger,
@@ -189,13 +150,19 @@ export {
   type AuditLogFilter,
 } from './audit';
 
-// ============================================================================
-// LEGACY FUNCTIONS - DEPRECATED
-// ============================================================================
-// These are kept for backward compatibility but should not be used in new code
-// Use the new dual ID functions above instead
-
-// export * from './utils';
-// export * from './order';
-// export * from './customer';
-// export * from './product'; 
+// Plan variant and subscription placeholder functions
+export {
+  getPlanVariantByPublicId,
+  updatePlanVariant,
+  permanentlyDeletePlanVariant,
+  deletePlanVariant,
+  getDeletedPlanVariants,
+  restorePlanVariant,
+  searchPlanVariants,
+  createPlanVariant,
+  getPlanByPublicId,
+  getActivePlanVariants,
+  getPlanVariantStats,
+  markSubscriptionAsExpired,
+  extendSubscription,
+} from './plan-variant-placeholders'; 

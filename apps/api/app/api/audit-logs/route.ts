@@ -1,27 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { AuditLogger } from '../../../../../packages/database/src/audit';
-import {API} from '@rentalshop/constants';
+import { API } from '@rentalshop/constants';
 
-// GET /api/audit-logs - Get audit logs with filtering and pagination
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/audit-logs - Get audit logs with filtering and pagination
+ * REFACTORED: Now uses unified withAuthRoles pattern
+ */
+export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  console.log(`🔍 GET /api/audit-logs - Admin: ${user.email}`);
+  
   try {
-    // Verify authentication using the centralized method
-    const authResult = await authenticateRequest(request);
-    if (!authResult.success) {
-      return authResult.response;
-    }
-
-    const user = authResult.user;
-
-    // Only ADMIN users can access audit logs
-    if (user?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, message: 'Insufficient permissions. Admin access required.' },
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const { searchParams } = new URL(request.url);
     
@@ -30,9 +20,9 @@ export async function GET(request: NextRequest) {
       action: searchParams.get('action') || undefined,
       entityType: searchParams.get('entityType') || undefined,
       entityId: searchParams.get('entityId') || undefined,
-      userId: searchParams.get('userId') || undefined,
-      merchantId: searchParams.get('merchantId') || undefined,
-      outletId: searchParams.get('outletId') || undefined,
+      userId: searchParams.get('userId') ? parseInt(searchParams.get('userId')!) : undefined,
+      merchantId: searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : undefined,
+      outletId: searchParams.get('outletId') ? parseInt(searchParams.get('outletId')!) : undefined,
       severity: searchParams.get('severity') || undefined,
       category: searchParams.get('category') || undefined,
       startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
@@ -66,4 +56,4 @@ export async function GET(request: NextRequest) {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
