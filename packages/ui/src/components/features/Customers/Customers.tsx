@@ -270,7 +270,7 @@ export const Customers: React.FC<CustomersProps> = ({
         />
 
         {/* Pagination - only show when there are results */}
-        {filteredCustomers.length > 0 && pagination.totalPages > 1 && (
+        {filteredCustomers.length > 0 && (
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}

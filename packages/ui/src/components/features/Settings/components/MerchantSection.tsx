@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Card, 
   CardContent,
@@ -8,6 +8,7 @@ import {
   Input,
   Label
 } from '@rentalshop/ui';
+import { merchantsApi } from '@rentalshop/utils';
 
 // ============================================================================
 // TYPES
@@ -48,6 +49,70 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   onCancel,
   onInputChange
 }) => {
+  const [merchantData, setMerchantData] = useState<any>(null);
+  const [loadingMerchant, setLoadingMerchant] = useState(false);
+  const fetchingRef = useRef(false);
+  
+  // Debug logging
+  console.log('🔍 MerchantSection render - user:', user);
+  console.log('🔍 MerchantSection render - user.merchant:', user?.merchant);
+  console.log('🔍 MerchantSection render - user.merchantId:', user?.merchantId);
+  console.log('🔍 MerchantSection render - user role:', user?.role);
+  console.log('🔍 MerchantSection render - loadingMerchant:', loadingMerchant);
+  console.log('🔍 MerchantSection render - fetchingRef.current:', fetchingRef.current);
+  
+  // Fetch merchant data if user has merchantId but no full merchant object
+  useEffect(() => {
+    const fetchMerchantData = async () => {
+      // Prevent infinite loops by checking if we're already fetching
+      if (user?.merchantId && !user?.merchant && !fetchingRef.current) {
+        console.log('🔄 Fetching merchant data for merchantId:', user.merchantId);
+        fetchingRef.current = true;
+        setLoadingMerchant(true);
+        
+        try {
+          const result = await merchantsApi.getMerchantById(user.merchantId);
+          console.log('🔍 Merchant API response:', result);
+          
+          if (result.success && result.data) {
+            // Handle nested structure: result.data.merchant or direct result.data
+            const merchantInfo = (result.data as any).merchant || result.data;
+            console.log('✅ Merchant data extracted:', merchantInfo);
+            setMerchantData(merchantInfo);
+          } else {
+            console.error('❌ Failed to fetch merchant data:', result);
+          }
+        } catch (error) {
+          console.error('💥 Error fetching merchant data:', error);
+        } finally {
+          setLoadingMerchant(false);
+          fetchingRef.current = false;
+        }
+      }
+    };
+    
+    fetchMerchantData();
+    
+    // Cleanup function to reset fetching ref
+    return () => {
+      fetchingRef.current = false;
+    };
+  }, [user?.merchantId, user?.merchant]); // Removed loadingMerchant from dependencies
+  
+  // Use merchant data from user object or fetched data
+  const merchant = user?.merchant || merchantData;
+  
+  // Debug merchant data
+  console.log('🔍 MerchantSection - Final merchant data:', {
+    'user.merchant': user?.merchant,
+    'merchantData': merchantData,
+    'final merchant': merchant,
+    'merchant.name': merchant?.name,
+    'merchant.email': merchant?.email,
+    'merchant.phone': merchant?.phone,
+    'merchant.businessType': merchant?.businessType
+  });
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -75,9 +140,19 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
 
       <Card>
         <CardContent className="p-6">
-          {!user?.merchant ? (
+          {loadingMerchant ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Loading business information...</p>
+            </div>
+          ) : !merchant && !user?.merchantId ? (
             <div className="text-center py-8">
               <p className="text-gray-500">No business information available</p>
+              <p className="text-gray-400 text-sm mt-2">
+                User role: {user?.role || 'Unknown'} | 
+                Has merchantId: {user?.merchantId ? 'Yes' : 'No'} | 
+                Has merchant object: {user?.merchant ? 'Yes' : 'No'} |
+                Fetched merchant: {merchantData ? 'Yes' : 'No'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -96,7 +171,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.name || 'Not provided'}
+                    {merchant?.name || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -110,7 +185,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     id="merchantEmail"
                     name="email"
                     type="email"
-                    value={user?.merchant?.email || ''}
+                    value={merchant?.email || ''}
                     placeholder="Business email address"
                     disabled={true}
                     className="bg-gray-100 text-gray-600 cursor-not-allowed"
@@ -141,7 +216,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.phone || 'Not provided'}
+                    {merchant?.phone || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -161,7 +236,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.businessType || 'Not provided'}
+                    {merchant?.businessType || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -181,7 +256,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.taxId || 'Not provided'}
+                    {merchant?.taxId || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -201,7 +276,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.address || 'Not provided'}
+                    {merchant?.address || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -221,7 +296,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.city || 'Not provided'}
+                    {merchant?.city || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -241,7 +316,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.state || 'Not provided'}
+                    {merchant?.state || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -261,7 +336,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.zipCode || 'Not provided'}
+                    {merchant?.zipCode || 'Not provided'}
                   </p>
                 )}
               </div>
@@ -281,7 +356,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.merchant?.country || 'Not provided'}
+                    {merchant?.country || 'Not provided'}
                   </p>
                 )}
               </div>

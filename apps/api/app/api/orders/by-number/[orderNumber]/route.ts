@@ -3,16 +3,25 @@ import { getOrderByNumber } from '@rentalshop/database';
 import { withAuthRoles, withOrderViewAuth } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-export const GET = withOrderViewAuth(async (
-  authorizedRequest,
-  { params, user }: { params: { orderNumber: string }, user: any }
-) => {
+export const GET = withOrderViewAuth(async (authorizedRequest, context) => {
   try {
+    const { user, userScope } = authorizedRequest;
+    const { params } = context;
+    
     console.log('🔍 [by-number] Starting order lookup for:', params.orderNumber);
     
     // User is already authenticated and authorized to view orders
     // user and userScope are now available directly
     console.log('✅ [by-number] Token verified for user:', user.email);
+    
+    // Ensure user email is available
+    if (!user.email) {
+      console.log('❌ [by-number] User email is missing');
+      return NextResponse.json(
+        { success: false, error: 'User authentication error - email required' },
+        { status: 401 }
+      );
+    }
 
     const { orderNumber } = params;
 
@@ -25,14 +34,46 @@ export const GET = withOrderViewAuth(async (
     }
 
     console.log('🔍 [by-number] Looking for order number:', orderNumber);
+    console.log('🔍 [by-number] User scope:', userScope);
 
-        // Find order by order number using the database function
+    // Find order by order number using the database function
     const order = await getOrderByNumber(orderNumber);
+
+    console.log('🔍 [by-number] Raw order data from database:', JSON.stringify({
+      orderId: order?.id,
+      outletId: order?.outletId,
+      outlet: {
+        id: order?.outlet?.id,
+        name: order?.outlet?.name,
+        merchantId: order?.outlet?.merchantId,
+        merchant: {
+          id: order?.outlet?.merchant?.id,
+          name: order?.outlet?.merchant?.name
+        }
+      }
+    }, null, 2));
 
     if (!order) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
         { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
+    // Security check: Ensure user can only access orders within their scope
+    if (userScope.outletId && order.outletId !== userScope.outletId) {
+      console.log('❌ [by-number] User not authorized to access order from different outlet');
+      return NextResponse.json(
+        { success: false, error: 'Access denied - order belongs to different outlet' },
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
+    if (userScope.merchantId && order.merchantId !== userScope.merchantId) {
+      console.log('❌ [by-number] User not authorized to access order from different merchant');
+      return NextResponse.json(
+        { success: false, error: 'Access denied - order belongs to different merchant' },
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 

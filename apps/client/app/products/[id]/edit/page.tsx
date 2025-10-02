@@ -34,6 +34,7 @@ export default function ProductEditPage() {
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [merchantIdForOutlets, setMerchantIdForOutlets] = useState<number | null>(null);
 
   const productId = parseInt(params.id as string);
 
@@ -64,26 +65,32 @@ export default function ProductEditPage() {
         console.log('🔍 Edit Product - user.role:', user?.role);
         console.log('🔍 Edit Product - product.merchant:', product?.merchant);
         
-        // Check if user has proper merchant access (same logic as add product page)
-        if (!user?.merchant?.id) {
+        // Check if user has proper merchant access (try both merchant.id and merchantId)
+        const resolvedMerchantId = user?.merchant?.id || user?.merchantId;
+        if (!resolvedMerchantId) {
           console.error('🔍 Edit Product - ERROR: User has no merchant ID!');
           console.error('🔍 Edit Product - user object:', user);
           throw new Error('You must be associated with a merchant to edit products. Please contact your administrator.');
         }
         
-        // Use the same merchant ID resolution logic as add product page
-        const merchantIdForOutlets = Number(user.merchant.id);
-        console.log('🔍 Edit Product - merchantId for outlets:', merchantIdForOutlets);
+        setMerchantIdForOutlets(Number(resolvedMerchantId));
         
-        if (merchantIdForOutlets <= 0) {
-          console.error('🔍 Edit Product - ERROR: Invalid merchant ID:', merchantIdForOutlets);
+        console.log('🔍 Edit Product - merchantId for outlets:', resolvedMerchantId);
+        console.log('🔍 Edit Product - User merchant info:', {
+          'user.merchant': user?.merchant,
+          'user.merchantId': user?.merchantId,
+          'resolved merchantId': resolvedMerchantId
+        });
+        
+        if (Number(resolvedMerchantId) <= 0) {
+          console.error('🔍 Edit Product - ERROR: Invalid merchant ID:', resolvedMerchantId);
           throw new Error('Invalid merchant ID. Please contact your administrator.');
         }
         
         // Fetch categories and outlets for the form (same as add product page)
         const [categoriesData, outletsData] = await Promise.all([
           categoriesApi.getCategories(),
-          outletsApi.getOutletsByMerchant(merchantIdForOutlets)
+          outletsApi.getOutletsByMerchant(Number(resolvedMerchantId))
         ]);
         
         if (categoriesData.success) {
@@ -222,7 +229,7 @@ export default function ProductEditPage() {
           product={product}
           categories={categories}
           outlets={outlets}
-          merchantId={typeof user?.merchant?.id === 'number' ? user.merchant.id : 0}
+          merchantId={merchantIdForOutlets || 0}
           onSave={handleSave}
           onCancel={handleCancel}
           onBack={handleBack}

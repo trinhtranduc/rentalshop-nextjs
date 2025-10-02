@@ -224,7 +224,10 @@ export function useAuth() {
       hasStoredUser: !!storedUser,
       tokenLength: token?.length,
       tokenPreview: token ? token.substring(0, 20) + '...' : 'null',
-      storedUserPreview: storedUser ? JSON.stringify(storedUser).substring(0, 100) + '...' : 'null'
+      storedUserPreview: storedUser ? JSON.stringify(storedUser).substring(0, 100) + '...' : 'null',
+      storedUserFirstName: storedUser?.firstName,
+      storedUserLastName: storedUser?.lastName,
+      storedUserPhone: storedUser?.phone
     });
 
     if (token && storedUser) {
@@ -237,7 +240,10 @@ export function useAuth() {
       // Only refresh user data if we don't have complete user info
       // This prevents unnecessary API calls that might fail
       if (!storedUser.merchantId && !storedUser.outletId) {
-        console.log('🔄 User data incomplete - refreshing from API...');
+        console.log('🔄 User data incomplete (missing merchant/outlet IDs) - refreshing from API...');
+        refreshUser();
+      } else if (!storedUser.firstName || !storedUser.lastName) {
+        console.log('🔄 User data incomplete (missing firstName/lastName) - refreshing from API...');
         refreshUser();
       } else {
         console.log('✅ User data complete - no need to refresh');

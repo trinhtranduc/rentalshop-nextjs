@@ -128,6 +128,13 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
           page: page
         };
         
+        console.log('🔍 fetchOrders - Calling API with filters:', {
+          outletParam: outlet,
+          outletId: filters.outletId,
+          status: filters.status,
+          orderType: filters.orderType
+        });
+        
         response = await ordersApi.searchOrders(filters);
       } else {
         // Client page uses getOrdersPaginated
@@ -289,20 +296,31 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
   }, [throttledSearchChange]);
 
   const handleFiltersChange = useCallback((newFilters: Partial<OrderFilters>) => {
-    if (newFilters.status !== undefined) {
+    console.log('🔧 handleFiltersChange called with:', newFilters);
+    
+    if ('status' in newFilters) {
       // Handle 'all' case for UI filter state (not part of OrderStatus type)
+      // Use 'in' operator to detect undefined values as well
       const statusValue = newFilters.status as any;
-      setStatusFilter(statusValue === 'all' ? 'all' : (Array.isArray(newFilters.status) ? newFilters.status[0] : newFilters.status) as string);
+      const newStatusFilter = statusValue === undefined || statusValue === 'all' ? 'all' : (Array.isArray(newFilters.status) ? newFilters.status[0] : newFilters.status) as string;
+      console.log('🔧 Setting statusFilter:', newStatusFilter);
+      setStatusFilter(newStatusFilter);
     }
-    if (newFilters.orderType !== undefined) {
+    if ('orderType' in newFilters) {
       // Handle 'all' case for UI filter state (not part of OrderType type)
+      // Use 'in' operator to detect undefined values as well
       const orderTypeValue = newFilters.orderType as any;
-      setOrderTypeFilter(orderTypeValue === 'all' ? 'all' : newFilters.orderType as string);
+      const newOrderTypeFilter = orderTypeValue === undefined || orderTypeValue === 'all' ? 'all' : newFilters.orderType as string;
+      console.log('🔧 Setting orderTypeFilter:', newOrderTypeFilter);
+      setOrderTypeFilter(newOrderTypeFilter);
     }
-    if (newFilters.outletId !== undefined) {
+    if ('outletId' in newFilters) {
       // Handle 'all' case for UI filter state (outletId is number, not string)
+      // Use 'in' operator to detect undefined values as well
       const outletIdValue = newFilters.outletId as any;
-      setOutletFilter(outletIdValue === 'all' ? 'all' : newFilters.outletId.toString());
+      const newOutletFilter = outletIdValue === undefined || outletIdValue === 'all' || outletIdValue === null ? 'all' : (newFilters.outletId?.toString() || 'all');
+      console.log('🔧 Setting outletFilter:', newOutletFilter, 'from:', newFilters.outletId);
+      setOutletFilter(newOutletFilter);
     }
     if (newFilters.startDate !== undefined || newFilters.endDate !== undefined) {
       setDateRangeFilter({

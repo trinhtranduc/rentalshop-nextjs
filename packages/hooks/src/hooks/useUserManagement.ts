@@ -140,12 +140,28 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       
       if (response.success && response.data) {
         console.log('🔍 useUserManagement: API response success, data:', response.data);
-        // Extract users array and pagination info from the nested response structure
-        const usersData = response.data.users || [];
-        const total = response.data.total || 0;
-        const totalPagesCount = response.data.totalPages || 1;
         
-        console.log('🔍 useUserManagement: setting users data:', { usersCount: usersData.length, total, totalPagesCount });
+        // Handle different response structures
+        let usersData, total, totalPagesCount;
+        
+        if (Array.isArray(response.data)) {
+          // Direct array response (from /api/users)
+          usersData = response.data;
+          total = (response as any).pagination?.total || usersData.length;
+          totalPagesCount = (response as any).pagination?.totalPages || Math.ceil(total / pagination.limit);
+        } else {
+          // Nested response structure (from searchUsers)
+          usersData = response.data.users || [];
+          total = response.data.total || 0;
+          totalPagesCount = response.data.totalPages || 1;
+        }
+        
+        console.log('🔍 useUserManagement: setting users data:', { 
+          usersCount: usersData.length, 
+          total, 
+          totalPagesCount,
+          responseStructure: Array.isArray(response.data) ? 'direct-array' : 'nested-object'
+        });
         setUsers(usersData);
         
         // Update pagination state using the hook

@@ -11,6 +11,30 @@ import { API } from '@rentalshop/constants';
  */
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/orders - User: ${user.email} (${user.role})`);
+  console.log(`🔍 GET /api/orders - UserScope:`, userScope);
+  
+  // Validate that non-admin users have merchant association
+  if (user.role !== 'ADMIN' && !userScope.merchantId) {
+    console.log('❌ Non-admin user without merchant association:', {
+      role: user.role,
+      merchantId: userScope.merchantId,
+      outletId: userScope.outletId
+    });
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: 'User must be associated with a merchant',
+        debug: {
+          role: user.role,
+          merchantId: userScope.merchantId,
+          outletId: userScope.outletId,
+          userMerchantId: user.merchantId,
+          userOutletId: user.outletId
+        }
+      },
+      { status: 403 }
+    );
+  }
   
   try {
     const { searchParams } = new URL(request.url);
@@ -34,6 +58,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       status,
       outletId: queryOutletId,
       customerId,
+      productId,
       startDate,
       endDate
     } = parsed.data;
@@ -42,13 +67,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('Parsed filters:', { 
       page, limit, offset, q, orderType, status, 
-      queryOutletId, customerId, startDate, endDate 
+      queryOutletId, customerId, productId, startDate, endDate 
     });
     
-    // Use simplified database API with userScope
-    const searchFilters = {
+    // Implement role-based filtering
+    let searchFilters: any = {
       merchantId: userScope.merchantId,
-      outletId: queryOutletId || userScope.outletId,
       customerId,
       orderType,
       status,
@@ -59,6 +83,33 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       limit: limit || 20
     };
 
+    // Role-based outlet filtering:
+    // - MERCHANT role: Can see orders from all outlets of their merchant (unless queryOutletId is specified)
+    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
+    if (user.role === 'MERCHANT') {
+      // Merchants can see all outlets unless specifically filtering by outlet
+      searchFilters.outletId = queryOutletId;
+    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      // Outlet users can only see orders from their assigned outlet
+      searchFilters.outletId = userScope.outletId;
+    } else if (user.role === 'ADMIN') {
+      // Admins can see all orders (no outlet filtering unless specified)
+      searchFilters.outletId = queryOutletId;
+    }
+
+    // Add product filtering if specified
+    if (productId) {
+      searchFilters.productId = productId;
+    }
+
+    console.log(`🔍 Role-based filtering for ${user.role}:`, {
+      'userScope.merchantId': userScope.merchantId,
+      'userScope.outletId': userScope.outletId,
+      'queryOutletId': queryOutletId,
+      'final outletId filter': searchFilters.outletId,
+      'productId filter': searchFilters.productId
+    });
+
     console.log('🔍 Using simplified db.orders.search with filters:', searchFilters);
     
     const result = await db.orders.search(searchFilters);
@@ -66,12 +117,14 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     return NextResponse.json({
       success: true,
-      data: result.data || [],
-      pagination: {
+      data: {
+        orders: result.data || [],
+        total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
-        total: result.total || 0,
-        hasMore: result.hasMore || false
+        offset: ((result.page || 1) - 1) * (result.limit || 20),
+        hasMore: result.hasMore || false,
+        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
       message: `Found ${result.total || 0} orders`
     });
@@ -104,23 +157,38 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       }, { status: 400 });
     }
 
-    // Generate order number
-    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    // Generate order number using the outlet's ID
+    const orderNumber = `ORD-${parsed.data.outletId.toString().padStart(3, '0')}-${Date.now().toString().slice(-6)}`;
 
-    // Create order with proper relations
+    // Determine initial status based on order type
+    // SALE orders start as COMPLETED (immediate purchase)
+    // RENT orders start as RESERVED (scheduled rental)
+    const initialStatus = parsed.data.orderType === 'SALE' ? 'COMPLETED' : 'RESERVED';
+
+    // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
       orderNumber,
-      merchant: { connect: { id: userScope.merchantId } },
       outlet: { connect: { id: parsed.data.outletId } },
-      customer: { connect: { id: parsed.data.customerId } },
+      customer: parsed.data.customerId ? { connect: { id: parsed.data.customerId } } : undefined,
       createdBy: { connect: { id: user.id } },
       orderType: parsed.data.orderType,
-      status: 'PENDING',
+      status: initialStatus,
       totalAmount: parsed.data.totalAmount,
       depositAmount: parsed.data.depositAmount || 0,
+      securityDeposit: parsed.data.securityDeposit || 0,
+      damageFee: parsed.data.damageFee || 0,
+      lateFee: parsed.data.lateFee || 0,
+      discountType: parsed.data.discountType,
+      discountValue: parsed.data.discountValue || 0,
+      discountAmount: parsed.data.discountAmount || 0,
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
       returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
+      rentalDuration: parsed.data.rentalDuration,
+      isReadyToDeliver: parsed.data.isReadyToDeliver || false,
+      collateralType: parsed.data.collateralType,
+      collateralDetails: parsed.data.collateralDetails,
       notes: parsed.data.notes,
+      pickupNotes: parsed.data.pickupNotes,
       // Add order items
       orderItems: {
         create: parsed.data.orderItems?.map(item => ({
@@ -128,7 +196,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
-          deposit: item.deposit || 0
+          deposit: item.deposit || 0,
+          notes: item.notes,
+          rentalDays: item.daysRented
         })) || []
       }
     };

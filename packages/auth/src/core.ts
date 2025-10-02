@@ -240,9 +240,23 @@ export async function authenticateRequest(request: NextRequest): Promise<{
  * This is the SINGLE function that determines data access scope
  */
 export function getUserScope(user: AuthUser): UserScope {
+  // Use merchantId/outletId from JWT payload first, fallback to merchant/outlet objects
+  const merchantId = user.merchantId || user.merchant?.id;
+  const outletId = user.outletId || user.outlet?.id;
+  
+  console.log('🔍 getUserScope - User merchant info:', {
+    'user.merchantId': user.merchantId,
+    'user.merchant?.id': user.merchant?.id,
+    'user.outletId': user.outletId,
+    'user.outlet?.id': user.outlet?.id,
+    'resolved merchantId': merchantId,
+    'resolved outletId': outletId,
+    'user.role': user.role
+  });
+  
   return {
-    merchantId: user.merchant?.id,
-    outletId: user.outlet?.id,
+    merchantId,
+    outletId,
     canAccessSystem: user.role === 'ADMIN'
   };
 }

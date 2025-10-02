@@ -462,15 +462,34 @@ export function OrderTable({
                     <Eye className="h-3 w-3 mr-1" />
                     View
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onOrderAction('edit', order.orderNumber)}
-                    className="h-8 px-3"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
+                  {/* 
+                    Edit Button Logic:
+                    - RENT orders: Only editable when RESERVED (not PICKUPED/RETURNED/CANCELLED)
+                    - SALE orders: Only editable when RESERVED (normally SALE starts as COMPLETED, so rarely editable)
+                    - All other statuses: Disabled
+                  */}
+                  {order.status === 'RESERVED' ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onOrderAction('edit', order.orderNumber)}
+                      className="h-8 px-3"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      className="h-8 px-3 opacity-50 cursor-not-allowed"
+                      title={`Cannot edit ${order.status.toLowerCase()} orders`}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

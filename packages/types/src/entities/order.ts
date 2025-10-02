@@ -491,6 +491,19 @@ export interface OrderListData {
 }
 
 /**
+ * Orders data interface with stats
+ * Used for Orders component with statistics
+ */
+export interface OrdersData {
+  orders: OrderSearchResult[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  limit: number;
+  stats?: OrderStats;
+}
+
+/**
  * Order detail data interface
  * Used for detailed order views in admin/client apps
  */

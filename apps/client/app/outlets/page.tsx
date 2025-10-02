@@ -66,11 +66,16 @@ export default function OutletsPage() {
     description: ''
   });
 
-  const merchantId = user?.merchant?.id;
+  // Try both merchant.id and merchantId (same fix as products page)
+  const merchantId = user?.merchant?.id || user?.merchantId;
   
   // Debug logging
   console.log('🔍 OutletsPage render - user:', user);
-  console.log('🔍 OutletsPage render - merchantId:', merchantId);
+  console.log('🔍 OutletsPage render - merchant info:', {
+    'user.merchant': user?.merchant,
+    'user.merchantId': user?.merchantId,
+    'resolved merchantId': merchantId
+  });
   console.log('🔍 OutletsPage render - outlets state:', outlets);
   console.log('🔍 OutletsPage render - loading state:', loading);
 
@@ -88,9 +93,18 @@ export default function OutletsPage() {
       console.log('📥 Outlets API response:', result);
       
       if (result.success) {
-        // API returns { success: true, data: { outlets: Outlet[], total, page, totalPages } }
+        // API returns { success: true, data: { outlets: Outlet[], total, page, hasMore } }
+        console.log('🔍 Outlets API response structure:', {
+          'result.data': result.data,
+          'result.data.outlets': result.data?.outlets,
+          'result.data.outlets length': result.data?.outlets?.length,
+          'result.data type': typeof result.data,
+          'result.data isArray': Array.isArray(result.data)
+        });
+        
         const outletsData = result.data?.outlets || [];
         console.log('✅ Setting outlets state:', outletsData);
+        console.log('✅ Outlets count:', outletsData.length);
         setOutlets(outletsData);
       } else {
         console.error('❌ Failed to fetch outlets:', result.error);

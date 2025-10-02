@@ -210,44 +210,56 @@ async function handleUpdateOrder(
     }
 
     const updateData = parsed.data;
-    const updateInput: OrderUpdateInput = {
-      orderType: 'RENT', // Default value
-      createdById: user.id, // Required field
-      orderItems: [] as OrderItemInput[], // Default empty array for updates
-      subtotal: 0, // Default value
-      totalAmount: 0, // Default value
-      ...(updateData.status !== undefined && { status: updateData.status as any }),
-      ...(updateData.customerId !== undefined && { customerId: updateData.customerId }),
-      outletId: updateData.outletId || 1, // Ensure outletId is always defined
-      ...(updateData.pickupPlanAt !== undefined && { pickupPlanAt: typeof updateData.pickupPlanAt === 'string' ? new Date(updateData.pickupPlanAt) : updateData.pickupPlanAt }),
-      ...(updateData.returnPlanAt !== undefined && { returnPlanAt: typeof updateData.returnPlanAt === 'string' ? new Date(updateData.returnPlanAt) : updateData.returnPlanAt }),
-      ...(updateData.pickedUpAt !== undefined && { pickedUpAt: typeof updateData.pickedUpAt === 'string' ? new Date(updateData.pickedUpAt) : updateData.pickedUpAt }),
-      ...(updateData.returnedAt !== undefined && { returnedAt: typeof updateData.returnedAt === 'string' ? new Date(updateData.returnedAt) : updateData.returnedAt }),
-      ...(updateData.rentalDuration !== undefined && { rentalDuration: updateData.rentalDuration }),
-      ...(updateData.discountType !== undefined && { discountType: updateData.discountType }),
-      ...(updateData.discountValue !== undefined && { discountValue: updateData.discountValue }),
-      ...(updateData.discountAmount !== undefined && { discountAmount: updateData.discountAmount }),
-      ...(updateData.totalAmount !== undefined && { totalAmount: updateData.totalAmount }),
-      ...(updateData.depositAmount !== undefined && { depositAmount: updateData.depositAmount }),
-      ...(updateData.securityDeposit !== undefined && { securityDeposit: updateData.securityDeposit }),
-      ...(updateData.damageFee !== undefined && { damageFee: updateData.damageFee }),
-      ...(updateData.lateFee !== undefined && { lateFee: updateData.lateFee }),
-      ...(updateData.collateralType !== undefined && { collateralType: updateData.collateralType }),
-      ...(updateData.collateralDetails !== undefined && { collateralDetails: updateData.collateralDetails }),
-      ...(updateData.notes !== undefined && { notes: updateData.notes }),
-      ...(updateData.pickupNotes !== undefined && { pickupNotes: updateData.pickupNotes }),
-      ...(updateData.returnNotes !== undefined && { returnNotes: updateData.returnNotes }),
-      ...(updateData.damageNotes !== undefined && { damageNotes: updateData.damageNotes }),
-      ...(updateData.isReadyToDeliver !== undefined && { isReadyToDeliver: updateData.isReadyToDeliver }),
-      // Order items management - keep productId as number for type consistency
-      ...(updateData.orderItems !== undefined && { 
-        orderItems: updateData.orderItems.map(item => ({
-          ...item,
-          productId: item.productId, // Keep as number for OrderItemInput type
-          totalPrice: item.totalPrice || 0, // Ensure totalPrice is always defined
-        }))
-      }),
-    };
+    
+    console.log('🔧 API Route - Update data received:', {
+      hasOrderItems: !!updateData.orderItems,
+      orderItemsLength: updateData.orderItems?.length,
+      orderItemsPreview: updateData.orderItems?.slice(0, 2)
+    });
+    
+    // Build update input - pass orderItems directly without transformation
+    const updateInput: any = {};
+    
+    if (updateData.status !== undefined) updateInput.status = updateData.status;
+    if (updateData.customerId !== undefined) updateInput.customerId = updateData.customerId;
+    if (updateData.outletId !== undefined) updateInput.outletId = updateData.outletId;
+    if (updateData.orderType !== undefined) updateInput.orderType = updateData.orderType;
+    if (updateData.totalAmount !== undefined) updateInput.totalAmount = updateData.totalAmount;
+    if (updateData.depositAmount !== undefined) updateInput.depositAmount = updateData.depositAmount;
+    if (updateData.securityDeposit !== undefined) updateInput.securityDeposit = updateData.securityDeposit;
+    if (updateData.damageFee !== undefined) updateInput.damageFee = updateData.damageFee;
+    if (updateData.lateFee !== undefined) updateInput.lateFee = updateData.lateFee;
+    if (updateData.discountType !== undefined) updateInput.discountType = updateData.discountType;
+    if (updateData.discountValue !== undefined) updateInput.discountValue = updateData.discountValue;
+    if (updateData.discountAmount !== undefined) updateInput.discountAmount = updateData.discountAmount;
+    if (updateData.pickupPlanAt !== undefined) updateInput.pickupPlanAt = typeof updateData.pickupPlanAt === 'string' ? new Date(updateData.pickupPlanAt) : updateData.pickupPlanAt;
+    if (updateData.returnPlanAt !== undefined) updateInput.returnPlanAt = typeof updateData.returnPlanAt === 'string' ? new Date(updateData.returnPlanAt) : updateData.returnPlanAt;
+    if (updateData.pickedUpAt !== undefined) updateInput.pickedUpAt = typeof updateData.pickedUpAt === 'string' ? new Date(updateData.pickedUpAt) : updateData.pickedUpAt;
+    if (updateData.returnedAt !== undefined) updateInput.returnedAt = typeof updateData.returnedAt === 'string' ? new Date(updateData.returnedAt) : updateData.returnedAt;
+    if (updateData.rentalDuration !== undefined) updateInput.rentalDuration = updateData.rentalDuration;
+    if (updateData.isReadyToDeliver !== undefined) updateInput.isReadyToDeliver = updateData.isReadyToDeliver;
+    if (updateData.collateralType !== undefined) updateInput.collateralType = updateData.collateralType;
+    if (updateData.collateralDetails !== undefined) updateInput.collateralDetails = updateData.collateralDetails;
+    if (updateData.notes !== undefined) updateInput.notes = updateData.notes;
+    if (updateData.pickupNotes !== undefined) updateInput.pickupNotes = updateData.pickupNotes;
+    if (updateData.returnNotes !== undefined) updateInput.returnNotes = updateData.returnNotes;
+    if (updateData.damageNotes !== undefined) updateInput.damageNotes = updateData.damageNotes;
+    
+    // Pass orderItems as-is - the updateOrder function will handle the nested write conversion
+    if (updateData.orderItems !== undefined && Array.isArray(updateData.orderItems)) {
+      updateInput.orderItems = updateData.orderItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
+        deposit: item.deposit || 0,
+        notes: item.notes || '',
+        rentalDays: item.daysRented
+      }));
+      console.log('🔧 API Route - Passing', updateInput.orderItems.length, 'order items to updateOrder function');
+    }
+
+    console.log('🔧 API Route - Final updateInput keys:', Object.keys(updateInput));
 
     // Update the order
     const orderIdNumber = parseInt(orderId);
@@ -258,7 +270,8 @@ async function handleUpdateOrder(
       );
     }
     
-    const updatedOrder = await updateOrder(orderIdNumber, updateInput as any);
+    console.log('🔧 API Route - Calling updateOrder with id:', orderIdNumber);
+    const updatedOrder = await updateOrder(orderIdNumber, updateInput);
 
     if (!updatedOrder) {
       return NextResponse.json(

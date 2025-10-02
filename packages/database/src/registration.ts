@@ -138,24 +138,19 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     // Auto-create trial plan if none exists (modern SaaS pattern)
     console.log('Creating trial plan automatically...');
     
-    // Get next available id
-    const lastPlan = await tx.plan.findFirst({
-      orderBy: { id: 'desc' }
-    });
-    const planId = (lastPlan?.id || 0) + 1;
-    
     trialPlan = await tx.plan.create({
       data: {
-        id: planId,
         name: 'Trial',
         description: 'Free trial plan for new merchants to test the platform',
         basePrice: 0, // Free
         currency: 'USD',
         trialDays: 14,
-        maxOutlets: 1,
-        maxUsers: 2,
-        maxProducts: 25,
-        maxCustomers: 50,
+        limits: JSON.stringify({
+          outlets: 1,
+          users: 2,
+          products: 25,
+          customers: 50
+        }),
         features: JSON.stringify([
           'Basic inventory management',
           'Customer management',

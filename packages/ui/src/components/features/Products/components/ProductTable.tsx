@@ -84,49 +84,16 @@ export function ProductTable({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with sorting options */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Products ({products.length})
-        </h2>
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span>Sort by:</span>
-          <div className="flex items-center gap-1">
-            {[
-              { key: 'name', label: 'Name' },
-              { key: 'createdAt', label: 'Created' }
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => onSort?.(key)}
-                className={`px-2 py-1 rounded text-xs transition-colors ${
-                  sortBy === key
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-              >
-                {label}
-                {sortBy === key && (
-                  <span className="ml-1">
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Card-style rows */}
-      <div className="grid gap-4">
+    <div className="space-y-0">
+      {/* Card-style rows without top/bottom padding */}
+      <div className="grid gap-0">
         {products.map((product) => (
           <Card 
             key={product.id} 
-            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700"
+            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700 rounded-none border-t-0 border-l-0 border-r-0 border-b"
           >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="px-6 py-0">
+              <div className="flex items-center justify-between py-4">
                 {/* Left side - Main info */}
                 <div className="flex items-center gap-3 flex-1">
                   {/* Product Image */}

@@ -32,19 +32,24 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
       try {
         setLoadingOutlets(true);
         setOutletError(null);
+        console.log('📍 OrderFilters: Fetching outlets...');
         const result = await outletsApi.getOutlets();
+        console.log('📍 OrderFilters: Outlets API response:', result);
         if (result.success && result.data?.outlets) {
+          console.log('📍 OrderFilters: Setting outlets:', result.data.outlets);
           setOutlets(result.data.outlets);
         } else {
+          console.log('📍 OrderFilters: Failed to load outlets');
           setOutletError('Failed to load outlets');
           setOutlets([]);
         }
       } catch (error) {
-        console.error('Failed to fetch outlets:', error);
+        console.error('📍 OrderFilters: Error fetching outlets:', error);
         setOutletError('Failed to load outlets');
         setOutlets([]);
       } finally {
         setLoadingOutlets(false);
+        console.log('📍 OrderFilters: Outlets loading complete. Total:', outlets.length);
       }
     };
 
@@ -175,14 +180,35 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
               </Select>
             </div>
             
-            {/* Outlet Filter */}
+            {/* Outlet Filter - Using Radix UI Select with workaround for re-selection */}
             <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Outlet
-              </label>
-              <Select value={filters.outletId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('outletId', value === 'all' ? undefined : parseInt(value))}>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Outlet
+                </label>
+                {filters.outletId && (
+                  <button
+                    onClick={() => {
+                      console.log('🔧 Clear outlet filter clicked');
+                      handleFilterChange('outletId', undefined);
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline"
+                  >
+                    × Clear
+                  </button>
+                )}
+              </div>
+              <Select 
+                value={filters.outletId ? filters.outletId.toString() : 'all'} 
+                onValueChange={(value) => {
+                  console.log('🔧 Outlet Select - onValueChange:', value);
+                  const newValue = value === 'all' ? undefined : parseInt(value);
+                  console.log('🔧 Outlet Select - calling handleFilterChange with:', newValue);
+                  handleFilterChange('outletId', newValue);
+                }}
+              >
                 <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
-                  <SelectValue placeholder={loadingOutlets ? "Loading..." : "All Outlets"} />
+                  <SelectValue placeholder="All Outlets" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="font-medium">All Outlets</SelectItem>

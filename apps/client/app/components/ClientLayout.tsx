@@ -39,11 +39,11 @@ export default function ClientLayout({
     );
   }
 
-  // Check if we're on the login page - hide sidebar on login page
-  const isLoginPage = pathname === '/login';
+  // Check if we're on auth pages - hide sidebar on auth pages
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forget-password';
   
-  // Redirect to login if not authenticated (except on login page)
-  if (!user && !isLoginPage) {
+  // Redirect to login if not authenticated (except on auth pages)
+  if (!user && !isAuthPage) {
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
@@ -63,8 +63,8 @@ export default function ClientLayout({
     }
   };
 
-  // Check if we're on the login page - hide sidebar on login page
-  const showSidebar = !isLoginPage;
+  // Check if we're on auth pages - hide sidebar on auth pages
+  const showSidebar = !isAuthPage;
 
   return (
     <div className="flex h-screen bg-bg-primary">
