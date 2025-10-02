@@ -26,6 +26,7 @@ export default function ProductAddPage() {
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [merchantId, setMerchantId] = useState<number | null>(null);
 
 
 
@@ -40,17 +41,26 @@ export default function ProductAddPage() {
           return;
         }
 
-        // Check if user has merchant ID
-        if (!user?.merchant?.id) {
+        // Check if user has merchant ID (try both merchant.id and merchantId)
+        const resolvedMerchantId = user?.merchant?.id || user?.merchantId;
+        if (!resolvedMerchantId) {
           setError('You must be associated with a merchant to create products. Please contact your administrator.');
           setLoading(false);
           return;
         }
 
+        setMerchantId(Number(resolvedMerchantId));
+
+        console.log('🔍 Product Add - User merchant info:', {
+          'user.merchant': user?.merchant,
+          'user.merchantId': user?.merchantId,
+          'resolved merchantId': resolvedMerchantId
+        });
+
         // Fetch categories and outlets for the form
         const [categoriesData, outletsData] = await Promise.all([
           categoriesApi.getCategories(),
-          outletsApi.getOutletsByMerchant(Number(user.merchant.id))
+          outletsApi.getOutletsByMerchant(Number(resolvedMerchantId))
         ]);
         
         if (categoriesData.success) {
@@ -225,7 +235,7 @@ export default function ProductAddPage() {
         <ProductAddForm
           categories={categories}
           outlets={outlets}
-          merchantId={user?.merchant?.id ? String(user.merchant.id) : ''}
+          merchantId={String(merchantId)}
           onSave={handleSave}
           onCancel={handleCancel}
           onBack={handleBack}

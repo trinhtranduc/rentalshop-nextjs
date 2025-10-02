@@ -149,6 +149,7 @@ export const ordersQuerySchema = z.object({
   outletId: z.coerce.number().int().positive().optional(), // Changed from string to number
   customerId: z.coerce.number().int().positive().optional(), // Changed from string to number
   userId: z.coerce.number().int().positive().optional(), // Changed from string to number
+  productId: z.coerce.number().int().positive().optional(), // Add product filtering support
   orderType: orderTypeEnum.optional(),
   status: orderStatusEnum.optional(),
   startDate: z.coerce.date().optional(),

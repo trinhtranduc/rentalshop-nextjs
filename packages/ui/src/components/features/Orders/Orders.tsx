@@ -14,7 +14,7 @@ interface OrdersProps {
   onFiltersChange: (filters: OrderFilters) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
-  onOrderAction: (action: string, orderId: number) => void;
+  onOrderAction: (action: string, orderNumber: string) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
 }
@@ -50,14 +50,16 @@ export function Orders({
         onSort={onSort}
       />
       
-      <Pagination 
-        currentPage={data.currentPage}
-        totalPages={data.totalPages}
-        total={data.total}
-        limit={data.limit || 20}
-        onPageChange={onPageChange}
-        itemName="orders"
-      />
+      {data.total > 0 && (
+        <Pagination 
+          currentPage={data.currentPage}
+          totalPages={data.totalPages}
+          total={data.total}
+          limit={data.limit || 20}
+          onPageChange={onPageChange}
+          itemName="orders"
+        />
+      )}
     </div>
   );
 }

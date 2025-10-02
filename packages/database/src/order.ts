@@ -29,6 +29,7 @@ export interface OrderWithRelations {
   createdAt: Date
   updatedAt: Date
   outletId: number
+  merchantId?: number // Extracted from outlet relation for authorization
   customerId?: number
   createdById: number
   // Relations
@@ -45,6 +46,11 @@ export interface OrderWithRelations {
     id: number
     name: string
     address: string
+    merchantId: number
+    merchant: {
+      id: number
+      name: string
+    }
   }
   createdBy?: {
     id: number
@@ -120,6 +126,13 @@ const orderInclude = {
       id: true,
       name: true,
       address: true,
+      merchantId: true, // Include merchantId for authorization checks
+      merchant: {
+        select: {
+          id: true,
+          name: true,
+        }
+      }
     }
   },
   createdBy: {
@@ -184,6 +197,7 @@ function transformOrder(order: any): OrderWithRelations {
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     outletId: order.outletId,
+    merchantId: order.outlet?.merchantId, // Extract merchantId from outlet relation for authorization
     customerId: order.customerId || undefined,
     createdById: order.createdById,
     // Relations
@@ -320,14 +334,61 @@ export async function updateOrder(
     returnNotes: string
     damageNotes: string
     customerId: number
+    orderItems?: Array<{
+      productId: number
+      quantity: number
+      unitPrice: number
+      totalPrice: number
+      deposit?: number
+      notes?: string
+      rentalDays?: number
+    }>
   }>
 ): Promise<OrderWithRelations> {
+  console.log('🔧 updateOrder called with id:', id);
+  console.log('🔧 updateOrder data keys:', Object.keys(data));
+  console.log('🔧 updateOrder has orderItems?:', !!data.orderItems, 'length:', data.orderItems?.length);
+  
+  // Extract orderItems from data if present
+  const { orderItems, ...orderData } = data
+  
+  // Build update data
+  const updateData: any = { ...orderData }
+  
+  // Handle order items separately if provided
+  if (orderItems && orderItems.length > 0) {
+    console.log('🔧 Processing', orderItems.length, 'order items');
+    updateData.orderItems = {
+      // Delete all existing order items
+      deleteMany: {},
+      // Create new order items
+      create: orderItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
+        deposit: item.deposit || 0,
+        notes: item.notes,
+        rentalDays: item.rentalDays
+      }))
+    }
+    console.log('🔧 Converted orderItems to nested write format');
+  }
+  
+  console.log('🔧 Final update data structure:', JSON.stringify({
+    hasOrderItems: !!updateData.orderItems,
+    orderItemsType: updateData.orderItems ? typeof updateData.orderItems : 'none',
+    orderItemsIsArray: Array.isArray(updateData.orderItems),
+    orderItemsKeys: updateData.orderItems ? Object.keys(updateData.orderItems) : []
+  }));
+  
   const order = await prisma.order.update({
     where: { id },
-    data,
+    data: updateData,
     include: orderInclude,
   })
 
+  console.log('✅ Order updated successfully');
   return transformOrder(order)
 }
 

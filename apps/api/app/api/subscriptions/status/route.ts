@@ -17,16 +17,32 @@ async function handleGetSubscriptionStatus(
 ) {
   try {
 
-    // Check if user has a merchant
-    if (!user.merchant?.id) {
+    // Check if user has a merchant (try both merchant.id and merchantId)
+    const merchantId = user.merchant?.id || user.merchantId;
+    
+    console.log('🔍 Subscription status - User merchant info:', {
+      'user.merchant': user.merchant,
+      'user.merchantId': user.merchantId,
+      'resolved merchantId': merchantId,
+      'user.role': user.role
+    });
+    
+    if (!merchantId) {
       return NextResponse.json({
         success: false,
-        message: 'User is not associated with any merchant'
+        message: 'User is not associated with any merchant',
+        debug: {
+          role: user.role,
+          hasMerchantObject: !!user.merchant,
+          hasMerchantId: !!user.merchantId,
+          merchantId: user.merchantId,
+          merchantObject: user.merchant
+        }
       }, { status: 400 });
     }
 
     // Get user's subscription
-    const subscription = await getSubscriptionByMerchantId(user.merchant.id);
+    const subscription = await getSubscriptionByMerchantId(merchantId);
     
     if (!subscription) {
       return NextResponse.json({

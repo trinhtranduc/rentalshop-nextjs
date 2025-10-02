@@ -8,7 +8,7 @@ export const PAGINATION = {
   // Search and List Limits
   SEARCH_LIMIT: 20,
   DEFAULT_PAGE_SIZE: 25,
-  MAX_PAGE_SIZE: 100,
+  MAX_PAGE_SIZE: 20,
   
   // Dashboard Limits
   DASHBOARD_ITEMS: 10,

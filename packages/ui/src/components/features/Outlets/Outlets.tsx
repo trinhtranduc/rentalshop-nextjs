@@ -85,7 +85,7 @@ export function Outlets({
       )}
 
       {/* Pagination */}
-      {data.totalPages > 1 && (
+      {data.total > 0 && (
         <OutletPagination
           currentPage={data.currentPage}
           totalPages={data.totalPages}

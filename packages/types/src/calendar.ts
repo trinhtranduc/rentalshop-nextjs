@@ -94,9 +94,16 @@ export interface PickupOrder {
   id: number;
   orderNumber: string;
   customerName: string;
+  customerPhone?: string;
   productName: string;
+  productCount?: number;
+  totalAmount?: number;
   pickupDate: Date;
   returnDate: Date;
   status: string;
+  outletName?: string;
   notes?: string;
+  // 🎯 EXPERT: Calculated fields for better UX
+  isOverdue?: boolean;
+  duration?: number;
 }

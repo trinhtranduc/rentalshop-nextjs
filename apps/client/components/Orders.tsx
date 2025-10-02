@@ -51,12 +51,14 @@ export function Orders({
         onSort={onSort}
       />
       
-      <OrderPagination 
-        currentPage={data.page}
-        totalPages={data.totalPages}
-        total={data.total}
-        onPageChange={onPageChange}
-      />
+      {data.total > 0 && (
+        <OrderPagination 
+          currentPage={data.page}
+          totalPages={data.totalPages}
+          total={data.total}
+          onPageChange={onPageChange}
+        />
+      )}
     </div>
   );
 }

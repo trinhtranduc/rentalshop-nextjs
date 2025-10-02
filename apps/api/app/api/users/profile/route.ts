@@ -74,6 +74,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     console.log('✅ User profile found:', { 
       id: userProfile.id, 
       email: userProfile.email,
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      phone: userProfile.phone,
+      role: userProfile.role,
       hasMerchant: !!userProfile.merchant,
       hasOutlet: !!userProfile.outlet
     });
@@ -126,12 +130,24 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     console.log('Profile API - User data:', {
       userId: user.id,
       role: userProfile.role,
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      phone: userProfile.phone,
       merchantId: userProfile.merchant?.id,
       outletId: userProfile.outlet?.id,
       hasMerchant: !!userProfile.merchant,
       hasOutlet: !!userProfile.outlet,
       merchantName: userProfile.merchant?.name,
       outletName: userProfile.outlet?.name
+    });
+    
+    console.log('Profile API - Transformed user data:', {
+      id: transformedUser.id,
+      email: transformedUser.email,
+      firstName: transformedUser.firstName,
+      lastName: transformedUser.lastName,
+      phone: transformedUser.phone,
+      role: transformedUser.role
     });
 
     console.log('✅ Returning user profile data');

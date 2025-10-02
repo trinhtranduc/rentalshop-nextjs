@@ -42,6 +42,17 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   onCancel,
   onInputChange
 }) => {
+  // Debug logging
+  console.log('🔍 ProfileSection render - user:', user);
+  console.log('🔍 ProfileSection render - user details:', {
+    'user.id': user?.id,
+    'user.email': user?.email,
+    'user.firstName': user?.firstName,
+    'user.lastName': user?.lastName,
+    'user.phone': user?.phone,
+    'user.role': user?.role
+  });
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

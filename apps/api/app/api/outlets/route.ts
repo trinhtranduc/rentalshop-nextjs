@@ -63,12 +63,13 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     return NextResponse.json({
       success: true,
-      data: result.data || [],
-      pagination: {
+      data: {
+        outlets: result.data || [],
+        total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
-        total: result.total || 0,
-        hasMore: result.hasMore || false
+        hasMore: result.hasMore || false,
+        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
       message: `Found ${result.total || 0} outlets`
     });

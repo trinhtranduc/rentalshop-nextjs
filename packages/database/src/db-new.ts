@@ -520,6 +520,7 @@ const db = {
       customerId?: number;
       status?: string;
       orderType?: string;
+      productId?: number;
       startDate?: Date;
       endDate?: Date;
     }): Promise<SimpleResponse<any>> => {
@@ -529,10 +530,30 @@ const db = {
       // Build where clause
       const where: any = {};
       
-      if (whereFilters.outletId) where.outletId = whereFilters.outletId;
+      // Handle merchant-level filtering (orders belong to outlets, outlets belong to merchants)
+      if (whereFilters.merchantId) {
+        where.outlet = {
+          merchantId: whereFilters.merchantId
+        };
+      }
+      
+      // Handle outlet-level filtering (overrides merchant filter if both are present)
+      if (whereFilters.outletId) {
+        where.outletId = whereFilters.outletId;
+      }
+      
       if (whereFilters.customerId) where.customerId = whereFilters.customerId;
       if (whereFilters.status) where.status = whereFilters.status;
       if (whereFilters.orderType) where.orderType = whereFilters.orderType;
+      
+      // Filter by product (through order items)
+      if (whereFilters.productId) {
+        where.orderItems = {
+          some: {
+            productId: whereFilters.productId
+          }
+        };
+      }
       
       // Date range
       if (whereFilters.startDate || whereFilters.endDate) {
@@ -556,7 +577,13 @@ const db = {
           where,
           include: {
             customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
-            outlet: { select: { id: true, name: true } },
+            outlet: { 
+              select: { 
+                id: true, 
+                name: true,
+                merchant: { select: { id: true, name: true } }
+              } 
+            },
             createdBy: { select: { id: true, firstName: true, lastName: true } },
             orderItems: {
               include: {

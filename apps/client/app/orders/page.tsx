@@ -100,9 +100,10 @@ export default function OrdersPage() {
   }, [orders, router, handlePickupOrder, handleReturnOrder, handleCancelOrder, showSuccess, showError]);
 
 
-  // Debug stats
+  // Debug stats and pagination
   console.log('Client orders page - stats received:', stats);
   console.log('Client orders page - orders count:', orders.length);
+  console.log('Client orders page - pagination:', pagination);
 
   // Transform the data to match the refactored Orders component interface - memoized to prevent unnecessary re-renders
   const orderData = useMemo(() => ({
@@ -215,9 +216,9 @@ export default function OrdersPage() {
             orders: orderData.orders as any,
             total: orderData.total,
             hasMore: orderData.hasMore,
-            page: pagination.page,
+            page: pagination.currentPage,
             limit: pagination.limit,
-            totalPages: Math.ceil(orderData.total / pagination.limit),
+            totalPages: pagination.totalPages,
             filters
           }}
           filters={filters}

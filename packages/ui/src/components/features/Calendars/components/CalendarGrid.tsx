@@ -42,24 +42,30 @@ export function CalendarGrid({
       const isToday = tempDate.toDateString() === new Date().toDateString();
       const isSelected = selectedDate?.toDateString() === tempDate.toDateString();
       
-      // Get orders for this date
+      // Get orders for this date using consistent date formatting
+      const currentDateKey = tempDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
       const dateOrders = orders.filter(order => {
         const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
         const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
+        const pickupDateKey = pickupDate.toISOString().split('T')[0];
+        const returnDateKey = returnDate.toISOString().split('T')[0];
         return (
-          pickupDate.toDateString() === tempDate.toDateString() ||
-          returnDate.toDateString() === tempDate.toDateString()
+          pickupDateKey === currentDateKey ||
+          returnDateKey === currentDateKey
         );
       });
       
       const pickupOrders = dateOrders.filter(order => {
         const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
-        return pickupDate.toDateString() === tempDate.toDateString();
+        const pickupDateKey = pickupDate.toISOString().split('T')[0];
+        return pickupDateKey === currentDateKey;
       });
       
       const returnOrders = dateOrders.filter(order => {
         const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
-        return returnDate.toDateString() === tempDate.toDateString();
+        const returnDateKey = returnDate.toISOString().split('T')[0];
+        return returnDateKey === currentDateKey;
       });
       
       days.push({
@@ -116,7 +122,7 @@ export function CalendarGrid({
             `}
           >
             {/* Date Number */}
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2">
               <span
                 className={`
                   text-sm font-medium
@@ -126,46 +132,40 @@ export function CalendarGrid({
               >
                 {(day as any).dayOfMonth}
               </span>
-              
-              {/* Event Indicators */}
-              {(day as any).hasEvents && (
-                <div className="flex space-x-1">
-                  {(day as any).pickupCount > 0 && (
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  )}
-                  {(day as any).returnCount > 0 && (
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* Events for this day */}
+            {/* 🎯 NEW: Order Count Display (User's Requested Strategy) */}
             <div className="space-y-1">
-              {/* Pickup Orders */}
-              {(day as any).pickupOrders.slice(0, 2).map((order: any) => (
-                <div
-                  key={`pickup-${order.id}`}
-                  className="p-1 bg-green-50 border border-green-200 rounded text-xs text-green-700 truncate"
-                >
-                  📦 {order.orderNumber}
+              {/* Show order counts instead of individual orders */}
+              {(day as any).hasEvents && (
+                <div className="space-y-1">
+                  {/* Pickup Count */}
+                  {(day as any).pickupCount > 0 && (
+                    <div className="flex items-center justify-between px-2 py-1 bg-green-50 border border-green-200 rounded text-xs">
+                      <span className="text-green-700 font-medium">Pickup</span>
+                      <span className="text-green-800 font-bold">{(day as any).pickupCount}</span>
+                    </div>
+                  )}
+                  
+                  {/* Return Count */}
+                  {(day as any).returnCount > 0 && (
+                    <div className="flex items-center justify-between px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs">
+                      <span className="text-blue-700 font-medium">Return</span>
+                      <span className="text-blue-800 font-bold">{(day as any).returnCount}</span>
+                    </div>
+                  )}
+                  
+                  {/* More indicator */}
+                  <div className="text-xs text-gray-400 text-left">
+                    More...
+                  </div>
                 </div>
-              ))}
+              )}
               
-              {/* Return Orders */}
-              {(day as any).returnOrders.slice(0, 2).map((order: any) => (
-                <div
-                  key={`return-${order.id}`}
-                  className="p-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 truncate"
-                >
-                  🔄 {order.orderNumber}
-                </div>
-              ))}
-              
-              {/* Show more indicator if there are more events */}
-              {((day as any).pickupCount + (day as any).returnCount) > 4 && (
-                <div className="text-xs text-gray-500 text-center py-1">
-                  +{((day as any).pickupCount + (day as any).returnCount) - 4} more
+              {/* No events message */}
+              {!(day as any).hasEvents && day.isCurrentMonth && (
+                <div className="text-xs text-gray-400 text-center py-2">
+                  No orders
                 </div>
               )}
             </div>
