@@ -180,7 +180,8 @@ export default function DashboardPage() {
   const [orderData, setOrderData] = useState<OrderData[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [todayOrders, setTodayOrders] = useState<any[]>([]);
+  const [orderStatusCounts, setOrderStatusCounts] = useState<any>({});
 
   useEffect(() => {
     fetchDashboardData();
@@ -252,7 +253,7 @@ export default function DashboardPage() {
         ordersResponse,
         topProductsResponse,
         topCustomersResponse,
-        recentOrdersResponse
+        dashboardResponse
       ] = await Promise.all([
         analyticsApi.getEnhancedDashboardSummary(defaultFilters),
         analyticsApi.getTodayMetrics(),
@@ -261,7 +262,7 @@ export default function DashboardPage() {
         analyticsApi.getOrderAnalytics(defaultFilters),
         analyticsApi.getTopProducts(defaultFilters),
         analyticsApi.getTopCustomers(defaultFilters),
-        analyticsApi.getRecentOrders(defaultFilters)
+        analyticsApi.getDashboardSummary(defaultFilters)
       ]);
 
       // Process responses
@@ -273,7 +274,7 @@ export default function DashboardPage() {
         ordersResponse,
         topProductsResponse,
         topCustomersResponse,
-        recentOrdersResponse
+        dashboardResponse
       });
 
       if (statsResponse.success && statsResponse.data) {
@@ -289,7 +290,7 @@ export default function DashboardPage() {
         });
         
         setStats({
-          todayRevenue: apiStats.totalRevenue || 0,
+          todayRevenue: apiStats.todayRevenue || 0,
           todayRentals: apiStats.totalOrders || 0,
           activeRentals: apiStats.activeRentals || 0,
           todayPickups: todayMetrics.todayPickups || 0,
@@ -324,8 +325,9 @@ export default function DashboardPage() {
         setTopCustomers(topCustomersResponse.data);
       }
 
-      if (recentOrdersResponse.success && recentOrdersResponse.data) {
-        setRecentOrders(recentOrdersResponse.data);
+      if (dashboardResponse.success && dashboardResponse.data) {
+        setTodayOrders(dashboardResponse.data.todayOrders || []);
+        setOrderStatusCounts(dashboardResponse.data.orderStatusCounts || {});
       }
 
     } catch (error) {
@@ -528,7 +530,7 @@ export default function DashboardPage() {
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
-                title="Active Rentals"
+                title="Pickup Orders"
                 value={currentStats.activeRentals}
                 change="Real-time data"
                 description="Currently rented"
@@ -577,9 +579,9 @@ export default function DashboardPage() {
                         </div>
                       ))}
                     </div>
-                  ) : (recentOrders || []).filter(order => order.status === 'RESERVED').slice(0, 6).length > 0 ? (
+                  ) : (todayOrders || []).length > 0 ? (
                     <div className="space-y-2">
-                      {(recentOrders || []).filter(order => order.status === 'RESERVED').slice(0, 6).map(order => (
+                      {(todayOrders || []).slice(0, 6).map(order => (
                         <div key={order.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                           <div className="flex items-center space-x-3">
                             <Package className="w-4 h-4 text-blue-600" />
@@ -616,10 +618,11 @@ export default function DashboardPage() {
                 <CardContentClean>
                   <div className="space-y-4">
                     {[
-                      { status: 'Reserved', count: (recentOrders || []).filter(o => o.status === 'RESERVED').length, color: 'bg-blue-500' },
-                      { status: 'Active', count: (recentOrders || []).filter(o => o.status === 'ACTIVE').length, color: 'bg-green-500' },
-                      { status: 'Completed', count: (recentOrders || []).filter(o => o.status === 'COMPLETED').length, color: 'bg-gray-500' },
-                      { status: 'Cancelled', count: (recentOrders || []).filter(o => o.status === 'CANCELLED').length, color: 'bg-red-500' }
+                      { status: 'Reserved', count: orderStatusCounts.reserved || 0, color: 'bg-blue-500' },
+                      { status: 'Pickup', count: orderStatusCounts.pickup || 0, color: 'bg-green-500' },
+                      { status: 'Return', count: orderStatusCounts.returned || 0, color: 'bg-yellow-500' },
+                      { status: 'Completed', count: orderStatusCounts.completed || 0, color: 'bg-gray-500' },
+                      { status: 'Cancelled', count: orderStatusCounts.cancelled || 0, color: 'bg-red-500' }
                     ].map((item, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">

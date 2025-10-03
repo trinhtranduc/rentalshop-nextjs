@@ -75,13 +75,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
           }
         }
 
-        const realIncome = await prisma.payment.aggregate({
-          where: paymentWhereClause,
-          _sum: {
-            amount: true,
-          },
-        });
-
         // Build where clause for orders
         const orderWhereClause: any = {
           createdAt: {
@@ -107,6 +100,56 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
             orderWhereClause.outletId = outlet.id;
           }
         }
+
+        // Get orders for revenue calculation using new formula
+        const ordersForRevenue = await prisma.order.findMany({
+          where: orderWhereClause,
+          select: {
+            id: true,
+            orderType: true,
+            status: true,
+            totalAmount: true,
+            depositAmount: true,
+            securityDeposit: true,
+            damageFee: true,
+            pickedUpAt: true,
+            returnedAt: true
+          }
+        });
+
+        // Calculate revenue using the same formula as dashboard
+        const calculateOrderRevenue = (order: any) => {
+          if (order.orderType === 'SALE') {
+            return order.totalAmount;
+          } else {
+            // RENT order
+            if (order.status === 'RESERVED') {
+              return order.depositAmount;
+            } else if (order.status === 'PICKUPED') {
+              return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
+            } else if (order.status === 'RETURNED') {
+              // Check if order was picked up and returned on the same day
+              const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+              const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
+              
+              if (pickupDate && returnDate) {
+                const sameDay = pickupDate.toDateString() === returnDate.toDateString();
+                if (sameDay) {
+                  // Same day rental: total - security deposit + damage fee
+                  return order.totalAmount - (order.securityDeposit || 0) + (order.damageFee || 0);
+                }
+              }
+              
+              // Different days or no pickup/return dates: security deposit - damage fee
+              return (order.securityDeposit || 0) - (order.damageFee || 0);
+            }
+          }
+          return 0;
+        };
+
+        const realIncome = ordersForRevenue.reduce((sum: number, order: any) => {
+          return sum + calculateOrderRevenue(order);
+        }, 0);
 
         // Get future income (pending orders with future return dates)
         const futureIncome = await prisma.order.aggregate({
@@ -138,7 +181,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
         incomeData.push({
           month: monthName,
           year: year,
-          realIncome: (realIncome._sum?.amount as number | null) || 0,
+          realIncome: realIncome,
           futureIncome: futureIncome._sum.totalAmount || 0,
           orderCount: orderCount
         });
@@ -191,13 +234,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
           }
         }
 
-        const realIncome = await prisma.payment.aggregate({
-          where: paymentWhereClause,
-          _sum: {
-            amount: true,
-          },
-        });
-
         // Build where clause for orders
         const orderWhereClause: any = {
           createdAt: {
@@ -223,6 +259,56 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
             orderWhereClause.outletId = outlet.id;
           }
         }
+
+        // Get orders for revenue calculation using new formula
+        const ordersForRevenue = await prisma.order.findMany({
+          where: orderWhereClause,
+          select: {
+            id: true,
+            orderType: true,
+            status: true,
+            totalAmount: true,
+            depositAmount: true,
+            securityDeposit: true,
+            damageFee: true,
+            pickedUpAt: true,
+            returnedAt: true
+          }
+        });
+
+        // Calculate revenue using the same formula as dashboard
+        const calculateOrderRevenue = (order: any) => {
+          if (order.orderType === 'SALE') {
+            return order.totalAmount;
+          } else {
+            // RENT order
+            if (order.status === 'RESERVED') {
+              return order.depositAmount;
+            } else if (order.status === 'PICKUPED') {
+              return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
+            } else if (order.status === 'RETURNED') {
+              // Check if order was picked up and returned on the same day
+              const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+              const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
+              
+              if (pickupDate && returnDate) {
+                const sameDay = pickupDate.toDateString() === returnDate.toDateString();
+                if (sameDay) {
+                  // Same day rental: total - security deposit + damage fee
+                  return order.totalAmount - (order.securityDeposit || 0) + (order.damageFee || 0);
+                }
+              }
+              
+              // Different days or no pickup/return dates: security deposit - damage fee
+              return (order.securityDeposit || 0) - (order.damageFee || 0);
+            }
+          }
+          return 0;
+        };
+
+        const realIncome = ordersForRevenue.reduce((sum: number, order: any) => {
+          return sum + calculateOrderRevenue(order);
+        }, 0);
 
         // Get future income (pending orders with future return dates)
         const futureIncome = await prisma.order.aggregate({
@@ -254,7 +340,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
         incomeData.push({
           month: `${monthName} ${day}`,
           year: year,
-          realIncome: (realIncome._sum?.amount as number | null) || 0,
+          realIncome: realIncome,
           futureIncome: futureIncome._sum.totalAmount || 0,
           orderCount: orderCount
         });
