@@ -1,12 +1,23 @@
-import React from 'react';
-import { Button } from '@rentalshop/ui';
+import React, { useState } from 'react';
+import { Button, ConfirmationDialog } from '@rentalshop/ui';
 import { X, Printer, Package, RotateCcw } from 'lucide-react';
-import { OrderDetailData, SettingsForm } from '@rentalshop/types';
+import { OrderWithDetails } from '@rentalshop/types';
+
+// Define SettingsForm interface locally
+interface SettingsForm {
+  damageFee: number;
+  securityDeposit: number;
+  collateralType: string;
+  collateralDetails: string;
+  notes: string;
+  bailAmount?: number;
+  material?: string;
+}
 
 interface OrderActionsProps {
-  order: OrderDetailData;
+  order: OrderWithDetails;
   settingsForm: SettingsForm;
-  onCancel?: (order: OrderDetailData) => void;
+  onCancel?: (order: OrderWithDetails) => void;
   onPickup?: (orderId: number, data: any) => void;
   onReturn?: (orderId: number, data: any) => void;
 }
@@ -18,6 +29,8 @@ export const OrderActions: React.FC<OrderActionsProps> = ({
   onPickup, 
   onReturn 
 }) => {
+  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState(false);
+
   const canCancel = order.status !== 'PICKUPED' && 
                    order.status !== 'RETURNED' && 
                    order.status !== 'CANCELLED';
@@ -30,6 +43,15 @@ export const OrderActions: React.FC<OrderActionsProps> = ({
   const canReturn = order.orderType === 'RENT' && 
                    order.status === 'PICKUPED';
 
+  const handleCancelClick = () => {
+    setShowCancelConfirmDialog(true);
+  };
+
+  const handleCancelConfirm = () => {
+    onCancel?.(order);
+    setShowCancelConfirmDialog(false);
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-gray-900">Order Actions</h3>
@@ -41,7 +63,7 @@ export const OrderActions: React.FC<OrderActionsProps> = ({
           {canCancel && (
             <Button
               variant="destructive"
-              onClick={() => onCancel?.(order)}
+              onClick={handleCancelClick}
               className="px-6"
             >
               <X className="w-4 h-4 mr-2" />
@@ -96,6 +118,19 @@ export const OrderActions: React.FC<OrderActionsProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Cancel Order Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showCancelConfirmDialog}
+        onOpenChange={setShowCancelConfirmDialog}
+        type="danger"
+        title="Cancel Order"
+        description={`Are you sure you want to cancel order #${order.orderNumber}? This action cannot be undone.`}
+        confirmText="Cancel Order"
+        cancelText="Keep Order"
+        onConfirm={handleCancelConfirm}
+        onCancel={() => setShowCancelConfirmDialog(false)}
+      />
     </div>
   );
 };

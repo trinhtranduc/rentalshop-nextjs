@@ -39,9 +39,22 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     // Apply role-based filtering
     if (user.role === 'MERCHANT' && userScope.merchantId) {
-      orderWhereClause.merchantId = userScope.merchantId;
+      // Find merchant by id to get CUID, then filter by outlet
+      const merchant = await prisma.merchant.findUnique({
+        where: { id: userScope.merchantId },
+        include: { outlets: { select: { id: true } } }
+      });
+      if (merchant) {
+        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+      }
     } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      orderWhereClause.outletId = userScope.outletId;
+      // Find outlet by id to get CUID
+      const outlet = await prisma.outlet.findUnique({
+        where: { id: userScope.outletId }
+      });
+      if (outlet) {
+        orderWhereClause.outletId = outlet.id;
+      }
     }
     // ADMIN sees all data (no additional filtering)
 

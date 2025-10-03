@@ -1,5 +1,14 @@
-import { OrderData, OrderDetailData, SettingsForm } from '@rentalshop/types';
+import { OrderWithDetails } from '@rentalshop/types';
 import * as CONSTANTS from '@rentalshop/constants';
+
+// Define SettingsForm interface locally
+interface SettingsForm {
+  damageFee: number;
+  securityDeposit: number;
+  collateralType: string;
+  collateralDetails: string;
+  notes: string;
+}
 
 // Type definitions for calculation items
 interface CalculationItem {
@@ -14,7 +23,7 @@ interface CalculationItem {
 }
 
 // Centralized calculation function to ensure consistency
-export const calculateCollectionTotal = (order: OrderDetailData, settingsForm: SettingsForm): number => {
+export const calculateCollectionTotal = (order: OrderWithDetails, settingsForm: SettingsForm): number => {
   if (order.orderType === 'SALE') {
     return order.totalAmount;
   }
@@ -39,12 +48,12 @@ export const getOrderTypeColor = (type: string): string => {
 };
 
 // Collection calculation - USER'S ORIGINAL LOGIC
-export const calculateCollectionAmount = (order: OrderDetailData, settingsForm: SettingsForm): number => {
+export const calculateCollectionAmount = (order: OrderWithDetails, settingsForm: SettingsForm): number => {
   return calculateCollectionTotal(order, settingsForm);
 };
 
 // Collection title - USER'S ORIGINAL LOGIC
-export const getCollectionTitle = (order: OrderDetailData): string => {
+export const getCollectionTitle = (order: OrderWithDetails): string => {
   if (order.orderType === 'SALE') {
     return 'Collect from customer';
   }
@@ -62,7 +71,7 @@ export const getCollectionTitle = (order: OrderDetailData): string => {
 };
 
 // Return amount calculation - USER'S ORIGINAL LOGIC
-export const calculateReturnAmount = (order: OrderDetailData, settingsForm: SettingsForm): number => {
+export const calculateReturnAmount = (order: OrderWithDetails, settingsForm: SettingsForm): number => {
   if (order.orderType === 'SALE') {
     // Sale orders don't have returns
     return 0;
@@ -86,7 +95,7 @@ export const calculateReturnAmount = (order: OrderDetailData, settingsForm: Sett
 };
 
 // Return title - USER'S ORIGINAL LOGIC
-export const getReturnTitle = (order: OrderDetailData): string => {
+export const getReturnTitle = (order: OrderWithDetails): string => {
   if (order.orderType === 'SALE') {
     return 'No return needed';
   }
@@ -102,7 +111,7 @@ export const getReturnTitle = (order: OrderDetailData): string => {
 };
 
 // Collection details - Focus on WHAT TO COLLECT and HOW IT'S CALCULATED
-export const getCollectionDetails = (order: OrderDetailData, settingsForm: SettingsForm) => {
+export const getCollectionDetails = (order: OrderWithDetails, settingsForm: SettingsForm) => {
   if (order.orderType === 'SALE') {
     return {
       title: 'Sale Order - What to Collect',
@@ -185,7 +194,7 @@ export const getCollectionDetails = (order: OrderDetailData, settingsForm: Setti
 };
 
 // Return details - Focus on WHAT TO RETURN and HOW IT'S CALCULATED
-export const getReturnDetails = (order: OrderDetailData, settingsForm: SettingsForm) => {
+export const getReturnDetails = (order: OrderWithDetails, settingsForm: SettingsForm) => {
   if (order.orderType === 'SALE') {
     return {
       title: 'No Return Needed',

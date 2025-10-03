@@ -16,7 +16,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  ConfirmationDialog
 } from '@rentalshop/ui';
 import { 
   Info, 
@@ -38,7 +39,29 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@rentalshop/ui';
 import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
-import type { OrderDetailData, OrderDetailProps, SettingsForm } from '@rentalshop/types';
+import type { OrderWithDetails } from '@rentalshop/types';
+
+// Define OrderDetailProps interface locally
+interface OrderDetailProps {
+  order: OrderWithDetails;
+  onEdit?: (order: OrderWithDetails) => void;
+  onCancel?: (order: OrderWithDetails) => void;
+  onStatusChange?: (orderId: number, status: string) => void;
+  onPickup?: (orderId: number, data: any) => void;
+  onReturn?: (orderId: number, data: any) => void;
+  onSaveSettings?: (settings: SettingsForm) => Promise<void>;
+  loading?: boolean;
+  showActions?: boolean;
+}
+
+// Define SettingsForm interface locally
+interface SettingsForm {
+  damageFee: number;
+  securityDeposit: number;
+  collateralType: string;
+  collateralDetails: string;
+  notes: string;
+}
 import { useToasts } from '@rentalshop/ui';
 import { ToastContainer } from '@rentalshop/ui';
 import { CollectionReturnModal } from './components/CollectionReturnModal';
@@ -239,6 +262,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const [isPickupLoading, setIsPickupLoading] = useState(false);
   const [isReturnLoading, setIsReturnLoading] = useState(false);
   const [isCancelLoading, setIsCancelLoading] = useState(false);
+  
+  // Confirmation dialog state
+  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState(false);
   
   // Update settings when order changes
   useEffect(() => {
@@ -462,6 +488,10 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     }
   };
 
+  const handleCancelOrderClick = () => {
+    setShowCancelConfirmDialog(true);
+  };
+
   const handleCancelOrder = async () => {
     try {
       setIsCancelLoading(true);
@@ -477,6 +507,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
       showError('Cancellation Failed', 'Failed to cancel order. Please try again.');
     } finally {
       setIsCancelLoading(false);
+      setShowCancelConfirmDialog(false);
     }
   };
 
@@ -597,7 +628,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Created By:</span>
                         <span className="text-sm font-medium">
-                          {order.createdBy.firstName} {order.createdBy.lastName}
+                          {order.createdBy?.name || 'Unknown'}
                         </span>
                       </div>
                     )}
@@ -672,7 +703,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                               {item.product?.name || 'Unknown Product'}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {item.product?.barcode ? `Barcode: ${item.product.barcode}` : 'No barcode'}
+                              {item.product?.name ? `Product: ${item.product.name}` : 'Unknown Product'}
                             </div>
                             <div className="text-xs text-gray-600">
                               {formatCurrency(item.unitPrice)} x {item.quantity}
@@ -976,7 +1007,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                   {canCancel && (
                     <Button
                       variant="destructive"
-                      onClick={handleCancelOrder}
+                      onClick={handleCancelOrderClick}
                       className="px-6"
                       disabled={isCancelLoading}
                     >
@@ -1084,6 +1115,20 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         settingsForm={tempSettings}
         mode="return"
         onConfirmReturn={handleReturnOrder}
+      />
+
+      {/* Cancel Order Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showCancelConfirmDialog}
+        onOpenChange={setShowCancelConfirmDialog}
+        type="danger"
+        title="Cancel Order"
+        description={`Are you sure you want to cancel order #${order.orderNumber}? This action cannot be undone.`}
+        confirmText="Cancel Order"
+        cancelText="Keep Order"
+        onConfirm={handleCancelOrder}
+        onCancel={() => setShowCancelConfirmDialog(false)}
+        isLoading={isCancelLoading}
       />
     </div>
   );
