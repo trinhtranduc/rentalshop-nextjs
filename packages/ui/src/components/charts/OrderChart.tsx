@@ -39,15 +39,15 @@ export const OrderChart: React.FC<OrderChartProps> = ({ data, loading = false })
     );
   }
 
-  // Transform data for Recharts - use actual revenue as rental count proxy
+  // Transform data for Recharts - use actual order count
   const chartData = data.map(item => ({
     period: item.period,
-    'Rental Revenue': item.actual,
+    'Rental Orders': item.actual,
   }));
 
   // Custom tooltip formatter
   const formatTooltip = (value: number, name: string) => {
-    return [`$${value.toLocaleString()}`, 'Revenue'];
+    return [`${value.toLocaleString()} orders`, 'Orders'];
   };
 
   return (
@@ -62,8 +62,11 @@ export const OrderChart: React.FC<OrderChartProps> = ({ data, loading = false })
           height={80}
         />
         <YAxis 
-          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          tickFormatter={(value) => `${value}`}
           tick={{ fontSize: 12 }}
+          domain={[0, 'dataMax']}
+          allowDecimals={false}
+          tickCount={6}
         />
         <Tooltip 
           formatter={formatTooltip}
@@ -72,7 +75,7 @@ export const OrderChart: React.FC<OrderChartProps> = ({ data, loading = false })
         <Legend />
         <Line 
           type="monotone" 
-          dataKey="Rental Revenue" 
+          dataKey="Rental Orders" 
           stroke="#3B82F6" 
           strokeWidth={2}
           dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}

@@ -303,6 +303,7 @@ export const analyticsApi = {
    */
   async getEnhancedDashboardSummary(filters?: AnalyticsFilters): Promise<ApiResponse<{
     totalRevenue: number;
+    todayRevenue: number;
     totalOrders: number;
     futureIncome: number;
     todayPickups: number;

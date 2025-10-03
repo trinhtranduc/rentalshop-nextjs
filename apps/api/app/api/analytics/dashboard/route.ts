@@ -14,7 +14,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   try {
     // Build where clause based on user role and scope
     const orderWhereClause: any = {
-      status: { in: ['BOOKED', 'ACTIVE', 'COMPLETED'] }
+      status: { in: ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED'] }
     };
     
     const paymentWhereClause: any = {
@@ -49,55 +49,164 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Fetch dashboard data in parallel
     const [
       totalOrders,
-      totalRevenue,
+      totalRevenueOrders,
       activeOrders,
-      recentOrders
+      recentOrders,
+      reservedOrders,
+      pickupOrders,
+      completedOrders,
+      cancelledOrders,
+      returnedOrders
     ] = await Promise.all([
       // Total orders count
       prisma.order.count({ where: orderWhereClause }),
       
-      // Total revenue from completed payments
-      prisma.payment.aggregate({
-        where: paymentWhereClause,
-        _sum: { amount: true }
+      // Total revenue based on order status and type
+      prisma.order.findMany({
+        where: orderWhereClause,
+        select: {
+          id: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
+          pickedUpAt: true,
+          returnedAt: true
+        }
       }),
       
-      // Active orders count
+      // Pickup orders count
       prisma.order.count({ 
         where: { 
           ...orderWhereClause, 
-          status: 'ACTIVE' 
+          status: 'PICKUPED' 
         } 
       }),
       
-      // Recent orders (last 10)
+      // Today's orders (orders created today)
       prisma.order.findMany({
-        where: orderWhereClause,
+        where: {
+          ...orderWhereClause,
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
+            lte: new Date(new Date().setHours(23, 59, 59, 999)) // End of today
+          }
+        },
         include: {
           customer: { select: { firstName: true, lastName: true } },
-          outlet: { select: { name: true } }
+          outlet: { select: { name: true } },
+          orderItems: {
+            include: {
+              product: { select: { name: true } }
+            }
+          }
         },
-        orderBy: { createdAt: 'desc' },
-        take: 10
+        orderBy: { createdAt: 'desc' }
+      }),
+      
+      // Reserved orders count
+      prisma.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'RESERVED'
+        }
+      }),
+      
+      // Pickup orders count
+      prisma.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'PICKUPED'
+        }
+      }),
+      
+      // Completed orders count
+      prisma.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'COMPLETED'
+        }
+      }),
+      
+      // Cancelled orders count
+      prisma.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'CANCELLED'
+        }
+      }),
+      
+      // Returned orders count
+      prisma.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'RETURNED'
+        }
       })
     ]);
+
+    // Calculate total revenue based on order type and status
+    const calculateOrderRevenue = (order: any) => {
+      if (order.orderType === 'SALE') {
+        return order.totalAmount;
+      } else {
+        // RENT order
+        if (order.status === 'RESERVED') {
+          return order.depositAmount;
+        } else if (order.status === 'PICKUPED') {
+          return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
+        } else if (order.status === 'RETURNED') {
+          // Check if order was picked up and returned on the same day
+          const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+          const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
+          
+          if (pickupDate && returnDate) {
+            const sameDay = pickupDate.toDateString() === returnDate.toDateString();
+            if (sameDay) {
+              // Same day rental: total - security deposit + damage fee
+              return order.totalAmount - (order.securityDeposit || 0) + (order.damageFee || 0);
+            }
+          }
+          
+          // Different days or no pickup/return dates: security deposit - damage fee
+          return (order.securityDeposit || 0) - (order.damageFee || 0);
+        }
+      }
+      return 0;
+    };
+
+    const totalRevenue = totalRevenueOrders.reduce((sum, order) => {
+      return sum + calculateOrderRevenue(order);
+    }, 0);
 
     // Prepare response data
     const dashboardData = {
       overview: {
         totalOrders,
-        totalRevenue: totalRevenue._sum.amount || 0,
+        totalRevenue,
         activeOrders,
         completionRate: totalOrders > 0 ? ((totalOrders - activeOrders) / totalOrders * 100).toFixed(1) : 0
       },
-      recentOrders: recentOrders.map(order => ({
+      orderStatusCounts: {
+        reserved: reservedOrders,
+        pickup: pickupOrders,
+        completed: completedOrders,
+        cancelled: cancelledOrders,
+        returned: returnedOrders
+      },
+      todayOrders: recentOrders.map(order => ({
         id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,
         totalAmount: order.totalAmount,
         customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
         outletName: order.outlet?.name || 'Unknown',
-        createdAt: order.createdAt
+        createdAt: order.createdAt,
+        pickupPlanAt: order.pickupPlanAt,
+        returnPlanAt: order.returnPlanAt,
+        productNames: order.orderItems?.map(item => item.product?.name).filter(Boolean).join(', ') || 'N/A'
       }))
     };
 

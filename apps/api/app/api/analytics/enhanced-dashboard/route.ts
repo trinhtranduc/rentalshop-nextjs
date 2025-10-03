@@ -121,16 +121,21 @@ async function handleGetEnhancedDashboard(
         where: orderWhereClause
       }),
       
-      // Total revenue from completed payments - hide from OUTLET_STAFF
-      user.role !== 'OUTLET_STAFF' ? prisma.payment.aggregate({
-        where: {
-          status: 'COMPLETED',
-          ...paymentWhereClause
-        },
-        _sum: {
-          amount: true,
-        },
-      }) : Promise.resolve({ _sum: { amount: null } }),
+      // Total revenue based on order status and type - hide from OUTLET_STAFF
+      user.role !== 'OUTLET_STAFF' ? prisma.order.findMany({
+        where: orderWhereClause,
+        select: {
+          id: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
+          pickedUpAt: true,
+          returnedAt: true
+        }
+      }) : Promise.resolve([]),
       
       // Active rentals (orders with status ACTIVE)
       prisma.order.count({
@@ -247,6 +252,70 @@ async function handleGetEnhancedDashboard(
       })
     ]);
 
+    // Calculate total revenue based on order type and status
+    const calculateOrderRevenue = (order: any) => {
+      if (order.orderType === 'SALE') {
+        return order.totalAmount;
+      } else {
+        // RENT order
+        if (order.status === 'RESERVED') {
+          return order.depositAmount;
+        } else if (order.status === 'PICKUPED') {
+          return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
+        } else if (order.status === 'RETURNED') {
+          // Check if order was picked up and returned on the same day
+          const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+          const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
+          
+          if (pickupDate && returnDate) {
+            const sameDay = pickupDate.toDateString() === returnDate.toDateString();
+            if (sameDay) {
+              // Same day rental: total - security deposit + damage fee
+              return order.totalAmount - (order.securityDeposit || 0) + (order.damageFee || 0);
+            }
+          }
+          
+          // Different days or no pickup/return dates: security deposit - damage fee
+          return (order.securityDeposit || 0) - (order.damageFee || 0);
+        }
+      }
+      return 0;
+    };
+
+    const calculatedTotalRevenue = totalRevenue.reduce((sum: number, order: any) => {
+      return sum + calculateOrderRevenue(order);
+    }, 0);
+
+    // Calculate today's revenue (orders created today)
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    
+    const todayOrders = await prisma.order.findMany({
+      where: {
+        ...orderWhereClause,
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay
+        }
+      },
+      select: {
+        id: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        securityDeposit: true,
+        damageFee: true,
+        pickedUpAt: true,
+        returnedAt: true
+      }
+    });
+
+    const todayRevenue = todayOrders.reduce((sum: number, order: any) => {
+      return sum + calculateOrderRevenue(order);
+    }, 0);
+
     // Calculate revenue growth percentage
     const [currentMonthRevenue, lastMonthRevenue] = revenueGrowth;
     const currentRevenue = (currentMonthRevenue._sum?.amount as number | null) || 0;
@@ -268,7 +337,8 @@ async function handleGetEnhancedDashboard(
       success: true,
       data: {
         // Financial data - hide from OUTLET_STAFF
-        totalRevenue: user.role !== 'OUTLET_STAFF' ? ((totalRevenue._sum?.amount as number | null) || 0) : null,
+        totalRevenue: user.role !== 'OUTLET_STAFF' ? calculatedTotalRevenue : null,
+        todayRevenue: user.role !== 'OUTLET_STAFF' ? todayRevenue : null,
         revenueGrowth: user.role !== 'OUTLET_STAFF' ? (Math.round(revenueGrowthPercent * 100) / 100) : null,
         futureIncome: user.role !== 'OUTLET_STAFF' ? (futureIncome._sum.totalAmount || 0) : null,
         
