@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
+import { useUserRole } from '@rentalshop/hooks';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
@@ -25,6 +26,8 @@ export function ProductActions({
   onProductUpdated,
   onError
 }: ProductActionsProps) {
+  // Use hook instead of prop
+  const { role: currentUserRole, canManageProducts, canManageCategories } = useUserRole();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
 
@@ -56,14 +59,16 @@ export function ProductActions({
     onError?.(error);
   };
 
-  const actions = [
+  // Filter actions based on user role - OUTLET_STAFF cannot create/update products or manage categories
+  const allActions = [
     {
       id: 'add-product',
       label: 'Add Product',
       description: 'Create a new product',
       icon: '➕',
       variant: 'default' as const,
-      onClick: handleAddProduct
+      onClick: handleAddProduct,
+      roles: canManageProducts ? ['ALL'] : [] // Use permission check
     },
     {
       id: 'import-products',
@@ -71,7 +76,8 @@ export function ProductActions({
       description: 'Import from CSV/Excel',
       icon: '📥',
       variant: 'secondary' as const,
-      onClick: () => onAction('import-products')
+      onClick: () => onAction('import-products'),
+      roles: canManageProducts ? ['ALL'] : [] // Use permission check
     },
     {
       id: 'export-products',
@@ -79,7 +85,8 @@ export function ProductActions({
       description: 'Export to CSV/Excel',
       icon: '📤',
       variant: 'outline' as const,
-      onClick: () => onAction('export-products')
+      onClick: () => onAction('export-products'),
+      roles: ['ALL'] // All roles can export
     },
     {
       id: 'bulk-edit',
@@ -87,7 +94,8 @@ export function ProductActions({
       description: 'Edit multiple products',
       icon: '✏️',
       variant: 'outline' as const,
-      onClick: () => onAction('bulk-edit')
+      onClick: () => onAction('bulk-edit'),
+      roles: canManageProducts ? ['ALL'] : [] // Use permission check
     },
     {
       id: 'manage-categories',
@@ -95,7 +103,8 @@ export function ProductActions({
       description: 'Organize product categories',
       icon: '🏷️',
       variant: 'outline' as const,
-      onClick: () => onAction('manage-categories')
+      onClick: () => onAction('manage-categories'),
+      roles: canManageCategories ? ['ALL'] : [] // Use permission check
     },
     {
       id: 'inventory-check',
@@ -103,9 +112,15 @@ export function ProductActions({
       description: 'Perform stock count',
       icon: '🔍',
       variant: 'outline' as const,
-      onClick: () => onAction('inventory-check')
+      onClick: () => onAction('inventory-check'),
+      roles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'] // All roles can do inventory check
     }
   ];
+
+  // Filter actions based on current user role
+  const actions = allActions.filter(action => 
+    !action.roles || action.roles.length > 0
+  ).map(({ roles, ...action }) => action); // Remove roles property from final actions
 
   return (
     <>

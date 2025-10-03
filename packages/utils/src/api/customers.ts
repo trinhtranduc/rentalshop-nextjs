@@ -57,7 +57,8 @@ export const customersApi = {
   async getCustomersPaginated(page: number = 1, limit: number = 50): Promise<CustomerApiResponse<CustomerListResponse>> {
     const params = new URLSearchParams({
       page: page.toString(),
-      limit: limit.toString()
+      limit: limit.toString(),
+      _t: Date.now().toString() // Cache-busting parameter
     });
     
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
@@ -117,6 +118,7 @@ export const customersApi = {
     
     params.append('limit', (filters.limit || 20).toString());
     params.append('offset', (filters.offset || 0).toString());
+    params.append('_t', Date.now().toString()); // Cache-busting parameter
 
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
     const result = await parseApiResponse<CustomerSearchResponse>(response);
@@ -151,7 +153,7 @@ export const customersApi = {
    * Update customer
    */
   async updateCustomer(customerId: number, customerData: CustomerUpdateInput): Promise<CustomerApiResponse> {
-    const response = await authenticatedFetch(apiUrls.customers.update(customerId), {
+    const response = await authenticatedFetch(`${apiUrls.customers.list}?id=${customerId}`, {
       method: 'PUT',
       body: JSON.stringify(customerData),
     });

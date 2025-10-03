@@ -18,6 +18,7 @@ export function CalendarGrid({
 }: CalendarGridProps) {
   // Generate calendar days for the current month
   const calendarDays = React.useMemo(() => {
+    
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     
@@ -42,31 +43,33 @@ export function CalendarGrid({
       const isToday = tempDate.toDateString() === new Date().toDateString();
       const isSelected = selectedDate?.toDateString() === tempDate.toDateString();
       
-      // Get orders for this date using consistent date formatting
-      const currentDateKey = tempDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      // Get orders for this date using local date formatting to match local calendar
+      const currentDateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
       
       const dateOrders = orders.filter(order => {
         const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
         const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
-        const pickupDateKey = pickupDate.toISOString().split('T')[0];
-        const returnDateKey = returnDate.toISOString().split('T')[0];
-        return (
+        
+        // Convert to local date for comparison
+        const pickupDateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, '0')}-${String(pickupDate.getDate()).padStart(2, '0')}`;
+        const returnDateKey = `${returnDate.getFullYear()}-${String(returnDate.getMonth() + 1).padStart(2, '0')}-${String(returnDate.getDate()).padStart(2, '0')}`;
+        
+        const matches = (
           pickupDateKey === currentDateKey ||
           returnDateKey === currentDateKey
         );
+        
+        return matches;
       });
       
       const pickupOrders = dateOrders.filter(order => {
         const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
-        const pickupDateKey = pickupDate.toISOString().split('T')[0];
+        const pickupDateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, '0')}-${String(pickupDate.getDate()).padStart(2, '0')}`;
         return pickupDateKey === currentDateKey;
       });
       
-      const returnOrders = dateOrders.filter(order => {
-        const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
-        const returnDateKey = returnDate.toISOString().split('T')[0];
-        return returnDateKey === currentDateKey;
-      });
+      // Only show pickup orders - no return orders
+      const returnOrders: any[] = [];
       
       days.push({
         date: new Date(tempDate),

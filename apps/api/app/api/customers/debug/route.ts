@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     console.log('Raw request body:', JSON.stringify(body, null, 2));
     
     // Check for missing required fields
-    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'merchantId'];
+    const requiredFields = ['firstName', 'lastName', 'phone', 'merchantId'];
     const missingFields = requiredFields.filter(field => !body[field]);
     
     if (missingFields.length > 0) {

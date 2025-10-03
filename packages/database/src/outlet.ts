@@ -404,12 +404,37 @@ export const simplifiedOutlets = {
    * Create new outlet (simplified API)
    */
   create: async (data: any) => {
-    return await prisma.outlet.create({
-      data,
-      include: {
-        merchant: { select: { id: true, name: true } }
+    try {
+      console.log('🔍 simplifiedOutlets.create called with data:', data);
+      
+      // Validate that merchant exists if merchant connection is provided
+      if (data.merchant && data.merchant.connect && data.merchant.connect.id) {
+        const merchantId = data.merchant.connect.id;
+        const merchant = await prisma.merchant.findUnique({
+          where: { id: merchantId },
+          select: { id: true }
+        });
+        
+        if (!merchant) {
+          throw new Error(`Merchant with id ${merchantId} not found`);
+        }
+        
+        console.log('✅ Merchant found:', merchant);
       }
-    });
+      
+      const outlet = await prisma.outlet.create({
+        data,
+        include: {
+          merchant: { select: { id: true, name: true } }
+        }
+      });
+      
+      console.log('✅ Outlet created successfully:', outlet);
+      return outlet;
+    } catch (error) {
+      console.error('❌ Error in simplifiedOutlets.create:', error);
+      throw error;
+    }
   },
 
   /**

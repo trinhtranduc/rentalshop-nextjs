@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrderByNumber } from '@rentalshop/database';
-import { withAuthRoles, withOrderViewAuth } from '@rentalshop/auth';
+import { db } from '@rentalshop/database';
+import { withAuthRoles } from '@rentalshop/auth';
 import {API} from '@rentalshop/constants';
 
-export const GET = withOrderViewAuth(async (authorizedRequest, context) => {
+async function handleGetOrderByNumber(
+  request: NextRequest,
+  context: { user: any; userScope: any },
+  params: { orderNumber: string }
+) {
+  const { user, userScope } = context;
   try {
-    const { user, userScope } = authorizedRequest;
-    const { params } = context;
     
     console.log('🔍 [by-number] Starting order lookup for:', params.orderNumber);
     
@@ -36,8 +39,8 @@ export const GET = withOrderViewAuth(async (authorizedRequest, context) => {
     console.log('🔍 [by-number] Looking for order number:', orderNumber);
     console.log('🔍 [by-number] User scope:', userScope);
 
-    // Find order by order number using the database function
-    const order = await getOrderByNumber(orderNumber);
+    // Find order by order number using the simplified database API
+    const order = await db.orders.findByNumber(orderNumber);
 
     console.log('🔍 [by-number] Raw order data from database:', JSON.stringify({
       orderId: order?.id,
@@ -69,7 +72,7 @@ export const GET = withOrderViewAuth(async (authorizedRequest, context) => {
       );
     }
 
-    if (userScope.merchantId && order.merchantId !== userScope.merchantId) {
+    if (userScope.merchantId && order.outlet?.merchantId !== userScope.merchantId) {
       console.log('❌ [by-number] User not authorized to access order from different merchant');
       return NextResponse.json(
         { success: false, error: 'Access denied - order belongs to different merchant' },
@@ -183,4 +186,18 @@ export const GET = withOrderViewAuth(async (authorizedRequest, context) => {
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-});
+}
+
+export const runtime = 'nodejs';
+
+// Export function with withAuthRoles wrapper
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { orderNumber: string } }
+) {
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authenticatedHandler = authWrapper((req, context) => 
+    handleGetOrderByNumber(req, context, params)
+  );
+  return authenticatedHandler(request);
+}

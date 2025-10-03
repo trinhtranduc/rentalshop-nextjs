@@ -1,9 +1,8 @@
 import React from 'react';
-import { Package, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Package, ArrowUpRight } from 'lucide-react';
 
 interface CalendarStatsProps {
   totalPickups: number;
-  totalReturns: number;
   currentMonth: number;
   currentYear: number;
   className?: string;
@@ -11,7 +10,6 @@ interface CalendarStatsProps {
 
 export function CalendarStats({
   totalPickups,
-  totalReturns,
   currentMonth,
   currentYear,
   className = ''
@@ -22,7 +20,7 @@ export function CalendarStats({
   ];
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${className}`}>
+    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${className}`}>
       {/* Pickup Stats */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex items-center space-x-3">
@@ -30,21 +28,8 @@ export function CalendarStats({
             <ArrowUpRight className="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600">Pickups</p>
+            <p className="text-sm font-medium text-gray-600">Pickup Orders</p>
             <p className="text-2xl font-bold text-gray-900">{totalPickups}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Return Stats */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <ArrowDownLeft className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-600">Returns</p>
-            <p className="text-2xl font-bold text-gray-900">{totalReturns}</p>
           </div>
         </div>
       </div>

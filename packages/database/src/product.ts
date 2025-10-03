@@ -325,6 +325,52 @@ export async function searchProducts(filters: ProductSearchFilter) {
 }
 
 // ============================================================================
+// DEFAULT CATEGORY FUNCTIONS
+// ============================================================================
+
+/**
+ * Get or create default category for merchant
+ */
+async function getOrCreateDefaultCategory(merchantId: number): Promise<any> {
+  // First try to find existing default category
+  const existingDefault = await prisma.category.findFirst({
+    where: {
+      merchantId: merchantId, // merchantId is number (public ID)
+      name: 'General',
+      isActive: true
+    }
+  });
+
+  if (existingDefault) {
+    console.log('✅ Found existing default category:', existingDefault.id);
+    return existingDefault;
+  }
+
+  // Create default category if not exists
+  console.log('🔧 Creating default category for merchant:', merchantId);
+  
+  // Generate next category id
+  const lastCategory = await prisma.category.findFirst({
+    orderBy: { id: 'desc' },
+    select: { id: true }
+  });
+  const nextPublicId = (lastCategory?.id || 0) + 1;
+
+  const defaultCategory = await prisma.category.create({
+    data: {
+      id: nextPublicId,
+      name: 'General',
+      description: 'Default category for general products',
+      merchantId: merchantId,
+      isActive: true
+    }
+  });
+
+  console.log('✅ Created default category:', defaultCategory.id);
+  return defaultCategory;
+}
+
+// ============================================================================
 // PRODUCT CREATION FUNCTIONS
 // ============================================================================
 
@@ -710,18 +756,38 @@ export const simplifiedProducts = {
    * Create new product (simplified API)
    */
   create: async (data: any) => {
-    return await prisma.product.create({
-      data,
-      include: {
-        merchant: { select: { id: true, name: true } },
-        category: { select: { id: true, name: true } },
-        outletStock: {
-          include: {
-            outlet: { select: { id: true, name: true } }
+    try {
+      console.log('🔍 simplifiedProducts.create called with data:', data);
+      
+      // If no categoryId provided, get or create default category
+      if (!data.categoryId && data.merchant && data.merchant.connect && data.merchant.connect.id) {
+        const merchantPublicId = data.merchant.connect.id; // This is the public ID (number)
+        const defaultCategory = await getOrCreateDefaultCategory(merchantPublicId);
+        
+        // Add category connection to data
+        data.category = { connect: { id: defaultCategory.id } };
+        console.log('✅ Using default category:', defaultCategory.id, 'for merchant:', merchantPublicId);
+      }
+      
+      const product = await prisma.product.create({
+        data,
+        include: {
+          merchant: { select: { id: true, name: true } },
+          category: { select: { id: true, name: true } },
+          outletStock: {
+            include: {
+              outlet: { select: { id: true, name: true } }
+            }
           }
         }
-      }
-    });
+      });
+      
+      console.log('✅ Product created successfully:', product.id);
+      return product;
+    } catch (error) {
+      console.error('❌ Error in simplifiedProducts.create:', error);
+      throw error;
+    }
   },
 
   /**

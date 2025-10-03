@@ -112,6 +112,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     setIsSubmitting(true);
     try {
       const customerData = {
+        ...(mode === 'edit' && customer ? { id: customer.id } : {}),
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim() || undefined,
@@ -126,7 +127,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         idNumber: formData.idNumber.trim() || undefined,
         idType: formData.idType,
         notes: formData.notes.trim() || undefined,
-        merchantId: 1, // TODO: Get actual merchant ID from context
+        // merchantId will be automatically determined from JWT token
+        // Only ADMIN users need to send merchantId in request
       };
 
       await onSave(customerData);

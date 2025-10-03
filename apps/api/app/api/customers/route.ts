@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { customersQuerySchema, customerCreateSchema, customerUpdateSchema } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
@@ -39,6 +39,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       limit, 
       q, 
       search, 
+      merchantId,
       isActive,
       city,
       state,
@@ -46,13 +47,33 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      page, limit, q, search, isActive, 
+      page, limit, q, search, merchantId, isActive, 
       city, state, country 
     });
 
+    // Determine merchantId for filtering
+    let filterMerchantId = userScope.merchantId;
+    
+    // For ADMIN users, they can specify merchantId in query to view other merchants' customers
+    // For other roles, use their assigned merchantId
+    if (user.role === 'ADMIN' && merchantId) {
+      filterMerchantId = merchantId;
+    } else if (user.role !== 'ADMIN' && merchantId && merchantId !== userScope.merchantId) {
+      // Non-ADMIN users cannot view other merchants' customers
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Access denied: Cannot view customers from other merchants' 
+        },
+        { status: 403 }
+      );
+    }
+
+    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);
+
     // Build search filters for customer search
     const searchFilters = {
-      merchantId: userScope.merchantId,
+      merchantId: filterMerchantId,
       isActive,
       city,
       state,
@@ -87,7 +108,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, {
         status: 304,
-        headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' },
+        headers: { ETag: etag, 'Cache-Control': 'private, max-age=5' },
       });
     }
 
@@ -96,7 +117,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       headers: {
         'Content-Type': 'application/json',
         ETag: etag,
-        'Cache-Control': 'private, max-age=60',
+        'Cache-Control': 'private, max-age=5',
       },
     });
 
@@ -128,10 +149,47 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       }, { status: 400 });
     }
 
-    // Use merchantId from userScope
+    // Determine merchantId for customer creation
+    let merchantId = userScope.merchantId;
+    
+    // For ADMIN users, they need to specify merchantId in the request
+    // For other roles, use their assigned merchantId
+    if (user.role === 'ADMIN' && parsed.data.merchantId) {
+      merchantId = parsed.data.merchantId;
+    } else if (!merchantId) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: user.role === 'ADMIN' 
+            ? 'MerchantId is required for ADMIN users when creating customers' 
+            : 'User is not associated with any merchant'
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
+
+    // Find merchant by publicId to get CUID
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      select: { id: true, name: true }
+    });
+
+    if (!merchant) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: `Merchant with ID ${merchantId} not found`
+        },
+        { status: 404 }
+      );
+    }
+
+    // Use merchant CUID for customer creation
     const customerData = {
-      merchant: { connect: { id: userScope.merchantId } },
-      ...parsed.data
+      ...parsed.data,
+      merchantId: merchant.id // Use CUID, not publicId
     };
 
     console.log('🔍 Creating customer with data:', customerData);
@@ -203,8 +261,8 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       );
     }
 
-    // Check if user can access this customer
-    if (existingCustomer.merchantId !== userScope.merchantId) {
+    // Check if user can access this customer (ADMIN can access all customers)
+    if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userScope.merchantId) {
       return NextResponse.json(
         { success: false, message: 'Forbidden' },
         { status: 403 }

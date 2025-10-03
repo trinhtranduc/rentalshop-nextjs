@@ -102,12 +102,26 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       }, { status: 400 });
     }
 
-    // Use merchantId from userScope (only merchants can create outlets for themselves)
-    const merchantId = userScope.merchantId;
+    // Get merchantId from userScope or from request body
+    let merchantId = userScope.merchantId;
+    
+    // If user is ADMIN and no merchantId in scope, allow them to specify merchantId in request
+    if (!merchantId && user.role === 'ADMIN' && body.merchantId) {
+      merchantId = body.merchantId;
+    }
+    
+    console.log('🔍 User scope debug:', {
+      userRole: user.role,
+      userScope,
+      requestMerchantId: body.merchantId,
+      resolvedMerchantId: merchantId,
+      hasMerchantId: !!merchantId
+    });
 
     if (!merchantId) {
+      console.log('❌ No merchantId available for user:', user.email);
       return NextResponse.json(
-        { success: false, message: 'Merchant ID is required' },
+        { success: false, message: 'Merchant ID is required. Please provide merchantId in request body for admin users or ensure you are logged in as a merchant.' },
         { status: 400 }
       );
     }

@@ -213,7 +213,23 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     }
   });
 
-  // 6. Create default outlet with merchant information
+  // 6. Create default category for merchant
+  const lastCategory = await tx.category.findFirst({
+    orderBy: { id: 'desc' }
+  });
+  const categoryId = (lastCategory?.id || 0) + 1;
+
+  const defaultCategory = await tx.category.create({
+    data: {
+      id: categoryId,
+      name: 'General',
+      description: 'Default category for general products',
+      merchantId: merchant.id,
+      isActive: true
+    }
+  });
+
+  // 7. Create default outlet with merchant information
   const lastOutlet = await tx.outlet.findFirst({
     orderBy: { id: 'desc' }
   });
@@ -237,7 +253,7 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     }
   });
 
-  // 7. Create trial subscription
+  // 8. Create trial subscription
   const subscriptionStartDate = new Date();
   const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
   

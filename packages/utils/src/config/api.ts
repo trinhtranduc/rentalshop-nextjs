@@ -244,12 +244,15 @@ export interface ApiUrls {
     preferences: string;
     test: string;
   };
-  auditLogs: {
-    list: string;
-    stats: string;
-    export: string;
-  };
-}
+    auditLogs: {
+      list: string;
+      stats: string;
+      export: string;
+    };
+    calendar: {
+      orders: string;
+    };
+  }
 
 /**
  * Get the current environment
@@ -657,6 +660,9 @@ function createApiUrls(): ApiUrls {
       list: `${base}/api/audit-logs`,
       stats: `${base}/api/audit-logs/stats`,
       export: `${base}/api/audit-logs/export`,
+    },
+    calendar: {
+      orders: `${base}/api/calendar/orders`,
     },
   };
 }

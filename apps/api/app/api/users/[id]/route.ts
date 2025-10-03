@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { prisma, db } from '@rentalshop/database';
 
 import {API} from '@rentalshop/constants';
 
@@ -308,11 +308,8 @@ async function handleUpdateUser(
       );
     }
 
-    // Import the update function
-    const { updateUser } = await import('@rentalshop/database');
-
     // Update user
-    const updatedUser = await updateUser(numericId, body);
+    const updatedUser = await db.users.update(numericId, body);
 
     console.log('✅ User updated successfully:', {
       updatedUserId: numericId,

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { updateOrder } from '@rentalshop/database';
-import { prisma } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { assertAnyRole } from '@rentalshop/auth';
 import { orderUpdateSchema } from '@rentalshop/utils';
 import type { OrderUpdateInput, OrderItemInput } from '@rentalshop/types';
@@ -21,9 +20,10 @@ import {API} from '@rentalshop/constants';
  */
 async function handleGetOrder(
   request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
+  context: { user: any; userScope: any },
   params: { orderId: string }
 ) {
+  const { user, userScope } = context;
   try {
 
     const { orderId } = params;
@@ -82,18 +82,25 @@ async function handleGetOrder(
       console.log('createdBy data:', order.createdBy);
     }
 
-    // Authorization: Users can only view orders from their own outlet or if they're admin/merchant
-    if (userScope.outletId && order.outlet.id !== userScope.outletId) {
-      // Check if user has admin or merchant role
-      try {
-        assertAnyRole(user as any, ['ADMIN', 'MERCHANT']);
-      } catch {
+    // Authorization: Users can only view orders from their own outlet/merchant or if they're admin
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      // Outlet users can only see orders from their outlet
+      if (order.outlet.id !== userScope.outletId) {
         return NextResponse.json(
           { success: false, error: 'Forbidden: You can only view orders from your own outlet' },
           { status: API.STATUS.FORBIDDEN }
         );
       }
+    } else if (user.role === 'MERCHANT') {
+      // Merchant users can see orders from their merchant
+      if (order.outlet.merchantId !== userScope.merchantId) {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden: You can only view orders from your own merchant' },
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
     }
+    // ADMIN users can see all orders
 
     // Format the response with additional computed fields
     const orderDetail = {
@@ -181,10 +188,14 @@ async function handleGetOrder(
  */
 async function handleUpdateOrder(
   request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
+  context: { user: any; userScope: any },
   params: { orderId: string }
 ) {
+  const { user, userScope } = context;
   try {
+    console.log('🔧 [UPDATE] Starting order update:', params.orderId);
+    console.log('🔧 [UPDATE] User:', { id: user.id, email: user.email, role: user.role });
+    console.log('🔧 [UPDATE] UserScope:', userScope);
 
     const { orderId } = params;
     
@@ -204,12 +215,16 @@ async function handleUpdateOrder(
 
     // Parse and validate request body
     const body = await request.json();
-    const parsed = orderUpdateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ success: false, error: parsed.error.flatten() }, { status: 400 });
+    
+    // Simple validation for status update
+    if (body.status && !['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED'].includes(body.status)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Invalid status. Must be one of: RESERVED, PICKUPED, RETURNED, COMPLETED, CANCELLED' 
+      }, { status: 400 });
     }
 
-    const updateData = parsed.data;
+    const updateData = body;
     
     console.log('🔧 API Route - Update data received:', {
       hasOrderItems: !!updateData.orderItems,
@@ -270,8 +285,10 @@ async function handleUpdateOrder(
       );
     }
     
-    console.log('🔧 API Route - Calling updateOrder with id:', orderIdNumber);
-    const updatedOrder = await updateOrder(orderIdNumber, updateInput);
+    console.log('🔧 [UPDATE] Calling db.orders.update with id:', orderIdNumber);
+    console.log('🔧 [UPDATE] Update input:', updateInput);
+    const updatedOrder = await db.orders.update(orderIdNumber, updateInput);
+    console.log('🔧 [UPDATE] Update result:', !!updatedOrder);
 
     if (!updatedOrder) {
       return NextResponse.json(
@@ -300,9 +317,10 @@ async function handleUpdateOrder(
  */
 async function handleDeleteOrder(
   request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
+  context: { user: any; userScope: any },
   params: { orderId: string }
 ) {
+  const { user, userScope } = context;
   try {
 
     const { orderId } = params;
@@ -334,15 +352,10 @@ async function handleDeleteOrder(
       );
     }
     
-    const cancelledOrder = await updateOrder(orderIdNumber, {
-      orderType: 'RENT', // Default value
-      createdById: user.id, // Required field
-      orderItems: [] as any[], // Default empty array
-      subtotal: 0, // Default value
-      totalAmount: 0, // Default value
+    const cancelledOrder = await db.orders.update(orderIdNumber, {
       status: 'CANCELLED',
       notes: reason
-    } as any);
+    });
 
     if (!cancelledOrder) {
       return NextResponse.json(

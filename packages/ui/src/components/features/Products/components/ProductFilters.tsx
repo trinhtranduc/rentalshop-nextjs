@@ -103,8 +103,9 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search and Basic Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-2">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search field - takes more space */}
+          <div className="flex-1 space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Search Products
             </label>
@@ -112,84 +113,88 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
               placeholder="Search by name, barcode..."
               value={filters.search || ''} // Use the search term from filters
               onChange={(e) => onSearchChange(e.target.value)} // Use direct handler
+              className="w-full"
             />
           </div>
           
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Category
-            </label>
-            <Select value={filters.categoryId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {loadingCategories ? (
-                  <SelectItem value="loading" disabled>Loading categories...</SelectItem>
-                ) : categoryError ? (
-                  <SelectItem value="error" disabled className="text-red-500">Error loading categories</SelectItem>
-                ) : categories.length === 0 ? (
-                  <SelectItem value="none" disabled className="text-gray-500">No categories available</SelectItem>
-                ) : (
-                  categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            {categoryError && (
-              <p className="text-xs text-red-500 dark:text-red-400">
-                {categoryError}
-              </p>
-            )}
-            {!loadingCategories && !categoryError && categories.length === 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                No categories available for your role
-              </p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Outlet
-            </label>
-            <Select value={filters.outletId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('outletId', value === 'all' ? undefined : parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder={loadingOutlets ? "Loading..." : "All Outlets"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Outlets</SelectItem>
-                {loadingOutlets ? (
-                  <SelectItem value="loading" disabled>Loading outlets...</SelectItem>
-                ) : outletError ? (
-                  <SelectItem value="error" disabled className="text-red-500">Error loading outlets</SelectItem>
-                ) : outlets.length === 0 ? (
-                  <SelectItem value="none" disabled className="text-gray-500">No outlets available</SelectItem>
-                ) : (
-                  outlets.map((outlet) => {
-                    console.log('🔍 ProductFilters: Rendering outlet:', outlet);
-                    return (
-                      <SelectItem key={outlet.id} value={outlet.id.toString()}>
-                        {outlet.name}
+          {/* Category and Outlet filters - positioned to the right */}
+          <div className="flex flex-col sm:flex-row gap-4 lg:min-w-[400px]">
+            <div className="space-y-2 flex-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Category
+              </label>
+              <Select value={filters.categoryId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {loadingCategories ? (
+                    <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                  ) : categoryError ? (
+                    <SelectItem value="error" disabled className="text-red-500">Error loading categories</SelectItem>
+                  ) : categories.length === 0 ? (
+                    <SelectItem value="none" disabled className="text-gray-500">No categories available</SelectItem>
+                  ) : (
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
                       </SelectItem>
-                    );
-                  })
-                )}
-              </SelectContent>
-            </Select>
-            {outletError && (
-              <p className="text-xs text-red-500 dark:text-red-400">
-                {outletError}
-              </p>
-            )}
-            {!loadingOutlets && !outletError && outlets.length === 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                No outlets available for your role
-              </p>
-            )}
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {categoryError && (
+                <p className="text-xs text-red-500 dark:text-red-400">
+                  {categoryError}
+                </p>
+              )}
+              {!loadingCategories && !categoryError && categories.length === 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  No categories available for your role
+                </p>
+              )}
+            </div>
+            
+            <div className="space-y-2 flex-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Outlet
+              </label>
+              <Select value={filters.outletId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('outletId', value === 'all' ? undefined : parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingOutlets ? "Loading..." : "All Outlets"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Outlets</SelectItem>
+                  {loadingOutlets ? (
+                    <SelectItem value="loading" disabled>Loading outlets...</SelectItem>
+                  ) : outletError ? (
+                    <SelectItem value="error" disabled className="text-red-500">Error loading outlets</SelectItem>
+                  ) : outlets.length === 0 ? (
+                    <SelectItem value="none" disabled className="text-gray-500">No outlets available</SelectItem>
+                  ) : (
+                    outlets.map((outlet) => {
+                      console.log('🔍 ProductFilters: Rendering outlet:', outlet);
+                      return (
+                        <SelectItem key={outlet.id} value={outlet.id.toString()}>
+                          {outlet.name}
+                        </SelectItem>
+                      );
+                    })
+                  )}
+                </SelectContent>
+              </Select>
+              {outletError && (
+                <p className="text-xs text-red-500 dark:text-red-400">
+                  {outletError}
+                </p>
+              )}
+              {!loadingOutlets && !outletError && outlets.length === 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  No outlets available for your role
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

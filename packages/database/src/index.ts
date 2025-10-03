@@ -134,7 +134,7 @@ export { db, checkDatabaseConnection, generateOrderNumber };
 
 // Legacy exports for backward compatibility
 export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById } from './subscription';
-export { AuditLogger, getAuditLogger } from './audit';
+export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';
 export type { OrderNumberFormat } from './order-number-generator';

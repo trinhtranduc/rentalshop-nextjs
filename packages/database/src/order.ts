@@ -476,7 +476,14 @@ export const simplifiedOrders = {
       where: { orderNumber },
       include: {
         customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
-        outlet: { select: { id: true, name: true } },
+        outlet: { 
+          select: { 
+            id: true, 
+            name: true,
+            merchantId: true,
+            merchant: { select: { id: true, name: true } }
+          } 
+        },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
           include: {

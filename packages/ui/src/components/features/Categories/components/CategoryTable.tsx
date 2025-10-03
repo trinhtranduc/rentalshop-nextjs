@@ -9,6 +9,7 @@ import {
 } from '@rentalshop/ui';
 import { Edit, Eye } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
+import { useUserRole } from '@rentalshop/hooks';
 
 interface CategoryTableProps {
   categories: Category[];
@@ -27,6 +28,8 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   sortOrder,
   onSortChange
 }) => {
+  // Use hook instead of prop
+  const { canManageCategories } = useUserRole();
   const handleSort = (field: string) => {
     if (!onSortChange) return;
     
@@ -178,15 +181,18 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                     <Eye className="h-3 w-3 mr-1" />
                     View
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEditCategory(category)}
-                    className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
+                  {/* Only users who can manage categories can edit */}
+                  {canManageCategories && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEditCategory(category)}
+                      className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

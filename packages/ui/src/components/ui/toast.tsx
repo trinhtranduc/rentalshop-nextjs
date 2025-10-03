@@ -62,8 +62,8 @@ export const Toast: React.FC<ToastProps> = ({
   return (
     <div
       className={cn(
-        'max-w-sm w-full transition-all duration-300 ease-in-out',
-        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+        'w-full transition-all duration-300 ease-in-out',
+        isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
       )}
     >
       <div
@@ -104,9 +104,18 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose 
   console.log('🎯 ToastContainer render:', { toastsCount: toasts.length, toasts });
   
   return (
-    <div className="fixed top-4 right-4 z-[9999] space-y-2">
-      {toasts.map((toast) => (
-        <Toast key={toast.id} {...toast} onClose={onClose} />
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 max-w-sm">
+      {toasts.map((toast, index) => (
+        <div 
+          key={toast.id} 
+          className="animate-slide-in-from-right"
+          style={{ 
+            animationDelay: `${index * 100}ms`,
+            transform: `translateY(${index * 8}px)`
+          }}
+        >
+          <Toast {...toast} onClose={onClose} />
+        </div>
       ))}
     </div>
   );
