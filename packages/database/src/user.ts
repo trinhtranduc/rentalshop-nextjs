@@ -8,6 +8,7 @@
 
 import { prisma } from './client';
 import type { UserCreateInput, UserUpdateInput } from '@rentalshop/types';
+import { hashPassword } from '@rentalshop/auth';
 
 // ============================================================================
 // USER LOOKUP FUNCTIONS
@@ -376,3 +377,128 @@ export async function restoreUser(id: number): Promise<any> {
 
   return restoredUser;
 }
+
+// ============================================================================
+// SIMPLIFIED API FUNCTIONS (for db object)
+// ============================================================================
+
+export const simplifiedUsers = {
+  /**
+   * Find user by ID (simplified API)
+   */
+  findById: async (id: number) => {
+    return await prisma.user.findUnique({
+      where: { id },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        outlet: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Find user by email (simplified API)
+   */
+  findByEmail: async (email: string) => {
+    return await prisma.user.findUnique({
+      where: { email },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        outlet: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Create new user (simplified API)
+   */
+  create: async (data: any) => {
+    // Hash password if provided
+    const userData = { ...data };
+    if (userData.password) {
+      userData.password = await hashPassword(userData.password);
+    }
+
+    return await prisma.user.create({
+      data: userData,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        outlet: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Update user (simplified API)
+   */
+  update: async (id: number, data: any) => {
+    return await prisma.user.update({
+      where: { id },
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        outlet: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Delete user (soft delete) (simplified API)
+   */
+  delete: async (id: number) => {
+    return await prisma.user.update({
+      where: { id },
+      data: { 
+        isActive: false,
+        deletedAt: new Date()
+      }
+    });
+  },
+
+  /**
+   * Search users with simple filters (simplified API)
+   */
+  search: async (filters: any) => {
+    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.outletId = whereFilters.outletId;
+    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    if (whereFilters.role) where.role = whereFilters.role;
+    
+    // Text search
+    if (whereFilters.search) {
+      where.OR = [
+        { firstName: { contains: whereFilters.search } },
+        { lastName: { contains: whereFilters.search } },
+        { email: { contains: whereFilters.search } }
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        include: {
+          merchant: { select: { id: true, name: true } },
+          outlet: { select: { id: true, name: true } }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.user.count({ where })
+    ]);
+
+    return {
+      data: users,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total
+    };
+  }
+};

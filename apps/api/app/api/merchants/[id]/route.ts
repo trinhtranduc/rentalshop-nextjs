@@ -128,6 +128,19 @@ async function handleGetMerchant(
       totalRevenue: merchantData.totalRevenue || 0,
       createdAt: merchantData.createdAt,
       lastActiveAt: merchantData.lastActiveAt,
+      // Add currentPlan for easy access (extracted from subscription.plan)
+      currentPlan: currentSubscription?.plan ? {
+        id: currentSubscription.plan.id,
+        name: currentSubscription.plan.name,
+        description: currentSubscription.plan.description,
+        price: currentSubscription.plan.basePrice,
+        currency: currentSubscription.plan.currency,
+        trialDays: currentSubscription.plan.trialDays,
+        limits: currentSubscription.plan.limits ? JSON.parse(currentSubscription.plan.limits) : null,
+        features: currentSubscription.plan.features ? JSON.parse(currentSubscription.plan.features) : [],
+        isActive: currentSubscription.plan.isActive,
+        isPopular: currentSubscription.plan.isPopular
+      } : null,
       currentSubscription: currentSubscription ? {
         id: currentSubscription.id,
         status: currentSubscription.status,

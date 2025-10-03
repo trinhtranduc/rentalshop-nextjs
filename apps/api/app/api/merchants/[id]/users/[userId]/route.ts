@@ -46,6 +46,8 @@ async function handleGetUser(
         phone: true,
         role: true,
         isActive: true,
+        merchantId: true,  // ✅ ADD MISSING merchantId
+        outletId: true,    // ✅ ADD MISSING outletId
         createdAt: true,
         updatedAt: true,
         merchant: {
@@ -95,6 +97,9 @@ async function handleGetUser(
       lastLoginAt: undefined, // Default value since field doesn't exist
       createdAt: userDetails.createdAt.toISOString(),
       updatedAt: userDetails.updatedAt.toISOString(),
+      // ✅ ADD MISSING merchantId and outletId
+      merchantId: userDetails.merchantId,
+      outletId: userDetails.outletId,
       merchant: userDetails.merchant ? {
         id: userDetails.merchant.id,
         name: userDetails.merchant.name

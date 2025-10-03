@@ -1,6 +1,32 @@
 'use client'
 
-import type { UserCreateInput, UserUpdateInput } from '@rentalshop/types';
+import type { UserCreateInput, UserUpdateInput, UserRole } from '@rentalshop/types';
+
+// ============================================================================
+// TYPE-SAFE FORM DATA INTERFACES (Matching UserForm.tsx)
+// ============================================================================
+
+interface UserCreateFormData {
+  name: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  isActive: boolean;
+  password: string;
+  confirmPassword: string;
+  merchantId: string;
+  outletId: string;
+}
+
+interface UserUpdateFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  merchantId: string;
+  outletId: string;
+}
 
 // Common validation rules that can be reused across forms
 export const validateEmail = (email: string): string | null => {
@@ -17,15 +43,23 @@ export const validatePhone = (phone: string): string | null => {
   if (!phone.trim()) {
     return 'Phone number is required';
   }
-  if (!/^[0-9]+$/.test(phone.trim())) {
-    return 'Phone number must contain only numbers';
-  }
-  if (phone.trim().length < 8) {
+  
+  // Remove all non-digit characters for validation
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  if (digitsOnly.length < 8) {
     return 'Phone number must be at least 8 digits';
   }
-  if (phone.trim().length > 15) {
+  if (digitsOnly.length > 15) {
     return 'Phone number must be less than 16 digits';
   }
+  
+  // Allow common phone number formats
+  const phoneRegex = /^[\+]?[0-9\s\-\(\)]+$/;
+  if (!phoneRegex.test(phone.trim())) {
+    return 'Phone number contains invalid characters';
+  }
+  
   return null;
 };
 
@@ -57,18 +91,23 @@ export const validateConfirmPassword = (password: string, confirmPassword: strin
 };
 
 // Validation for user creation
-export const validateUserCreateInput = (data: any): Record<string, string> => {
+export const validateUserCreateInput = (data: UserCreateFormData): Record<string, string> => {
   const errors: Record<string, string> = {};
+
+  console.log('🔍 UserFormValidation: Validating create input:', data);
 
   // Name validation (split from full name)
   const nameParts = data.name?.trim().split(' ') || [];
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
 
+  console.log('🔍 UserFormValidation: Name parts:', { firstName, lastName });
+
   const firstNameError = validateName(firstName, 'First name');
   if (firstNameError) errors.firstName = firstNameError;
 
-  const lastNameError = validateName(lastName, 'Last name');
+  // Only validate lastName if it exists (allow single name entry)
+  const lastNameError = lastName ? validateName(lastName, 'Last name') : null;
   if (lastNameError) errors.lastName = lastNameError;
 
   // Email validation
@@ -84,14 +123,27 @@ export const validateUserCreateInput = (data: any): Record<string, string> => {
     errors.role = 'Role is required';
   }
 
-  // Merchant validation based on role
-  if (data.role && (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') && !data.merchantId) {
-    errors.merchantId = 'Merchant is required for this role';
-  }
-
-  // Outlet validation based on role
-  if (data.role && (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') && !data.outletId) {
-    errors.outletId = 'Outlet is required for this role';
+  // Smart validation based on role requirements
+  if (data.role) {
+    if (data.role === 'ADMIN') {
+      // ADMIN can have any merchant/outlet or none - no validation needed
+    } else if (data.role === 'MERCHANT') {
+      // MERCHANT must have merchantId, no outletId
+      if (!data.merchantId) {
+        errors.merchantId = 'Merchant is required for this role';
+      }
+      if (data.outletId) {
+        errors.outletId = 'Outlet should not be selected for merchant role';
+      }
+    } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
+      // OUTLET users must have both merchantId and outletId
+      if (!data.merchantId) {
+        errors.merchantId = 'Merchant is required for this role';
+      }
+      if (!data.outletId) {
+        errors.outletId = 'Outlet is required for this role';
+      }
+    }
   }
 
   // Password validation
@@ -102,12 +154,15 @@ export const validateUserCreateInput = (data: any): Record<string, string> => {
   const confirmPasswordError = validateConfirmPassword(data.password || '', data.confirmPassword || '');
   if (confirmPasswordError) errors.confirmPassword = confirmPasswordError;
 
+  console.log('🔍 UserFormValidation: Validation errors:', errors);
   return errors;
 };
 
 // Validation for user updates
-export const validateUserUpdateInput = (data: Partial<UserUpdateInput>): Record<string, string> => {
+export const validateUserUpdateInput = (data: UserUpdateFormData): Record<string, string> => {
   const errors: Record<string, string> = {};
+
+  console.log('🔍 UserFormValidation: Validating update input:', data);
 
   // First Name validation
   const firstNameError = validateName(data.firstName || '', 'First name');
@@ -125,5 +180,35 @@ export const validateUserUpdateInput = (data: Partial<UserUpdateInput>): Record<
   const phoneError = validatePhone(data.phone || '');
   if (phoneError) errors.phone = phoneError;
 
+  // Role validation
+  if (!data.role) {
+    errors.role = 'Role is required';
+  }
+
+  // Smart validation based on role requirements
+  if (data.role) {
+    if (data.role === 'ADMIN') {
+      // ADMIN can have any merchant/outlet or none - no validation needed
+    } else if (data.role === 'MERCHANT') {
+      // MERCHANT must have merchantId, no outletId
+      if (!data.merchantId) {
+        errors.merchantId = 'Merchant is required for this role';
+      }
+      if (data.outletId) {
+        errors.outletId = 'Outlet should not be selected for merchant role';
+      }
+    } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
+      // OUTLET users must have both merchantId and outletId
+      if (!data.merchantId) {
+        errors.merchantId = 'Merchant is required for this role';
+      }
+      if (!data.outletId) {
+        errors.outletId = 'Outlet is required for this role';
+      }
+    }
+  }
+
+  // Note: No password validation in edit mode - password is not changed
+  console.log('🔍 UserFormValidation: Update validation errors:', errors);
   return errors;
 };

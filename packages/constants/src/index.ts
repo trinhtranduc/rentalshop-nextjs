@@ -15,7 +15,6 @@ import { ENVIRONMENT } from './environment';
 import { API } from './api';
 import * as ORDERS from './orders';
 import * as BILLING_CYCLES from './billing-cycles';
-import * as BILLING from './billing';
 import * as STATUS from './status';
 
 // Export all constant modules
@@ -28,8 +27,8 @@ export * from './environment';
 export * from './api';
 export * from './orders';
 export * from './billing-cycles';
-export * from './billing';
 export * from './status';
+export * from './subscription-pricing';
 
 // Explicit exports for status constants
 export { 
@@ -98,7 +97,6 @@ export const CONSTANTS = {
   API,
   ORDERS,
   BILLING_CYCLES,
-  BILLING,
   STATUS,
 } as const;
 

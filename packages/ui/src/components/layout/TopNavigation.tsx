@@ -97,9 +97,24 @@ export function TopNavigation({
   const filterNavItemsByRole = (items: NavItem[], userRole?: string) => {
     if (!userRole) return items;
     
-    // Hide outlets tab for outlet-level users
-    if (userRole === 'OUTLET_ADMIN' || userRole === 'OUTLET_STAFF') {
-      return items.filter(item => item.href !== '/outlets');
+    // Hide specific tabs based on user role
+    if (userRole === 'OUTLET_ADMIN') {
+      // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments
+      return items.filter(item => 
+        item.href !== '/outlets' && 
+        item.href !== '/subscriptions' && 
+        item.href !== '/plans' && 
+        item.href !== '/payments'
+      );
+    } else if (userRole === 'OUTLET_STAFF') {
+      // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments (limited permissions)
+      return items.filter(item => 
+        item.href !== '/users' && 
+        item.href !== '/outlets' && 
+        item.href !== '/subscriptions' && 
+        item.href !== '/plans' && 
+        item.href !== '/payments'
+      );
     }
     
     return items;

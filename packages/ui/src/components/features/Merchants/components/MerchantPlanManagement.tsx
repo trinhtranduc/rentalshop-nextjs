@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '../../../ui';
+import { ManualRenewalModal } from '../../Subscriptions';
 import { 
   CreditCard, 
   Clock, 
@@ -31,7 +32,6 @@ import {
   Plus,
   X
 } from 'lucide-react';
-import { SubscriptionPeriodCard } from '../../Subscriptions/SubscriptionPeriodCard';
 import { formatSubscriptionPeriod } from '@rentalshop/utils';
 // Billing configuration (following Stripe's modern practices)
 const BILLING_INTERVALS = [
@@ -132,6 +132,7 @@ interface MerchantPlanManagementProps {
   onSuspend?: (subscription: Subscription, reason: string) => Promise<void>;
   onReactivate?: (subscription: Subscription) => Promise<void>;
   loading?: boolean;
+  currentUserRole?: string;
 }
 
 export function MerchantPlanManagement({
@@ -143,14 +144,18 @@ export function MerchantPlanManagement({
   onCancel,
   onSuspend,
   onReactivate,
-  loading = false
+  loading = false,
+  currentUserRole
 }: MerchantPlanManagementProps) {
+  // Get current subscription
+  const currentSubscription = (merchant as any).currentSubscription || subscriptions[0];
+
   // Debug: Log subscription status values
   console.log('🔍 MerchantPlanManagement Debug:', {
     merchantId: merchant.id,
     merchantName: merchant.name,
     subscriptionStatus: merchant.subscriptionStatus,
-    currentSubscription: subscriptions[0],
+    currentSubscription: currentSubscription,
     subscriptionStatusFromSubscription: subscriptions[0]?.status
   });
 
@@ -158,35 +163,38 @@ export function MerchantPlanManagement({
   const normalizedStatus = merchant.subscriptionStatus?.toLowerCase() || 'unknown';
   const isActiveStatus = normalizedStatus === 'trial' || normalizedStatus === 'active';
   const isPausedStatus = normalizedStatus === 'paused' || normalizedStatus === 'cancelled' || normalizedStatus === 'expired';
+  const isTrialStatus = normalizedStatus === 'trial';
+  const isActivePaidStatus = normalizedStatus === 'active';
+  const isPaused = normalizedStatus === 'paused';
+  
+  // Check if current plan is Trial plan (free)
+  const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === 'trial' || 
+                      merchant.currentPlan?.price === 0 ||
+                      (currentSubscription?.plan?.name?.toLowerCase() === 'trial');
+  
   const [showChangeDialog, setShowChangeDialog] = useState(false);
-  const [showExtendDialog, setShowExtendDialog] = useState(false);
-  const [extendDuration, setExtendDuration] = useState<string>('1');
-  const [extendBillingInterval, setExtendBillingInterval] = useState<string>('month');
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelType, setCancelType] = useState<'immediate' | 'end_of_period'>('end_of_period');
   const [suspendReason, setSuspendReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [renewalLoading, setRenewalLoading] = useState(false);
   
   // Change plan form state
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [changeReason, setChangeReason] = useState('');
-  const [effectiveDate, setEffectiveDate] = useState<string>('');
   const [notifyMerchant, setNotifyMerchant] = useState(true);
   const [changeBillingInterval, setChangeBillingInterval] = useState<string>('month');
-  const [changeDuration, setChangeDuration] = useState<string>('1');
 
   // Reset form when dialog opens
   const handleOpenChangeDialog = () => {
     setShowChangeDialog(true);
-    // Reset form state to ensure clean state
     setSelectedPlanId('');
     setChangeReason('');
-    setEffectiveDate('');
-    setNotifyMerchant(true);
     setChangeBillingInterval('month');
-    setChangeDuration('1');
+    setNotifyMerchant(true);
   };
 
   // Ensure billing interval is always set when dialog opens
@@ -195,8 +203,6 @@ export function MerchantPlanManagement({
       setChangeBillingInterval('month');
     }
   }, [showChangeDialog, changeBillingInterval]);
-
-  const currentSubscription = subscriptions[0]; // Most recent subscription
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -216,16 +222,6 @@ export function MerchantPlanManagement({
   // Get billing intervals from configuration
   const billingIntervals = getActiveBillingIntervals();
 
-  // Calculate extended price with discount using centralized function
-  const calculateExtendedPrice = () => {
-    if (!currentSubscription?.amount) return 0;
-    return calculateDiscountedPrice(
-      currentSubscription.amount,
-      extendBillingInterval,
-      parseInt(extendDuration)
-    );
-  };
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active': return 'success';
@@ -240,27 +236,28 @@ export function MerchantPlanManagement({
   };
 
 
-  const handleExtend = async () => {
-    if (!currentSubscription) return;
-
-    setIsSubmitting(true);
+  const handleRenewal = async (paymentData: any) => {
+    if (!currentSubscription || !onExtend) return;
+    
     try {
-      const extendData = {
+      setRenewalLoading(true);
+      
+      // Pass the renewal data to parent handler
+      await onExtend({
         subscription: currentSubscription,
-        duration: parseInt(extendDuration),
-        billingInterval: extendBillingInterval,
-        discount: getDiscountPercentage(extendBillingInterval),
-        totalPrice: calculateExtendedPrice()
-      };
-      await onExtend?.(extendData);
-      setShowExtendDialog(false);
-      // Reset form
-      setExtendDuration('1');
-      setExtendBillingInterval('month');
+        duration: 1,
+        billingInterval: 'month',
+        discount: 0,
+        totalPrice: currentSubscription.amount,
+        paymentData: paymentData // Include payment info
+      } as any);
+      
+      setShowRenewalModal(false);
     } catch (error) {
-      console.error('Error extending subscription:', error);
+      console.error('Failed to renew subscription:', error);
+      throw error; // Re-throw for modal to handle
     } finally {
-      setIsSubmitting(false);
+      setRenewalLoading(false);
     }
   };
 
@@ -281,47 +278,30 @@ export function MerchantPlanManagement({
   };
 
   const handleChangePlan = async () => {
-    if (!selectedPlanId || !changeReason.trim()) return;
-
-    console.log('🔍 Form submission started');
-    console.log('🔍 Current state values:', {
-      selectedPlanId,
-      changeReason,
-      changeBillingInterval,
-      changeDuration,
-      effectiveDate,
-      notifyMerchant
-    });
+    if (!selectedPlanId || !changeBillingInterval) return;
 
     setIsSubmitting(true);
     try {
       const selectedPlan = plans.find(p => p.id.toString() === selectedPlanId);
       const discount = getDiscountPercentage(changeBillingInterval);
-      const duration = parseInt(changeDuration) || 1;
       
       const planChangeData = {
         planId: Number(selectedPlanId),
-        reason: changeReason.trim(),
-        effectiveDate: effectiveDate || new Date().toISOString(),
+        reason: changeReason.trim() || 'Plan changed by admin',
         notifyMerchant,
         billingInterval: changeBillingInterval,
-        duration: duration,
+        duration: 1, // Always 1 period
         discount: discount,
-        totalPrice: selectedPlan ? calculateDiscountedPrice(selectedPlan.basePrice, changeBillingInterval, duration) : 0
+        totalPrice: selectedPlan ? calculateDiscountedPrice(selectedPlan.basePrice, changeBillingInterval, 1) : 0
       };
-      
-      console.log('🔍 Plan change data being sent:', planChangeData);
-      console.log('🔍 Billing interval value:', changeBillingInterval);
-      console.log('🔍 Billing interval in data:', planChangeData.billingInterval);
       
       await onPlanChange?.(planChangeData);
       setShowChangeDialog(false);
+      // Reset form
       setSelectedPlanId('');
       setChangeReason('');
-      setEffectiveDate('');
       setNotifyMerchant(true);
       setChangeBillingInterval('month');
-      setChangeDuration('1');
     } catch (error) {
       console.error('Error changing plan:', error);
     } finally {
@@ -391,6 +371,7 @@ export function MerchantPlanManagement({
         <CardContent>
           {(merchant.currentPlan || currentSubscription) ? (
             <div className="space-y-4">
+              {/* Plan Name, Price & Status */}
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">
@@ -398,9 +379,9 @@ export function MerchantPlanManagement({
                   </h3>
                   <p className="text-sm text-gray-500">
                     {merchant.currentPlan ? 
-                      formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency) :
+                      formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency) + '/month' :
                       currentSubscription ? 
-                        formatPrice(currentSubscription.amount, currentSubscription.currency) :
+                        formatPrice(currentSubscription.amount, currentSubscription.currency) + '/month' :
                         'No pricing available'
                     }
                   </p>
@@ -411,122 +392,141 @@ export function MerchantPlanManagement({
                 />
               </div>
 
+              {/* Subscription Period - Simplified */}
               {currentSubscription && (
-                <SubscriptionPeriodCard
-                  period={{
-                    startDate: new Date((currentSubscription as any).startDate),
-                    endDate: new Date((currentSubscription as any).endDate || new Date()),
-                    duration: (currentSubscription as any).interval || 'month',
-                    isActive: (currentSubscription as any).status === 'active',
-                    daysRemaining: (currentSubscription as any).subscriptionPeriod?.daysRemaining || 0,
-                    nextBillingDate: new Date((currentSubscription as any).nextBillingDate || new Date()),
-                    isTrial: (currentSubscription as any).status === 'trial',
-                  }}
-                  planName={currentSubscription.plan?.name}
-                  amount={currentSubscription.amount}
-                  currency={currentSubscription.currency}
-                  className="mt-4"
-                />
+                <div className="p-4 bg-gray-50 border rounded-lg space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Period:</span>
+                    <span className="font-medium">
+                      {formatDate((currentSubscription as any).startDate)} - {formatDate((currentSubscription as any).endDate)}
+                    </span>
+                  </div>
+                  {(currentSubscription as any).subscriptionPeriod?.daysRemaining !== undefined && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">
+                        {(currentSubscription as any).status === 'trial' ? 'Trial ends in:' : 'Renews in:'}
+                      </span>
+                      <span className={`font-medium ${
+                        (currentSubscription as any).subscriptionPeriod?.daysRemaining <= 7 
+                          ? 'text-orange-600' 
+                          : 'text-gray-900'
+                      }`}>
+                        {(currentSubscription as any).subscriptionPeriod?.daysRemaining} days
+                      </span>
+                    </div>
+                  )}
+                </div>
               )}
 
-              <div className="flex flex-wrap items-center gap-3 pt-4">
-                {/* Debug: Show current status and button visibility */}
-                <div className="w-full text-xs text-gray-500 mb-2">
-                  Debug: Original = "{merchant.subscriptionStatus}" | Normalized = "{normalizedStatus}" | 
-                  Extend: {currentSubscription && isActiveStatus ? 'YES' : 'NO'} | 
-                  Pause: {isActiveStatus ? 'YES' : 'NO'} | 
-                  Resume: {isPausedStatus ? 'YES' : 'NO'} | 
-                  Cancel: {isActiveStatus || isPausedStatus ? 'YES' : 'NO'}
-                </div>
+              {/* Only show action buttons for ADMIN and MERCHANT roles */}
+              {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
+                <div className="flex flex-wrap items-center gap-3 pt-4">
+                  {/* Trial Users: Show Upgrade Button */}
+                  {isTrialPlan && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleOpenChangeDialog}
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      Upgrade to Paid Plan
+                    </Button>
+                  )}
+                  
+                  {/* Paid Users: Show Change Plan */}
+                  {!isTrialPlan && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenChangeDialog}
+                      className="flex items-center gap-2"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      Change Plan
+                    </Button>
+                  )}
                 
-                {/* Change Plan - Always Available */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOpenChangeDialog}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  Change Plan
-                </Button>
-                
-                {/* Extend Plan */}
-                {currentSubscription && isActiveStatus && (
+                {/* Renew/Extend - Only for PAID active subscriptions (NOT trial) */}
+                {currentSubscription && isActiveStatus && !isTrialPlan && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowExtendDialog(true)}
+                    onClick={() => setShowRenewalModal(true)}
                     className="flex items-center gap-2"
                   >
                     <Plus className="h-4 w-4" />
-                    Extend Plan
+                    Renew/Extend
                   </Button>
                 )}
                 
-                {/* Pause/Resume Plan */}
-                {currentSubscription && (
-                  <>
-                    {isActiveStatus ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowSuspendDialog(true)}
-                        className="flex items-center gap-2 text-orange-600 hover:text-orange-700"
-                      >
-                        <Pause className="h-4 w-4" />
-                        Pause Plan
-                      </Button>
-                    ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                        onClick={handleReactivate}
-                        disabled={isSubmitting}
-                        className="flex items-center gap-2 text-green-600 hover:text-green-700"
-                      >
-                        <Play className="h-4 w-4" />
-                        Resume Plan
-                </Button>
-                    )}
-                  </>
+                {/* Pause - Only for ACTIVE PAID subscriptions (not trial) */}
+                {currentSubscription && isActivePaidStatus && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSuspendDialog(true)}
+                    className="flex items-center gap-2 text-orange-600 hover:text-orange-700"
+                  >
+                    <Pause className="h-4 w-4" />
+                    Pause Plan
+                  </Button>
                 )}
                 
-                {/* Cancel Plan (Permanent) */}
+                {/* Resume - Only for PAUSED subscriptions */}
+                {currentSubscription && isPaused && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReactivate}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2 text-green-600 hover:text-green-700"
+                  >
+                    <Play className="h-4 w-4" />
+                    Resume Plan
+                  </Button>
+                )}
+                
+                {/* Cancel/End Trial - Different text based on status */}
                 {currentSubscription && (isActiveStatus || isPausedStatus) && (
-                <Button
-                  variant="outline"
-                  size="sm"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setShowCancelDialog(true)}
                     className="flex items-center gap-2 text-red-600 hover:text-red-700"
                   >
                     <X className="h-4 w-4" />
-                    Cancel Plan
-                </Button>
+                    {isTrialStatus ? 'End Trial' : 'Cancel Plan'}
+                  </Button>
                 )}
-              </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">
               <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Subscription</h3>
               <p className="text-gray-500 mb-4">This merchant doesn't have an active subscription.</p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button onClick={handleOpenChangeDialog}>
-                <CreditCard className="h-4 w-4 mr-2" />
-                Create Subscription
-              </Button>
-                
-                {/* Always show Change Plan button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOpenChangeDialog}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  Change Plan
-                </Button>
-              </div>
+              {/* Only show action buttons for ADMIN and MERCHANT roles */}
+              {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button onClick={handleOpenChangeDialog}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Create Subscription
+                  </Button>
+                    
+                  {/* Always show Change Plan button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenChangeDialog}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    Change Plan
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -559,7 +559,7 @@ export function MerchantPlanManagement({
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
-                      {formatPrice(subscription.amount, subscription.currency)}
+                      {formatPrice(subscription.amount, (subscription as any).currency || 'USD')}
                     </p>
                     <StatusBadge 
                       status={getStatusColor(subscription.status)} 
@@ -574,271 +574,139 @@ export function MerchantPlanManagement({
       )}
 
 
-      {/* Extend Plan Dialog */}
-      <Dialog open={showExtendDialog} onOpenChange={setShowExtendDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0">
+      {/* Manual Renewal Modal - Only for PAID plans */}
+      {currentSubscription && !isTrialPlan && (
+        <ManualRenewalModal
+          isOpen={showRenewalModal}
+          onClose={() => setShowRenewalModal(false)}
+          subscription={{
+            id: currentSubscription.id,
+            merchantName: merchant.name,
+            planName: merchant.currentPlan?.name || 'Unknown Plan',
+            amount: merchant.currentPlan?.price || currentSubscription.amount || 0,
+            currency: currentSubscription.currency || 'USD',
+            currentPeriodEnd: currentSubscription.currentPeriodEnd 
+              ? new Date(currentSubscription.currentPeriodEnd)
+              : new Date()
+          }}
+          onRenew={handleRenewal}
+          loading={renewalLoading}
+        />
+      )}
+
+      {/* Change Plan Dialog - Simplified */}
+      <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-blue-500" />
-              Extend Plan
+              <ArrowRight className="h-5 w-5 text-blue-500" />
+              Change Subscription Plan
             </DialogTitle>
             <DialogDescription>
-              Extend the current plan for {merchant.name}. Choose billing interval to get discounts on longer commitments.
+              Change the subscription plan for {merchant.name}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
-
-            {/* Extension Options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="extendDuration">Duration</Label>
-                <Input
-                  id="extendDuration"
-                  type="number"
-                  min="1"
-                  max="12"
-                  value={extendDuration}
-                  onChange={(e) => setExtendDuration(e.target.value)}
-                  placeholder="1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="extendBillingInterval">Billing Interval</Label>
-                <Select value={extendBillingInterval} onValueChange={setExtendBillingInterval}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select interval..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {billingIntervals.map((interval: any) => (
-                      <SelectItem key={interval.id} value={interval.id}>
-                        {formatBillingInterval(interval.id)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Simple Extension Summary */}
-            {currentSubscription?.amount && extendDuration && extendBillingInterval && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-blue-900">Plan Extension</p>
-                    <p className="text-sm text-gray-600">
-                      {merchant.currentPlan?.name || 'Current Plan'} • {formatBillingInterval(extendBillingInterval)} • {extendDuration} period(s)
-                      {getDiscountPercentage(extendBillingInterval) > 0 && ` • ${getDiscountPercentage(extendBillingInterval)}% off`}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-900">
-                      {formatPrice(calculateExtendedPrice(), currentSubscription.currency)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      New end: {(() => {
-                        const currentEndDate = (currentSubscription as any)?.endDate ? new Date((currentSubscription as any).endDate) : new Date();
-                        const duration = parseInt(extendDuration) || 1;
-                        const interval = extendBillingInterval;
-                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === 'semiAnnual' ? 6 : 12;
-                        const newEndDate = new Date(currentEndDate);
-                        newEndDate.setMonth(newEndDate.getMonth() + (months * duration));
-                        return formatDate(newEndDate);
-                      })()}
-                    </p>
-                  </div>
+          <div className="space-y-6">
+            {/* Current Plan Display */}
+            {merchant.currentPlan && (
+              <div className="p-4 bg-gray-50 border rounded-lg">
+                <p className="text-sm text-gray-600 mb-1">Current Plan</p>
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-lg">{merchant.currentPlan.name}</p>
+                  <p className="font-semibold text-lg">{formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency)}/month</p>
                 </div>
               </div>
             )}
 
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-500" />
-                <p className="text-sm text-blue-700 font-medium">
-                  Extension will be added to the current plan period
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowExtendDialog(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleExtend}
-              disabled={isSubmitting || !extendDuration || !extendBillingInterval}
-            >
-              {isSubmitting ? 'Extending...' : 'Extend Plan'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Change Plan Dialog */}
-      <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowRight className="h-5 w-5 text-blue-500" />
-              Change Plan
-            </DialogTitle>
-            <DialogDescription>
-              Change the subscription plan for {merchant.name}. This will update their billing and features.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
-
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-500" />
-                <p className="text-sm text-blue-700 font-medium">
-                  Plan changes take effect immediately with proration
-                </p>
-              </div>
+            {/* Select New Plan */}
+            <div>
+              <Label htmlFor="planSelect">New Plan *</Label>
+              <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a plan..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id.toString()}>
+                      {plan.name} - ${plan.basePrice}/month
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="planSelect">Select New Plan</Label>
-                <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a plan..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {plans.map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id.toString()}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{plan.name}</span>
-                          <span className="text-sm text-gray-500 ml-2">
-                            ${plan.basePrice}/{plan.currency}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="effectiveDate">Effective Date</Label>
-                <Input
-                  id="effectiveDate"
-                  type="datetime-local"
-                  value={effectiveDate}
-                  onChange={(e) => setEffectiveDate(e.target.value)}
-                  min={new Date().toISOString().slice(0, 16)}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Leave empty for immediate change
-                </p>
-              </div>
+            {/* Billing Cycle */}
+            <div>
+              <Label htmlFor="changeBillingInterval">Billing Cycle *</Label>
+              <Select value={changeBillingInterval} onValueChange={setChangeBillingInterval}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {billingIntervals.map((interval: any) => (
+                    <SelectItem key={interval.id} value={interval.id}>
+                      {formatBillingInterval(interval.id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Longer billing cycles offer better discounts
+              </p>
             </div>
 
-            {/* Billing Interval Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="changeBillingInterval">Billing Interval</Label>
-                <Select 
-                  value={changeBillingInterval || 'month'} 
-                  onValueChange={(value) => {
-                    console.log('🔍 Setting billing interval to:', value);
-                    setChangeBillingInterval(value);
-                    console.log('🔍 Billing interval state updated to:', value);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select billing interval..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {billingIntervals.map((interval: any) => (
-                      <SelectItem key={interval.id} value={interval.id}>
-                        {formatBillingInterval(interval.id)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-500 mt-1">
-                  Choose longer intervals for better discounts
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="changeDuration">Duration (Optional)</Label>
-                <Input
-                  id="changeDuration"
-                  type="number"
-                  min="1"
-                  max="12"
-                  value={changeDuration}
-                  onChange={(e) => setChangeDuration(e.target.value)}
-                  placeholder="1"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Number of billing periods (default: 1)
-                </p>
-              </div>
-            </div>
-
-            {/* Simple Plan Change Summary */}
+            {/* Pricing Summary */}
             {selectedPlanId && changeBillingInterval && (
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-blue-900">Plan Change</p>
-                    <p className="text-sm text-gray-600">
-                      {plans.find(p => p.id.toString() === selectedPlanId)?.name} • {formatBillingInterval(changeBillingInterval)} • {changeDuration || 1} period(s)
-                      {getDiscountPercentage(changeBillingInterval) > 0 && ` • ${getDiscountPercentage(changeBillingInterval)}% off`}
-                    </p>
+                <p className="font-medium text-blue-900 mb-2">Pricing Summary</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>New Plan:</span>
+                    <span className="font-medium">
+                      {plans.find(p => p.id.toString() === selectedPlanId)?.name}
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-900">
+                  <div className="flex justify-between">
+                    <span>Billing:</span>
+                    <span className="font-medium">{formatBillingInterval(changeBillingInterval)}</span>
+                  </div>
+                  {getDiscountPercentage(changeBillingInterval) > 0 && (
+                    <div className="flex justify-between text-green-700">
+                      <span>Discount:</span>
+                      <span className="font-medium">{getDiscountPercentage(changeBillingInterval)}% off</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-2 border-t text-base">
+                    <span className="font-semibold">Total:</span>
+                    <span className="font-bold text-blue-900">
                       {(() => {
                         const selectedPlan = plans.find(p => p.id.toString() === selectedPlanId);
                         if (!selectedPlan) return '$0.00';
-                        const duration = parseInt(changeDuration) || 1;
-                        const interval = changeBillingInterval;
-                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === 'semiAnnual' ? 6 : 12;
-                        const totalMonths = months * duration;
                         const discount = getDiscountPercentage(changeBillingInterval);
                         const discountedPrice = selectedPlan.basePrice * (1 - discount / 100);
-                        const totalPrice = discountedPrice * duration;
-                        return formatPrice(totalPrice, selectedPlan.currency);
+                        return formatPrice(discountedPrice, selectedPlan.currency);
                       })()}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Ends: {(() => {
-                        const startDate = effectiveDate ? new Date(effectiveDate) : new Date();
-                        const duration = parseInt(changeDuration) || 1;
-                        const interval = changeBillingInterval;
-                        const months = interval === 'month' ? 1 : interval === 'quarter' ? 3 : interval === 'semiAnnual' ? 6 : 12;
-                        const endDate = new Date(startDate);
-                        endDate.setMonth(endDate.getMonth() + (months * duration));
-                        return formatDate(endDate);
-                      })()}
-                    </p>
+                      /{changeBillingInterval}
+                    </span>
                   </div>
                 </div>
               </div>
             )}
 
+            {/* Reason (Optional) */}
             <div>
-              <Label htmlFor="changeReason">Reason for Change</Label>
+              <Label htmlFor="changeReason">Reason for Change (Optional)</Label>
               <Textarea
                 id="changeReason"
                 value={changeReason}
                 onChange={(e) => setChangeReason(e.target.value)}
-                placeholder="Enter reason for changing the plan..."
-                rows={3}
+                placeholder="e.g., Customer requested upgrade, Business growth, etc."
+                rows={2}
               />
             </div>
 
+            {/* Notify Merchant */}
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -848,12 +716,12 @@ export function MerchantPlanManagement({
                 className="rounded border-gray-300"
               />
               <Label htmlFor="notifyMerchant" className="text-sm">
-                Notify merchant about this change
+                Send email notification to merchant
               </Label>
             </div>
           </div>
 
-          <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
+          <DialogFooter className="border-t pt-4">
             <Button
               variant="outline"
               onClick={() => setShowChangeDialog(false)}
@@ -863,7 +731,7 @@ export function MerchantPlanManagement({
             </Button>
             <Button
               onClick={handleChangePlan}
-              disabled={!selectedPlanId || !changeReason.trim() || !changeBillingInterval || isSubmitting}
+              disabled={!selectedPlanId || !changeBillingInterval || isSubmitting}
             >
               {isSubmitting ? 'Changing...' : 'Change Plan'}
             </Button>

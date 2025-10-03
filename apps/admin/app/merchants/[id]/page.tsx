@@ -13,14 +13,17 @@ import {
 import { ArrowLeft } from 'lucide-react';
 import { 
   merchantsApi,
-  subscriptionsApi
+  subscriptionsApi,
+  plansApi
 } from '@rentalshop/utils';
+import { useAuth } from '@rentalshop/hooks';
 import type { Merchant } from '@rentalshop/types';
 
 export default function MerchantDetailPage() {
   const params = useParams();
   const router = useRouter();
   const merchantId = params.id as string;
+  const { user } = useAuth();
   
   const [merchant, setMerchant] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
@@ -41,15 +44,14 @@ export default function MerchantDetailPage() {
       if (response.success && response.data) {
         // The API returns data in the format: { merchant: {...}, stats: {...}, ... }
         setMerchant(response.data);
-        
-        // Add mock plans data for the Change Plan dialog
-        setPlans([
-          { id: 1, name: 'Starter', basePrice: 29.99, currency: 'USD', description: 'Basic plan for small businesses' },
-          { id: 2, name: 'Professional', basePrice: 59.99, currency: 'USD', description: 'Advanced plan for growing businesses' },
-          { id: 3, name: 'Enterprise', basePrice: 99.99, currency: 'USD', description: 'Full-featured plan for large businesses' }
-        ]);
       } else {
         setError(response.message || 'Failed to fetch merchant details');
+      }
+
+      // Fetch real plans
+      const plansResponse = await plansApi.getPlans();
+      if (plansResponse.success && plansResponse.data) {
+        setPlans(plansResponse.data.plans || []);
       }
     } catch (error) {
       console.error('Error fetching merchant details:', error);
@@ -157,23 +159,37 @@ export default function MerchantDetailPage() {
     }
   };
 
-  const handleExtend = async (subscription: any) => {
+  const handleExtend = async (extendData: any) => {
+    if (!extendData.paymentData) {
+      // Old extend flow (fallback)
+      console.log('Old extend flow');
+      return;
+    }
+
+    // New renewal flow with payment tracking
     try {
-      const response = await subscriptionsApi.extend(subscription.id, {
-        newEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        amount: subscription.amount,
-        method: 'MANUAL_EXTENSION',
-        description: 'Subscription extended by admin'
+      const subscriptionId = extendData.subscription.id;
+      
+      const response = await fetch(`/api/subscriptions/${subscriptionId}/renew`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(extendData.paymentData)
       });
 
-      if (response.success) {
-        console.log('Subscription extended successfully');
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Subscription renewed successfully');
         fetchMerchantDetails();
       } else {
-        console.error('Failed to extend subscription:', response.message);
+        throw new Error(result.message || 'Failed to renew subscription');
       }
     } catch (error) {
       console.error('Error extending subscription:', error);
+      throw error; // Re-throw for component to handle
     }
   };
 
@@ -315,6 +331,7 @@ export default function MerchantDetailPage() {
         <MerchantDetail
           data={merchantData}
           plans={plans}
+          currentUserRole={user?.role}
           onMerchantAction={handleMerchantAction}
           onOutletAction={handleOutletAction}
           onUserAction={handleUserAction}

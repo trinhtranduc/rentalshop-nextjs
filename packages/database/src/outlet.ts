@@ -375,3 +375,112 @@ export async function deleteOutlet(id: number) {
 
   return { success: true };
 }
+
+// ============================================================================
+// SIMPLIFIED API FUNCTIONS (for db object)
+// ============================================================================
+
+export const simplifiedOutlets = {
+  /**
+   * Find outlet by ID (simplified API)
+   */
+  findById: async (id: number) => {
+    return await prisma.outlet.findUnique({
+      where: { id },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        _count: {
+          select: { 
+            users: true,
+            orders: true,
+            products: true
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Create new outlet (simplified API)
+   */
+  create: async (data: any) => {
+    return await prisma.outlet.create({
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Update outlet (simplified API)
+   */
+  update: async (id: number, data: any) => {
+    return await prisma.outlet.update({
+      where: { id },
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Search outlets with pagination (simplified API)
+   */
+  search: async (filters: any) => {
+    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.id = whereFilters.outletId;
+    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    if (whereFilters.status) where.status = whereFilters.status;
+    
+    // Text search across multiple fields
+    if (whereFilters.search) {
+      where.OR = [
+        { name: { contains: whereFilters.search } },
+        { address: { contains: whereFilters.search } },
+        { phone: { contains: whereFilters.search } },
+        { email: { contains: whereFilters.search } }
+      ];
+    }
+
+    // Specific field filters
+    if (whereFilters.name) where.name = { contains: whereFilters.name };
+    if (whereFilters.address) where.address = { contains: whereFilters.address };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone };
+    if (whereFilters.email) where.email = { contains: whereFilters.email };
+
+    const [outlets, total] = await Promise.all([
+      prisma.outlet.findMany({
+        where,
+        include: {
+          merchant: { select: { id: true, name: true } },
+          _count: {
+            select: { 
+              users: true,
+              orders: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.outlet.count({ where })
+    ]);
+
+    return {
+      data: outlets,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total
+    };
+  }
+};

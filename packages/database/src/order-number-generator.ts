@@ -736,3 +736,44 @@ export function analyzeOrderNumber(orderNumber: string) {
     random: parsed?.random
   };
 }
+
+// ============================================================================
+// SIMPLIFIED API FUNCTIONS (for db object)
+// ============================================================================
+
+export const simplifiedOrderNumbers = {
+  /**
+   * Get outlet order stats (simplified API)
+   */
+  getOutletStats: async (outletId: number) => {
+    return await getOutletOrderStats(outletId);
+  },
+
+  /**
+   * Create order number with format (simplified API)
+   */
+  createWithFormat: async (outletId: number, format: OrderNumberFormat) => {
+    return await createOrderNumberWithFormat(outletId, format);
+  },
+
+  /**
+   * Generate multiple order numbers (simplified API)
+   */
+  generateMultiple: async (outletId: number, count: number, format: OrderNumberFormat = 'sequential') => {
+    return await generateTestOrderNumbers(outletId, count, format);
+  },
+
+  /**
+   * Validate order number format (simplified API)
+   */
+  validateFormat: (orderNumber: string) => {
+    return validateOrderNumber(orderNumber);
+  },
+
+  /**
+   * Get format info (simplified API)
+   */
+  getFormatInfo: (format: OrderNumberFormat) => {
+    return getFormatInfo(format);
+  }
+};

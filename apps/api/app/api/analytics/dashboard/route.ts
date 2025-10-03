@@ -8,10 +8,28 @@ import { API } from '@rentalshop/constants';
  * GET /api/analytics/dashboard - Get dashboard analytics
  * REFACTORED: Now uses unified withAuthRoles pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   console.log(`📊 GET /api/analytics/dashboard - User: ${user.email}`);
   
   try {
+    // Build where clause based on user role and scope
+    const orderWhereClause: any = {
+      status: { in: ['BOOKED', 'ACTIVE', 'COMPLETED'] }
+    };
+    
+    const paymentWhereClause: any = {
+      status: 'COMPLETED'
+    };
+
+    // Apply role-based filtering
+    if (user.role === 'MERCHANT' && userScope.merchantId) {
+      orderWhereClause.merchantId = userScope.merchantId;
+      paymentWhereClause.merchantId = userScope.merchantId;
+    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+      orderWhereClause.outletId = userScope.outletId;
+      paymentWhereClause.outletId = userScope.outletId;
+    }
+    // ADMIN sees all data (no additional filtering)
 
     // Get dashboard statistics
     const [
@@ -21,38 +39,36 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
     ] = await Promise.all([
       // Count total orders
       prisma.order.count({
-        where: { 
-          status: { in: ['BOOKED', 'ACTIVE', 'COMPLETED'] }
-        }
+        where: orderWhereClause
       }),
       
-      // Get real income (completed payments)
-      prisma.payment.aggregate({
-        where: {
-          status: 'COMPLETED',
-        },
+      // Get real income (completed payments) - only if user can see financial data
+      user.role !== 'OUTLET_STAFF' ? prisma.payment.aggregate({
+        where: paymentWhereClause,
         _sum: {
           amount: true,
         },
-      }),
+      }) : Promise.resolve({ _sum: { amount: null } }),
       
-      // Get future income (pending orders)
-      prisma.order.aggregate({
+      // Get future income (pending orders) - only if user can see financial data
+      user.role !== 'OUTLET_STAFF' ? prisma.order.aggregate({
         where: {
+          ...orderWhereClause,
           status: { in: ['BOOKED', 'ACTIVE'] }
         },
         _sum: {
           totalAmount: true
         }
-      })
+      }) : Promise.resolve({ _sum: { totalAmount: null } })
     ]);
 
     const payload = {
       success: true,
       data: {
         totalOrders,
-        realIncome: (realIncome._sum?.amount as number | null) || 0,
-        futureIncome: futureIncome._sum.totalAmount || 0,
+        realIncome: user.role !== 'OUTLET_STAFF' ? ((realIncome._sum?.amount as number | null) || 0) : null,
+        futureIncome: user.role !== 'OUTLET_STAFF' ? (futureIncome._sum.totalAmount || 0) : null,
+        userRole: user.role, // Include user role for frontend filtering
       },
     };
     const body = JSON.stringify(payload);

@@ -191,21 +191,27 @@ export function useAuth() {
         }
       } else {
         console.error('❌ API error:', response.status, response.statusText);
-        // If we have a token but API fails, clear corrupted data
-        if (getAuthToken()) {
-          console.log('🧹 Clearing corrupted auth data...');
-          clearAuthData();
-          setState(prev => ({ ...prev, user: null, loading: false }));
+        // Don't clear auth data on API errors - keep existing user data
+        console.log('⚠️ API error during refresh, but keeping existing user data');
+        setState(prev => ({ ...prev, loading: false }));
+        // Only clear auth data for critical errors (500, 503, etc.)
+        if (response.status >= 500) {
+          console.log('🔥 Server error, keeping user data but not clearing auth');
         }
-        throw new Error('Failed to refresh user');
       }
     } catch (err) {
       console.error('💥 Error refreshing user:', err);
-      // If we have a token but refresh fails, clear corrupted data
-      if (getAuthToken()) {
-        console.log('🧹 Clearing corrupted auth data due to error...');
-        clearAuthData();
-        setState(prev => ({ ...prev, user: null, loading: false }));
+      // Don't clear auth data immediately on refresh error
+      // Keep existing user data and just set loading to false
+      console.log('⚠️ Refresh failed, but keeping existing user data');
+      setState(prev => ({ ...prev, loading: false }));
+      // Only clear auth data if it's a network error or critical failure
+      if (err instanceof Error && (
+        err.message.includes('Failed to fetch') || 
+        err.message.includes('Network error') ||
+        err.message.includes('fetch')
+      )) {
+        console.log('🌐 Network error during refresh, keeping user data');
       }
     }
   }, [logout]);
@@ -241,9 +247,11 @@ export function useAuth() {
       // This prevents unnecessary API calls that might fail
       if (!storedUser.merchantId && !storedUser.outletId) {
         console.log('🔄 User data incomplete (missing merchant/outlet IDs) - refreshing from API...');
+        // Don't set loading to true here - keep user visible while refreshing
         refreshUser();
       } else if (!storedUser.firstName || !storedUser.lastName) {
         console.log('🔄 User data incomplete (missing firstName/lastName) - refreshing from API...');
+        // Don't set loading to true here - keep user visible while refreshing
         refreshUser();
       } else {
         console.log('✅ User data complete - no need to refresh');

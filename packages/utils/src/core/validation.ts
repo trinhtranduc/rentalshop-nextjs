@@ -254,6 +254,8 @@ export const userCreateSchema = z.object({
   lastName: z.string().min(1),
   phone: z.string().min(1, 'Phone number is required'), // Phone is now required
   role: userRoleEnum.optional(),
+  merchantId: z.coerce.number().int().positive().optional(),
+  outletId: z.coerce.number().int().positive().optional(),
 });
 
 export const userUpdateSchema = z.object({
@@ -263,6 +265,8 @@ export const userUpdateSchema = z.object({
   phone: z.string().min(1, 'Phone number is required').optional(), // Phone is required when provided
   role: userRoleEnum.optional(),
   isActive: z.boolean().optional(),
+  merchantId: z.coerce.number().int().positive().optional(),
+  outletId: z.coerce.number().int().positive().optional(),
 });
 
 export type UsersQuery = z.infer<typeof usersQuerySchema>;

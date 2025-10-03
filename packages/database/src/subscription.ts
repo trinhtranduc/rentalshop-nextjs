@@ -879,3 +879,377 @@ export async function createSubscriptionPayment(data: SubscriptionPaymentCreateI
     updatedAt: payment.updatedAt
   };
 }
+
+// ============================================================================
+// SUBSCRIPTION PAYMENT HISTORY
+// ============================================================================
+
+/**
+ * Get payment history for a subscription
+ * @param subscriptionId - Subscription ID
+ * @param filters - Optional filters for payments
+ * @returns Payment history with pagination
+ */
+export async function getSubscriptionPaymentHistory(
+  subscriptionId: number,
+  filters?: {
+    status?: string;
+    method?: string;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<{
+  payments: SubscriptionPayment[];
+  total: number;
+  hasMore: boolean;
+}> {
+  const where: any = {
+    subscriptionId,
+    type: 'SUBSCRIPTION'
+  };
+
+  // Apply filters
+  if (filters?.status) {
+    where.status = filters.status.toUpperCase();
+  }
+
+  if (filters?.method) {
+    where.method = filters.method.toUpperCase();
+  }
+
+  if (filters?.startDate || filters?.endDate) {
+    where.createdAt = {};
+    if (filters.startDate) where.createdAt.gte = filters.startDate;
+    if (filters.endDate) where.createdAt.lte = filters.endDate;
+  }
+
+  const limit = filters?.limit || 20;
+  const offset = filters?.offset || 0;
+
+  // Get total count and payments
+  const [total, payments] = await Promise.all([
+    prisma.payment.count({ where }),
+    prisma.payment.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset
+    })
+  ]);
+
+  const hasMore = offset + limit < total;
+
+  return {
+    payments: payments.map(p => ({
+      id: p.id,
+      subscriptionId: subscriptionId,
+      amount: p.amount,
+      currency: p.currency,
+      method: p.method,
+      status: p.status,
+      transactionId: p.transactionId || '',
+      description: p.description || undefined,
+      failureReason: p.failureReason || undefined,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt
+    })),
+    total,
+    hasMore
+  };
+}
+
+// ============================================================================
+// SUBSCRIPTION RENEWAL
+// ============================================================================
+
+/**
+ * Renew subscription for another month with payment
+ * @param subscriptionId - Subscription ID
+ * @param paymentData - Payment information
+ * @returns Updated subscription and payment record
+ */
+export async function renewSubscription(
+  subscriptionId: number,
+  paymentData: {
+    method: 'STRIPE' | 'TRANSFER';
+    transactionId: string;
+    reference?: string;
+    description?: string;
+  }
+): Promise<{
+  subscription: Subscription;
+  payment: SubscriptionPayment;
+}> {
+  // 1. Get subscription with merchant
+  const subscription = await prisma.subscription.findUnique({
+    where: { id: subscriptionId },
+    include: {
+      merchant: true,
+      plan: true
+    }
+  });
+
+  if (!subscription) {
+    throw new Error('Subscription not found');
+  }
+
+  // 2. Validate subscription can be renewed
+  if (subscription.status === 'cancelled') {
+    throw new Error('Cannot renew cancelled subscription');
+  }
+
+  // 3. Calculate new period (extend by 1 month)
+  const newPeriodStart = subscription.currentPeriodEnd;
+  const newPeriodEnd = calculatePeriodEnd(newPeriodStart, 'month');
+
+  // 4. Use database transaction to ensure atomicity
+  const result = await prisma.$transaction(async (tx) => {
+    // Create payment record
+    const payment = await tx.payment.create({
+      data: {
+        subscriptionId: subscription.id,
+        merchantId: subscription.merchantId,
+        amount: subscription.amount,
+        currency: subscription.currency,
+        method: paymentData.method,
+        type: 'SUBSCRIPTION',
+        status: paymentData.method === 'STRIPE' ? 'COMPLETED' : 'PENDING',
+        transactionId: paymentData.transactionId,
+        reference: paymentData.reference,
+        description: paymentData.description || `Monthly subscription renewal - ${new Date().toLocaleDateString()}`,
+        processedAt: paymentData.method === 'STRIPE' ? new Date() : null
+      }
+    });
+
+    // Update subscription period
+    const updatedSubscription = await tx.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        currentPeriodStart: newPeriodStart,
+        currentPeriodEnd: newPeriodEnd,
+        status: 'active',
+        updatedAt: new Date()
+      },
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            subscriptionStatus: true
+          }
+        },
+        plan: true
+      }
+    });
+
+    // Update merchant status
+    await tx.merchant.update({
+      where: { id: subscription.merchantId },
+      data: {
+        subscriptionStatus: 'active',
+        lastActiveAt: new Date()
+      }
+    });
+
+    return { updatedSubscription, payment };
+  });
+
+  // 5. Return formatted response
+  return {
+    subscription: {
+      id: result.updatedSubscription.id,
+      merchantId: result.updatedSubscription.merchantId,
+      planId: result.updatedSubscription.planId,
+      status: result.updatedSubscription.status as SubscriptionStatus,
+      billingInterval: result.updatedSubscription.interval as BillingInterval,
+      currentPeriodStart: result.updatedSubscription.currentPeriodStart,
+      currentPeriodEnd: result.updatedSubscription.currentPeriodEnd,
+      amount: result.updatedSubscription.amount,
+      createdAt: result.updatedSubscription.createdAt,
+      updatedAt: result.updatedSubscription.updatedAt,
+      merchant: result.updatedSubscription.merchant,
+      plan: convertPrismaPlanToPlan(result.updatedSubscription.plan)
+    },
+    payment: {
+      id: result.payment.id,
+      subscriptionId: subscriptionId,
+      amount: result.payment.amount,
+      currency: result.payment.currency,
+      method: result.payment.method,
+      status: result.payment.status,
+      transactionId: result.payment.transactionId || '',
+      description: result.payment.description || undefined,
+      createdAt: result.payment.createdAt,
+      updatedAt: result.payment.updatedAt
+    }
+  };
+}
+
+// ============================================================================
+// SIMPLIFIED API FUNCTIONS (for db object)
+// ============================================================================
+
+export const simplifiedSubscriptions = {
+  /**
+   * Find subscription by ID (simplified API)
+   */
+  findById: async (id: number) => {
+    return await prisma.subscription.findUnique({
+      where: { id },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }
+      }
+    });
+  },
+
+  /**
+   * Find subscription by merchant ID (simplified API)
+   */
+  findByMerchantId: async (merchantId: number) => {
+    return await prisma.subscription.findFirst({
+      where: { 
+        merchantId,
+        status: { not: 'CANCELLED' }
+      },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }
+      }
+    });
+  },
+
+  /**
+   * Create new subscription (simplified API)
+   */
+  create: async (data: any) => {
+    return await prisma.subscription.create({
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Update subscription (simplified API)
+   */
+  update: async (id: number, data: any) => {
+    return await prisma.subscription.update({
+      where: { id },
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Delete subscription (simplified API)
+   */
+  delete: async (id: number) => {
+    return await prisma.subscription.update({
+      where: { id },
+      data: { 
+        status: 'CANCELLED',
+        canceledAt: new Date()
+      }
+    });
+  },
+
+  /**
+   * Search subscriptions with simple filters (simplified API)
+   */
+  search: async (filters: any) => {
+    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.planId) where.planId = whereFilters.planId;
+    if (whereFilters.isActive !== undefined) {
+      if (whereFilters.isActive) {
+        where.status = { not: 'CANCELLED' };
+      } else {
+        where.status = 'CANCELLED';
+      }
+    }
+    if (whereFilters.status) where.status = whereFilters.status;
+    
+    // Date range filters
+    if (whereFilters.startDate || whereFilters.endDate) {
+      where.createdAt = {};
+      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
+      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
+    }
+
+    const [subscriptions, total] = await Promise.all([
+      prisma.subscription.findMany({
+        where,
+        include: {
+          merchant: { select: { id: true, name: true } },
+          plan: { select: { id: true, name: true } },
+          payments: {
+            orderBy: { createdAt: 'desc' },
+            take: 3
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.subscription.count({ where })
+    ]);
+
+    return {
+      data: subscriptions,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total
+    };
+  },
+
+  /**
+   * Get expired subscriptions (simplified API)
+   */
+  getExpired: async () => {
+    const now = new Date();
+    
+    return await prisma.subscription.findMany({
+      where: {
+        status: { not: 'CANCELLED' },
+        OR: [
+          { 
+            status: 'TRIAL',
+            trialEnd: { lt: now }
+          },
+          {
+            status: 'ACTIVE',
+            currentPeriodEnd: { lt: now }
+          }
+        ]
+      },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } }
+      },
+      orderBy: { currentPeriodEnd: 'asc' }
+    });
+  }
+};

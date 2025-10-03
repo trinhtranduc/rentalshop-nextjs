@@ -25,7 +25,7 @@ export default function LoginPage() {
         // Small delay to ensure auth state is updated
         setTimeout(() => {
           router.push('/dashboard');
-        }, 100);
+        }, 200);
       } else {
         console.log('❌ Login failed');
         // Don't set local error - let authError from useAuth handle it

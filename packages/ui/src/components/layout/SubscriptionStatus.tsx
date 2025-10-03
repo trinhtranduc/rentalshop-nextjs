@@ -21,9 +21,10 @@ import { useSubscriptionStatusInfo } from '@rentalshop/hooks';
 interface SubscriptionStatusProps {
   showDetails?: boolean;
   className?: string;
+  currentUserRole?: string;
 }
 
-export function SubscriptionStatus({ showDetails = false, className = '' }: SubscriptionStatusProps) {
+export function SubscriptionStatus({ showDetails = false, className = '', currentUserRole }: SubscriptionStatusProps) {
   const {
     hasSubscription,
     subscription,
@@ -49,14 +50,17 @@ export function SubscriptionStatus({ showDetails = false, className = '' }: Subs
   if (error || !hasSubscription) {
     return (
       <div className={className}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => window.location.href = '/plans'}
-        >
-          <CreditCard className="h-4 w-4 mr-2" />
-          Get Started
-        </Button>
+        {/* Only show "Get Started" button for ADMIN and MERCHANT roles */}
+        {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/plans'}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Get Started
+          </Button>
+        )}
       </div>
     );
   }
@@ -100,7 +104,8 @@ export function SubscriptionStatus({ showDetails = false, className = '' }: Subs
               <StatusBadge variant={getStatusVariant()}>
                 {status}
               </StatusBadge>
-              {(isExpired || isExpiringSoon) && (
+              {/* Only show action buttons for ADMIN and MERCHANT roles */}
+              {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (isExpired || isExpiringSoon) && (
                 <Button
                   size="sm"
                   onClick={() => window.location.href = '/plans'}
@@ -122,7 +127,8 @@ export function SubscriptionStatus({ showDetails = false, className = '' }: Subs
       <StatusBadge variant={getStatusVariant()}>
         {planName} - {getStatusText()}
       </StatusBadge>
-      {(isExpired || isExpiringSoon) && (
+      {/* Only show action buttons for ADMIN and MERCHANT roles */}
+      {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (isExpired || isExpiringSoon) && (
         <Button
           variant="outline"
           size="sm"

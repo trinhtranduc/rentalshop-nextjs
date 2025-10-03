@@ -327,6 +327,7 @@ export default function UserPage() {
         ) : (
           <div className="mt-8">
             <UserForm
+              mode="edit"
               user={userData}
               onSave={handleSave}
               onCancel={() => setShowEditSection(false)}

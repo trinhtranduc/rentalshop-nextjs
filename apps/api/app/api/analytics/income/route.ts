@@ -8,7 +8,7 @@ import { API } from '@rentalshop/constants';
  * GET /api/analytics/income - Get income analytics
  * REFACTORED: Now uses unified withAuthRoles pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
   console.log(`💰 GET /api/analytics/income - User: ${user.email}`);
   
   try {
