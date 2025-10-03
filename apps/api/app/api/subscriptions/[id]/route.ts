@@ -175,7 +175,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']); // OUTLET_ADMIN/STAFF cannot view subscriptions
   const authenticatedHandler = authWrapper((req, context) => 
     handleGetSubscription(req, context, params)
   );

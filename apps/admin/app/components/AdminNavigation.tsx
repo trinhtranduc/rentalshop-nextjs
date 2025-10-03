@@ -26,7 +26,7 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const navigation = [
+  const allNavigation = [
     {
       name: 'Dashboard',
       href: '/dashboard',
@@ -94,6 +94,35 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
       current: pathname.startsWith('/settings')
     }
   ];
+
+  // Filter navigation items based on user role
+  const filterNavigationByRole = (items: typeof allNavigation, userRole?: string) => {
+    if (!userRole) return items;
+    
+    // Hide specific tabs based on user role
+    if (userRole === 'OUTLET_ADMIN') {
+      // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments
+      return items.filter(item => 
+        item.href !== '/outlets' && 
+        item.href !== '/subscriptions' && 
+        item.href !== '/plans' && 
+        item.href !== '/payments'
+      );
+    } else if (userRole === 'OUTLET_STAFF') {
+      // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments (limited permissions)
+      return items.filter(item => 
+        item.href !== '/users' && 
+        item.href !== '/outlets' && 
+        item.href !== '/subscriptions' && 
+        item.href !== '/plans' && 
+        item.href !== '/payments'
+      );
+    }
+    
+    return items;
+  };
+
+  const navigation = filterNavigationByRole(allNavigation, user?.role);
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {

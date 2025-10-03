@@ -18,16 +18,17 @@ import { useNavigation } from '../hooks/useNavigation';
 
 export interface ServerTopNavigationProps {
   currentPage: string;
+  userRole?: string; // Add user role for filtering navigation
 }
 
-export default function ServerTopNavigation({ currentPage }: ServerTopNavigationProps) {
+export default function ServerTopNavigation({ currentPage, userRole }: ServerTopNavigationProps) {
   const { navigateTo, prefetchRoute } = useNavigation();
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPage);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
-  const navItems = [
+  const allNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/orders', label: 'Orders', icon: ShoppingCart },
     { 
@@ -44,6 +45,35 @@ export default function ServerTopNavigation({ currentPage }: ServerTopNavigation
     { href: '/outlets', label: 'Outlets', icon: Building2 },
     { href: '/calendar', label: 'Calendar', icon: Calendar },
   ];
+
+  // Filter nav items based on user role
+  const filterNavItemsByRole = (items: typeof allNavItems, userRole?: string) => {
+    if (!userRole) return items;
+    
+    // Hide specific tabs based on user role
+    if (userRole === 'OUTLET_ADMIN') {
+      // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments
+      return items.filter(item => 
+        item.href !== '/outlets' && 
+        item.href !== '/subscriptions' && 
+        item.href !== '/plans' && 
+        item.href !== '/payments'
+      );
+    } else if (userRole === 'OUTLET_STAFF') {
+      // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments (limited permissions)
+      return items.filter(item => 
+        item.href !== '/users' && 
+        item.href !== '/outlets' && 
+        item.href !== '/subscriptions' && 
+        item.href !== '/plans' && 
+        item.href !== '/payments'
+      );
+    }
+    
+    return items;
+  };
+
+  const navItems = filterNavItemsByRole(allNavItems, userRole);
 
   // Update local state when prop changes
   useEffect(() => {

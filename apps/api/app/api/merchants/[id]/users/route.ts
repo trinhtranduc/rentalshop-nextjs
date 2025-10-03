@@ -31,6 +31,45 @@ async function handleGetMerchantUsers(
       );
     }
 
+    // ✅ Authorization check: Ensure user can access this merchant's users
+    let canAccessMerchantUsers = false;
+    
+    if (user.role === 'ADMIN') {
+      // ADMIN can access any merchant's users
+      canAccessMerchantUsers = true;
+      console.log('✅ ADMIN access granted for merchant users');
+    } else if (user.role === 'MERCHANT') {
+      // MERCHANT can access users in their own merchant
+      if (userScope.merchantId && merchant.id === userScope.merchantId) {
+        canAccessMerchantUsers = true;
+        console.log('✅ MERCHANT access granted for own merchant users');
+      }
+    } else if (user.role === 'OUTLET_ADMIN') {
+      // OUTLET_ADMIN can access users in their outlet's merchant
+      if (userScope.merchantId && merchant.id === userScope.merchantId) {
+        canAccessMerchantUsers = true;
+        console.log(`✅ ${user.role} access granted for outlet's merchant users`);
+      }
+    }
+    // Note: OUTLET_STAFF cannot access user management
+
+    if (!canAccessMerchantUsers) {
+      console.log('❌ Access denied for merchant users:', {
+        userRole: user.role,
+        requestedMerchantId: merchant.id,
+        userScope: userScope
+      });
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Insufficient permissions to access merchant users',
+          required: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'],
+          current: user.role
+        },
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || undefined;

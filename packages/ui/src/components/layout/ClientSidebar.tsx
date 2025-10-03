@@ -120,6 +120,35 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPath);
   const pathname = usePathname();
 
+  // Filter menu items based on user role
+  const filterMenuItemsByRole = (items: MenuItem[], userRole?: string) => {
+    if (!userRole) return items;
+    
+    // Hide specific tabs based on user role
+    if (userRole === 'OUTLET_ADMIN') {
+      // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments
+      return items.filter(item => 
+        item.href !== '/outlets' && 
+        item.href !== '/subscriptions' && 
+        item.href !== '/plans' && 
+        item.href !== '/payments'
+      );
+    } else if (userRole === 'OUTLET_STAFF') {
+      // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments (limited permissions)
+      return items.filter(item => 
+        item.href !== '/users' && 
+        item.href !== '/outlets' && 
+        item.href !== '/subscriptions' && 
+        item.href !== '/plans' && 
+        item.href !== '/payments'
+      );
+    }
+    
+    return items;
+  };
+
+  const menuItems = filterMenuItemsByRole(clientMenuItems, user?.role);
+
   // Update local state when prop changes
   useEffect(() => {
     setLocalCurrentPage(currentPath);
@@ -344,7 +373,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-        {clientMenuItems.map((item) => renderMenuItem(item))}
+        {menuItems.map((item) => renderMenuItem(item))}
       </nav>
 
       {/* User Profile & Actions */}

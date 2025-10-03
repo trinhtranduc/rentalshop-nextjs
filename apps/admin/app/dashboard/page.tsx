@@ -21,6 +21,7 @@ import {
 import { usePathname } from 'next/navigation';
 import { analyticsApi } from '@rentalshop/utils';
 import { useToasts } from '@rentalshop/ui';
+import { useAuth } from '@rentalshop/hooks';
 import { 
   Users, 
   DollarSign, 
@@ -62,6 +63,7 @@ interface MerchantTrend {
 export default function AdminDashboard() {
   const pathname = usePathname();
   const { showError } = useToasts();
+  const { user } = useAuth();
   const [metrics, setMetrics] = useState<SystemMetrics>({
     totalMerchants: 0,
     totalOutlets: 0,
@@ -233,14 +235,15 @@ export default function AdminDashboard() {
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
     },
-    {
+    // Platform Revenue - Hidden for OUTLET_STAFF
+    ...(user?.role !== 'OUTLET_STAFF' ? [{
       title: 'Platform Revenue',
       value: `$${metrics.totalRevenue.toLocaleString()}`,
       change: { value: 22, isPositive: true, period: getPeriodLabel() },
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-100'
-    },
+    }] : []),
     {
       title: 'System Users',
       value: metrics.totalUsers,

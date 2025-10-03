@@ -7,6 +7,7 @@ import { API } from '@rentalshop/constants';
 /**
  * GET /api/analytics/today-metrics - Get today's operational metrics
  * Requires: Any authenticated user (scoped by role)
+ * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
  */
 async function handleGetTodayMetrics(
   request: NextRequest,
@@ -153,7 +154,7 @@ async function handleGetTodayMetrics(
   }
 }
 
-export const GET = withAuthRoles()((req, context) => 
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])((req, context) => 
   handleGetTodayMetrics(req, context)
 );
 

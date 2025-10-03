@@ -7,6 +7,7 @@ import { API } from '@rentalshop/constants';
 /**
  * GET /api/analytics/enhanced-dashboard - Get comprehensive dashboard analytics
  * Requires: Any authenticated user (scoped by role)
+ * Permissions: ADMIN (all), MERCHANT (merchant), OUTLET_ADMIN/STAFF (outlet)
  */
 async function handleGetEnhancedDashboard(
   request: NextRequest,
@@ -120,8 +121,8 @@ async function handleGetEnhancedDashboard(
         where: orderWhereClause
       }),
       
-      // Total revenue from completed payments
-      prisma.payment.aggregate({
+      // Total revenue from completed payments - hide from OUTLET_STAFF
+      user.role !== 'OUTLET_STAFF' ? prisma.payment.aggregate({
         where: {
           status: 'COMPLETED',
           ...paymentWhereClause
@@ -129,7 +130,7 @@ async function handleGetEnhancedDashboard(
         _sum: {
           amount: true,
         },
-      }),
+      }) : Promise.resolve({ _sum: { amount: null } }),
       
       // Active rentals (orders with status ACTIVE)
       prisma.order.count({
@@ -252,8 +253,8 @@ async function handleGetEnhancedDashboard(
     const lastRevenue = (lastMonthRevenue._sum?.amount as number | null) || 0;
     const revenueGrowthPercent = lastRevenue > 0 ? ((currentRevenue - lastRevenue) / lastRevenue) * 100 : 0;
 
-    // Calculate future income (pending orders)
-    const futureIncome = await prisma.order.aggregate({
+    // Calculate future income (pending orders) - hide from OUTLET_STAFF
+    const futureIncome = user.role !== 'OUTLET_STAFF' ? await prisma.order.aggregate({
       where: {
         ...orderWhereClause,
         status: { in: ['RESERVED', 'ACTIVE'] }
@@ -261,12 +262,17 @@ async function handleGetEnhancedDashboard(
       _sum: {
         totalAmount: true
       }
-    });
+    }) : { _sum: { totalAmount: null } };
 
     const payload = {
       success: true,
       data: {
-        totalRevenue: (totalRevenue._sum?.amount as number | null) || 0,
+        // Financial data - hide from OUTLET_STAFF
+        totalRevenue: user.role !== 'OUTLET_STAFF' ? ((totalRevenue._sum?.amount as number | null) || 0) : null,
+        revenueGrowth: user.role !== 'OUTLET_STAFF' ? (Math.round(revenueGrowthPercent * 100) / 100) : null,
+        futureIncome: user.role !== 'OUTLET_STAFF' ? (futureIncome._sum.totalAmount || 0) : null,
+        
+        // Operational data - visible to all roles
         totalOrders,
         activeRentals,
         completedOrders,
@@ -281,9 +287,8 @@ async function handleGetEnhancedDashboard(
           return Math.round((avgRenting / avgStock) * 100);
         })(),
         customerGrowth,
-        revenueGrowth: Math.round(revenueGrowthPercent * 100) / 100,
         customerBase,
-        futureIncome: futureIncome._sum.totalAmount || 0
+        userRole: user.role // Include user role for frontend filtering
       },
     };
 
@@ -308,7 +313,7 @@ async function handleGetEnhancedDashboard(
   }
 }
 
-export const GET = withAuthRoles()((req, context) => 
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])((req, context) => 
   handleGetEnhancedDashboard(req, context)
 );
 

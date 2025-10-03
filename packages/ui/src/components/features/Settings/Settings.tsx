@@ -58,7 +58,8 @@ const settingsMenuItems = [
     id: 'subscription',
     label: 'Subscription',
     icon: CreditCard,
-    description: 'Manage your subscription and billing'
+    description: 'Manage your subscription and billing',
+    roles: ['ADMIN', 'MERCHANT'] // Only ADMIN and MERCHANT can access subscription
   },
   {
     id: 'account',
@@ -172,6 +173,16 @@ export const SettingsComponent: React.FC = () => {
       });
     }
   }, [user]);
+
+  // Filter menu items based on user role
+  const filteredMenuItems = settingsMenuItems.filter(item => {
+    // If item has roles restriction, check if user role is allowed
+    if (item.roles) {
+      return item.roles.includes(user?.role || '');
+    }
+    // If no roles restriction, show to all
+    return true;
+  });
 
   // Event handlers will be added in the next part...
   const handlePersonalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -359,6 +370,7 @@ export const SettingsComponent: React.FC = () => {
           <SubscriptionSection
             subscriptionData={subscriptionData}
             subscriptionLoading={subscriptionLoading}
+            currentUserRole={user?.role}
           />
         );
       case 'account':
@@ -390,7 +402,7 @@ export const SettingsComponent: React.FC = () => {
       <SettingsLayout
         user={user}
         loading={loading}
-        menuItems={settingsMenuItems}
+        menuItems={filteredMenuItems}
         activeSection={activeSection}
         onSectionChange={setActiveSection}
       >

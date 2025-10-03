@@ -268,9 +268,16 @@ export const Users: React.FC<UsersProps> = ({
               </DialogDescription>
             </DialogHeader>
             
+            {/* 🔍 DEBUG: Log selectedUser data */}
+            {console.log('🔍 Users.tsx: selectedUser for edit dialog:', selectedUser as any)}
+            {console.log('🔍 Users.tsx: selectedUser.role:', (selectedUser as any).role, 'Type:', typeof (selectedUser as any).role)}
+            {console.log('🔍 Users.tsx: selectedUser.merchantId:', (selectedUser as any).merchantId)}
+            {console.log('🔍 Users.tsx: selectedUser.outletId:', (selectedUser as any).outletId)}
+            
             <UserForm
+              mode="edit"
               user={selectedUser}
-              onSave={handleUserUpdatedWithToast}
+              onSave={handleUserUpdatedWithToast as any}
               onCancel={() => setShowEditDialog(false)}
             />
           </DialogContent>
@@ -296,6 +303,7 @@ export const Users: React.FC<UsersProps> = ({
             </DialogDescription>
           </DialogHeader>
           <UserForm
+            mode="create"
             onSave={handleUserCreatedWithToast as any}
             onCancel={() => setShowCreateForm(false)}
             currentUser={currentUser}

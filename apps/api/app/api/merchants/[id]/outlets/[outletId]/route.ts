@@ -234,7 +234,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string; outletId: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']); // OUTLET_ADMIN cannot edit outlet info
   const authenticatedHandler = authWrapper((req, context) => 
     handleUpdateOutlet(req, context, params)
   );

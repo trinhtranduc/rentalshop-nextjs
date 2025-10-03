@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchPlans, createPlan, getPlanStats } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { planCreateSchema } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
@@ -30,12 +30,12 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
     };
 
     // Use database function to search plans
-    const result = await searchPlans(filters);
+    const result = await db.plans.search(filters);
 
     return NextResponse.json({
       success: true,
       data: {
-        plans: result.plans,
+        plans: result.data,
         total: result.total,
         hasMore: result.hasMore
       }
@@ -57,7 +57,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
     const validatedData = planCreateSchema.parse(body);
 
     // Create plan using database function
-    const plan = await createPlan(validatedData);
+    const plan = await db.plans.create(validatedData);
 
     return NextResponse.json({
       success: true,

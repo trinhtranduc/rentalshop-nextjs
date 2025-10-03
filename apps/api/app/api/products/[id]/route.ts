@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductById, updateProduct } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { assertAnyRole, withAuthRoles } from '@rentalshop/auth';
 import { productUpdateSchema } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
@@ -41,8 +41,8 @@ async function handleGetProduct(
       );
     }
     
-    // Get product using the secure database function that enforces merchant isolation
-    const product = await getProductById(productId, userMerchantId);
+    // Get product using the simplified database API
+    const product = await db.products.findById(productId);
 
     if (!product) {
       console.log('❌ Product not found in database for productId:', productId);
@@ -160,7 +160,7 @@ async function handleUpdateProduct(
     console.log('✅ Validated update data:', validatedData);
 
     // Check if product exists and user has access to it
-    const existingProduct = await getProductById(productId, userMerchantId);
+    const existingProduct = await db.products.findById(productId);
     if (!existingProduct) {
       return NextResponse.json(
         { success: false, message: 'Product not found' },
@@ -168,8 +168,8 @@ async function handleUpdateProduct(
       );
     }
 
-    // Update the product using the database function
-    const updatedProduct = await updateProduct(productId, validatedData);
+    // Update the product using the simplified database API
+    const updatedProduct = await db.products.update(productId, validatedData);
     console.log('✅ Product updated successfully:', updatedProduct);
 
     // Log audit event for product update

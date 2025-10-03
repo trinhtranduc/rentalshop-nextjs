@@ -442,3 +442,187 @@ export async function generateOrderNumber(outletId: number): Promise<string> {
 
   return `${prefix}-${String(sequence).padStart(4, '0')}`
 }
+
+// ============================================================================
+// SIMPLIFIED API FUNCTIONS (for db object)
+// ============================================================================
+
+export const simplifiedOrders = {
+  /**
+   * Find order by ID (simplified API)
+   */
+  findById: async (id: number) => {
+    return await prisma.order.findUnique({
+      where: { id },
+      include: {
+        customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+        outlet: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        orderItems: {
+          include: {
+            product: { select: { id: true, name: true, barcode: true } }
+          }
+        },
+        payments: true
+      }
+    });
+  },
+
+  /**
+   * Find order by order number (simplified API)
+   */
+  findByNumber: async (orderNumber: string) => {
+    return await prisma.order.findUnique({
+      where: { orderNumber },
+      include: {
+        customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+        outlet: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        orderItems: {
+          include: {
+            product: { select: { id: true, name: true, barcode: true } }
+          }
+        },
+        payments: true
+      }
+    });
+  },
+
+  /**
+   * Create new order (simplified API)
+   */
+  create: async (data: any) => {
+    return await prisma.order.create({
+      data,
+      include: {
+        customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+        outlet: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        orderItems: {
+          include: {
+            product: { select: { id: true, name: true, barcode: true } }
+          }
+        },
+        payments: true
+      }
+    });
+  },
+
+  /**
+   * Update order (simplified API)
+   */
+  update: async (id: number, data: any) => {
+    return await prisma.order.update({
+      where: { id },
+      data,
+      include: {
+        customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+        outlet: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        orderItems: {
+          include: {
+            product: { select: { id: true, name: true, barcode: true } }
+          }
+        },
+        payments: true
+      }
+    });
+  },
+
+  /**
+   * Delete order (simplified API)
+   */
+  delete: async (id: number) => {
+    return await prisma.order.delete({
+      where: { id }
+    });
+  },
+
+  /**
+   * Search orders with simple filters (simplified API)
+   */
+  search: async (filters: any) => {
+    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    // Handle merchant-level filtering (orders belong to outlets, outlets belong to merchants)
+    if (whereFilters.merchantId) {
+      where.outlet = {
+        merchantId: whereFilters.merchantId
+      };
+    }
+    
+    // Handle outlet-level filtering (overrides merchant filter if both are present)
+    if (whereFilters.outletId) {
+      where.outletId = whereFilters.outletId;
+    }
+    
+    if (whereFilters.customerId) where.customerId = whereFilters.customerId;
+    if (whereFilters.status) where.status = whereFilters.status;
+    if (whereFilters.orderType) where.orderType = whereFilters.orderType;
+    
+    // Filter by product (through order items)
+    if (whereFilters.productId) {
+      where.orderItems = {
+        some: {
+          productId: whereFilters.productId
+        }
+      };
+    }
+    
+    // Date range
+    if (whereFilters.startDate || whereFilters.endDate) {
+      where.createdAt = {};
+      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
+      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
+    }
+
+    // Text search
+    if (whereFilters.search) {
+      where.OR = [
+        { orderNumber: { contains: whereFilters.search } },
+        { customer: { firstName: { contains: whereFilters.search } } },
+        { customer: { lastName: { contains: whereFilters.search } } },
+        { customer: { phone: { contains: whereFilters.search } } }
+      ];
+    }
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+          outlet: { 
+            select: { 
+              id: true, 
+              name: true,
+              merchant: { select: { id: true, name: true } }
+            } 
+          },
+          createdBy: { select: { id: true, firstName: true, lastName: true } },
+          orderItems: {
+            include: {
+              product: { select: { id: true, name: true, barcode: true } }
+            }
+          },
+          payments: true
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.order.count({ where })
+    ]);
+
+    return {
+      data: orders,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total
+    };
+  }
+};

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthAndAuthz } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
-export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (authorizedRequest) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   try {
     // User is already authenticated and authorized to view analytics
-    const { user, userScope, request } = authorizedRequest;
 
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);

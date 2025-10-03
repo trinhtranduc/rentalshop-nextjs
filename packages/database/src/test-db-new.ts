@@ -3,7 +3,7 @@
 // ============================================================================
 // This file tests the new simplified database API before replacing the old one
 
-import { db, checkDatabaseConnection, generateOrderNumber } from './db-new';
+import { db, checkDatabaseConnection, generateOrderNumber } from './index';
 
 /**
  * Test the new simplified database API
@@ -68,5 +68,4 @@ export async function comparePerformance() {
   console.log(`📊 Average: ${duration / iterations}ms per iteration`);
 }
 
-// Export test functions
-export { testNewDatabaseAPI, comparePerformance };
+// Test functions are already exported above

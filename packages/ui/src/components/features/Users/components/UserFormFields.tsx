@@ -76,28 +76,40 @@ interface RoleSelectProps {
   onChange: (value: string) => void;
   error?: string;
   disabled?: boolean;
+  currentUserRole?: string;
 }
 
 export const RoleSelect: React.FC<RoleSelectProps> = ({
   value,
   onChange,
   error,
-  disabled = false
+  disabled = false,
+  currentUserRole
 }) => {
+  console.log('🔍 RoleSelect: Current value:', value, 'Type:', typeof value);
+  console.log('🔍 RoleSelect: Current user role:', currentUserRole);
+  console.log('🔍 RoleSelect: Available roles for current user:', currentUserRole === 'ADMIN' ? ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'] : ['OUTLET_ADMIN', 'OUTLET_STAFF']);
+  
   return (
     <div className="space-y-2">
       <Label htmlFor="role">Role *</Label>
       <Select 
-        value={value} 
+        value={value || undefined} 
         onValueChange={onChange}
         disabled={disabled}
       >
         <SelectTrigger className={error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}>
-          <SelectValue placeholder="Select role" />
+          <SelectValue placeholder={value ? `Current: ${value}` : "Select role"} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="OUTLET_STAFF">Outlet Staff</SelectItem>
+          {currentUserRole === 'ADMIN' && (
+            <>
+              <SelectItem value="ADMIN">System Admin</SelectItem>
+              <SelectItem value="MERCHANT">Merchant</SelectItem>
+            </>
+          )}
           <SelectItem value="OUTLET_ADMIN">Outlet Admin</SelectItem>
+          <SelectItem value="OUTLET_STAFF">Outlet Staff</SelectItem>
         </SelectContent>
       </Select>
       {error && (

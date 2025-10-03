@@ -28,6 +28,7 @@ export interface UserListOptions {
  * GET /api/users
  * Get users with filtering and pagination
  * REFACTORED: Uses unified withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']) pattern
+ * Note: OUTLET_STAFF cannot access user management
  */
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
   try {
@@ -87,6 +88,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
  * POST /api/users
  * Create a new user
  * REFACTORED: Uses unified withAuth pattern
+ * Note: OUTLET_STAFF cannot create users
  */
 export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
   try {
@@ -103,12 +105,32 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       }, { status: 400 });
     }
 
+    // Smart assignment of merchantId and outletId based on role and user permissions
+    let merchantId: number | undefined;
+    let outletId: number | undefined;
+
+    if (parsed.data.role === 'ADMIN') {
+      // ADMIN can be assigned to any merchant/outlet or none
+      merchantId = parsed.data.merchantId;
+      outletId = parsed.data.outletId;
+    } else if (parsed.data.role === 'MERCHANT') {
+      // MERCHANT must have merchantId, no outletId
+      merchantId = parsed.data.merchantId || userScope.merchantId;
+      outletId = undefined;
+    } else if (parsed.data.role === 'OUTLET_ADMIN' || parsed.data.role === 'OUTLET_STAFF') {
+      // OUTLET users must have both merchantId and outletId
+      merchantId = parsed.data.merchantId || userScope.merchantId;
+      outletId = parsed.data.outletId || userScope.outletId;
+    }
+
     const userData = {
       ...parsed.data,
-      // Add scope-based data
-      merchantId: userScope.merchantId,
-      outletId: parsed.data.role === 'OUTLET_STAFF' ? userScope.outletId : undefined
+      merchantId,
+      outletId
     };
+
+    console.log('🔍 POST /api/users: Creating user with data:', userData);
+    console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
 
     const newUser = await db.users.create(userData);
     

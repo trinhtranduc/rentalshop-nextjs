@@ -17,7 +17,7 @@ import {API} from '@rentalshop/constants';
 // ============================================================================
 // GET /api/subscriptions - Search subscriptions
 // ============================================================================
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
   try {
     // Parse query parameters
     const { searchParams } = new URL(request.url);

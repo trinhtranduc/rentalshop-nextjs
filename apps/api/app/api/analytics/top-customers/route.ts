@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthAndAuthz } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
-export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (authorizedRequest) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   try {
     // User is already authenticated and authorized to view analytics
-    const { user, userScope, request } = authorizedRequest;
 
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
@@ -28,16 +27,27 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
       dateStart.setDate(dateStart.getDate() - 30);
     }
 
+    // Build where clause based on user role and scope
+    const orderWhereClause: any = {
+      customerId: { not: null },
+      createdAt: {
+        gte: dateStart,
+        lte: dateEnd
+      },
+      status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] }
+    };
+
+    // Apply role-based filtering
+    if (user.role === 'MERCHANT' && userScope.merchantId) {
+      orderWhereClause.merchantId = userScope.merchantId;
+    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+      orderWhereClause.outletId = userScope.outletId;
+    }
+    // ADMIN sees all data (no additional filtering)
+
     const topCustomers = await prisma.order.groupBy({
       by: ['customerId'],
-      where: {
-        customerId: { not: null },
-        createdAt: {
-          gte: dateStart,
-          lte: dateEnd
-        },
-        status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] }
-      },
+      where: orderWhereClause,
       _count: {
         customerId: true
       },
@@ -70,12 +80,8 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
     // Get rental count for this customer (only RENT orders)
     const rentalCount = await prisma.order.count({
       where: {
+        ...orderWhereClause,
         customerId: item.customerId!,
-        createdAt: {
-          gte: dateStart,
-          lte: dateEnd
-        },
-        status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] },
         orderType: 'RENT'
       }
     });
@@ -83,12 +89,8 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
     // Get sale count for this customer (only SALE orders)
     const saleCount = await prisma.order.count({
       where: {
+        ...orderWhereClause,
         customerId: item.customerId!,
-        createdAt: {
-          gte: dateStart,
-          lte: dateEnd
-        },
-        status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] },
         orderType: 'SALE'
       }
     });
@@ -102,11 +104,16 @@ export const GET = withAuthAndAuthz({ permission: 'analytics.view' }, async (aut
         orderCount: item._count.customerId, // Total orders (rental + sale)
         rentalCount: rentalCount, // Only rental orders
         saleCount: saleCount, // Only sale orders
-        totalSpent: item._sum.totalAmount || 0,
+        // Hide financial data from OUTLET_STAFF
+        totalSpent: user.role !== 'OUTLET_STAFF' ? (item._sum.totalAmount || 0) : null,
       });
     }
 
-    const body = JSON.stringify({ success: true, data: topCustomersWithDetails });
+    const body = JSON.stringify({ 
+      success: true, 
+      data: topCustomersWithDetails,
+      userRole: user.role // Include user role for frontend filtering
+    });
     const etag = crypto.createHash('sha1').update(body).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');
     if (ifNoneMatch && ifNoneMatch === etag) {

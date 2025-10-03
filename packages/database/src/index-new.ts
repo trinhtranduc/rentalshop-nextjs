@@ -4,11 +4,115 @@
 // This is the new, simplified version that replaces the complex dual ID system
 // Goal: Reduce from 139 exports to ~10 simple functions
 
-// Database client
-export { prisma } from './client';
+import { prisma } from './client';
+import { simplifiedUsers } from './user';
+import { simplifiedCustomers } from './customer';
+import { simplifiedProducts } from './product';
+import { simplifiedOrders } from './order';
+import { simplifiedOutlets } from './outlet';
 
-// New simplified database API
-export { db, checkDatabaseConnection, generateOrderNumber } from './db-new';
+// Database client
+export { prisma };
+
+// ============================================================================
+// TYPES FOR SIMPLIFIED API
+// ============================================================================
+
+export interface SimpleFilters {
+  merchantId?: number;
+  outletId?: number;
+  isActive?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface SimpleResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
+// ============================================================================
+// SIMPLIFIED DATABASE API
+// ============================================================================
+
+/**
+ * Simplified database operations
+ * Replaces the complex dual ID system with simple, consistent operations
+ */
+const db = {
+  // ============================================================================
+  // USER OPERATIONS
+  // ============================================================================
+  users: simplifiedUsers,
+
+  // ============================================================================
+  // CUSTOMER OPERATIONS
+  // ============================================================================
+  customers: simplifiedCustomers,
+
+  // ============================================================================
+  // PRODUCT OPERATIONS
+  // ============================================================================
+  products: simplifiedProducts,
+
+  // ============================================================================
+  // ORDER OPERATIONS
+  // ============================================================================
+  orders: simplifiedOrders,
+
+  // ============================================================================
+  // OUTLET OPERATIONS
+  // ============================================================================
+  outlets: simplifiedOutlets
+};
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Check database connection health
+ */
+const checkDatabaseConnection = async () => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return { status: 'connected' };
+  } catch (error) {
+    return { status: 'disconnected', error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+/**
+ * Generate next order number (simplified)
+ */
+const generateOrderNumber = async (outletId: number): Promise<string> => {
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { id: true }
+  });
+
+  if (!outlet) {
+    throw new Error(`Outlet with id ${outletId} not found`);
+  }
+
+  // Get the count of orders for this outlet
+  const orderCount = await prisma.order.count({
+    where: { outletId }
+  });
+
+  const sequence = (orderCount + 1).toString().padStart(4, '0');
+  return `ORD-${outletId.toString().padStart(3, '0')}-${sequence}`;
+};
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+export { db, checkDatabaseConnection, generateOrderNumber };
 
 // Test functions (for development)
 export { testNewDatabaseAPI, comparePerformance } from './test-db-new';

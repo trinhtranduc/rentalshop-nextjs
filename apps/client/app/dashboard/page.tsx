@@ -499,18 +499,23 @@ export default function DashboardPage() {
         {timePeriod === 'today' && (
           <>
             {/* Today's Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard
-                title="Today's Revenue"
-                value={currentStats.todayRevenue}
-                change="Real-time data"
-                description="Cash in hand"
-                tooltip="Total revenue collected from completed rentals and payments today"
-                color="text-green-600"
-                trend="neutral"
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
-              />
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 ${
+              user?.role === 'OUTLET_STAFF' ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
+            }`}>
+              {/* Revenue Card - Hidden for OUTLET_STAFF */}
+              {user?.role !== 'OUTLET_STAFF' && (
+                <StatCard
+                  title="Today's Revenue"
+                  value={currentStats.todayRevenue}
+                  change="Real-time data"
+                  description="Cash in hand"
+                  tooltip="Total revenue collected from completed rentals and payments today"
+                  color="text-green-600"
+                  trend="neutral"
+                  activeTooltip={activeTooltip}
+                  setActiveTooltip={setActiveTooltip}
+                />
+              )}
               <StatCard
                 title="New Rentals"
                 value={currentStats.todayRentals}
@@ -639,18 +644,23 @@ export default function DashboardPage() {
         {(timePeriod === 'month' || timePeriod === 'year') && (
           <>
             {/* Business Performance Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard
-                title="Total Revenue"
-                value={currentStats.totalRevenue}
-                change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}% growth` : 'No growth data'}
-                description={timePeriod === 'month' ? 'This month' : 'This year'}
-                tooltip="Total revenue from all completed rentals and payments"
-                color="text-green-600"
-                trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
-              />
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 ${
+              user?.role === 'OUTLET_STAFF' ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
+            }`}>
+              {/* Revenue Card - Hidden for OUTLET_STAFF */}
+              {user?.role !== 'OUTLET_STAFF' && (
+                <StatCard
+                  title="Total Revenue"
+                  value={currentStats.totalRevenue}
+                  change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}% growth` : 'No growth data'}
+                  description={timePeriod === 'month' ? 'This month' : 'This year'}
+                  tooltip="Total revenue from all completed rentals and payments"
+                  color="text-green-600"
+                  trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
+                  activeTooltip={activeTooltip}
+                  setActiveTooltip={setActiveTooltip}
+                />
+              )}
               <StatCard
                 title="Total Rentals"
                 value={currentStats.totalRentals}
@@ -673,34 +683,38 @@ export default function DashboardPage() {
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
-              <StatCard
-                title="Future Revenue"
-                value={currentStats.futureRevenue}
-                change="Real-time data"
-                description="Booked revenue"
-                tooltip="Expected revenue from upcoming and ongoing rentals"
-                color="text-orange-600"
-                trend="neutral"
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
-              />
+              {/* Future Revenue Card - Hidden for OUTLET_STAFF */}
+              {user?.role !== 'OUTLET_STAFF' && (
+                <StatCard
+                  title="Future Revenue"
+                  value={currentStats.futureRevenue}
+                  change="Real-time data"
+                  description="Booked revenue"
+                  tooltip="Expected revenue from upcoming and ongoing rentals"
+                  color="text-orange-600"
+                  trend="neutral"
+                  activeTooltip={activeTooltip}
+                  setActiveTooltip={setActiveTooltip}
+                />
+              )}
             </div>
 
-            {/* Revenue Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">
-                    {timePeriod === 'month' 
-                      ? `${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Revenue`
-                      : `${new Date().getFullYear()} Revenue`
-                    }
-                  </CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean>
-                  <IncomeChart data={currentRevenueData} loading={loadingCharts} />
-                </CardContentClean>
-              </CardClean>
+            {/* Revenue Charts - Hidden for OUTLET_STAFF */}
+            {user?.role !== 'OUTLET_STAFF' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <CardClean size="md">
+                  <CardHeaderClean>
+                    <CardTitleClean size="md">
+                      {timePeriod === 'month' 
+                        ? `${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Revenue`
+                        : `${new Date().getFullYear()} Revenue`
+                      }
+                    </CardTitleClean>
+                  </CardHeaderClean>
+                  <CardContentClean>
+                    <IncomeChart data={currentRevenueData} loading={loadingCharts} />
+                  </CardContentClean>
+                </CardClean>
               
               <CardClean size="md">
                 <CardHeaderClean>
@@ -718,7 +732,8 @@ export default function DashboardPage() {
                   />
                 </CardContentClean>
               </CardClean>
-            </div>
+              </div>
+            )}
 
             {/* Analytics Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

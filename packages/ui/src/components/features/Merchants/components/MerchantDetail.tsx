@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { MerchantHeader } from './MerchantHeader';
 import { MerchantPlanManagement } from './MerchantPlanManagement';
+import { MerchantSubscriptionSection } from './MerchantSubscriptionSection';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '../../../ui';
 import { Building2, Users, Package, ShoppingCart } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
@@ -11,6 +12,7 @@ import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
 interface MerchantDetailProps {
   data: MerchantDetailData;
   plans?: Plan[];
+  currentUserRole?: string;
   onMerchantAction: (action: string, merchantId: number) => void;
   onOutletAction: (action: string, outletId: number) => void;
   onUserAction: (action: string, userId: number) => void;
@@ -36,6 +38,7 @@ interface MerchantDetailProps {
 export function MerchantDetail({
   data,
   plans = [],
+  currentUserRole,
   onMerchantAction,
   onOutletAction,
   onUserAction,
@@ -108,7 +111,7 @@ export function MerchantDetail({
 
       </div>
 
-      {/* Plan Management */}
+      {/* Plan Management - Original Component (Keep existing UI) */}
       {onPlanChange && (
         <MerchantPlanManagement
           merchant={{
@@ -125,11 +128,20 @@ export function MerchantDetail({
           }}
           subscriptions={data.merchant.currentSubscription ? [data.merchant.currentSubscription as any] : []}
           plans={plans}
+          currentUserRole={currentUserRole}
           onPlanChange={onPlanChange}
           onExtend={onExtend}
           onCancel={onCancel}
           onSuspend={onSuspend}
           onReactivate={onReactivate}
+        />
+      )}
+
+      {/* Activity Timeline - Add below plan management */}
+      {data.merchant.currentSubscription && (
+        <MerchantSubscriptionSection
+          merchantId={data.merchant.id}
+          subscription={data.merchant.currentSubscription as any}
         />
       )}
 

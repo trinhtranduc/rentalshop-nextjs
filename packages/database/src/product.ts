@@ -664,3 +664,150 @@ export async function deleteProduct(id: number): Promise<any> {
     },
   };
 }
+
+// ============================================================================
+// SIMPLIFIED API FUNCTIONS (for db object)
+// ============================================================================
+
+export const simplifiedProducts = {
+  /**
+   * Find product by ID (simplified API)
+   */
+  findById: async (id: number) => {
+    return await prisma.product.findUnique({
+      where: { id },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Find product by barcode (simplified API)
+   */
+  findByBarcode: async (barcode: string) => {
+    return await prisma.product.findUnique({
+      where: { barcode },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Create new product (simplified API)
+   */
+  create: async (data: any) => {
+    return await prisma.product.create({
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Update product (simplified API)
+   */
+  update: async (id: number, data: any) => {
+    return await prisma.product.update({
+      where: { id },
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Delete product (soft delete) (simplified API)
+   */
+  delete: async (id: number) => {
+    return await prisma.product.update({
+      where: { id },
+      data: { isActive: false }
+    });
+  },
+
+  /**
+   * Search products with simple filters (simplified API)
+   */
+  search: async (filters: any) => {
+    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
+    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    
+    // Text search
+    if (whereFilters.search) {
+      where.OR = [
+        { name: { contains: whereFilters.search } },
+        { description: { contains: whereFilters.search } },
+        { barcode: { contains: whereFilters.search } }
+      ];
+    }
+
+    // Price range
+    if (whereFilters.minPrice !== undefined || whereFilters.maxPrice !== undefined) {
+      where.rentPrice = {};
+      if (whereFilters.minPrice !== undefined) where.rentPrice.gte = whereFilters.minPrice;
+      if (whereFilters.maxPrice !== undefined) where.rentPrice.lte = whereFilters.maxPrice;
+    }
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          merchant: { select: { id: true, name: true } },
+          category: { select: { id: true, name: true } },
+          outletStock: {
+            include: {
+              outlet: { select: { id: true, name: true } }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.product.count({ where })
+    ]);
+
+    return {
+      data: products,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total
+    };
+  }
+};

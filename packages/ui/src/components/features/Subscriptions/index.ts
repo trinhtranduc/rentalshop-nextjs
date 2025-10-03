@@ -13,6 +13,13 @@ export { SubscriptionStatusBanner, SubscriptionStatusCard } from './components/S
 export { SubscriptionPeriodCard } from './SubscriptionPeriodCard';
 export { RestrictedButton, RestrictedAction, RestrictedSection } from './components/RestrictedButton';
 
+// New Phase 1 components
+export { PaymentHistoryTable } from './components/PaymentHistoryTable';
+export { ManualRenewalModal } from './components/ManualRenewalModal';
+export { UpgradeTrialModal } from './components/UpgradeTrialModal';
+export { SubscriptionActivityTimeline } from './components/SubscriptionActivityTimeline';
+export { SubscriptionChangePlanDialog } from './components/SubscriptionChangePlanDialog';
+
 // Re-export types for convenience
 export type {
   Subscription,

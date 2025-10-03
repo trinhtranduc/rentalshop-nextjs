@@ -7,6 +7,7 @@ import {API} from '@rentalshop/constants';
 /**
  * GET /api/analytics/top-products - Get top-performing products
  * Requires: Any authenticated user (scoped by role)
+ * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
  */
 async function handleGetTopProducts(
   request: NextRequest,
@@ -142,7 +143,7 @@ async function handleGetTopProducts(
   }
 }
 
-export const GET = withAuthRoles()((req, context) => 
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])((req, context) => 
   handleGetTopProducts(req, context)
 );
 

@@ -456,3 +456,109 @@ export async function customerExistsByPhone(phone: string, merchantId: number): 
 
   return !!customer;
 }
+
+// ============================================================================
+// SIMPLIFIED API FUNCTIONS (for db object)
+// ============================================================================
+
+export const simplifiedCustomers = {
+  /**
+   * Find customer by ID (simplified API)
+   */
+  findById: async (id: number) => {
+    return await prisma.customer.findUnique({
+      where: { id },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        orders: {
+          select: { id: true, orderNumber: true, totalAmount: true, status: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }
+      }
+    });
+  },
+
+  /**
+   * Create new customer (simplified API)
+   */
+  create: async (data: any) => {
+    return await prisma.customer.create({
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Update customer (simplified API)
+   */
+  update: async (id: number, data: any) => {
+    return await prisma.customer.update({
+      where: { id },
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
+   * Search customers with pagination (simplified API)
+   */
+  search: async (filters: any) => {
+    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.outletId = whereFilters.outletId;
+    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    
+    // Text search across multiple fields
+    if (whereFilters.search) {
+      where.OR = [
+        { firstName: { contains: whereFilters.search } },
+        { lastName: { contains: whereFilters.search } },
+        { email: { contains: whereFilters.search } },
+        { phone: { contains: whereFilters.search } }
+      ];
+    }
+
+    // Specific field filters
+    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName };
+    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName };
+    if (whereFilters.email) where.email = { contains: whereFilters.email };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone };
+    if (whereFilters.city) where.city = { contains: whereFilters.city };
+    if (whereFilters.state) where.state = { contains: whereFilters.state };
+    if (whereFilters.country) where.country = { contains: whereFilters.country };
+
+    const [customers, total] = await Promise.all([
+      prisma.customer.findMany({
+        where,
+        include: {
+          merchant: { select: { id: true, name: true } },
+          _count: {
+            select: { orders: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.customer.count({ where })
+    ]);
+
+    return {
+      data: customers,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total
+    };
+  }
+};
