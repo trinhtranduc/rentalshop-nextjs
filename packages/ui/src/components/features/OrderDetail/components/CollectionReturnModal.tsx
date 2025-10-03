@@ -10,7 +10,16 @@ import {
 } from '@rentalshop/ui';
 import { Calculator, Info, DollarSign, Package, RotateCcw } from 'lucide-react';
 import { formatCurrency } from '@rentalshop/ui';
-import { OrderDetailData, SettingsForm } from '@rentalshop/types';
+import { OrderWithDetails } from '@rentalshop/types';
+
+// Define SettingsForm interface locally
+interface SettingsForm {
+  damageFee: number;
+  securityDeposit: number;
+  collateralType: string;
+  collateralDetails: string;
+  notes: string;
+}
 import { 
   getCollectionDetails, 
   getReturnDetails 
@@ -19,7 +28,7 @@ import {
 interface CollectionReturnModalProps {
   isOpen: boolean;
   onClose: () => void;
-  order: OrderDetailData;
+  order: OrderWithDetails;
   settingsForm: SettingsForm;
   mode: 'collection' | 'return';
   onConfirmPickup?: () => void;
