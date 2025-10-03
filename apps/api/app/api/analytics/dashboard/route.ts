@@ -23,61 +23,81 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     // Apply role-based filtering
     if (user.role === 'MERCHANT' && userScope.merchantId) {
-      orderWhereClause.merchantId = userScope.merchantId;
-      paymentWhereClause.merchantId = userScope.merchantId;
+      orderWhereClause.outlet = { merchantId: userScope.merchantId };
+      paymentWhereClause.order = { outlet: { merchantId: userScope.merchantId } };
     } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
       orderWhereClause.outletId = userScope.outletId;
-      paymentWhereClause.outletId = userScope.outletId;
+      paymentWhereClause.order = { outletId: userScope.outletId };
     }
-    // ADMIN sees all data (no additional filtering)
+    // ADMIN users see all data (no additional filtering)
 
-    // Get dashboard statistics
+    console.log('🔍 Dashboard filters:', { orderWhereClause, paymentWhereClause });
+
+    // Fetch dashboard data in parallel
     const [
       totalOrders,
-      realIncome,
-      futureIncome
+      totalRevenue,
+      activeOrders,
+      recentOrders
     ] = await Promise.all([
-      // Count total orders
-      prisma.order.count({
-        where: orderWhereClause
+      // Total orders count
+      prisma.order.count({ where: orderWhereClause }),
+      
+      // Total revenue from completed payments
+      prisma.payment.aggregate({
+        where: paymentWhereClause,
+        _sum: { amount: true }
       }),
       
-      // Get real income (completed payments) - only if user can see financial data
-      user.role !== 'OUTLET_STAFF' ? prisma.payment.aggregate({
-        where: paymentWhereClause,
-        _sum: {
-          amount: true,
-        },
-      }) : Promise.resolve({ _sum: { amount: null } }),
+      // Active orders count
+      prisma.order.count({ 
+        where: { 
+          ...orderWhereClause, 
+          status: 'ACTIVE' 
+        } 
+      }),
       
-      // Get future income (pending orders) - only if user can see financial data
-      user.role !== 'OUTLET_STAFF' ? prisma.order.aggregate({
-        where: {
-          ...orderWhereClause,
-          status: { in: ['BOOKED', 'ACTIVE'] }
+      // Recent orders (last 10)
+      prisma.order.findMany({
+        where: orderWhereClause,
+        include: {
+          customer: { select: { firstName: true, lastName: true } },
+          outlet: { select: { name: true } }
         },
-        _sum: {
-          totalAmount: true
-        }
-      }) : Promise.resolve({ _sum: { totalAmount: null } })
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      })
     ]);
 
-    const payload = {
-      success: true,
-      data: {
+    // Prepare response data
+    const dashboardData = {
+      overview: {
         totalOrders,
-        realIncome: user.role !== 'OUTLET_STAFF' ? ((realIncome._sum?.amount as number | null) || 0) : null,
-        futureIncome: user.role !== 'OUTLET_STAFF' ? (futureIncome._sum.totalAmount || 0) : null,
-        userRole: user.role, // Include user role for frontend filtering
+        totalRevenue: totalRevenue._sum.amount || 0,
+        activeOrders,
+        completionRate: totalOrders > 0 ? ((totalOrders - activeOrders) / totalOrders * 100).toFixed(1) : 0
       },
+      recentOrders: recentOrders.map(order => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        totalAmount: order.totalAmount,
+        customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
+        outletName: order.outlet?.name || 'Unknown',
+        createdAt: order.createdAt
+      }))
     };
-    const body = JSON.stringify(payload);
-    const etag = crypto.createHash('sha1').update(body).digest('hex');
+
+    // Generate ETag for caching
+    const dataString = JSON.stringify(dashboardData);
+    const etag = crypto.createHash('md5').update(dataString).digest('hex');
+    
+    // Check if client has cached version
     const ifNoneMatch = request.headers.get('if-none-match');
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(body, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return new NextResponse(dataString, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

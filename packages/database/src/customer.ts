@@ -150,7 +150,7 @@ export async function createCustomer(input: CustomerInput): Promise<any> {
       id: nextPublicId,
       firstName: input.firstName,
       lastName: input.lastName,
-      email: input.email,
+      email: input.email && input.email.trim() !== '' ? input.email : null,
       phone: input.phone,
       address: input.address,
       city: input.city,
@@ -483,8 +483,17 @@ export const simplifiedCustomers = {
    * Create new customer (simplified API)
    */
   create: async (data: any) => {
+    // Handle optional email field - convert empty string to null
+    const customerData = {
+      ...data,
+      email: data.email && data.email.trim() !== '' ? data.email : null
+    };
+    
+    // Remove merchant connection from data since it's handled by Prisma relations
+    delete customerData.merchant;
+    
     return await prisma.customer.create({
-      data,
+      data: customerData,
       include: {
         merchant: { select: { id: true, name: true } }
       }

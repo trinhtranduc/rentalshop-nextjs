@@ -111,16 +111,14 @@ export default function CalendarPage() {
     console.log('📅 Available dateKeys:', Object.keys(calendarData));
     
     if (dayData) {
-      // Combine pickups and returns for display
+      // Only show pickup orders
       const allOrders = [
-        ...dayData.pickups.map((order: CalendarOrderSummary) => ({ ...order, type: 'pickup' as const })),
-        ...dayData.returns.map((order: CalendarOrderSummary) => ({ ...order, type: 'return' as const }))
+        ...dayData.pickups.map((order: CalendarOrderSummary) => ({ ...order, type: 'pickup' as const }))
       ];
       
       console.log('📅 Orders found for selected date:', {
         dateKey,
         pickups: dayData.pickups.length,
-        returns: dayData.returns.length,
         allOrders: allOrders.length
       });
       
@@ -137,6 +135,11 @@ export default function CalendarPage() {
 
   // Convert calendar data to the format expected by Calendars component
   const pickupOrders: PickupOrder[] = React.useMemo(() => {
+    console.log('📅 Transforming calendar data:', { 
+      calendarDataKeys: Object.keys(calendarData),
+      calendarDataLength: Object.keys(calendarData).length
+    });
+    
     const orders: PickupOrder[] = [];
     
     // Flatten calendar data into pickup orders format
@@ -153,6 +156,10 @@ export default function CalendarPage() {
           productName: order.productName,
           productCount: 1,
           totalAmount: order.totalAmount,
+          // Keep original field names for CalendarGrid compatibility
+          pickupPlanAt: order.pickupPlanAt,
+          returnPlanAt: order.returnPlanAt,
+          // Also provide legacy field names for backward compatibility
           pickupDate: new Date(order.pickupPlanAt || dateKey),
           returnDate: new Date(order.returnPlanAt || dateKey),
           status: order.status,
@@ -164,27 +171,12 @@ export default function CalendarPage() {
         });
       });
       
-      // Add return orders
-      dayData.returns.forEach((order: CalendarOrderSummary) => {
-        orders.push({
-          id: order.id,
-          orderNumber: order.orderNumber,
-          customerName: order.customerName,
-          customerPhone: order.customerPhone,
-          productName: order.productName,
-          productCount: 1,
-          totalAmount: order.totalAmount,
-          pickupDate: new Date(order.pickupPlanAt || dateKey),
-          returnDate: new Date(order.returnPlanAt || dateKey),
-          status: order.status,
-          outletName: order.outletName,
-          notes: order.notes || '',
-          isOverdue: order.status === 'PICKUPED' && order.returnPlanAt && new Date(order.returnPlanAt) < new Date(),
-          duration: order.pickupPlanAt && order.returnPlanAt ? 
-            Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : 0
-        });
-      });
+      // Only process pickup orders - no return orders needed
     }
+    
+    console.log('📅 Final pickupOrders:', {
+      ordersCount: orders.length
+    });
     
     return orders;
   }, [calendarData]);
@@ -221,7 +213,7 @@ export default function CalendarPage() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-green-600">Return Orders</p>
-                  <p className="text-2xl font-bold text-green-900">{calendarMeta.stats.totalReturns}</p>
+                  <p className="text-2xl font-bold text-green-900">0</p>
                 </div>
               </div>
             </div>

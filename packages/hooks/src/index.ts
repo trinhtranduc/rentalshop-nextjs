@@ -17,3 +17,4 @@ export * from './hooks/useSubscriptionStatusInfo';
 export * from './hooks/useThrottledSearch';
 export * from './hooks/useToast';
 export * from './hooks/useUserManagement';
+export * from './hooks/useUserRole';

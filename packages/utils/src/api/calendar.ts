@@ -1,4 +1,5 @@
 import { authenticatedFetch, parseApiResponse } from '../core';
+import { apiUrls } from '../config/api';
 
 // Types for calendar API
 export interface CalendarOrderSummary {
@@ -20,7 +21,6 @@ export interface CalendarOrderSummary {
 
 export interface DayOrders {
   pickups: CalendarOrderSummary[];
-  returns: CalendarOrderSummary[];
   total: number;
 }
 
@@ -34,7 +34,6 @@ export interface CalendarMeta {
   totalDays: number;
   stats: {
     totalPickups: number;
-    totalReturns: number;
     totalOrders: number;
   };
   dateRange: {
@@ -80,11 +79,11 @@ export const calendarApi = {
       ...(query.limit && { limit: query.limit.toString() })
     });
 
-    const response = await authenticatedFetch(`/api/calendar/orders?${searchParams}`);
+    const response = await authenticatedFetch(`${apiUrls.calendar.orders}?${searchParams}`);
     const result = await parseApiResponse<CalendarApiResponse>(response);
     
     // Return the full calendar response as-is from backend
-    return result.data!;
+    return result;
   },
 
   /**

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { findUserById, updateUser, prisma } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -246,7 +246,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       merchantId: user.merchant?.id
     });
 
-    const updatedUser = await updateUser(user.id, updateData);
+    const updatedUser = await db.users.update(user.id, updateData);
 
     console.log('✅ Profile updated successfully:', {
       userId: updatedUser.id,

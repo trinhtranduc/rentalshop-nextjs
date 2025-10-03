@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
@@ -100,7 +100,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * Create a new product using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/products - User: ${user.email} (${user.role})`);
   
   try {
@@ -134,10 +134,46 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
     console.log('🔍 Calculated totalStock:', totalStock);
 
-    // Use Prisma relation syntax
-    const productData = {
-      merchant: { connect: { id: userScope.merchantId } },
-      category: { connect: { id: parsed.data.categoryId } },
+    // Determine merchantId for product creation
+    let merchantId = userScope.merchantId;
+    
+    // For ADMIN users, they need to specify merchantId in the request
+    // For other roles, use their assigned merchantId
+    if (user.role === 'ADMIN' && parsed.data.merchantId) {
+      merchantId = parsed.data.merchantId;
+    } else if (!merchantId) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: user.role === 'ADMIN' 
+            ? 'MerchantId is required for ADMIN users when creating products' 
+            : 'User is not associated with any merchant'
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
+
+    // Find merchant by publicId to get CUID
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      select: { id: true, name: true }
+    });
+
+    if (!merchant) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: `Merchant with ID ${merchantId} not found`
+        },
+        { status: 404 }
+      );
+    }
+
+    // Use Prisma relation syntax with CUID
+    const productData: any = {
+      merchant: { connect: { id: merchant.id } }, // Use CUID, not publicId
       name: parsed.data.name,
       description: parsed.data.description,
       barcode: parsed.data.barcode,
@@ -153,6 +189,12 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
         }))
       }
     };
+
+    // Only add category connection if categoryId is provided
+    // If not provided, simplifiedProducts.create will use default category
+    if (parsed.data.categoryId) {
+      productData.category = { connect: { id: parsed.data.categoryId } };
+    }
 
     console.log('🔍 Creating product with data:', productData);
     

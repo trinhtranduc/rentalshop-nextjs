@@ -311,7 +311,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
   const authenticatedHandler = authWrapper((req, context) => 
     handleUpdateProduct(req, context, params)
   );
@@ -322,7 +322,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
   const authenticatedHandler = authWrapper((req, context) => 
     handleDeleteProduct(req, context, params)
   );

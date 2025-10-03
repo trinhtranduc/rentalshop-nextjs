@@ -39,9 +39,10 @@ export const productCreateSchema = z.object({
   rentPrice: z.number().nonnegative('Rent price must be non-negative'),
   salePrice: z.number().nonnegative('Sale price must be non-negative'),
   deposit: z.number().nonnegative('Deposit must be non-negative').default(0),
-  categoryId: z.coerce.number().int().positive('Category is required'), // Required - every product must have a category
+  categoryId: z.coerce.number().int().positive().optional(), // Optional - will use default category if not provided
   totalStock: z.number().int().min(0, 'Total stock must be non-negative'),
   images: z.string().optional(), // stored as JSON string upstream
+  merchantId: z.coerce.number().int().positive().optional(), // Optional - required for ADMIN users, auto-assigned for others
   outletStock: z.array(outletStockItemSchema).min(1, 'At least one outlet stock entry is required'), // Required - every product must have outlet stock
 });
 
@@ -93,9 +94,9 @@ export type RentalInput = z.infer<typeof rentalSchema>;
 export const customerCreateSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email format'),
+  email: z.string().email('Invalid email format').optional().or(z.literal('')),
   phone: z.string().min(1, 'Phone number is required'),
-  merchantId: z.coerce.number().int().positive('Merchant is required'), // Changed from string to number
+  merchantId: z.coerce.number().int().positive().optional(), // Optional - only required for ADMIN users, auto-assigned for MERCHANT/OUTLET from JWT
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),

@@ -192,7 +192,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string; productId: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']); // OUTLET_ADMIN can update products
   const authenticatedHandler = authWrapper((req, context) => 
     handleUpdateProduct(req, context, params)
   );

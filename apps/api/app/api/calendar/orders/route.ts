@@ -46,54 +46,45 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('📅 Date range:', { startDate, endDate });
 
-    // Build where clause with role-based filtering
+    // Build where clause with role-based filtering - only pickup orders
     const where: any = {
       orderType: 'RENT',
       status: {
         in: ['RESERVED', 'PICKUPED', 'RETURNED']
       },
-      OR: [
-        {
-          pickupPlanAt: {
-            gte: startDate,
-            lte: endDate
-          }
-        },
-        {
-          returnPlanAt: {
-            gte: startDate,
-            lte: endDate
-          }
-        }
-      ]
+      pickupPlanAt: {
+        gte: startDate,
+        lte: endDate
+      }
     };
 
-    // Role-based outlet filtering
-    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-      where.outletId = userScope.outletId;
-    } else if (user.role === 'MERCHANT') {
-      where.outletId = outletId || userScope.outletId;
-    } else if (user.role === 'ADMIN') {
+    // Role-based filtering
+    if (user.role === 'ADMIN') {
+      // ADMIN: Can see all orders, optionally filter by outletId
       if (outletId) {
         where.outletId = outletId;
       }
+      // No merchantId filter for ADMIN - they can see all merchants
+    } else if (user.role === 'MERCHANT') {
+      // MERCHANT: Can see orders from all their outlets
+      where.merchantId = userScope.merchantId;
+      if (outletId) {
+        where.outletId = outletId;
+      }
+      // If no outletId specified, they see all outlets within their merchant
+    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      // OUTLET users: Can only see orders from their assigned outlet
+      where.merchantId = userScope.merchantId;
+      where.outletId = userScope.outletId;
     }
 
     console.log('🔍 Calendar where clause:', where);
 
-    // Fetch orders for the month
+    // Fetch orders for the month using simplified database API
     const orders = await db.orders.search({
       ...where,
       limit: 1000, // Get all orders for the month
-      include: {
-        customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
-        outlet: { select: { id: true, name: true } },
-        orderItems: {
-          include: {
-            product: { select: { id: true, name: true } }
-          }
-        }
-      }
+      page: 1
     });
 
     console.log('📦 Found orders:', orders.data?.length || 0);
@@ -109,9 +100,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           customerName: order.customer?.firstName ? 
             `${order.customer.firstName} ${order.customer.lastName || ''}`.trim() : 
             'Unknown Customer',
+          customerPhone: order.customer?.phone,
           productName: order.orderItems?.[0]?.product?.name || 'Unknown Product',
           status: order.status,
           totalAmount: order.totalAmount,
+          outletName: order.outlet?.name,
           pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
           returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined
         };
@@ -119,52 +112,35 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         // Add to pickup dates
         if (order.pickupPlanAt) {
           const pickupDate = new Date(order.pickupPlanAt);
-          const dateKey = pickupDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          const dateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, '0')}-${String(pickupDate.getDate()).padStart(2, '0')}`;
           
           if (!calendarData[dateKey]) {
-            calendarData[dateKey] = { pickups: [], returns: [], total: 0 };
+            calendarData[dateKey] = { pickups: [], total: 0 };
           }
           
           if (calendarData[dateKey].pickups.length < limit) {
             calendarData[dateKey].pickups.push(orderSummary);
+            calendarData[dateKey].total++;
           }
         }
 
-        // Add to return dates
-        if (order.returnPlanAt) {
-          const returnDate = new Date(order.returnPlanAt);
-          const dateKey = returnDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-          
-          if (!calendarData[dateKey]) {
-            calendarData[dateKey] = { pickups: [], returns: [], total: 0 };
-          }
-          
-          if (calendarData[dateKey].returns.length < limit) {
-            calendarData[dateKey].returns.push(orderSummary);
-          }
-        }
+        // Only process pickup orders - skip return dates
       }
 
-      // Calculate totals for each day
-      for (const dateKey in calendarData) {
-        calendarData[dateKey].total = calendarData[dateKey].pickups.length + calendarData[dateKey].returns.length;
-      }
+      // Total is already calculated when adding orders
 
-      // Calculate monthly statistics
+      // Calculate monthly statistics (only pickup orders)
       let totalPickups = 0;
-      let totalReturns = 0;
       let totalOrders = 0;
 
       for (const dateKey in calendarData) {
         totalPickups += calendarData[dateKey].pickups.length;
-        totalReturns += calendarData[dateKey].returns.length;
         totalOrders += calendarData[dateKey].total;
       }
 
       console.log('📅 Calendar data prepared:', {
         daysWithOrders: Object.keys(calendarData).length,
         totalPickups,
-        totalReturns,
         totalOrders
       });
 
@@ -177,7 +153,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           totalDays: Object.keys(calendarData).length,
           stats: {
             totalPickups,
-            totalReturns,
             totalOrders
           },
           dateRange: {
@@ -199,7 +174,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         totalDays: 0,
         stats: {
           totalPickups: 0,
-          totalReturns: 0,
           totalOrders: 0
         },
         dateRange: {

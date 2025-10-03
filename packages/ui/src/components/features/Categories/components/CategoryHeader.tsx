@@ -3,6 +3,7 @@
 import React from 'react';
 import { Button } from '@rentalshop/ui';
 import { Plus } from 'lucide-react';
+import { useUserRole } from '@rentalshop/hooks';
 
 interface CategoryHeaderProps {
   onAddCategory: () => void;
@@ -11,6 +12,8 @@ interface CategoryHeaderProps {
 export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
   onAddCategory
 }) => {
+  const { canManageCategories } = useUserRole();
+  
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -20,10 +23,12 @@ export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
         </p>
       </div>
       
-      <Button onClick={onAddCategory} className="flex items-center space-x-2">
-        <Plus className="h-4 w-4" />
-        <span>Add Category</span>
-      </Button>
+      {canManageCategories && (
+        <Button onClick={onAddCategory} className="flex items-center space-x-2">
+          <Plus className="h-4 w-4" />
+          <span>Add Category</span>
+        </Button>
+      )}
     </div>
   );
 };

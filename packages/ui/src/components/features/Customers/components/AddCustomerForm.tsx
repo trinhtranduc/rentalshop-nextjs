@@ -113,7 +113,8 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
       
       await onSave({
         ...formData,
-        merchantId: 1 // TODO: Get actual merchant ID from props or context
+        // merchantId will be automatically determined from JWT token
+        // Only ADMIN users need to send merchantId in request
       });
       
     } catch (error) {

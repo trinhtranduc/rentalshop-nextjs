@@ -176,7 +176,6 @@ model Customer {
   orders      Order[]
 
   @@unique([merchantId, phone])
-  @@unique([merchantId, email], map: "unique_merchant_email")
   @@index([merchantId, firstName, lastName])
 }
 

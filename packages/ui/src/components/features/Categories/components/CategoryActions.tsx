@@ -7,6 +7,7 @@ import {
   Button
 } from '../../../ui';
 import { Plus, Download, Upload, Edit3 } from 'lucide-react';
+import { useUserRole } from '@rentalshop/hooks';
 
 interface CategoryActionsProps {
   onAddCategory: () => void;
@@ -21,14 +22,18 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
   onExportCategories,
   onBulkEdit
 }) => {
-  const actions = [
+  // Use hook instead of prop
+  const { canManageCategories } = useUserRole();
+  // Filter actions based on user role - Only ADMIN and MERCHANT can manage categories
+  const allActions = [
     {
       id: 'add-category',
       label: 'Add Category',
       description: 'Create a new product category',
       icon: '➕',
       variant: 'default' as const,
-      onClick: onAddCategory
+      onClick: onAddCategory,
+      roles: canManageCategories ? ['ALL'] : [] // Use permission check
     },
     {
       id: 'import-categories',
@@ -36,7 +41,8 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
       description: 'Import from CSV/Excel',
       icon: '📥',
       variant: 'secondary' as const,
-      onClick: onImportCategories
+      onClick: onImportCategories,
+      roles: canManageCategories ? ['ALL'] : [] // Use permission check
     },
     {
       id: 'export-categories',
@@ -44,7 +50,8 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
       description: 'Export to CSV/Excel',
       icon: '📤',
       variant: 'outline' as const,
-      onClick: onExportCategories
+      onClick: onExportCategories,
+      roles: ['ALL'] // All roles can export
     },
     {
       id: 'bulk-edit',
@@ -52,9 +59,15 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
       description: 'Edit multiple categories',
       icon: '✏️',
       variant: 'outline' as const,
-      onClick: onBulkEdit
+      onClick: onBulkEdit,
+      roles: canManageCategories ? ['ALL'] : [] // Use permission check
     }
   ];
+
+  // Filter actions based on current user role
+  const actions = allActions.filter(action => 
+    !action.roles || action.roles.length > 0
+  ).map(({ roles, ...action }) => action); // Remove roles property from final actions
 
   return (
     <Card>

@@ -37,7 +37,7 @@ import {
   ProductUpdateInput
 } from '@rentalshop/types';
 import { outletsApi, categoriesApi } from '@rentalshop/utils';
-import { useProductManagement, type UseProductManagementOptions } from '@rentalshop/hooks';
+import { useProductManagement, type UseProductManagementOptions, useUserRole } from '@rentalshop/hooks';
 import { 
   Package as PackageIcon, 
   TrendingUp, 
@@ -120,6 +120,7 @@ export function Products({
   mode = 'legacy'
 }: ProductsProps) {
   const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { canManageProducts } = useUserRole();
   
   // State for outlets and categories
   const [availableOutlets, setAvailableOutlets] = useState<Outlet[]>([]);
@@ -179,7 +180,7 @@ export function Products({
             onSort={onSort}
         />
         
-        <ProductPagination 
+        <Pagination 
           currentPage={data.page}
           totalPages={data.totalPages}
           total={data.total}
@@ -265,6 +266,7 @@ export function Products({
     try {
       // Convert ProductInput to ProductUpdateInput format
       const updateData: ProductUpdateInput = {
+        id: productData.id, // Add required id field
         name: productData.name,
         description: productData.description,
         barcode: productData.barcode,
@@ -316,7 +318,7 @@ export function Products({
         title={title}
         subtitle={subtitle}
       >
-        {showAddButton && (
+        {showAddButton && canManageProducts && (
           <Button
             onClick={handleAddProduct}
             className="flex items-center space-x-2"
@@ -423,8 +425,8 @@ export function Products({
                   ? 'Try adjusting your search or filters'
                   : 'Get started by adding your first product'
               }
-              actionLabel={addButtonText}
-              onAction={handleAddProduct}
+              actionLabel={canManageProducts ? addButtonText : undefined}
+              onAction={canManageProducts ? handleAddProduct : undefined}
             />
           </div>
         )}
@@ -455,8 +457,8 @@ export function Products({
           </DialogHeader>
           {selectedProduct && (
             <ProductDetail
-              product={selectedProduct}
-              onEdit={handleEditProduct}
+              product={selectedProduct as any}
+              onEdit={() => handleEditProduct(selectedProduct)}
               isMerchantAccount={true}
               showActions={true}
             />

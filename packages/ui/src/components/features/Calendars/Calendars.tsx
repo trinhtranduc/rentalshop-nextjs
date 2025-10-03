@@ -72,13 +72,10 @@ export function Calendars({
     return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
   });
 
-  const totalPickups = monthOrders.filter(order => 
-    new Date((order as any).pickupPlanAt || order.pickupDate).getMonth() === currentMonth
-  ).length;
+  const totalPickups = monthOrders.length;
 
-  const totalReturns = monthOrders.filter(order => 
-    new Date((order as any).returnPlanAt || order.returnDate).getMonth() === currentMonth
-  ).length;
+  // Only pickup orders - no return orders
+  const totalReturns = 0;
 
   // Loading state
   if (loading) {
@@ -105,7 +102,6 @@ export function Calendars({
       {/* Calendar Stats */}
       <CalendarStats
         totalPickups={totalPickups}
-        totalReturns={totalReturns}
         currentMonth={currentMonth}
         currentYear={currentYear}
       />

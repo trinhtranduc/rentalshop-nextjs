@@ -24,6 +24,7 @@ const publicRoutes = [
   '/api/system/integrity',
   '/api/docs',
   '/api/plans/public',
+  '/api/test',
 ];
 
 // Note: Subscription validation routes are now defined in @rentalshop/middleware

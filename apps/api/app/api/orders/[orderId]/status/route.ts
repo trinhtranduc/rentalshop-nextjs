@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { updateOrder } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { z } from 'zod';
 import {API} from '@rentalshop/constants';
 
@@ -123,7 +123,7 @@ export async function PATCH(
       );
     }
     
-    const updatedOrder = await updateOrder(orderPublicId, updateInput);
+    const updatedOrder = await db.orders.update(orderPublicId, updateInput);
 
     if (!updatedOrder) {
       return NextResponse.json(
