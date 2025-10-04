@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema } from '@rentalshop/utils';
+import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -123,6 +123,22 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       return NextResponse.json(
         { success: false, message: 'Merchant ID is required. Please provide merchantId in request body for admin users or ensure you are logged in as a merchant.' },
         { status: 400 }
+      );
+    }
+
+    // Check plan limits before creating outlet
+    try {
+      await assertPlanLimit(merchantId, 'outlets');
+      console.log('✅ Plan limit check passed for outlets');
+    } catch (error: any) {
+      console.log('❌ Plan limit exceeded for outlets:', error.message);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: error.message || 'Plan limit exceeded for outlets',
+          error: 'PLAN_LIMIT_EXCEEDED'
+        },
+        { status: 403 }
       );
     }
 

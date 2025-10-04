@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
 
@@ -161,6 +161,31 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
         message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
+    }
+
+    // Get outlet to check merchant association and plan limits
+    const outlet = await db.outlets.findById(parsed.data.outletId);
+    if (!outlet) {
+      return NextResponse.json(
+        { success: false, message: 'Outlet not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check plan limits before creating order (optional - orders are typically unlimited)
+    try {
+      await assertPlanLimit(outlet.merchantId, 'orders');
+      console.log('✅ Plan limit check passed for orders');
+    } catch (error: any) {
+      console.log('❌ Plan limit exceeded for orders:', error.message);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: error.message || 'Plan limit exceeded for orders',
+          error: 'PLAN_LIMIT_EXCEEDED'
+        },
+        { status: 403 }
+      );
     }
 
     // Generate order number using the outlet's ID

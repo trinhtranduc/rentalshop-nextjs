@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db, prisma } from '@rentalshop/database';
-import { customersQuerySchema, customerCreateSchema, customerUpdateSchema } from '@rentalshop/utils';
+import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 import crypto from 'crypto';
@@ -169,6 +169,22 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     }
 
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
+
+    // Check plan limits before creating customer
+    try {
+      await assertPlanLimit(merchantId, 'customers');
+      console.log('✅ Plan limit check passed for customers');
+    } catch (error: any) {
+      console.log('❌ Plan limit exceeded for customers:', error.message);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: error.message || 'Plan limit exceeded for customers',
+          error: 'PLAN_LIMIT_EXCEEDED'
+        },
+        { status: 403 }
+      );
+    }
 
     // Find merchant by publicId to get CUID
     const merchant = await prisma.merchant.findUnique({
