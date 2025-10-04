@@ -105,6 +105,7 @@ async function handleGetEnhancedDashboard(
     const [
       totalOrders,
       totalRevenue,
+      todayRentals,
       activeRentals,
       completedOrders,
       cancelledOrders,
@@ -136,6 +137,17 @@ async function handleGetEnhancedDashboard(
           returnedAt: true
         }
       }) : Promise.resolve([]),
+      
+      // Today's rentals count
+      prisma.order.count({
+        where: {
+          ...orderWhereClause,
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lte: new Date(new Date().setHours(23, 59, 59, 999))
+          }
+        }
+      }),
       
       // Active rentals (orders with status ACTIVE)
       prisma.order.count({
@@ -344,6 +356,7 @@ async function handleGetEnhancedDashboard(
         
         // Operational data - visible to all roles
         totalOrders,
+        todayRentals,
         activeRentals,
         completedOrders,
         cancelledOrders,

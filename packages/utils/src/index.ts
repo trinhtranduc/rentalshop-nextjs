@@ -10,3 +10,6 @@ export * from './config';
 
 // Core utilities (everything else)
 export * from './core';
+
+// Performance monitoring
+export * from './performance';

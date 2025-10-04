@@ -1,0 +1,99 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    # Ramp up phase
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up load"
+    # Sustained load phase
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load"
+    # Peak load phase
+    - duration: 180
+      arrivalRate: 100
+      name: "Peak load"
+    # Cool down phase
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool down"
+  
+  # Default payload
+  payload:
+    path: "./test-data.json"
+    fields:
+      - "orderIds"
+      - "customerIds"
+      - "outletIds"
+      - "productIds"
+  
+  # Plugins
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+
+# Test scenarios
+scenarios:
+  # Order search scenario
+  - name: "Order Search Performance"
+    weight: 40
+    flow:
+      - get:
+          url: "/api/orders"
+          qs:
+            limit: "20"
+            offset: "{{ $randomInt(0, 1000) }}"
+          capture:
+            - json: "$.data.orders[0].id"
+              as: "orderId"
+      - get:
+          url: "/api/orders/{{ orderId }}"
+          ifTrue: "{{ orderId }}"
+      
+  # Order creation scenario
+  - name: "Order Creation Performance"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/orders"
+          json:
+            orderType: "RENT"
+            outletId: "{{ outletIds[$randomInt(0, outletIds.length)] }}"
+            customerId: "{{ customerIds[$randomInt(0, customerIds.length)] }}"
+            totalAmount: "{{ $randomInt(100, 1000) }}"
+            depositAmount: "{{ $randomInt(50, 500) }}"
+            orderItems:
+              - productId: "{{ productIds[$randomInt(0, productIds.length)] }}"
+                quantity: "{{ $randomInt(1, 5) }}"
+                unitPrice: "{{ $randomInt(50, 200) }}"
+                totalPrice: "{{ $randomInt(100, 1000) }}"
+      
+  # Order filtering scenario
+  - name: "Order Filtering Performance"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/orders"
+          qs:
+            status: "{{ $randomChoice(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED']) }}"
+            orderType: "{{ $randomChoice(['RENT', 'SALE']) }}"
+            limit: "50"
+            offset: "{{ $randomInt(0, 100) }}"
+      
+  # Complex search scenario
+  - name: "Complex Order Search"
+    weight: 15
+    flow:
+      - get:
+          url: "/api/orders"
+          qs:
+            q: "ORD"
+            startDate: "2024-01-01"
+            endDate: "2024-12-31"
+            limit: "100"
+            offset: "{{ $randomInt(0, 50) }}"

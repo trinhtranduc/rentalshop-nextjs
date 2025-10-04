@@ -598,10 +598,31 @@ export const simplifiedOrders = {
     }
 
     const [orders, total] = await Promise.all([
+      // OPTIMIZED: Use select instead of include for better performance
       prisma.order.findMany({
         where,
-        include: {
-          customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          pickupPlanAt: true,
+          returnPlanAt: true,
+          pickedUpAt: true,
+          returnedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          customer: { 
+            select: { 
+              id: true, 
+              firstName: true, 
+              lastName: true, 
+              phone: true, 
+              email: true 
+            } 
+          },
           outlet: { 
             select: { 
               id: true, 
@@ -609,15 +630,22 @@ export const simplifiedOrders = {
               merchant: { select: { id: true, name: true } }
             } 
           },
-          createdBy: { select: { id: true, firstName: true, lastName: true } },
-          orderItems: {
-            include: {
-              product: { select: { id: true, name: true, barcode: true } }
-            }
+          createdBy: { 
+            select: { 
+              id: true, 
+              firstName: true, 
+              lastName: true 
+            } 
           },
-          payments: true
+          // OPTIMIZED: Count instead of loading all items
+          _count: {
+            select: {
+              orderItems: true,
+              payments: true
+            }
+          }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'desc' }, // Uses @@index([createdAt])
         skip,
         take: limit
       }),

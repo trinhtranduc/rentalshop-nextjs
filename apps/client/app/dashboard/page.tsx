@@ -291,7 +291,7 @@ export default function DashboardPage() {
         
         setStats({
           todayRevenue: apiStats.todayRevenue || 0,
-          todayRentals: apiStats.totalOrders || 0,
+          todayRentals: apiStats.todayRentals || 0,
           activeRentals: apiStats.activeRentals || 0,
           todayPickups: todayMetrics.todayPickups || 0,
           todayReturns: todayMetrics.todayReturns || 0,
