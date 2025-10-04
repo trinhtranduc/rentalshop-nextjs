@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth'; // Direct import to avoid conflicts
 import { db } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 
@@ -131,6 +131,24 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
 
     console.log('🔍 POST /api/users: Creating user with data:', userData);
     console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
+
+    // Check plan limits before creating user (only for non-ADMIN users)
+    if (parsed.data.role !== 'ADMIN' && merchantId) {
+      try {
+        await assertPlanLimit(merchantId, 'users');
+        console.log('✅ Plan limit check passed for users');
+      } catch (error: any) {
+        console.log('❌ Plan limit exceeded for users:', error.message);
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: error.message || 'Plan limit exceeded for users',
+            error: 'PLAN_LIMIT_EXCEEDED'
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     const newUser = await db.users.create(userData);
     

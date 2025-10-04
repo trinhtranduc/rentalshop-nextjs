@@ -42,6 +42,7 @@ export * from './user-utils';
 
 // Validation
 export * from './validation';
+export * from './plan-limits-validation';
 
 // Payment utilities
 export * from './currency';

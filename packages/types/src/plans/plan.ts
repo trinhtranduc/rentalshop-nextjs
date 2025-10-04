@@ -7,6 +7,7 @@ export interface PlanLimits {
   users: number;               // Maximum number of users allowed (-1 for unlimited)
   products: number;            // Maximum number of products allowed (-1 for unlimited)
   customers: number;           // Maximum number of customers allowed (-1 for unlimited)
+  orders: number;              // Maximum number of orders allowed (-1 for unlimited)
 }
 
 export interface PlanPricing {
