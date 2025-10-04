@@ -14,6 +14,14 @@ import { simplifiedPlans } from './plan';
 import { simplifiedSubscriptions } from './subscription';
 import { simplifiedOrderNumbers } from './order-number-generator';
 
+// Optimized order functions
+export { 
+  searchOrdersOptimized, 
+  searchOrdersWithCursor, 
+  getOrderDetailsOptimized, 
+  getOrderSummary 
+} from './order-optimized';
+
 // Database client
 export { prisma };
 

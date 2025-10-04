@@ -220,6 +220,15 @@ model Order {
   @@index([pickupPlanAt, returnPlanAt])
   @@index([orderNumber])
   @@index([isReadyToDeliver, outletId])
+  
+  // Performance optimization indexes
+  @@index([createdAt])                          // Default sorting
+  @@index([outletId, createdAt])                // Outlet + date queries
+  @@index([orderType, status])                  // Type filtering
+  @@index([outletId, status, createdAt])        // Composite for complex queries
+  @@index([createdById, createdAt])             // User order history
+  @@index([totalAmount])                        // Financial reporting
+  @@index([status, orderType, createdAt])       // Status + type + date
 }
 
 model OrderItem {

@@ -3,6 +3,7 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
 
 /**
  * GET /api/orders
@@ -112,7 +113,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('🔍 Using simplified db.orders.search with filters:', searchFilters);
     
-    const result = await db.orders.search(searchFilters);
+    // Use performance monitoring for query optimization
+    const result = await PerformanceMonitor.measureQuery(
+      'orders.search',
+      () => db.orders.search(searchFilters)
+    );
+    
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
 
     return NextResponse.json({
