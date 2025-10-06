@@ -51,7 +51,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
         outletStock: data.outletStock,
       };
       await onSave(transformedData);
-      showSuccess('Product Created', 'Product created successfully!');
+      // Parent component will handle success toast
       
       // Reset form after successful creation
       // The form will be reset by the parent component

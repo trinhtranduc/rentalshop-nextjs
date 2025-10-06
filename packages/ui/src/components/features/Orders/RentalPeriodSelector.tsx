@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Badge, Alert, AlertDescription } from '@rentalshop/ui';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Badge, Alert, AlertDescription, DateRangePicker } from '@rentalshop/ui';
 import { PricingResolver, PricingValidator, formatCurrency } from '@rentalshop/utils';
 import type { Product, Merchant } from '@rentalshop/types';
 import type { PricingType } from '@rentalshop/constants';
@@ -22,23 +22,51 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
   const [rentalStartAt, setRentalStartAt] = useState<Date | null>(null);
   const [rentalEndAt, setRentalEndAt] = useState<Date | null>(null);
   const [validationResult, setValidationResult] = useState<any>(null);
+  const [lastNotifiedDates, setLastNotifiedDates] = useState<string>('');
   
   const config = PricingResolver.getEffectivePricingConfig(product, merchant);
   
+  // Hourly-specific state (must be at component level, not inside render function)
+  const [pickupHour, setPickupHour] = useState<number>(9);
+  const [returnHour, setReturnHour] = useState<number>(17);
+  
+  // Debug logs
+  console.log('🔍 RentalPeriodSelector rendered:', {
+    pricingType: config.pricingType,
+    productName: product.name,
+    merchantBusinessType: merchant.businessType
+  });
+  
   useEffect(() => {
     if (rentalStartAt && rentalEndAt) {
-      // Validate rental period
-      const validation = PricingValidator.validateRentalPeriod(
-        product, merchant, rentalStartAt, rentalEndAt, 1
-      );
-      setValidationResult(validation);
+      // Create a unique key for current dates
+      const currentDatesKey = `${rentalStartAt.toISOString()}_${rentalEndAt.toISOString()}`;
       
-      // Only proceed if validation passes
-      if (validation.isValid) {
+      // Only notify if dates actually changed
+      if (currentDatesKey !== lastNotifiedDates) {
+        console.log('🔍 RentalPeriodSelector dates changed:', {
+          rentalStartAt,
+          rentalEndAt,
+          currentDatesKey,
+          lastNotifiedDates
+        });
+        
+        // Update last notified dates FIRST to prevent re-trigger
+        setLastNotifiedDates(currentDatesKey);
+        
+        // ALWAYS call onPeriodChange when dates are selected, even before validation
         onPeriodChange(rentalStartAt, rentalEndAt);
         
-        // Calculate and notify price change
-        if (onPriceChange) {
+        // Validate rental period
+        const validation = PricingValidator.validateRentalPeriod(
+          product, merchant, rentalStartAt, rentalEndAt, 1
+        );
+        setValidationResult(validation);
+        
+        console.log('🔍 Validation result:', validation);
+        
+        // Calculate and notify price change if validation passes
+        if (validation.isValid && onPriceChange) {
           try {
             const pricing = PricingResolver.calculatePrice(
               product, merchant, rentalStartAt, rentalEndAt, 1
@@ -50,7 +78,8 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
         }
       }
     }
-  }, [rentalStartAt, rentalEndAt, product, merchant, onPeriodChange, onPriceChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rentalStartAt, rentalEndAt]);
 
   const setQuickDuration = (duration: number, unit: 'hour' | 'day' | 'week') => {
     const now = new Date();
@@ -105,195 +134,187 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
     }
   };
 
-  if (config.pricingType === 'FIXED') {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Fixed Price Rental</CardTitle>
-          <CardDescription>
-            This product uses fixed pricing - no time selection needed
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center p-4">
-            <h3 className="text-lg font-semibold">
-              {formatCurrency(product.rentPrice)}
-            </h3>
-            <p className="text-gray-600">
-              Fixed price per rental
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Render UI based on merchant's pricing type (no manual override)
+  const renderPricingUI = () => {
+    switch (config.pricingType) {
+      case 'HOURLY':
+        return renderHourlyPricing();
+      case 'DAILY':
+        return renderDailyPricing();
+      case 'WEEKLY':
+        return renderWeeklyPricing();
+      case 'FIXED':
+      default:
+        return renderFixedPricing();
+    }
+  };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          Select Rental Period ({config.pricingType.toLowerCase()} pricing)
-        </CardTitle>
-        <CardDescription>
-          Price: {formatCurrency(product.rentPrice)} per {config.pricingType.toLowerCase().slice(0, -2)}
-        </CardDescription>
-      </CardHeader>
+  // Shared Calendar UI for FIXED, DAILY, WEEKLY
+  const renderCalendarUI = (label: string, quickButtons?: { value: number; unit: 'day' | 'week'; label: string }[]) => (
+    <div className="space-y-3">
+      <Label className="text-sm font-medium">{label}</Label>
+      <DateRangePicker
+        value={{
+          from: rentalStartAt || undefined,
+          to: rentalEndAt || undefined
+        }}
+        onChange={(range) => {
+          if (range?.from) setRentalStartAt(range.from);
+          if (range?.to) setRentalEndAt(range.to);
+        }}
+        placeholder="Select pickup and return dates"
+        minDate={new Date()}
+        showPresets={true}
+      />
       
-      <CardContent className="space-y-4">
-        {/* Start Date/Time */}
-        <div>
-          <Label>Start Date & Time</Label>
-          <Input
-            type="datetime-local"
-            value={rentalStartAt ? rentalStartAt.toISOString().slice(0, 16) : ''}
-            onChange={(e) => setRentalStartAt(new Date(e.target.value))}
-            min={new Date().toISOString().slice(0, 16)}
+      {/* Quick Duration Buttons (optional) */}
+      {quickButtons && quickButtons.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          {quickButtons.map((btn) => (
+            <Button
+              key={btn.value}
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setQuickDuration(btn.value, btn.unit)}
+            >
+              {btn.label}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Fixed pricing - calendar with fixed price
+  const renderFixedPricing = () => renderCalendarUI('Rental Period');
+
+  // Hourly pricing - Single date picker + Pickup/Return hour selectors
+  const renderHourlyPricing = () => {
+    // Update dates when hours change
+    const updateHourlyDates = (pickup: number, returnH: number) => {
+      if (rentalStartAt) {
+        const newStart = new Date(rentalStartAt);
+        newStart.setHours(pickup, 0, 0, 0);
+        setRentalStartAt(newStart);
+        
+        const newEnd = new Date(rentalStartAt);
+        newEnd.setHours(returnH, 0, 0, 0);
+        setRentalEndAt(newEnd);
+      }
+    };
+
+    return (
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Rental Period (Hourly)</Label>
+        
+        {/* Single Date Picker - Same day rental using DateRangePicker */}
+        <div className="space-y-2">
+          <DateRangePicker
+            value={{
+              from: rentalStartAt || undefined,
+              to: rentalStartAt || undefined // Same day for hourly
+            }}
+            onChange={(range) => {
+              if (range?.from) {
+                const selectedDate = new Date(range.from);
+                const newStart = new Date(selectedDate);
+                newStart.setHours(pickupHour, 0, 0, 0);
+                setRentalStartAt(newStart);
+                
+                const newEnd = new Date(selectedDate);
+                newEnd.setHours(returnHour, 0, 0, 0);
+                setRentalEndAt(newEnd);
+              }
+            }}
+            placeholder="Select rental date"
+            minDate={new Date()}
+            showPresets={false}
           />
         </div>
-
-        {/* End Date/Time */}
-        <div>
-          <Label>End Date & Time</Label>
-          <Input
-            type="datetime-local"
-            value={rentalEndAt ? rentalEndAt.toISOString().slice(0, 16) : ''}
-            onChange={(e) => setRentalEndAt(new Date(e.target.value))}
-            min={rentalStartAt ? rentalStartAt.toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)}
-          />
-        </div>
-
-        {/* Quick Duration Buttons */}
-        <div>
-          <Label>Quick Select</Label>
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {config.pricingType === 'HOURLY' && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(1, 'hour')}>
-                  1 Hour
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(4, 'hour')}>
-                  4 Hours
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(8, 'hour')}>
-                  8 Hours
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(24, 'hour')}>
-                  24 Hours
-                </Button>
-              </>
-            )}
-            
-            {config.pricingType === 'DAILY' && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(1, 'day')}>
-                  1 Day
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(3, 'day')}>
-                  3 Days
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(7, 'day')}>
-                  1 Week
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(14, 'day')}>
-                  2 Weeks
-                </Button>
-              </>
-            )}
-            
-            {config.pricingType === 'WEEKLY' && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(1, 'week')}>
-                  1 Week
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(2, 'week')}>
-                  2 Weeks
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQuickDuration(4, 'week')}>
-                  1 Month
-                </Button>
-              </>
-            )}
+        
+        {/* Pickup Hour Selector */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-600">Pickup Hour</Label>
+          <div className="grid grid-cols-8 gap-1">
+            {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
+              <Button
+                key={hour}
+                type="button"
+                variant={pickupHour === hour ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setPickupHour(hour);
+                  updateHourlyDates(hour, returnHour);
+                }}
+                disabled={!rentalStartAt}
+                className="text-xs px-1"
+              >
+                {hour.toString().padStart(2, '0')}
+              </Button>
+            ))}
           </div>
         </div>
 
-        {/* Validation Results */}
-        {validationResult && (
-          <div className="space-y-2">
-            {/* Errors */}
-            {validationResult.errors.length > 0 && (
-              <Alert variant="destructive">
-                <AlertDescription>
-                  <div className="space-y-1">
-                    {validationResult.errors.map((error: string, index: number) => (
-                      <div key={index} className="text-sm">• {error}</div>
-                    ))}
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Warnings */}
-            {validationResult.warnings.length > 0 && (
-              <Alert>
-                <AlertDescription>
-                  <div className="space-y-1">
-                    {validationResult.warnings.map((warning: string, index: number) => (
-                      <div key={index} className="text-sm">⚠️ {warning}</div>
-                    ))}
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Suggestions */}
-            {validationResult.suggestions.length > 0 && (
-              <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
-                <div className="font-medium mb-1">💡 Suggestions:</div>
-                <div className="space-y-1">
-                  {validationResult.suggestions.map((suggestion: string, index: number) => (
-                    <div key={index}>• {suggestion}</div>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Return Hour Selector */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-600">Return Hour</Label>
+          <div className="grid grid-cols-8 gap-1">
+            {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
+              <Button
+                key={hour}
+                type="button"
+                variant={returnHour === hour ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setReturnHour(hour);
+                  updateHourlyDates(pickupHour, hour);
+                }}
+                disabled={!rentalStartAt || hour <= pickupHour}
+                className="text-xs px-1"
+              >
+                {hour.toString().padStart(2, '0')}
+              </Button>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* Price Preview */}
-        {rentalStartAt && rentalEndAt && validationResult?.isValid && (
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">Price Preview</h4>
-            <div className="space-y-1 text-sm text-blue-700">
-              <div>Duration: {calculateDuration(rentalStartAt, rentalEndAt, config.pricingType)}</div>
-              <div>Unit Price: {formatCurrency(product.rentPrice)} per {config.pricingType.toLowerCase().slice(0, -2)}</div>
-              <div>Total Price: {formatCurrency(calculateTotalPrice())}</div>
-              <div>Deposit: {formatCurrency(product.deposit)}</div>
-              <div className="font-semibold pt-2 border-t border-blue-200">
-                Total Amount: {formatCurrency(calculateTotalPrice() + product.deposit)}
-              </div>
+        {/* Duration Display */}
+        {rentalStartAt && rentalEndAt && (
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Duration:</span>
+              <span className="font-medium text-blue-700">
+                {Math.ceil((rentalEndAt.getTime() - rentalStartAt.getTime()) / (1000 * 60 * 60))} hours
+              </span>
             </div>
           </div>
         )}
+      </div>
+    );
+  };
 
-        {/* Invalid Price Display */}
-        {rentalStartAt && rentalEndAt && validationResult && !validationResult.isValid && (
-          <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-            <h4 className="font-medium text-red-900 mb-2">Price Calculation Unavailable</h4>
-            <p className="text-sm text-red-700">
-              Please fix the validation errors above to see price calculation.
-            </p>
-          </div>
-        )}
-
-        {/* Validation Messages */}
-        {config.requireRentalDates && (!rentalStartAt || !rentalEndAt) && (
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              ⚠️ Please select rental dates for {config.pricingType.toLowerCase()} pricing
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+  // Daily pricing - calendar with daily quick buttons
+  const renderDailyPricing = () => renderCalendarUI(
+    'Rental Period (Daily)',
+    [
+      { value: 1, unit: 'day', label: '1 Day' },
+      { value: 3, unit: 'day', label: '3 Days' },
+      { value: 7, unit: 'day', label: '1 Week' },
+      { value: 14, unit: 'day', label: '2 Weeks' },
+    ]
   );
+
+  // Weekly pricing - calendar with weekly quick buttons
+  const renderWeeklyPricing = () => renderCalendarUI(
+    'Rental Period (Weekly)',
+    [
+      { value: 1, unit: 'week', label: '1 Week' },
+      { value: 2, unit: 'week', label: '2 Weeks' },
+      { value: 4, unit: 'week', label: '1 Month' },
+    ]
+  );
+
+  // Render pricing UI directly based on merchant's pricing type
+  return renderPricingUI();
 };

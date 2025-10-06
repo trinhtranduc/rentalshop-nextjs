@@ -24,3 +24,4 @@ export * from './settings';
 export * from './subscriptions';
 export * from './system';
 export * from './calendar';
+export * from './upload';

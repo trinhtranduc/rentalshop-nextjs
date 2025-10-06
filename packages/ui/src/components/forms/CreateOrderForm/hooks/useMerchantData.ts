@@ -1,11 +1,16 @@
 /**
- * Custom hook for fetching merchant data with pricing configuration
- * Used in CreateOrderForm to get merchant pricing rules for RentalPeriodSelector
+ * Custom hook for getting merchant data from user context
+ * OPTIMIZED: Uses merchant data already loaded in user object (no API call)
+ * 
+ * **Why this is better:**
+ * - User profile already includes merchant.businessType and merchant.pricingType
+ * - No extra API call needed
+ * - Instant data availability
+ * - Reduces server load
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@rentalshop/hooks';
-import { merchantsApi } from '@rentalshop/utils';
 import type { Merchant } from '@rentalshop/types';
 
 interface UseMerchantDataReturn {
@@ -15,64 +20,39 @@ interface UseMerchantDataReturn {
 }
 
 export const useMerchantData = (): UseMerchantDataReturn => {
-  const { user } = useAuth();
-  const [merchant, setMerchant] = useState<Merchant | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fetchingRef = useRef(false);
+  const { user, loading: authLoading } = useAuth();
 
-  useEffect(() => {
-    const fetchMerchantData = async () => {
-      // Get merchantId from user or props
-      const merchantId = user?.merchantId;
-      
-      if (!merchantId) {
-        setError('No merchant ID available');
-        return;
-      }
+  // Memoize merchant data from user object
+  const merchant = useMemo(() => {
+    if (!user?.merchant) {
+      return null;
+    }
 
-      // Prevent duplicate requests
-      if (fetchingRef.current) {
-        return;
-      }
+    // User object already has complete merchant data from profile API
+    // Including: businessType, pricingType, and all other fields needed
+    return user.merchant as Merchant;
+  }, [user?.merchant]);
 
-      console.log('🔄 useMerchantData: Fetching merchant data for merchantId:', merchantId);
-      fetchingRef.current = true;
-      setLoading(true);
-      setError(null);
+  // Derive error state
+  const error = useMemo(() => {
+    if (!authLoading && !user) {
+      return 'User not logged in';
+    }
+    if (!authLoading && user && !user.merchant) {
+      return 'No merchant associated with user';
+    }
+    return null;
+  }, [authLoading, user]);
 
-      try {
-        const result = await merchantsApi.getMerchantById(merchantId);
-        console.log('🔍 useMerchantData: Merchant API response:', result);
-
-        if (result.success && result.data) {
-          setMerchant(result.data);
-          console.log('✅ useMerchantData: Merchant data loaded:', result.data);
-        } else {
-          setError('Failed to fetch merchant data');
-          console.error('❌ useMerchantData: Failed to fetch merchant data:', result);
-        }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        setError(errorMessage);
-        console.error('💥 useMerchantData: Error fetching merchant data:', err);
-      } finally {
-        setLoading(false);
-        fetchingRef.current = false;
-      }
-    };
-
-    fetchMerchantData();
-
-    // Cleanup function
-    return () => {
-      fetchingRef.current = false;
-    };
-  }, [user?.merchantId]);
+  console.log('✅ useMerchantData: Using merchant from user context (no API call)', {
+    hasMerchant: !!merchant,
+    businessType: merchant?.businessType,
+    pricingType: merchant?.pricingType,
+  });
 
   return {
     merchant,
-    loading,
+    loading: authLoading, // Use auth loading state
     error
   };
 };

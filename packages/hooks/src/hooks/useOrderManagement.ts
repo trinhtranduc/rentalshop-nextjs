@@ -72,8 +72,6 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
     outletId
   } = options;
 
-  const { handleError } = useSimpleErrorHandler();
-
   // State
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,7 +173,7 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
-      handleError(error);
+      // Let component handle error notification
     } finally {
       setLoading(false);
     }
@@ -198,7 +196,7 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
-      handleError(error);
+      // Let component handle error notification
     }
   }, [enableStats]);
 
@@ -240,7 +238,6 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error picking up order:', error);
-      handleError(error);
       return { success: false, error: (error as Error).message };
     }
   }, [fetchOrders, fetchStats, pagination.currentPage, searchTerm, statusFilter, orderTypeFilter, outletFilter, dateRangeFilter, sortBy, sortOrder, enableStats]);
@@ -260,7 +257,6 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error returning order:', error);
-      handleError(error);
       return { success: false, error: (error as Error).message };
     }
   }, [fetchOrders, fetchStats, pagination.currentPage, searchTerm, statusFilter, orderTypeFilter, outletFilter, dateRangeFilter, sortBy, sortOrder, enableStats]);
@@ -280,7 +276,6 @@ export function useOrderManagement(options: UseOrderManagementOptions = {}): Use
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      handleError(error);
       return { success: false, error: (error as Error).message };
     }
   }, [fetchOrders, fetchStats, pagination.currentPage, searchTerm, statusFilter, orderTypeFilter, outletFilter, dateRangeFilter, sortBy, sortOrder, enableStats]);

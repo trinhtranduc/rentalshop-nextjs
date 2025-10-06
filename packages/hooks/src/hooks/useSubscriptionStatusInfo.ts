@@ -83,11 +83,13 @@ export function useSubscriptionStatusInfo(
       const response = await subscriptionsApi.getCurrentUserSubscriptionStatus();
       
       if (response.success && response.data) {
-        const { subscription: subscriptionData, status: statusData } = response.data;
+        const subscriptionData = response.data.subscription;
+        const statusString = response.data.status || '';
         
-        const isActive = statusData.isActive;
-        const isExpired = statusData.isExpired;
-        const isTrial = statusData.isTrial;
+        // Extract boolean flags from response (they're at root level, not in statusData)
+        const isActive = response.data.hasSubscription || false;
+        const isExpired = response.data.isExpired || false;
+        const isTrial = subscriptionData?.trial?.isActive || false;
         
         // Calculate days until expiry
         let daysUntil = null;

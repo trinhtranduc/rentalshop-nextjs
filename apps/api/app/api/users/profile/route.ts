@@ -52,7 +52,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       // Direct IDs for quick access
       merchantId: userProfile.merchant?.id,
       outletId: userProfile.outlet?.id,
-      // Complete merchant object with all business info
+      // Complete merchant object with all business info including pricingConfig
       merchant: userProfile.merchant ? {
         id: userProfile.merchant.id,
         name: userProfile.merchant.name,

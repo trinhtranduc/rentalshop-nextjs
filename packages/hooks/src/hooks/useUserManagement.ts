@@ -177,13 +177,13 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      handleError(error); // Show error toast
       setUsers([]);
+      // Let component handle error notification
     } finally {
       console.log('🔍 useUserManagement: fetchUsers completed, setLoading(false)');
       setLoading(false);
     }
-  }, [pagination.limit, useSearchUsers, updatePaginationFromResponse, handleError]);
+  }, [pagination.limit, useSearchUsers, updatePaginationFromResponse]);
 
   // Single effect to handle all data fetching
   useEffect(() => {
@@ -273,9 +273,9 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
     } catch (error) {
       console.error('Error updating user status:', error);
-      handleError(error); // Show error toast
+      // Let component handle error notification
     }
-  }, [fetchUsers, handleError]);
+  }, [fetchUsers]);
 
   const handleUserUpdated = useCallback((updatedUser: User) => {
     setShowEditDialog(false);
@@ -351,10 +351,9 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      handleError(error); // Show error toast
-      throw error; // Re-throw to let the form handle the error
+      throw error; // Let component handle error notification
     }
-  }, [fetchUsers, handleError]);
+  }, [fetchUsers]);
 
   const handleUserUpdatedAsync = useCallback(async (userData: UserUpdateInput) => {
     if (!selectedUser) return;
@@ -369,10 +368,9 @@ export const useUserManagement = (options: UseUserManagementOptions = {}): UseUs
       }
     } catch (error) {
       console.error('Error updating user:', error);
-      handleError(error); // Show error toast
-      throw error; // Re-throw to let the form handle the error
+      throw error; // Let component handle error notification
     }
-  }, [selectedUser, fetchUsers, handleError]);
+  }, [selectedUser, fetchUsers]);
 
   return {
     // State

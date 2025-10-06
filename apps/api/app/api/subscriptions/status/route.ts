@@ -7,16 +7,22 @@ import { API } from '@rentalshop/constants';
 /**
  * GET /api/subscriptions/status
  * Get subscription status for the authenticated merchant
+ * 
+ * **Why OUTLET_ADMIN and OUTLET_STAFF need access:**
+ * - They need to know plan limits (products, users, outlets)
+ * - They need to see subscription status for their outlet
+ * - They work for the merchant, so should have read access
+ * - Read-only access, cannot modify subscription
  */
 export async function GET(request: NextRequest) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
     try {
-      // For MERCHANT role, get their own subscription
+      // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: get their merchant's subscription
       // For ADMIN role, they can specify merchantId in query params
       const { searchParams } = new URL(request.url);
       const merchantId = user.role === 'ADMIN' 
         ? (searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : userScope.merchantId)
-        : userScope.merchantId;
+        : userScope.merchantId; // All outlet users have merchantId in scope
 
       if (!merchantId) {
         return NextResponse.json(

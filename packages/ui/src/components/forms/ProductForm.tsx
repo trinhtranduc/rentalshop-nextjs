@@ -24,6 +24,7 @@ import {
   NumericInput
 } from '../ui';
 import { formatCurrency } from '../../lib';
+import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
 import { 
   Package, 
   DollarSign, 
@@ -36,7 +37,8 @@ import {
   Upload,
   Image as ImageIcon,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import type { 
   ProductInput, 
@@ -120,6 +122,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [uploadProgress, setUploadProgress] = useState<Record<string, UploadProgress>>({});
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debug: Log initial data changes
@@ -403,44 +407,116 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
 
 
-  // Image handling
-  const handleImageUpload = (files: FileList | null) => {
+  // Image handling with enhanced Cloudinary upload and progress tracking
+  const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
     
-    // Check if adding more files would exceed the 2 image limit
-    if (formData.images.length >= 2) {
-      return; // Already at maximum
+    // Check if adding more files would exceed the 3 image limit
+    if (formData.images.length >= 3) {
+      console.warn('Maximum 3 images allowed');
+      return;
     }
     
-    Array.from(files).forEach(file => {
-      // Stop if we've reached the 2 image limit
-      if (formData.images.length >= 2) {
-        return;
-      }
+    const filesArray = Array.from(files);
+    const filesToUpload = filesArray.slice(0, 3 - formData.images.length);
+    
+    // Get auth token
+    const token = getAuthToken();
+    if (!token) {
+      console.error('No authentication token found');
+      setUploadErrors(prev => ({
+        ...prev,
+        general: 'Authentication required. Please log in again.'
+      }));
+      return;
+    }
+    
+    for (const file of filesToUpload) {
+      const fileId = `${file.name}-${Date.now()}`;
       
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        return;
-      }
+      // Clear any previous errors for this file
+      setUploadErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fileId];
+        return newErrors;
+      });
       
-      // Validate file size (2MB limit - more reasonable for web)
-      if (file.size > 2 * 1024 * 1024) {
-        return;
-      }
+      // Add placeholder for loading state
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, `uploading-${fileId}`]
+      }));
       
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageUrl = e.target?.result as string;
+      try {
+        // Upload with progress tracking and automatic optimization
+        const uploadResult = await uploadImage(file, token, {
+          folder: 'rentalshop/products',
+          maxFileSize: 5 * 1024 * 1024, // 5MB
+          allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+          useBase64Fallback: true, // Enable fallback for development
+          maxWidth: 1200, // Client-side resize before upload
+          maxHeight: 900,
+          quality: 0.85,
+          onProgress: (progress: UploadProgress) => {
+            setUploadProgress(prev => ({
+              ...prev,
+              [fileId]: progress
+            }));
+          }
+        });
+        
+        if (uploadResult.success && uploadResult.data) {
+          // Success - replace placeholder with actual URL
+          setFormData(prev => ({
+            ...prev,
+            images: prev.images.map(img => 
+              img === `uploading-${fileId}` ? uploadResult.data!.url : img
+            )
+          }));
+          
+          // Show success message based on upload method
+          if (uploadResult.data.uploadMethod === 'base64') {
+            console.warn('⚠️ Image uploaded using base64 fallback. Configure Cloudinary for production.');
+          } else if (uploadResult.data.uploadMethod === 'local') {
+            console.warn('⚠️ Image uploaded to local storage. Configure Cloudinary for production.');
+          } else {
+            console.log('✅ Image uploaded successfully to Cloudinary');
+          }
+          
+          // Clean up progress
+          setUploadProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[fileId];
+            return newProgress;
+          });
+        } else {
+          // Upload failed
+          console.error('Upload failed:', uploadResult.error);
+          setUploadErrors(prev => ({
+            ...prev,
+            [fileId]: uploadResult.error || 'Upload failed'
+          }));
+          
+          // Remove placeholder
+          setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter(img => img !== `uploading-${fileId}`)
+          }));
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadErrors(prev => ({
+          ...prev,
+          [fileId]: error instanceof Error ? error.message : 'Upload failed'
+        }));
+        
+        // Remove placeholder
         setFormData(prev => ({
           ...prev,
-          images: [...prev.images, imageUrl]
+          images: prev.images.filter(img => img !== `uploading-${fileId}`)
         }));
-      };
-      reader.onerror = () => {
-        // Silently handle file reading errors
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    }
   };
 
   const removeImage = (index: number) => {
@@ -465,7 +541,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     e.stopPropagation();
     setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0] && formData.images.length < 2) {
+    if (e.dataTransfer.files && e.dataTransfer.files[0] && formData.images.length < 3) {
       handleImageUpload(e.dataTransfer.files);
     }
   }, [formData.images.length]);
@@ -770,23 +846,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             {/* Drag & Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive && formData.images.length < 2
+                dragActive && formData.images.length < 3
                   ? 'border-action-primary bg-action-primary/10' 
-                  : formData.images.length >= 2
+                  : formData.images.length >= 3
                   ? 'border-gray-300 bg-gray-50'
                   : 'border-border hover:border-action-primary/50'
               }`}
-              onDragEnter={formData.images.length < 2 ? handleDrag : undefined}
-              onDragLeave={formData.images.length < 2 ? handleDrag : undefined}
-              onDragOver={formData.images.length < 2 ? handleDrag : undefined}
-              onDrop={formData.images.length < 2 ? handleDrop : undefined}
+              onDragEnter={formData.images.length < 3 ? handleDrag : undefined}
+              onDragLeave={formData.images.length < 3 ? handleDrag : undefined}
+              onDragOver={formData.images.length < 3 ? handleDrag : undefined}
+              onDrop={formData.images.length < 3 ? handleDrop : undefined}
             >
-              <Upload className={`w-8 h-8 mx-auto mb-2 ${formData.images.length >= 2 ? 'text-gray-400' : 'text-text-secondary'}`} />
+              <Upload className={`w-8 h-8 mx-auto mb-2 ${formData.images.length >= 3 ? 'text-gray-400' : 'text-text-secondary'}`} />
               <p className="text-text-primary font-medium mb-1">
-                {formData.images.length >= 2 ? 'Maximum images reached' : 'Drag and drop images here'}
+                {formData.images.length >= 3 ? 'Maximum images reached' : 'Drag and drop images here'}
               </p>
               <p className="text-text-secondary text-sm mb-3">
-                Supports JPG, PNG, GIF up to 2MB each (max 2 images)
+                Supports JPG, PNG, WebP, GIF up to 5MB each (max 3 images, optional)
               </p>
               
               {/* File Input */}
@@ -798,7 +874,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 onChange={(e) => handleImageUpload(e.target.files)}
                 className="hidden"
                 id="image-upload"
-                disabled={formData.images.length >= 2}
+                disabled={formData.images.length >= 3}
               />
               
               {/* Browse Button */}
@@ -807,16 +883,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 variant="outline" 
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={formData.images.length >= 2}
+                disabled={formData.images.length >= 3}
               >
-                {formData.images.length >= 2 ? 'Max Images Reached' : 'Browse Files'}
+                {formData.images.length >= 3 ? 'Max Images Reached' : 'Browse Files'}
               </Button>
             </div>
 
             {/* Image Counter and Preview Grid */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-text-secondary">
-                {formData.images.length}/2 images uploaded
+                {formData.images.length}/3 images uploaded (optional)
               </p>
               {formData.images.length > 0 && (
                 <Button
@@ -830,24 +906,86 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               )}
             </div>
             
-            {formData.images.length > 0 && (
-              <div className="grid grid-cols-2 gap-3">
-                {formData.images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={image}
-                      alt={`Product ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border"
-                    />
+            {/* Upload Errors Display */}
+            {Object.keys(uploadErrors).length > 0 && (
+              <div className="space-y-2">
+                {Object.entries(uploadErrors).map(([fileId, error]) => (
+                  <div key={fileId} className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm text-red-700 font-medium">Upload Failed</p>
+                      <p className="text-xs text-red-600 mt-1">{error}</p>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setUploadErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors[fileId];
+                        return newErrors;
+                      })}
+                      className="text-red-400 hover:text-red-600"
                     >
                       <XCircle className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+            
+            {formData.images.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                {formData.images.map((image, index) => {
+                  // Check if this is an uploading placeholder
+                  const isUploading = image.startsWith('uploading-');
+                  const fileId = isUploading ? image.replace('uploading-', '') : '';
+                  const progress = isUploading ? uploadProgress[fileId] : null;
+                  
+                  return (
+                    <div key={index} className="relative group">
+                      {isUploading ? (
+                        // Upload Progress Card
+                        <div className="w-full h-24 rounded-lg border border-action-primary bg-action-primary/5 flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="w-6 h-6 animate-spin text-action-primary" />
+                          {progress && (
+                            <>
+                              <div className="w-full px-4">
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-action-primary h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${progress.percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                              <p className="text-xs text-text-secondary">
+                                {progress.stage === 'preparing' && 'Preparing...'}
+                                {progress.stage === 'uploading' && `Uploading ${progress.percentage}%`}
+                                {progress.stage === 'processing' && 'Processing...'}
+                                {progress.stage === 'complete' && 'Complete!'}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        // Image Preview
+                        <>
+                          <img
+                            src={image}
+                            alt={`Product ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                            title="Remove image"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

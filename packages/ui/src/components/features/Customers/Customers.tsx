@@ -114,7 +114,7 @@ export const Customers: React.FC<CustomersProps> = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       addToast('error', 'Creation Failed', errorMessage);
-      throw error; // Re-throw to let the form handle the error
+      // Don't re-throw - error already handled
     }
   };
 
@@ -125,7 +125,7 @@ export const Customers: React.FC<CustomersProps> = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       addToast('error', 'Update Failed', errorMessage);
-      throw error; // Re-throw to let the form handle the error
+      // Don't re-throw - error already handled
     }
   };
 
@@ -173,7 +173,7 @@ export const Customers: React.FC<CustomersProps> = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred while deleting the customer';
       addToast('error', 'Delete Failed', errorMessage);
-      throw error; // Re-throw to let the dialog handle the error
+      // Don't re-throw - error already handled
     }
   };
 

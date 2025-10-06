@@ -42,6 +42,9 @@ export default function ClientLayout({
   // Check if we're on auth pages - hide sidebar on auth pages
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forget-password';
   
+  // Check if we're on full-width pages - hide sidebar for better space
+  const isFullWidthPage = pathname === '/orders/create' || pathname?.startsWith('/orders/edit/');
+  
   // Redirect to login if not authenticated (except on auth pages)
   if (!user && !isAuthPage) {
     if (typeof window !== 'undefined') {
@@ -63,8 +66,8 @@ export default function ClientLayout({
     }
   };
 
-  // Check if we're on auth pages - hide sidebar on auth pages
-  const showSidebar = !isAuthPage;
+  // Hide sidebar on auth pages and full-width pages
+  const showSidebar = !isAuthPage && !isFullWidthPage;
 
   return (
     <div className="flex h-screen bg-bg-primary">
