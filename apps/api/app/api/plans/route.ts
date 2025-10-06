@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { planCreateSchema } from '@rentalshop/utils';
+import { planCreateSchema, handleApiError } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
 
@@ -43,10 +43,10 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
 
   } catch (error) {
     console.error('Error fetching plans:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -68,16 +68,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   } catch (error: any) {
     console.error('Error creating plan:', error);
     
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { success: false, message: 'Invalid input data', error: error.errors },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { customerCreateSchema } from '@rentalshop/utils';
+import { customerCreateSchema, handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -32,10 +32,10 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('Error in test endpoint:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 

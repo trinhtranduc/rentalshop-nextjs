@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateMerchant, prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
+import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -51,10 +52,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
 
     // Get the merchant ID from the authenticated user
     console.log('🔍 MERCHANT API: Looking up user in database with id:', user.id);
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      include: { merchant: true }
-    });
+    const dbUser = await db.users.findById(user.id);
 
     console.log('🔍 MERCHANT API: Database query result:', {
       userFound: !!dbUser,
@@ -73,7 +71,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
 
     // Update merchant using the centralized database function
     console.log('🔍 MERCHANT API: Calling updateMerchant with id:', dbUser.merchant.id);
-    const updatedMerchant = await updateMerchant(dbUser.merchant.id, {
+    const updatedMerchant = await db.merchants.update(dbUser.merchant.id, {
       name,
       phone,
       address,
@@ -117,10 +115,9 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
   } catch (error) {
     console.error('🔍 MERCHANT API: Error updating merchant information:', error);
     console.error('🔍 MERCHANT API: Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { success: false, message: 'Failed to update merchant information', error: errorMessage },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

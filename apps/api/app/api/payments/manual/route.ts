@@ -5,8 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // Manual payment creation schema
@@ -36,14 +37,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
     const body = await request.json();
     const validatedData = createManualPaymentSchema.parse(body);
 
-    // Get merchant
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: validatedData.merchantId },
-      include: { 
-        Plan: true,
-        subscription: true
-      }
-    });
+    // Get merchant using simplified database API
+    const merchant = await db.merchants.findById(validatedData.merchantId);
 
     if (!merchant) {
       return NextResponse.json(
@@ -52,10 +47,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
       );
     }
 
-    // Get plan and plan variant
-    const plan = await prisma.plan.findUnique({
-      where: { id: validatedData.planId }
-    });
+    // Get plan using simplified database API
+    const plan = await db.plans.findById(validatedData.planId);
 
     if (!plan) {
       return NextResponse.json(
@@ -64,72 +57,53 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
       );
     }
 
-    // Create payment record
-    const result = await prisma.$transaction(async (tx) => {
-      // Get next payment public ID
-      const lastPayment = await tx.payment.findFirst({
-        orderBy: { id: 'desc' }
-      });
-      const paymentPublicId = (lastPayment?.id || 0) + 1;
+    // Create payment record using simplified database API
+    const payment = await db.payments.create({
+      amount: validatedData.amount,
+      method: validatedData.method,
+      type: 'SUBSCRIPTION_PAYMENT',
+      status: 'COMPLETED', // Manual payments are immediately completed
+      reference: validatedData.invoiceNumber || `MANUAL-${Date.now()}`,
+      notes: validatedData.description || `Manual payment for ${plan.name}`,
+      // merchantId: merchant.id, // TODO: Add merchantId field to PaymentCreateInput type
+      // subscriptionId: merchant.subscription?.id, // TODO: Add subscriptionId field to PaymentCreateInput type
+      processedBy: user.id
+    });
 
-      // Create payment record
-      const payment = await tx.payment.create({
-        data: {
-          id: paymentPublicId,
-          amount: validatedData.amount,
-          method: validatedData.method,
-          type: 'SUBSCRIPTION_PAYMENT',
-          status: 'COMPLETED', // Manual payments are immediately completed
-          reference: validatedData.invoiceNumber || `MANUAL-${paymentPublicId}`,
-          notes: validatedData.description || `Manual payment for ${plan.name}`,
-          merchantId: merchant.id,
-          subscriptionId: merchant.subscription?.id,
-          processedBy: user.id
-        }
-      });
+    // If extending subscription, update the subscription
+    if (validatedData.extendSubscription && merchant.subscription && validatedData.monthsToExtend) {
+      const currentSubscription = merchant.subscription;
+      if (currentSubscription.currentPeriodEnd) {
+        const newEndDate = new Date(currentSubscription.currentPeriodEnd);
+        newEndDate.setMonth(newEndDate.getMonth() + validatedData.monthsToExtend);
 
-      // If extending subscription, update the subscription
-      if (validatedData.extendSubscription && merchant.subscription && validatedData.monthsToExtend) {
-        const currentSubscription = merchant.subscription;
-        if (currentSubscription.currentPeriodEnd) {
-          const newEndDate = new Date(currentSubscription.currentPeriodEnd);
-          newEndDate.setMonth(newEndDate.getMonth() + validatedData.monthsToExtend);
-
-          await tx.subscription.update({
-            where: { id: currentSubscription.id },
-            data: {
-              currentPeriodEnd: newEndDate,
-              updatedAt: new Date()
-            }
-          });
-        }
+        await db.subscriptions.update(currentSubscription.id, {
+          currentPeriodEnd: newEndDate,
+          updatedAt: new Date()
+        });
       }
+    }
 
-      // Create audit log
-      await tx.auditLog.create({
-        data: {
-          entityType: 'PAYMENT',
-          entityId: payment.id.toString(),
-          action: 'MANUAL_PAYMENT_CREATED',
-          details: JSON.stringify({
-            paymentId: payment.id,
-            amount: payment.amount,
-            method: payment.method,
-            merchantId: merchant.id,
-            planId: plan.id,
-            planVariantId: null,
-            startDate: validatedData.startDate,
-            endDate: validatedData.endDate,
-            createdBy: user.id,
-            createdByEmail: user.email
-          }),
-          userId: user.id,
-          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-          userAgent: request.headers.get('user-agent') || 'unknown'
-        }
-      });
-
-      return payment;
+    // Create audit log
+    await db.auditLogs.create({
+      entityType: 'PAYMENT',
+      entityId: payment.id.toString(),
+      action: 'MANUAL_PAYMENT_CREATED',
+      details: JSON.stringify({
+        paymentId: payment.id,
+        amount: payment.amount,
+        method: payment.method,
+        merchantId: merchant.id,
+        planId: plan.id,
+        planVariantId: null,
+        startDate: validatedData.startDate,
+        endDate: validatedData.endDate,
+        createdBy: user.id,
+        createdByEmail: user.email
+      }),
+      userId: user.id,
+      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown'
     });
 
     return NextResponse.json({
@@ -137,38 +111,23 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
       message: 'Manual payment created successfully',
       data: {
         payment: {
-          id: result.id,
-          amount: result.amount,
-          method: result.method,
-          type: result.type,
-          status: result.status,
-          reference: result.reference,
-          notes: result.notes,
-          createdAt: result.createdAt
+          id: payment.id,
+          amount: payment.amount,
+          method: payment.method,
+          type: payment.type,
+          status: payment.status,
+          reference: payment.reference,
+          notes: payment.notes,
+          createdAt: payment.createdAt
         }
       }
     });
 
   } catch (error) {
     console.error('Manual payment creation error:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Validation error',
-          errors: error.errors.map(e => ({
-            field: e.path.join('.'),
-            message: e.message
-          }))
-        },
-        { status: 400 }
-      );
-    }
 
-    return NextResponse.json(
-      { success: false, message: 'Failed to create manual payment' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

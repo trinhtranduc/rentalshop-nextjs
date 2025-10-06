@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 export async function POST(request: NextRequest) {
@@ -18,10 +19,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Logout error:', error);
     
-    return NextResponse.json({
-      success: false,
-      message: 'Logout failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 } 

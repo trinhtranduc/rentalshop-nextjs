@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -39,10 +40,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     }
 
     // Get current user from database to verify current password
-    const currentUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { id: true, password: true, email: true }
-    });
+    const currentUser = await db.users.findById(user.id);
 
     if (!currentUser) {
       return NextResponse.json(
@@ -64,9 +62,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     // Update password
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { password: hashedPassword }
+    await db.users.update(user.id, {
+      password: hashedPassword
     });
 
     console.log('✅ Password changed successfully for user:', user.email);
@@ -78,13 +75,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
 
   } catch (error) {
     console.error('❌ Error changing password:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to change password',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { searchOrders } from '@rentalshop/database';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -47,8 +47,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     if (orderType) filters.orderType = orderType;
 
     // Get orders
-    const result = await searchOrders(filters);
-    const orders = result.data.orders;
+    const result = await db.orders.search(filters);
+    const orders = result.data;
 
     // Convert to CSV
     const csvHeaders = [
@@ -70,7 +70,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
       'Updated At'
     ];
 
-    const csvRows = orders.map(order => [
+    const csvRows = orders.map((order: any) => [
       order.id,
       `"${order.orderNumber}"`,
       order.orderType,
@@ -91,7 +91,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
 
     const csvContent = [
       csvHeaders.join(','),
-      ...csvRows.map(row => row.join(','))
+      ...csvRows.map((row: any) => row.join(','))
     ].join('\n');
 
     // Return CSV file
@@ -106,9 +106,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
 
   } catch (error) {
     console.error('Error exporting orders:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to export orders' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

@@ -390,8 +390,47 @@ export const simplifiedUsers = {
     return await prisma.user.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
-        outlet: { select: { id: true, name: true } }
+        merchant: { 
+          select: { 
+            id: true, 
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true,
+            businessType: true,
+            taxId: true,
+            website: true,
+            description: true,
+            isActive: true,
+            planId: true,
+            subscriptionStatus: true,
+            totalRevenue: true,
+            createdAt: true,
+            lastActiveAt: true
+          } 
+        },
+        outlet: { 
+          select: { 
+            id: true, 
+            name: true,
+            address: true,
+            phone: true,
+            description: true,
+            isActive: true,
+            isDefault: true,
+            createdAt: true,
+            merchant: {
+              select: {
+                id: true,
+                name: true,
+              }
+            }
+          } 
+        }
       }
     });
   },
@@ -410,22 +449,151 @@ export const simplifiedUsers = {
   },
 
   /**
-   * Create new user (simplified API)
+   * Find first user matching criteria (simplified API)
    */
-  create: async (data: any) => {
-    // Hash password if provided
-    const userData = { ...data };
-    if (userData.password) {
-      userData.password = await hashPassword(userData.password);
-    }
-
-    return await prisma.user.create({
-      data: userData,
+  findFirst: async (where: any) => {
+    return await prisma.user.findFirst({
+      where,
       include: {
         merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
     });
+  },
+
+  /**
+   * Create new user (simplified API)
+   */
+  create: async (data: any) => {
+    try {
+      console.log('🔍 simplifiedUsers.create called with data:', data);
+      
+      // Password should already be hashed when passed to this function
+      const userData = { ...data };
+
+      // Validate merchantId exists if provided
+      if (userData.merchantId && typeof userData.merchantId === 'number') {
+        const merchant = await prisma.merchant.findUnique({
+          where: { id: userData.merchantId },
+          select: { id: true, name: true }
+        });
+        
+        if (!merchant) {
+          throw new Error(`Merchant with id ${userData.merchantId} not found`);
+        }
+        
+        console.log('✅ Merchant found:', merchant);
+        // Keep the number ID as-is since schema uses Int IDs
+      }
+
+      // Validate outletId exists if provided
+      if (userData.outletId && typeof userData.outletId === 'number') {
+        const outlet = await prisma.outlet.findUnique({
+          where: { id: userData.outletId },
+          select: { id: true, name: true, merchantId: true }
+        });
+        
+        if (!outlet) {
+          throw new Error(`Outlet with id ${userData.outletId} not found`);
+        }
+        
+        // Validate outlet belongs to the same merchant
+        if (userData.merchantId && outlet.merchantId !== userData.merchantId) {
+          throw new Error(`Outlet ${userData.outletId} does not belong to merchant ${userData.merchantId}`);
+        }
+        
+        console.log('✅ Outlet found:', outlet);
+        // Keep the number ID as-is since schema uses Int IDs
+      }
+
+      // Check for duplicate email globally
+      if (userData.email) {
+        const existingEmail = await prisma.user.findUnique({
+          where: { email: userData.email },
+          select: { id: true, email: true }
+        });
+        
+        if (existingEmail) {
+          throw new Error(`Email ${userData.email} is already registered`);
+        }
+      }
+
+      // Check for duplicate phone within merchant
+      if (userData.phone && userData.merchantId) {
+        const existingPhone = await prisma.user.findFirst({
+          where: { 
+            phone: userData.phone,
+            merchantId: userData.merchantId
+          },
+          select: { id: true, phone: true, merchantId: true }
+        });
+        
+        if (existingPhone) {
+          throw new Error(`Phone number ${userData.phone} is already registered in this merchant`);
+        }
+      }
+
+      // Generate next user id
+      const lastUser = await prisma.user.findFirst({
+        orderBy: { id: 'desc' },
+        select: { id: true }
+      });
+      const nextPublicId = (lastUser?.id || 0) + 1;
+      userData.id = nextPublicId;
+
+      const user = await prisma.user.create({
+        data: userData,
+        include: {
+          merchant: { 
+            select: { 
+              id: true, 
+              name: true,
+              email: true,
+              phone: true,
+              address: true,
+              city: true,
+              state: true,
+              zipCode: true,
+              country: true,
+              businessType: true,
+              taxId: true,
+              website: true,
+              description: true,
+              isActive: true,
+              planId: true,
+              subscriptionStatus: true,
+              totalRevenue: true,
+              createdAt: true,
+              lastActiveAt: true
+            } 
+          },
+          outlet: { 
+            select: { 
+              id: true, 
+              name: true,
+              address: true,
+              phone: true,
+              description: true,
+              isActive: true,
+              isDefault: true,
+              createdAt: true,
+              merchant: {
+                select: {
+                  id: true,
+                  name: true,
+                }
+              }
+            } 
+          }
+        }
+      });
+      
+      console.log('✅ User created successfully:', user);
+      return user;
+    } catch (error) {
+      console.error('❌ Error in simplifiedUsers.create:', error);
+      throw error;
+    }
   },
 
   /**

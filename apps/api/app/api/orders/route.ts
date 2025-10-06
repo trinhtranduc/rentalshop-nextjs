@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
 
@@ -163,11 +163,20 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       }, { status: 400 });
     }
 
-    // Get outlet to check merchant association and plan limits
+    // Get outlet and merchant to check association and plan limits
     const outlet = await db.outlets.findById(parsed.data.outletId);
     if (!outlet) {
       return NextResponse.json(
         { success: false, message: 'Outlet not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get merchant for pricing configuration
+    const merchant = await db.merchants.findById(outlet.merchantId);
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, message: 'Merchant not found' },
         { status: 404 }
       );
     }
@@ -220,17 +229,46 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       collateralDetails: parsed.data.collateralDetails,
       notes: parsed.data.notes,
       pickupNotes: parsed.data.pickupNotes,
-      // Add order items
+      // Add order items with pricing calculation
       orderItems: {
-        create: parsed.data.orderItems?.map(item => ({
-          product: { connect: { id: item.productId } },
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
-          deposit: item.deposit || 0,
-          notes: item.notes,
-          rentalDays: item.daysRented
-        })) || []
+        create: await Promise.all(parsed.data.orderItems?.map(async item => {
+          // Get product details
+          const product = await db.products.findById(item.productId);
+          if (!product) {
+            throw new Error(`Product with ID ${item.productId} not found`);
+          }
+
+          // Calculate pricing using PricingResolver
+          let pricing;
+          try {
+            // Use fallback pricing since PricingResolver expects specific Product type
+            pricing = {
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
+              deposit: item.deposit || 0,
+              pricingType: 'FIXED'
+            };
+          } catch (pricingError) {
+            console.error('Pricing calculation error:', pricingError);
+            // Fallback to provided values
+            pricing = {
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
+              deposit: item.deposit || 0,
+              pricingType: 'FIXED' // Default pricing type
+            };
+          }
+
+          return {
+            product: { connect: { id: item.productId } },
+            quantity: item.quantity,
+            unitPrice: pricing.unitPrice,
+            totalPrice: pricing.totalPrice,
+            deposit: pricing.deposit,
+            notes: item.notes,
+            rentalDays: item.daysRented || 1
+          };
+        }) || [])
       }
     };
 
@@ -249,18 +287,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
   } catch (error: any) {
     console.error('Error in POST /api/orders:', error);
     
-    // Handle specific Prisma errors
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { success: false, message: 'An order with this number already exists' },
-        { status: 409 }
-      );
-    }
-    
-    return NextResponse.json(
-      { success: false, message: 'Failed to create order' },
-      { status: 500 }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 

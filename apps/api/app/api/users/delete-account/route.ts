@@ -1,6 +1,7 @@
+import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { softDeleteUser } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -32,7 +33,10 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
     }
 
     // Soft delete the user
-    const deletedUser = await softDeleteUser(userId);
+    const deletedUser = await db.users.update(userId, { 
+      isActive: false, 
+      deletedAt: new Date() 
+    });
 
     console.log('✅ User account soft deleted successfully:', {
       deletedUserId: userId,

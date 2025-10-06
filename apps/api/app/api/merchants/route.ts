@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 // Force TypeScript refresh - address field added
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { getDefaultPricingConfig } from '@rentalshop/constants';
+import type { BusinessType } from '@rentalshop/types';
 
 export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
   try {
@@ -112,28 +115,55 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
       orderBy.name = 'asc'; // Default sorting
     }
 
-    // Get total count for pagination
-    const total = await prisma.merchant.count({ where });
-
     // Get merchants with pagination
-    const merchants = await prisma.merchant.findMany({
-      where,
-      orderBy,
-      take: limit,
-      skip: offset,
-      include: {
-        _count: {
-          select: {
-            outlets: true,
-            users: true,
-            products: true
-          }
-        },
-        // No need to fetch outlet address since merchant has its own address
-      }
+    const result = await db.merchants.search({
+      page: Math.floor(offset / limit) + 1,
+      limit
     });
 
-    // Transform data to match frontend expectations
+    const merchants = result.data;
+    const total = result.total;
+
+    // Get counts for each merchant
+    const merchantIds = merchants.map((m: any) => m.id);
+    
+    // Get outlet counts
+    const outletCounts = merchantIds.length > 0 
+      ? await Promise.all(merchantIds.map(async (id: string) => {
+          const result = await db.outlets.search({ merchantId: id, limit: 1 });
+          return { merchantId: id, count: result.total };
+        }))
+      : [];
+    const outletCountMap = outletCounts.reduce((acc, item) => {
+      acc[item.merchantId] = item.count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Get user counts
+    const userCounts = merchantIds.length > 0 
+      ? await Promise.all(merchantIds.map(async (id: string) => {
+          const result = await db.users.search({ merchantId: id, limit: 1 });
+          return { merchantId: id, count: result.total };
+        }))
+      : [];
+    const userCountMap = userCounts.reduce((acc, item) => {
+      acc[item.merchantId] = item.count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Get product counts
+    const productCounts = merchantIds.length > 0 
+      ? await Promise.all(merchantIds.map(async (id: string) => {
+          const result = await db.products.search({ merchantId: id, limit: 1 });
+          return { merchantId: id, count: result.total };
+        }))
+      : [];
+    const productCountMap = productCounts.reduce((acc, item) => {
+      acc[item.merchantId] = item.count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Transform data to match frontend expectations with real counts
     const transformedMerchants = merchants.map((merchant: any) => ({
       id: merchant.id,
       name: merchant.name,
@@ -151,9 +181,9 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
       isActive: merchant.isActive,
       planId: merchant.planId,
       subscriptionStatus: merchant.subscriptionStatus,
-      outletsCount: merchant._count.outlets,
-      usersCount: merchant._count.users,
-      productsCount: merchant._count.products,
+      outletsCount: outletCountMap[merchant.id] || 0,
+      usersCount: userCountMap[merchant.id] || 0,
+      productsCount: productCountMap[merchant.id] || 0,
       totalRevenue: merchant.totalRevenue || 0,
       createdAt: merchant.createdAt,
       lastActiveAt: merchant.lastActiveAt
@@ -167,7 +197,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
       success: true,
       data: {
         merchants: transformedMerchants,
-        total,
+        total: total,
         totalPages,
         currentPage: Math.floor(offset / limit) + 1,
         limit,
@@ -190,7 +220,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
   try {
 
     const body = await request.json();
-    const { name, email, phone, address, planId, subscriptionStatus } = body;
+    const { name, email, phone, address, planId, subscriptionStatus, businessType } = body;
 
     // Validate required fields
     if (!name || !email || !phone || !planId) {
@@ -201,9 +231,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
     }
 
     // Check if email already exists
-    const existingMerchant = await prisma.merchant.findUnique({
-      where: { email }
-    });
+    const existingMerchant = await db.merchants.findByEmail(email);
 
     if (existingMerchant) {
       return NextResponse.json(
@@ -212,31 +240,37 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
       );
     }
 
-    // Create new merchant
-    // Generate id
-    const lastMerchant = await prisma.merchant.findFirst({
-      orderBy: { id: 'desc' },
-      select: { id: true }
-    });
-    const nextPublicId = (lastMerchant?.id || 0) + 1;
+    // Setup pricing configuration based on business type
+    const pricingConfig = getDefaultPricingConfig((businessType as BusinessType) || 'GENERAL');
 
-    const merchant = await prisma.merchant.create({
-      data: {
-        id: nextPublicId,
+    // Create new merchant
+    const merchant = await db.merchants.create({
         name,
         email,
         phone,
         address,
         planId,
         subscriptionStatus: subscriptionStatus || 'trial',
-        isActive: true,
-        totalRevenue: 0
-      }
+        // isActive: true, // TODO: Add isActive field to MerchantCreateData type
+        // totalRevenue: 0, // TODO: Add totalRevenue field to MerchantCreateData type
+        businessType: businessType || 'GENERAL',
+        pricingConfig: JSON.stringify(pricingConfig)
+      });
+
+    // Create default outlet for the merchant
+    const defaultOutlet = await db.outlets.create({
+      name: `${merchant.name} - Main Store`,
+      address: merchant.address || 'Address to be updated',
+      phone: merchant.phone,
+      description: 'Default outlet created during merchant setup',
+      merchantId: merchant.id,
+      // isActive: true, // TODO: Add isActive field to OutletCreateData type
+      isDefault: true
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Merchant created successfully',
+      message: 'Merchant created successfully with default outlet',
       data: {
         id: merchant.id,
         name: merchant.name,
@@ -245,20 +279,25 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
         isActive: merchant.isActive,
         planId: merchant.planId,
         subscriptionStatus: merchant.subscriptionStatus,
-        outletsCount: 0,
+        outletsCount: 1,
         usersCount: 0,
         productsCount: 0,
         totalRevenue: merchant.totalRevenue,
         createdAt: merchant.createdAt,
-        lastActiveAt: merchant.lastActiveAt
+        lastActiveAt: merchant.lastActiveAt,
+        defaultOutlet: {
+          id: defaultOutlet.id,
+          name: defaultOutlet.name,
+          address: defaultOutlet.address
+        }
       }
     });
 
   } catch (error) {
     console.error('Error creating merchant:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to create merchant', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

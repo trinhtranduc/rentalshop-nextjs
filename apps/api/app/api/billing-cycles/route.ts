@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
+import { handleApiError } from '@rentalshop/utils';
 
 /**
  * GET /api/billing-cycles - Get billing cycles
@@ -38,9 +39,9 @@ export const POST = withAuthRoles(['ADMIN'])(async (request, { user, userScope }
     );
   } catch (error) {
     console.error('Error creating billing cycle:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to create billing cycle' },
-      { status: 500 }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

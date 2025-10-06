@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth'; // Direct import to avoid conflicts
 import { db } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 
@@ -160,12 +160,12 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       message: 'User created successfully'
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ POST /api/users error:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to create user'
-    }, { status: 500 });
+    
+    // Use unified error handling
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 

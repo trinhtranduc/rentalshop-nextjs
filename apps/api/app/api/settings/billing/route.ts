@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // Simple in-memory storage (in production, use database)
@@ -56,9 +57,8 @@ export async function POST(request: NextRequest) {
       data: billingConfig
     });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, message: 'Failed to update billing configuration' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 }

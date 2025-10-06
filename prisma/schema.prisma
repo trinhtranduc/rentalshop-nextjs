@@ -48,6 +48,7 @@ model Merchant {
   taxId              String?
   website            String?
   description        String?
+  pricingConfig      String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
   planId             Int?
   subscriptionStatus String        @default("trial")
   totalRevenue       Float         @default(0)

@@ -1,576 +1,781 @@
 import { z } from 'zod';
+import { clearAuthData } from './common';
+import CONSTANTS from '@rentalshop/constants';
+
+const API = CONSTANTS.API;
 
 // ============================================================================
-// ERROR CODES - Centralized definition for all error types
+// UNIFIED ERROR HANDLING SYSTEM - DRY PRINCIPLE
 // ============================================================================
 
 /**
- * User-related error codes
+ * Core Error Codes - Simplified and Unified
  */
-export const USER_ERROR_CODES = {
-  // Duplicate errors
-  DUPLICATE_EMAIL: 'DUPLICATE_EMAIL',
-  DUPLICATE_PHONE: 'DUPLICATE_PHONE',
-  DUPLICATE_USER: 'DUPLICATE_USER',
+export enum ErrorCode {
+  // Authentication & Authorization
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
   
-  // Validation errors
-  INVALID_EMAIL_FORMAT: 'INVALID_EMAIL_FORMAT',
-  INVALID_PHONE_FORMAT: 'INVALID_PHONE_FORMAT',
-  INVALID_PASSWORD: 'INVALID_PASSWORD',
-  INVALID_ROLE: 'INVALID_ROLE',
-  INVALID_USER_DATA: 'INVALID_USER_DATA',
+  // Validation Errors
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  INVALID_INPUT = 'INVALID_INPUT',
+  MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD',
   
-  // Authentication errors
-  USER_NOT_FOUND: 'USER_NOT_FOUND',
-  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
-  ACCOUNT_DEACTIVATED: 'ACCOUNT_DEACTIVATED',
-  INSUFFICIENT_PERMISSIONS: 'INSUFFICIENT_PERMISSIONS',
+  // Database Errors
+  DATABASE_ERROR = 'DATABASE_ERROR',
+  DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
+  FOREIGN_KEY_CONSTRAINT = 'FOREIGN_KEY_CONSTRAINT',
+  NOT_FOUND = 'NOT_FOUND',
   
-  // Business logic errors
-  USER_ALREADY_ACTIVE: 'USER_ALREADY_ACTIVE',
-  USER_ALREADY_INACTIVE: 'USER_ALREADY_INACTIVE',
-  CANNOT_DEACTIVATE_SELF: 'CANNOT_DEACTIVATE_SELF',
-  CANNOT_CHANGE_OWN_ROLE: 'CANNOT_CHANGE_OWN_ROLE',
-} as const;
-
-/**
- * Customer-related error codes
- */
-export const CUSTOMER_ERROR_CODES = {
-  // Duplicate errors
-  DUPLICATE_CUSTOMER_EMAIL: 'DUPLICATE_CUSTOMER_EMAIL',
-  DUPLICATE_CUSTOMER_PHONE: 'DUPLICATE_CUSTOMER_PHONE',
+  // Business Logic Errors
+  PLAN_LIMIT_EXCEEDED = 'PLAN_LIMIT_EXCEEDED',
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+  BUSINESS_RULE_VIOLATION = 'BUSINESS_RULE_VIOLATION',
+  ACCOUNT_DEACTIVATED = 'ACCOUNT_DEACTIVATED',
+  SUBSCRIPTION_EXPIRED = 'SUBSCRIPTION_EXPIRED',
+  SUBSCRIPTION_CANCELLED = 'SUBSCRIPTION_CANCELLED',
+  SUBSCRIPTION_PAUSED = 'SUBSCRIPTION_PAUSED',
+  TRIAL_EXPIRED = 'TRIAL_EXPIRED',
+  ORDER_ALREADY_EXISTS = 'ORDER_ALREADY_EXISTS',
+  PRODUCT_OUT_OF_STOCK = 'PRODUCT_OUT_OF_STOCK',
+  INVALID_ORDER_STATUS = 'INVALID_ORDER_STATUS',
+  PAYMENT_FAILED = 'PAYMENT_FAILED',
+  INVALID_PAYMENT_METHOD = 'INVALID_PAYMENT_METHOD',
   
-  // Validation errors
-  INVALID_CUSTOMER_DATA: 'INVALID_CUSTOMER_DATA',
-  INVALID_CUSTOMER_EMAIL: 'INVALID_CUSTOMER_EMAIL',
-  INVALID_CUSTOMER_PHONE: 'INVALID_CUSTOMER_PHONE',
+  // Resource Specific Errors
+  EMAIL_EXISTS = 'EMAIL_EXISTS',
+  PHONE_EXISTS = 'PHONE_EXISTS',
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  MERCHANT_NOT_FOUND = 'MERCHANT_NOT_FOUND',
+  OUTLET_NOT_FOUND = 'OUTLET_NOT_FOUND',
+  PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
+  ORDER_NOT_FOUND = 'ORDER_NOT_FOUND',
+  CUSTOMER_NOT_FOUND = 'CUSTOMER_NOT_FOUND',
+  CATEGORY_NOT_FOUND = 'CATEGORY_NOT_FOUND',
+  PLAN_NOT_FOUND = 'PLAN_NOT_FOUND',
+  SUBSCRIPTION_NOT_FOUND = 'SUBSCRIPTION_NOT_FOUND',
+  PAYMENT_NOT_FOUND = 'PAYMENT_NOT_FOUND',
+  AUDIT_LOG_NOT_FOUND = 'AUDIT_LOG_NOT_FOUND',
+  BILLING_CYCLE_NOT_FOUND = 'BILLING_CYCLE_NOT_FOUND',
+  PLAN_VARIANT_NOT_FOUND = 'PLAN_VARIANT_NOT_FOUND',
   
-  // Business logic errors
-  CUSTOMER_NOT_FOUND: 'CUSTOMER_NOT_FOUND',
-  CUSTOMER_HAS_ACTIVE_ORDERS: 'CUSTOMER_HAS_ACTIVE_ORDERS',
-} as const;
-
-/**
- * Product-related error codes
- */
-export const PRODUCT_ERROR_CODES = {
-  // Duplicate errors
-  DUPLICATE_PRODUCT_BARCODE: 'DUPLICATE_PRODUCT_BARCODE',
-  DUPLICATE_PRODUCT_NAME: 'DUPLICATE_PRODUCT_NAME',
+  // System Errors
+  INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+  SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+  NETWORK_ERROR = 'NETWORK_ERROR',
   
-  // Validation errors
-  INVALID_PRODUCT_DATA: 'INVALID_PRODUCT_DATA',
-  INVALID_PRODUCT_PRICE: 'INVALID_PRODUCT_PRICE',
-  INVALID_PRODUCT_STOCK: 'INVALID_PRODUCT_STOCK',
-  
-  // Business logic errors
-  PRODUCT_NOT_FOUND: 'PRODUCT_NOT_FOUND',
-  INSUFFICIENT_STOCK: 'INSUFFICIENT_STOCK',
-  PRODUCT_IN_USE: 'PRODUCT_IN_USE',
-} as const;
-
-/**
- * Order-related error codes
- */
-export const ORDER_ERROR_CODES = {
-  // Validation errors
-  INVALID_ORDER_DATA: 'INVALID_ORDER_DATA',
-  INVALID_ORDER_ITEMS: 'INVALID_ORDER_ITEMS',
-  INVALID_ORDER_AMOUNT: 'INVALID_ORDER_AMOUNT',
-  
-  // Business logic errors
-  ORDER_NOT_FOUND: 'ORDER_NOT_FOUND',
-  ORDER_ALREADY_PROCESSED: 'ORDER_ALREADY_PROCESSED',
-  ORDER_CANNOT_BE_CANCELLED: 'ORDER_CANNOT_BE_CANCELLED',
-  INSUFFICIENT_PRODUCT_STOCK: 'INSUFFICIENT_PRODUCT_STOCK',
-} as const;
-
-/**
- * Payment-related error codes
- */
-export const PAYMENT_ERROR_CODES = {
-  // Validation errors
-  INVALID_PAYMENT_DATA: 'INVALID_PAYMENT_DATA',
-  INVALID_PAYMENT_AMOUNT: 'INVALID_PAYMENT_AMOUNT',
-  INVALID_PAYMENT_METHOD: 'INVALID_PAYMENT_METHOD',
-  
-  // Business logic errors
-  PAYMENT_NOT_FOUND: 'PAYMENT_NOT_FOUND',
-  PAYMENT_ALREADY_PROCESSED: 'PAYMENT_ALREADY_PROCESSED',
-  PAYMENT_AMOUNT_MISMATCH: 'PAYMENT_AMOUNT_MISMATCH',
-} as const;
-
-/**
- * Database-related error codes
- */
-export const DATABASE_ERROR_CODES = {
-  // Connection errors
-  CONNECTION_FAILED: 'CONNECTION_FAILED',
-  CONNECTION_TIMEOUT: 'CONNECTION_TIMEOUT',
-  
-  // Query errors
-  QUERY_FAILED: 'QUERY_FAILED',
-  QUERY_TIMEOUT: 'QUERY_TIMEOUT',
-  
-  // Constraint errors
-  UNIQUE_CONSTRAINT_VIOLATION: 'UNIQUE_CONSTRAINT_VIOLATION',
-  FOREIGN_KEY_CONSTRAINT_VIOLATION: 'FOREIGN_KEY_CONSTRAINT_VIOLATION',
-  CHECK_CONSTRAINT_VIOLATION: 'CHECK_CONSTRAINT_VIOLATION',
-  
-  // Transaction errors
-  TRANSACTION_FAILED: 'TRANSACTION_FAILED',
-  TRANSACTION_ROLLBACK: 'TRANSACTION_ROLLBACK',
-} as const;
-
-/**
- * Subscription-related error codes
- */
-export const SUBSCRIPTION_ERROR_CODES = {
-  // Subscription status errors
-  SUBSCRIPTION_EXPIRED: 'SUBSCRIPTION_EXPIRED',
-  SUBSCRIPTION_PAUSED: 'SUBSCRIPTION_PAUSED',
-  SUBSCRIPTION_CANCELLED: 'SUBSCRIPTION_CANCELLED',
-  SUBSCRIPTION_SUSPENDED: 'SUBSCRIPTION_SUSPENDED',
-  SUBSCRIPTION_PAST_DUE: 'SUBSCRIPTION_PAST_DUE',
-  
-  // Subscription access errors
-  SUBSCRIPTION_ACCESS_DENIED: 'SUBSCRIPTION_ACCESS_DENIED',
-  SUBSCRIPTION_TRIAL_EXPIRED: 'SUBSCRIPTION_TRIAL_EXPIRED',
-  SUBSCRIPTION_PAYMENT_REQUIRED: 'SUBSCRIPTION_PAYMENT_REQUIRED',
-  
-  // Subscription management errors
-  SUBSCRIPTION_NOT_FOUND: 'SUBSCRIPTION_NOT_FOUND',
-  SUBSCRIPTION_ALREADY_ACTIVE: 'SUBSCRIPTION_ALREADY_ACTIVE',
-  SUBSCRIPTION_CANNOT_BE_CANCELLED: 'SUBSCRIPTION_CANNOT_BE_CANCELLED',
-  SUBSCRIPTION_CANNOT_BE_PAUSED: 'SUBSCRIPTION_CANNOT_BE_PAUSED',
-} as const;
-
-/**
- * API-related error codes
- */
-export const API_ERROR_CODES = {
-  // Authentication errors
-  UNAUTHORIZED: 'UNAUTHORIZED',
-  FORBIDDEN: 'FORBIDDEN',
-  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
-  TOKEN_INVALID: 'TOKEN_INVALID',
-  
-  // Request errors
-  BAD_REQUEST: 'BAD_REQUEST',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
-  
-  // Server errors
-  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
-  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
-  GATEWAY_TIMEOUT: 'GATEWAY_TIMEOUT',
-} as const;
-
-/**
- * All error codes combined
- */
-export const ERROR_CODES = {
-  ...USER_ERROR_CODES,
-  ...CUSTOMER_ERROR_CODES,
-  ...PRODUCT_ERROR_CODES,
-  ...ORDER_ERROR_CODES,
-  ...PAYMENT_ERROR_CODES,
-  ...DATABASE_ERROR_CODES,
-  ...SUBSCRIPTION_ERROR_CODES,
-  ...API_ERROR_CODES,
-} as const;
-
-// ============================================================================
-// ERROR TYPES
-// ============================================================================
-
-export type ErrorCode = typeof ERROR_CODES[keyof typeof ERROR_CODES];
-
-export interface AppErrorResponse {
-  success: false;
-  error: string;
-  code: ErrorCode;
-  details?: string;
-  timestamp?: string;
+  // File Upload Errors
+  FILE_TOO_LARGE = 'FILE_TOO_LARGE',
+  INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
+  UPLOAD_FAILED = 'UPLOAD_FAILED'
 }
 
-export interface AppSuccessResponse<T = any> {
+// ============================================================================
+// ERROR RESPONSE TYPES - Unified Format
+// ============================================================================
+
+export interface ApiErrorResponse {
+  success: false;
+  message: string;
+  error: ErrorCode;
+  details?: string;
+  field?: string;
+}
+
+export interface ApiSuccessResponse<T = any> {
   success: true;
   data: T;
   message?: string;
 }
 
-// ApiResponse moved to common.ts to avoid conflicts
+export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 // ============================================================================
-// ERROR CLASSES
+// TYPE GUARDS - Type-safe response checking
 // ============================================================================
 
-export class AppError extends Error {
+export function isSuccessResponse<T>(response: ApiResponse<T>): response is ApiSuccessResponse<T> {
+  return response.success === true;
+}
+
+export function isErrorResponse(response: ApiResponse<any>): response is ApiErrorResponse {
+  return response.success === false;
+}
+
+// ============================================================================
+// ERROR MESSAGE MAPPINGS - DRY and Consistent
+// ============================================================================
+
+export const ERROR_MESSAGES: Record<ErrorCode, string> = {
+  // Authentication & Authorization
+  [ErrorCode.UNAUTHORIZED]: 'Authentication required',
+  [ErrorCode.FORBIDDEN]: 'Access denied',
+  [ErrorCode.INVALID_TOKEN]: 'Invalid authentication token',
+  [ErrorCode.TOKEN_EXPIRED]: 'Authentication token has expired',
+  [ErrorCode.INVALID_CREDENTIALS]: 'Invalid email or password',
+  
+  // Validation Errors
+  [ErrorCode.VALIDATION_ERROR]: 'Input validation failed',
+  [ErrorCode.INVALID_INPUT]: 'Invalid input provided',
+  [ErrorCode.MISSING_REQUIRED_FIELD]: 'Required field is missing',
+  
+  // Database Errors
+  [ErrorCode.DATABASE_ERROR]: 'Database operation failed',
+  [ErrorCode.DUPLICATE_ENTRY]: 'Record already exists',
+  [ErrorCode.FOREIGN_KEY_CONSTRAINT]: 'Invalid reference',
+  [ErrorCode.NOT_FOUND]: 'Resource not found',
+  
+  // Business Logic Errors
+  [ErrorCode.PLAN_LIMIT_EXCEEDED]: 'Plan limit exceeded',
+  [ErrorCode.INSUFFICIENT_PERMISSIONS]: 'Insufficient permissions',
+  [ErrorCode.BUSINESS_RULE_VIOLATION]: 'Business rule violation',
+  [ErrorCode.ACCOUNT_DEACTIVATED]: 'Account is deactivated',
+  [ErrorCode.SUBSCRIPTION_EXPIRED]: 'Subscription has expired',
+  [ErrorCode.SUBSCRIPTION_CANCELLED]: 'Subscription has been cancelled',
+  [ErrorCode.SUBSCRIPTION_PAUSED]: 'Subscription is paused',
+  [ErrorCode.TRIAL_EXPIRED]: 'Trial period has expired',
+  [ErrorCode.ORDER_ALREADY_EXISTS]: 'Order already exists',
+  [ErrorCode.PRODUCT_OUT_OF_STOCK]: 'Product is out of stock',
+  [ErrorCode.INVALID_ORDER_STATUS]: 'Invalid order status',
+  [ErrorCode.PAYMENT_FAILED]: 'Payment processing failed',
+  [ErrorCode.INVALID_PAYMENT_METHOD]: 'Invalid payment method',
+  
+  // Resource Specific Errors
+  [ErrorCode.EMAIL_EXISTS]: 'Email address is already registered',
+  [ErrorCode.PHONE_EXISTS]: 'Phone number is already registered',
+  [ErrorCode.USER_NOT_FOUND]: 'User not found',
+  [ErrorCode.MERCHANT_NOT_FOUND]: 'Merchant not found',
+  [ErrorCode.OUTLET_NOT_FOUND]: 'Outlet not found',
+  [ErrorCode.PRODUCT_NOT_FOUND]: 'Product not found',
+  [ErrorCode.ORDER_NOT_FOUND]: 'Order not found',
+  [ErrorCode.CUSTOMER_NOT_FOUND]: 'Customer not found',
+  [ErrorCode.CATEGORY_NOT_FOUND]: 'Category not found',
+  [ErrorCode.PLAN_NOT_FOUND]: 'Plan not found',
+  [ErrorCode.SUBSCRIPTION_NOT_FOUND]: 'Subscription not found',
+  [ErrorCode.PAYMENT_NOT_FOUND]: 'Payment not found',
+  [ErrorCode.AUDIT_LOG_NOT_FOUND]: 'Audit log not found',
+  [ErrorCode.BILLING_CYCLE_NOT_FOUND]: 'Billing cycle not found',
+  [ErrorCode.PLAN_VARIANT_NOT_FOUND]: 'Plan variant not found',
+  
+  // System Errors
+  [ErrorCode.INTERNAL_SERVER_ERROR]: 'Internal server error',
+  [ErrorCode.SERVICE_UNAVAILABLE]: 'Service temporarily unavailable',
+  [ErrorCode.NETWORK_ERROR]: 'Network error occurred',
+  
+  // File Upload Errors
+  [ErrorCode.FILE_TOO_LARGE]: 'File size exceeds limit',
+  [ErrorCode.INVALID_FILE_TYPE]: 'Invalid file type',
+  [ErrorCode.UPLOAD_FAILED]: 'File upload failed'
+};
+
+// ============================================================================
+// HTTP STATUS CODE MAPPINGS - DRY and Consistent
+// ============================================================================
+
+export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
+  // Authentication & Authorization (4xx)
+  [ErrorCode.UNAUTHORIZED]: 401,
+  [ErrorCode.FORBIDDEN]: 403,
+  [ErrorCode.INVALID_TOKEN]: 401,
+  [ErrorCode.TOKEN_EXPIRED]: 401,
+  [ErrorCode.INVALID_CREDENTIALS]: 401,
+  
+  // Validation Errors (4xx)
+  [ErrorCode.VALIDATION_ERROR]: 400,
+  [ErrorCode.INVALID_INPUT]: 400,
+  [ErrorCode.MISSING_REQUIRED_FIELD]: 400,
+  
+  // Database Errors (4xx/5xx)
+  [ErrorCode.DATABASE_ERROR]: 500,
+  [ErrorCode.DUPLICATE_ENTRY]: 409,
+  [ErrorCode.FOREIGN_KEY_CONSTRAINT]: 400,
+  [ErrorCode.NOT_FOUND]: 404,
+  
+  // Business Logic Errors (4xx)
+  [ErrorCode.PLAN_LIMIT_EXCEEDED]: 403,
+  [ErrorCode.INSUFFICIENT_PERMISSIONS]: 403,
+  [ErrorCode.BUSINESS_RULE_VIOLATION]: 422,
+  [ErrorCode.ACCOUNT_DEACTIVATED]: 403,
+  [ErrorCode.SUBSCRIPTION_EXPIRED]: 402,
+  [ErrorCode.SUBSCRIPTION_CANCELLED]: 402,
+  [ErrorCode.SUBSCRIPTION_PAUSED]: 402,
+  [ErrorCode.TRIAL_EXPIRED]: 402,
+  [ErrorCode.ORDER_ALREADY_EXISTS]: 409,
+  [ErrorCode.PRODUCT_OUT_OF_STOCK]: 422,
+  [ErrorCode.INVALID_ORDER_STATUS]: 422,
+  [ErrorCode.PAYMENT_FAILED]: 402,
+  [ErrorCode.INVALID_PAYMENT_METHOD]: 400,
+  
+  // Resource Specific Errors (4xx)
+  [ErrorCode.EMAIL_EXISTS]: 409,
+  [ErrorCode.PHONE_EXISTS]: 409,
+  [ErrorCode.USER_NOT_FOUND]: 404,
+  [ErrorCode.MERCHANT_NOT_FOUND]: 404,
+  [ErrorCode.OUTLET_NOT_FOUND]: 404,
+  [ErrorCode.PRODUCT_NOT_FOUND]: 404,
+  [ErrorCode.ORDER_NOT_FOUND]: 404,
+  [ErrorCode.CUSTOMER_NOT_FOUND]: 404,
+  [ErrorCode.CATEGORY_NOT_FOUND]: 404,
+  [ErrorCode.PLAN_NOT_FOUND]: 404,
+  [ErrorCode.SUBSCRIPTION_NOT_FOUND]: 404,
+  [ErrorCode.PAYMENT_NOT_FOUND]: 404,
+  [ErrorCode.AUDIT_LOG_NOT_FOUND]: 404,
+  [ErrorCode.BILLING_CYCLE_NOT_FOUND]: 404,
+  [ErrorCode.PLAN_VARIANT_NOT_FOUND]: 404,
+  
+  // System Errors (5xx)
+  [ErrorCode.INTERNAL_SERVER_ERROR]: 500,
+  [ErrorCode.SERVICE_UNAVAILABLE]: 503,
+  [ErrorCode.NETWORK_ERROR]: 503,
+  
+  // File Upload Errors (4xx)
+  [ErrorCode.FILE_TOO_LARGE]: 413,
+  [ErrorCode.INVALID_FILE_TYPE]: 400,
+  [ErrorCode.UPLOAD_FAILED]: 500
+};
+
+// ============================================================================
+// ERROR CLASSES - Unified and Simplified
+// ============================================================================
+
+export class ApiError extends Error {
+  public readonly code: ErrorCode;
+  public readonly statusCode: number;
+  public readonly details?: string;
+  public readonly field?: string;
+
   constructor(
-    message: string,
-    public code: ErrorCode,
-    public statusCode: number = 500,
-    public details?: string
+    code: ErrorCode,
+    message?: string,
+    details?: string,
+    field?: string
   ) {
-    super(message);
-    this.name = 'AppError';
+    const errorMessage = message || ERROR_MESSAGES[code];
+    super(errorMessage);
+    
+    this.name = 'ApiError';
+    this.code = code;
+    this.statusCode = ERROR_STATUS_CODES[code];
+    this.details = details;
+    this.field = field;
   }
 
-  toResponse(): AppErrorResponse {
+  toResponse(): ApiErrorResponse {
     return {
       success: false,
-      error: this.message,
-      code: this.code,
+      message: this.message,
+      error: this.code,
       details: this.details,
-      timestamp: new Date().toISOString(),
+      field: this.field
     };
   }
 }
 
-export class ValidationError extends AppError {
-  constructor(message: string, details?: string) {
-    super(message, 'VALIDATION_ERROR', 400, details);
+// ============================================================================
+// CONVENIENCE ERROR CLASSES
+// ============================================================================
+
+export class ValidationError extends ApiError {
+  constructor(message: string, details?: string, field?: string) {
+    super(ErrorCode.VALIDATION_ERROR, message, details, field);
     this.name = 'ValidationError';
   }
 }
 
-export class DuplicateError extends AppError {
-  constructor(message: string, code: ErrorCode, details?: string) {
-    super(message, code, 409, details);
+export class DuplicateError extends ApiError {
+  constructor(code: ErrorCode, message?: string, details?: string, field?: string) {
+    super(code, message, details, field);
     this.name = 'DuplicateError';
   }
 }
 
-export class NotFoundError extends AppError {
-  constructor(message: string, code: ErrorCode, details?: string) {
-    super(message, code, 404, details);
+export class NotFoundError extends ApiError {
+  constructor(code: ErrorCode, message?: string, details?: string) {
+    super(code, message, details);
     this.name = 'NotFoundError';
   }
 }
 
-export class UnauthorizedError extends AppError {
-  constructor(message: string = 'Unauthorized', details?: string) {
-    super(message, 'UNAUTHORIZED', 401, details);
+export class UnauthorizedError extends ApiError {
+  constructor(message?: string, details?: string) {
+    super(ErrorCode.UNAUTHORIZED, message, details);
     this.name = 'UnauthorizedError';
   }
 }
 
-export class ForbiddenError extends AppError {
-  constructor(message: string = 'Forbidden', details?: string) {
-    super(message, 'FORBIDDEN', 403, details);
+export class ForbiddenError extends ApiError {
+  constructor(message?: string, details?: string) {
+    super(ErrorCode.FORBIDDEN, message, details);
     this.name = 'ForbiddenError';
   }
 }
 
-export class SubscriptionError extends AppError {
-  public readonly subscriptionStatus?: string;
-
-  constructor(
-    message: string,
-    code: ErrorCode = SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_ACCESS_DENIED,
-    subscriptionStatus?: string,
-    details?: string
-  ) {
-    super(message, code, 402, details);
-    this.name = 'SubscriptionError';
-    this.subscriptionStatus = subscriptionStatus;
-  }
-
-  /**
-   * Check if an error is a SubscriptionError
-   */
-  static isSubscriptionError(error: unknown): error is SubscriptionError {
-    return error instanceof SubscriptionError;
-  }
-
-  /**
-   * Get subscription status message for UI display
-   */
-  static getStatusMessage(status: string): string {
-    const statusMessages: Record<string, string> = {
-      'cancelled': 'Your subscription has been cancelled. Please contact support to reactivate your account.',
-      'expired': 'Your subscription has expired. Please renew to continue using our services.',
-      'suspended': 'Your subscription has been suspended. Please contact support for assistance.',
-      'past_due': 'Your subscription payment is past due. Please update your payment method.',
-      'paused': 'Your subscription is paused. Please contact support to reactivate your account.'
-    };
-    
-    return statusMessages[status.toLowerCase()] || 'There is an issue with your subscription. Please contact support.';
-  }
-
-  /**
-   * Create a SubscriptionError from a status
-   */
-  static fromStatus(status: string): SubscriptionError {
-    const message = SubscriptionError.getStatusMessage(status);
-    const code = getSubscriptionErrorCode(status);
-    return new SubscriptionError(message, code, status);
+export class PlanLimitError extends ApiError {
+  constructor(message?: string, details?: string) {
+    super(ErrorCode.PLAN_LIMIT_EXCEEDED, message, details);
+    this.name = 'PlanLimitError';
   }
 }
 
-/**
- * Get subscription error code from status
- */
-function getSubscriptionErrorCode(status: string): ErrorCode {
-  const statusMap: Record<string, ErrorCode> = {
-    'cancelled': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_CANCELLED,
-    'expired': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_EXPIRED,
-    'suspended': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_SUSPENDED,
-    'past_due': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAST_DUE,
-    'paused': SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAUSED,
-  };
-  
-  return statusMap[status.toLowerCase()] || SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_ACCESS_DENIED;
-}
-
 // ============================================================================
-// ERROR FACTORY FUNCTIONS
+// ERROR RESPONSE BUILDERS - DRY and Consistent
 // ============================================================================
 
-/**
- * Create user-related errors
- */
-export const createUserError = {
-  duplicateEmail: (email: string, merchantId?: number) => 
-    new DuplicateError(
-      `User with email '${email}' already exists${merchantId ? ' in this merchant organization' : ''}`,
-      USER_ERROR_CODES.DUPLICATE_EMAIL,
-      `Email: ${email}, Merchant: ${merchantId || 'N/A'}`
-    ),
-    
-  duplicatePhone: (phone: string, merchantId?: number) => 
-    new DuplicateError(
-      `User with phone '${phone}' already exists${merchantId ? ' in this merchant organization' : ''}`,
-      USER_ERROR_CODES.DUPLICATE_PHONE,
-      `Phone: ${phone}, Merchant: ${merchantId || 'N/A'}`
-    ),
-    
-  notFound: (userId: number) => 
-    new NotFoundError(
-      `User with ID '${userId}' not found`,
-      USER_ERROR_CODES.USER_NOT_FOUND,
-      `User ID: ${userId}`
-    ),
-    
-  invalidData: (details: string) => 
-    new ValidationError(
-      'Invalid user data provided',
-      details
-    ),
-};
-
-/**
- * Create customer-related errors
- */
-export const createCustomerError = {
-  duplicateEmail: (email: string, merchantId?: number) => 
-    new DuplicateError(
-      `Customer with email '${email}' already exists${merchantId ? ' in this merchant organization' : ''}`,
-      CUSTOMER_ERROR_CODES.DUPLICATE_CUSTOMER_EMAIL,
-      `Email: ${email}, Merchant: ${merchantId || 'N/A'}`
-    ),
-    
-  duplicatePhone: (phone: string, merchantId?: number) => 
-    new DuplicateError(
-      `Customer with phone '${phone}' already exists${merchantId ? ' in this merchant organization' : ''}`,
-      CUSTOMER_ERROR_CODES.DUPLICATE_CUSTOMER_PHONE,
-      `Phone: ${phone}, Merchant: ${merchantId || 'N/A'}`
-    ),
-    
-  notFound: (customerId: number) => 
-    new NotFoundError(
-      `Customer with ID '${customerId}' not found`,
-      CUSTOMER_ERROR_CODES.CUSTOMER_NOT_FOUND,
-      `Customer ID: ${customerId}`
-    ),
-};
-
-/**
- * Create product-related errors
- */
-export const createProductError = {
-  duplicateBarcode: (barcode: string) => 
-    new DuplicateError(
-      `Product with barcode '${barcode}' already exists`,
-      PRODUCT_ERROR_CODES.DUPLICATE_PRODUCT_BARCODE,
-      `Barcode: ${barcode}`
-    ),
-    
-  notFound: (productId: number) => 
-    new NotFoundError(
-      `Product with ID '${productId}' not found`,
-      PRODUCT_ERROR_CODES.PRODUCT_NOT_FOUND,
-      `Product ID: ${productId}`
-    ),
-    
-  insufficientStock: (productId: number, requested: number, available: number) => 
-    new AppError(
-      `Insufficient stock for product. Requested: ${requested}, Available: ${available}`,
-      PRODUCT_ERROR_CODES.INSUFFICIENT_STOCK,
-      400,
-      `Product ID: ${productId}, Requested: ${requested}, Available: ${available}`
-    ),
-};
-
-// ============================================================================
-// ERROR HANDLING UTILITIES
-// ============================================================================
-
-/**
- * Convert any error to a standardized AppErrorResponse
- */
-export const normalizeError = (error: unknown): AppErrorResponse => {
-  if (error instanceof AppError) {
-    return error.toResponse();
-  }
-
-  if (error instanceof Error) {
-    return {
-      success: false,
-      error: error.message,
-      code: 'INTERNAL_SERVER_ERROR',
-      details: error.stack,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
+export function createErrorResponse(
+  code: ErrorCode,
+  message?: string,
+  details?: string,
+  field?: string
+): ApiErrorResponse {
   return {
     success: false,
-    error: 'An unexpected error occurred',
-    code: 'INTERNAL_SERVER_ERROR',
-    details: String(error),
-    timestamp: new Date().toISOString(),
+    message: message || ERROR_MESSAGES[code],
+    error: code,
+    details,
+    field
   };
-};
+}
 
-// handleApiError moved to common.ts to avoid conflicts
+export function createSuccessResponse<T>(
+  data: T,
+  message?: string
+): ApiSuccessResponse<T> {
+  return {
+    success: true,
+    data,
+    message
+  };
+}
 
 // ============================================================================
-// HTTP STATUS CODE MAPPING
+// DATABASE ERROR HANDLERS - Unified and Comprehensive
 // ============================================================================
 
-export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
-  // User errors
-  [USER_ERROR_CODES.DUPLICATE_EMAIL]: 409,
-  [USER_ERROR_CODES.DUPLICATE_PHONE]: 409,
-  [USER_ERROR_CODES.DUPLICATE_USER]: 409,
-  [USER_ERROR_CODES.INVALID_EMAIL_FORMAT]: 400,
-  [USER_ERROR_CODES.INVALID_PHONE_FORMAT]: 400,
-  [USER_ERROR_CODES.INVALID_PASSWORD]: 400,
-  [USER_ERROR_CODES.INVALID_ROLE]: 400,
-  [USER_ERROR_CODES.INVALID_USER_DATA]: 400,
-  [USER_ERROR_CODES.USER_NOT_FOUND]: 404,
-  [USER_ERROR_CODES.INVALID_CREDENTIALS]: 401,
-  [USER_ERROR_CODES.ACCOUNT_DEACTIVATED]: 403,
-  [USER_ERROR_CODES.INSUFFICIENT_PERMISSIONS]: 403,
-  [USER_ERROR_CODES.USER_ALREADY_ACTIVE]: 400,
-  [USER_ERROR_CODES.USER_ALREADY_INACTIVE]: 400,
-  [USER_ERROR_CODES.CANNOT_DEACTIVATE_SELF]: 400,
-  [USER_ERROR_CODES.CANNOT_CHANGE_OWN_ROLE]: 400,
-  
-  // Customer errors
-  [CUSTOMER_ERROR_CODES.DUPLICATE_CUSTOMER_EMAIL]: 409,
-  [CUSTOMER_ERROR_CODES.DUPLICATE_CUSTOMER_PHONE]: 409,
-  [CUSTOMER_ERROR_CODES.INVALID_CUSTOMER_DATA]: 400,
-  [CUSTOMER_ERROR_CODES.INVALID_CUSTOMER_EMAIL]: 400,
-  [CUSTOMER_ERROR_CODES.INVALID_CUSTOMER_PHONE]: 400,
-  [CUSTOMER_ERROR_CODES.CUSTOMER_NOT_FOUND]: 404,
-  [CUSTOMER_ERROR_CODES.CUSTOMER_HAS_ACTIVE_ORDERS]: 400,
-  
-  // Product errors
-  [PRODUCT_ERROR_CODES.DUPLICATE_PRODUCT_BARCODE]: 409,
-  [PRODUCT_ERROR_CODES.DUPLICATE_PRODUCT_NAME]: 409,
-  [PRODUCT_ERROR_CODES.INVALID_PRODUCT_DATA]: 400,
-  [PRODUCT_ERROR_CODES.INVALID_PRODUCT_PRICE]: 400,
-  [PRODUCT_ERROR_CODES.INVALID_PRODUCT_STOCK]: 400,
-  [PRODUCT_ERROR_CODES.PRODUCT_NOT_FOUND]: 404,
-  [PRODUCT_ERROR_CODES.INSUFFICIENT_STOCK]: 400,
-  [PRODUCT_ERROR_CODES.PRODUCT_IN_USE]: 400,
-  
-  // Order errors
-  [ORDER_ERROR_CODES.INVALID_ORDER_DATA]: 400,
-  [ORDER_ERROR_CODES.INVALID_ORDER_ITEMS]: 400,
-  [ORDER_ERROR_CODES.INVALID_ORDER_AMOUNT]: 400,
-  [ORDER_ERROR_CODES.ORDER_NOT_FOUND]: 404,
-  [ORDER_ERROR_CODES.ORDER_ALREADY_PROCESSED]: 400,
-  [ORDER_ERROR_CODES.ORDER_CANNOT_BE_CANCELLED]: 400,
-  [ORDER_ERROR_CODES.INSUFFICIENT_PRODUCT_STOCK]: 400,
-  
-  // Payment errors
-  [PAYMENT_ERROR_CODES.INVALID_PAYMENT_DATA]: 400,
-  [PAYMENT_ERROR_CODES.INVALID_PAYMENT_AMOUNT]: 400,
-  [PAYMENT_ERROR_CODES.INVALID_PAYMENT_METHOD]: 400,
-  [PAYMENT_ERROR_CODES.PAYMENT_NOT_FOUND]: 404,
-  [PAYMENT_ERROR_CODES.PAYMENT_ALREADY_PROCESSED]: 400,
-  [PAYMENT_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH]: 400,
-  
-  // Subscription errors
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_EXPIRED]: 402,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAUSED]: 402,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_CANCELLED]: 402,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_SUSPENDED]: 402,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAST_DUE]: 402,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_ACCESS_DENIED]: 402,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_TRIAL_EXPIRED]: 402,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_PAYMENT_REQUIRED]: 402,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_NOT_FOUND]: 404,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_ALREADY_ACTIVE]: 400,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_CANNOT_BE_CANCELLED]: 400,
-  [SUBSCRIPTION_ERROR_CODES.SUBSCRIPTION_CANNOT_BE_PAUSED]: 400,
-  
-  // Database errors
-  [DATABASE_ERROR_CODES.CONNECTION_FAILED]: 503,
-  [DATABASE_ERROR_CODES.CONNECTION_TIMEOUT]: 504,
-  [DATABASE_ERROR_CODES.QUERY_FAILED]: 500,
-  [DATABASE_ERROR_CODES.QUERY_TIMEOUT]: 504,
-  [DATABASE_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION]: 409,
-  [DATABASE_ERROR_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION]: 400,
-  [DATABASE_ERROR_CODES.CHECK_CONSTRAINT_VIOLATION]: 400,
-  [DATABASE_ERROR_CODES.TRANSACTION_FAILED]: 500,
-  [DATABASE_ERROR_CODES.TRANSACTION_ROLLBACK]: 500,
-  
-  // API errors
-  [API_ERROR_CODES.UNAUTHORIZED]: 401,
-  [API_ERROR_CODES.FORBIDDEN]: 403,
-  [API_ERROR_CODES.TOKEN_EXPIRED]: 401,
-  [API_ERROR_CODES.TOKEN_INVALID]: 401,
-  [API_ERROR_CODES.BAD_REQUEST]: 400,
-  [API_ERROR_CODES.VALIDATION_ERROR]: 400,
-  [API_ERROR_CODES.RATE_LIMIT_EXCEEDED]: 429,
-  [API_ERROR_CODES.INTERNAL_SERVER_ERROR]: 500,
-  [API_ERROR_CODES.SERVICE_UNAVAILABLE]: 503,
-  [API_ERROR_CODES.GATEWAY_TIMEOUT]: 504,
-};
+export function handlePrismaError(error: any): ApiError {
+  console.error('🔍 Prisma Error Details:', {
+    code: error.code,
+    message: error.message,
+    meta: error.meta
+  });
 
-/**
- * Get HTTP status code for an error code
- */
-export const getErrorStatusCode = (code: ErrorCode): number => {
-  return ERROR_STATUS_CODES[code] || 500;
-};
-
-/**
- * Check if an error is subscription-related
- */
-export function isSubscriptionError(error: unknown): boolean {
-  if (SubscriptionError.isSubscriptionError(error)) {
-    return true;
+  switch (error.code) {
+    case 'P2002': {
+      // Unique constraint violation
+      const target = error.meta?.target;
+      const field = Array.isArray(target) ? target[0] : target;
+      
+      if (field?.includes('email')) {
+        return new ApiError(
+          ErrorCode.EMAIL_EXISTS,
+          `Email address is already registered`,
+          `Field: ${field}`,
+          'email'
+        );
+      }
+      
+      if (field?.includes('phone')) {
+        return new ApiError(
+          ErrorCode.PHONE_EXISTS,
+          `Phone number is already registered`,
+          `Field: ${field}`,
+          'phone'
+        );
+      }
+      
+      return new ApiError(
+        ErrorCode.DUPLICATE_ENTRY,
+        'Record with this information already exists',
+        `Field: ${field}`
+      );
+    }
+    
+    case 'P2003': {
+      // Foreign key constraint violation
+      const fieldName = error.meta?.field_name;
+      return new ApiError(
+        ErrorCode.FOREIGN_KEY_CONSTRAINT,
+        `Invalid reference: ${fieldName}`,
+        `Field: ${fieldName}`
+      );
+    }
+    
+    case 'P2025': {
+      // Record not found
+      return new ApiError(
+        ErrorCode.NOT_FOUND,
+        'Record not found',
+        error.message
+      );
+    }
+    
+    case 'P2014': {
+      // Relation violation
+      return new ApiError(
+        ErrorCode.BUSINESS_RULE_VIOLATION,
+        'Cannot perform this operation due to existing relationships',
+        error.message
+      );
+    }
+    
+    default: {
+      return new ApiError(
+        ErrorCode.DATABASE_ERROR,
+        'Database operation failed',
+        error.message
+      );
+    }
   }
+}
 
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    return (
-      message.includes('subscription') ||
-      message.includes('paused') ||
-      message.includes('expired') ||
-      message.includes('cancelled') ||
-      message.includes('suspended') ||
-      message.includes('past_due') ||
-      message.includes('trial')
+// ============================================================================
+// VALIDATION ERROR HANDLERS
+// ============================================================================
+
+export function handleValidationError(error: any): ApiError {
+  if (error.name === 'ZodError') {
+    const firstError = error.errors[0];
+    const field = firstError.path.join('.');
+    
+    return new ApiError(
+      ErrorCode.VALIDATION_ERROR,
+      firstError.message,
+      `Field: ${field}`,
+      field
     );
   }
+  
+  return new ApiError(
+    ErrorCode.INVALID_INPUT,
+    error.message || 'Validation failed'
+  );
+}
 
-  return false;
-} 
+// ============================================================================
+// BUSINESS LOGIC ERROR HANDLERS
+// ============================================================================
+
+export function handleBusinessError(error: any): ApiError {
+  if (error instanceof ApiError) {
+    return error;
+  }
+  
+  if (error.message?.includes('not found')) {
+    if (error.message.includes('Merchant')) {
+      return new ApiError(ErrorCode.MERCHANT_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Outlet')) {
+      return new ApiError(ErrorCode.OUTLET_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('User')) {
+      return new ApiError(ErrorCode.USER_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Product')) {
+      return new ApiError(ErrorCode.PRODUCT_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Order')) {
+      return new ApiError(ErrorCode.ORDER_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Customer')) {
+      return new ApiError(ErrorCode.CUSTOMER_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Category')) {
+      return new ApiError(ErrorCode.CATEGORY_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Plan')) {
+      return new ApiError(ErrorCode.PLAN_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Subscription')) {
+      return new ApiError(ErrorCode.SUBSCRIPTION_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Payment')) {
+      return new ApiError(ErrorCode.PAYMENT_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Audit log')) {
+      return new ApiError(ErrorCode.AUDIT_LOG_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Billing cycle')) {
+      return new ApiError(ErrorCode.BILLING_CYCLE_NOT_FOUND, error.message);
+    }
+    if (error.message.includes('Plan variant')) {
+      return new ApiError(ErrorCode.PLAN_VARIANT_NOT_FOUND, error.message);
+    }
+  }
+  
+  if (error.message?.includes('already registered')) {
+    if (error.message.includes('Email')) {
+      return new ApiError(ErrorCode.EMAIL_EXISTS, error.message);
+    }
+    if (error.message.includes('Phone')) {
+      return new ApiError(ErrorCode.PHONE_EXISTS, error.message);
+    }
+  }
+  
+  if (error.message?.includes('already exists')) {
+    if (error.message.includes('order')) {
+      return new ApiError(ErrorCode.ORDER_ALREADY_EXISTS, error.message);
+    }
+  }
+  
+  if (error.message?.includes('Plan limit')) {
+    return new ApiError(ErrorCode.PLAN_LIMIT_EXCEEDED, error.message);
+  }
+  
+  if (error.message?.includes('permission')) {
+    return new ApiError(ErrorCode.INSUFFICIENT_PERMISSIONS, error.message);
+  }
+  
+  if (error.message?.includes('deactivated')) {
+    return new ApiError(ErrorCode.ACCOUNT_DEACTIVATED, error.message);
+  }
+  
+  if (error.message?.includes('subscription')) {
+    if (error.message.includes('expired')) {
+      return new ApiError(ErrorCode.SUBSCRIPTION_EXPIRED, error.message);
+    }
+    if (error.message.includes('cancelled')) {
+      return new ApiError(ErrorCode.SUBSCRIPTION_CANCELLED, error.message);
+    }
+    if (error.message.includes('paused')) {
+      return new ApiError(ErrorCode.SUBSCRIPTION_PAUSED, error.message);
+    }
+  }
+  
+  if (error.message?.includes('trial')) {
+    if (error.message.includes('expired')) {
+      return new ApiError(ErrorCode.TRIAL_EXPIRED, error.message);
+    }
+  }
+  
+  if (error.message?.includes('out of stock')) {
+    return new ApiError(ErrorCode.PRODUCT_OUT_OF_STOCK, error.message);
+  }
+  
+  if (error.message?.includes('payment')) {
+    if (error.message.includes('failed')) {
+      return new ApiError(ErrorCode.PAYMENT_FAILED, error.message);
+    }
+    if (error.message.includes('invalid')) {
+      return new ApiError(ErrorCode.INVALID_PAYMENT_METHOD, error.message);
+    }
+  }
+  
+  if (error.message?.includes('invalid order status')) {
+    return new ApiError(ErrorCode.INVALID_ORDER_STATUS, error.message);
+  }
+  
+  return new ApiError(
+    ErrorCode.BUSINESS_RULE_VIOLATION,
+    error.message || 'Business rule violation'
+  );
+}
+
+// ============================================================================
+// GLOBAL ERROR HANDLER - DRY and Comprehensive
+// ============================================================================
+
+export function handleApiError(error: any): {
+  response: ApiErrorResponse;
+  statusCode: number;
+} {
+  console.error('🚨 API Error:', error);
+  
+  let apiError: ApiError;
+  
+  // Handle different error types
+  if (error instanceof ApiError) {
+    apiError = error;
+  } else if (error.code && error.code.startsWith('P')) {
+    // Prisma errors
+    apiError = handlePrismaError(error);
+  } else if (error.name === 'ZodError') {
+    // Validation errors
+    apiError = handleValidationError(error);
+  } else {
+    // Business logic or other errors
+    apiError = handleBusinessError(error);
+  }
+  
+  const response = createErrorResponse(
+    apiError.code,
+    apiError.message,
+    apiError.details,
+    apiError.field
+  );
+
+  return {
+    response,
+    statusCode: apiError.statusCode
+  };
+}
+
+// ============================================================================
+// ERROR ANALYSIS & HANDLING (from error-handling.ts)
+// ============================================================================
+
+/**
+ * Error types for better user experience
+ */
+export type ErrorType = 'auth' | 'permission' | 'subscription' | 'network' | 'validation' | 'unknown';
+
+/**
+ * Enhanced error information for better handling
+ */
+export interface ErrorInfo {
+  type: ErrorType;
+  message: string;
+  title: string;
+  showLoginButton: boolean;
+  originalError: any;
+}
+
+/**
+ * Check if an error is authentication-related (401)
+ */
+export const isAuthError = (error: any): boolean => {
+  return (
+    error?.message?.includes('Authentication required') ||
+    error?.message?.includes('Unauthorized') ||
+    error?.message?.includes('Invalid token') ||
+    error?.message?.includes('Token expired') ||
+    error?.status === API.STATUS.UNAUTHORIZED ||
+    error?.status === 401
+  );
+};
+
+/**
+ * Check if an error is permission-related (403)
+ */
+export const isPermissionError = (error: any): boolean => {
+  return (
+    error?.message?.includes('Forbidden') ||
+    error?.message?.includes('Access denied') ||
+    error?.message?.includes('Insufficient permissions') ||
+    error?.status === API.STATUS.FORBIDDEN ||
+    error?.status === 403
+  );
+};
+
+/**
+ * Check if an error is subscription-related (402)
+ */
+const isSubscriptionErrorNew = (error: any): boolean => {
+  if (!error) return false;
+
+  const message = error.message || error.error || '';
+  const code = error.code || '';
+
+  return (
+    code === 'PLAN_LIMIT_EXCEEDED' ||
+    message.toLowerCase().includes('subscription') ||
+    message.toLowerCase().includes('plan limit') ||
+    message.toLowerCase().includes('trial expired') ||
+    message.toLowerCase().includes('cancelled') ||
+    message.toLowerCase().includes('expired') ||
+    message.toLowerCase().includes('suspended') ||
+    message.toLowerCase().includes('past due') ||
+    message.toLowerCase().includes('paused')
+  );
+};
+
+/**
+ * Check if an error is network-related
+ */
+export const isNetworkError = (error: any): boolean => {
+  return (
+    error?.message?.includes('Network Error') ||
+    error?.message?.includes('Failed to fetch') ||
+    error?.message?.includes('Connection failed') ||
+    error?.status === API.STATUS.SERVICE_UNAVAILABLE ||
+    error?.status === 503
+  );
+};
+
+/**
+ * Check if an error is validation-related (400)
+ */
+export const isValidationError = (error: any): boolean => {
+  return (
+    error?.message?.includes('Validation failed') ||
+    error?.message?.includes('Invalid input') ||
+    error?.message?.includes('Required field') ||
+    error?.status === API.STATUS.BAD_REQUEST ||
+    error?.status === 400
+  );
+};
+
+/**
+ * Analyze error and provide enhanced information
+ */
+export const analyzeError = (error: any): ErrorInfo => {
+  console.log('🔍 analyzeError called with:', error);
+
+  // Authentication errors
+  if (isAuthError(error)) {
+    console.log('🔍 analyzeError: Detected auth error, clearing auth data');
+    clearAuthData();
+    
+    return {
+      type: 'auth',
+      message: 'Your session has expired. Please log in again.',
+      title: 'Session Expired',
+      showLoginButton: true,
+      originalError: error
+    };
+  }
+
+  // Permission errors
+  if (isPermissionError(error)) {
+    return {
+      type: 'permission',
+      message: 'You do not have permission to perform this action.',
+      title: 'Access Denied',
+      showLoginButton: false,
+      originalError: error
+    };
+  }
+
+  // Subscription errors
+  if (isSubscriptionErrorNew(error)) {
+    return {
+      type: 'subscription',
+      message: 'Your subscription has expired or been cancelled. Please renew to continue.',
+      title: 'Subscription Issue',
+      showLoginButton: false,
+      originalError: error
+    };
+  }
+
+  // Network errors
+  if (isNetworkError(error)) {
+    return {
+      type: 'network',
+      message: 'Network connection failed. Please check your internet connection and try again.',
+      title: 'Connection Error',
+      showLoginButton: false,
+      originalError: error
+    };
+  }
+
+  // Validation errors
+  if (isValidationError(error)) {
+    return {
+      type: 'validation',
+      message: 'Please check your input and try again.',
+      title: 'Invalid Input',
+      showLoginButton: false,
+      originalError: error
+    };
+  }
+
+  // Unknown errors
+  return {
+    type: 'unknown',
+    message: 'An unexpected error occurred. Please try again later.',
+    title: 'Error',
+    showLoginButton: false,
+    originalError: error
+  };
+}; 

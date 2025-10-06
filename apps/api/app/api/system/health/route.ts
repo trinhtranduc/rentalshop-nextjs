@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 interface HealthCheck {
@@ -201,5 +202,11 @@ export async function GET(request: NextRequest) {
         cpu: { usage: 0 }
       }
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
+  } catch (error) {
+    console.error('System health check error:', error);
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 }

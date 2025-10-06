@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
-import { SubscriptionError } from '@rentalshop/utils';
+import { PlanLimitError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // ============================================================================
@@ -148,8 +148,8 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     try {
       user = await verifyTokenSimple(token);
     } catch (error) {
-      // Check if it's a subscription error
-      if (SubscriptionError.isSubscriptionError(error)) {
+      // Check if it's a subscription/plan limit error
+      if (error instanceof PlanLimitError) {
         return {
           success: false,
           response: NextResponse.json(

@@ -3,6 +3,7 @@ import {
   searchProducts
 } from '@rentalshop/database';
 import type { ProductSearchFilter } from '@rentalshop/types';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -59,13 +60,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching mobile products:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch products',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 } 

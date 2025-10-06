@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
+import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -31,9 +32,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
   } catch (error) {
     console.error('Error verifying token:', error);
-    return NextResponse.json(
-      { success: false, message: 'Token verification failed' },
-      { status: API.STATUS.UNAUTHORIZED }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

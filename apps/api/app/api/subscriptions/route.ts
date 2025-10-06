@@ -3,15 +3,9 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  searchSubscriptions, 
-  createSubscription,
-  getExpiredSubscriptions,
-  markSubscriptionAsExpired,
-  extendSubscription
-} from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { subscriptionCreateSchema } from '@rentalshop/utils';
+import { subscriptionCreateSchema, handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // ============================================================================
@@ -36,11 +30,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
       filters.merchantId = userScope.merchantId;
     }
 
-    const result = await searchSubscriptions(filters);
+    const result = await db.subscriptions.search(filters);
 
     return NextResponse.json({
       success: true,
-      data: result.subscriptions,
+      data: result.data,
       pagination: {
         total: result.total,
         hasMore: result.hasMore,
@@ -50,33 +44,25 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     });
   } catch (error) {
     console.error('Error fetching subscriptions:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch subscriptions' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
 // ============================================================================
 // POST /api/subscriptions - Create subscription
 // ============================================================================
-/**
- * POST /api/subscriptions - Create subscription
- * Requires: ADMIN or MERCHANT role
- */
-async function handleCreateSubscription(
-  request: NextRequest,
-  { user }: { user: any; userScope: any }
-) {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
   try {
-
     const body = await request.json();
     const validatedData = subscriptionCreateSchema.parse(body);
 
     // Role-based restrictions
-    if (user.role === 'MERCHANT' && user.merchantId) {
+    if (user.role === 'MERCHANT' && userScope.merchantId) {
       // Merchants can only create subscriptions for themselves
-      validatedData.merchantId = user.merchantId;
+      validatedData.merchantId = userScope.merchantId;
     }
 
     // Convert planId to number if it's a string
@@ -85,7 +71,7 @@ async function handleCreateSubscription(
       planId: typeof validatedData.planId === 'string' ? parseInt(validatedData.planId) : validatedData.planId
     };
 
-    const subscription = await createSubscription(subscriptionData);
+    const subscription = await db.subscriptions.create(subscriptionData);
 
     return NextResponse.json({
       success: true,
@@ -94,9 +80,9 @@ async function handleCreateSubscription(
     });
   } catch (error) {
     console.error('Error creating subscription:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to create subscription' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
-}
+});

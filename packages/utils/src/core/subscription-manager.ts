@@ -12,7 +12,8 @@
  * - subscription-check.ts
  */
 
-import { SubscriptionError } from '../core';
+import { PlanLimitError } from '../core';
+import { ErrorCode } from './errors';
 import { getSubscriptionByMerchantId } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
 import { API } from '@rentalshop/constants';
@@ -30,6 +31,34 @@ export interface SubscriptionPeriod {
   daysRemaining: number;
   nextBillingDate: Date;
   isTrial?: boolean;
+}
+
+export interface SubscriptionRenewalConfig {
+  paymentGateway: {
+    apiKey: string;
+    webhookSecret: string;
+  };
+  autoRenewEnabled: boolean;
+  gracePeriodDays: number;
+  retryAttempts: number;
+  retryDelayHours: number;
+}
+
+export interface SubscriptionRenewalResult {
+  subscriptionId: number;
+  success: boolean;
+  status: string;
+  error?: string;
+  paymentId?: number;
+  nextBillingDate?: Date;
+}
+
+export interface RenewalStats {
+  totalProcessed: number;
+  successful: number;
+  failed: number;
+  skipped: number;
+  errors: string[];
 }
 
 export interface SubscriptionValidationResult {
@@ -117,7 +146,7 @@ export class SubscriptionManager {
   /**
    * Get subscription error if any
    */
-  static async getError(user: any): Promise<SubscriptionError | null> {
+  static async getError(user: any): Promise<PlanLimitError | null> {
     try {
       if (!user?.merchant?.id) {
         return null; // No merchant = no subscription check needed
@@ -132,7 +161,7 @@ export class SubscriptionManager {
         const numericId = parseInt(merchantId);
         if (isNaN(numericId)) {
           console.log('🔍 SUBSCRIPTION: Invalid merchant ID:', merchantId);
-          return new SubscriptionError('Invalid merchant ID', 'SUBSCRIPTION_NOT_FOUND');
+          return new PlanLimitError('Invalid merchant ID', 'SUBSCRIPTION_NOT_FOUND');
         }
         
         merchantId = numericId;
@@ -151,7 +180,7 @@ export class SubscriptionManager {
 
       if (!subscription) {
         console.log('🔍 SUBSCRIPTION: No subscription found for merchant');
-        return new SubscriptionError('No active subscription found', 'SUBSCRIPTION_NOT_FOUND');
+        return new PlanLimitError('No active subscription found', 'SUBSCRIPTION_NOT_FOUND');
       }
 
       const status = subscription.status?.toLowerCase();
@@ -159,7 +188,7 @@ export class SubscriptionManager {
 
       if (errorStatuses.includes(status)) {
         console.log('🔍 SUBSCRIPTION: Subscription status is error status:', status);
-        return new SubscriptionError(
+        return new PlanLimitError(
           `Your subscription has been ${status}. Please renew to continue using our services.`,
           'SUBSCRIPTION_ACCESS_DENIED'
         );
@@ -178,7 +207,7 @@ export class SubscriptionManager {
         
         if (currentDate > endDate) {
           console.log('🔍 SUBSCRIPTION: Subscription is past end date, treating as expired');
-          return new SubscriptionError(
+          return new PlanLimitError(
             'Your subscription has expired. Please renew to continue using our services.',
             'SUBSCRIPTION_EXPIRED'
           );
@@ -189,7 +218,7 @@ export class SubscriptionManager {
       return null;
     } catch (error) {
       console.error('🔍 SUBSCRIPTION: Error checking subscription status:', error);
-      return new SubscriptionError('Unable to verify subscription status', 'SUBSCRIPTION_ACCESS_DENIED');
+      return new PlanLimitError('Unable to verify subscription status', 'SUBSCRIPTION_ACCESS_DENIED');
     }
   }
 
@@ -241,7 +270,7 @@ export class SubscriptionManager {
             isValid: false,
             error: subscriptionError.message,
             statusCode: subscriptionError.statusCode,
-            isExpired: subscriptionError.code === 'SUBSCRIPTION_EXPIRED'
+            isExpired: subscriptionError.code === ErrorCode.TOKEN_EXPIRED
           };
         }
       }
@@ -633,11 +662,12 @@ export class SubscriptionManager {
 
 // Export individual functions for backward compatibility
 export const checkSubscriptionStatus = SubscriptionManager.checkStatus;
-export const shouldThrowSubscriptionError = SubscriptionManager.shouldThrowError;
-export const getSubscriptionError = SubscriptionManager.getError;
+export const shouldThrowPlanLimitError = SubscriptionManager.shouldThrowError;
+export const getPlanLimitError = SubscriptionManager.getError;
+export const getSubscriptionError = SubscriptionManager.getError; // Backward compatibility alias
 export const validateSubscriptionAccess = SubscriptionManager.validateAccess;
 export const canPerformOperation = SubscriptionManager.canPerformOperation;
-export const getSubscriptionErrorMessage = SubscriptionManager.getErrorMessage;
+export const getPlanLimitErrorMessage = SubscriptionManager.getErrorMessage;
 export const getAllowedOperations = SubscriptionManager.getAllowedOperations;
 export const calculateSubscriptionPeriod = SubscriptionManager.calculatePeriod;
 export const formatSubscriptionPeriod = SubscriptionManager.formatPeriod;

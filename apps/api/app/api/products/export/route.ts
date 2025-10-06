@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withProductExportAuth } from '@rentalshop/auth';
-import { searchProducts } from '@rentalshop/database';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -37,8 +37,8 @@ export const GET = withProductExportAuth(async (authorizedRequest) => {
     }
 
     // Get products
-    const result = await searchProducts(filters);
-    const products = result.products;
+    const result = await db.products.search(filters);
+    const products = result.data;
 
     // Convert to CSV
     const csvHeaders = [
@@ -97,7 +97,7 @@ export const GET = withProductExportAuth(async (authorizedRequest) => {
 
     const csvContent = [
       csvHeaders.join(','),
-      ...csvRows.map(row => row.join(','))
+      ...csvRows.map((row: any) => row.join(','))
     ].join('\n');
 
     // Return CSV file
@@ -112,9 +112,9 @@ export const GET = withProductExportAuth(async (authorizedRequest) => {
 
   } catch (error) {
     console.error('Error exporting products:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to export products' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

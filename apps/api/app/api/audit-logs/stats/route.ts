@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { AuditLogger } from '../../../../../../packages/database/src/audit';
+import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -41,9 +42,9 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
 
   } catch (error) {
     console.error('Error fetching audit statistics:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch audit statistics' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

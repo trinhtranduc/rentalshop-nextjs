@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { comparePassword, generateToken } from '@rentalshop/auth';
-import { loginSchema, SubscriptionError } from '@rentalshop/utils';
+import { loginSchema } from '@rentalshop/utils';
+import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -139,14 +140,8 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = loginSchema.parse(body);
     
-    // Find user in database
-    const user = await prisma.user.findUnique({
-      where: { email: validatedData.email },
-      include: {
-        merchant: true,
-        outlet: true,
-      },
-    });
+    // Find user in database by email
+    const user = await db.users.findByEmail(validatedData.email);
 
     if (!user) {
       return NextResponse.json(
@@ -202,44 +197,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Login error:', error);
     
-    // Handle validation errors
-    if (error.name === 'ZodError') {
-      return NextResponse.json({
-        success: false,
-        message: 'Validation failed',
-        errors: error.errors
-      }, { status: 400 });
-    }
-    
-    // Handle auth errors
-    if (error.message === 'Invalid credentials') {
-      return NextResponse.json({
-        success: false,
-        message: 'Invalid email or password'
-      }, { status: 401 });
-    }
-    
-    if (error.message === 'Account is deactivated') {
-      return NextResponse.json({
-        success: false,
-        message: 'Account is deactivated. Please contact support.'
-      }, { status: API.STATUS.FORBIDDEN });
-    }
-    
-    // Handle subscription errors (402 Payment Required)
-    if (SubscriptionError.isSubscriptionError(error)) {
-      return NextResponse.json({
-        success: false,
-        message: error.message,
-        errorCode: API.ERROR_CODES.SUBSCRIPTION_ERROR
-      }, { status: API.STATUS.PAYMENT_REQUIRED });
-    }
-    
-    // Generic error
-    return NextResponse.json({
-      success: false,
-      message: 'Login failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 } 

@@ -1,60 +1,50 @@
-// ============================================================================
-// CHANGE SUBSCRIPTION PLAN API ENDPOINT
-// ============================================================================
-
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { changePlan } from '@rentalshop/database';
-import {API} from '@rentalshop/constants';
+import { handleApiError } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
 
 /**
- * PATCH /api/subscriptions/[id]/change-plan - Change subscription plan
- * Requires: ADMIN or MERCHANT role
+ * POST /api/subscriptions/[id]/change-plan
+ * Change subscription plan
  */
-async function handleChangeSubscriptionPlan(
-  request: NextRequest,
-  { user }: { user: any; userScope: any },
-  params: { id: string }
-) {
-  try {
-
-    // Parse request body
-    const body = await request.json();
-    const { newPlanId, billingInterval } = body;
-
-    if (!newPlanId) {
-      return NextResponse.json(
-        { success: false, message: 'New plan ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Change the subscription plan
-    const subscriptionId = parseInt(params.id);
-    const result = await changePlan(subscriptionId, newPlanId, billingInterval || 'month');
-
-    return NextResponse.json({
-      success: true,
-      message: 'Subscription plan changed successfully',
-      data: result
-    });
-
-  } catch (error) {
-    console.error('Error changing subscription plan:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
-
-export async function PATCH(
+export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
-  const authenticatedHandler = authWrapper((req, context) => 
-    handleChangeSubscriptionPlan(req, context, params)
-  );
-  return authenticatedHandler(request);
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+    try {
+      const subscriptionId = parseInt(params.id);
+      
+      if (isNaN(subscriptionId)) {
+        return NextResponse.json({ success: false, message: 'Invalid subscription ID' }, { status: 400 });
+      }
+
+      const body = await request.json();
+      const { planId } = body;
+
+      if (!planId) {
+        return NextResponse.json({ success: false, message: 'Plan ID is required' }, { status: 400 });
+      }
+
+      const existing = await db.subscriptions.findById(subscriptionId);
+      if (!existing) {
+        return NextResponse.json({ success: false, message: 'Subscription not found' }, { status: API.STATUS.NOT_FOUND });
+      }
+
+      // Change subscription plan
+      const updatedSubscription = await db.subscriptions.update(subscriptionId, {
+        planId: planId,
+        updatedAt: new Date()
+      });
+
+      return NextResponse.json({ success: true, data: updatedSubscription });
+    } catch (error) {
+      console.error('Error changing subscription plan:', error);
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }

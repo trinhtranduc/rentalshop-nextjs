@@ -82,8 +82,24 @@ export const calendarApi = {
     const response = await authenticatedFetch(`${apiUrls.calendar.orders}?${searchParams}`);
     const result = await parseApiResponse<CalendarApiResponse>(response);
     
-    // Return the full calendar response as-is from backend
-    return result;
+    // Return the calendar response data directly
+    if (result.success && result.data) {
+      return result.data;
+    }
+    
+    // Fallback structure if backend returns different format
+    return {
+      success: result.success,
+      data: {} as CalendarResponse,
+      meta: {
+        month: query.month,
+        year: query.year,
+        totalDays: 30,
+        stats: { totalPickups: 0, totalOrders: 0 },
+        dateRange: { start: '', end: '' }
+      },
+      message: result.message || 'Calendar data loaded'
+    };
   },
 
   /**

@@ -1,8 +1,8 @@
+import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
-import { findUserById } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -56,7 +56,7 @@ export async function PATCH(
     }
 
     // Check if user exists using id
-    const targetUser = await findUserById(numericId);
+    const targetUser = await db.users.findById(numericId);
 
     if (!targetUser) {
       return NextResponse.json(
@@ -111,9 +111,8 @@ export async function PATCH(
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     // Update password using internal ID
-    await prisma.user.update({
-      where: { id: targetUser.id },
-      data: { password: hashedPassword }
+    await db.users.update(targetUser.id, {
+      password: hashedPassword
     });
 
     console.log('✅ Password changed successfully for user:', targetUser.email);

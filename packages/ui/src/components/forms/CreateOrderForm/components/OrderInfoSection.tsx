@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
   DateRangePicker,
+  RentalPeriodSelector,
   Textarea,
   Skeleton
 } from '@rentalshop/ui';
@@ -39,6 +40,9 @@ interface OrderInfoSectionProps {
   customerSearchResults: CustomerSearchResult[];
   isLoadingCustomers: boolean;
   isEditMode: boolean;
+  merchantData?: any;
+  merchantLoading?: boolean;
+  merchantError?: string | null;
   onFormDataChange: (field: keyof OrderFormData, value: any) => void;
   onCustomerSelect: (customer: CustomerSearchResult) => void;
   onCustomerClear: () => void;
@@ -56,6 +60,9 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   customerSearchResults,
   isLoadingCustomers,
   isEditMode,
+  merchantData,
+  merchantLoading,
+  merchantError,
   onFormDataChange,
   onCustomerSelect,
   onCustomerClear,
@@ -329,33 +336,99 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </div>
         </div>
 
-        {/* Rental Dates - Only show for RENT orders */}
+        {/* Rental Period Selection - Smart pricing based on merchant configuration */}
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
-            <label className="text-sm font-medium text-text-primary">
-              Rental Period <span className="text-red-500">*</span>
-            </label>
-            <DateRangePicker
-              value={{
-                from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
-                to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
-              }}
-              onChange={(range) => {
-                const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
-                const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
-                
-                onFormDataChange('pickupPlanAt', startDate);
-                onFormDataChange('returnPlanAt', endDate);
-                
-                if (startDate && endDate) {
+            {merchantLoading ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">
+                  Rental Period <span className="text-red-500">*</span>
+                </label>
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : merchantError ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">
+                  Rental Period <span className="text-red-500">*</span>
+                </label>
+                <div className="text-sm text-red-500 p-2 border border-red-200 rounded">
+                  Error loading merchant pricing: {merchantError}
+                </div>
+                {/* Fallback to basic DateRangePicker */}
+                <DateRangePicker
+                  value={{
+                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
+                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
+                  }}
+                  onChange={(range) => {
+                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
+                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
+                    
+                    onFormDataChange('pickupPlanAt', startDate);
+                    onFormDataChange('returnPlanAt', endDate);
+                    
+                    if (startDate && endDate) {
+                      onUpdateRentalDates(startDate, endDate);
+                    }
+                  }}
+                  placeholder="Select rental period"
+                  minDate={new Date()}
+                  showPresets={false}
+                  format="long"
+                />
+              </div>
+            ) : merchantData ? (
+              <RentalPeriodSelector
+                product={{
+                  id: 0, // Placeholder - will be updated when product is selected
+                  name: 'Rental Period',
+                  rentPrice: 0, // Will be calculated based on merchant pricing
+                  deposit: 0
+                }}
+                merchant={merchantData}
+                onPeriodChange={(startAt, endAt) => {
+                  const startDate = startAt.toISOString().split('T')[0];
+                  const endDate = endAt.toISOString().split('T')[0];
+                  
+                  onFormDataChange('pickupPlanAt', startDate);
+                  onFormDataChange('returnPlanAt', endDate);
+                  
                   onUpdateRentalDates(startDate, endDate);
-                }
-              }}
-              placeholder="Select rental period"
-              minDate={new Date()}
-              showPresets={false}
-              format="long"
-            />
+                }}
+                onPriceChange={(pricing) => {
+                  // Update pricing information when period changes
+                  console.log('Pricing updated:', pricing);
+                }}
+              />
+            ) : (
+              // Fallback to basic DateRangePicker if no merchant data
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">
+                  Rental Period <span className="text-red-500">*</span>
+                </label>
+                <DateRangePicker
+                  value={{
+                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
+                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
+                  }}
+                  onChange={(range) => {
+                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
+                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
+                    
+                    onFormDataChange('pickupPlanAt', startDate);
+                    onFormDataChange('returnPlanAt', endDate);
+                    
+                    if (startDate && endDate) {
+                      onUpdateRentalDates(startDate, endDate);
+                    }
+                  }}
+                  placeholder="Select rental period"
+                  minDate={new Date()}
+                  showPresets={false}
+                  format="long"
+                />
+              </div>
+            )}
           </div>
         )}
 

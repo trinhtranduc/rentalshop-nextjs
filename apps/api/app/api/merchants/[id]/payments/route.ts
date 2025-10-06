@@ -1,363 +1,47 @@
-// ============================================================================
-// MERCHANT PAYMENTS API
-// ============================================================================
-// Handles payment processing for merchant plan changes and extensions
-
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import {API} from '@rentalshop/constants';
+import { handleApiError } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
 
-// Payment method validation
-const paymentMethodSchema = z.enum(['STRIPE', 'TRANSFER', 'MANUAL', 'CASH', 'CHECK']);
-
-// Payment type validation
-const paymentTypeSchema = z.enum(['PLAN_CHANGE', 'PLAN_EXTENSION', 'SUBSCRIPTION_PAYMENT']);
-
-// Payment status validation
-const paymentStatusSchema = z.enum(['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELLED']);
-
-// Create payment request schema
-const createPaymentSchema = z.object({
-  amount: z.number().positive('Amount must be positive'),
-  method: paymentMethodSchema,
-  type: paymentTypeSchema,
-  reference: z.string().optional(),
-  notes: z.string().optional(),
-  subscriptionId: z.string().optional(),
-  stripePaymentIntentId: z.string().optional(), // For Stripe payments
-  bankReference: z.string().optional(), // For bank transfers
-});
-
-// Update payment status schema
-const updatePaymentStatusSchema = z.object({
-  status: paymentStatusSchema,
-  reference: z.string().optional(),
-  notes: z.string().optional(),
-  processedBy: z.string().optional(),
-});
-
-// ============================================================================
-// CREATE PAYMENT
-// ============================================================================
-async function handleCreatePayment(
-  request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
-  params: { id: string }
-) {
-  try {
-    // Parse and validate request body
-    const body = await request.json();
-    const validatedData = createPaymentSchema.parse(body);
-
-    const merchantId = params.id;
-
-    // Get merchant
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: parseInt(merchantId) },
-      include: { Plan: true }
-    });
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
-    // Create payment record
-    const result = await prisma.$transaction(async (tx) => {
-      // Get next payment public ID
-      const lastPayment = await tx.payment.findFirst({
-        orderBy: { id: 'desc' }
-      });
-      const paymentPublicId = (lastPayment?.id || 0) + 1;
-
-      // Create payment record
-      const payment = await tx.payment.create({
-        data: {
-          id: paymentPublicId,
-          amount: validatedData.amount,
-          method: validatedData.method,
-          type: validatedData.type,
-          status: 'PENDING',
-          reference: validatedData.reference,
-          notes: validatedData.notes,
-          merchantId: merchant.id,
-          subscriptionId: validatedData.subscriptionId ? parseInt(validatedData.subscriptionId) : null,
-          processedBy: user.id
-        }
-      });
-
-      // Create audit log
-      await tx.auditLog.create({
-        data: {
-          entityType: 'PAYMENT',
-          entityId: payment.id.toString(),
-          action: 'PAYMENT_CREATED',
-          details: JSON.stringify({
-            paymentId: payment.id,
-            amount: payment.amount,
-            method: payment.method,
-            type: payment.type,
-            merchantId: merchant.id,
-            createdBy: user.id,
-            createdByEmail: user.email
-          }),
-          userId: user.id,
-          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-          userAgent: request.headers.get('user-agent') || 'unknown'
-        }
-      });
-
-      return payment;
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Payment created successfully',
-      data: {
-        payment: {
-          id: result.id,
-          amount: result.amount,
-          method: result.method,
-          type: result.type,
-          status: result.status,
-          reference: result.reference,
-          notes: result.notes,
-          createdAt: result.createdAt
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('Payment creation error:', error);
-    
-    if ((error as any)?.name === 'ZodError') {
-      return NextResponse.json({
-        success: false,
-        message: 'Validation failed',
-        errors: (error as any).errors
-      }, { status: 400 });
-    }
-    
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to create payment',
-      error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
-  }
-}
-
-// ============================================================================
-// GET MERCHANT PAYMENTS
-// ============================================================================
-async function handleGetPayments(
-  request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
-  params: { id: string }
-) {
-  try {
-    const merchantId = params.id;
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const status = searchParams.get('status');
-    const type = searchParams.get('type');
-    const method = searchParams.get('method');
-
-    // Build where clause
-    const where: any = {
-      merchant: { id: parseInt(merchantId) }
-    };
-
-    if (status) where.status = status;
-    if (type) where.type = type;
-    if (method) where.method = method;
-
-    // Get payments
-    const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
-        where,
-        include: {
-          subscription: {
-            include: {
-              plan: true
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset
-      }),
-      prisma.payment.count({ where })
-    ]);
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        payments: payments.map((payment: any) => ({
-          id: payment.id,
-          amount: payment.amount,
-          method: payment.method,
-          type: payment.type,
-          status: payment.status,
-          reference: payment.reference,
-          notes: payment.notes,
-          processedAt: payment.processedAt,
-          createdAt: payment.createdAt,
-          subscription: payment.subscription ? {
-            id: payment.subscription.id,
-            plan: payment.subscription.plan?.name,
-            planVariant: payment.subscription.planVariant?.name
-          } : null
-        })),
-        total,
-        hasMore: offset + limit < total
-      }
-    });
-
-  } catch (error) {
-    console.error('Get payments error:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to get payments',
-      error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
-  }
-}
-
-// ============================================================================
-// UPDATE PAYMENT STATUS
-// ============================================================================
-async function handleUpdatePaymentStatus(
-  request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
-  params: { id: string }
-) {
-  try {
-    // Parse and validate request body
-    const body = await request.json();
-    const validatedData = updatePaymentStatusSchema.parse(body);
-
-    const merchantId = params.id;
-
-    // Get payment
-    const payment = await prisma.payment.findFirst({
-      where: {
-        id: parseInt(merchantId),
-        merchant: { id: parseInt(merchantId) }
-      }
-    });
-
-    if (!payment) {
-      return NextResponse.json(
-        { success: false, message: 'Payment not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
-    // Update payment status
-    const result = await prisma.$transaction(async (tx) => {
-      const updatedPayment = await tx.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: validatedData.status,
-          reference: validatedData.reference || payment.reference,
-          notes: validatedData.notes || payment.notes,
-          processedBy: validatedData.processedBy || user.id,
-          processedAt: validatedData.status === 'COMPLETED' ? new Date() : payment.processedAt,
-          updatedAt: new Date()
-        }
-      });
-
-      // Create audit log
-      await tx.auditLog.create({
-        data: {
-          entityType: 'PAYMENT',
-          entityId: payment.id.toString(),
-          action: 'PAYMENT_STATUS_UPDATED',
-          details: JSON.stringify({
-            paymentId: payment.id,
-            oldStatus: payment.status,
-            newStatus: validatedData.status,
-            updatedBy: user.id,
-            updatedByEmail: user.email
-          }),
-          userId: user.id,
-          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-          userAgent: request.headers.get('user-agent') || 'unknown'
-        }
-      });
-
-      return updatedPayment;
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Payment status updated successfully',
-      data: {
-        payment: {
-          id: result.id,
-          status: result.status,
-          reference: result.reference,
-          notes: result.notes,
-          processedAt: result.processedAt,
-          updatedAt: result.updatedAt
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('Update payment status error:', error);
-    
-    if ((error as any).name === 'ZodError') {
-      return NextResponse.json({
-        success: false,
-        message: 'Validation failed',
-        errors: (error as any).errors
-      }, { status: 400 });
-    }
-    
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to update payment status',
-      error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
-  }
-}
-
-// Export functions with withAuthRoles wrapper
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
-  const authenticatedHandler = authWrapper((req, context) => 
-    handleCreatePayment(req, context, params)
-  );
-  return authenticatedHandler(request);
-}
-
+/**
+ * GET /api/merchants/[id]/payments
+ * Get merchant payments
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
-  const authenticatedHandler = authWrapper((req, context) => 
-    handleGetPayments(req, context, params)
-  );
-  return authenticatedHandler(request);
-}
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+    try {
+      const merchantPublicId = parseInt(params.id);
+      if (isNaN(merchantPublicId)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid merchant ID' },
+          { status: 400 }
+        );
+      }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']);
-  const authenticatedHandler = authWrapper((req, context) => 
-    handleUpdatePaymentStatus(req, context, params)
-  );
-  return authenticatedHandler(request);
+      const merchant = await db.merchants.findById(merchantPublicId);
+      if (!merchant) {
+        return NextResponse.json(
+          { success: false, message: 'Merchant not found' },
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // TODO: Implement merchant payments functionality
+      return NextResponse.json(
+        { success: false, message: 'Merchant payments functionality not yet implemented' },
+        { status: 501 }
+      );
+
+    } catch (error) {
+      console.error('Error fetching merchant payments:', error);
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }

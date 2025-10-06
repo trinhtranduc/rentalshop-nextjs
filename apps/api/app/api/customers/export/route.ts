@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCustomerExportAuth } from '@rentalshop/auth';
-import { searchCustomers } from '@rentalshop/database';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -37,8 +37,8 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
     }
 
     // Get customers
-    const result = await searchCustomers(filters);
-    const customers = result.data.customers;
+    const result = await db.customers.search(filters);
+    const customers = result.data;
 
     // Convert to CSV
     const csvHeaders = [
@@ -59,7 +59,7 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
       'Updated At'
     ];
 
-    const csvRows = customers.map(customer => [
+    const csvRows = customers.map((customer: any) => [
       customer.id,
       `"${customer.firstName}"`,
       `"${customer.lastName}"`,
@@ -79,7 +79,7 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
 
     const csvContent = [
       csvHeaders.join(','),
-      ...csvRows.map(row => row.join(','))
+      ...csvRows.map((row: any) => row.join(','))
     ].join('\n');
 
     // Return CSV file
@@ -94,9 +94,9 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
 
   } catch (error) {
     console.error('Error exporting customers:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to export customers' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

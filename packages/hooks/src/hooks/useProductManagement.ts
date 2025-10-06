@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePagination } from './usePagination';
 import { useThrottledSearch } from './useThrottledSearch';
 import { useSimpleErrorHandler } from './useToast';
-import { productsApi } from '@rentalshop/utils';
+import { productsApi, isErrorResponse } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
 import type { Product, ProductWithDetails, ProductWithStock, ProductFilters, ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
 
@@ -173,8 +173,8 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
           offset: (page - 1) * pagination.limit,
           hasMore: page < totalPagesCount
         });
-      } else {
-        console.error('API Error:', response.error);
+      } else if (isErrorResponse(response)) {
+        console.error('API Error:', response.message);
         setProducts([]);
       }
     } catch (error) {
@@ -290,8 +290,8 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       if (response.success && response.data) {
         setSelectedProduct(response.data);
         setShowProductDetail(true);
-      } else {
-        console.error('Failed to fetch product details:', response.error);
+      } else if (isErrorResponse(response)) {
+        console.error('Failed to fetch product details:', response.message);
         // Fallback to basic product info
         setSelectedProduct(product);
         setShowProductDetail(true);

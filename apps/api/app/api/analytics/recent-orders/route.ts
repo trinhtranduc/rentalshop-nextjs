@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
@@ -36,29 +37,36 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       }
     };
 
-    // Add scope filtering based on user role
-    if (userScope.outletId) {
+    // Apply role-based filtering (consistent with other APIs)
+    if (user.role === 'MERCHANT' && userScope.merchantId) {
+      // Find merchant by id to get outlets
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        whereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+      }
+    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
       // Find outlet by id to get CUID
-      const outlet = await prisma.outlet.findUnique({
-        where: { id: userScope.outletId },
-        select: { id: true }
-      });
+      const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {
         whereClause.outletId = outlet.id;
       }
-    } else if (userScope.merchantId) {
-      // Find merchant by id to get CUID
-      const merchant = await prisma.merchant.findUnique({
-        where: { id: userScope.merchantId },
-        select: { id: true, outlets: { select: { id: true } } }
+    } else if (user.role !== 'ADMIN') {
+      // New users without merchant/outlet assignment should see no data
+      console.log('🚫 User without merchant/outlet assignment:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
       });
-      if (merchant) {
-        whereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
-      }
+      return NextResponse.json({
+        success: true,
+        data: [],
+        message: 'No data available - user not assigned to merchant/outlet'
+      });
     }
+    // ADMIN users see all data (no additional filtering)
 
     // Get recent orders with date filtering
-    const recentOrders = await prisma.order.findMany({
+    const recentOrders = await db.orders.search({
       where: whereClause,
       include: {
         customer: true,
@@ -71,7 +79,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     });
 
     // Format the data for display
-    const formattedOrders = recentOrders.map(order => {
+    const formattedOrders = recentOrders.data.map((order: any) => {
       const customerName = order.customer 
         ? `${order.customer.firstName} ${order.customer.lastName}`
         : 'Walk-in Customer';
@@ -79,7 +87,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       const customerPhone = order.customer?.phone || 'N/A';
       
       const productNames = order.orderItems
-        .map(item => item.product.name)
+        .map((item: any) => item.product.name)
         .join(', ');
       
       const productImage = order.orderItems[0]?.product.images 
@@ -113,14 +121,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
   } catch (error) {
     console.error('Error fetching recent orders:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch recent orders',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 

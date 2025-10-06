@@ -569,5 +569,14 @@ export const simplifiedCustomers = {
       limit,
       hasMore: skip + limit < total
     };
+  },
+
+  /**
+   * Get customer statistics (simplified API)
+   */
+  getStats: async (whereClause?: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.customer.count({ where });
   }
 };

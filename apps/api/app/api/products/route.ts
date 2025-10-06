@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db, prisma } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit } from '@rentalshop/utils';
+import { db } from '@rentalshop/database';
+import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 
@@ -172,10 +172,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     }
 
     // Find merchant by publicId to get CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantId },
-      select: { id: true, name: true }
-    });
+    const merchant = await db.merchants.findById(merchantId);
 
     if (!merchant) {
       return NextResponse.json(
@@ -227,18 +224,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
   } catch (error: any) {
     console.error('Error in POST /api/products:', error);
     
-    // Handle specific Prisma errors
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { success: false, message: 'A product with this name or barcode already exists' },
-        { status: 409 }
-      );
-    }
-    
-    return NextResponse.json(
-      { success: false, message: 'Failed to create product' },
-      { status: 500 }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
