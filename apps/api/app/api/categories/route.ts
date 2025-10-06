@@ -22,8 +22,27 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
       if (outlet) {
         where.merchantId = outlet.merchantId;
       }
+    } else if (user.role === 'ADMIN') {
+      // ADMIN users see all data (system-wide access)
+      // No additional filtering needed for ADMIN role
+      console.log('✅ ADMIN user accessing all system data:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
+      });
+    } else {
+      // All other users without merchant/outlet assignment should see no data
+      console.log('🚫 User without merchant/outlet assignment:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
+      });
+      return NextResponse.json({
+        success: true,
+        data: [],
+        message: 'No data available - user not assigned to merchant/outlet'
+      });
     }
-    // ADMIN users see all data (no additional filtering)
 
     const categories = await db.categories.findMany({
       where,

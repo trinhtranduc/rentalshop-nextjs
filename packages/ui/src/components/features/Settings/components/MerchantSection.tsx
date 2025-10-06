@@ -9,6 +9,11 @@ import {
   Label
 } from '@rentalshop/ui';
 import { merchantsApi } from '@rentalshop/utils';
+import { 
+  getBusinessTypeDescription, 
+  getPricingTypeDescription
+} from '@rentalshop/constants';
+import type { BusinessType, PricingType } from '@rentalshop/constants/src/pricing';
 
 // ============================================================================
 // TYPES
@@ -27,6 +32,7 @@ export interface MerchantSectionProps {
     zipCode: string;
     country: string;
     businessType: string;
+    pricingType: string;
     taxId: string;
   };
   onEdit: () => void;
@@ -190,15 +196,27 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     disabled={true}
                     className="bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
-                      Cannot be changed
-                    </span>
-                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Business email addresses cannot be changed for security reasons
-                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Tax ID
+                </Label>
+                {isEditing ? (
+                  <Input
+                    id="taxId"
+                    name="taxId"
+                    type="text"
+                    value={formData.taxId}
+                    onChange={onInputChange}
+                    placeholder="Enter tax ID"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                    {merchant?.taxId || 'Not provided'}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -221,44 +239,48 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 )}
               </div>
 
-              <div>
-                <Label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Type
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="businessType"
-                    name="businessType"
-                    type="text"
-                    value={formData.businessType}
-                    onChange={onInputChange}
-                    placeholder="Enter business type"
-                  />
-                ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.businessType || 'Not provided'}
-                  </p>
-                )}
-              </div>
+              <div className="md:col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Type
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="businessType"
+                        name="businessType"
+                        type="text"
+                        value={merchant?.businessType || 'Not provided'}
+                        placeholder="Business type"
+                        disabled={true}
+                        className="bg-gray-100 text-gray-600 cursor-not-allowed"
+                      />
+                    </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {merchant?.businessType ? getBusinessTypeDescription(merchant.businessType as BusinessType) : 'Business type description'}
+                </p>
+                  </div>
 
-              <div>
-                <Label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Tax ID
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="taxId"
-                    name="taxId"
-                    type="text"
-                    value={formData.taxId}
-                    onChange={onInputChange}
-                    placeholder="Enter tax ID"
-                  />
-                ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.taxId || 'Not provided'}
-                  </p>
-                )}
+                  <div>
+                    <Label htmlFor="pricingType" className="block text-sm font-medium text-gray-700 mb-2">
+                      Pricing Type
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="pricingType"
+                        name="pricingType"
+                        type="text"
+                        value={merchant?.pricingType || 'Not provided'}
+                        placeholder="Pricing type"
+                        disabled={true}
+                        className="bg-gray-100 text-gray-600 cursor-not-allowed"
+                      />
+                    </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {merchant?.pricingType ? getPricingTypeDescription(merchant.pricingType as PricingType) : 'Pricing type description'}
+                </p>
+                  </div>
+                </div>
               </div>
 
               <div className="md:col-span-2">

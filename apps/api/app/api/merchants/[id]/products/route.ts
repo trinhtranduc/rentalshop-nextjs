@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, createSuccessResponse } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -36,11 +36,15 @@ export async function GET(
         isActive: true
       });
 
-      return NextResponse.json({
-        success: true,
-        data: products.data || [],
-        total: products.total || 0
-      });
+      // Return standardized response format matching general products API
+      return NextResponse.json(createSuccessResponse({
+        products: products.data || [],
+        total: products.total || 0,
+        page: products.page || 1,
+        limit: products.limit || 20,
+        hasMore: products.hasMore || false,
+        totalPages: Math.ceil((products.total || 0) / (products.limit || 20))
+      }, `Found ${products.total || 0} products`));
 
     } catch (error) {
       console.error('Error fetching merchant products:', error);

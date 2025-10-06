@@ -63,8 +63,16 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         orderWhereClause.outletId = outlet.id;
         paymentWhereClause.order = { outletId: outlet.id };
       }
-    } else if (user.role !== 'ADMIN') {
-      // New users without merchant/outlet assignment should see no data
+    } else if (user.role === 'ADMIN') {
+      // ADMIN users see all data (system-wide access)
+      // No additional filtering needed for ADMIN role
+      console.log('✅ ADMIN user accessing all system data:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
+      });
+    } else {
+      // All other users without merchant/outlet assignment should see no data
       console.log('🚫 User without merchant/outlet assignment:', {
         role: user.role,
         merchantId: userScope.merchantId,
@@ -86,7 +94,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         message: 'No data available - user not assigned to merchant/outlet'
       });
     }
-    // ADMIN users see all data (no additional filtering)
 
     console.log('🔍 Dashboard filters:', { orderWhereClause, paymentWhereClause });
 

@@ -461,6 +461,7 @@ export async function generateOrderNumber(outletId: number): Promise<string> {
  * @deprecated Use simplifiedOrders.search instead
  */
 export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSearchResponse> {
+  
   const {
     q,
     outletId,
@@ -726,11 +727,11 @@ export const simplifiedOrders = {
    * Search orders with simple filters (simplified API)
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { page = 1, limit = 20, where: whereClause, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
 
-    // Build where clause
-    const where: any = {};
+    // Build where clause - start with provided where clause if any
+    const where: any = whereClause || {};
     
     // Handle merchant-level filtering (orders belong to outlets, outlets belong to merchants)
     if (whereFilters.merchantId) {
@@ -739,8 +740,9 @@ export const simplifiedOrders = {
       };
     }
     
-    // Handle outlet-level filtering (overrides merchant filter if both are present)
+    // Handle outlet-level filtering (overrides merchant filter if both are present)                                                                            
     if (whereFilters.outletId) {
+      // Support both simple values and complex objects like { in: [...] }
       where.outletId = whereFilters.outletId;
     }
     
