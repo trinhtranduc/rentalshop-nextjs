@@ -45,6 +45,7 @@ model Merchant {
   zipCode            String?
   country            String?
   businessType       String?
+  pricingType        String?
   taxId              String?
   website            String?
   description        String?

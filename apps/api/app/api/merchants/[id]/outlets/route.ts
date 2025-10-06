@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, createSuccessResponse } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -38,11 +38,15 @@ export async function GET(
         isActive: true
       });
 
-      return NextResponse.json({
-        success: true,
-        data: outlets.data || [],
-        total: outlets.total || 0
-      });
+      // Return standardized response format matching general outlets API
+      return NextResponse.json(createSuccessResponse({
+        outlets: outlets.data || [],
+        total: outlets.total || 0,
+        page: outlets.page || 1,
+        limit: outlets.limit || 20,
+        hasMore: outlets.hasMore || false,
+        totalPages: Math.ceil((outlets.total || 0) / (outlets.limit || 20))
+      }, `Found ${outlets.total || 0} outlets`));
 
     } catch (error) {
       console.error('Error fetching merchant outlets:', error);

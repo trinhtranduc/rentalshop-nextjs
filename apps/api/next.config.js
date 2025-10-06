@@ -13,6 +13,9 @@ const nextConfig = {
     // TODO: Re-enable and fix ESLint errors incrementally
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+  },
   async headers() {
     // Avoid requiring TS files here; compute CORS origins directly from env
     const csv = process.env.CORS_ORIGINS || '';

@@ -134,15 +134,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                     disabled={true}
                     className="bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
-                      Cannot be changed
-                    </span>
-                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Email addresses cannot be changed for security reasons
-                </p>
               </div>
 
               <div>

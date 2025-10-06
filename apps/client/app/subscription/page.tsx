@@ -59,10 +59,16 @@ export default function MerchantSubscriptionPage() {
       // Get current user's subscription status
       const result = await subscriptionsApi.getCurrentUserSubscriptionStatus();
       
+      console.log('🔍 Subscription API response:', result);
+      
       if (result.success && result.data) {
+        // API returns: { merchant, subscription, status, limits, usage }
+        console.log('✅ Setting subscription data:', result.data.subscription);
         setSubscription(result.data.subscription);
         // Payments will be fetched separately if needed
         setPayments([]);
+      } else {
+        console.log('❌ No subscription data:', result);
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);

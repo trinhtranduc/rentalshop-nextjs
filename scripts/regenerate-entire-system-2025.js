@@ -202,6 +202,7 @@ async function createMerchants() {
         zipCode: business.zipCode,
         country: business.country,
         businessType: business.businessType,
+        pricingType: business.businessType === 'Equipment Rental' ? 'DAILY' : 'FIXED',
         taxId: business.taxId,
         website: business.website,
         description: business.description,

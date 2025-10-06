@@ -58,8 +58,16 @@ export async function middleware(request: NextRequest) {
 
   // Allow OPTIONS requests to pass through for CORS preflight
   if (request.method === 'OPTIONS') {
-    console.log('🔍 MIDDLEWARE: OPTIONS request, allowing through');
-    return NextResponse.next();
+    console.log('🔍 MIDDLEWARE: OPTIONS request, returning CORS headers');
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
   }
 
   // Check if route is public or not an API route

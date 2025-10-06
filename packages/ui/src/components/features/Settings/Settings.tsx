@@ -3,12 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User, 
-  Shield, 
   CreditCard, 
   Settings as SettingsIcon, 
   Building2,
-  Store,
-  DollarSign
+  Store
 } from 'lucide-react';
 import { useAuth, useToastHandler } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
@@ -18,12 +16,10 @@ import { SettingsLayout } from './components/SettingsLayout';
 import { ProfileSection } from './components/ProfileSection';
 import { MerchantSection } from './components/MerchantSection';
 import { OutletSection } from './components/OutletSection';
-import { SecuritySection } from './components/SecuritySection';
 import { SubscriptionSection } from './components/SubscriptionSection';
 import { AccountSection } from './components/AccountSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
-import { PricingSection } from './components/PricingSection';
 
 // ============================================================================
 // SETTINGS MENU ITEMS
@@ -40,7 +36,7 @@ const settingsMenuItems = [
     id: 'merchant',
     label: 'Business',
     icon: Building2,
-    description: 'Manage your business information',
+    description: 'Manage your business information and pricing',
     roles: ['MERCHANT']
   },
   {
@@ -49,19 +45,6 @@ const settingsMenuItems = [
     icon: Store,
     description: 'Manage your outlet information',
     roles: ['OUTLET_ADMIN', 'OUTLET_STAFF']
-  },
-  {
-    id: 'security',
-    label: 'Security',
-    icon: Shield,
-    description: 'Password and account security'
-  },
-  {
-    id: 'pricing',
-    label: 'Pricing',
-    icon: DollarSign,
-    description: 'Configure pricing rules for your products',
-    roles: ['ADMIN', 'MERCHANT']
   },
   {
     id: 'subscription',
@@ -74,7 +57,7 @@ const settingsMenuItems = [
     id: 'account',
     label: 'Account',
     icon: SettingsIcon,
-    description: 'Account settings and preferences'
+    description: 'Account settings, password and preferences'
   }
 ];
 
@@ -111,6 +94,7 @@ export const SettingsComponent: React.FC = () => {
     zipCode: '',
     country: '',
     businessType: '',
+    pricingType: '',
     taxId: '',
   });
   
@@ -144,11 +128,41 @@ export const SettingsComponent: React.FC = () => {
         setSubscriptionLoading(true);
         const response = await subscriptionsApi.getCurrentUserSubscriptionStatus();
         
-        if (response.success) {
-          setSubscriptionData(response.data);
+        console.log('🔍 Settings - Subscription API response:', response);
+        
+        if (response.success && response.data) {
+          // API returns: { merchant, subscription, status, limits, usage }
+          // Transform to match SubscriptionSection expectations
+          const transformedData = {
+            hasSubscription: !!response.data.subscription,
+            subscription: {
+              ...response.data.subscription,
+              // Flatten nested structures for UI compatibility
+              currentPeriodEnd: response.data.subscription.currentPeriod?.end,
+              amount: response.data.subscription.billing?.amount || 0,
+              interval: response.data.subscription.billing?.interval || 'monthly'
+            },
+            status: response.data.status,
+            limits: response.data.limits,
+            usage: response.data.usage,
+            merchant: response.data.merchant,
+            // Add computed properties
+            isExpired: response.data.status?.isExpired || false,
+            isExpiringSoon: response.data.status?.isExpiringSoon || false,
+            isTrial: response.data.status?.isTrial || false,
+            isActive: response.data.status?.isActive || false,
+            daysRemaining: response.data.subscription?.trial?.daysRemaining || null
+          };
+          
+          console.log('✅ Settings - Transformed subscription data:', transformedData);
+          setSubscriptionData(transformedData);
+        } else {
+          console.log('❌ Settings - No subscription data:', response);
+          setSubscriptionData(null);
         }
       } catch (error) {
         console.error('Error fetching subscription data:', error);
+        setSubscriptionData(null);
       } finally {
         setSubscriptionLoading(false);
       }
@@ -169,6 +183,7 @@ export const SettingsComponent: React.FC = () => {
         zipCode: user.merchant.zipCode || '',
         country: user.merchant.country || '',
         businessType: user.merchant.businessType || '',
+        pricingType: user.merchant.pricingType || '',
         taxId: user.merchant.taxId || '',
       });
     }
@@ -368,14 +383,6 @@ export const SettingsComponent: React.FC = () => {
             onInputChange={handleOutletInputChange}
           />
         );
-      case 'security':
-        return (
-          <SecuritySection
-            onChangePassword={() => setShowChangePassword(true)}
-          />
-        );
-      case 'pricing':
-        return <PricingSection />;
       case 'subscription':
         return (
           <SubscriptionSection
@@ -389,6 +396,7 @@ export const SettingsComponent: React.FC = () => {
           <AccountSection
             onSignOut={handleSignOut}
             onDeleteAccount={() => setShowDeleteConfirm(true)}
+            onChangePassword={() => setShowChangePassword(true)}
             isDeleting={isDeleting}
           />
         );

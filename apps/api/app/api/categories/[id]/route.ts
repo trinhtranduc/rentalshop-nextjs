@@ -34,8 +34,26 @@ export async function GET(
       if (outlet) {
         where.merchantId = outlet.merchantId;
       }
+    } else if (user.role === 'ADMIN') {
+      // ADMIN users see all data (system-wide access)
+      // No additional filtering needed for ADMIN role
+      console.log('✅ ADMIN user accessing all system data:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
+      });
+    } else {
+      // All other users without merchant/outlet assignment should see no data
+      console.log('🚫 User without merchant/outlet assignment:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
+      });
+      return NextResponse.json({
+        success: false,
+        message: 'Access denied - user not assigned to merchant/outlet'
+      }, { status: 403 });
     }
-    // ADMIN users see all data (no additional filtering)
 
     const category = await db.categories.findFirst({
       where

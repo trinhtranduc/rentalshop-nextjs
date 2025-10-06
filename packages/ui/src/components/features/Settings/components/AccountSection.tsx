@@ -7,7 +7,7 @@ import {
   Button,
   Separator
 } from '@rentalshop/ui';
-import { LogOut, Trash2 } from 'lucide-react';
+import { LogOut, Trash2, Key } from 'lucide-react';
 
 // ============================================================================
 // TYPES
@@ -16,6 +16,7 @@ import { LogOut, Trash2 } from 'lucide-react';
 export interface AccountSectionProps {
   onSignOut: () => void;
   onDeleteAccount: () => void;
+  onChangePassword: () => void;
   isDeleting: boolean;
 }
 
@@ -26,6 +27,7 @@ export interface AccountSectionProps {
 export const AccountSection: React.FC<AccountSectionProps> = ({
   onSignOut,
   onDeleteAccount,
+  onChangePassword,
   isDeleting
 }) => {
   return (
@@ -38,6 +40,24 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
       <Card>
         <CardContent className="p-6">
           <div className="space-y-6">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <Key className="h-5 w-5 text-gray-600" />
+                <div>
+                  <h3 className="font-medium text-gray-900">Change Password</h3>
+                  <p className="text-sm text-gray-600">Update your account password</p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={onChangePassword}
+              >
+                Change Password
+              </Button>
+            </div>
+
+            <Separator />
+
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <LogOut className="h-5 w-5 text-gray-600" />

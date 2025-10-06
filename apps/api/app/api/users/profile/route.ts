@@ -37,6 +37,14 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       hasMerchant: !!userProfile.merchant,
       hasOutlet: !!userProfile.outlet
     });
+    
+    console.log('🔍 Merchant data from DB:', {
+      businessType: userProfile.merchant?.businessType,
+      pricingType: userProfile.merchant?.pricingType,
+      hasBusinessType: 'businessType' in (userProfile.merchant || {}),
+      hasPricingType: 'pricingType' in (userProfile.merchant || {}),
+      merchantKeys: Object.keys(userProfile.merchant || {})
+    });
 
     // Transform user data to include complete merchant and outlet information
     const transformedUser = {
@@ -56,6 +64,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         zipCode: userProfile.merchant.zipCode,
         country: userProfile.merchant.country,
         businessType: userProfile.merchant.businessType,
+        pricingType: userProfile.merchant.pricingType,
         taxId: userProfile.merchant.taxId,
         website: userProfile.merchant.website,
         description: userProfile.merchant.description,

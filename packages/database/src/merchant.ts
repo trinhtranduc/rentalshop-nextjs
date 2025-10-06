@@ -27,6 +27,7 @@ export interface MerchantCreateData {
   zipCode?: string;
   country?: string;
   businessType?: string;
+  pricingType?: string;
   taxId?: string;
   website?: string;
   description?: string;
@@ -53,7 +54,11 @@ export async function findById(id: number) {
     where: { id },
     include: {
       Plan: true,
-      subscription: true,
+      subscription: {
+        include: {
+          plan: true
+        }
+      },
       outlets: {
         select: {
           id: true,

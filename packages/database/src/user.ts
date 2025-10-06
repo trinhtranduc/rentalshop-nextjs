@@ -402,6 +402,7 @@ export const simplifiedUsers = {
             zipCode: true,
             country: true,
             businessType: true,
+            pricingType: true,
             taxId: true,
             website: true,
             description: true,

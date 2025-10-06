@@ -331,8 +331,8 @@ export async function registerMerchantWithTrial(data: any) {
   // Transform result to match expected API format
   return {
     merchant: {
-      id: result.user.merchant.id,
-      name: result.user.merchant.name,
+      id: result.user.merchant?.id,
+      name: result.user.merchant?.name,
       email: result.user.email
     },
     user: {
@@ -343,8 +343,8 @@ export async function registerMerchantWithTrial(data: any) {
       role: result.user.role
     },
     outlet: {
-      id: result.user.outlet.id,
-      name: result.user.outlet.name
+      id: result.user.outlet?.id,
+      name: result.user.outlet?.name
     },
     subscription: {
       planName: 'Trial',

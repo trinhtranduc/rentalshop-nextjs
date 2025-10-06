@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
         zipCode: validatedData.zipCode,
         country: validatedData.country,
         businessType: validatedData.businessType || 'GENERAL',
+        pricingType: validatedData.pricingType || 'FIXED',
         // Lock pricing configuration after registration using constants
         pricingConfig: JSON.stringify(
           validatedData.businessType && validatedData.pricingType
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
               id: merchant.id,
               name: merchant.name,
               businessType: merchant.businessType,
-              pricingType: validatedData.pricingType
+              pricingType: merchant.pricingType
             },
             outlet: {
               id: outlet.id,
