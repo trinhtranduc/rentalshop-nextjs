@@ -1,32 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/categories
  * Get all categories
  */
-export const GET = withAuthRoles()(async (request: NextRequest, { user }) => {
+export const GET = withAuthRoles()(async (request: NextRequest, { user, userScope }) => {
   try {
 
-    // Build where clause based on user role and scope
+    // Apply role-based filtering (consistent with other APIs)
     const where: any = { isActive: true };
     
-    if (user.merchantId) {
-      where.merchantId = user.merchantId;
+    if (user.role === 'MERCHANT' && userScope.merchantId) {
+      where.merchantId = userScope.merchantId;
+    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+      // Find outlet by id to get merchant
+      const outlet = await db.outlets.findById(userScope.outletId);
+      if (outlet) {
+        where.merchantId = outlet.merchantId;
+      }
     }
+    // ADMIN users see all data (no additional filtering)
 
-    const categories = await prisma.category.findMany({
+    const categories = await db.categories.findMany({
       where,
-      select: {
-        id: true,           // Internal ID (for database operations)
-        name: true,
-        description: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true
-      },
       orderBy: { name: 'asc' }
     });
 
@@ -47,10 +47,10 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user }) => {
     });
   } catch (error) {
     console.error('Error fetching categories:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch categories' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -58,7 +58,7 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user }) => {
  * POST /api/categories
  * Create a new category
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user }) => {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
   console.log('🚀 POST /api/categories - Starting category creation...');
   
   try {
@@ -73,7 +73,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     });
 
     // Check if user can manage categories
-    if (!user.merchantId) {
+    if (!userScope.merchantId) {
       console.log('❌ User has no merchantId - merchant access required');
       return NextResponse.json(
         { success: false, message: 'Merchant access required' },
@@ -97,27 +97,14 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
 
     console.log('✅ Validation passed - proceeding with category creation');
 
-    // Find merchant by id to get the CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: user.merchantId },
-      select: { id: true }
-    });
-    
-    if (!merchant) {
-      console.log('❌ Merchant not found for id:', user.merchantId);
-      return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
     // Check if category name already exists for this merchant
-    console.log('🔍 Checking for existing category with name:', name.trim(), 'for merchant:', user.merchantId);
+    console.log('🔍 Checking for existing category with name:', name.trim(), 'for merchant:', userScope.merchantId);
     
-    const existingCategory = await prisma.category.findFirst({
+    const existingCategory = await db.categories.findFirst({
       where: {
         name: name.trim(),
-        merchantId: merchant.id // Use CUID for database query
+        merchantId: userScope.merchantId,
+        isActive: true
       }
     });
 
@@ -135,40 +122,30 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     console.log('🔢 Finding last category to generate next id...');
     
     // Check globally across ALL merchants for the highest id
-    const lastCategory = await prisma.category.findFirst({
-      orderBy: { id: 'desc' },
-      select: { id: true }
+    const lastCategory = await db.categories.findFirst({
+      where: {},
+      orderBy: { id: 'desc' }
     });
     
     const nextPublicId = (lastCategory?.id || 0) + 1;
     console.log('🔢 Generated id:', nextPublicId, '(last was:', lastCategory?.id || 0, ')');
 
-    // Create category
-    console.log('💾 Creating category in database with data:', {
+    // Create category with proper data handling
+    const categoryData: any = {
       id: nextPublicId,
       name: name.trim(),
-      description: description?.trim() || null,
-      merchantId: merchant.id, // Use CUID for database query
+      merchantId: userScope.merchantId,
       isActive: true
-    });
+    };
 
-    const category = await prisma.category.create({
-      data: {
-        id: nextPublicId,
-        name: name.trim(),
-        description: description?.trim() || null,
-        merchantId: merchant.id, // Use CUID for database query
-        isActive: true
-      },
-      select: {
-          id: true,
-        name: true,
-        description: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+    // Only include description if it has a value
+    if (description && description.trim()) {
+      categoryData.description = description.trim();
+    }
+
+    console.log('💾 Creating category in database with data:', categoryData);
+
+    const category = await db.categories.create(categoryData);
 
     console.log('✅ Category created successfully in database:', category);
 
@@ -195,21 +172,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
   } catch (error) {
     console.error('💥 Error creating category:', error);
     
-    // Type guard for error object
-    if (error instanceof Error) {
-      console.error('💥 Error stack:', error.stack);
-      console.error('💥 Error details:', {
-        name: error.name,
-        message: error.message,
-        code: (error as any).code
-      });
-    } else {
-      console.error('💥 Unknown error type:', typeof error, error);
-    }
-    
-    return NextResponse.json(
-      { success: false, message: 'Failed to create category' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

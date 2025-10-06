@@ -124,18 +124,14 @@ export const billingCyclesApi = {
   /**
    * Get active billing cycles (for dropdowns and forms)
    */
-  async getActiveBillingCycles(): Promise<ApiResponse<BillingCycle[]>> {
+  async getActiveBillingCycles(): Promise<ApiResponse<BillingCyclesResponse>> {
     const response = await this.getBillingCycles({ 
       isActive: true, 
       sortBy: 'sortOrder', 
       sortOrder: 'asc' 
     });
     
-    return {
-      success: response.success,
-      data: response.data?.billingCycles || [],
-      message: response.message
-    };
+    return response; // Return the ApiResponse directly - let consumers use type guards
   },
 
   /**
@@ -147,7 +143,11 @@ export const billingCyclesApi = {
       isActive: true 
     });
     
-    const cycle = response.data?.billingCycles.find(c => c.value === value);
+    if (!response.success || !response.data) {
+      throw new Error('Failed to fetch billing cycles');
+    }
+    
+    const cycle = response.data.billingCycles.find((c: any) => c.value === value);
     
     if (!cycle) {
       throw new Error(`Billing cycle with value '${value}' not found`);

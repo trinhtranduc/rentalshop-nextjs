@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -57,22 +58,30 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
 
         // Add user scope filtering for payments
         if (userScope.merchantId) {
-          const merchant = await prisma.merchant.findUnique({
-            where: { id: userScope.merchantId }
-          });
+          const merchant = await db.merchants.findById(userScope.merchantId );
           if (merchant) {
             paymentWhereClause.merchantId = merchant.id;
           }
         } else if (userScope.outletId) {
           // For outlet scope, filter through orders
-          const outlet = await prisma.outlet.findUnique({
-            where: { id: userScope.outletId }
-          });
+          const outlet = await db.outlets.findById(userScope.outletId );
           if (outlet) {
             paymentWhereClause.order = {
               outletId: outlet.id
             };
           }
+        } else if (user.role !== 'ADMIN') {
+          // New users without merchant/outlet assignment should see no data
+          console.log('🚫 User without merchant/outlet assignment:', {
+            role: user.role,
+            merchantId: userScope.merchantId,
+            outletId: userScope.outletId
+          });
+          return NextResponse.json({
+            success: true,
+            data: [],
+            message: 'No data available - user not assigned to merchant/outlet'
+          });
         }
 
         // Build where clause for orders
@@ -85,24 +94,19 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
 
         // Add user scope filtering for orders
         if (userScope.merchantId) {
-          const merchant = await prisma.merchant.findUnique({
-            where: { id: userScope.merchantId },
-            include: { outlets: { select: { id: true } } }
-          });
-          if (merchant) {
+          const merchant = await db.merchants.findById(userScope.merchantId);
+          if (merchant && merchant.outlets) {
             orderWhereClause.outletId = { in: merchant.outlets.map((outlet: any) => outlet.id) };
           }
         } else if (userScope.outletId) {
-          const outlet = await prisma.outlet.findUnique({
-            where: { id: userScope.outletId }
-          });
+          const outlet = await db.outlets.findById(userScope.outletId );
           if (outlet) {
             orderWhereClause.outletId = outlet.id;
           }
         }
 
         // Get orders for revenue calculation using new formula
-        const ordersForRevenue = await prisma.order.findMany({
+        const ordersForRevenueResult = await db.orders.search({
           where: orderWhereClause,
           select: {
             id: true,
@@ -147,12 +151,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
           return 0;
         };
 
-        const realIncome = ordersForRevenue.reduce((sum: number, order: any) => {
+        const realIncome = ordersForRevenueResult.data.reduce((sum: number, order: any) => {
           return sum + calculateOrderRevenue(order);
         }, 0);
 
         // Get future income (pending orders with future return dates)
-        const futureIncome = await prisma.order.aggregate({
+        const futureIncome = await db.orders.aggregate({
           where: {
             status: { in: ['RESERVED', 'ACTIVE'] },
             returnPlanAt: {
@@ -167,7 +171,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
         });
 
         // Get order count for the month
-        const orderCount = await prisma.order.count({
+        const orderCount = await db.orders.getStats({
           where: {
             createdAt: {
               gte: startOfMonth,
@@ -182,7 +186,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
           month: monthName,
           year: year,
           realIncome: realIncome,
-          futureIncome: futureIncome._sum.totalAmount || 0,
+          futureIncome: futureIncome._sum?.totalAmount || 0,
           orderCount: orderCount
         });
 
@@ -216,22 +220,30 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
 
         // Add user scope filtering for payments
         if (userScope.merchantId) {
-          const merchant = await prisma.merchant.findUnique({
-            where: { id: userScope.merchantId }
-          });
+          const merchant = await db.merchants.findById(userScope.merchantId );
           if (merchant) {
             paymentWhereClause.merchantId = merchant.id;
           }
         } else if (userScope.outletId) {
           // For outlet scope, filter through orders
-          const outlet = await prisma.outlet.findUnique({
-            where: { id: userScope.outletId }
-          });
+          const outlet = await db.outlets.findById(userScope.outletId );
           if (outlet) {
             paymentWhereClause.order = {
               outletId: outlet.id
             };
           }
+        } else if (user.role !== 'ADMIN') {
+          // New users without merchant/outlet assignment should see no data
+          console.log('🚫 User without merchant/outlet assignment:', {
+            role: user.role,
+            merchantId: userScope.merchantId,
+            outletId: userScope.outletId
+          });
+          return NextResponse.json({
+            success: true,
+            data: [],
+            message: 'No data available - user not assigned to merchant/outlet'
+          });
         }
 
         // Build where clause for orders
@@ -244,24 +256,19 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
 
         // Add user scope filtering for orders
         if (userScope.merchantId) {
-          const merchant = await prisma.merchant.findUnique({
-            where: { id: userScope.merchantId },
-            include: { outlets: { select: { id: true } } }
-          });
-          if (merchant) {
+          const merchant = await db.merchants.findById(userScope.merchantId);
+          if (merchant && merchant.outlets) {
             orderWhereClause.outletId = { in: merchant.outlets.map((outlet: any) => outlet.id) };
           }
         } else if (userScope.outletId) {
-          const outlet = await prisma.outlet.findUnique({
-            where: { id: userScope.outletId }
-          });
+          const outlet = await db.outlets.findById(userScope.outletId );
           if (outlet) {
             orderWhereClause.outletId = outlet.id;
           }
         }
 
         // Get orders for revenue calculation using new formula
-        const ordersForRevenue = await prisma.order.findMany({
+        const ordersForRevenueResult = await db.orders.search({
           where: orderWhereClause,
           select: {
             id: true,
@@ -306,12 +313,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
           return 0;
         };
 
-        const realIncome = ordersForRevenue.reduce((sum: number, order: any) => {
+        const realIncome = ordersForRevenueResult.data.reduce((sum: number, order: any) => {
           return sum + calculateOrderRevenue(order);
         }, 0);
 
         // Get future income (pending orders with future return dates)
-        const futureIncome = await prisma.order.aggregate({
+        const futureIncome = await db.orders.aggregate({
           where: {
             status: { in: ['RESERVED', 'ACTIVE'] },
             returnPlanAt: {
@@ -326,7 +333,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
         });
 
         // Get order count for the day
-        const orderCount = await prisma.order.count({
+        const orderCount = await db.orders.getStats({
           where: {
             createdAt: {
               gte: startOfDay,
@@ -341,7 +348,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
           month: `${monthName} ${day}`,
           year: year,
           realIncome: realIncome,
-          futureIncome: futureIncome._sum.totalAmount || 0,
+          futureIncome: futureIncome._sum?.totalAmount || 0,
           orderCount: orderCount
         });
 
@@ -360,14 +367,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
 
   } catch (error) {
     console.error('Error fetching income analytics:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch income analytics',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 

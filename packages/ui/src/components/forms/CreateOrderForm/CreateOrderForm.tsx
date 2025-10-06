@@ -45,6 +45,7 @@ import { useCreateOrderForm } from './hooks/useCreateOrderForm';
 import { useOrderValidation } from './hooks/useOrderValidation';
 import { useProductSearch } from './hooks/useProductSearch';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
+import { useMerchantData } from './hooks/useMerchantData';
 import { OrderFormHeader } from './components/OrderFormHeader';
 import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
@@ -105,6 +106,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     clearCustomerSearchResults,
     setCustomerResults 
   } = useCustomerSearch();
+
+  // Fetch merchant data for pricing configuration
+  const { merchant: merchantData, loading: merchantLoading, error: merchantError } = useMerchantData();
 
   // Local state
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(() => {
@@ -471,6 +475,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               customerSearchResults={customerSearchResults}
               isLoadingCustomers={isLoadingCustomers}
               isEditMode={isEditMode}
+              merchantData={merchantData}
+              merchantLoading={merchantLoading}
+              merchantError={merchantError}
               onFormDataChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
               onCustomerSelect={handleCustomerSelect}
               onCustomerClear={() => {

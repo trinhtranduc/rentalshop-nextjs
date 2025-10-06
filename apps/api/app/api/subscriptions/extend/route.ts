@@ -3,8 +3,9 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { extendSubscription } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -58,15 +59,20 @@ async function handleExtendSubscription(
       );
     }
 
-    const extendedSubscription = await extendSubscription(
-      subscriptionId.toString(),
-      {
-        endDate,
-        amount,
-        method,
-        description
-      }
-    );
+    // TODO: Implement subscription extension using simplified database API
+    const subscription = await db.subscriptions.findById(subscriptionId);
+    
+    if (!subscription) {
+      return NextResponse.json(
+        { success: false, message: 'Subscription not found' },
+        { status: API.STATUS.NOT_FOUND }
+      );
+    }
+    
+    const extendedSubscription = await db.subscriptions.update(subscriptionId, {
+      currentPeriodEnd: endDate,
+      updatedAt: new Date()
+    });
 
     return NextResponse.json({
       success: true,
@@ -75,10 +81,9 @@ async function handleExtendSubscription(
     });
   } catch (error) {
     console.error('Error extending subscription:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to extend subscription' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 

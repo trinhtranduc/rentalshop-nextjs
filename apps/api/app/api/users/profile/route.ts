@@ -1,6 +1,7 @@
+import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db, prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -16,52 +17,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Get user profile with complete merchant and outlet data
     // Note: user.id is the id, we need to find by id
     console.log('🔍 Searching for user with id:', user.id);
-    const userProfile = await prisma.user.findUnique({
-      where: { id: user.id },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            address: true,
-            city: true,
-            state: true,
-            zipCode: true,
-            country: true,
-            businessType: true,
-            taxId: true,
-            website: true,
-            description: true,
-            isActive: true,
-            planId: true,
-            subscriptionStatus: true,
-            totalRevenue: true,
-            createdAt: true,
-            lastActiveAt: true,
-          }
-        },
-        outlet: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
-            phone: true,
-            description: true,
-            isActive: true,
-            isDefault: true,
-            createdAt: true,
-            merchant: {
-              select: {
-                id: true,
-                name: true,
-              }
-            }
-          }
-        },
-      },
-    });
+    const userProfile = await db.users.findById(user.id);
 
     if (!userProfile) {
       console.log('❌ User not found with id:', user.id);
@@ -181,7 +137,11 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const updateData: any = {};
     if (firstName && firstName.trim()) updateData.firstName = firstName.trim();
     if (lastName && lastName.trim()) updateData.lastName = lastName.trim();
-    if (phone !== undefined) updateData.phone = phone?.trim() || null;
+    
+    // Only update phone if it has a value (don't overwrite with null)
+    if (phone && phone.trim()) {
+      updateData.phone = phone.trim();
+    }
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
@@ -196,10 +156,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Validate phone uniqueness if phone is being updated
     if (updateData.phone) {
       // Get the current user's merchant ID from database
-      const currentUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { merchantId: true, role: true }
-      });
+      const currentUser = await db.users.findById(user.id);
 
       // Build the where clause for phone uniqueness check
       const whereClause: any = {
@@ -219,7 +176,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         whereClause.merchantId = null;
       }
 
-      const existingUserWithPhone = await prisma.user.findFirst({
+      const existingUserWithPhone = await db.users.findFirst({
         where: whereClause,
       });
 
@@ -265,38 +222,11 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       merchant: updatedUser.merchant ? {
         id: updatedUser.merchant.id,
         name: updatedUser.merchant.name,
-        email: updatedUser.merchant.email,
-        phone: updatedUser.merchant.phone,
-        address: updatedUser.merchant.address,
-        city: updatedUser.merchant.city,
-        state: updatedUser.merchant.state,
-        zipCode: updatedUser.merchant.zipCode,
-        country: updatedUser.merchant.country,
-        businessType: updatedUser.merchant.businessType,
-        taxId: updatedUser.merchant.taxId,
-        website: updatedUser.merchant.website,
-        description: updatedUser.merchant.description,
-        isActive: updatedUser.merchant.isActive,
-        planId: updatedUser.merchant.planId,
-        subscriptionStatus: updatedUser.merchant.subscriptionStatus,
-        totalRevenue: updatedUser.merchant.totalRevenue,
-        createdAt: updatedUser.merchant.createdAt,
-        lastActiveAt: updatedUser.merchant.lastActiveAt,
       } : undefined,
       // Complete outlet object with all outlet info  
       outlet: updatedUser.outlet ? {
         id: updatedUser.outlet.id,
         name: updatedUser.outlet.name,
-        address: updatedUser.outlet.address,
-        phone: updatedUser.outlet.phone,
-        description: updatedUser.outlet.description,
-        isActive: updatedUser.outlet.isActive,
-        isDefault: updatedUser.outlet.isDefault,
-        createdAt: updatedUser.outlet.createdAt,
-        merchant: updatedUser.outlet.merchant ? {
-          id: updatedUser.outlet.merchant.id,
-          name: updatedUser.outlet.merchant.name,
-        } : undefined,
       } : undefined,
     };
 

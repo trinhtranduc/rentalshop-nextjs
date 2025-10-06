@@ -1,172 +1,100 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/orders - Get order analytics
  * Requires: Any authenticated user (scoped by role)
+ * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
  */
-async function handleGetOrderAnalytics(
-  request: NextRequest,
-  { user, userScope }: { user: any; userScope: any }
-) {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   try {
-
     // Get query parameters
     const { searchParams } = new URL(request.url);
+    const groupBy = searchParams.get('groupBy') || 'month'; // month or day
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
-    const groupBy = searchParams.get('groupBy') || 'month';
 
-    if (!startDate || !endDate) {
-      return NextResponse.json(
-        { success: false, error: 'startDate and endDate are required' },
-        { status: API.STATUS.BAD_REQUEST }
-      );
+    // Apply role-based filtering (consistent with other APIs)
+    let orderWhereClause: any = {};
+
+    if (user.role === 'MERCHANT' && userScope.merchantId) {
+      // Find merchant by id to get outlets
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+      }
+    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+      // Find outlet by id to get CUID
+      const outlet = await db.outlets.findById(userScope.outletId);
+      if (outlet) {
+        orderWhereClause.outletId = outlet.id;
+      }
+    } else if (user.role !== 'ADMIN') {
+      // New users without merchant/outlet assignment should see no data
+      console.log('🚫 User without merchant/outlet assignment:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
+      });
+      return NextResponse.json({
+        success: true,
+        data: [],
+        message: 'No data available - user not assigned to merchant/outlet'
+      });
+    }
+    // ADMIN users see all data (no additional filtering)
+
+    // Add date filtering if provided
+    if (startDate || endDate) {
+      orderWhereClause.createdAt = {};
+      if (startDate) orderWhereClause.createdAt.gte = new Date(startDate);
+      if (endDate) orderWhereClause.createdAt.lte = new Date(endDate);
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Get orders based on user scope
+    const orders = await db.orders.search({
+      where: orderWhereClause,
+      limit: 1000 // Get enough orders to analyze
+    });
 
-    // Generate data based on groupBy parameter
-    const orderData = [];
+    // Group orders by time period
+    const groupedOrders: { [key: string]: number } = {};
     
-    if (groupBy === 'month') {
-      // Generate monthly data
-      const current = new Date(start.getFullYear(), start.getMonth(), 1);
-      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+    orders.data?.forEach(order => {
+      const date = new Date(order.createdAt);
+      let key: string;
       
-      while (current <= endMonth) {
-        const monthName = current.toLocaleString('default', { month: 'short' });
-        const year = current.getFullYear();
-        const month = current.getMonth();
-        
-        // Calculate start and end of month
-        const startOfMonth = new Date(year, month, 1);
-        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
-
-        // Build where clause for user scope
-        const whereClause: any = {
-          createdAt: {
-            gte: startOfMonth,
-            lte: endOfMonth
-          }
-        };
-
-        // Add user scope filtering
-        if (userScope.merchantId) {
-          const merchant = await prisma.merchant.findUnique({
-            where: { id: userScope.merchantId },
-            include: { outlets: { select: { id: true } } }
-          });
-          if (merchant) {
-            whereClause.outletId = { in: merchant.outlets.map((outlet: any) => outlet.id) };
-          }
-        } else if (userScope.outletId) {
-          const outlet = await prisma.outlet.findUnique({
-            where: { id: userScope.outletId }
-          });
-          if (outlet) {
-            whereClause.outletId = outlet.id;
-          }
-        }
-
-        // Get order count for this month
-        const orderCount = await prisma.order.count({
-          where: whereClause
-        });
-
-        orderData.push({
-          month: monthName,
-          year: year,
-          orderCount: orderCount
-        });
-
-        // Move to next month
-        current.setMonth(current.getMonth() + 1);
+      if (groupBy === 'day') {
+        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      } else {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
       }
-    } else if (groupBy === 'day') {
-      // Generate daily data
-      const current = new Date(start);
-      const endDay = new Date(end);
       
-      while (current <= endDay) {
-        const monthName = current.toLocaleString('default', { month: 'short' });
-        const year = current.getFullYear();
-        const month = current.getMonth();
-        const day = current.getDate();
-        
-        // Calculate start and end of day
-        const startOfDay = new Date(year, month, day, 0, 0, 0);
-        const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
+      groupedOrders[key] = (groupedOrders[key] || 0) + 1;
+    });
 
-        // Build where clause for user scope
-        const whereClause: any = {
-          createdAt: {
-            gte: startOfDay,
-            lte: endOfDay
-          }
-        };
+    // Convert to array format
+    const analyticsData = Object.entries(groupedOrders).map(([period, count]) => ({
+      period,
+      count
+    })).sort((a, b) => a.period.localeCompare(b.period));
 
-        // Add user scope filtering
-        if (userScope.merchantId) {
-          const merchant = await prisma.merchant.findUnique({
-            where: { id: userScope.merchantId },
-            include: { outlets: { select: { id: true } } }
-          });
-          if (merchant) {
-            whereClause.outletId = { in: merchant.outlets.map((outlet: any) => outlet.id) };
-          }
-        } else if (userScope.outletId) {
-          const outlet = await prisma.outlet.findUnique({
-            where: { id: userScope.outletId }
-          });
-          if (outlet) {
-            whereClause.outletId = outlet.id;
-          }
-        }
-
-        // Get order count for this day
-        const orderCount = await prisma.order.count({
-          where: whereClause
-        });
-
-        orderData.push({
-          month: `${monthName} ${day}`,
-          year: year,
-          orderCount: orderCount
-        });
-
-        // Move to next day
-        current.setDate(current.getDate() + 1);
-      }
-    }
-
-    const body = JSON.stringify({ success: true, data: orderData });
-    const etag = crypto.createHash('sha1').update(body).digest('hex');
-    const ifNoneMatch = request.headers.get('if-none-match');
-    if (ifNoneMatch && ifNoneMatch === etag) {
-      return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
-    }
-    return new NextResponse(body, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return NextResponse.json({
+      success: true,
+      data: analyticsData,
+      message: 'Order analytics retrieved successfully'
+    });
 
   } catch (error) {
-    console.error('Error fetching order analytics:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch order analytics',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    console.error('❌ Error fetching order analytics:', error);
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
-}
-
-export const GET = withAuthRoles()((req, context) => 
-  handleGetOrderAnalytics(req, context)
-);
+});
 
 export const runtime = 'nodejs';

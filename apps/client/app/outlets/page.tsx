@@ -43,6 +43,10 @@ import { Outlet, OutletCreateInput, OutletUpdateInput } from '@rentalshop/types'
 interface OutletFormData {
   name: string;
   address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
   phone: string;
   description: string;
 }
@@ -62,6 +66,10 @@ export default function OutletsPage() {
   const [formData, setFormData] = useState<OutletFormData>({
     name: '',
     address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
     phone: '',
     description: ''
   });
@@ -130,6 +138,10 @@ export default function OutletsPage() {
           id: editingOutlet.id,
           name: formData.name,
           address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
           phone: formData.phone,
           description: formData.description
         });
@@ -148,6 +160,10 @@ export default function OutletsPage() {
         const result = await outletsApi.createOutlet({
           name: formData.name,
           address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
           phone: formData.phone,
           description: formData.description,
           merchantId: Number(merchantId)
@@ -178,6 +194,10 @@ export default function OutletsPage() {
     setFormData({
       name: outlet.name,
       address: outlet.address || '',
+      city: (outlet as any).city || '',
+      state: (outlet as any).state || '',
+      zipCode: (outlet as any).zipCode || '',
+      country: (outlet as any).country || '',
       phone: outlet.phone || '',
       description: outlet.description || ''
     });
@@ -259,6 +279,10 @@ export default function OutletsPage() {
     setFormData({
       name: '',
       address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: '',
       phone: '',
       description: ''
     });
@@ -368,15 +392,61 @@ export default function OutletsPage() {
                 />
               </div>
               
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="Enter outlet address"
-                  rows={3}
-                />
+              {/* Address Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900">Address Information</h3>
+                
+                <div>
+                  <Label htmlFor="address">Street Address</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                    placeholder="Enter street address"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="Enter city"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="state">State/Province</Label>
+                    <Input
+                      id="state"
+                      value={formData.state}
+                      onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                      placeholder="Enter state"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="zipCode">ZIP/Postal Code</Label>
+                    <Input
+                      id="zipCode"
+                      value={formData.zipCode}
+                      onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value }))}
+                      placeholder="Enter ZIP code"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    value={formData.country}
+                    onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                    placeholder="Enter country"
+                  />
+                </div>
               </div>
               
               <div>
@@ -486,11 +556,30 @@ export default function OutletsPage() {
                   </div>
                 </div>
                   
-                  {viewingOutlet.address && (
+                  {/* Address Information */}
+                  {(viewingOutlet.address || (viewingOutlet as any).city || (viewingOutlet as any).state || (viewingOutlet as any).zipCode || (viewingOutlet as any).country) && (
                     <div className="md:col-span-2">
-                      <Label className="text-sm font-medium text-gray-700">Address</Label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded-md border">
-                        <p className="text-gray-900 whitespace-pre-wrap">{viewingOutlet.address}</p>
+                      <Label className="text-sm font-medium text-gray-700">Address Information</Label>
+                      <div className="mt-1 p-3 bg-gray-50 rounded-md border space-y-2">
+                        {viewingOutlet.address && (
+                          <p className="text-gray-900"><strong>Street:</strong> {viewingOutlet.address}</p>
+                        )}
+                        {((viewingOutlet as any).city || (viewingOutlet as any).state || (viewingOutlet as any).zipCode) && (
+                          <div className="flex flex-wrap gap-2">
+                            {(viewingOutlet as any).city && (
+                              <span className="text-gray-900"><strong>City:</strong> {(viewingOutlet as any).city}</span>
+                            )}
+                            {(viewingOutlet as any).state && (
+                              <span className="text-gray-900"><strong>State:</strong> {(viewingOutlet as any).state}</span>
+                            )}
+                            {(viewingOutlet as any).zipCode && (
+                              <span className="text-gray-900"><strong>ZIP:</strong> {(viewingOutlet as any).zipCode}</span>
+                            )}
+                          </div>
+                        )}
+                        {(viewingOutlet as any).country && (
+                          <p className="text-gray-900"><strong>Country:</strong> {(viewingOutlet as any).country}</p>
+                        )}
                       </div>
                     </div>
                   )}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db, prisma } from '@rentalshop/database';
-import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit } from '@rentalshop/utils';
+import { db } from '@rentalshop/database';
+import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 import crypto from 'crypto';
@@ -187,19 +187,10 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     }
 
     // Find merchant by publicId to get CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantId },
-      select: { id: true, name: true }
-    });
+    const merchant = await db.merchants.findById(merchantId);
 
     if (!merchant) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: `Merchant with ID ${merchantId} not found`
-        },
-        { status: 404 }
-      );
+      throw new Error(`Merchant with ID ${merchantId} not found`);
     }
 
     // Use merchant CUID for customer creation
@@ -308,9 +299,8 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       );
     }
     
-    return NextResponse.json(
-      { success: false, message: 'Failed to update customer' },
-      { status: 500 }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

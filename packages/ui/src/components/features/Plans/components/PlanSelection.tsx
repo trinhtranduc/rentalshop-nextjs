@@ -21,12 +21,12 @@ import {
   Calendar,
   DollarSign
 } from 'lucide-react';
+import { BILLING_CYCLES } from '@rentalshop/constants';
 import { 
-  BILLING_CYCLES,
   calculateDiscountedPrice,
   getBillingCycleDiscount,
   formatBillingCycle
-} from '@rentalshop/constants';
+} from '@rentalshop/utils';
 import type { Plan, BillingCycle } from '@rentalshop/types';
 
 interface PlanSelectionProps {

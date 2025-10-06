@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import { prisma } from '@rentalshop/database';
+import { ApiError, ErrorCode } from './errors';
+import { API, PlanLimits, getPlan, hasWebAccess, hasMobileAccess, getPlanPlatform, hasProductPublicCheck } from '@rentalshop/constants';
+import { AuthUser } from '@rentalshop/types';
 
 // Auth validation schemas
 export const loginSchema = z.object({
@@ -9,21 +13,39 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  // Support both name formats for flexibility
+  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().min(1, 'Last name is required').optional(),
   phone: z.string().optional(),
   role: z.enum(['CLIENT', 'SHOP_OWNER', 'ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']).optional(),
   // For merchant registration
   businessName: z.string().optional(),
-  outletName: z.string().optional(),
+  // Business configuration (required for merchants)
+  businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY', 'WEEKLY']).optional(),
   // Address fields for merchant registration
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zipCode: z.string().optional(),
-  country: z.string().optional(),
+  country: z.string().min(2, 'Please select a valid country').optional(),
   // For outlet staff registration
   merchantCode: z.string().optional(),
   outletCode: z.string().optional(),
+}).refine((data) => {
+  // Either 'name' or both 'firstName' and 'lastName' must be provided
+  return data.name || (data.firstName && data.lastName);
+}, {
+  message: "Either 'name' or both 'firstName' and 'lastName' must be provided"
+}).refine((data) => {
+  // For MERCHANT role, businessType and pricingType are required
+  if (data.role === 'MERCHANT' || data.businessName) {
+    return data.businessType && data.pricingType;
+  }
+  return true;
+}, {
+  message: "Business type and pricing type are required for merchant registration"
 });
 
 // Product validation schemas (aligned with API routes and DB types)
@@ -252,7 +274,7 @@ export const userCreateSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   firstName: z.string().min(1),
-  lastName: z.string().min(1),
+  lastName: z.string().min(1).or(z.literal('')), // Allow empty string for lastName
   phone: z.string().min(1, 'Phone number is required'), // Phone is now required
   role: userRoleEnum.optional(),
   merchantId: z.coerce.number().int().positive().optional(),
@@ -261,7 +283,7 @@ export const userCreateSchema = z.object({
 
 export const userUpdateSchema = z.object({
   firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
+  lastName: z.string().min(1).or(z.literal('')).optional(), // Allow empty string for lastName
   email: z.string().email().optional(),
   phone: z.string().min(1, 'Phone number is required').optional(), // Phone is required when provided
   role: userRoleEnum.optional(),
@@ -293,6 +315,10 @@ export const outletsQuerySchema = z.object({
 export const outletCreateSchema = z.object({
   name: z.string().min(1, 'Outlet name is required'),
   address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional(),
   phone: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).default('ACTIVE'),
@@ -428,3 +454,237 @@ export const subscriptionsQuerySchema = z.object({
 export type SubscriptionCreateInput = z.infer<typeof subscriptionCreateSchema>;
 export type SubscriptionUpdateInput = z.infer<typeof subscriptionUpdateSchema>;
 export type SubscriptionsQuery = z.infer<typeof subscriptionsQuerySchema>;
+
+// ============================================================================
+// PLAN LIMITS VALIDATION (from plan-limits-validation.ts)
+// ============================================================================
+
+export interface PlanLimitsValidationResult {
+  isValid: boolean;
+  error?: string;
+  currentCount: number;
+  limit: number;
+  entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders';
+}
+
+export interface PlanLimitsInfo {
+  planLimits: PlanLimits;
+  platform: 'mobile' | 'mobile+web';
+  currentCounts: {
+    outlets: number;
+    users: number;
+    products: number;
+    customers: number;
+    orders: number;
+  };
+  isUnlimited: {
+    outlets: boolean;
+    users: boolean;
+    products: boolean;
+    customers: boolean;
+    orders: boolean;
+  };
+  platformAccess: {
+    mobile: boolean;
+    web: boolean;
+    productPublicCheck: boolean;
+  };
+}
+
+/**
+ * Get current counts for all entities for a merchant
+ */
+export async function getCurrentEntityCounts(merchantId: number): Promise<{
+  outlets: number;
+  users: number;
+  products: number;
+  customers: number;
+  orders: number;
+}> {
+  try {
+    const [outlets, users, products, customers, orders] = await Promise.all([
+      prisma.outlet.count({ where: { merchantId } }),
+      prisma.user.count({ where: { merchantId } }),
+      prisma.product.count({ where: { merchantId } }),
+      prisma.customer.count({ where: { merchantId } }),
+      prisma.order.count({ where: { outlet: { merchantId } } })
+    ]);
+
+    return {
+      outlets,
+      users,
+      products,
+      customers,
+      orders
+    };
+  } catch (error) {
+    console.error('Error getting entity counts:', error);
+    throw new ApiError(ErrorCode.DATABASE_ERROR, 'Failed to get entity counts');
+  }
+}
+
+/**
+ * Get comprehensive plan limits information for a merchant
+ */
+export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsInfo> {
+  try {
+    // Get merchant with subscription
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      include: {
+        subscription: true
+      }
+    });
+
+    if (!merchant) {
+      throw new ApiError(ErrorCode.MERCHANT_NOT_FOUND, 'Merchant not found');
+    }
+
+    if (!merchant.subscription) {
+      throw new ApiError(ErrorCode.NOT_FOUND, 'No subscription found for merchant');
+    }
+
+    // Get plan information from database
+    const plan = await prisma.plan.findUnique({
+      where: { id: merchant.subscription.planId }
+    });
+    if (!plan) {
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Plan not found');
+    }
+    const planLimits = JSON.parse(plan.limits);
+    const platform = plan.features.includes('Web dashboard access') ? 'mobile+web' : 'mobile';
+
+    // Get current counts
+    const currentCounts = await getCurrentEntityCounts(merchantId);
+
+    // Check unlimited flags
+    const isUnlimited = {
+      outlets: planLimits.outlets === -1,
+      users: planLimits.users === -1,
+      products: planLimits.products === -1,
+      customers: planLimits.customers === -1,
+      orders: planLimits.orders === -1
+    };
+
+    // Check platform access from plan features
+    const features = JSON.parse(plan.features);
+    const platformAccess = {
+      mobile: true, // All plans have mobile access
+      web: features.includes('Web dashboard access'),
+      productPublicCheck: features.includes('Product public check')
+    };
+
+    return {
+      planLimits,
+      platform: platform || 'mobile',
+      currentCounts,
+      isUnlimited,
+      platformAccess
+    };
+  } catch (error) {
+    console.error('Error getting plan limits info:', error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR, 'Failed to get plan limits information');
+  }
+}
+
+/**
+ * Validate if merchant can create a new entity
+ */
+export async function validatePlanLimits(
+  merchantId: number,
+  entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders'
+): Promise<PlanLimitsValidationResult> {
+  try {
+    const planInfo = await getPlanLimitsInfo(merchantId);
+    const currentCount = planInfo.currentCounts[entityType];
+    const limit = planInfo.planLimits[entityType];
+    const isUnlimited = planInfo.isUnlimited[entityType];
+
+    // If unlimited, always allow
+    if (isUnlimited) {
+      return {
+        isValid: true,
+        currentCount,
+        limit: -1,
+        entityType
+      };
+    }
+
+    // Check if limit is exceeded
+    if (currentCount >= limit) {
+      return {
+        isValid: false,
+        error: `${entityType} limit exceeded. Current: ${currentCount}, Limit: ${limit}`,
+        currentCount,
+        limit,
+        entityType
+      };
+    }
+
+    return {
+      isValid: true,
+      currentCount,
+      limit,
+      entityType
+    };
+  } catch (error) {
+    console.error('Error validating plan limits:', error);
+    throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR, 'Failed to validate plan limits');
+  }
+}
+
+/**
+ * Validate platform access for merchant
+ */
+export function validatePlatformAccess(
+  merchantId: number,
+  platform: 'mobile' | 'web',
+  planInfo: PlanLimitsInfo
+): boolean {
+  switch (platform) {
+    case 'mobile':
+      return planInfo.platformAccess.mobile;
+    case 'web':
+      return planInfo.platformAccess.web;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Validate product public check access
+ */
+export function validateProductPublicCheckAccess(planInfo: PlanLimitsInfo): boolean {
+  return planInfo.platformAccess.productPublicCheck;
+}
+
+/**
+ * Assert plan limits for a specific entity type
+ * Throws an error if the plan limit would be exceeded
+ */
+export async function assertPlanLimit(
+  merchantId: number,
+  entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders'
+): Promise<void> {
+  try {
+    const validation = await validatePlanLimits(merchantId, entityType);
+    
+    if (!validation.isValid) {
+      throw new ApiError(
+        ErrorCode.PLAN_LIMIT_EXCEEDED,
+        validation.error || `Plan limit exceeded for ${entityType}`
+      );
+    }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(
+      ErrorCode.INTERNAL_SERVER_ERROR,
+      `Failed to validate plan limits for ${entityType}`
+    );
+  }
+}

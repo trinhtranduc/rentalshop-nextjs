@@ -1,242 +1,150 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import {API} from '@rentalshop/constants';
+import { handleApiError } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
 
-async function handleGetOutlet(
-  request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
-  params: { id: string; outletId: string }
-) {
-  try {
-    const merchantPublicId = parseInt(params.id);
-    const outletPublicId = parseInt(params.outletId);
-    
-    if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid merchant or outlet ID' },
-        { status: 400 }
-      );
-    }
-
-    // Find the merchant by id to get the actual CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantPublicId },
-      select: { id: true }
-    });
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
-    // Get outlet with statistics
-    const outlet = await prisma.outlet.findFirst({
-      where: {
-        id: outletPublicId,
-        merchantId: merchant.id
-      },
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        description: true,
-        phone: true,
-        isActive: true,
-        isDefault: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            users: true,
-            products: true,
-            orders: true
-          }
-        }
-      }
-    });
-
-    if (!outlet) {
-      return NextResponse.json(
-        { success: false, message: 'Outlet not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
-    // Transform data for frontend
-    const transformedOutlet = {
-      id: outlet.id,
-      name: outlet.name,
-      address: outlet.address || '',
-      phone: outlet.phone || '',
-      description: outlet.description,
-      isActive: outlet.isActive,
-      isDefault: outlet.isDefault,
-      createdAt: outlet.createdAt.toISOString(),
-      updatedAt: outlet.updatedAt.toISOString(),
-      stats: {
-        totalUsers: outlet._count.users,
-        totalProducts: outlet._count.products,
-        totalOrders: outlet._count.orders
-      }
-    };
-
-    return NextResponse.json({
-      success: true,
-      data: transformedOutlet
-    });
-
-  } catch (error) {
-    console.error('Error fetching outlet details:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch outlet details' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
-
-async function handleUpdateOutlet(
-  request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
-  params: { id: string; outletId: string }
-) {
-  try {
-    const merchantPublicId = parseInt(params.id);
-    const outletPublicId = parseInt(params.outletId);
-    
-    if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid merchant or outlet ID' },
-        { status: 400 }
-      );
-    }
-
-    // Find the merchant by id to get the actual CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantPublicId },
-      select: { id: true }
-    });
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
-    // Get request body
-    const body = await request.json();
-    const { name, address, phone, description } = body;
-
-    // Validate required fields
-    if (!name || !address) {
-      return NextResponse.json(
-        { success: false, message: 'Name and address are required' },
-        { status: 400 }
-      );
-    }
-
-    // Update outlet
-    const updatedOutlet = await prisma.outlet.updateMany({
-      where: {
-        id: outletPublicId,
-        merchantId: merchant.id
-      },
-      data: {
-        name,
-        address,
-        phone: phone || null,
-        description: description || null,
-        updatedAt: new Date()
-      }
-    });
-
-    if (updatedOutlet.count === 0) {
-      return NextResponse.json(
-        { success: false, message: 'Outlet not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
-    // Get updated outlet with statistics
-    const outlet = await prisma.outlet.findFirst({
-      where: {
-        id: outletPublicId,
-        merchantId: merchant.id
-      },
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        description: true,
-        phone: true,
-        isActive: true,
-        isDefault: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            users: true,
-            products: true,
-            orders: true
-          }
-        }
-      }
-    });
-
-    // Transform data for frontend
-    const transformedOutlet = {
-      id: outlet!.id,
-      name: outlet!.name,
-      address: outlet!.address || '',
-      phone: outlet!.phone || '',
-      description: outlet!.description,
-      isActive: outlet!.isActive,
-      isDefault: outlet!.isDefault,
-      createdAt: outlet!.createdAt.toISOString(),
-      updatedAt: outlet!.updatedAt.toISOString(),
-      stats: {
-        totalUsers: outlet!._count.users,
-        totalProducts: outlet!._count.products,
-        totalOrders: outlet!._count.orders
-      }
-    };
-
-    return NextResponse.json({
-      success: true,
-      data: transformedOutlet
-    });
-
-  } catch (error) {
-    console.error('Error updating outlet:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to update outlet' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
-
-// Export functions with withAuthRoles wrapper
+/**
+ * GET /api/merchants/[id]/outlets/[outletId]
+ * Get outlet by ID
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string; outletId: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
-  const authenticatedHandler = authWrapper((req, context) => 
-    handleGetOutlet(req, context, params)
-  );
-  return authenticatedHandler(request);
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+    try {
+      const merchantPublicId = parseInt(params.id);
+      const outletPublicId = parseInt(params.outletId);
+      
+      if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
+        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+      }
+
+      const merchant = await db.merchants.findById(merchantPublicId);
+      if (!merchant) {
+        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+      }
+
+      const outlet = await db.outlets.findById(outletPublicId);
+      if (!outlet) {
+        return NextResponse.json({ success: false, message: 'Outlet not found' }, { status: API.STATUS.NOT_FOUND });
+      }
+
+      return NextResponse.json({ success: true, data: outlet });
+    } catch (error) {
+      console.error('Error fetching outlet:', error);
+      return NextResponse.json(
+        { success: false, message: 'Internal server error' },
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })(request);
 }
 
+/**
+ * PUT /api/merchants/[id]/outlets/[outletId]
+ * Update outlet
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string; outletId: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT']); // OUTLET_ADMIN cannot edit outlet info
-  const authenticatedHandler = authWrapper((req, context) => 
-    handleUpdateOutlet(req, context, params)
-  );
-  return authenticatedHandler(request);
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+    try {
+      const merchantPublicId = parseInt(params.id);
+      const outletPublicId = parseInt(params.outletId);
+      
+      if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
+        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+      }
+
+      const merchant = await db.merchants.findById(merchantPublicId);
+      if (!merchant) {
+        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+      }
+
+      const existing = await db.outlets.findById(outletPublicId);
+      if (!existing) {
+        return NextResponse.json({ success: false, message: 'Outlet not found' }, { status: API.STATUS.NOT_FOUND });
+      }
+
+      const body = await request.json();
+      const { name, address, phone, description } = body;
+
+      // Update outlet with proper data handling
+      const updateData: any = {
+        name,
+        address,
+        updatedAt: new Date()
+      };
+
+      // Only include optional fields if they have values
+      if (phone && phone.trim()) {
+        updateData.phone = phone.trim();
+      }
+
+      if (description && description.trim()) {
+        updateData.description = description.trim();
+      }
+
+      const updatedOutlet = await db.outlets.update(outletPublicId, updateData);
+
+      if (!updatedOutlet) {
+        return NextResponse.json(
+          { success: false, message: 'Outlet not found' },
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      return NextResponse.json({ success: true, data: updatedOutlet });
+    } catch (error) {
+      console.error('Error updating outlet:', error);
+      return NextResponse.json(
+        { success: false, message: 'Internal server error' },
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })(request);
+}
+
+/**
+ * DELETE /api/merchants/[id]/outlets/[outletId]
+ * Delete outlet (soft delete)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string; outletId: string } }
+) {
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+    try {
+      const merchantPublicId = parseInt(params.id);
+      const outletPublicId = parseInt(params.outletId);
+      
+      if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
+        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+      }
+
+      const merchant = await db.merchants.findById(merchantPublicId);
+      if (!merchant) {
+        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+      }
+
+      const existing = await db.outlets.findById(outletPublicId);
+      if (!existing) {
+        return NextResponse.json({ success: false, message: 'Outlet not found' }, { status: API.STATUS.NOT_FOUND });
+      }
+
+      // Soft delete by setting isActive to false
+      const deletedOutlet = await db.outlets.update(outletPublicId, { isActive: false });
+
+      return NextResponse.json({ success: true, data: deletedOutlet });
+    } catch (error) {
+      console.error('Error deleting outlet:', error);
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }

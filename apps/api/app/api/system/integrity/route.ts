@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 interface IntegrityCheck {
@@ -88,23 +89,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Integrity check failed:', error);
     
-    return NextResponse.json({
-      overall: 'critical',
-      timestamp: new Date().toISOString(),
-      checks: [{
-        name: 'system_error',
-        status: 'fail',
-        message: 'System error during integrity check',
-        severity: 'critical',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }],
-      summary: {
-        total: 1,
-        passed: 0,
-        failed: 1,
-        warnings: 0
-      }
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 

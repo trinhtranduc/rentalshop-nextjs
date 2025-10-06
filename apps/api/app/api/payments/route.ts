@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
@@ -34,49 +35,56 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       where.method = method.toUpperCase();
     }
 
-    // Fetch all payments using unified Payment model
-    const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
-        where,
-        include: {
-          merchant: {
-            select: {
-              name: true,
-              id: true
-            }
-          },
-          subscription: {
-            include: {
-              plan: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset
-      }),
-      prisma.payment.count({ where })
-    ]);
+    // Fetch all payments using simplified database API
+    const result = await db.payments.search({
+      ...where,
+      page: Math.floor(offset / limit) + 1,
+      limit
+    });
+    
+    const payments = result.data;
+    const total = result.total;
 
-    // Transform data for frontend
+    // Get merchant and subscription data for payments
+    const merchantIds = [...new Set(payments.map(p => p.merchantId).filter(Boolean))];
+    const subscriptionIds = [...new Set(payments.map(p => p.subscriptionId).filter(Boolean))];
+    
+    // Fetch merchant data
+    const merchants = merchantIds.length > 0 
+      ? await Promise.all(merchantIds.map(id => id ? db.merchants.findById(id) : null))
+      : [];
+    const merchantMap = merchants.reduce((acc, merchant) => {
+      if (merchant) acc[merchant.id] = merchant;
+      return acc;
+    }, {} as Record<string, any>);
+
+    // Fetch subscription data with plans
+    const subscriptions = subscriptionIds.length > 0
+      ? await Promise.all(subscriptionIds.map(id => id ? db.subscriptions.findById(id) : null))
+      : [];
+    const subscriptionMap = subscriptions.reduce((acc, sub) => {
+      if (sub) acc[sub.id] = sub;
+      return acc;
+    }, {} as Record<string, any>);
+
+    // Transform data for frontend with real data
     const transformedPayments = payments.map(payment => {
+      const merchant = payment.merchantId ? merchantMap[payment.merchantId] : null;
+      const subscription = payment.subscriptionId ? subscriptionMap[payment.subscriptionId] : null;
+      
       return {
         id: payment.id,
-        merchantId: payment.merchant?.id || 0,
-        merchantName: payment.merchant?.name || 'Unknown Merchant',
-        planName: payment.subscription?.plan?.name || 'Manual Payment',
+        merchantId: payment.merchantId || 0,
+        merchantName: merchant?.name || 'Unknown Merchant',
+        planName: subscription?.planName || 'Manual Payment',
         amount: payment.amount,
         currency: payment.currency || 'USD',
-        status: payment.status.toLowerCase(),
-        paymentMethod: payment.method.toLowerCase(),
+        status: payment.status?.toLowerCase() || 'pending',
+        paymentMethod: payment.method?.toLowerCase() || 'unknown',
         invoiceNumber: payment.invoiceNumber || payment.reference || `PAY-${payment.id}`,
         description: payment.description || payment.notes || 'Payment',
         transactionId: payment.transactionId || payment.reference || `txn_${payment.id}`,
-        createdAt: payment.createdAt.toISOString(),
+        createdAt: payment.createdAt?.toISOString(),
         processedAt: payment.processedAt?.toISOString(),
         failureReason: payment.failureReason
       };
@@ -91,9 +99,9 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
 
   } catch (error) {
     console.error('Error fetching payments:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

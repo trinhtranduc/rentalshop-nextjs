@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
@@ -40,25 +41,32 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Apply role-based filtering
     if (user.role === 'MERCHANT' && userScope.merchantId) {
       // Find merchant by id to get CUID, then filter by outlet
-      const merchant = await prisma.merchant.findUnique({
-        where: { id: userScope.merchantId },
-        include: { outlets: { select: { id: true } } }
-      });
-      if (merchant) {
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
         orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
     } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
       // Find outlet by id to get CUID
-      const outlet = await prisma.outlet.findUnique({
-        where: { id: userScope.outletId }
-      });
+      const outlet = await db.outlets.findById(userScope.outletId );
       if (outlet) {
         orderWhereClause.outletId = outlet.id;
       }
+    } else if (user.role !== 'ADMIN') {
+      // New users without merchant/outlet assignment should see no data
+      console.log('🚫 User without merchant/outlet assignment:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
+      });
+      return NextResponse.json({
+        success: true,
+        data: [],
+        message: 'No data available - user not assigned to merchant/outlet'
+      });
     }
     // ADMIN sees all data (no additional filtering)
 
-    const topCustomers = await prisma.order.groupBy({
+    const topCustomers = await db.orders.groupBy({
       by: ['customerId'],
       where: orderWhereClause,
       _count: {
@@ -78,20 +86,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Get customer details for each top customer in order
     const topCustomersWithDetails = [];
     for (const item of topCustomers) {
-      const customer = await prisma.customer.findUnique({
-        where: { id: item.customerId! },
-        select: {
-          id: true, // Include id to use as the external ID
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          address: true,
-        },
-      });
+      const customer = await db.customers.findById(item.customerId!);
 
     // Get rental count for this customer (only RENT orders)
-    const rentalCount = await prisma.order.count({
+    const rentalCount = await db.orders.getStats({
       where: {
         ...orderWhereClause,
         customerId: item.customerId!,
@@ -100,7 +98,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     });
 
     // Get sale count for this customer (only SALE orders)
-    const saleCount = await prisma.order.count({
+    const saleCount = await db.orders.getStats({
       where: {
         ...orderWhereClause,
         customerId: item.customerId!,
@@ -114,11 +112,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         email: customer?.email || '',
         phone: customer?.phone || '',
         location: customer?.address || '',
-        orderCount: item._count.customerId, // Total orders (rental + sale)
+        orderCount: (item._count as any)?.customerId || 0, // Total orders (rental + sale)
         rentalCount: rentalCount, // Only rental orders
         saleCount: saleCount, // Only sale orders
         // Hide financial data from OUTLET_STAFF
-        totalSpent: user.role !== 'OUTLET_STAFF' ? (item._sum.totalAmount || 0) : null,
+        totalSpent: user.role !== 'OUTLET_STAFF' ? (item._sum?.totalAmount || 0) : null,
       });
     }
 
@@ -136,14 +134,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
   } catch (error) {
     console.error('Error fetching top customers analytics:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch top customers analytics',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 

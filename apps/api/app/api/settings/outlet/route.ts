@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -60,16 +61,23 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
     
     console.log('🔍 DEBUG: Updating outlet with ID:', outletId);
     
-    const updatedOutlet = await prisma.outlet.update({
-      where: { id: outletId },
-      data: {
-        name,
-        address,
-        phone: phone || null,
-        description: description || null,
-        updatedAt: new Date()
-      }
-    });
+    // Only update fields that have values to avoid overwriting existing data with null
+    const updateData: any = {
+      name,
+      address,
+      updatedAt: new Date()
+    };
+    
+    // Only include optional fields if they have values
+    if (phone && phone.trim()) {
+      updateData.phone = phone.trim();
+    }
+    
+    if (description && description.trim()) {
+      updateData.description = description.trim();
+    }
+
+    const updatedOutlet = await db.outlets.update(outletId, updateData);
 
     return NextResponse.json({
       success: true,
@@ -89,10 +97,9 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
 
   } catch (error) {
     console.error('Error updating outlet information:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { success: false, message: 'Failed to update outlet information', error: errorMessage },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

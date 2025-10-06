@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -23,24 +24,67 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     // Apply role-based filtering
     if (user.role === 'MERCHANT' && userScope.merchantId) {
-      // Find merchant by id to get CUID, then filter by outlet
-      const merchant = await prisma.merchant.findUnique({
-        where: { id: userScope.merchantId },
-        include: { outlets: { select: { id: true } } }
+      // Find merchant by id to get outlets
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      console.log('🔍 Merchant found:', {
+        merchantId: userScope.merchantId,
+        merchant: merchant ? { id: merchant.id, name: merchant.name } : null,
+        outlets: merchant?.outlets || [],
+        outletsLength: merchant?.outlets?.length || 0
       });
-      if (merchant) {
-        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
-        paymentWhereClause.order = { outletId: { in: merchant.outlets.map(outlet => outlet.id) } };
+      
+      if (merchant && merchant.outlets && merchant.outlets.length > 0) {
+        const outletIds = merchant.outlets.map(outlet => outlet.id);
+        orderWhereClause.outletId = { in: outletIds };
+        paymentWhereClause.order = { outletId: { in: outletIds } };
+        console.log('✅ Applied outlet filter:', { outletIds });
+      } else {
+        console.log('❌ No outlets found for merchant, returning empty data');
+        return NextResponse.json({
+          success: true,
+          data: {
+            totalOrders: 0,
+            totalRevenue: 0,
+            activeRentals: 0,
+            recentOrders: [],
+            reservedOrders: 0,
+            pickupOrders: 0,
+            completedOrders: 0,
+            cancelledOrders: 0,
+            returnedOrders: 0
+          },
+          message: 'No outlets found for merchant'
+        });
       }
     } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
       // Find outlet by id to get CUID
-      const outlet = await prisma.outlet.findUnique({
-        where: { id: userScope.outletId }
-      });
+      const outlet = await db.outlets.findById(userScope.outletId );
       if (outlet) {
         orderWhereClause.outletId = outlet.id;
         paymentWhereClause.order = { outletId: outlet.id };
       }
+    } else if (user.role !== 'ADMIN') {
+      // New users without merchant/outlet assignment should see no data
+      console.log('🚫 User without merchant/outlet assignment:', {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId
+      });
+      return NextResponse.json({
+        success: true,
+        data: {
+          totalOrders: 0,
+          totalRevenue: 0,
+          activeRentals: 0,
+          recentOrders: [],
+          reservedOrders: 0,
+          pickupOrders: 0,
+          completedOrders: 0,
+          cancelledOrders: 0,
+          returnedOrders: 0
+        },
+        message: 'No data available - user not assigned to merchant/outlet'
+      });
     }
     // ADMIN users see all data (no additional filtering)
 
@@ -59,10 +103,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       returnedOrders
     ] = await Promise.all([
       // Total orders count
-      prisma.order.count({ where: orderWhereClause }),
+      db.orders.getStats(orderWhereClause),
       
       // Total revenue based on order status and type
-      prisma.order.findMany({
+      db.orders.search({
         where: orderWhereClause,
         select: {
           id: true,
@@ -75,18 +119,16 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           pickedUpAt: true,
           returnedAt: true
         }
-      }),
+      }).then(result => result.data),
       
       // Pickup orders count
-      prisma.order.count({ 
-        where: { 
-          ...orderWhereClause, 
-          status: 'PICKUPED' 
-        } 
+      db.orders.getStats({ 
+        ...orderWhereClause, 
+        status: 'PICKUPED' 
       }),
       
       // Today's orders (orders created today)
-      prisma.order.findMany({
+      db.orders.search({
         where: {
           ...orderWhereClause,
           createdAt: {
@@ -104,46 +146,36 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           }
         },
         orderBy: { createdAt: 'desc' }
-      }),
+      }).then(result => result.data),
       
       // Reserved orders count
-      prisma.order.count({
-        where: {
-          ...orderWhereClause,
-          status: 'RESERVED'
-        }
+      db.orders.getStats({
+        ...orderWhereClause,
+        status: 'RESERVED'
       }),
       
-      // Pickup orders count
-      prisma.order.count({
-        where: {
-          ...orderWhereClause,
-          status: 'PICKUPED'
-        }
+      // Pickup orders count (duplicate - already above)
+      db.orders.getStats({
+        ...orderWhereClause,
+        status: 'PICKUPED'
       }),
       
       // Completed orders count
-      prisma.order.count({
-        where: {
-          ...orderWhereClause,
-          status: 'COMPLETED'
-        }
+      db.orders.getStats({
+        ...orderWhereClause,
+        status: 'COMPLETED'
       }),
       
       // Cancelled orders count
-      prisma.order.count({
-        where: {
-          ...orderWhereClause,
-          status: 'CANCELLED'
-        }
+      db.orders.getStats({
+        ...orderWhereClause,
+        status: 'CANCELLED'
       }),
       
       // Returned orders count
-      prisma.order.count({
-        where: {
-          ...orderWhereClause,
-          status: 'RETURNED'
-        }
+      db.orders.getStats({
+        ...orderWhereClause,
+        status: 'RETURNED'
       })
     ]);
 
@@ -206,7 +238,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         createdAt: order.createdAt,
         pickupPlanAt: order.pickupPlanAt,
         returnPlanAt: order.returnPlanAt,
-        productNames: order.orderItems?.map(item => item.product?.name).filter(Boolean).join(', ') || 'N/A'
+        productNames: (order as any).orderItems?.map((item: any) => item.product?.name).filter(Boolean).join(', ') || 'N/A'
       }))
     };
 
@@ -223,14 +255,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch dashboard statistics',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 

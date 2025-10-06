@@ -4,17 +4,28 @@ import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, ToastContainer, useToasts } from "@rentalshop/ui";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, ToastContainer, useToasts, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rentalshop/ui";
 import { authApi } from "@rentalshop/utils";
+import { 
+  BUSINESS_TYPE_OPTIONS,
+  PRICING_TYPE_OPTIONS,
+  COUNTRIES,
+  getDefaultCountry,
+  formatCountryDisplay
+} from "@rentalshop/constants";
 
 // Types for the registration form
 interface RegisterFormData {
   login: string;
   password: string;
   confirmPassword: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   businessName: string;
+  // Business configuration (locked after registration)
+  businessType: 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
+  pricingType: 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
   address: string;
   city: string;
   state: string;
@@ -57,9 +68,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     confirmPassword: Yup.string()
       .oneOf([Yup.ref("password")], "Password does not match")
       .required("Please confirm your password"),
-    name: Yup.string()
-      .min(2, "Name must be at least 2 characters")
-      .required("Please Enter Your Name"),
+    firstName: Yup.string()
+      .min(1, "First name is required")
+      .required("Please Enter Your First Name"),
+    lastName: Yup.string()
+      .min(1, "Last name is required")
+      .required("Please Enter Your Last Name"),
     phone: Yup.string()
       .matches(/^[0-9+\-\s()]+$/, "Please enter a valid phone number")
       .min(10, "Phone number must be at least 10 digits")
@@ -71,6 +85,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     businessName: Yup.string()
       .min(2, "Business name must be at least 2 characters")
       .required("Please Enter Business Name"),
+    businessType: Yup.string()
+      .oneOf(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL'], 'Please select a valid business type')
+      .required("Please select your business type"),
+    pricingType: Yup.string()
+      .oneOf(['FIXED', 'HOURLY', 'DAILY', 'WEEKLY'], 'Please select a valid pricing type')
+      .required("Please select your pricing type"),
     address: Yup.string()
       .min(5, "Address must be at least 5 characters")
       .required("Please Enter Business Address"),
@@ -96,14 +116,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       login: "",
       password: "",
       confirmPassword: "",
-      name: "",
+      firstName: "",
+      lastName: "",
       phone: "",
       businessName: "",
+      businessType: "GENERAL",
+      pricingType: "FIXED",
       address: "",
       city: "",
       state: "",
       zipCode: "",
-      country: "United States",
+      country: getDefaultCountry().name,
       acceptTermsAndPrivacy: false,
       role: 'MERCHANT',
     },
@@ -127,7 +150,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           login: values.login,
           password: values.password,
           confirmPassword: values.confirmPassword,
-          name: values.name,
+          firstName: values.firstName,
+          lastName: values.lastName,
           phone: values.phone,
           role: values.role,
         });
@@ -144,28 +168,25 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         const registrationData = {
           email: completeData.login!,
           password: completeData.password!,
-          name: completeData.name!,
+          firstName: completeData.firstName!,
+          lastName: completeData.lastName!,
           phone: completeData.phone!,
           role: completeData.role!,
           businessName: values.businessName,
+          businessType: values.businessType,
+          pricingType: values.pricingType,
           address: values.address,
           city: values.city,
           state: values.state,
           zipCode: values.zipCode,
           country: values.country,
-          // Default outlet name to business name
-          outletName: values.businessName,
         };
         
         const result = await authApi.register(registrationData);
         
-        // Check if result has error field (from parseApiResponse)
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        
         if (!result.success) {
-          throw new Error(result.error || result.message || 'Registration failed');
+          // Prioritize message over error field
+          throw new Error(result.message || result.error || 'Registration failed');
         }
         
         // Store token in localStorage using consolidated function
@@ -324,27 +345,53 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   )}
                 </div>
 
-                {/* Name Field */}
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium text-gray-700">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={formik.values.name}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`pl-10 ${formik.errors.name && formik.touched.name ? 'border-red-500' : ''}`}
-                    />
+                {/* First Name and Last Name Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* First Name Field */}
+                  <div className="space-y-2">
+                    <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                      First Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        placeholder="Enter your first name"
+                        value={formik.values.firstName}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 ${formik.errors.firstName && formik.touched.firstName ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    {formik.errors.firstName && formik.touched.firstName && (
+                      <p className="text-red-500 text-sm">{formik.errors.firstName}</p>
+                    )}
                   </div>
-                  {formik.errors.name && formik.touched.name && (
-                    <p className="text-red-500 text-sm">{formik.errors.name}</p>
-                  )}
+
+                  {/* Last Name Field */}
+                  <div className="space-y-2">
+                    <label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+                      Last Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        placeholder="Enter your last name"
+                        value={formik.values.lastName}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 ${formik.errors.lastName && formik.touched.lastName ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    {formik.errors.lastName && formik.touched.lastName && (
+                      <p className="text-red-500 text-sm">{formik.errors.lastName}</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Phone Field */}
@@ -405,6 +452,87 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   {formik.errors.businessName && formik.touched.businessName && (
                     <p className="text-red-500 text-sm">{formik.errors.businessName}</p>
                   )}
+                </div>
+
+
+                {/* Business Type and Pricing Type */}
+                <div className="space-y-4">
+                  {/* Warning Note */}
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-amber-800">
+                          Important Notice
+                        </h3>
+                        <div className="mt-1 text-sm text-amber-700">
+                          <p>Business Type and Pricing Type <strong>cannot be changed</strong> after registration. Please choose carefully as these settings will be locked permanently.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Business Type Field */}
+                    <div className="space-y-2">
+                      <label htmlFor="businessType" className="text-sm font-medium text-gray-700">
+                        Business Type *
+                      </label>
+                      <Select
+                        value={formik.values.businessType}
+                        onValueChange={(value) => formik.setFieldValue('businessType', value)}
+                      >
+                        <SelectTrigger className={`w-full ${formik.errors.businessType && formik.touched.businessType ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Select business type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BUSINESS_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className="flex flex-col items-start">
+                                <span className="font-medium">{option.label}</span>
+                                <span className="text-xs text-gray-500">{option.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {formik.errors.businessType && formik.touched.businessType && (
+                        <p className="text-red-500 text-sm">{formik.errors.businessType}</p>
+                      )}
+                    </div>
+
+                    {/* Pricing Type Field */}
+                    <div className="space-y-2">
+                      <label htmlFor="pricingType" className="text-sm font-medium text-gray-700">
+                        Pricing Type *
+                      </label>
+                      <Select
+                        value={formik.values.pricingType}
+                        onValueChange={(value) => formik.setFieldValue('pricingType', value)}
+                      >
+                        <SelectTrigger className={`w-full ${formik.errors.pricingType && formik.touched.pricingType ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Select pricing type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PRICING_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className="flex flex-col items-start">
+                                <span className="font-medium">{option.label}</span>
+                                <span className="text-xs text-gray-500">{option.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {formik.errors.pricingType && formik.touched.pricingType && (
+                        <p className="text-red-500 text-sm">{formik.errors.pricingType}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Address Field */}
@@ -492,18 +620,26 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="country" className="text-sm font-medium text-gray-700">
-                      Country
+                      Country *
                     </label>
-                    <Input
-                      id="country"
-                      name="country"
-                      type="text"
-                      placeholder="Country"
+                    <Select
                       value={formik.values.country}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={formik.errors.country && formik.touched.country ? 'border-red-500' : ''}
-                    />
+                      onValueChange={(value) => formik.setFieldValue('country', value)}
+                    >
+                      <SelectTrigger className={`w-full ${formik.errors.country && formik.touched.country ? 'border-red-500' : ''}`}>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRIES.map((country: any) => (
+                          <SelectItem key={country.code} value={country.name}>
+                            <div className="flex items-center gap-2">
+                              <span>{country.flag}</span>
+                              <span>{country.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {formik.errors.country && formik.touched.country && (
                       <p className="text-red-500 text-sm">{formik.errors.country}</p>
                     )}

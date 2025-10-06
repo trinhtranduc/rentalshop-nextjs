@@ -14,6 +14,7 @@
 
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const { SUBSCRIPTION_PLANS } = require('../packages/constants/src/subscription.ts');
 
 const prisma = new PrismaClient();
 
@@ -204,6 +205,19 @@ async function createMerchants() {
         taxId: business.taxId,
         website: business.website,
         description: business.description,
+        pricingConfig: JSON.stringify({
+          businessType: business.businessType === 'Equipment Rental' ? 'EQUIPMENT' : 'GENERAL',
+          defaultPricingType: business.businessType === 'Equipment Rental' ? 'DAILY' : 'FIXED',
+          businessRules: {
+            requireRentalDates: business.businessType === 'Equipment Rental',
+            showPricingOptions: business.businessType === 'Equipment Rental'
+          },
+          durationLimits: {
+            minDuration: business.businessType === 'Equipment Rental' ? 1 : 1,
+            maxDuration: business.businessType === 'Equipment Rental' ? 30 : 1,
+            defaultDuration: business.businessType === 'Equipment Rental' ? 3 : 1
+          }
+        }),
         isActive: true,
         subscriptionStatus: 'trial' // Ensure all merchants start with trial status
       }
@@ -753,75 +767,20 @@ async function createPlans() {
   const plans = [];
   let planId = 1;
   
-  const planData = [
-    {
-      name: 'Starter',
-      description: 'Perfect for small rental businesses just getting started',
-      basePrice: 29.99,
-      trialDays: 14,
-      maxOutlets: 1,
-      maxUsers: 3,
-      maxProducts: 100,
-      maxCustomers: -1, // Unlimited customers
-      features: JSON.stringify([
-        'Basic inventory management',
-        'Customer management',
-        'Order processing',
-        'Basic reporting',
-        'Email support',
-        'Mobile app access'
-      ]),
-      isPopular: false,
-      sortOrder: 1
-    },
-    {
-      name: 'Professional',
-      description: 'Ideal for growing rental businesses with multiple outlets',
-      basePrice: 79.99,
-      trialDays: 14,
-      maxOutlets: 5,
-      maxUsers: 15,
-      maxProducts: 1000,
-      maxCustomers: -1, // Unlimited customers
-      features: JSON.stringify([
-        'Advanced inventory management',
-        'Multi-outlet support',
-        'Advanced reporting & analytics',
-        'Inventory forecasting',
-        'Payment processing',
-        'Priority support',
-        'API access',
-        'Team collaboration tools',
-        'Advanced integrations'
-      ]),
-      isPopular: true,
-      sortOrder: 2
-    },
-    {
-      name: 'Enterprise',
-      description: 'For large rental operations with complex needs',
-      basePrice: 199.99,
-      trialDays: 14,
-      maxOutlets: -1, // unlimited
-      maxUsers: -1, // unlimited
-      maxProducts: -1, // unlimited
-      maxCustomers: -1, // unlimited
-      features: JSON.stringify([
-        'Unlimited everything',
-        'Advanced analytics & reporting',
-        'Custom integrations',
-        'Dedicated account manager',
-        '24/7 phone support',
-        'White-label options',
-        'Advanced security features',
-        'Custom workflows',
-        'Enterprise SSO',
-        'Advanced API access'
-      ]),
-      isPopular: false,
-      sortOrder: 3
-    }
-  ];
+  // Convert SUBSCRIPTION_PLANS to database format
+  const planData = Object.values(SUBSCRIPTION_PLANS).map(plan => ({
+    name: plan.name,
+    description: plan.description,
+    basePrice: plan.basePrice,
+    trialDays: 14,
+    maxOutlets: plan.limits.outlets,
+    maxUsers: plan.limits.users,
+    maxProducts: plan.limits.products,
+    maxCustomers: plan.limits.customers,
+    features: JSON.stringify(plan.features.map(f => f.name)),
+    isPopular: plan.isPopular,
+    sortOrder: plan.sortOrder
+  }));
   
   for (const plan of planData) {
     const subscriptionPlan = await prisma.plan.create({

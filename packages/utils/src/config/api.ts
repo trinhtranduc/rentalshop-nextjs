@@ -181,6 +181,10 @@ export interface ApiUrls {
     getPlan: (id: number) => string;
     extendPlan: (id: number) => string;
     cancelPlan: (id: number) => string;
+    pricing: {
+      get: (id: number) => string;
+      update: (id: number) => string;
+    };
     products: {
       list: (merchantId: number) => string;
       get: (merchantId: number, productId: number) => string;
@@ -593,6 +597,10 @@ function createApiUrls(): ApiUrls {
       getPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
       extendPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
       cancelPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
+      pricing: {
+        get: (id: number) => `${base}/api/merchants/${id}/pricing`,
+        update: (id: number) => `${base}/api/merchants/${id}/pricing`,
+      },
       products: {
         list: (merchantId: number) => `${base}/api/merchants/${merchantId}/products`,
         get: (merchantId: number, productId: number) => `${base}/api/merchants/${merchantId}/products/${productId}`,

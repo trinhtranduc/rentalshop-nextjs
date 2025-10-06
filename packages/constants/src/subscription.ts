@@ -107,6 +107,39 @@ export const TRIAL_CONFIG = {
 // ============================================================================
 
 export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
+  TRIAL: {
+    id: 'trial',
+    name: 'Trial',
+    description: 'Free trial with starter plan limits',
+    basePrice: 0, // Free trial
+    currency: 'VND',
+    limits: {
+      outlets: 1,
+      users: 3,
+      products: 500,
+      customers: 2000,
+      orders: 2000
+    },
+    features: [
+      { name: 'Mobile app access', description: 'Access your business on mobile devices', included: true },
+      { name: 'Basic inventory management', description: 'Track products and stock levels', included: true },
+      { name: 'Customer management', description: 'Store customer information and history', included: true },
+      { name: 'Order processing', description: 'Create and manage rental orders', included: true },
+      { name: 'Basic reporting', description: 'View sales and rental reports', included: true },
+      { name: 'Public product catalog', description: 'Share product list publicly with customers', included: true },
+      { name: 'Product public check', description: 'Send public links to customers to view products and pricing', included: true }
+    ],
+    platform: 'mobile',
+    publicProductCheck: true,
+    isPopular: false,
+    isActive: true,
+    sortOrder: 0,
+    color: 'green',
+    badge: 'Free Trial',
+    upgradeFrom: [],
+    downgradeTo: ['basic']
+  },
+
   BASIC: {
     id: 'basic',
     name: 'Basic',

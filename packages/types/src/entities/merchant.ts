@@ -42,6 +42,9 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   totalRevenue: number;
   lastActiveAt?: Date | string;
   
+  // NEW: Pricing configuration
+  pricingConfig: MerchantPricingConfig;
+  
   // Related entities (populated when needed)
   plan?: PlanDetails;
   currentSubscription?: CurrentSubscription;
@@ -250,4 +253,45 @@ export interface MerchantFilters {
   endDate?: Date | string;
   page?: number;
   limit?: number;
+}
+
+// ============================================================================
+// PRICING CONFIGURATION TYPES
+// ============================================================================
+
+/**
+ * Pricing type enumeration
+ */
+export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
+
+/**
+ * Business type enumeration
+ */
+export type BusinessType = 'CLOTHING'| 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
+
+/**
+ * Business rules for pricing
+ */
+export interface PricingBusinessRules {
+  requireRentalDates: boolean;      // Bắt buộc chọn dates cho time-based pricing
+  showPricingOptions: boolean;      // Hiển thị pricing options cho customer
+}
+
+/**
+ * Duration limits for time-based pricing
+ */
+export interface PricingDurationLimits {
+  minDuration: number;              // Thời gian thuê tối thiểu
+  maxDuration: number;              // Thời gian thuê tối đa
+  defaultDuration: number;          // Thời gian mặc định
+}
+
+/**
+ * Merchant pricing configuration
+ */
+export interface MerchantPricingConfig {
+  businessType: BusinessType;       // Loại hình kinh doanh
+  defaultPricingType: PricingType;  // Pricing type mặc định
+  businessRules: PricingBusinessRules;
+  durationLimits: PricingDurationLimits;
 }

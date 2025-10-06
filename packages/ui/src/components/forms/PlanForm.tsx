@@ -37,12 +37,12 @@ import type {
   Plan,
   BillingCycle
 } from '@rentalshop/types';
+import { BILLING_CYCLES } from '@rentalshop/constants';
 import { 
-  BILLING_CYCLES,
   calculateDiscountedPrice,
   getBillingCycleDiscount,
   formatBillingCycle
-} from '@rentalshop/constants';
+} from '@rentalshop/utils';
 
 interface PlanFormData {
   name: string;

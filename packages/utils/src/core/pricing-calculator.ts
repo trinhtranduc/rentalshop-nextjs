@@ -2,8 +2,8 @@
 // REFACTORED PRICING CALCULATOR SYSTEM
 // ============================================================================
 
-import { Plan } from '@rentalshop/types';
-import { BillingInterval } from '@rentalshop/constants';
+import { Plan, Product, Merchant, PricingType, BusinessType, PricingDurationLimits, PricingBusinessRules } from '@rentalshop/types';
+import { BillingInterval, BUSINESS_TYPE_DEFAULTS } from '@rentalshop/constants';
 
 // ============================================================================
 // TYPES
@@ -33,6 +33,46 @@ export interface PricingConfig {
     semiAnnual: { interval: BillingInterval; intervalCount: number };
     year: { interval: BillingInterval; intervalCount: number };
   };
+}
+
+// ============================================================================
+// PRICING RESOLUTION INTERFACES (from pricing-resolver.ts)
+// ============================================================================
+
+export interface PricingInfo {
+  pricingType: PricingType;
+  pricePerUnit: number;
+  minDuration: number;
+  maxDuration: number;
+  requireRentalDates: boolean;
+  showPricingOptions: boolean;
+}
+
+export interface CalculatedPricing {
+  unitPrice: number;
+  totalPrice: number;
+  deposit: number;
+  pricingType: PricingType;
+  duration?: number;
+  durationUnit?: string;
+}
+
+// ============================================================================
+// VALIDATION INTERFACES (from pricing-validation.ts)
+// ============================================================================
+
+export interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+  warning?: string;
+  suggestions?: string[];
+}
+
+export interface RentalPeriodValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  suggestions: string[];
 }
 
 // ============================================================================
@@ -428,3 +468,240 @@ export const calculateProratedAmount = (
   billingInterval: BillingInterval,
   daysRemaining: number
 ) => pricingCalculator.calculateProratedAmount(currentPlan, newPlan, billingInterval, daysRemaining);
+
+// ============================================================================
+// ADDITIONAL UTILITY FUNCTIONS (for UI components)
+// ============================================================================
+
+/**
+ * Format billing cycle for display
+ */
+export const formatBillingCycle = (billingInterval: BillingInterval): string => {
+  switch (billingInterval) {
+    case 'month':
+      return 'Monthly';
+    case 'quarter':
+      return 'Quarterly';
+    case 'semiAnnual':
+      return 'Semi-Annual';
+    case 'year':
+      return 'Yearly';
+    default:
+      return billingInterval;
+  }
+};
+
+/**
+ * Get billing cycle discount percentage
+ */
+export const getBillingCycleDiscount = (billingInterval: BillingInterval): number => {
+  return DEFAULT_PRICING_CONFIG.discounts[billingInterval] || 0;
+};
+
+/**
+ * Calculate renewal price
+ */
+export const calculateRenewalPrice = (plan: Plan, billingInterval: BillingInterval): number => {
+  return calculateSubscriptionPrice(plan, billingInterval);
+};
+
+/**
+ * Calculate savings amount
+ */
+export const calculateSavings = (originalPrice: number, discountedPrice: number): number => {
+  return Math.max(0, originalPrice - discountedPrice);
+};
+
+/**
+ * Get discount percentage
+ */
+export const getDiscountPercentage = (billingInterval: BillingInterval): number => {
+  return DEFAULT_PRICING_CONFIG.discounts[billingInterval] || 0;
+};
+
+/**
+ * Calculate discounted price
+ */
+export const calculateDiscountedPrice = (originalPrice: number, discountPercentage: number): number => {
+  const discountAmount = originalPrice * (discountPercentage / 100);
+  return Math.max(0, originalPrice - discountAmount);
+};
+
+// ============================================================================
+// PRICING RESOLVER CLASS (from pricing-resolver.ts)
+// ============================================================================
+
+export class PricingResolver {
+  /**
+   * Resolve pricing type cho product dựa trên merchant config
+   */
+  static resolvePricingType(
+    product: Product,
+    merchant: Merchant
+  ): PricingType {
+    return merchant.pricingConfig.defaultPricingType;
+  }
+  
+  /**
+   * Get effective pricing config cho product
+   */
+  static getEffectivePricingConfig(
+    product: Product,
+    merchant: Merchant
+  ): PricingInfo {
+    const pricingType = this.resolvePricingType(product, merchant);
+    
+    return {
+      pricingType,
+      pricePerUnit: product.rentPrice || 0,
+      minDuration: 1,
+      maxDuration: 365,
+      requireRentalDates: false,
+      showPricingOptions: true
+    };
+  }
+
+  /**
+   * Calculate pricing cho product
+   */
+  static calculatePricing(
+    product: Product,
+    merchant: Merchant,
+    duration?: number,
+    quantity: number = 1
+  ): CalculatedPricing {
+    const config = this.getEffectivePricingConfig(product, merchant);
+    const unitPrice = config.pricePerUnit;
+    const totalPrice = unitPrice * quantity * (duration || 1);
+    
+    return {
+      unitPrice,
+      totalPrice,
+      deposit: product.deposit || 0,
+      pricingType: config.pricingType,
+      duration,
+      durationUnit: 'days'
+    };
+  }
+}
+
+// ============================================================================
+// PRICING VALIDATOR CLASS (from pricing-validation.ts)
+// ============================================================================
+
+export class PricingValidator {
+  /**
+   * Validate rental period for a product
+   */
+  static validateRentalPeriod(
+    product: Product,
+    merchant: Merchant,
+    rentalStartAt: Date,
+    rentalEndAt: Date,
+    quantity: number = 1
+  ): RentalPeriodValidation {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const suggestions: string[] = [];
+
+    // Parse merchant pricing configuration
+    let pricingConfig;
+    try {
+      pricingConfig = merchant.pricingConfig;
+    } catch (error) {
+      errors.push('Invalid pricing configuration');
+      return { isValid: false, errors, warnings, suggestions };
+    }
+
+    // Validate rental dates
+    if (rentalStartAt >= rentalEndAt) {
+      errors.push('Rental start date must be before end date');
+    }
+
+    // Calculate duration in days
+    const durationMs = rentalEndAt.getTime() - rentalStartAt.getTime();
+    const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+
+    // Validate minimum duration
+    const minDuration = pricingConfig?.durationLimits?.minDuration || 1;
+    if (durationDays < minDuration) {
+      errors.push(`Minimum rental duration is ${minDuration} days`);
+      suggestions.push(`Consider extending rental to ${minDuration} days`);
+    }
+
+    // Validate maximum duration
+    const maxDuration = pricingConfig?.durationLimits?.maxDuration || 365;
+    if (durationDays > maxDuration) {
+      warnings.push(`Rental duration (${durationDays} days) exceeds recommended maximum (${maxDuration} days)`);
+      suggestions.push('Consider splitting into multiple rentals');
+    }
+
+    // Validate quantity
+    if (quantity <= 0) {
+      errors.push('Quantity must be greater than 0');
+    }
+
+    if (quantity > 100) {
+      warnings.push('Large quantity rental detected');
+      suggestions.push('Consider bulk pricing or contact for custom quote');
+    }
+
+    // Validate product availability
+    if (product.stock < quantity) {
+      errors.push(`Insufficient stock. Available: ${product.stock}, Requested: ${quantity}`);
+    }
+
+    // Validate pricing
+    if (!product.rentPrice || product.rentPrice <= 0) {
+      errors.push('Invalid product pricing');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      suggestions
+    };
+  }
+
+  /**
+   * Validate pricing configuration
+   */
+  static validatePricingConfig(config: any): ValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Check required fields
+    if (!config.defaultPricingType) {
+      errors.push('Default pricing type is required');
+    }
+
+    if (!config.durationLimits) {
+      errors.push('Duration limits are required');
+    } else {
+      if (!config.durationLimits.minDays || config.durationLimits.minDays < 1) {
+        errors.push('Minimum duration must be at least 1 day');
+      }
+      if (!config.durationLimits.maxDays || config.durationLimits.maxDays < 1) {
+        errors.push('Maximum duration must be at least 1 day');
+      }
+      if (config.durationLimits.minDays >= config.durationLimits.maxDays) {
+        errors.push('Minimum duration must be less than maximum duration');
+      }
+    }
+
+    // Check business rules
+    if (config.businessRules) {
+      if (config.businessRules.requireDeposit && config.businessRules.depositPercentage <= 0) {
+        errors.push('Deposit percentage must be greater than 0 when deposits are required');
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      error: errors.length > 0 ? errors.join('; ') : undefined,
+      warning: warnings.length > 0 ? warnings.join('; ') : undefined,
+      suggestions: errors.length > 0 ? ['Review pricing configuration'] : undefined
+    };
+  }
+}

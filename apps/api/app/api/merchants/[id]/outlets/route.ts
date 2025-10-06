@@ -1,145 +1,118 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import {API} from '@rentalshop/constants';
+import { handleApiError } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
 
-async function handleGetMerchantOutlets(
-  request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
-  params: { id: string }
-) {
-  try {
-
-    const merchantPublicId = parseInt(params.id);
-    if (isNaN(merchantPublicId)) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid merchant ID' },
-        { status: 400 }
-      );
-    }
-
-    // Find the merchant by id to get the actual CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantPublicId },
-      select: { id: true }
-    });
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search') || undefined;
-    const status = searchParams.get('status') || undefined;
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
-
-    // Build where clause
-    const where: any = {
-      merchantId: merchant.id // Use the actual CUID
-    };
-
-    // Add search filter
-    if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { address: { contains: search } },
-        { phone: { contains: search } }
-      ];
-    }
-
-    // Add status filter
-    if (status) {
-      if (status === 'active') {
-        where.isActive = true;
-      } else if (status === 'inactive') {
-        where.isActive = false;
-      }
-    }
-
-    // Build order by clause
-    const orderBy: any = {};
-    orderBy[sortBy] = sortOrder;
-
-    // Get total count
-    const total = await prisma.outlet.count({ where });
-
-    // Get outlets with pagination
-    const outlets = await prisma.outlet.findMany({
-      where,
-      orderBy,
-      take: limit,
-      skip: offset,
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        phone: true,
-        isActive: true,
-        isDefault: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            users: true,
-            products: true,
-            orders: true
-          }
-        }
-      }
-    });
-
-    // Transform data for frontend
-    const transformedOutlets = outlets.map(outlet => ({
-      id: outlet.id,
-      name: outlet.name,
-      address: outlet.address,
-      phone: outlet.phone,
-      isActive: outlet.isActive,
-      isDefault: outlet.isDefault,
-      createdAt: outlet.createdAt.toISOString(),
-      updatedAt: outlet.updatedAt.toISOString(),
-      stats: {
-        totalUsers: outlet._count.users,
-        totalProducts: outlet._count.products,
-        totalOrders: outlet._count.orders
-      }
-    }));
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        outlets: transformedOutlets,
-        total,
-        limit,
-        offset,
-        hasMore: offset + limit < total
-      }
-    });
-
-  } catch (error) {
-    console.error('Error fetching merchant outlets:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch outlets' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
-
-// Export function with withAuthRoles wrapper
+/**
+ * GET /api/merchants/[id]/outlets
+ * Get merchant outlets
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
-  const authenticatedHandler = authWrapper((req, context) => 
-    handleGetMerchantOutlets(req, context, params)
-  );
-  return authenticatedHandler(request);
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+    try {
+      const merchantPublicId = parseInt(params.id);
+      if (isNaN(merchantPublicId)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid merchant ID' },
+          { status: 400 }
+        );
+      }
+
+      // Find the merchant by id to get the actual CUID
+      const merchant = await db.merchants.findById(merchantPublicId);
+
+      if (!merchant) {
+        return NextResponse.json(
+          { success: false, message: 'Merchant not found' },
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Get outlets for this merchant
+      const outlets = await db.outlets.search({
+        merchantId: merchantPublicId,
+        isActive: true
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: outlets.data || [],
+        total: outlets.total || 0
+      });
+
+    } catch (error) {
+      console.error('Error fetching merchant outlets:', error);
+      return NextResponse.json(
+        { success: false, message: 'Internal server error' },
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })(request);
+}
+
+/**
+ * POST /api/merchants/[id]/outlets
+ * Create new outlet
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+    try {
+      const merchantPublicId = parseInt(params.id);
+      if (isNaN(merchantPublicId)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid merchant ID' },
+          { status: 400 }
+        );
+      }
+
+      const merchant = await db.merchants.findById(merchantPublicId);
+      if (!merchant) {
+        return NextResponse.json(
+          { success: false, message: 'Merchant not found' },
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      const body = await request.json();
+      const { name, address, phone, description } = body;
+
+      // Create new outlet with proper data handling
+      const outletData: any = {
+        name,
+        address,
+        merchantId: merchant.id,
+        isActive: true
+      };
+
+      // Only include optional fields if they have values
+      if (phone && phone.trim()) {
+        outletData.phone = phone.trim();
+      }
+
+      if (description && description.trim()) {
+        outletData.description = description.trim();
+      }
+
+      const newOutlet = await db.outlets.create(outletData);
+
+      return NextResponse.json({
+        success: true,
+        data: newOutlet
+      });
+
+    } catch (error) {
+      console.error('Error creating outlet:', error);
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }

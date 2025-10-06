@@ -1,5 +1,6 @@
+import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { API } from '@rentalshop/constants';
 
@@ -46,25 +47,25 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       totalRevenue
     ] = await Promise.all([
       // Total merchants
-      prisma.merchant.count({ where: { isActive: true } }),
+      db.merchants.getStats({ where: { isActive: true } }),
       
       // Total outlets
-      prisma.outlet.count({ where: { isActive: true } }),
+      db.outlets.getStats({ where: { isActive: true } }),
       
       // Total users
-      prisma.user.count({ where: { isActive: true } }),
+      db.users.getStats({ where: { isActive: true } }),
       
       // Total products
-      prisma.product.count({ where: { isActive: true } }),
+      db.products.getStats({ where: { isActive: true } }),
       
       // Total customers
-      prisma.customer.count({ where: { isActive: true } }),
+      db.customers.getStats({ where: { isActive: true } }),
       
       // Total orders
-      prisma.order.count(),
+      db.orders.getStats(),
       
       // Active merchants (with recent activity in date range)
-      prisma.merchant.count({ 
+      db.merchants.getStats({ 
         where: { 
           isActive: true,
           outlets: {
@@ -83,7 +84,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       }),
       
       // New merchants in date range
-      prisma.merchant.count({ 
+      db.merchants.getStats({ 
         where: { 
           isActive: true,
           createdAt: { 
@@ -94,7 +95,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       }),
       
       // New merchants this year (keep for comparison)
-      prisma.merchant.count({ 
+      db.merchants.getStats({ 
         where: { 
           isActive: true,
           createdAt: { 
@@ -104,7 +105,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       }),
       
       // Revenue in date range
-      prisma.order.aggregate({
+      db.orders.aggregate({
         where: {
           createdAt: {
             gte: dateStart,
@@ -125,14 +126,14 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
         const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
         const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
         
-        const newMerchants = await prisma.merchant.count({
+        const newMerchants = await db.merchants.getStats({
           where: {
             isActive: true,
             createdAt: { gte: monthStart, lte: monthEnd }
           }
         });
         
-        const activeMerchants = await prisma.merchant.count({
+        const activeMerchants = await db.merchants.getStats({
           where: {
             isActive: true,
             createdAt: { lte: monthEnd }
@@ -154,14 +155,14 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
         const dayStart = new Date(current.getFullYear(), current.getMonth(), current.getDate());
         const dayEnd = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
         
-        const newMerchants = await prisma.merchant.count({
+        const newMerchants = await db.merchants.getStats({
           where: {
             isActive: true,
             createdAt: { gte: dayStart, lte: dayEnd }
           }
         });
         
-        const activeMerchants = await prisma.merchant.count({
+        const activeMerchants = await db.merchants.getStats({
           where: {
             isActive: true,
             createdAt: { lte: dayEnd }

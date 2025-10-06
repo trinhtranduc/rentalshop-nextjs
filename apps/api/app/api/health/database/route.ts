@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 export async function GET(request: NextRequest) {
@@ -64,13 +65,14 @@ export async function GET(request: NextRequest) {
     
     console.error('Error details:', errorDetails);
     
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
     return NextResponse.json({
-      success: false,
       status: 'unhealthy',
       database: 'disconnected',
-      error: errorDetails,
+      ...response,
       timestamp: new Date().toISOString()
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
+    }, { status: statusCode });
   } finally {
     await prisma.$disconnect();
   }

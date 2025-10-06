@@ -9,18 +9,23 @@ import { simplifiedUsers } from './user';
 import { simplifiedCustomers } from './customer';
 import { simplifiedProducts } from './product';
 import { simplifiedOrders } from './order';
+import { simplifiedPayments } from './payment';
 import { simplifiedOutlets } from './outlet';
 import { simplifiedPlans } from './plan';
 import { simplifiedSubscriptions } from './subscription';
+import { simplifiedMerchants } from './merchant';
 import { simplifiedOrderNumbers } from './order-number-generator';
+import { simplifiedCategories } from './category';
+import { simplifiedAuditLogs } from './audit-logs';
+import { simplifiedOrderItems } from './order-items';
 
-// Optimized order functions
-export { 
-  searchOrdersOptimized, 
-  searchOrdersWithCursor, 
-  getOrderDetailsOptimized, 
-  getOrderSummary 
-} from './order-optimized';
+// Optimized order functions (temporarily disabled due to type issues)
+// export { 
+//   searchOrdersOptimized, 
+//   searchOrdersWithCursor, 
+//   getOrderDetailsOptimized, 
+//   getOrderSummary 
+// } from './order-optimized';
 
 // Database client
 export { prisma };
@@ -76,14 +81,39 @@ const db = {
   orders: simplifiedOrders,
 
   // ============================================================================
+  // PAYMENT OPERATIONS
+  // ============================================================================
+  payments: simplifiedPayments,
+
+  // ============================================================================
   // OUTLET OPERATIONS
   // ============================================================================
   outlets: simplifiedOutlets,
 
   // ============================================================================
+  // MERCHANT OPERATIONS
+  // ============================================================================
+  merchants: simplifiedMerchants,
+
+  // ============================================================================
   // PLAN OPERATIONS
   // ============================================================================
   plans: simplifiedPlans,
+
+  // ============================================================================
+  // CATEGORY OPERATIONS
+  // ============================================================================
+  categories: simplifiedCategories,
+
+  // ============================================================================
+  // AUDIT LOG OPERATIONS
+  // ============================================================================
+  auditLogs: simplifiedAuditLogs,
+
+  // ============================================================================
+  // ORDER ITEM OPERATIONS
+  // ============================================================================
+  orderItems: simplifiedOrderItems,
 
   // ============================================================================
   // SUBSCRIPTION OPERATIONS
@@ -93,7 +123,19 @@ const db = {
   // ============================================================================
   // ORDER NUMBER OPERATIONS
   // ============================================================================
-  orderNumbers: simplifiedOrderNumbers
+  orderNumbers: simplifiedOrderNumbers,
+
+  // ============================================================================
+  // OUTLET STOCK OPERATIONS
+  // ============================================================================
+  outletStock: {
+    /**
+     * Aggregate outlet stock statistics
+     */
+    aggregate: async (options: any) => {
+      return await prisma.outletStock.aggregate(options);
+    }
+  }
 };
 
 // ============================================================================
@@ -140,15 +182,20 @@ const generateOrderNumber = async (outletId: number): Promise<string> => {
 
 export { db, checkDatabaseConnection, generateOrderNumber };
 
+// Export payment functions
+export { simplifiedPayments } from './payment';
+
 // Legacy exports for backward compatibility
 export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById } from './subscription';
 export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';
 export type { OrderNumberFormat } from './order-number-generator';
+export { searchOrders } from './order'; // Legacy order search function
 
-// Test functions (for development)
-export { testNewDatabaseAPI, comparePerformance } from './test-db-new';
+// Registration functions
+export { registerUser, registerMerchantWithTrial } from './registration';
+export type { RegistrationInput, RegistrationResult } from './registration';
 
 // ============================================================================
 // MIGRATION GUIDE

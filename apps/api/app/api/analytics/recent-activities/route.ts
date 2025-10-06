@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdminAuth } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { withAuthRoles } from '@rentalshop/auth';
+import { db } from '@rentalshop/database';
+import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
-export const GET = withAdminAuth(async (authorizedRequest) => {
+export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
   try {
-    // User is already authenticated and authorized as ADMIN
-    const { user, userScope, request } = authorizedRequest;
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -18,17 +17,7 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
     const validOffset = Math.max(offset, 0);
 
     // Get recent audit logs
-    const auditLogs = await prisma.auditLog.findMany({
-      include: {
-        user: {
-          select: {
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true
-          }
-        }
-      },
+    const auditLogs = await db.auditLogs.findMany({
       orderBy: {
         createdAt: 'desc'
       },
@@ -97,7 +86,7 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
     });
 
     // Get total count for pagination
-    const totalCount = await prisma.auditLog.count();
+    const totalCount = await db.auditLogs.getStats();
 
     return NextResponse.json({
       success: true,
@@ -112,9 +101,9 @@ export const GET = withAdminAuth(async (authorizedRequest) => {
 
   } catch (error) {
     console.error('Error fetching recent activities:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch recent activities' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

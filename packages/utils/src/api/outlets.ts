@@ -98,8 +98,12 @@ export const outletsApi = {
     const result = await parseApiResponse<OutletsResponse>(response);
     console.log('🔍 Outlets API Client: Parsed result:', result);
     console.log('🔍 Outlets API Client: Result success:', result.success);
-    console.log('🔍 Outlets API Client: Result data:', result.data);
-    console.log('🔍 Outlets API Client: Result outlets count:', result.data?.outlets?.length || 0);
+    if (result.success) {
+      console.log('🔍 Outlets API Client: Result data:', result.data);
+      console.log('🔍 Outlets API Client: Result outlets count:', result.data?.outlets?.length || 0);
+    } else {
+      console.log('🔍 Outlets API Client: Error:', result.message);
+    }
     
     return result;
   },

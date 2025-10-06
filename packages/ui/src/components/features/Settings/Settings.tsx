@@ -7,7 +7,8 @@ import {
   CreditCard, 
   Settings as SettingsIcon, 
   Building2,
-  Store
+  Store,
+  DollarSign
 } from 'lucide-react';
 import { useAuth, useToastHandler } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
@@ -22,6 +23,7 @@ import { SubscriptionSection } from './components/SubscriptionSection';
 import { AccountSection } from './components/AccountSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
+import { PricingSection } from './components/PricingSection';
 
 // ============================================================================
 // SETTINGS MENU ITEMS
@@ -55,11 +57,18 @@ const settingsMenuItems = [
     description: 'Password and account security'
   },
   {
+    id: 'pricing',
+    label: 'Pricing',
+    icon: DollarSign,
+    description: 'Configure pricing rules for your products',
+    roles: ['ADMIN', 'MERCHANT']
+  },
+  {
     id: 'subscription',
     label: 'Subscription',
     icon: CreditCard,
     description: 'Manage your subscription and billing',
-    roles: ['ADMIN', 'MERCHANT'] // Only ADMIN and MERCHANT can access subscription
+    roles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'] // ADMIN, MERCHANT, and OUTLET_ADMIN can access subscription
   },
   {
     id: 'account',
@@ -365,6 +374,8 @@ export const SettingsComponent: React.FC = () => {
             onChangePassword={() => setShowChangePassword(true)}
           />
         );
+      case 'pricing':
+        return <PricingSection />;
       case 'subscription':
         return (
           <SubscriptionSection

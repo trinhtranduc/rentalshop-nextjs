@@ -17,4 +17,7 @@ export {
   OrderDetailLoading
 } from './components';
 
+// Order creation components
+export { RentalPeriodSelector } from './RentalPeriodSelector';
+
 // Note: Types are imported directly from @rentalshop/types where needed

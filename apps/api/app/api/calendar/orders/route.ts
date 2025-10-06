@@ -3,6 +3,7 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse } from '@rentalshop/utils';
+import { handleApiError } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
@@ -101,7 +102,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             `${order.customer.firstName} ${order.customer.lastName || ''}`.trim() : 
             'Unknown Customer',
           customerPhone: order.customer?.phone,
-          productName: order.orderItems?.[0]?.product?.name || 'Unknown Product',
+          productName: (order as any).orderItems?.[0]?.product?.name || 'Unknown Product',
           status: order.status,
           totalAmount: order.totalAmount,
           outletName: order.outlet?.name,
@@ -186,25 +187,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
   } catch (error) {
     console.error('❌ Calendar API error:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Invalid query parameters',
-          errors: error.errors 
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to fetch calendar data',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

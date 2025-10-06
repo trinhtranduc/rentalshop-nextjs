@@ -63,12 +63,7 @@ export const customersApi = {
     
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
     const result = await parseApiResponse<CustomerListResponse>(response);
-    return {
-      success: result.success,
-      data: result.data,
-      message: result.message,
-      error: result.error
-    };
+    return result; // Return the ApiResponse directly - let consumers use type guards
   },
 
   /**
@@ -94,12 +89,7 @@ export const customersApi = {
 
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
     const result = await parseApiResponse<CustomerListResponse>(response);
-    return {
-      success: result.success,
-      data: result.data,
-      message: result.message,
-      error: result.error
-    };
+    return result; // Return the ApiResponse directly - let consumers use type guards
   },
 
   /**
@@ -122,12 +112,7 @@ export const customersApi = {
 
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
     const result = await parseApiResponse<CustomerSearchResponse>(response);
-    return {
-      success: result.success,
-      data: result.data,
-      message: result.message,
-      error: result.error
-    };
+    return result; // Return the ApiResponse directly - let consumers use type guards
   },
 
   /**

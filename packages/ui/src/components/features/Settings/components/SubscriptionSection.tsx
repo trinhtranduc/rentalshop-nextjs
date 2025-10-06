@@ -22,6 +22,7 @@ import {
 export interface SubscriptionSectionProps {
   subscriptionData: any;
   subscriptionLoading: boolean;
+  currentUserRole?: string;
 }
 
 // ============================================================================
@@ -30,7 +31,8 @@ export interface SubscriptionSectionProps {
 
 export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
   subscriptionData,
-  subscriptionLoading
+  subscriptionLoading,
+  currentUserRole
 }) => {
   if (subscriptionLoading) {
     return (
@@ -140,16 +142,14 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                 </div>
               )}
 
-              <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
-                <Button variant="outline">
-                  Upgrade Plan
-                </Button>
-                <Button variant="outline">
-                  View Billing History
-                </Button>
-                <Button variant="outline">
-                  Manage Subscription
-                </Button>
+              {/* Show read-only message for all roles */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-600 text-center">
+                  {currentUserRole === 'OUTLET_ADMIN' 
+                    ? 'Contact your merchant administrator to manage subscription settings.'
+                    : 'Subscription management features coming soon.'
+                  }
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -171,9 +171,20 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
             <CreditCard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Subscription</h3>
             <p className="text-gray-600 mb-6">You don't have an active subscription. Choose a plan to get started.</p>
-            <Button>
-              View Available Plans
-            </Button>
+            
+            {/* Only show action button for ADMIN and MERCHANT roles */}
+            {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
+              <Button>
+                View Available Plans
+              </Button>
+            )}
+            
+            {/* Show read-only message for OUTLET_ADMIN */}
+            {currentUserRole === 'OUTLET_ADMIN' && (
+              <p className="text-sm text-gray-600">
+                Contact your merchant administrator to set up a subscription.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

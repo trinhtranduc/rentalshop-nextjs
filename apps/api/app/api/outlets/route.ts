@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit } from '@rentalshop/utils';
+import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -147,6 +147,10 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       merchant: { connect: { id: merchantId } },
       name: parsed.data.name,
       address: parsed.data.address,
+      city: parsed.data.city,
+      state: parsed.data.state,
+      zipCode: parsed.data.zipCode,
+      country: parsed.data.country,
       phone: parsed.data.phone,
       status: parsed.data.status || 'ACTIVE',
       description: parsed.data.description
@@ -311,9 +315,8 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { use
   } catch (error: any) {
     console.error('Error in DELETE /api/outlets:', error);
     
-    return NextResponse.json(
-      { success: false, message: 'Failed to delete outlet' },
-      { status: 500 }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });

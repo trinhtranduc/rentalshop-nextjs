@@ -1,5 +1,7 @@
 import CONSTANTS from '@rentalshop/constants';
 import type { User, LoginCredentials } from '@rentalshop/types';
+import type { ApiResponse, ErrorCode } from './errors';
+import { analyzeError } from './errors'; // Import analyzeError for handleApiErrorForUI
 
 const API = CONSTANTS.API;
 
@@ -13,13 +15,7 @@ const API = CONSTANTS.API;
 // API UTILITIES
 // ============================================================================
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  errorCode?: string; // Add error code field for specific error handling
-}
+// ApiResponse interface moved to errors.ts for unified error handling
 
 /**
  * Create API URL with proper base URL
@@ -54,6 +50,53 @@ export const createApiUrl = (endpoint: string): string => {
  * Authenticated fetch wrapper for API calls
  * Handles authentication headers and common error cases
  */
+/**
+ * Public fetch wrapper for unauthenticated requests (login, register, etc.)
+ * Does not require authentication token
+ */
+export const publicFetch = async (
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> => {
+  console.log('🔍 FRONTEND: publicFetch called with URL:', url);
+  console.log('🔍 FRONTEND: publicFetch options:', options);
+  
+  // Input validation
+  if (!url || typeof url !== 'string') {
+    console.log('🔍 FRONTEND: URL validation failed');
+    throw new Error('URL is required and must be a string');
+  }
+
+  // Set default headers using API constants
+  const headers: Record<string, string> = {
+    [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
+    [API.HEADERS.ACCEPT]: API.CONTENT_TYPES.JSON,
+  };
+
+  // Create full URL
+  const fullUrl = createApiUrl(url);
+
+  // Merge headers
+  const requestOptions: RequestInit = {
+    ...options,
+    headers: {
+      ...headers,
+      ...options.headers,
+    },
+  };
+
+  console.log(`🌐 PUBLIC REQUEST: ${requestOptions.method || 'GET'} ${fullUrl}`);
+  
+  try {
+    const response = await fetch(fullUrl, requestOptions);
+    console.log(`✅ PUBLIC RESPONSE: ${response.status} ${response.statusText}`);
+    return response;
+  } catch (error) {
+    console.error(`❌ PUBLIC REQUEST FAILED:`, error);
+    throw error;
+  }
+};
+
 /**
  * Authenticated fetch wrapper for API calls
  * 
@@ -272,9 +315,9 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
       if (errorData.success === false && errorData.message && errorData.error) {
         console.log('🔍 parseApiResponse: Structured error response detected');
         const result = {
-          success: false,
-          error: errorData.message, // Use the user-friendly message
-          errorCode: errorData.error, // Preserve the error code for specific handling
+          success: false as const,
+          message: errorData.message, // Use the user-friendly message
+          error: errorData.error as ErrorCode, // Preserve the error code for specific handling
         };
         console.log('🔍 parseApiResponse: Returning structured error:', result);
         return result;
@@ -305,13 +348,12 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
         );
         
         const result = {
-          success: false,
-          error: errorData.error, // Use the error message directly
+          success: false as const,
+          message: errorData.error, // Use the error message directly
+          error: errorData.errorCode as ErrorCode || 'INTERNAL_SERVER_ERROR',
           // Add subscription context if detected
           ...(isSubscriptionInvalidToken && {
-            subscriptionError: true,
-            context: 'subscription',
-            errorCode: errorData.errorCode || 'SUBSCRIPTION_CANCELLED'
+            details: 'subscription'
           })
         };
         console.log('🔍 parseApiResponse: Returning API error:', result);
@@ -342,13 +384,12 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
       );
       
       const result = {
-        success: false,
-        error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+        success: false as const,
+        message: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+        error: errorData.errorCode as ErrorCode || 'INTERNAL_SERVER_ERROR',
         // Add subscription context if detected
         ...(isSubscriptionInvalidTokenMessage && {
-          subscriptionError: true,
-          context: 'subscription',
-          errorCode: errorData.errorCode || 'SUBSCRIPTION_CANCELLED'
+          details: 'subscription'
         })
       };
       console.log('🔍 parseApiResponse: Returning legacy error:', result);
@@ -356,8 +397,9 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
     } catch {
       console.log('🔍 parseApiResponse: Failed to parse error JSON, using fallback');
       const result = {
-        success: false,
-        error: `HTTP ${response.status}: ${response.statusText}`,
+        success: false as const,
+        message: `HTTP ${response.status}: ${response.statusText}`,
+        error: 'INTERNAL_SERVER_ERROR' as ErrorCode,
       };
       console.log('🔍 parseApiResponse: Returning fallback error:', result);
       return result;
@@ -372,20 +414,21 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
     // We extract: { success: true, data: { ... } }
     if (responseData.success && responseData.data !== undefined) {
       return {
-        success: true,
+        success: true as const,
         data: responseData.data, // Extract the nested data
       };
     }
     
     // Fallback for non-standard responses
     return {
-      success: true,
+      success: true as const,
       data: responseData,
     };
   } catch (error) {
     return {
-      success: false,
-      error: 'Failed to parse response',
+      success: false as const,
+      message: 'Failed to parse response',
+      error: 'INTERNAL_SERVER_ERROR' as ErrorCode,
     };
   }
 };
@@ -679,4 +722,55 @@ export const handleAuthError = (error: Error): void => {
       window.location.href = '/login';
     }
   }
+};
+
+// ============================================================================
+// TOAST UTILITIES (for UI components)
+// ============================================================================
+
+/**
+ * Get toast type based on error type
+ */
+export const getToastType = (errorType: 'auth' | 'permission' | 'subscription' | 'network' | 'validation' | 'unknown'): 'error' | 'warning' | 'info' => {
+  switch (errorType) {
+    case 'auth':
+      return 'error';
+    case 'permission':
+      return 'error';
+    case 'subscription':
+      return 'warning';
+    case 'network':
+      return 'warning';
+    case 'validation':
+      return 'warning';
+    case 'unknown':
+      return 'error';
+    default:
+      return 'error';
+  }
+};
+
+/**
+ * Wrap API call with error handling for UI
+ */
+export const withErrorHandlingForUI = async <T>(
+  apiCall: () => Promise<T>
+): Promise<{ data?: T; error?: any }> => {
+  try {
+    const data = await apiCall();
+    return { data };
+  } catch (error) {
+    return { error };
+  }
+};
+
+/**
+ * Handle API error for UI display
+ */
+export const handleApiErrorForUI = (error: any): { message: string; type: string } => {
+  const errorInfo = analyzeError(error);
+  return {
+    message: errorInfo.message,
+    type: errorInfo.type
+  };
 }; 

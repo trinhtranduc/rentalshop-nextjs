@@ -109,9 +109,9 @@ export const merchantsApi = {
   /**
    * Get merchant detail with full data (subscriptions, outlets, users, etc.)
    */
-  async getMerchantDetail(id: number): Promise<ApiResponse<any>> {
+  async getMerchantDetail(id: number): Promise<ApiResponse<Merchant>> {
     const response = await authenticatedFetch(apiUrls.merchants.get(id));
-    const result = await parseApiResponse<any>(response);
+    const result = await parseApiResponse<Merchant>(response);
     return result;
   },
 
@@ -385,5 +385,26 @@ export const merchantsApi = {
         method: 'DELETE'
       });
     }
+  },
+
+  /**
+   * Get merchant pricing configuration
+   */
+  async getPricingConfig(merchantId: number): Promise<ApiResponse<{ merchantId: number; merchantName: string; businessType: string; pricingConfig: any }>> {
+    const response = await authenticatedFetch(apiUrls.merchants.pricing.get(merchantId));
+    const result = await parseApiResponse<{ merchantId: number; merchantName: string; businessType: string; pricingConfig: any }>(response);
+    return result;
+  },
+
+  /**
+   * Update merchant pricing configuration
+   */
+  async updatePricingConfig(merchantId: number, config: any): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.merchants.pricing.update(merchantId), {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    });
+    const result = await parseApiResponse<any>(response);
+    return result;
   }
 };

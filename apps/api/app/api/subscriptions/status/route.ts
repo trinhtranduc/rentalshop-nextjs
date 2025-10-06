@@ -1,109 +1,27 @@
-// ============================================================================
-// SUBSCRIPTION STATUS API ENDPOINTS
-// ============================================================================
-
 import { NextRequest, NextResponse } from 'next/server';
-import { getSubscriptionByMerchantId } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import {API} from '@rentalshop/constants';
+import { handleApiError } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
 
 /**
- * GET /api/subscriptions/status - Get current user's subscription status
- * Requires: Any authenticated user
+ * GET /api/subscriptions/status
+ * Get subscription status
  */
-async function handleGetSubscriptionStatus(
-  request: NextRequest,
-  { user }: { user: any; userScope: any }
-) {
-  try {
-
-    // Check if user has a merchant (try both merchant.id and merchantId)
-    const merchantId = user.merchant?.id || user.merchantId;
-    
-    console.log('🔍 Subscription status - User merchant info:', {
-      'user.merchant': user.merchant,
-      'user.merchantId': user.merchantId,
-      'resolved merchantId': merchantId,
-      'user.role': user.role
-    });
-    
-    if (!merchantId) {
-      return NextResponse.json({
-        success: false,
-        message: 'User is not associated with any merchant',
-        debug: {
-          role: user.role,
-          hasMerchantObject: !!user.merchant,
-          hasMerchantId: !!user.merchantId,
-          merchantId: user.merchantId,
-          merchantObject: user.merchant
-        }
-      }, { status: 400 });
+export async function GET(request: NextRequest) {
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+    try {
+      // TODO: Implement subscription status functionality
+      return NextResponse.json(
+        { success: false, message: 'Subscription status functionality not yet implemented' },
+        { status: 501 }
+      );
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
-
-    // Get user's subscription
-    const subscription = await getSubscriptionByMerchantId(merchantId);
-    
-    if (!subscription) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          hasSubscription: false,
-          status: 'NO_SUBSCRIPTION',
-          message: 'No subscription found'
-        }
-      });
-    }
-
-    // Check if subscription is expired
-    const now = new Date();
-    const isExpired = subscription.status === 'cancelled' || 
-      (subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) < now);
-    
-    const isExpiringSoon = subscription.status === 'active' && 
-      subscription.currentPeriodEnd && 
-      new Date(subscription.currentPeriodEnd) <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    // Calculate days until expiry
-    const daysUntilExpiry = subscription.currentPeriodEnd ? 
-      Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        hasSubscription: true,
-        subscription: {
-          id: subscription.id,
-          merchantId: subscription.merchantId,
-          planId: subscription.planId,
-          status: subscription.status,
-          currentPeriodStart: subscription.currentPeriodStart,
-          currentPeriodEnd: subscription.currentPeriodEnd,
-          amount: subscription.amount,
-          createdAt: subscription.createdAt,
-          updatedAt: subscription.updatedAt,
-          merchant: subscription.merchant,
-          plan: subscription.plan
-        },
-        isExpired,
-        isExpiringSoon,
-        daysUntilExpiry,
-        message: isExpired ? 
-          'Your subscription has expired. Please renew to continue using the service.' :
-          isExpiringSoon ? 
-          `Your subscription expires in ${daysUntilExpiry} days. Consider renewing soon.` :
-          'Your subscription is active.'
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching subscription status:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch subscription status' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
+  })(request);
 }
-
-export const GET = withAuthRoles()((req, context) => 
-  handleGetSubscriptionStatus(req, context)
-);

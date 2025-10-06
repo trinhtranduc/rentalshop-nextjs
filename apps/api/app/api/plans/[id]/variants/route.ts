@@ -1,50 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivePlanVariants } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import {API} from '@rentalshop/constants';
+import { handleApiError } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
 
-async function handleGetPlanVariants(
-  request: NextRequest,
-  { user, userScope }: { user: any; userScope: any },
-  params: { id: string }
-) {
-  try {
-
-    const planId = params.id;
-    if (!planId) {
-      return NextResponse.json(
-        { success: false, message: 'Plan ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Get active plan variants for the plan
-    const variants = await getActivePlanVariants(planId);
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        variants,
-        total: variants.length
-      }
-    });
-
-  } catch (error) {
-    console.error('Error fetching plan variants:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
-
+/**
+ * GET /api/plans/[id]/variants
+ * Get plan variants
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authWrapper = withAuthRoles(['ADMIN']);
-  const authenticatedHandler = authWrapper((req, context) => 
-    handleGetPlanVariants(req, context, params)
-  );
-  return authenticatedHandler(request);
+  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+    try {
+      const planId = parseInt(params.id);
+      
+      if (isNaN(planId)) {
+        return NextResponse.json({ success: false, message: 'Invalid plan ID' }, { status: 400 });
+      }
+
+      // TODO: Implement plan variants functionality when model is added to schema
+      return NextResponse.json(
+        { success: false, message: 'Plan variants functionality not yet implemented' },
+        { status: 501 }
+      );
+    } catch (error) {
+      console.error('Error fetching plan variants:', error);
+      return NextResponse.json(
+        { success: false, message: 'Internal server error' },
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })(request);
+}
+
+/**
+ * POST /api/plans/[id]/variants
+ * Create plan variant
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+    try {
+      const planId = parseInt(params.id);
+      
+      if (isNaN(planId)) {
+        return NextResponse.json({ success: false, message: 'Invalid plan ID' }, { status: 400 });
+      }
+
+      // TODO: Implement plan variants functionality when model is added to schema
+      return NextResponse.json(
+        { success: false, message: 'Plan variants functionality not yet implemented' },
+        { status: 501 }
+      );
+    } catch (error) {
+      console.error('Error creating plan variant:', error);
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }

@@ -1,6 +1,7 @@
+import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -11,7 +12,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles()(async (request: NextRequest, { user }) => {
+  return withAuthRoles()(async (request: NextRequest, { user, userScope }) => {
     try {
 
     const categoryId = parseInt(params.id);
@@ -22,31 +23,22 @@ export async function GET(
       );
     }
 
-    // Build where clause based on user role and scope
+    // Apply role-based filtering (consistent with other APIs)
     const where: any = { id: categoryId };
     
-    if (user.merchant?.id) {
-      // Find merchant by id to get the CUID
-      const merchant = await prisma.merchant.findUnique({
-        where: { id: user.merchant.id },
-        select: { id: true }
-      });
-      
-      if (merchant) {
-        where.merchantId = merchant.id; // Use CUID for database query
+    if (user.role === 'MERCHANT' && userScope.merchantId) {
+      where.merchantId = userScope.merchantId;
+    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+      // Find outlet by id to get merchant
+      const outlet = await db.outlets.findById(userScope.outletId);
+      if (outlet) {
+        where.merchantId = outlet.merchantId;
       }
     }
+    // ADMIN users see all data (no additional filtering)
 
-    const category = await prisma.category.findFirst({
-      where,
-      select: {
-          id: true,
-        name: true,
-        description: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true
-      }
+    const category = await db.categories.findFirst({
+      where
     });
 
     if (!category) {
@@ -90,11 +82,11 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user }) => {
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
     try {
 
     // Check if user can manage categories
-    if (!user.merchantId) {
+    if (!userScope.merchantId) {
       return NextResponse.json(
         { success: false, message: 'Merchant access required' },
         { status: API.STATUS.FORBIDDEN }
@@ -120,24 +112,11 @@ export async function PUT(
       );
     }
 
-    // Find merchant by id to get the CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: user.merchantId },
-      select: { id: true }
-    });
-    
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
     // Find category by id and verify ownership
-    const existingCategory = await prisma.category.findFirst({
+    const existingCategory = await db.categories.findFirst({
       where: {
         id: categoryId,
-        merchantId: merchant.id // Use CUID for database query
+        merchantId: userScope.merchantId
       }
     });
 
@@ -149,10 +128,10 @@ export async function PUT(
     }
 
     // Check if new name conflicts with existing category (excluding current one)
-    const nameConflict = await prisma.category.findFirst({
+    const nameConflict = await db.categories.findFirst({
       where: {
         name: name.trim(),
-        merchantId: merchant.id, // Use CUID for database query
+        merchantId: userScope.merchantId,
         id: { not: categoryId }
       }
     });
@@ -164,23 +143,18 @@ export async function PUT(
       );
     }
 
-    // Update category
-    const updatedCategory = await prisma.category.update({
-      where: { id: existingCategory.id }, // Use internal CUID
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        isActive: isActive !== undefined ? isActive : existingCategory.isActive
-      },
-      select: {
-          id: true,
-        name: true,
-        description: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+    // Update category with proper data handling
+    const updateData: any = {
+      name: name.trim(),
+      isActive: isActive !== undefined ? isActive : existingCategory.isActive
+    };
+
+    // Only update description if it has a value
+    if (description && description.trim()) {
+      updateData.description = description.trim();
+    }
+
+    const updatedCategory = await db.categories.update(categoryId, updateData);
 
     // Transform response: internal id → public id as "id"
     const transformedCategory = {
@@ -217,11 +191,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user }) => {
+  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
     try {
 
     // Check if user can manage categories
-    if (!user.merchantId) {
+    if (!userScope.merchantId) {
       return NextResponse.json(
         { success: false, message: 'Merchant access required' },
         { status: API.STATUS.FORBIDDEN }
@@ -236,29 +210,11 @@ export async function DELETE(
       );
     }
 
-    // Find merchant by id to get the CUID
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: user.merchantId },
-      select: { id: true }
-    });
-    
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
     // Find category by id and verify ownership
-    const existingCategory = await prisma.category.findFirst({
+    const existingCategory = await db.categories.findFirst({
       where: {
         id: categoryId,
-        merchantId: merchant.id // Use CUID for database query
-      },
-      include: {
-        products: {
-          select: { id: true, name: true }
-        }
+        merchantId: userScope.merchantId
       }
     });
 
@@ -269,21 +225,23 @@ export async function DELETE(
       );
     }
 
-    // Check if category has products
-    if (existingCategory.products.length > 0) {
+    // Check if category has products (simplified check)
+    const productCount = await db.products.getStats({
+      where: { categoryId: categoryId }
+    });
+    
+    if (productCount > 0) {
       return NextResponse.json(
         { 
           success: false, 
-          message: `Cannot delete category "${existingCategory.name}" because it has ${existingCategory.products.length} product(s) assigned to it. Please reassign or delete these products first.` 
+          message: `Cannot delete category "${existingCategory.name}" because it has ${productCount} product(s) assigned to it. Please reassign or delete these products first.` 
         },
         { status: API.STATUS.CONFLICT }
       );
     }
 
-    // Delete category
-    await prisma.category.delete({
-      where: { id: existingCategory.id } // Use internal CUID
-    });
+    // Delete category (soft delete)
+    await db.categories.delete(categoryId);
 
     return NextResponse.json({
       success: true,

@@ -451,6 +451,42 @@ export const simplifiedOutlets = {
   },
 
   /**
+   * Find first outlet matching criteria (simplified API)
+   */
+  findFirst: async (where: any) => {
+    return await prisma.outlet.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        _count: {
+          select: { 
+            users: true,
+            orders: true,
+            products: true
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Get outlet statistics (simplified API)
+   */
+  getStats: async (options: any) => {
+    return await prisma.outlet.count(options.where);
+  },
+
+  /**
+   * Update multiple outlets (simplified API)
+   */
+  updateMany: async (where: any, data: any) => {
+    return await prisma.outlet.updateMany({
+      where,
+      data
+    });
+  },
+
+  /**
    * Search outlets with pagination (simplified API)
    */
   search: async (filters: any) => {

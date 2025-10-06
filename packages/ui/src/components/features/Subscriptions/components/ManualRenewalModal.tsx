@@ -21,12 +21,14 @@ import {
 } from '@rentalshop/ui';
 import { formatDate, formatCurrency } from '@rentalshop/utils';
 import { 
-  RENEWAL_DURATIONS, 
-  calculateRenewalPrice, 
-  calculateSavings,
-  getDiscountPercentage,
+  RENEWAL_DURATIONS,
   type RenewalMonths 
 } from '@rentalshop/constants';
+import { 
+  calculateRenewalPrice, 
+  calculateSavings,
+  getDiscountPercentage
+} from '@rentalshop/utils';
 import { CreditCard, Building2, AlertCircle } from 'lucide-react';
 
 interface ManualRenewalModalProps {

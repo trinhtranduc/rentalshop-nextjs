@@ -1,4 +1,4 @@
-import { authenticatedFetch, parseApiResponse } from '../core';
+import { authenticatedFetch, publicFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../core';
 import type { User, LoginCredentials, RegisterData } from '@rentalshop/types';
@@ -17,18 +17,23 @@ export const authApi = {
    * Login user
    */
   async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
-    const response = await fetch(apiUrls.auth.login, {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    return await parseApiResponse<AuthResponse>(response);
+    try {
+      const response = await publicFetch(apiUrls.auth.login, {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+      return await parseApiResponse<AuthResponse>(response);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw new Error('Failed to login');
+    }
   },
 
   /**
    * Register new user
    */
   async register(userData: RegisterData): Promise<ApiResponse<AuthResponse>> {
-    const response = await fetch(apiUrls.auth.register, {
+    const response = await publicFetch(apiUrls.auth.register, {
       method: 'POST',
       body: JSON.stringify(userData),
     });

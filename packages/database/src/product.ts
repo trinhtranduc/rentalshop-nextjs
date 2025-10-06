@@ -820,6 +820,13 @@ export const simplifiedProducts = {
   },
 
   /**
+   * Get product statistics (simplified API)
+   */
+  getStats: async (where: any = {}) => {
+    return await prisma.product.count({ where });
+  },
+
+  /**
    * Search products with simple filters (simplified API)
    */
   search: async (filters: any) => {

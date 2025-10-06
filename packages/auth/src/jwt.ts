@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import { SubscriptionError, getSubscriptionError } from '@rentalshop/utils';
+import { getSubscriptionError } from '@rentalshop/utils';
 
 // Get JWT secret from environment or use a fallback
 const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SECRET_LOCAL || 'local-jwt-secret-key-change-this';
