@@ -51,6 +51,27 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
         <div className="space-y-3 p-4 border border-border rounded-lg bg-bg-primary">
           <h4 className="font-medium text-text-primary">Order Summary</h4>
           
+          {/* Rental Duration - Show for RENT orders with dates */}
+          {formData.orderType === 'RENT' && formData.pickupPlanAt && formData.returnPlanAt && (
+            <div className="pb-2 mb-2 border-b border-border">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-text-secondary">Rental Duration:</span>
+                <span className="font-medium">
+                  {(() => {
+                    const start = new Date(formData.pickupPlanAt);
+                    const end = new Date(formData.returnPlanAt);
+                    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                    return `${days} ${days === 1 ? 'day' : 'days'}`;
+                  })()}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs text-text-tertiary">
+                <span>From: {new Date(formData.pickupPlanAt).toLocaleDateString('en-GB')}</span>
+                <span>To: {new Date(formData.returnPlanAt).toLocaleDateString('en-GB')}</span>
+              </div>
+            </div>
+          )}
+          
           {/* Subtotal */}
           <div className="flex justify-between text-sm">
             <span className="text-text-secondary">Subtotal:</span>

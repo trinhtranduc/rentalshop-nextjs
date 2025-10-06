@@ -4,6 +4,7 @@
 
 // API utilities
 export * from './api';
+export * from './api/upload';
 
 // Configuration
 export * from './config';

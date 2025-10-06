@@ -31,6 +31,7 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   email: string;
   description?: string;
   businessType?: string;
+  pricingType?: string; // FIXED, HOURLY, DAILY, WEEKLY
   taxId?: string;
   isActive: boolean;
   
@@ -42,8 +43,8 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   totalRevenue: number;
   lastActiveAt?: Date | string;
   
-  // NEW: Pricing configuration
-  pricingConfig: MerchantPricingConfig;
+  // Optional: Full pricing configuration (can be removed if not needed)
+  pricingConfig?: MerchantPricingConfig | string;
   
   // Related entities (populated when needed)
   plan?: PlanDetails;

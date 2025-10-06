@@ -184,6 +184,12 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       );
     }
 
+    // Handle images - convert array to JSON string if needed
+    let imagesValue = parsed.data.images;
+    if (Array.isArray(imagesValue)) {
+      imagesValue = JSON.stringify(imagesValue);
+    }
+
     // Use Prisma relation syntax with CUID
     const productData: any = {
       merchant: { connect: { id: merchant.id } }, // Use CUID, not publicId
@@ -194,7 +200,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       rentPrice: parsed.data.rentPrice ?? 0,
       salePrice: parsed.data.salePrice ?? undefined,
       deposit: parsed.data.deposit ?? 0,
-      images: parsed.data.images,
+      images: imagesValue,
       outletStock: {
         create: outletStock.map(os => ({
           outlet: { connect: { id: os.outletId } },

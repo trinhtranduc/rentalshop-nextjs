@@ -103,7 +103,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
 
     try {
       await onSave(data);
-      showSuccess('Success', 'Product updated successfully!');
+      // Parent component will handle success toast
     } catch (err) {
       showError('Error', err instanceof Error ? err.message : 'Failed to update product');
     } finally {

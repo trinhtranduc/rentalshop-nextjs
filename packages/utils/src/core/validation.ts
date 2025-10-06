@@ -63,7 +63,7 @@ export const productCreateSchema = z.object({
   deposit: z.number().nonnegative('Deposit must be non-negative').default(0),
   categoryId: z.coerce.number().int().positive().optional(), // Optional - will use default category if not provided
   totalStock: z.number().int().min(0, 'Total stock must be non-negative'),
-  images: z.string().optional(), // stored as JSON string upstream
+  images: z.union([z.string(), z.array(z.string())]).optional(), // Allow both string and array for testing
   merchantId: z.coerce.number().int().positive().optional(), // Optional - required for ADMIN users, auto-assigned for others
   outletStock: z.array(outletStockItemSchema).min(1, 'At least one outlet stock entry is required'), // Required - every product must have outlet stock
 });

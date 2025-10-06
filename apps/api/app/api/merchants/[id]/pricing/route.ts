@@ -7,8 +7,14 @@ import type { BusinessType, PricingType, MerchantPricingConfig } from '@rentalsh
 // ============================================================================
 // GET MERCHANT PRICING CONFIGURATION
 // ============================================================================
+// 
+// **Why OUTLET_ADMIN and OUTLET_STAFF need access:**
+// - They create orders and need to know merchant pricing rules
+// - They need to calculate rental prices (HOURLY, DAILY, WEEKLY)
+// - They work for the merchant, so should have READ access
+// - Read-only access, cannot modify pricing (PUT is restricted)
 
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (
   request: NextRequest, 
   { user, userScope }, 
   params: { id: string }
@@ -21,8 +27,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (
     const merchantId = parseInt(params?.id || '0');
     console.log(`🔍 GET /api/merchants/${merchantId}/pricing - User: ${user?.email} (${user?.role})`);
     
-    // Validate merchant access
-    if (user.role === 'MERCHANT' && userScope?.merchantId !== merchantId) {
+    // Validate merchant access - all outlet users have merchantId in scope
+    if (['MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'].includes(user.role) && userScope?.merchantId !== merchantId) {
       console.log('❌ Access denied: merchant scope mismatch');
       return NextResponse.json(
         { success: false, message: 'Access denied' },

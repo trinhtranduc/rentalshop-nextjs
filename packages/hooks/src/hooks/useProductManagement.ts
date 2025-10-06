@@ -179,8 +179,8 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       }
     } catch (error) {
       console.error('Error fetching products:', error);
-      handleError(error); // Show error toast
       setProducts([]);
+      // Let component handle error notification
     } finally {
       setLoading(false);
     }
@@ -298,9 +298,9 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       }
     } catch (error) {
       console.error('Error fetching product details:', error);
-      handleError(error); // Show error toast
       // Fallback to basic product info
       setSelectedProduct(product);
+      // Let component handle error notification
       setShowProductDetail(true);
     } finally {
       setLoading(false);
@@ -328,7 +328,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       }
     } catch (error) {
       console.error('Error updating product status:', error);
-      handleError(error); // Show error toast
+      // Let component handle error notification
     }
   }, [fetchProducts]);
 
@@ -428,8 +428,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       }
     } catch (error) {
       console.error('Error creating product:', error);
-      handleError(error); // Show error toast
-      throw error; // Re-throw to let the form handle the error
+      throw error; // Let component handle error notification
     }
   }, [fetchProducts]);
 

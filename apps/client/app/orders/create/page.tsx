@@ -51,26 +51,36 @@ export default function CreateOrderPage() {
         console.log('🔍 Fetching data for merchant ID:', merchantId);
 
         const [customersRes, productsRes, outletsRes] = await Promise.all([
-          // Call customers API directly with merchantId filter
-          fetch(`/api/customers?merchantId=${merchantId}&isActive=true&limit=50`).then(res => res.json()),
-          // Call products API directly with merchantId filter  
-          fetch(`/api/products?merchantId=${merchantId}&isActive=true&limit=100`).then(res => res.json()),
-          // Use getOutletsByMerchant for merchant-specific outlets
+          // Use API clients (they automatically attach auth token)
+          customersApi.searchCustomers({ 
+            merchantId: Number(merchantId), 
+            isActive: true, 
+            limit: 50 
+          }),
+          productsApi.searchProducts({ 
+            merchantId: Number(merchantId), 
+            isActive: true, 
+            limit: 100 
+          }),
           outletsApi.getOutletsByMerchant(Number(merchantId)),
         ]);
 
         if (customersRes.success) {
-          // API returns { success: true, data: { customers: CustomerSearchResult[] } }
+          // searchCustomers returns { success: true, data: { customers: [...] } }
           setCustomers(customersRes.data?.customers || []);
+          console.log('✅ Loaded customers:', customersRes.data?.customers?.length || 0);
         } else {
           console.error('Failed to fetch customers:', customersRes.error);
+          showError('Load Error', 'Failed to load customers');
         }
 
         if (productsRes.success) {
-          // API returns { success: true, data: { products: ProductWithStock[] } }
+          // searchProducts returns { success: true, data: { products: [...] } }
           setProducts(productsRes.data?.products || []);
+          console.log('✅ Loaded products:', productsRes.data?.products?.length || 0);
         } else {
           console.error('Failed to fetch products:', productsRes.error);
+          showError('Load Error', 'Failed to load products');
         }
 
         if (outletsRes.success) {
@@ -160,26 +170,26 @@ export default function CreateOrderPage() {
   }
 
   return (
-    <PageWrapper>
-      <PageContent>
-        <ToastContainer toasts={toasts} onClose={removeToast} />
-        {loading ? (
+    <div className="min-h-screen bg-bg-primary">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      {loading ? (
+        <div className="p-6">
           <FormSkeleton />
-        ) : (
-          <CreateOrderForm
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            customers={customers}
-            products={products}
-            outlets={outlets}
-            loading={submitting}
-            layout="split"
-            merchantId={Number(merchantId)}
-            onFormReady={handleFormReady}
-          />
-        )}
-      </PageContent>
-    </PageWrapper>
+        </div>
+      ) : (
+        <CreateOrderForm
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          customers={customers}
+          products={products}
+          outlets={outlets}
+          loading={submitting}
+          layout="three-column"
+          merchantId={Number(merchantId)}
+          onFormReady={handleFormReady}
+        />
+      )}
+    </div>
   );
 }
 

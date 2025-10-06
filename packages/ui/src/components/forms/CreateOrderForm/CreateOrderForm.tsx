@@ -45,8 +45,8 @@ import { useCreateOrderForm } from './hooks/useCreateOrderForm';
 import { useOrderValidation } from './hooks/useOrderValidation';
 import { useProductSearch } from './hooks/useProductSearch';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
-import { useMerchantData } from './hooks/useMerchantData';
 import { OrderFormHeader } from './components/OrderFormHeader';
+import { useAuth } from '@rentalshop/hooks';
 import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderSummarySection } from './components/OrderSummarySection';
@@ -107,8 +107,18 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     setCustomerResults 
   } = useCustomerSearch();
 
-  // Fetch merchant data for pricing configuration
-  const { merchant: merchantData, loading: merchantLoading, error: merchantError } = useMerchantData();
+  // Get merchant data from user context (no API call needed!)
+  const { user } = useAuth();
+  const merchantData = user?.merchant || null;
+  
+  // Debug merchant data
+  console.log('🔍 CreateOrderForm - Merchant Data:', {
+    hasUser: !!user,
+    hasMerchant: !!merchantData,
+    pricingType: merchantData?.pricingType,
+    businessType: merchantData?.businessType,
+    fullMerchant: merchantData
+  });
 
   // Local state
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(() => {
@@ -447,9 +457,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           isEditMode={isEditMode} 
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-          {/* Left Column - Products Section (2/3) */}
-          <div className="lg:col-span-2 space-y-6">
+        <div className="flex flex-col lg:flex-row gap-4 p-4">
+          {/* Column 1 - Products Section (40%) */}
+          <div className="lg:w-[40%] space-y-4">
             <ProductsSection
               orderItems={orderItems}
               products={[...products, ...searchedProducts]} // Combine initial products with searched products
@@ -465,8 +475,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             />
           </div>
 
-          {/* Right Column - Order Info & Summary (1/3) */}
-          <div className="space-y-6">
+          {/* Column 2 - Order Information (30%) */}
+          <div className="lg:w-[30%] space-y-4">
             <OrderInfoSection
               formData={formData}
               outlets={outlets}
@@ -476,8 +486,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               isLoadingCustomers={isLoadingCustomers}
               isEditMode={isEditMode}
               merchantData={merchantData}
-              merchantLoading={merchantLoading}
-              merchantError={merchantError}
               onFormDataChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
               onCustomerSelect={handleCustomerSelect}
               onCustomerClear={() => {
@@ -490,7 +498,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               onShowAddCustomerDialog={() => setShowAddCustomerDialog(true)}
               onUpdateRentalDates={updateRentalDates}
             />
+          </div>
 
+          {/* Column 3 - Order Summary & Actions (30%) */}
+          <div className="lg:w-[30%] space-y-4">
             <OrderSummarySection
               formData={formData}
               orderItems={orderItems}

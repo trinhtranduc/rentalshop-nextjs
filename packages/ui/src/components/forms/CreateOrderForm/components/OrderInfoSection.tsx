@@ -41,8 +41,6 @@ interface OrderInfoSectionProps {
   isLoadingCustomers: boolean;
   isEditMode: boolean;
   merchantData?: any;
-  merchantLoading?: boolean;
-  merchantError?: string | null;
   onFormDataChange: (field: keyof OrderFormData, value: any) => void;
   onCustomerSelect: (customer: CustomerSearchResult) => void;
   onCustomerClear: () => void;
@@ -61,8 +59,6 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   isLoadingCustomers,
   isEditMode,
   merchantData,
-  merchantLoading,
-  merchantError,
   onFormDataChange,
   onCustomerSelect,
   onCustomerClear,
@@ -82,7 +78,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Outlet Selection */}
+        {/* 1. Outlet Selection */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
             Outlet <span className="text-red-500">*</span>
@@ -114,7 +110,122 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </Select>
         </div>
 
-        {/* Customer Selection */}
+        {/* 2. Order Type Toggle */}
+        <div className="space-y-2 w-full">
+          <label className="text-sm font-medium text-text-primary">
+            Order Type
+            {isEditMode && (
+              <span className="ml-2 text-xs text-gray-500 font-normal">
+                (Cannot be changed when editing)
+              </span>
+            )}
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={isEditMode}
+              onClick={() => {
+                if (!isEditMode) {
+                  onFormDataChange('orderType', 'RENT');
+                }
+              }}
+              className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
+                formData.orderType === 'RENT' 
+                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              Rent
+            </button>
+            <button
+              type="button"
+              disabled={isEditMode}
+              onClick={() => {
+                if (!isEditMode) {
+                  onFormDataChange('orderType', 'SALE');
+                  onFormDataChange('pickupPlanAt', '');
+                  onFormDataChange('returnPlanAt', '');
+                  onFormDataChange('depositAmount', 0);
+                }
+              }}
+              className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
+                formData.orderType === 'SALE' 
+                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              Sale
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Rental Period Selection - Smart pricing based on merchant configuration */}
+        {formData.orderType === 'RENT' && (
+          <div className="space-y-2 w-full">
+            {/* Debug logs */}
+            {console.log('🔍 OrderInfoSection - Rental Period Check:', {
+              orderType: formData.orderType,
+              hasMerchantData: !!merchantData,
+              pricingType: merchantData?.pricingType,
+              businessType: merchantData?.businessType
+            })}
+            
+            {merchantData ? (
+              <RentalPeriodSelector
+                product={{
+                  id: 0, // Placeholder - will be updated when product is selected
+                  name: 'Rental Period',
+                  rentPrice: 0, // Will be calculated based on merchant pricing
+                  deposit: 0
+                }}
+                merchant={merchantData}
+                onPeriodChange={(startAt, endAt) => {
+                  const startDate = startAt.toISOString().split('T')[0];
+                  const endDate = endAt.toISOString().split('T')[0];
+                  
+                  onFormDataChange('pickupPlanAt', startDate);
+                  onFormDataChange('returnPlanAt', endDate);
+                  
+                  onUpdateRentalDates(startDate, endDate);
+                }}
+                onPriceChange={(pricing) => {
+                  // Update pricing information when period changes
+                  console.log('Pricing updated:', pricing);
+                }}
+              />
+            ) : (
+              // Fallback to basic DateRangePicker if no merchant data
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">
+                  Rental Period <span className="text-red-500">*</span>
+                </label>
+                <DateRangePicker
+                  value={{
+                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
+                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
+                  }}
+                  onChange={(range) => {
+                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
+                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
+                    
+                    onFormDataChange('pickupPlanAt', startDate);
+                    onFormDataChange('returnPlanAt', endDate);
+                    
+                    if (startDate && endDate) {
+                      onUpdateRentalDates(startDate, endDate);
+                    }
+                  }}
+                  placeholder="Select rental period"
+                  minDate={new Date()}
+                  showPresets={false}
+                  format="long"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 4. Customer Selection */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
             Customer <span className="text-red-500">*</span>
@@ -237,56 +348,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
         </div>
 
-        {/* Order Type Toggle */}
-        <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">
-            Order Type
-            {isEditMode && (
-              <span className="ml-2 text-xs text-gray-500 font-normal">
-                (Cannot be changed when editing)
-              </span>
-            )}
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={isEditMode}
-              onClick={() => {
-                if (!isEditMode) {
-                  onFormDataChange('orderType', 'RENT');
-                }
-              }}
-              className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
-                formData.orderType === 'RENT' 
-                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              Rent
-            </button>
-            <button
-              type="button"
-              disabled={isEditMode}
-              onClick={() => {
-                if (!isEditMode) {
-                  onFormDataChange('orderType', 'SALE');
-                  onFormDataChange('pickupPlanAt', '');
-                  onFormDataChange('returnPlanAt', '');
-                  onFormDataChange('depositAmount', 0);
-                }
-              }}
-              className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
-                formData.orderType === 'SALE' 
-                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              Sale
-            </button>
-          </div>
-        </div>
-
-        {/* Deposit Amount - Only for RENT orders */}
+        {/* 5. Deposit Amount - Only for RENT orders */}
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
             <label className="text-sm font-medium text-text-primary">Deposit</label>
@@ -303,7 +365,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </div>
         )}
 
-        {/* Discount Section */}
+        {/* 6. Discount Section */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">Discount</label>
           <div className="grid grid-cols-3 gap-2">
@@ -336,103 +398,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </div>
         </div>
 
-        {/* Rental Period Selection - Smart pricing based on merchant configuration */}
-        {formData.orderType === 'RENT' && (
-          <div className="space-y-2 w-full">
-            {merchantLoading ? (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">
-                  Rental Period <span className="text-red-500">*</span>
-                </label>
-                <Skeleton className="h-10 w-full" />
-              </div>
-            ) : merchantError ? (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">
-                  Rental Period <span className="text-red-500">*</span>
-                </label>
-                <div className="text-sm text-red-500 p-2 border border-red-200 rounded">
-                  Error loading merchant pricing: {merchantError}
-                </div>
-                {/* Fallback to basic DateRangePicker */}
-                <DateRangePicker
-                  value={{
-                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
-                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
-                  }}
-                  onChange={(range) => {
-                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
-                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
-                    
-                    onFormDataChange('pickupPlanAt', startDate);
-                    onFormDataChange('returnPlanAt', endDate);
-                    
-                    if (startDate && endDate) {
-                      onUpdateRentalDates(startDate, endDate);
-                    }
-                  }}
-                  placeholder="Select rental period"
-                  minDate={new Date()}
-                  showPresets={false}
-                  format="long"
-                />
-              </div>
-            ) : merchantData ? (
-              <RentalPeriodSelector
-                product={{
-                  id: 0, // Placeholder - will be updated when product is selected
-                  name: 'Rental Period',
-                  rentPrice: 0, // Will be calculated based on merchant pricing
-                  deposit: 0
-                }}
-                merchant={merchantData}
-                onPeriodChange={(startAt, endAt) => {
-                  const startDate = startAt.toISOString().split('T')[0];
-                  const endDate = endAt.toISOString().split('T')[0];
-                  
-                  onFormDataChange('pickupPlanAt', startDate);
-                  onFormDataChange('returnPlanAt', endDate);
-                  
-                  onUpdateRentalDates(startDate, endDate);
-                }}
-                onPriceChange={(pricing) => {
-                  // Update pricing information when period changes
-                  console.log('Pricing updated:', pricing);
-                }}
-              />
-            ) : (
-              // Fallback to basic DateRangePicker if no merchant data
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">
-                  Rental Period <span className="text-red-500">*</span>
-                </label>
-                <DateRangePicker
-                  value={{
-                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
-                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
-                  }}
-                  onChange={(range) => {
-                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
-                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
-                    
-                    onFormDataChange('pickupPlanAt', startDate);
-                    onFormDataChange('returnPlanAt', endDate);
-                    
-                    if (startDate && endDate) {
-                      onUpdateRentalDates(startDate, endDate);
-                    }
-                  }}
-                  placeholder="Select rental period"
-                  minDate={new Date()}
-                  showPresets={false}
-                  format="long"
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Order Notes */}
+        {/* 7. Order Notes */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">Order Notes</label>
           <Textarea

@@ -27,7 +27,7 @@ export interface DateRangePickerProps {
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   value = { from: undefined, to: undefined },
   onChange,
-  placeholder = "Chọn khoảng thời gian",
+  placeholder = "Select date range",
   className,
   disabled = false,
   minDate = new Date(),
@@ -63,32 +63,30 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   }, []);
 
   const formatDate = (date: Date, formatType: 'short' | 'long' = format) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
     if (formatType === 'long') {
-      return date.toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
+      return `${day}/${month}/${year}`;
     }
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: 'short'
-    });
+    // For short format, show dd/mm
+    return `${day}/${month}`;
   };
 
   const formatDisplayValue = () => {
     if (!value?.from && !value?.to) return placeholder;
     
     if (value.from && value.to) {
-      return `${formatDate(value.from)} - ${formatDate(value.to)}`;
+      return `${formatDate(value.from, 'long')} - ${formatDate(value.to, 'long')}`;
     }
     
     if (value.from) {
-      return `Từ ${formatDate(value.from)}`;
+      return `From ${formatDate(value.from, 'long')}`;
     }
     
     if (value.to) {
-      return `Đến ${formatDate(value.to)}`;
+      return `To ${formatDate(value.to, 'long')}`;
     }
     
     return placeholder;
@@ -213,7 +211,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   };
 
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentMonth);
-  const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
   return (
     <div className={cn("relative", className)} ref={containerRef}>
@@ -261,7 +259,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                     onClick={() => handlePresetClick(days)}
                     className="text-xs h-7 px-2"
                   >
-                    {days} ngày
+                    {days} {days === 1 ? 'day' : 'days'}
                   </Button>
                 ))}
               </div>
@@ -280,7 +278,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             </Button>
             
             <h4 className="text-sm font-medium text-gray-900">
-              {currentMonth.toLocaleDateString('vi-VN', { 
+              {currentMonth.toLocaleDateString('en-US', { 
                 month: 'long', 
                 year: 'numeric' 
               })}
@@ -354,14 +352,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
               onClick={handleClear}
               className="flex-1"
             >
-              Xóa
+              Clear
             </Button>
             <Button
               size="sm"
               onClick={handleApply}
               className="flex-1"
             >
-              Áp dụng
+              Apply
             </Button>
           </div>
         </div>

@@ -105,7 +105,7 @@ export const Users: React.FC<UsersProps> = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       addToast('error', 'Creation Failed', errorMessage);
-      throw error; // Re-throw to let the form handle the error
+      // Don't re-throw - error already handled
     }
   };
 
@@ -116,7 +116,7 @@ export const Users: React.FC<UsersProps> = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       addToast('error', 'Update Failed', errorMessage);
-      throw error; // Re-throw to let the form handle the error
+      // Don't re-throw - error already handled
     }
   };
 

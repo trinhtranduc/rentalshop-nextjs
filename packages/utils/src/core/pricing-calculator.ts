@@ -534,12 +534,14 @@ export const calculateDiscountedPrice = (originalPrice: number, discountPercenta
 export class PricingResolver {
   /**
    * Resolve pricing type cho product dựa trên merchant config
+   * Simple: Chỉ dùng pricingType từ merchant (không cần pricingConfig object)
    */
   static resolvePricingType(
     product: Product,
     merchant: Merchant
   ): PricingType {
-    return merchant.pricingConfig.defaultPricingType;
+    // Use pricingType directly from merchant
+    return (merchant.pricingType as PricingType) || 'FIXED';
   }
   
   /**
@@ -604,14 +606,9 @@ export class PricingValidator {
     const warnings: string[] = [];
     const suggestions: string[] = [];
 
-    // Parse merchant pricing configuration
-    let pricingConfig;
-    try {
-      pricingConfig = merchant.pricingConfig;
-    } catch (error) {
-      errors.push('Invalid pricing configuration');
-      return { isValid: false, errors, warnings, suggestions };
-    }
+    // Get pricing type from merchant (simplified - no need for pricingConfig object)
+    const pricingType = merchant.pricingType || 'FIXED';
+    const businessType = merchant.businessType || 'GENERAL';
 
     // Validate rental dates
     if (rentalStartAt >= rentalEndAt) {
@@ -622,15 +619,15 @@ export class PricingValidator {
     const durationMs = rentalEndAt.getTime() - rentalStartAt.getTime();
     const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
 
-    // Validate minimum duration
-    const minDuration = pricingConfig?.durationLimits?.minDuration || 1;
+    // Use default duration limits (simplified)
+    const minDuration = 1;
+    const maxDuration = 365;
+    
     if (durationDays < minDuration) {
-      errors.push(`Minimum rental duration is ${minDuration} days`);
-      suggestions.push(`Consider extending rental to ${minDuration} days`);
+      errors.push(`Minimum rental duration is ${minDuration} day`);
+      suggestions.push(`Please select at least ${minDuration} day`);
     }
 
-    // Validate maximum duration
-    const maxDuration = pricingConfig?.durationLimits?.maxDuration || 365;
     if (durationDays > maxDuration) {
       warnings.push(`Rental duration (${durationDays} days) exceeds recommended maximum (${maxDuration} days)`);
       suggestions.push('Consider splitting into multiple rentals');
