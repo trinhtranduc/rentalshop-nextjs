@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { subscriptionsApi, plansApi } from '@rentalshop/utils';
-import { useToastHandler } from '@rentalshop/hooks';
+import { useCanExportData } from '@rentalshop/hooks';
+import { useAuth } from '@rentalshop/hooks';
+import { useToast } from '@rentalshop/ui';
 import {
   Card,
   CardHeader,
@@ -44,7 +46,9 @@ import {
 import type { Subscription, Plan, Payment } from '@rentalshop/types';
 
 export default function MerchantSubscriptionPage() {
-  const { showError, showSuccess } = useToastHandler();
+  const { user } = useAuth();
+  const { toastError, toastSuccess } = useToast();
+  const canExport = useCanExportData();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,9 +66,46 @@ export default function MerchantSubscriptionPage() {
       console.log('🔍 Subscription API response:', result);
       
       if (result.success && result.data) {
-        // API returns: { merchant, subscription, status, limits, usage }
-        console.log('✅ Setting subscription data:', result.data.subscription);
-        setSubscription(result.data.subscription);
+        // ============================================================================
+        // NEW FLAT API RESPONSE - Map to Subscription object
+        // ============================================================================
+        const data = result.data;
+        
+        const subscriptionData: Subscription = {
+          id: data.subscriptionId,
+          merchantId: data.merchantId,
+          planId: data.planId,
+          status: data.status,
+          amount: data.billingAmount,
+          currency: data.billingCurrency,
+          interval: data.billingInterval,
+          intervalCount: data.billingIntervalCount,
+          currentPeriodStart: data.currentPeriodStart,
+          currentPeriodEnd: data.currentPeriodEnd,
+          trialStart: data.trialStart,
+          trialEnd: data.trialEnd,
+          cancelAtPeriodEnd: data.cancelAtPeriodEnd,
+          canceledAt: data.canceledAt,
+          cancelReason: data.cancelReason,
+          createdAt: data.currentPeriodStart, // Use as fallback
+          updatedAt: data.currentPeriodStart, // Use as fallback
+          plan: {
+            id: data.planId || 0,
+            name: data.planName,
+            description: data.planDescription || '',
+            basePrice: data.planPrice,
+            currency: data.planCurrency,
+            trialDays: data.planTrialDays,
+            isActive: true,
+            features: data.features,
+            limits: data.limits,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        } as any;
+        
+        console.log('✅ Mapped subscription data:', subscriptionData);
+        setSubscription(subscriptionData);
         // Payments will be fetched separately if needed
         setPayments([]);
       } else {
@@ -73,7 +114,7 @@ export default function MerchantSubscriptionPage() {
     } catch (error) {
       console.error('Error fetching subscription:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch subscription data';
-      showError('Error', errorMessage);
+      toastError('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -365,10 +406,12 @@ export default function MerchantSubscriptionPage() {
               <CreditCard className="h-5 w-5" />
               <span>Payment History</span>
             </span>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+            {canExport && (
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>

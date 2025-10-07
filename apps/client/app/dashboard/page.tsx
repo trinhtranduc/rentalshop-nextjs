@@ -12,8 +12,8 @@ import {
   PageContent,
   IncomeChart,
   OrderChart,
-  SubscriptionStatusBanner
-} from '@rentalshop/ui';
+  SubscriptionStatusBanner,
+  useToast } from '@rentalshop/ui';
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
@@ -25,7 +25,7 @@ import {
   ArrowDownRight,
   Minus
 } from 'lucide-react';
-import { useAuth, useToastHandler } from '@rentalshop/hooks';
+import { useAuth } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi } from '@rentalshop/utils';
 
 // ============================================================================
@@ -154,7 +154,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 // ============================================================================
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { showError, showSuccess } = useToastHandler();
+  const { toastError, toastSuccess } = useToast();
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>('today');
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -262,7 +262,7 @@ export default function DashboardPage() {
         analyticsApi.getOrderAnalytics(defaultFilters),
         analyticsApi.getTopProducts(defaultFilters),
         analyticsApi.getTopCustomers(defaultFilters),
-        analyticsApi.getDashboardSummary(defaultFilters)
+        analyticsApi.getDashboardSummary()
       ]);
 
       // Process responses
@@ -342,18 +342,13 @@ export default function DashboardPage() {
         error.message.includes('trial')
       )) {
         console.log('⚠️ Subscription error detected, showing error instead of redirecting');
-        showError('Subscription Issue', errorMessage);
+        toastError('Subscription Issue', errorMessage);
         return;
       }
       
-      // Handle other 401 errors using centralized utility
-      if (error instanceof Error) {
-        const { handleAuthError } = await import('@rentalshop/utils');
-        handleAuthError(error);
-        return;
-      }
+      // Handle other errors
       
-      showError('Error', errorMessage);
+      toastError('Error', errorMessage);
       
       // Set default data if API fails to prevent crashes
       setStats({
@@ -376,7 +371,6 @@ export default function DashboardPage() {
       setOrderData([]);
       setTopProducts([]);
       setTopCustomers([]);
-      setRecentOrders([]);
     } finally {
       setLoadingCharts(false);
     }

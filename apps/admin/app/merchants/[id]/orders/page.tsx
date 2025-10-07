@@ -3,16 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  PageWrapper,
+import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
   Orders,
   Button,
-  useToasts,
-  ToastContainer
-} from '@rentalshop/ui';
+  useToast
+ , useToast } from '@rentalshop/ui';
 import { ArrowLeft, Plus } from 'lucide-react';
 import type { Order, OrderFilters, OrderListData, OrderStats } from '@rentalshop/types';
 
@@ -21,7 +19,7 @@ import type { Order, OrderFilters, OrderListData, OrderStats } from '@rentalshop
 export default function MerchantOrdersPage() {
   const params = useParams();
   const router = useRouter();
-  const { toasts, showInfo, removeToast } = useToasts();
+  const { toasts, toastInfo, removeToast } = useToast();
   const merchantId = params.id as string;
   
   const [orderData, setOrderData] = useState<OrderListData>({
@@ -249,7 +247,7 @@ export default function MerchantOrdersPage() {
               size="sm"
               onClick={() => {
                 // TODO: Implement export functionality
-                showInfo('Export Feature', 'Export functionality coming soon!');
+                info('Export Feature', 'Export functionality coming soon!');
               }}
             >
               Export
@@ -279,7 +277,6 @@ export default function MerchantOrdersPage() {
         />
       </PageContent>
     </PageWrapper>
-    <ToastContainer toasts={toasts} onClose={removeToast} />
   </>
   );
 }

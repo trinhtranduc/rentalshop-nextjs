@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, ToastContainer, useToasts, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rentalshop/ui";
 import { authApi } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
@@ -54,7 +53,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [accountData, setAccountData] = useState<Partial<RegisterFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   // Step 1 validation schema (Account Information)
   const step1ValidationSchema = Yup.object({
@@ -195,7 +194,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           storeAuthData(result.data.token, result.data.user);
         }
         
-        showSuccess("Registration Complete!", "Account created successfully.");
+        toastSuccess("Registration Complete!", "Account created successfully.");
         
         // Reset form
         formik.resetForm();
@@ -207,7 +206,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           window.location.href = "/login";
         }, 2000);
       } catch (error: any) {
-        showError(
+        toastError(
           "Registration Failed",
           error.message || "Something went wrong. Please try again."
         );
@@ -738,11 +737,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             </div>
           </form>
         </CardContent>
-      </Card>
-
-      {/* Toast Container */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
-    </div>
+      </Card>    </div>
   );
 };
 

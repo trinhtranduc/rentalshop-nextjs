@@ -18,6 +18,7 @@ export { PaymentHistoryTable } from './components/PaymentHistoryTable';
 export { ManualRenewalModal } from './components/ManualRenewalModal';
 export { UpgradeTrialModal } from './components/UpgradeTrialModal';
 export { SubscriptionActivityTimeline } from './components/SubscriptionActivityTimeline';
+export { SubscriptionHistoryDialog } from './components/SubscriptionHistoryDialog';
 export { SubscriptionChangePlanDialog } from './components/SubscriptionChangePlanDialog';
 
 // Re-export types for convenience

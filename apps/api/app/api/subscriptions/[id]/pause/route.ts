@@ -25,13 +25,44 @@ export async function POST(
         return NextResponse.json({ success: false, message: 'Subscription not found' }, { status: API.STATUS.NOT_FOUND });
       }
 
+      // Get reason from request body
+      const body = await request.json().catch(() => ({}));
+      const reason = body.reason || 'Paused by admin';
+
       // Pause subscription
       const pausedSubscription = await db.subscriptions.update(subscriptionId, {
-        status: 'PAUSED',
-        pausedAt: new Date()
+        status: 'PAUSED'
       });
 
-      return NextResponse.json({ success: true, data: pausedSubscription });
+      // Log activity to database
+      await db.subscriptionActivities.create({
+        subscriptionId,
+        type: 'subscription_paused',
+        description: 'Subscription paused',
+        reason,
+        metadata: {
+          planId: existing.planId,
+          planName: existing.plan?.name,
+          previousStatus: existing.status,
+          newStatus: 'PAUSED',
+          performedBy: {
+            userId: user.userId || user.id,
+            email: user.email,
+            role: user.role,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+          },
+          source: user.role === 'ADMIN' ? 'admin_panel' : 'merchant_panel',
+          severity: 'warning',
+          category: 'billing'
+        },
+        performedBy: user.userId || user.id
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        data: pausedSubscription,
+        message: 'Subscription paused successfully'
+      });
     } catch (error) {
       console.error('Error pausing subscription:', error);
       

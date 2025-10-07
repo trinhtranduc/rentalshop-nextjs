@@ -7,8 +7,8 @@ import {
   CardTitle,
   CardContent,
   Button
-} from '../../../ui';
-import { useToasts } from '../../../ui/toast';
+} from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
 import type { ProductInput, ProductWithStock, Outlet, Category } from '@rentalshop/types';
@@ -33,7 +33,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   onBack
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showSuccess, showError } = useToasts();
+  const { toastSuccess, toastError } = useToast();
 
   // Debug: Log product data structure
   useEffect(() => {
@@ -105,7 +105,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       await onSave(data);
       // Parent component will handle success toast
     } catch (err) {
-      showError('Error', err instanceof Error ? err.message : 'Failed to update product');
+      error('Error', err instanceof Error ? err.message : 'Failed to update product');
     } finally {
       setIsSubmitting(false);
     }

@@ -9,8 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  ToastContainer,
-  useToasts,
+  useToast,
   UserPageHeader,
   UserFilters as UserFiltersComponent,
   UserTable,
@@ -61,7 +60,7 @@ export const Users: React.FC<UsersProps> = ({
   console.log('🔄 Users component re-rendered');
   console.log('🔄 Props:', { title, subtitle, showExportButton, showAddButton, addButtonText, exportButtonText, showStats, useSearchUsers, initialLimit, currentUser: !!currentUser, onExport: !!onExport, className });
   
-  const { toasts, addToast, removeToast } = useToasts();
+  const { toastSuccess, toastError, toastInfo, removeToast } = useToast();
   
   // Use the shared user management hook - memoize options to prevent re-mounts
   const userManagementOptions: UseUserManagementOptions = useMemo(() => ({
@@ -101,10 +100,10 @@ export const Users: React.FC<UsersProps> = ({
   const handleUserCreatedWithToast = async (userData: UserCreateInput | UserUpdateInput) => {
     try {
       await handleUserCreated(userData as UserCreateInput);
-      addToast('success', 'User Created', 'User has been created successfully.');
+      toastSuccess('User Created', 'User has been created successfully.');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      addToast('error', 'Creation Failed', errorMessage);
+      toastError('Creation Failed', errorMessage);
       // Don't re-throw - error already handled
     }
   };
@@ -112,10 +111,10 @@ export const Users: React.FC<UsersProps> = ({
   const handleUserUpdatedWithToast = async (userData: UserUpdateInput) => {
     try {
       await handleUserUpdatedAsync(userData);
-      addToast('success', 'User Updated', 'User information has been updated successfully.');
+      toastSuccess('User Updated', 'User information has been updated successfully.');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      addToast('error', 'Update Failed', errorMessage);
+      toastError('Update Failed', errorMessage);
       // Don't re-throw - error already handled
     }
   };
@@ -125,19 +124,19 @@ export const Users: React.FC<UsersProps> = ({
       onExport();
     } else {
       handleExportUsers();
-      addToast('info', 'Export', 'Export functionality coming soon!');
+      toastInfo('Export', 'Export functionality coming soon!');
     }
   };
 
   const handleUserUpdatedWithToastCallback = (updatedUser: User) => {
     handleUserUpdated(updatedUser);
     const fullName = `${updatedUser.firstName || ''} ${updatedUser.lastName || ''}`.trim();
-    addToast('success', 'User Updated', `User "${fullName}" has been updated successfully.`);
+    toastSuccess('User Updated', `User "${fullName}" has been updated successfully.`);
   };
 
-  const handleUserErrorWithToast = (error: string) => {
-    handleUserError(error);
-    addToast('error', 'Error', error);
+  const handleUserErrorWithToast = (errorMessage: string) => {
+    handleUserError(errorMessage);
+    toastError('Error', errorMessage);
   };
 
   // Loading state
@@ -310,9 +309,6 @@ export const Users: React.FC<UsersProps> = ({
           />
         </DialogContent>
       </Dialog>
-      
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 };

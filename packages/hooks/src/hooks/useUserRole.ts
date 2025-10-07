@@ -18,6 +18,7 @@ export interface UserRoleInfo {
   canManageOutlets: boolean;
   canManageSubscriptions: boolean;
   canViewBilling: boolean;
+  canExportData: boolean;
 }
 
 export function useUserRole(): UserRoleInfo {
@@ -39,6 +40,7 @@ export function useUserRole(): UserRoleInfo {
     canManageOutlets: role === 'ADMIN' || role === 'MERCHANT',
     canManageSubscriptions: role === 'ADMIN' || role === 'MERCHANT',
     canViewBilling: role === 'ADMIN' || role === 'MERCHANT',
+    canExportData: role === 'ADMIN' || role === 'MERCHANT',
   };
 }
 
@@ -74,4 +76,9 @@ export function useCanManageSubscriptions(): boolean {
 export function useCanViewBilling(): boolean {
   const { canViewBilling } = useUserRole();
   return canViewBilling;
+}
+
+export function useCanExportData(): boolean {
+  const { canExportData } = useUserRole();
+  return canExportData;
 }

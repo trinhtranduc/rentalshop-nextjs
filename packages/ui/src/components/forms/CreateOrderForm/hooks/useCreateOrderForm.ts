@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useToasts } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui';
 import { customersApi, handleApiError } from '@rentalshop/utils';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
 import type { 
@@ -106,7 +106,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   const [showOrderPreview, setShowOrderPreview] = useState(false);
 
   // Toast notifications
-  const { showSuccess, showError } = useToasts();
+  const { toastSuccess, toastError } = useToast();
 
   // Calculate totals when order items change
   useEffect(() => {

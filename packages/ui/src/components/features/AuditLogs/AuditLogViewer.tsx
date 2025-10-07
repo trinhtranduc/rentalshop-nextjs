@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card,
+import { Card,
   CardContent,
   CardHeader,
   CardTitle,
@@ -12,8 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
   Badge,
-  useToasts
-} from '@rentalshop/ui';
+  useToast,  } from '@rentalshop/ui';
 import { AuditLogDetail } from './AuditLogDetail';
 import { 
   Search,

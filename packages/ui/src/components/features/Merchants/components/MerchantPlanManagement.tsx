@@ -23,6 +23,7 @@ import {
   SelectValue
 } from '../../../ui';
 import { ManualRenewalModal } from '../../Subscriptions';
+import { SubscriptionHistoryDialog } from '../../Subscriptions/components/SubscriptionHistoryDialog';
 import { 
   CreditCard, 
   Clock, 
@@ -30,9 +31,10 @@ import {
   Pause,
   Play,
   Plus,
-  X
+  X,
+  History
 } from 'lucide-react';
-import { formatSubscriptionPeriod } from '@rentalshop/utils';
+import { formatSubscriptionPeriod, formatDateTimeLong } from '@rentalshop/utils';
 // Billing configuration (following Stripe's modern practices)
 const BILLING_INTERVALS = [
   {
@@ -176,6 +178,8 @@ export function MerchantPlanManagement({
   const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelType, setCancelType] = useState<'immediate' | 'end_of_period'>('end_of_period');
   const [suspendReason, setSuspendReason] = useState('');
@@ -331,6 +335,7 @@ export function MerchantPlanManagement({
     setIsSubmitting(true);
     try {
       await onReactivate?.(currentSubscription);
+      setShowResumeDialog(false);
     } catch (error) {
       console.error('Error reactivating subscription:', error);
     } finally {
@@ -363,10 +368,25 @@ export function MerchantPlanManagement({
       {/* Current Plan Overview */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Current Subscription
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Current Subscription
+            </CardTitle>
+            
+            {/* View History Button - Top Right Corner */}
+            {currentSubscription && (currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowHistoryDialog(true)}
+                className="flex items-center gap-2"
+              >
+                <History className="h-4 w-4" />
+                View History
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {(merchant.currentPlan || currentSubscription) ? (
@@ -386,10 +406,19 @@ export function MerchantPlanManagement({
                     }
                   </p>
                 </div>
-                <StatusBadge 
-                  status={getStatusColor(merchant.subscriptionStatus)} 
-                  size="sm"
-                />
+                <div className="flex flex-col items-end gap-2">
+                  {/* Subscription Status - Highlighted */}
+                  <div className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${
+                    currentSubscription?.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                    currentSubscription?.status === 'TRIAL' ? 'bg-blue-100 text-blue-800' :
+                    currentSubscription?.status === 'PAUSED' ? 'bg-orange-100 text-orange-800' :
+                    currentSubscription?.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                    currentSubscription?.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {currentSubscription?.status || merchant.subscriptionStatus || 'Unknown'}
+                  </div>
+                </div>
               </div>
 
               {/* Subscription Period - Simplified */}
@@ -398,9 +427,17 @@ export function MerchantPlanManagement({
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Period:</span>
                     <span className="font-medium">
-                      {formatDate((currentSubscription as any).startDate)} - {formatDate((currentSubscription as any).endDate)}
+                      {formatDateTimeLong((currentSubscription as any).startDate)} - {formatDateTimeLong((currentSubscription as any).endDate)}
                     </span>
                   </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Billing Interval:</span>
+                    <span className="font-medium capitalize">
+                      {currentSubscription.interval || 'month'}
+                    </span>
+                  </div>
+                  
                   {(currentSubscription as any).subscriptionPeriod?.daysRemaining !== undefined && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
@@ -478,7 +515,7 @@ export function MerchantPlanManagement({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleReactivate}
+                    onClick={() => setShowResumeDialog(true)}
                     disabled={isSubmitting}
                     className="flex items-center gap-2 text-green-600 hover:text-green-700"
                   >
@@ -596,7 +633,7 @@ export function MerchantPlanManagement({
 
       {/* Change Plan Dialog - Simplified */}
       <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ArrowRight className="h-5 w-5 text-blue-500" />
@@ -742,7 +779,7 @@ export function MerchantPlanManagement({
 
       {/* Cancel Plan Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <X className="h-5 w-5 text-red-500" />
@@ -815,7 +852,7 @@ export function MerchantPlanManagement({
 
       {/* Pause Plan Dialog */}
       <Dialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pause className="h-5 w-5 text-orange-500" />
@@ -862,6 +899,95 @@ export function MerchantPlanManagement({
               disabled={!suspendReason.trim() || isSubmitting}
             >
               {isSubmitting ? 'Pausing...' : 'Pause Plan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Resume Plan Dialog */}
+      <Dialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Play className="h-5 w-5 text-green-500" />
+              Resume Subscription
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to resume this subscription?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 flex-1 overflow-y-auto">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h4 className="font-semibold text-green-900 mb-2">Resuming Subscription</h4>
+              <ul className="text-sm text-green-800 space-y-1">
+                <li>✓ Your subscription will be reactivated immediately</li>
+                <li>✓ You will regain full access to all features</li>
+                <li>✓ Billing will resume according to your current plan</li>
+                <li>✓ All services will be restored</li>
+              </ul>
+            </div>
+
+            {currentSubscription && (
+              <div className="p-4 bg-gray-50 border rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Plan:</span>
+                  <span className="font-medium">{currentSubscription.plan?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Amount:</span>
+                  <span className="font-medium">{formatPrice(currentSubscription.amount, currentSubscription.currency)}/month</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowResumeDialog(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleReactivate}
+              disabled={isSubmitting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isSubmitting ? 'Resuming...' : 'Resume Subscription'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subscription History Dialog */}
+      <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-blue-500" />
+              Subscription Activity & Payment History
+            </DialogTitle>
+            <DialogDescription>
+              View detailed activity and payment history for this subscription
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <SubscriptionHistoryDialog 
+              subscriptionId={currentSubscription?.id}
+              merchantId={merchant.id}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowHistoryDialog(false)}
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

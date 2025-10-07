@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button, Card, CardHeader, CardTitle, CardContent, ToastContainer } from '../ui';
+import { Button, Card, CardHeader, CardTitle, CardContent } from '../ui';
 import { useErrorHandler, useToasts } from '@rentalshop/hooks';
 
 /**
@@ -83,7 +83,6 @@ export const ErrorHandlingUsage: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Toast Container */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
 
       {/* Demo Buttons */}
       <Card>

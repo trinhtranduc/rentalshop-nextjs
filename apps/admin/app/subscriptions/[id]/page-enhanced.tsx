@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Card,
+import { Card,
   CardHeader,
   CardTitle,
   CardContent,
@@ -13,9 +12,7 @@ import {
   PaymentHistoryTable,
   ManualRenewalModal,
   UpgradeTrialModal,
-  ToastContainer,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { subscriptionsApi, plansApi } from '@rentalshop/utils';
 import { 
   ArrowLeft,
@@ -59,7 +56,7 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
   const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   // Toast management
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   // Fetch subscription data
   useEffect(() => {
@@ -98,7 +95,7 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
       
     } catch (error) {
       console.error('Error fetching data:', error);
-      showError('Failed to load subscription details');
+      toastError('Failed to load subscription details');
     } finally {
       setLoading(false);
     }
@@ -120,15 +117,15 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
       const result = await response.json();
       
       if (result.success) {
-        showSuccess('Subscription renewed successfully!');
+        toastSuccess('Subscription renewed successfully!');
         setShowRenewalModal(false);
         fetchData(); // Reload data
       } else {
-        showError(result.message || 'Failed to renew subscription');
+        toastError(result.message || 'Failed to renew subscription');
       }
     } catch (error) {
       console.error('Renewal error:', error);
-      showError('An error occurred while renewing subscription');
+      toastError('An error occurred while renewing subscription');
     } finally {
       setRenewalLoading(false);
     }
@@ -153,15 +150,15 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
       const result = await response.json();
       
       if (result.success) {
-        showSuccess('Plan upgraded successfully!');
+        toastSuccess('Plan upgraded successfully!');
         setShowUpgradeModal(false);
         fetchData(); // Reload data
       } else {
-        showError(result.message || 'Failed to upgrade plan');
+        toastError(result.message || 'Failed to upgrade plan');
       }
     } catch (error) {
       console.error('Upgrade error:', error);
-      showError('An error occurred while upgrading plan');
+      toastError('An error occurred while upgrading plan');
     } finally {
       setUpgradeLoading(false);
     }
@@ -178,13 +175,13 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
 
       const result = await response.json();
       if (result.success) {
-        showSuccess('Subscription paused successfully');
+        toastSuccess('Subscription paused successfully');
         fetchData();
       } else {
-        showError(result.message || 'Failed to pause subscription');
+        toastError(result.message || 'Failed to pause subscription');
       }
     } catch (error) {
-      showError('An error occurred');
+      toastError('An error occurred');
     }
   };
 
@@ -199,13 +196,13 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
 
       const result = await response.json();
       if (result.success) {
-        showSuccess('Subscription resumed successfully');
+        toastSuccess('Subscription resumed successfully');
         fetchData();
       } else {
-        showError(result.message || 'Failed to resume subscription');
+        toastError(result.message || 'Failed to resume subscription');
       }
     } catch (error) {
-      showError('An error occurred');
+      toastError('An error occurred');
     }
   };
 
@@ -476,7 +473,6 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
       )}
 
       {/* Toast Container */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

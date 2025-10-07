@@ -129,15 +129,61 @@ export const subscriptionsApi = {
 
   /**
    * Get subscription status for current user
+   * Returns computed subscription status with single source of truth
    */
   async getCurrentUserSubscriptionStatus(): Promise<ApiResponse<{
-    hasSubscription: boolean;
-    status?: string;
-    subscription?: any;
-    isExpired?: boolean;
-    isExpiringSoon?: boolean;
-    daysUntilExpiry?: number;
-    message?: string;
+    // Merchant info
+    merchantId: number;
+    merchantName: string;
+    merchantEmail: string;
+    
+    // Computed status (single source of truth)
+    status: 'CANCELED' | 'EXPIRED' | 'PAST_DUE' | 'PAUSED' | 'TRIAL' | 'ACTIVE' | 'UNKNOWN';
+    statusReason: string;
+    hasAccess: boolean;
+    daysRemaining: number | null;
+    isExpiringSoon: boolean;
+    
+    // Database status (for reference)
+    dbStatus: string;
+    
+    // Subscription details
+    subscriptionId: number;
+    currentPeriodStart: string | null;
+    currentPeriodEnd: string | null;
+    trialStart: string | null;
+    trialEnd: string | null;
+    
+    // Plan info
+    planId: number | null;
+    planName: string;
+    planDescription: string;
+    planPrice: number;
+    planCurrency: string;
+    planTrialDays: number;
+    
+    // Billing info
+    billingAmount: number;
+    billingCurrency: string;
+    billingInterval: string;
+    billingIntervalCount: number;
+    
+    // Cancellation info
+    cancelAtPeriodEnd: boolean;
+    canceledAt: string | null;
+    cancelReason: string | null;
+    
+    // Limits & usage
+    limits: Record<string, number>;
+    usage: {
+      outlets: number;
+      users: number;
+      products: number;
+      customers: number;
+    };
+    
+    // Features
+    features: string[];
   }>> {
     const response = await authenticatedFetch(apiUrls.subscriptions.status);
     return await parseApiResponse(response);
@@ -195,5 +241,21 @@ export const subscriptionsApi = {
       body: JSON.stringify(data),
     });
     return await parseApiResponse<Subscription>(response);
+  },
+
+  /**
+   * Get subscription activities
+   */
+  async getActivities(id: number, limit: number = 20): Promise<ApiResponse<any[]>> {
+    const response = await authenticatedFetch(`${apiUrls.subscriptions.get(id)}/activities?limit=${limit}`);
+    return await parseApiResponse<any[]>(response);
+  },
+
+  /**
+   * Get subscription payments
+   */
+  async getPayments(id: number, limit: number = 20): Promise<ApiResponse<any[]>> {
+    const response = await authenticatedFetch(`${apiUrls.subscriptions.get(id)}/payments?limit=${limit}`);
+    return await parseApiResponse<any[]>(response);
   }
 };

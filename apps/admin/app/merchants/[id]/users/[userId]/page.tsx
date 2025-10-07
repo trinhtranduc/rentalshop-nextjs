@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  PageWrapper,
+import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
@@ -13,10 +12,8 @@ import {
   UserDisplayInfo,
   AccountManagementCard,
   ConfirmationDialog,
-  ToastContainer,
-  useToasts,
-  UserForm
-} from '@rentalshop/ui';
+  useToast,
+  UserForm , useToast } from '@rentalshop/ui';
 import { Edit, ArrowLeft, UserCheck, UserX, Trash2, Key } from 'lucide-react';
 import type { User, UserUpdateInput } from '@rentalshop/types';
 
@@ -31,7 +28,7 @@ export default function UserDetailPage() {
   const merchantId = params.id as string;
   const userId = params.userId as string;
   
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
   
   const [userDetails, setUserDetails] = useState<UserDetailData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,14 +86,14 @@ export default function UserDetailPage() {
           });
         }
         setShowEditSection(false);
-        showSuccess('User updated', 'Changes saved successfully.');
+        toastSuccess('User updated', 'Changes saved successfully.');
       } else {
         const msg = data.message || 'Failed to update user';
-        showError('Update failed', msg);
+        toastError('Update failed', msg);
       }
     } catch (error) {
       console.error('Error updating user:', error);
-      showError('Update failed', error instanceof Error ? error.message : 'Unknown error');
+      toastError('Update failed', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsUpdating(false);
     }
@@ -121,13 +118,13 @@ export default function UserDetailPage() {
             user: data.data
           });
         }
-        showSuccess('User Activated', 'User account has been activated successfully!');
+        toastSuccess('User Activated', 'User account has been activated successfully!');
       } else {
-        showError('Activation Failed', data.message || 'Failed to activate user');
+        toastError('Activation Failed', data.message || 'Failed to activate user');
       }
     } catch (error) {
       console.error('Error activating user:', error);
-      showError('Activation Failed', 'An error occurred while activating the user');
+      toastError('Activation Failed', 'An error occurred while activating the user');
     } finally {
       setIsUpdating(false);
     }
@@ -148,14 +145,14 @@ export default function UserDetailPage() {
             user: data.data
           });
         }
-        showSuccess('User Deactivated', 'User account has been deactivated successfully!');
+        toastSuccess('User Deactivated', 'User account has been deactivated successfully!');
         setShowDeactivateConfirm(false);
       } else {
-        showError('Deactivation Failed', data.message || 'Failed to deactivate user');
+        toastError('Deactivation Failed', data.message || 'Failed to deactivate user');
       }
     } catch (error) {
       console.error('Error deactivating user:', error);
-      showError('Deactivation Failed', 'An error occurred while deactivating the user');
+      toastError('Deactivation Failed', 'An error occurred while deactivating the user');
     } finally {
       setIsUpdating(false);
     }
@@ -171,27 +168,27 @@ export default function UserDetailPage() {
       const data = await response.json();
 
       if (data.success) {
-        showSuccess('User Deactivated', 'User account has been deactivated successfully!');
+        toastSuccess('User Deactivated', 'User account has been deactivated successfully!');
         setShowDeleteConfirm(false);
         router.push(`/merchants/${merchantId}/users`);
       } else {
-        showError('Deactivation Failed', data.message || 'Failed to deactivate user');
+        toastError('Deactivation Failed', data.message || 'Failed to deactivate user');
       }
     } catch (error) {
       console.error('Error deactivating user:', error);
-      showError('Deactivation Failed', 'An error occurred while deactivating the user');
+      toastError('Deactivation Failed', 'An error occurred while deactivating the user');
     } finally {
       setIsUpdating(false);
     }
   };
 
   const handlePasswordChangeSuccess = () => {
-    showSuccess('Password Changed', 'User password has been updated successfully!');
+    toastSuccess('Password Changed', 'User password has been updated successfully!');
     setShowChangePassword(false);
   };
 
-  const handlePasswordChangeError = (error: string) => {
-    showError('Password Change Failed', error);
+  const handlePasswordChangeError = (errorMessage: string) => {
+    toastError('Password Change Failed', errorMessage);
   };
 
   if (loading) {
@@ -263,7 +260,6 @@ export default function UserDetailPage() {
       </PageHeader>
 
       <PageContent>
-        <ToastContainer toasts={toasts} onClose={removeToast} />
         
         {/* User Information - Read Only OR Edit Form */}
         {!showEditSection ? (

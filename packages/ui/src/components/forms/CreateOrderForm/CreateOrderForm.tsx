@@ -33,7 +33,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useToasts, ToastContainer } from '@rentalshop/ui';
+import { useToast, ToastContainer } from '@rentalshop/ui';
 import { AddCustomerForm } from '../../features/Customers/components/AddCustomerForm';
 
 import { customersApi, handleApiError } from '@rentalshop/utils';
@@ -167,7 +167,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   const { calculateAvailability } = useProductAvailability();
   
   // Toast notifications
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   // Handle product search and store results
   const handleProductSearch = useCallback(async (query: string) => {
@@ -289,7 +289,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       if (!currentMerchantId) {
         const errorMsg = 'Merchant ID is required to create a customer. Please ensure the form has access to merchant information.';
-        showError("Error", errorMsg);
+        toastError("Error", errorMsg);
         throw new Error(errorMsg);
       }
       
@@ -309,7 +309,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       if (localDuplicate) {
         const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`;
-        showError("Duplicate Customer", errorMsg);
+        toastError("Duplicate Customer", errorMsg);
         throw new Error(errorMsg);
       }
       
@@ -327,7 +327,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
             if (normalizedPhone === existingNormalizedPhone) {
               const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`;
-              showError("Duplicate Customer", errorMsg);
+              toastError("Duplicate Customer", errorMsg);
               throw new Error(errorMsg);
             }
           }
@@ -367,7 +367,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         setSearchQuery(`${newCustomer.firstName} ${newCustomer.lastName} - ${newCustomer.phone}`);
         
         // Show success message
-        showSuccess("Customer Created", `Customer "${newCustomer.firstName} ${newCustomer.lastName}" has been created and selected.`);
+        toastSuccess("Customer Created", `Customer "${newCustomer.firstName} ${newCustomer.lastName}" has been created and selected.`);
         
         console.log('🔍 handleAddNewCustomer: Function completed successfully');
       } else {
@@ -375,7 +375,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         const errorMessage = result.message || result.error || 'Failed to create customer';
         console.error('❌ handleAddNewCustomer: API error:', errorMessage);
         console.error('❌ handleAddNewCustomer: Full result:', result);
-        showError("Error", errorMessage);
+        toastError("Error", errorMessage);
         throw new Error(errorMessage);
       }
     } catch (error) {
@@ -383,7 +383,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       // Re-throw the error so the dialog stays open
       throw error;
     }
-  }, [merchantId, outlets, customerSearchResults, setCustomerResults, setFormData, showSuccess, showError]);
+  }, [merchantId, outlets, customerSearchResults, setCustomerResults, setFormData, toastSuccess, toastError]);
 
   // Handle customer selection
   const handleCustomerSelect = useCallback((customer: CustomerSearchResult) => {
@@ -568,10 +568,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         editText="Back to Edit"
         title="Order Preview"
         subtitle="Review your order details before confirming"
-      />
-
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
-    </div>
+      />    </div>
   );
 };

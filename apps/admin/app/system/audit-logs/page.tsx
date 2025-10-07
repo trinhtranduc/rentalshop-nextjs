@@ -1,15 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  AuditLogViewer,
+import { AuditLogViewer,
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
   Pagination,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { 
   getAuditLogs, 
   getAuditLogStats,
@@ -36,7 +34,7 @@ export default function SystemAuditLogsPage() {
     updatePaginationFromResponse
   } = usePagination({ initialLimit: PAGINATION.DEFAULT_PAGE_SIZE, initialOffset: 0 });
   
-  const { addToast } = useToasts();
+  const { toastInfo } = useToast();
 
   // Load audit logs
   const loadAuditLogs = async (newFilter?: AuditLogFilter) => {
@@ -48,7 +46,7 @@ export default function SystemAuditLogsPage() {
       setLogs(result.data);
       updatePaginationFromResponse(result.pagination);
     } catch (error: any) {
-      addToast({
+      toastInfo({
         title: 'Failed to load audit logs',
         message: error.message || 'Please try again later.',
         type: 'error'

@@ -25,6 +25,7 @@ export const ProductDetailMultiLayout: React.FC<ProductDetailMultiLayoutProps> =
     <ProductDetailList
       product={product}
       onEdit={onEdit}
+      onViewOrders={onViewOrders}
       showActions={showActions}
       isMerchantAccount={isMerchantAccount}
       className={className}

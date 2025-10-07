@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CreateOrderForm, FormSkeleton, PageWrapper, PageContent, useToasts, ToastContainer } from '@rentalshop/ui';
+import { CreateOrderForm, FormSkeleton, PageWrapper, PageContent, useToast } from '@rentalshop/ui';
 import { 
   ordersApi, 
   customersApi, 
@@ -44,7 +44,7 @@ export default function EditOrderPage() {
   const [merchantId, setMerchantId] = useState<string>('');
 
   // Toast notifications
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   const orderId = params.id as string;
   
@@ -93,7 +93,7 @@ export default function EditOrderPage() {
             setMerchantId('');
           }
         } else {
-          setError(result.error || 'Failed to fetch order details');
+          setError('Failed to fetch order details');
         }
       } catch (err) {
         console.error('Error fetching order details:', err);
@@ -282,7 +282,7 @@ export default function EditOrderPage() {
 
       if (result.success) {
         // Show success message
-        showSuccess('Order updated successfully!');
+        toastSuccess('Order updated successfully!');
         // Navigate back to orders list after successful update
         router.push('/orders');
       } else {
@@ -290,7 +290,7 @@ export default function EditOrderPage() {
       }
     } catch (err) {
       console.error('Error updating order:', err);
-      showError('Failed to update order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError('Failed to update order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -441,7 +441,6 @@ export default function EditOrderPage() {
 
   return (
     <div className="min-h-screen bg-bg-primary">
-      <ToastContainer toasts={toasts} onClose={removeToast} />
       
       <CreateOrderForm
         isEditMode={true}

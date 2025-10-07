@@ -62,7 +62,7 @@ interface SettingsForm {
   collateralDetails: string;
   notes: string;
 }
-import { useToasts } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui';
 import { ToastContainer } from '@rentalshop/ui';
 import { CollectionReturnModal } from './components/CollectionReturnModal';
 import { calculateCollectionTotal } from './utils';
@@ -233,7 +233,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   loading = false,
   showActions = true
 }) => {
-  const { toasts, showSuccess, showError, showInfo, removeToast } = useToasts();
+  const { toastSuccess, toastError, toastInfo, removeToast } = useToast();
   
   // Predefined collateral types
   const COLLATERAL_TYPES = [
@@ -416,15 +416,15 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const handleSaveSettings = async () => {
     if (onSaveSettings) {
       setIsSavingSettings(true);
-      showInfo('Saving...', 'Please wait while settings are being saved');
+      toastInfo('Saving...', 'Please wait while settings are being saved');
       
       try {
         await onSaveSettings(tempSettings);
-        showSuccess('Settings Saved', 'Order settings have been updated successfully');
+        toastSuccess('Settings Saved', 'Order settings have been updated successfully');
         setSettingsForm(tempSettings);
         setIsEditingSettings(false);
       } catch (error) {
-        showError('Save Failed', 'Failed to save settings. Please try again.');
+        toastError('Save Failed', 'Failed to save settings. Please try again.');
       } finally {
         setIsSavingSettings(false);
       }
@@ -446,7 +446,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
       window.print();
       // No toast for print - this is a browser action, not an API call
     } catch (error) {
-      showError('Print Error', 'Failed to start printing. Please try again.');
+      toastError('Print Error', 'Failed to start printing. Please try again.');
     }
   };
 
@@ -454,7 +454,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     try {
       setIsPickupLoading(true);
       await ordersApi.pickupOrder(order.id);
-      showSuccess('Pickup Successful', 'Order pickup has been processed.');
+      toastSuccess('Pickup Successful', 'Order pickup has been processed.');
       onStatusChange && onStatusChange(order.id, 'PICKUPED');
       setIsCollectionModalOpen(false); // Close modal after successful pickup
       
@@ -463,7 +463,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         window.location.reload();
       }
     } catch (error) {
-      showError('Pickup Failed', 'Failed to process order pickup. Please try again.');
+      toastError('Pickup Failed', 'Failed to process order pickup. Please try again.');
     } finally {
       setIsPickupLoading(false);
     }
@@ -473,7 +473,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     try {
       setIsReturnLoading(true);
       await ordersApi.returnOrder(order.id);
-      showSuccess('Return Successful', 'Order return has been processed.');
+      toastSuccess('Return Successful', 'Order return has been processed.');
       onStatusChange && onStatusChange(order.id, 'RETURNED');
       setIsReturnModalOpen(false); // Close modal after successful return
       
@@ -482,7 +482,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         window.location.reload();
       }
     } catch (error) {
-      showError('Return Failed', 'Failed to process order return. Please try again.');
+      toastError('Return Failed', 'Failed to process order return. Please try again.');
     } finally {
       setIsReturnLoading(false);
     }
@@ -496,7 +496,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     try {
       setIsCancelLoading(true);
       await ordersApi.cancelOrder(order.id);
-      showSuccess('Cancellation Successful', 'Order has been cancelled.');
+      toastSuccess('Cancellation Successful', 'Order has been cancelled.');
       onStatusChange && onStatusChange(order.id, 'CANCELLED');
       
       // Trigger page refresh to update order data
@@ -504,7 +504,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         window.location.reload();
       }
     } catch (error) {
-      showError('Cancellation Failed', 'Failed to cancel order. Please try again.');
+      toastError('Cancellation Failed', 'Failed to cancel order. Please try again.');
     } finally {
       setIsCancelLoading(false);
       setShowCancelConfirmDialog(false);
@@ -527,7 +527,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         onEdit(order);
         // No toast for entering edit mode - this is just a UI state change
       } catch (error) {
-        showError('Edit Failed', 'Failed to enter edit mode. Please try again.');
+        toastError('Edit Failed', 'Failed to enter edit mode. Please try again.');
       }
     }
   };
@@ -549,7 +549,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         onEdit(enhancedOrder);
         // No toast for entering edit mode - this is just a UI state change
       } catch (error) {
-        showError('Edit Failed', 'Failed to enter edit mode. Please try again.');
+        toastError('Edit Failed', 'Failed to enter edit mode. Please try again.');
       }
     }
   };
@@ -628,7 +628,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Created By:</span>
                         <span className="text-sm font-medium">
-                          {order.createdBy?.name || 'Unknown'}
+                          {order.createdBy?.firstName && order.createdBy?.lastName 
+                            ? `${order.createdBy.firstName} ${order.createdBy.lastName}` 
+                            : order.createdBy?.email || 'Unknown'}
                         </span>
                       </div>
                     )}
@@ -1096,7 +1098,6 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
           </div>
         )}
       </div>
-      <ToastContainer toasts={toasts} onClose={removeToast} />
       {/* Collection Modal */}
       <CollectionReturnModal
         isOpen={isCollectionModalOpen}

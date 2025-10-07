@@ -8,13 +8,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
 import { PlanLimitError } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
 
 // ============================================================================
 // CORE TYPES
 // ============================================================================
 
-export type Role = 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+// Re-export UserRole from constants (single source of truth)
+export type { UserRole } from '@rentalshop/constants';
+export type Role = UserRole; // Alias for backward compatibility
 
 export type Permission = 
   // System Management

@@ -9,8 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  ToastContainer,
-  useToasts,
+  useToast,
   CustomerPageHeader,
   CustomerSearch,
   CustomerTable,
@@ -68,7 +67,7 @@ export const Customers: React.FC<CustomersProps> = ({
   onExport,
   className = ""
 }) => {
-  const { toasts, addToast, removeToast } = useToasts();
+  const { toastSuccess, toastError, toastInfo, removeToast } = useToast();
   
   // Use the shared customer management hook
   const customerManagementOptions: UseCustomerManagementOptions = {
@@ -110,10 +109,10 @@ export const Customers: React.FC<CustomersProps> = ({
   const handleCustomerCreatedWithToast = async (customerData: CustomerCreateInput | CustomerUpdateInput) => {
     try {
       await handleCustomerCreated(customerData as CustomerCreateInput);
-      addToast('success', 'Customer Created', 'Customer has been created successfully.');
+      toastSuccess('Customer Created', 'Customer has been created successfully.');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      addToast('error', 'Creation Failed', errorMessage);
+      toastError('Creation Failed', errorMessage);
       // Don't re-throw - error already handled
     }
   };
@@ -121,10 +120,10 @@ export const Customers: React.FC<CustomersProps> = ({
   const handleCustomerUpdatedWithToast = async (customerData: CustomerUpdateInput) => {
     try {
       await handleCustomerUpdatedAsync(customerData);
-      addToast('success', 'Customer Updated', 'Customer information has been updated successfully.');
+      toastSuccess('Customer Updated', 'Customer information has been updated successfully.');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      addToast('error', 'Update Failed', errorMessage);
+      toastError('Update Failed', errorMessage);
       // Don't re-throw - error already handled
     }
   };
@@ -142,19 +141,19 @@ export const Customers: React.FC<CustomersProps> = ({
       onExport();
     } else {
       handleExportCustomers();
-      addToast('info', 'Export', 'Export functionality coming soon!');
+      toastInfo('Export', 'Export functionality coming soon!');
     }
   };
 
   const handleCustomerUpdatedWithToastCallback = (updatedCustomer: Customer) => {
     handleCustomerUpdated(updatedCustomer);
     const fullName = getCustomerFullName(updatedCustomer);
-    addToast('success', 'Customer Updated', `Customer "${fullName}" has been updated successfully.`);
+    toastSuccess('Customer Updated', `Customer "${fullName}" has been updated successfully.`);
   };
 
-  const handleCustomerErrorWithToast = (error: string) => {
-    handleCustomerError(error);
-    addToast('error', 'Error', error);
+  const handleCustomerErrorWithToast = (errorMessage: string) => {
+    handleCustomerError(errorMessage);
+    toastError('Error', errorMessage);
   };
 
   const handleCustomerDeleteWithToast = async (customerId: number) => {
@@ -166,13 +165,13 @@ export const Customers: React.FC<CustomersProps> = ({
       // Refresh the customer list
       // The hook should handle this automatically, but we can trigger a refresh
       const fullName = selectedCustomer ? getCustomerFullName(selectedCustomer) : 'Customer';
-      addToast('success', 'Customer Deleted', `Customer "${fullName}" has been deleted successfully.`);
+      toastSuccess('Customer Deleted', `Customer "${fullName}" has been deleted successfully.`);
       
       // Close the detail dialog
       setShowCustomerDetail(false);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred while deleting the customer';
-      addToast('error', 'Delete Failed', errorMessage);
+      toastError('Delete Failed', errorMessage);
       // Don't re-throw - error already handled
     }
   };
@@ -328,9 +327,6 @@ export const Customers: React.FC<CustomersProps> = ({
           />
         </DialogContent>
       </Dialog>
-      
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 };

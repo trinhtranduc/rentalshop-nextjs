@@ -38,6 +38,7 @@ import { formatCurrency, formatDate } from '../../../../lib';
 interface ProductDetailListProps {
   product: ProductWithStock;
   onEdit?: () => void;
+  onViewOrders?: () => void;
   showActions?: boolean;
   isMerchantAccount?: boolean;
   className?: string;
@@ -46,6 +47,7 @@ interface ProductDetailListProps {
 export const ProductDetailList: React.FC<ProductDetailListProps> = ({
   product,
   onEdit,
+  onViewOrders,
   showActions = true,
   isMerchantAccount = false,
   className = ''

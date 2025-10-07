@@ -2,17 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserForm, UserPageHeader, UserCard, ToastContainer } from '@rentalshop/ui';
 import { usersApi } from "@rentalshop/utils";
 import type { UserCreateInput } from '@rentalshop/ui';
-import { useToasts } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 
 export default function AddUserPage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   // Role-based access control - Can create OUTLET_ADMIN and OUTLET_STAFF
   const canCreateUsers = currentUser?.role === 'ADMIN' || 
@@ -22,10 +21,10 @@ export default function AddUserPage() {
   // Redirect if user doesn't have permission
   useEffect(() => {
     if (currentUser && !canCreateUsers) {
-      showError('Access Denied', 'You do not have permission to create users.');
+      toastError('Access Denied', 'You do not have permission to create users.');
       router.push('/users');
     }
-  }, [currentUser, canCreateUsers, router, showError]);
+  }, [currentUser, canCreateUsers, router, toastError]);
 
   // Show loading while checking permissions
   if (!currentUser) {
@@ -59,23 +58,19 @@ export default function AddUserPage() {
       if (response.success) {
         console.log('✅ AddUserPage: User created successfully:', response.data);
         
-        // Show success message
-        showSuccess('User Created', 'New user account has been created successfully!');
-        
-        // Navigate back to users list after a short delay to show the toast
-        setTimeout(() => {
-          router.push('/users');
-        }, 1500);
+        // Navigate back to users list immediately
+        // Toast will be handled by Users component when the page loads
+        router.push('/users');
       } else {
         console.error('❌ AddUserPage: API error:', response.error);
-        showError('Creation Failed', response.error || 'Failed to create user');
+        toastError('Creation Failed', response.error || 'Failed to create user');
         throw new Error(response.error || 'Failed to create user');
       }
       
-    } catch (error) {
-      console.error('❌ AddUserPage: Error creating user:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while creating the user';
-      showError('Creation Failed', errorMessage);
+    } catch (err) {
+      console.error('❌ AddUserPage: Error creating user:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while creating the user';
+      toastError('Creation Failed', errorMessage);
       // Don't re-throw - let toast handle the error display
     } finally {
       setIsSubmitting(false);
@@ -87,7 +82,7 @@ export default function AddUserPage() {
     // Type guard to ensure we only handle UserCreateInput in this add page
     if (!('password' in userData && 'role' in userData)) {
       console.error('❌ AddUserPage: Invalid user data type for creation');
-      showError('Error', 'Invalid user data for creation');
+      toastError('Error', 'Invalid user data for creation');
       return;
     }
     
@@ -124,8 +119,6 @@ export default function AddUserPage() {
         />
       </div>
       
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

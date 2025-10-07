@@ -53,6 +53,7 @@ export default function MerchantDetailPage() {
       if (plansResponse.success && plansResponse.data) {
         setPlans(plansResponse.data.plans || []);
       }
+
     } catch (error) {
       console.error('Error fetching merchant details:', error);
       setError('Failed to fetch merchant details');
@@ -60,6 +61,7 @@ export default function MerchantDetailPage() {
       setLoading(false);
     }
   };
+
 
   const handleMerchantAction = (action: string, merchantId: number) => {
     switch (action) {
@@ -284,18 +286,29 @@ export default function MerchantDetailPage() {
     );
   }
 
-  // Prepare data for MerchantDetail component
+  // Transform API response to match MerchantDetail component expectations
+  // API returns: { subscription, Plan, _count }
+  // Component expects: { currentSubscription, plan, stats }
   const merchantData = {
-    merchant: merchant?.merchant || merchant || {},
-    stats: merchant?.stats || {
-      totalOutlets: merchant?.outletsCount || 0,
-      totalUsers: merchant?.usersCount || 0,
-      totalProducts: merchant?.productsCount || 0,
-      totalOrders: merchant?.ordersCount || 0,
-      totalRevenue: merchant?.totalRevenue || 0,
-      activeOrders: merchant?.activeOrders || 0,
-      completedOrders: merchant?.completedOrders || 0,
-      cancelledOrders: merchant?.cancelledOrders || 0
+    merchant: {
+      ...merchant,
+      currentSubscription: merchant.subscription ? {
+        ...merchant.subscription,
+        // Add aliases for date fields that component expects
+        startDate: merchant.subscription.currentPeriodStart,
+        endDate: merchant.subscription.currentPeriodEnd
+      } : null,
+      plan: merchant.subscription?.plan
+    },
+    stats: {
+      totalOutlets: merchant._count?.outlets || 0,
+      totalUsers: merchant._count?.users || 0,
+      totalProducts: merchant._count?.products || 0,
+      totalOrders: 0,
+      totalRevenue: merchant.totalRevenue || 0,
+      activeOrders: 0,
+      completedOrders: 0,
+      cancelledOrders: 0
     }
   };
 

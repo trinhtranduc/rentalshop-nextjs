@@ -83,39 +83,63 @@ export function useSubscriptionStatusInfo(
       const response = await subscriptionsApi.getCurrentUserSubscriptionStatus();
       
       if (response.success && response.data) {
-        const subscriptionData = response.data.subscription;
-        const statusString = response.data.status || '';
+        const data = response.data;
         
-        // Extract boolean flags from response (they're at root level, not in statusData)
-        const isActive = response.data.hasSubscription || false;
-        const isExpired = response.data.isExpired || false;
-        const isTrial = subscriptionData?.trial?.isActive || false;
+        // ============================================================================
+        // MAP NEW FLAT RESPONSE STRUCTURE
+        // ============================================================================
+        // Response structure:
+        // {
+        //   status: "CANCELED" | "EXPIRED" | "PAST_DUE" | "PAUSED" | "TRIAL" | "ACTIVE",
+        //   statusReason: "Canceled on 10/7/2025",
+        //   hasAccess: false,
+        //   daysRemaining: 31,
+        //   isExpiringSoon: false,
+        //   planName: "Basic",
+        //   ...other flat fields
+        // }
         
-        // Calculate days until expiry
-        let daysUntil = null;
-        if (subscriptionData.trial?.daysRemaining) {
-          daysUntil = subscriptionData.trial.daysRemaining;
-        } else if (subscriptionData.currentPeriod?.end) {
-          const now = new Date();
-          const expiryDate = new Date(subscriptionData.currentPeriod.end);
-          daysUntil = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        }
+        // Map computed status flags from API
+        const computedStatus = data.status || 'UNKNOWN'; // CANCELED | EXPIRED | PAST_DUE | PAUSED | TRIAL | ACTIVE
+        const apiHasAccess = data.hasAccess ?? false;
+        const apiDaysRemaining = data.daysRemaining ?? null;
+        const apiIsExpiringSoon = data.isExpiringSoon ?? false;
         
-        // Set original state
-        setHasActiveSubscription(isActive);
+        // Derive boolean flags from computed status
+        const isActive = computedStatus === 'ACTIVE';
+        const isExpired = computedStatus === 'EXPIRED';
+        const isTrial = computedStatus === 'TRIAL';
+        const isCanceled = computedStatus === 'CANCELED';
+        const isPastDue = computedStatus === 'PAST_DUE';
+        const isPaused = computedStatus === 'PAUSED';
+        
+        // Determine if subscription is active for access (ACTIVE or TRIAL)
+        const hasActive = apiHasAccess; // API already calculated this
+        
+        // Set original state (for backward compatibility)
+        setHasActiveSubscription(hasActive);
         setIsExpired(isExpired);
-        setIsExpiringSoon(daysUntil !== null && daysUntil <= 7 && daysUntil > 0);
-        setDaysUntilExpiry(daysUntil);
-        setSubscriptionType(subscriptionData.plan?.name || subscriptionData.status);
+        setIsExpiringSoon(apiIsExpiringSoon);
+        setDaysUntilExpiry(apiDaysRemaining);
+        setSubscriptionType(data.planName || computedStatus);
         
         // Set extended state for UI components
         setHasSubscription(true);
-        setSubscription(subscriptionData);
-        setStatus(subscriptionData.status);
+        setSubscription(data); // Store full response data
+        setStatus(computedStatus);
         setIsTrial(isTrial);
         setIsActive(isActive);
-        setPlanName(subscriptionData.plan?.name || subscriptionData.status);
+        setPlanName(data.planName || 'Unknown Plan');
         setError(null);
+        
+        console.log('✅ Subscription status mapped:', {
+          computedStatus,
+          hasAccess: apiHasAccess,
+          daysRemaining: apiDaysRemaining,
+          isExpiringSoon: apiIsExpiringSoon,
+          statusReason: data.statusReason
+        });
+        
       } else {
         // No subscription found
         setHasActiveSubscription(false);
@@ -127,7 +151,7 @@ export function useSubscriptionStatusInfo(
         // Set extended state for UI components
         setHasSubscription(false);
         setSubscription(null);
-        setStatus('');
+        setStatus('NO_SUBSCRIPTION');
         setIsTrial(false);
         setIsActive(false);
         setPlanName('');
@@ -145,7 +169,7 @@ export function useSubscriptionStatusInfo(
       // Set extended state for UI components
       setHasSubscription(false);
       setSubscription(null);
-      setStatus('');
+      setStatus('ERROR');
       setIsTrial(false);
       setIsActive(false);
       setPlanName('');
@@ -185,29 +209,39 @@ export function useSubscriptionStatusInfo(
   }, [user, fetchSubscriptionStatus, checkInterval]);
 
   // Calculate additional properties for other components
-  const statusMessage = isExpired ? 'Subscription expired' : 
-                       isExpiringSoon ? `Expires in ${daysUntilExpiry} days` :
-                       isTrial ? `Trial (${daysUntilExpiry} days left)` :
-                       isActive ? 'Active subscription' : 'No subscription';
+  // Use subscription.statusReason if available (from API), otherwise fallback to computed message
+  const statusMessage = subscription?.statusReason || 
+                       (isExpired ? 'Subscription expired' : 
+                        isExpiringSoon ? `Expires in ${daysUntilExpiry} days` :
+                        isTrial ? `Trial (${daysUntilExpiry} days left)` :
+                        isActive ? 'Active subscription' : 'No subscription');
   
-  const statusColor = isExpired ? 'red' : 
+  // Map status to color
+  const statusColor = status === 'EXPIRED' ? 'red' :
+                     status === 'CANCELED' ? 'red' :
+                     status === 'PAST_DUE' ? 'orange' :
+                     status === 'PAUSED' ? 'yellow' :
                      isExpiringSoon ? 'orange' :
-                     isTrial ? 'yellow' :
-                     isActive ? 'green' : 'gray';
+                     status === 'TRIAL' ? 'yellow' :
+                     status === 'ACTIVE' ? 'green' : 'gray';
   
-  const hasAccess = hasActiveSubscription && !isExpired;
-  const accessLevel = isExpired ? 'denied' : 
-                     isTrial ? 'limited' :
-                     isActive ? 'full' : 'denied';
+  // Use hasAccess from API (already calculated there)
+  const hasAccess = subscription?.hasAccess ?? (hasActiveSubscription && !isExpired);
   
-  const requiresPayment = isExpired || isExpiringSoon;
-  const upgradeRequired = isExpired;
+  const accessLevel = status === 'EXPIRED' || status === 'CANCELED' ? 'denied' : 
+                     status === 'PAST_DUE' ? 'readonly' :
+                     status === 'PAUSED' ? 'readonly' :
+                     status === 'TRIAL' ? 'limited' :
+                     status === 'ACTIVE' ? 'full' : 'denied';
+  
+  const requiresPayment = status === 'EXPIRED' || status === 'PAST_DUE' || isExpiringSoon;
+  const upgradeRequired = status === 'EXPIRED' || status === 'CANCELED';
   const gracePeriodEnds = isExpiringSoon && daysUntilExpiry ? new Date(Date.now() + daysUntilExpiry * 24 * 60 * 60 * 1000) : null;
   const canExportData = hasAccess;
-  const isRestricted = !hasAccess || isTrial;
-  const isReadOnly = isExpired;
-  const isLimited = isTrial;
-  const isDenied = isExpired || !hasActiveSubscription;
+  const isRestricted = !hasAccess || status === 'TRIAL' || status === 'PAUSED';
+  const isReadOnly = status === 'EXPIRED' || status === 'PAST_DUE' || status === 'PAUSED';
+  const isLimited = status === 'TRIAL';
+  const isDenied = status === 'EXPIRED' || status === 'CANCELED' || !hasActiveSubscription;
 
   return {
     // Original interface

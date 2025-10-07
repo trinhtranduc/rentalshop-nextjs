@@ -1,16 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  CardClean, 
+import { CardClean, 
   CardHeaderClean, 
   CardTitleClean, 
   CardContentClean,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
-} from '@rentalshop/ui';
+  PageContent, useToast } from '@rentalshop/ui';
 import { 
   AdminPageHeader,
   MetricCard,
@@ -20,7 +18,6 @@ import {
 } from '@rentalshop/ui';
 import { usePathname } from 'next/navigation';
 import { analyticsApi } from '@rentalshop/utils';
-import { useToasts } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 import { 
   Users, 
@@ -62,7 +59,7 @@ interface MerchantTrend {
 
 export default function AdminDashboard() {
   const pathname = usePathname();
-  const { showError } = useToasts();
+  const { toastError } = useToast();
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<SystemMetrics>({
     totalMerchants: 0,
@@ -152,7 +149,7 @@ export default function AdminDashboard() {
         setMerchantTrends(systemResponse.data.merchantTrends || []);
       } else {
         console.error('Failed to fetch system metrics:', systemResponse.message);
-        showError('Error', `Failed to fetch system metrics: ${systemResponse.message}`);
+        toastError('Error', `Failed to fetch system metrics: ${systemResponse.message}`);
         // Fallback to mock data for now
       }
 
@@ -160,7 +157,7 @@ export default function AdminDashboard() {
         setRecentActivities(activitiesResponse.data || []);
       } else {
         console.error('Failed to fetch recent activities:', activitiesResponse.message);
-        showError('Error', `Failed to fetch recent activities: ${activitiesResponse.message}`);
+        toastError('Error', `Failed to fetch recent activities: ${activitiesResponse.message}`);
         // Keep empty array for activities
       }
     } catch (error) {
@@ -175,18 +172,27 @@ export default function AdminDashboard() {
         error.message.includes('trial')
       )) {
         console.log('⚠️ Subscription error detected, showing error instead of redirecting');
-        showError('Subscription Issue', errorMessage);
+        toastError('Subscription Issue', errorMessage);
         return;
       }
       
-      // Handle other 401 errors using centralized utility
+      // Handle other 401 errors
       if (error instanceof Error) {
-        const { handleAuthError } = await import('@rentalshop/utils');
-        handleAuthError(error);
-        return;
+        const { analyzeError, clearAuthData } = await import('@rentalshop/utils');
+        const errorInfo = analyzeError(error);
+        
+        if (errorInfo.type === 'auth') {
+          clearAuthData();
+          toastError('Session Expired', 'Please log in again');
+          // Redirect to login after a short delay
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
+          return;
+        }
       }
       
-      showError('Error', errorMessage);
+      toastError('Error', errorMessage);
       // Fallback to mock data for now
     } finally {
       setLoading(false);

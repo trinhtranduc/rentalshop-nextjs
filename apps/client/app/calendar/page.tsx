@@ -157,15 +157,12 @@ export default function CalendarPage() {
           productCount: 1,
           totalAmount: order.totalAmount,
           // Keep original field names for CalendarGrid compatibility
-          pickupPlanAt: order.pickupPlanAt,
-          returnPlanAt: order.returnPlanAt,
-          // Also provide legacy field names for backward compatibility
           pickupDate: new Date(order.pickupPlanAt || dateKey),
           returnDate: new Date(order.returnPlanAt || dateKey),
           status: order.status,
           outletName: order.outletName,
           notes: order.notes || '',
-          isOverdue: order.status === 'PICKUPED' && order.returnPlanAt && new Date(order.returnPlanAt) < new Date(),
+          isOverdue: order.status === 'PICKUPED' && order.returnPlanAt ? new Date(order.returnPlanAt) < new Date() : false,
           duration: order.pickupPlanAt && order.returnPlanAt ? 
             Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : 0
         });

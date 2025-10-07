@@ -16,17 +16,14 @@
 import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  CreateOrderForm, 
+import { CreateOrderForm, 
   FormSkeleton, 
   PageWrapper, 
   PageHeader,
   PageTitle,
   PageContent, 
-  useToasts, 
-  ToastContainer,
-  Button
-} from '@rentalshop/ui';
+  useToast,
+  Button , useToast } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { customersApi, productsApi, outletsApi, ordersApi, categoriesApi } from '@rentalshop/utils';
 import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category } from '@rentalshop/types';
@@ -51,7 +48,7 @@ export default function MerchantOrderEditPage() {
   const [categories, setCategories] = useState<any[]>([]);
 
   // Toast notifications
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   useEffect(() => {
     if (!orderId) return;
@@ -189,7 +186,7 @@ export default function MerchantOrderEditPage() {
 
       const token = getAuthToken();
       if (!token) {
-        showError('Authentication required');
+        toastError('Authentication required');
         return;
       }
 
@@ -204,7 +201,7 @@ export default function MerchantOrderEditPage() {
 
       if (result.success) {
         // Show success message
-        showSuccess('Order updated successfully!');
+        toastSuccess('Order updated successfully!');
         // Navigate back to order detail page after successful update
         router.push(`/merchants/${merchantId}/orders/${orderId}`);
       } else {
@@ -212,7 +209,7 @@ export default function MerchantOrderEditPage() {
       }
     } catch (err) {
       console.error('Error updating order:', err);
-      showError('Failed to update order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError('Failed to update order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -363,7 +360,6 @@ export default function MerchantOrderEditPage() {
         </div>
       </PageHeader>
       <PageContent>
-        <ToastContainer toasts={toasts} onClose={removeToast} />
         
         <CreateOrderForm
           isEditMode={true}

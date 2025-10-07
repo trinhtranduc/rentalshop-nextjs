@@ -2,17 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { 
-  Button, 
+import { Button, 
   UserForm, 
   UserPageHeader, 
   UserCard, 
   UserDisplayInfo, 
   AccountManagementCard,
   ConfirmationDialog,
-  ToastContainer,
-  ChangePasswordDialog
-} from '@rentalshop/ui';
+  
+  ChangePasswordDialog, useToast } from '@rentalshop/ui';
 import { 
   ArrowLeft,
   Edit, 
@@ -23,7 +21,6 @@ import {
 } from 'lucide-react';
 import { usersApi } from "@rentalshop/utils";
 import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
-import { useToasts } from '@rentalshop/ui';
 import type { User, UserUpdateInput } from '@rentalshop/ui';
 
 export default function UserPage() {
@@ -31,7 +28,7 @@ export default function UserPage() {
   const params = useParams();
   const { user } = useAuth();
   const { handleError } = useSimpleErrorHandler();
-  const { showSuccess, showError, toasts, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
   const userId = params.id as string;
   
   console.log('🔍 UserPage: Component rendered with params:', params);
@@ -116,11 +113,11 @@ export default function UserPage() {
   };
 
   const handlePasswordChangeSuccess = () => {
-    showSuccess('Password Changed', 'User password has been changed successfully!');
+    toastSuccess('Password Changed', 'User password has been changed successfully!');
   };
 
-  const handlePasswordChangeError = (error: string) => {
-    showError('Password Change Failed', error);
+  const handlePasswordChangeError = (errorMessage: string) => {
+    toastError('Password Change Failed', errorMessage);
   };
 
   const handleEdit = () => {
@@ -158,17 +155,17 @@ export default function UserPage() {
         setShowEditSection(false);
         
         // Show success message
-        showSuccess('User Updated', 'User information has been updated successfully!');
+        toastSuccess('User Updated', 'User information has been updated successfully!');
       } else {
         console.error('❌ UserPage: API error:', response.error);
-        showError('Update Failed', response.error || 'Failed to update user');
+        toastError('Update Failed', response.error || 'Failed to update user');
         throw new Error(response.error || 'Failed to update user');
       }
       
-    } catch (error) {
-      console.error('❌ UserPage: Error updating user:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while updating the user';
-      showError('Update Failed', errorMessage);
+    } catch (err) {
+      console.error('❌ UserPage: Error updating user:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while updating the user';
+      toastError('Update Failed', errorMessage);
       // Don't re-throw - let toast handle the error display
     } finally {
       setIsUpdating(false);
@@ -185,13 +182,13 @@ export default function UserPage() {
       if (response.success) {
         // Refresh user data
         await refreshUserData();
-        showSuccess('User Activated', 'User account has been activated successfully!');
+        toastSuccess('User Activated', 'User account has been activated successfully!');
       } else {
-        showError('Activation Failed', response.error || 'Failed to activate user');
+        toastError('Activation Failed', response.error || 'Failed to activate user');
       }
-    } catch (error) {
-      console.error('Error activating user:', error);
-      showError('Activation Failed', 'An error occurred while activating the user');
+    } catch (err) {
+      console.error('Error activating user:', err);
+      toastError('Activation Failed', 'An error occurred while activating the user');
     } finally {
       setIsUpdating(false);
     }
@@ -214,15 +211,15 @@ export default function UserPage() {
       if (response.success) {
         // Refresh user data
         await refreshUserData();
-        showSuccess('User Deactivated', 'User account has been deactivated successfully!');
+        toastSuccess('User Deactivated', 'User account has been deactivated successfully!');
         setShowDeactivateConfirm(false);
       } else {
-        showError('Deactivation Failed', response.error || 'Failed to deactivate user');
+        toastError('Deactivation Failed', response.error || 'Failed to deactivate user');
       }
-    } catch (error) {
-      console.error('Error deactivating user:', error);
-      showError('Deactivation Failed', 'An error occurred while deactivating the user');
-    } finally {
+    } catch (err) {
+      console.error('Error deactivating user:', err);
+      toastError('Deactivation Failed', 'An error occurred while deactivating the user');
+    } finally{
       setIsUpdating(false);
     }
   };
@@ -235,14 +232,14 @@ export default function UserPage() {
       // Use id for deletion as the API expects numeric id
       const response = await usersApi.deleteUser(userData.id);
       if (response.success) {
-        showSuccess('User Deleted', 'User account has been deleted successfully!');
+        toastSuccess('User Deleted', 'User account has been deleted successfully!');
         router.push('/users');
       } else {
-        showError('Deletion Failed', response.error || 'Failed to delete user');
+        toastError('Deletion Failed', response.error || 'Failed to delete user');
       }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      showError('Deletion Failed', 'An error occurred while deleting the user');
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      toastError('Deletion Failed', 'An error occurred while deleting the user');
     } finally {
       setIsUpdating(false);
       setShowDeleteConfirm(false);
@@ -373,8 +370,6 @@ export default function UserPage() {
         onConfirm={confirmDeactivate}
       />
 
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
 
       {/* Change Password Dialog */}
       <ChangePasswordDialog

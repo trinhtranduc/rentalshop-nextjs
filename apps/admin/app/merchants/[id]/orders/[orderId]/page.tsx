@@ -3,15 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  PageWrapper,
+import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
   Button,
   OrderDetail,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { ordersApi } from '@rentalshop/utils';
 import type { OrderDetailData } from '@rentalshop/types';
@@ -19,7 +17,7 @@ import type { OrderDetailData } from '@rentalshop/types';
 export default function MerchantOrderDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { showSuccess, showError } = useToasts();
+  const { toastSuccess, showError } = useToast();
   
   const merchantId = params.id as string;
   const orderId = params.orderId as string;
@@ -95,7 +93,7 @@ export default function MerchantOrderDetailPage() {
 
       const token = getAuthToken();
       if (!token) {
-        showError('Authentication required');
+        toastError('Authentication required');
         return;
       }
 
@@ -105,13 +103,13 @@ export default function MerchantOrderDetailPage() {
 
       if (result.success) {
         setOrder(prev => prev ? { ...prev, status: 'CANCELLED' } : null);
-        showSuccess('Order cancelled successfully');
+        toastSuccess('Order cancelled successfully');
       } else {
-        showError(result.error || 'Failed to cancel order');
+        toastError(result.error || 'Failed to cancel order');
       }
     } catch (err) {
       console.error('Error cancelling order:', err);
-      showError('An error occurred while cancelling the order');
+      toastError('An error occurred while cancelling the order');
     } finally {
       setActionLoading(false);
     }
@@ -125,7 +123,7 @@ export default function MerchantOrderDetailPage() {
 
       const token = getAuthToken();
       if (!token) {
-        showError('Authentication required');
+        toastError('Authentication required');
         return;
       }
 
@@ -135,13 +133,13 @@ export default function MerchantOrderDetailPage() {
 
       if (result.success) {
         setOrder(prev => prev ? { ...prev, status: newStatus } : null);
-        showSuccess(`Order status updated to ${newStatus}`);
+        toastSuccess(`Order status updated to ${newStatus}`);
       } else {
-        showError(result.error || 'Failed to update order status');
+        toastError(result.error || 'Failed to update order status');
       }
     } catch (err) {
       console.error('Error updating order status:', err);
-      showError('An error occurred while updating the order status');
+      toastError('An error occurred while updating the order status');
     } finally {
       setActionLoading(false);
     }
@@ -155,7 +153,7 @@ export default function MerchantOrderDetailPage() {
 
       const token = getAuthToken();
       if (!token) {
-        showError('Authentication required');
+        toastError('Authentication required');
         return;
       }
 
@@ -170,13 +168,13 @@ export default function MerchantOrderDetailPage() {
           status: 'PICKUPED',
           pickedUpAt: new Date().toISOString()
         } : null);
-        showSuccess('Order marked as picked up');
+        toastSuccess('Order marked as picked up');
       } else {
-        showError(result.error || 'Failed to mark order as picked up');
+        toastError(result.error || 'Failed to mark order as picked up');
       }
     } catch (err) {
       console.error('Error marking order as picked up:', err);
-      showError('An error occurred while marking the order as picked up');
+      toastError('An error occurred while marking the order as picked up');
     } finally {
       setActionLoading(false);
     }
@@ -190,7 +188,7 @@ export default function MerchantOrderDetailPage() {
 
       const token = getAuthToken();
       if (!token) {
-        showError('Authentication required');
+        toastError('Authentication required');
         return;
       }
 
@@ -205,13 +203,13 @@ export default function MerchantOrderDetailPage() {
           status: 'RETURNED',
           returnedAt: new Date().toISOString()
         } : null);
-        showSuccess('Order marked as returned');
+        toastSuccess('Order marked as returned');
       } else {
-        showError(result.error || 'Failed to mark order as returned');
+        toastError(result.error || 'Failed to mark order as returned');
       }
     } catch (err) {
       console.error('Error marking order as returned:', err);
-      showError('An error occurred while marking the order as returned');
+      toastError('An error occurred while marking the order as returned');
     } finally {
       setActionLoading(false);
     }
@@ -219,7 +217,7 @@ export default function MerchantOrderDetailPage() {
 
   const handleSaveSettings = () => {
     // Settings save functionality could be implemented here
-    showSuccess('Settings saved successfully');
+    toastSuccess('Settings saved successfully');
   };
 
   if (loading) {

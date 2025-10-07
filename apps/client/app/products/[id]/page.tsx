@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { 
-  Card, 
+import { Card, 
   Button,
   ProductsLoading,
   PageWrapper,
@@ -11,10 +10,9 @@ import {
   PageTitle,
   PageContent,
   ConfirmationDialog,
-  useToasts,
-  ToastContainer
-} from '@rentalshop/ui';
-import { ProductDetail } from '@rentalshop/ui';
+  useToast
+ , useToast } from '@rentalshop/ui';
+import { ProductDetail , useToast } from '@rentalshop/ui';
 
 import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
@@ -30,7 +28,7 @@ export default function ProductViewPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { showSuccess, showError, toasts, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
   
   const [product, setProduct] = useState<ProductWithStock | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -92,11 +90,11 @@ export default function ProductViewPage() {
     setIsDeleting(true);
     try {
       await productsApi.deleteProduct(productId);
-      showSuccess('Success', 'Product deleted successfully!');
+      toastSuccess('Success', 'Product deleted successfully!');
       router.push('/products');
     } catch (err) {
       console.error('Error deleting product:', err);
-      showError('Error', 'Failed to delete product. Please try again.');
+      toastError('Error', 'Failed to delete product. Please try again.');
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -217,8 +215,6 @@ export default function ProductViewPage() {
         isLoading={isDeleting}
       />
 
-      {/* Toast Container */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 }
