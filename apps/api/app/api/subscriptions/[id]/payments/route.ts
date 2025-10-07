@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -25,11 +25,39 @@ export async function GET(
         throw new Error('Subscription not found');
       }
 
-      // TODO: Implement subscription payments functionality
-      return NextResponse.json(
-        { success: false, message: 'Subscription payments functionality not yet implemented' },
-        { status: 501 }
-      );
+      // Get query parameters
+      const { searchParams } = new URL(request.url);
+      const limit = parseInt(searchParams.get('limit') || '20');
+      const offset = parseInt(searchParams.get('offset') || '0');
+
+      // Get payments for this subscription from Payment table
+      const payments = await prisma.payment.findMany({
+        where: {
+          subscriptionId: subscriptionId
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: limit,
+        skip: offset
+      });
+
+      const total = await prisma.payment.count({
+        where: {
+          subscriptionId: subscriptionId
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: payments,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total
+        }
+      });
     } catch (error) {
       console.error('Error fetching subscription payments:', error);
       

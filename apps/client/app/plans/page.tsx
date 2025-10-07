@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { plansApi, subscriptionsApi } from '@rentalshop/utils';
-import { useToastHandler } from '@rentalshop/hooks';
+import { useToast } from '@rentalshop/ui';
 import {
   Card,
   CardHeader,
@@ -50,7 +50,7 @@ import {
 import type { Plan, Subscription } from '@rentalshop/types';
 
 export default function PlansPage() {
-  const { showError, showSuccess } = useToastHandler();
+  const { toastError, toastSuccess } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,14 +85,34 @@ export default function PlansPage() {
       // Fetch current subscription
       const subscriptionResult = await subscriptionsApi.getCurrentUserSubscriptionStatus();
       if (subscriptionResult.success && subscriptionResult.data) {
-        setCurrentSubscription(subscriptionResult.data.subscription);
+        // Map flat response to Subscription object
+        const data = subscriptionResult.data;
+        const subscription: Subscription = {
+          id: data.subscriptionId,
+          merchantId: data.merchantId,
+          planId: data.planId,
+          status: data.status,
+          amount: data.billingAmount,
+          currency: data.billingCurrency,
+          interval: data.billingInterval,
+          intervalCount: data.billingIntervalCount,
+          currentPeriodStart: data.currentPeriodStart,
+          currentPeriodEnd: data.currentPeriodEnd,
+          plan: {
+            id: data.planId || 0,
+            name: data.planName,
+            basePrice: data.planPrice,
+            currency: data.planCurrency
+          }
+        } as any;
+        setCurrentSubscription(subscription);
       }
 
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch plans data';
-      showError('Error', errorMessage);
-    } finally {
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plans data';
+      toastError('Error', errorMessage);
+    } finally{
       setLoading(false);
     }
   };
@@ -144,12 +164,12 @@ export default function PlansPage() {
         // Redirect to subscription page
         window.location.href = '/subscription';
       } else {
-        showError('Error', `Error purchasing plan: ${result.message}`);
+        toastError('Error', `Error purchasing plan: ${result.message}`);
       }
-    } catch (error) {
-      console.error('Error purchasing plan:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error purchasing plan';
-      showError('Error', errorMessage);
+    } catch (err) {
+      console.error('Error purchasing plan:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error purchasing plan';
+      toastError('Error', errorMessage);
     }
   };
 

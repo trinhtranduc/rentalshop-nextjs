@@ -36,6 +36,19 @@ export async function findById(id: number) {
 }
 
 /**
+ * Find payments by subscription ID
+ */
+export async function findBySubscriptionId(subscriptionId: number, options: { limit?: number } = {}) {
+  const { limit = 20 } = options;
+  
+  return await prisma.payment.findMany({
+    where: { subscriptionId },
+    orderBy: { createdAt: 'desc' },
+    take: limit
+  });
+}
+
+/**
  * Search payments with pagination
  */
 export async function searchPayments(filters: any) {
@@ -75,6 +88,11 @@ export const simplifiedPayments = {
    * Find payment by ID (simplified API)
    */
   findById,
+
+  /**
+   * Find payments by subscription ID (simplified API)
+   */
+  findBySubscriptionId,
 
   /**
    * Search payments (simplified API)

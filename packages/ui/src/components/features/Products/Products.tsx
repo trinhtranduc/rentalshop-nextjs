@@ -20,8 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  ToastContainer,
-  useToasts,
+  useToast,
   Button,
   EmptyState,
   Pagination
@@ -119,7 +118,7 @@ export function Products({
   className = "",
   mode = 'legacy'
 }: ProductsProps) {
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
   const { canManageProducts } = useUserRole();
   
   // State for outlets and categories
@@ -184,6 +183,7 @@ export function Products({
           currentPage={data.page}
           totalPages={data.totalPages}
           total={data.total}
+          limit={data.limit}
           onPageChange={onPageChange}
         />
       </div>
@@ -213,6 +213,7 @@ export function Products({
     showCreateForm,
     showEditDialog,
     showOrdersDialog,
+    showDeleteDialog,
     pagination,
     
     // Actions
@@ -226,6 +227,7 @@ export function Products({
     setShowCreateForm,
     setShowEditDialog,
     setShowOrdersDialog,
+    setShowDeleteDialog,
     
     // Handlers
     fetchProducts,
@@ -243,6 +245,7 @@ export function Products({
     handlePageChangeWithFetch,
     handleProductCreated,
     handleProductUpdatedAsync,
+    handleDeleteProduct,
     
     // Computed values
     filteredProducts,
@@ -255,9 +258,9 @@ export function Products({
   const handleProductCreatedWrapper = async (productData: ProductCreateInput) => {
     try {
       await handleProductCreated(productData);
-      showSuccess('Product Created', 'Product has been created successfully!');
+      toastSuccess('Product Created', 'Product has been created successfully!');
     } catch (error) {
-      showError('Creation Failed', error instanceof Error ? error.message : 'Failed to create product');
+      toastError('Creation Failed', error instanceof Error ? error.message : 'Failed to create product');
     }
   };
 
@@ -281,9 +284,9 @@ export function Products({
       };
       
       await handleProductUpdatedAsync(updateData);
-      showSuccess('Product Updated', 'Product has been updated successfully!');
+      toastSuccess('Product Updated', 'Product has been updated successfully!');
     } catch (error) {
-      showError('Update Failed', error instanceof Error ? error.message : 'Failed to update product');
+      toastError('Update Failed', error instanceof Error ? error.message : 'Failed to update product');
     }
   };
 
@@ -499,8 +502,14 @@ export function Products({
             <ProductEdit
               product={selectedProduct as any}
               onSave={handleProductUpdatedWrapper}
-              onCancel={() => setShowEditDialog(false)}
-              onBack={() => setShowEditDialog(false)}
+              onCancel={() => {
+                setShowEditDialog(false);
+                setShowProductDetail(false); // Close detail dialog too
+              }}
+              onBack={() => {
+                setShowEditDialog(false);
+                setShowProductDetail(false); // Close detail dialog too
+              }}
               categories={availableCategories}
               outlets={availableOutlets}
               merchantId={merchantId || 0}
@@ -509,9 +518,36 @@ export function Products({
         </DialogContent>
       </Dialog>
 
-
-      {/* Toast Container */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{selectedProduct?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (selectedProduct) {
+                  handleDeleteProduct(selectedProduct.id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </PageWrapper>
   );
 }

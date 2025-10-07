@@ -2,17 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { 
-  Button, 
+import { Button, 
   EditCustomerForm,
   CustomerPageHeader, 
   CustomerInfoCard, 
   ConfirmationDialog,
   PageWrapper,
   PageHeader,
-  PageContent
-} from '@rentalshop/ui';
-import { useToastHandler } from '@rentalshop/hooks';
+  PageContent, useToast } from '@rentalshop/ui';
 import { 
   ArrowLeft,
   Edit,
@@ -35,7 +32,7 @@ export default function CustomerPage() {
   const params = useParams();
   const { user } = useAuth();
   const { handleError } = useSimpleErrorHandler();
-  const { showError, showSuccess } = useToastHandler();
+  const { toastError, toastSuccess } = useToast();
   const customerId = params.id as string;
   
   console.log('🔍 CustomerPage: Component rendered with params:', params);
@@ -81,14 +78,14 @@ export default function CustomerPage() {
           console.log('✅ CustomerPage: Customer fetched successfully:', response.data);
           setCustomer(response.data);
         } else {
-          console.error('❌ CustomerPage: API error:', response.error);
+          console.error('❌ CustomerPage: API showError:', response.error);
           throw new Error(response.error || 'Failed to fetch customer');
         }
         
       } catch (error) {
         console.error('❌ CustomerPage: Error fetching customer:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch customer details';
-        showError('Error', errorMessage);
+        toastError('Error', errorMessage);
         // Show error state
         setCustomer(null);
       } finally {
@@ -141,13 +138,13 @@ export default function CustomerPage() {
         // Navigate back to customers list
         router.push('/customers');
       } else {
-        console.error('❌ CustomerPage: API error:', response.error);
+        console.error('❌ CustomerPage: API showError:', response.error);
         throw new Error(response.error || 'Failed to delete customer');
       }
       
     } catch (error) {
       console.error('❌ CustomerPage: Error deleting customer:', error);
-      showError('Delete Failed', 'Failed to delete customer: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toastError('Delete Failed', 'Failed to delete customer: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsUpdating(false);
       setShowDeleteConfirm(false);
@@ -175,9 +172,9 @@ export default function CustomerPage() {
         setShowEditSection(false);
         
         // Show success toast
-        showSuccess('Customer Updated', 'Customer information has been updated successfully!');
+        toastSuccess('Customer Updated', 'Customer information has been updated successfully!');
       } else {
-        console.error('❌ CustomerPage: API error:', response.error);
+        console.error('❌ CustomerPage: API showError:', response.error);
         throw new Error(response.error || 'Failed to update customer');
       }
       
@@ -214,15 +211,15 @@ export default function CustomerPage() {
         setShowDeactivateConfirm(false);
         
         // Show success message
-        showSuccess('Status Updated', `Customer ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+        toastSuccess('Status Updated', `Customer ${newStatus ? 'activated' : 'deactivated'} successfully!`);
       } else {
-        console.error('❌ CustomerPage: API error:', response.error);
+        console.error('❌ CustomerPage: API showError:', response.error);
         throw new Error(response.error || 'Failed to update customer status');
       }
       
     } catch (error) {
       console.error('❌ CustomerPage: Error updating customer status:', error);
-      showError('Status Update Failed', 'Failed to update customer status: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toastError('Status Update Failed', 'Failed to update customer status: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsUpdating(false);
     }

@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { Product } from '@rentalshop/types';
-import { Eye, Edit, ShoppingCart } from 'lucide-react';
+import { Eye, Edit, ShoppingCart, Trash2 } from 'lucide-react';
 
 interface ProductTableProps {
   products: Product[];
@@ -188,6 +188,15 @@ export function ProductTable({
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onProductAction('delete', product.id)}
+                    className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete
                   </Button>
                 </div>
               </div>

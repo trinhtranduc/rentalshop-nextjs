@@ -8,12 +8,12 @@
 // SUBSCRIPTION STATUSES
 // ============================================================================
 export const SUBSCRIPTION_STATUS = {
-  TRIAL: 'trial',
-  ACTIVE: 'active',
-  PAST_DUE: 'past_due',
-  CANCELLED: 'cancelled',
-  PAUSED: 'paused',
-  EXPIRED: 'expired'
+  TRIAL: 'TRIAL',
+  ACTIVE: 'ACTIVE',
+  PAST_DUE: 'PAST_DUE',
+  CANCELLED: 'CANCELLED',
+  PAUSED: 'PAUSED',
+  EXPIRED: 'EXPIRED'
 } as const;
 
 export type SubscriptionStatus = typeof SUBSCRIPTION_STATUS[keyof typeof SUBSCRIPTION_STATUS];

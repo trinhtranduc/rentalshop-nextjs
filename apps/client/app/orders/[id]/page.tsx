@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, OrderDetail, useToasts } from '@rentalshop/ui';
+import { Button, OrderDetail, useToast } from '@rentalshop/ui';
 
 import { ArrowLeft } from 'lucide-react';
 import { ordersApi } from '@rentalshop/utils';
@@ -12,7 +12,7 @@ import type { Order } from '@rentalshop/types';
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { showSuccess, showError } = useToasts();
+  const { toastSuccess, toastError } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,13 +69,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        showSuccess('Order Cancelled', 'Order has been cancelled successfully');
+        toastSuccess('Order Cancelled', 'Order has been cancelled successfully');
       } else {
         throw new Error(result.error || 'Failed to cancel order');
       }
     } catch (err) {
       console.error('Error cancelling order:', err);
-      showError('Cancellation Failed', 'Failed to cancel order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError('Cancellation Failed', 'Failed to cancel order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -92,13 +92,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        showSuccess('Status Updated', `Order status has been updated to ${newStatus}`);
+        toastSuccess('Status Updated', `Order status has been updated to ${newStatus}`);
       } else {
         throw new Error(result.error || 'Failed to update order status');
       }
     } catch (err) {
       console.error('Error updating order status:', err);
-      showError('Status Update Failed', 'Failed to update order status: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError('Status Update Failed', 'Failed to update order status: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -118,13 +118,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        showSuccess('Order Pickup', 'Order has been picked up successfully!');
+        toastSuccess('Order Pickup', 'Order has been picked up successfully!');
       } else {
         throw new Error(result.error || 'Failed to pickup order');
       }
     } catch (err) {
       console.error('Error picking up order:', err);
-      showError('Pickup Failed', 'Failed to pickup order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError('Pickup Failed', 'Failed to pickup order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -143,13 +143,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        showSuccess('Order Return', 'Order has been returned successfully!');
+        toastSuccess('Order Return', 'Order has been returned successfully!');
       } else {
         throw new Error(result.error || 'Failed to return order');
       }
     } catch (err) {
       console.error('Error returning order:', err);
-      showError('Return Failed', 'Failed to return order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError('Return Failed', 'Failed to return order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -163,7 +163,7 @@ export default function OrderDetailPage() {
     notes: string;
   }) => {
     if (!order) {
-      showError('Save Failed', 'Order not found');
+      toastError('Save Failed', 'Order not found');
       return;
     }
 
@@ -184,13 +184,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        showSuccess('Settings Saved', 'Order settings saved successfully!');
+        toastSuccess('Settings Saved', 'Order settings saved successfully!');
       } else {
         throw new Error(result.error || 'Failed to save order settings');
       }
     } catch (err) {
       console.error('Error saving order settings:', err);
-      showError('Save Failed', 'Failed to save order settings: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError('Save Failed', 'Failed to save order settings: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }

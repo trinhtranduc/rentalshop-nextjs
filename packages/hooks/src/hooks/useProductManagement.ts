@@ -30,6 +30,7 @@ export interface UseProductManagementReturn {
   showCreateForm: boolean;
   showEditDialog: boolean;
   showOrdersDialog: boolean;
+  showDeleteDialog: boolean;
   pagination: any;
   
   // Actions
@@ -43,6 +44,7 @@ export interface UseProductManagementReturn {
   setShowCreateForm: (show: boolean) => void;
   setShowEditDialog: (show: boolean) => void;
   setShowOrdersDialog: (show: boolean) => void;
+  setShowDeleteDialog: (show: boolean) => void;
   
   // Handlers
   fetchProducts: (page?: number) => Promise<void>;
@@ -60,6 +62,7 @@ export interface UseProductManagementReturn {
   handlePageChangeWithFetch: (page: number) => void;
   handleProductCreated: (productData: ProductCreateInput) => Promise<void>;
   handleProductUpdatedAsync: (productData: ProductUpdateInput) => Promise<void>;
+  handleDeleteProduct: (productId: number) => Promise<void>;
   
   // Computed values
   filteredProducts: Product[];
@@ -91,6 +94,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showOrdersDialog, setShowOrdersDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Pagination state using shared hook
   const { pagination, handlePageChange, updatePaginationFromResponse } = usePagination({
@@ -374,6 +378,11 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
       case 'deactivate':
         handleToggleStatus(product);
         break;
+      case 'delete':
+        // Set selected product and show delete confirmation dialog
+        setSelectedProduct(product);
+        setShowDeleteDialog(true);
+        break;
       default:
         console.log('Unknown action:', action);
     }
@@ -449,6 +458,29 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     }
   }, [selectedProduct, fetchProducts]);
 
+  const handleDeleteProduct = useCallback(async (productId: number) => {
+    try {
+      setLoading(true);
+      const response = await productsApi.deleteProduct(productId);
+      
+      if (response.success) {
+        // Remove the product from the local state
+        setProducts(prev => prev.filter(p => p.id !== productId));
+        setShowDeleteDialog(false);
+        setSelectedProduct(null);
+        // Refresh the list to ensure consistency
+        fetchProducts();
+      } else {
+        throw new Error(response.error || 'Failed to delete product');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchProducts, handleError]);
+
   return {
     // State
     products,
@@ -463,6 +495,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     showCreateForm,
     showEditDialog,
     showOrdersDialog,
+    showDeleteDialog,
     pagination,
     
     // Actions
@@ -476,6 +509,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     setShowCreateForm,
     setShowEditDialog,
     setShowOrdersDialog,
+    setShowDeleteDialog,
     
     // Handlers
     fetchProducts,
@@ -493,6 +527,7 @@ export const useProductManagement = (options: UseProductManagementOptions = {}):
     handlePageChangeWithFetch,
     handleProductCreated,
     handleProductUpdatedAsync,
+    handleDeleteProduct,
     
     // Computed values
     filteredProducts,

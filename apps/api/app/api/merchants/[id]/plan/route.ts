@@ -79,16 +79,105 @@ export async function PUT(
       }
 
       const body = await request.json();
-      const { planId } = body;
+      const { planId, billingInterval, totalPrice, duration, discount } = body;
+      
+      // totalPrice comes from frontend calculation
+      const amount = totalPrice || 0;
+
+      console.log('🔍 Plan Change Request:', { 
+        merchantPublicId, 
+        planId, 
+        billingInterval, 
+        amount,
+        totalPrice,
+        duration,
+        discount,
+        body 
+      });
 
       // Update merchant plan
       const updatedMerchant = await db.merchants.update(merchantPublicId, {
-        planId
+        planId,
+        subscriptionStatus: 'active' // Change from trial to active when upgrading
       });
+
+      // Also update the subscription record if it exists
+      if (merchant.subscription) {
+        // Get old plan for activity log
+        const oldPlan = await db.plans.findById(merchant.subscription.planId);
+        const newPlan = await db.plans.findById(planId);
+        
+        // Calculate new period end date based on billing interval
+        const currentStart = new Date();
+        const months = duration || 1;
+        const newPeriodEnd = new Date(currentStart);
+        newPeriodEnd.setMonth(newPeriodEnd.getMonth() + months);
+        
+        await db.subscriptions.update(merchant.subscription.id, {
+          planId,
+          interval: billingInterval || 'month',
+          amount: amount,
+          discount: discount || 0,
+          status: 'ACTIVE', // Update status to ACTIVE (UPPERCASE)
+          currentPeriodStart: currentStart,
+          currentPeriodEnd: newPeriodEnd,
+          // Clear trial dates when upgrading from trial
+          trialStart: null,
+          trialEnd: null
+        });
+
+        // Log activity to database
+        await db.subscriptionActivities.create({
+          subscriptionId: merchant.subscription.id,
+          type: 'plan_changed',
+          description: `Plan changed from ${oldPlan?.name} to ${newPlan?.name}`,
+          reason: body.reason || 'Plan changed by admin',
+          metadata: {
+            previousPlan: {
+              id: oldPlan?.id,
+              name: oldPlan?.name,
+              amount: merchant.subscription.amount
+            },
+            newPlan: {
+              id: newPlan?.id,
+              name: newPlan?.name,
+              amount: amount
+            },
+            billingInterval: billingInterval || 'month',
+            discount: discount || 0,
+            effectiveDate: currentStart.toISOString(),
+            nextBillingDate: newPeriodEnd.toISOString(),
+            performedBy: {
+              userId: user.userId || user.id,
+              email: user.email,
+              role: user.role,
+              name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+            },
+            source: user.role === 'ADMIN' ? 'admin_panel' : 'merchant_panel',
+            severity: 'info',
+            category: 'plan'
+          },
+          performedBy: user.userId || user.id
+        });
+        
+        console.log('✅ Updated subscription:', { 
+          subscriptionId: merchant.subscription.id, 
+          newPlanId: planId,
+          status: 'ACTIVE',
+          amount,
+          interval: billingInterval,
+          periodStart: currentStart,
+          periodEnd: newPeriodEnd
+        });
+      }
+
+      // Fetch updated merchant with new subscription data
+      const refreshedMerchant = await db.merchants.findById(merchantPublicId);
 
       return NextResponse.json({
         success: true,
-        data: updatedMerchant
+        data: refreshedMerchant,
+        message: 'Plan updated successfully'
       });
 
     } catch (error) {

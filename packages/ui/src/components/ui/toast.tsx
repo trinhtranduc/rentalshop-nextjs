@@ -101,11 +101,11 @@ export interface ToastContainerProps {
 }
 
 export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose }) => {
-  console.log('🎯 ToastContainer render:', { toastsCount: toasts.length, toasts });
+  console.log('🎯 ToastContainer render:', { toastsCount: toasts?.length || 0, toasts });
   
   return (
     <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 max-w-sm">
-      {toasts.map((toast, index) => (
+      {toasts?.map((toast, index) => (
         <div 
           key={toast.id} 
           className="animate-slide-in-from-right"
@@ -121,16 +121,12 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose 
   );
 };
 
-// Toast Context
-interface ToastContextType {
+// Toast Context Type
+type ToastContextType = {
   toasts: ToastProps[];
   addToast: (type: ToastType, title: string, message?: string, duration?: number) => string;
   removeToast: (id: string) => void;
-  showSuccess: (title: string, message?: string) => string;
-  showError: (title: string, message?: string) => string;
-  showWarning: (title: string, message?: string) => string;
-  showInfo: (title: string, message?: string) => string;
-}
+};
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
@@ -157,34 +153,44 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
-  const showSuccess = (title: string, message?: string) => addToast('success', title, message);
-  const showError = (title: string, message?: string) => addToast('error', title, message, 0); // No auto-hide for errors
-  const showWarning = (title: string, message?: string) => addToast('warning', title, message);
-  const showInfo = (title: string, message?: string) => addToast('info', title, message);
-
-  const value = {
-    toasts,
-    addToast,
-    removeToast,
-    showSuccess,
-    showError,
-    showWarning,
-    showInfo,
-  };
-
   return (
-    <ToastContext.Provider value={value}>
+    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </ToastContext.Provider>
   );
 };
 
-// Hook for managing toasts
+// Hook for managing toasts (internal)
 export const useToasts = () => {
   const context = useContext(ToastContext);
   if (context === undefined) {
     throw new Error('useToasts must be used within a ToastProvider');
   }
   return context;
+};
+
+// Unified toast hook with consistent naming (public API)
+export const useToast = () => {
+  const { addToast, removeToast } = useToasts();
+  
+  // ✅ NEW: Prefixed naming to avoid conflicts with state variables
+  const toastSuccess = (title: string, message?: string) => addToast('success', title, message);
+  const toastError = (title: string, message?: string) => addToast('error', title, message, 0); // No auto-hide for errors
+  const toastWarning = (title: string, message?: string) => addToast('warning', title, message);
+  const toastInfo = (title: string, message?: string) => addToast('info', title, message);
+  
+  return {
+    // Primary API - use these to avoid naming conflicts
+    toastSuccess,
+    toastError,
+    toastWarning,
+    toastInfo,
+    removeToast,
+    // Deprecated: kept for backward compatibility, will be removed in future
+    success: toastSuccess,
+    error: toastError,
+    warning: toastWarning,
+    info: toastInfo,
+  };
 };

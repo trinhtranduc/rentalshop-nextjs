@@ -6,17 +6,18 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
-} from '@rentalshop/ui';
+  PageContent,
+  useToast } from '@rentalshop/ui';
 import { Orders } from '../../components/Orders';
 import { useRouter } from 'next/navigation';
-import { useAuth, useOrderManagement, useToastHandler } from '@rentalshop/hooks';
+import { useAuth, useOrderManagement, useCanExportData } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
 
 export default function OrdersPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { showSuccess, showError } = useToastHandler();
+  const { toastSuccess, toastError } = useToast();
+  const canExport = useCanExportData();
   
   // Use the order management hook
   const {
@@ -62,9 +63,9 @@ export default function OrdersPage() {
         if (order) {
           const result = await handlePickupOrder(order.id);
           if (result.success) {
-            showSuccess('Order Confirmed', 'Order has been confirmed successfully!');
+            toastSuccess('Order Confirmed', 'Order has been confirmed successfully!');
           } else {
-            showError('Update Failed', result.error || 'An error occurred while updating the order');
+            toastError('Update Failed', result.error || 'An error occurred while updating the order');
           }
         }
         break;
@@ -73,9 +74,9 @@ export default function OrdersPage() {
         if (orderForReturn) {
           const result = await handleReturnOrder(orderForReturn.id);
           if (result.success) {
-            showSuccess('Order Returned', 'Order has been returned successfully!');
+            toastSuccess('Order Returned', 'Order has been returned successfully!');
           } else {
-            showError('Update Failed', result.error || 'An error occurred while updating the order');
+            toastError('Update Failed', result.error || 'An error occurred while updating the order');
           }
         }
         break;
@@ -85,9 +86,9 @@ export default function OrdersPage() {
           if (!confirm('Are you sure you want to cancel this order?')) return;
           const result = await handleCancelOrder(orderForCancel.id);
           if (result.success) {
-            showSuccess('Order Cancelled', 'Order has been cancelled successfully!');
+            toastSuccess('Order Cancelled', 'Order has been cancelled successfully!');
           } else {
-            showError('Cancellation Failed', result.error || 'An error occurred while cancelling the order');
+            toastError('Cancellation Failed', result.error || 'An error occurred while cancelling the order');
           }
         }
         break;
@@ -97,7 +98,7 @@ export default function OrdersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [orders, router, handlePickupOrder, handleReturnOrder, handleCancelOrder, showSuccess, showError]);
+  }, [orders, router, handlePickupOrder, handleReturnOrder, handleCancelOrder, toastSuccess, toastError]);
 
 
   // Debug stats and pagination
@@ -185,18 +186,20 @@ export default function OrdersPage() {
             <p className="text-sm text-gray-600">Manage orders and rental/sale transactions</p>
           </div>
           <div className="flex gap-3">
-            <button 
-              onClick={() => {
-                // TODO: Implement export functionality
-                showSuccess('Export Feature', 'Export functionality coming soon!');
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              Export
-            </button>
+            {canExport && (
+              <button 
+                onClick={() => {
+                  // TODO: Implement export functionality
+                  toastSuccess('Export Feature', 'Export functionality coming soon!');
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Export
+              </button>
+            )}
             <button 
               onClick={() => router.push('/orders/create')}
               className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 rounded-md flex items-center text-sm"

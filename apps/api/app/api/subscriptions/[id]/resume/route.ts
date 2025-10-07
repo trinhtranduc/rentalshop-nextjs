@@ -25,10 +25,37 @@ export async function POST(
         return NextResponse.json({ success: false, message: 'Subscription not found' }, { status: API.STATUS.NOT_FOUND });
       }
 
+      // Get reason from request body
+      const body = await request.json().catch(() => ({}));
+      const reason = body.reason || 'Resumed by admin';
+
       // Resume subscription
       const resumedSubscription = await db.subscriptions.update(subscriptionId, {
-        status: 'ACTIVE',
-        resumedAt: new Date()
+        status: 'ACTIVE'
+      });
+
+      // Log activity to database
+      await db.subscriptionActivities.create({
+        subscriptionId,
+        type: 'subscription_resumed',
+        description: 'Subscription resumed',
+        reason,
+        metadata: {
+          planId: existing.planId,
+          planName: existing.plan?.name,
+          previousStatus: existing.status,
+          newStatus: 'ACTIVE',
+          performedBy: {
+            userId: user.userId || user.id,
+            email: user.email,
+            role: user.role,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+          },
+          source: user.role === 'ADMIN' ? 'admin_panel' : 'merchant_panel',
+          severity: 'success',
+          category: 'billing'
+        },
+        performedBy: user.userId || user.id
       });
 
       return NextResponse.json({ success: true, data: resumedSubscription });

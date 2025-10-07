@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  PageWrapper,
+import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
@@ -17,9 +16,7 @@ import {
   Textarea,
   Label,
   StatusBadge,
-  ToastContainer,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { merchantsApi } from '@rentalshop/utils';
 import { ArrowLeft, Save, Building2 } from 'lucide-react';
 import type { Merchant } from '@rentalshop/types';
@@ -41,7 +38,7 @@ interface MerchantEditData {
 }
 
 export default function EditMerchantPage() {
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
   const params = useParams();
   const router = useRouter();
   const merchantId = params.id as string;
@@ -136,23 +133,23 @@ export default function EditMerchantPage() {
         const data = await response.json();
         if (data.success) {
           // Show success toast
-          showSuccess('Merchant updated', 'Changes saved successfully.');
+          toastSuccess('Merchant updated', 'Changes saved successfully.');
           // Navigate back to merchant detail page
           router.push(`/merchants/${merchantId}`);
         } else {
           const msg = data.message || 'Failed to update merchant';
           setError(msg);
-          showError('Update failed', msg);
+          toastError('Update failed', msg);
         }
       } else {
         console.error('Failed to update merchant');
         setError('Failed to update merchant');
-        showError('Update failed', 'Server returned an error.');
+        toastError('Update failed', 'Server returned an error.');
       }
-    } catch (error) {
-      console.error('Error updating merchant:', error);
+    } catch (err) {
+      console.error('Error updating merchant:', err);
       setError('Failed to update merchant');
-      showError('Update failed', error instanceof Error ? error.message : 'Unknown error');
+      toastError('Update failed', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setSaving(false);
     }
@@ -224,7 +221,6 @@ export default function EditMerchantPage() {
       </PageHeader>
 
       <PageContent>
-        <ToastContainer toasts={toasts} onClose={removeToast} />
         <div className="space-y-6">
           {/* Merchant Information */}
           <Card>

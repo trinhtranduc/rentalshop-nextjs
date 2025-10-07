@@ -11,17 +11,14 @@
 import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  CreateOrderForm, 
+import { CreateOrderForm, 
   FormSkeleton, 
   PageWrapper, 
   PageHeader,
   PageTitle,
   PageContent, 
-  useToasts, 
-  ToastContainer,
-  Button
-} from '@rentalshop/ui';
+  useToast,
+  Button , useToast } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { customersApi, productsApi, outletsApi, ordersApi, categoriesApi } from '@rentalshop/utils';
 import type { CustomerSearchResult, ProductWithStock, Category } from '@rentalshop/types';
@@ -44,7 +41,7 @@ export default function MerchantCreateOrderPage() {
   const [categories, setCategories] = useState<any[]>([]);
 
   // Toast notifications
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   // Fetch form data needed for order creation
   useEffect(() => {
@@ -129,7 +126,7 @@ export default function MerchantCreateOrderPage() {
 
       const token = getAuthToken();
       if (!token) {
-        showError('Authentication required');
+        toastError('Authentication required');
         return;
       }
 
@@ -138,7 +135,7 @@ export default function MerchantCreateOrderPage() {
 
       if (result.success) {
         // Show success message
-        showSuccess('Order created successfully!');
+        toastSuccess('Order created successfully!');
         // Navigate back to merchant orders after successful creation
         router.push(`/merchants/${merchantId}/orders`);
       } else {
@@ -146,7 +143,7 @@ export default function MerchantCreateOrderPage() {
       }
     } catch (err) {
       console.error('Error creating order:', err);
-      showError('Failed to create order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError('Failed to create order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -233,7 +230,6 @@ export default function MerchantCreateOrderPage() {
         </div>
       </PageHeader>
       <PageContent>
-        <ToastContainer toasts={toasts} onClose={removeToast} />
         
         <CreateOrderForm
           isEditMode={false}

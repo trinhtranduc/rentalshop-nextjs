@@ -133,9 +133,9 @@ export function SubscriptionChangePlanDialog({
             <Label className="text-lg font-semibold">Select New Plan</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {plans.map((plan) => {
-                const pricing = plan.pricing;
+                const pricing = plan.pricing || {};
                 const periodKey = selectedPeriod === 1 ? 'monthly' : selectedPeriod === 3 ? 'quarterly' : 'yearly';
-                const periodPricing = pricing[periodKey];
+                const periodPricing = pricing[periodKey] || { price: plan.basePrice, discount: 0, discountedPrice: plan.basePrice, savings: 0 };
                 
                 return (
                   <Card 

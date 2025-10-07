@@ -315,10 +315,12 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
               )}
             </div>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => onRemove(item.productId)}
-              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
+              className="shrink-0 h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
+              title="Remove product"
             >
               <Trash2 className="w-4 h-4" />
             </Button>

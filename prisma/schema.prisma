@@ -8,23 +8,24 @@ datasource db {
 }
 
 model User {
-  id            Int        @id @default(autoincrement())
-  email         String     @unique
-  password      String
-  firstName     String
-  lastName      String
-  phone         String?
-  role          String     @default("OUTLET_STAFF")
-  isActive      Boolean    @default(true)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  merchantId    Int?
-  outletId      Int?
-  deletedAt     DateTime?
-  auditLogs     AuditLog[]
-  createdOrders Order[]
-  outlet        Outlet?    @relation(fields: [outletId], references: [id])
-  merchant      Merchant?  @relation(fields: [merchantId], references: [id])
+  id                     Int                    @id @default(autoincrement())
+  email                  String                 @unique
+  password               String
+  firstName              String
+  lastName               String
+  phone                  String?
+  role                   String                 @default("OUTLET_STAFF")
+  isActive               Boolean                @default(true)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  merchantId             Int?
+  outletId               Int?
+  deletedAt              DateTime?
+  auditLogs              AuditLog[]
+  createdOrders          Order[]
+  subscriptionActivities SubscriptionActivity[]
+  outlet                 Outlet?                @relation(fields: [outletId], references: [id])
+  merchant               Merchant?              @relation(fields: [merchantId], references: [id])
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -328,12 +329,31 @@ model Subscription {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   payments           Payment[]
+  activities         SubscriptionActivity[]
   merchant           Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   plan               Plan      @relation(fields: [planId], references: [id])
 
   @@index([merchantId])
   @@index([planId])
   @@index([status])
+}
+
+model SubscriptionActivity {
+  id             Int      @id @default(autoincrement())
+  subscriptionId Int
+  type           String   // subscription_created, plan_changed, subscription_paused, etc.
+  description    String
+  reason         String?  // Reason for the action (e.g., "Paused by admin", "Trial ended")
+  metadata       String?  // JSON metadata (SQLite doesn't need @db.Text)
+  performedBy    Int?     // User ID who performed the action
+  createdAt      DateTime @default(now())
+  
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [performedBy], references: [id], onDelete: SetNull)
+  
+  @@index([subscriptionId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model AuditLog {

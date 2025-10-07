@@ -10,7 +10,7 @@ import {
 } from '../../../ui';
 import { ArrowLeft, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
-import { useToasts } from '../../../ui/toast';
+import { useToast } from '@rentalshop/ui';
 import type { Category, Outlet, ProductCreateInput } from '@rentalshop/types';
 
 interface ProductAddFormProps {
@@ -31,7 +31,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
   onBack
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showSuccess, showError } = useToasts();
+  const { toastSuccess, toastError } = useToast();
 
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -57,7 +57,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
       // The form will be reset by the parent component
     } catch (err) {
       console.error('❌ ProductAddForm: Error in handleSubmit:', err);
-      showError('Creation Failed', err instanceof Error ? err.message : 'Failed to create product');
+      error('Creation Failed', err instanceof Error ? err.message : 'Failed to create product');
     } finally {
       setIsSubmitting(false);
     }

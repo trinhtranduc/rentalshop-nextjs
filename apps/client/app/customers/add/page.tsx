@@ -1,8 +1,8 @@
 'use client'
+import { useToast } from '@rentalshop/ui';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AddCustomerForm, CustomerPageHeader, ToastContainer, PageWrapper, PageHeader, PageContent, useToasts, ProductsLoading } from '@rentalshop/ui';
 import { customersApi } from "@rentalshop/utils";
 import { useAuth } from '@rentalshop/hooks';
 import type { CustomerInput, CustomerCreateInput } from '@rentalshop/types';
@@ -11,7 +11,7 @@ export default function AddCustomerPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toasts, showSuccess, removeToast } = useToasts();
+  const { toastSuccess, removeToast } = useToast();
 
   // Get merchantId from current user
   const merchantId = user?.merchant?.id ? Number(user.merchant.id) : undefined;
@@ -47,13 +47,9 @@ export default function AddCustomerPage() {
       if (response.success) {
         console.log('✅ AddCustomerPage: Customer created successfully:', response.data);
         
-        // Show success toast
-        showSuccess('Customer Created', 'Customer has been created successfully!');
-        
-        // Navigate back to customers list after a short delay to show the toast
-        setTimeout(() => {
-          router.push('/customers');
-        }, 1500);
+        // Navigate back to customers list immediately
+        // Toast will be handled by Customers component when the page loads
+        router.push('/customers');
       } else {
         console.error('❌ AddCustomerPage: API error:', response.error);
         console.log('🔍 AddCustomerPage: Full API response:', response);
@@ -125,8 +121,6 @@ export default function AddCustomerPage() {
         />
       </PageContent>
       
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 }

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  PageWrapper,
+import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
@@ -14,9 +13,8 @@ import {
   CardTitle,
   Badge,
   EmptyState,
-  useToasts,
-  ToastContainer
-} from '@rentalshop/ui';
+  useToast
+ , useToast } from '@rentalshop/ui';
 import { 
   ArrowLeft, 
   ShoppingCart, 
@@ -32,7 +30,7 @@ import { ordersApi, productsApi } from '@rentalshop/utils';
 export default function ProductOrdersPage() {
   const params = useParams();
   const router = useRouter();
-  const { toasts, showError, removeToast } = useToasts();
+  const { toasts, toastError, removeToast } = useToast();
   const merchantId = params.id as string;
   const productId = params.productId as string;
   
@@ -378,7 +376,6 @@ export default function ProductOrdersPage() {
           )}
         </PageContent>
       </PageWrapper>
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </>
   );
 }

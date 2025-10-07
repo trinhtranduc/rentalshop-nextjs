@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { subscriptionsApi } from '@rentalshop/utils';
-import { 
-  Card,
+import { Card,
   CardHeader,
   CardTitle,
   CardContent,
@@ -26,9 +25,7 @@ import {
   Textarea,
   Label,
   ConfirmationDialog,
-  ToastContainer,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { 
   ArrowLeft,
   Edit,
@@ -67,7 +64,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   });
 
   // Toast management
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   // Confirmation dialog state
   const [confirmationDialog, setConfirmationDialog] = useState<{
@@ -116,13 +113,13 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       if (result.success) {
         setShowExtendModal(false);
         await fetchSubscription(); // Refresh data
-        showSuccess('Subscription Extended', 'Subscription has been extended successfully');
+        toastSuccess('Subscription Extended', 'Subscription has been extended successfully');
       } else {
-        showError('Extension Failed', result.message || 'Failed to extend subscription');
+        toastError('Extension Failed', result.message || 'Failed to extend subscription');
       }
     } catch (error) {
       console.error('Error extending subscription:', error);
-      showError('Extension Failed', 'Error extending subscription. Please try again.');
+      toastError('Extension Failed', 'Error extending subscription. Please try again.');
     }
   };
 
@@ -138,15 +135,15 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       const result = await subscriptionsApi.delete(parseInt(params.id));
       
       if (result.success) {
-        showSuccess('Subscription Deleted', 'Subscription has been deleted successfully');
+        toastSuccess('Subscription Deleted', 'Subscription has been deleted successfully');
         // Redirect to subscriptions list
         window.location.href = '/admin/subscriptions';
       } else {
-        showError('Deletion Failed', result.message || 'Failed to delete subscription');
+        toastError('Deletion Failed', result.message || 'Failed to delete subscription');
       }
     } catch (error) {
       console.error('Error deleting subscription:', error);
-      showError('Deletion Failed', 'Error deleting subscription. Please try again.');
+      toastError('Deletion Failed', 'Error deleting subscription. Please try again.');
     } finally {
       setConfirmationDialog({ open: false, type: 'delete' });
     }
@@ -167,13 +164,13 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
 
       if (result.success) {
         await fetchSubscription(); // Refresh data
-        showSuccess('Subscription Suspended', 'Subscription has been suspended successfully');
+        toastSuccess('Subscription Suspended', 'Subscription has been suspended successfully');
       } else {
-        showError('Suspension Failed', result.message || 'Failed to suspend subscription');
+        toastError('Suspension Failed', result.message || 'Failed to suspend subscription');
       }
     } catch (error) {
       console.error('Error suspending subscription:', error);
-      showError('Suspension Failed', 'Error suspending subscription. Please try again.');
+      toastError('Suspension Failed', 'Error suspending subscription. Please try again.');
     } finally {
       setConfirmationDialog({ open: false, type: 'pause' });
     }
@@ -193,13 +190,13 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
 
       if (result.success) {
         await fetchSubscription(); // Refresh data
-        showSuccess('Subscription Cancelled', 'Subscription has been cancelled successfully');
+        toastSuccess('Subscription Cancelled', 'Subscription has been cancelled successfully');
       } else {
-        showError('Cancellation Failed', result.message || 'Failed to cancel subscription');
+        toastError('Cancellation Failed', result.message || 'Failed to cancel subscription');
       }
     } catch (error) {
       console.error('Error cancelling subscription:', error);
-      showError('Cancellation Failed', 'Error cancelling subscription. Please try again.');
+      toastError('Cancellation Failed', 'Error cancelling subscription. Please try again.');
     } finally {
       setConfirmationDialog({ open: false, type: 'cancel' });
     }
@@ -677,7 +674,6 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       />
 
       {/* Toast Container */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

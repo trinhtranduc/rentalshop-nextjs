@@ -13,6 +13,7 @@ import { simplifiedPayments } from './payment';
 import { simplifiedOutlets } from './outlet';
 import { simplifiedPlans } from './plan';
 import { simplifiedSubscriptions } from './subscription';
+import { simplifiedSubscriptionActivities } from './subscription-activity';
 import { simplifiedMerchants } from './merchant';
 import { simplifiedOrderNumbers } from './order-number-generator';
 import { simplifiedCategories } from './category';
@@ -135,7 +136,12 @@ const db = {
     aggregate: async (options: any) => {
       return await prisma.outletStock.aggregate(options);
     }
-  }
+  },
+
+  // ============================================================================
+  // SUBSCRIPTION ACTIVITY OPERATIONS
+  // ============================================================================
+  subscriptionActivities: simplifiedSubscriptionActivities
 };
 
 // ============================================================================
@@ -184,6 +190,9 @@ export { db, checkDatabaseConnection, generateOrderNumber };
 
 // Export payment functions
 export { simplifiedPayments } from './payment';
+
+// Export subscription activity functions
+export { simplifiedSubscriptionActivities } from './subscription-activity';
 
 // Legacy exports for backward compatibility
 export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById } from './subscription';

@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { 
-  SubscriptionList,
+import { SubscriptionList,
   SubscriptionForm,
   SubscriptionEditDialog,
   PageWrapper,
@@ -21,9 +20,8 @@ import {
   DialogDescription,
   DialogFooter,
   ConfirmationDialogWithReason,
-  ToastContainer,
-  useToasts
-} from '@rentalshop/ui';
+  
+  useToast } from '@rentalshop/ui';
 import { 
   subscriptionsApi,
   merchantsApi,
@@ -58,7 +56,7 @@ export default function SubscriptionsPage() {
   });
 
   // Toast management
-  const { toasts, showSuccess, showError, showWarning, removeToast } = useToasts();
+  const { toasts, toastSuccess, toastError, toastWarning, removeToast } = useToast();
 
   // Confirmation dialog state
   const [confirmationDialog, setConfirmationDialog] = useState<{
@@ -224,13 +222,13 @@ export default function SubscriptionsPage() {
       setShowEditDialog(false);
       setSelectedSubscription(null);
       
-      showSuccess(
+      toastSuccess(
         'Subscription Updated',
         'Subscription has been updated successfully'
       );
     } catch (error) {
       console.error('Failed to update subscription:', error);
-      showError(
+      toastError(
         'Update Failed',
         'Failed to update subscription. Please try again.'
       );
@@ -281,19 +279,19 @@ export default function SubscriptionsPage() {
       
       if (result.success) {
         await fetchData(); // Refresh data
-        showSuccess(
+        toastSuccess(
           'Operation Successful',
           `Subscription ${type === 'cancel' ? 'cancelled' : 'plan changed'} successfully`
         );
       } else {
-        showError(
+        toastError(
           'Operation Failed',
           result.message || `Failed to ${type} subscription`
         );
       }
     } catch (error) {
       console.error(`Error ${type}ing subscription:`, error);
-      showError(
+      toastError(
         'Operation Failed',
         `Error ${type}ing subscription. Please try again.`
       );
@@ -329,19 +327,19 @@ export default function SubscriptionsPage() {
       if (result.success) {
         setShowCreateDialog(false);
         await fetchData(); // Refresh data
-        showSuccess(
+        toastSuccess(
           'Subscription Created',
           'New subscription has been created successfully'
         );
       } else {
-        showError(
+        toastError(
           'Creation Failed',
           result.message || 'Failed to create subscription'
         );
       }
     } catch (error) {
       console.error('Error creating subscription:', error);
-      showError(
+      toastError(
         'Creation Failed',
         'Error creating subscription. Please try again.'
       );
@@ -533,7 +531,6 @@ export default function SubscriptionsPage() {
       />
 
       {/* Toast Container */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 }

@@ -20,25 +20,54 @@ import {
   Play,
   CreditCard,
   User,
-  Download
+  Download,
+  DollarSign,
+  AlertCircle,
+  AlertTriangle,
+  Percent,
+  RotateCcw,
+  FileText,
+  Bell
 } from 'lucide-react';
 
 interface SubscriptionActivity {
   id: number;
-  action: string; // 'PLAN_CHANGE' | 'RENEWAL' | 'CANCEL' | 'PAUSE' | 'RESUME' | 'CREATE'
+  type: string; // 'subscription_created' | 'plan_changed' | 'subscription_paused' | etc.
   description: string;
-  details?: string;
-  oldValues?: any;
-  newValues?: any;
-  changes?: any;
-  userId?: number;
-  user?: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
+  timestamp: string;
+  metadata?: {
+    planId?: number;
+    planName?: string;
+    status?: string;
+    amount?: number;
+    currency?: string;
+    performedBy?: {
+      userId: number;
+      email: string;
+      role: string;
+      name?: string;
+    };
+    previousPlan?: {
+      id: number;
+      name: string;
+      amount: number;
+    };
+    newPlan?: {
+      id: number;
+      name: string;
+      amount: number;
+    };
+    paymentMethod?: string;
+    transactionId?: string;
+    invoiceNumber?: string;
+    effectiveDate?: string;
+    nextBillingDate?: string;
+    trialEndDate?: string;
+    reason?: string;
+    source?: string;
+    severity?: 'info' | 'warning' | 'error' | 'success';
+    category?: 'billing' | 'plan' | 'payment' | 'system' | 'user';
   };
-  createdAt: Date;
 }
 
 interface Payment {
@@ -70,20 +99,21 @@ export function SubscriptionActivityTimeline({
   const timeline = React.useMemo(() => {
     const items: any[] = [];
 
-    // Add activities
+    // Add activities (already have timestamp as string)
     activities.forEach(activity => {
       items.push({
-        type: 'activity',
+        itemType: 'activity',
         ...activity,
-        timestamp: new Date(activity.createdAt)
+        timestamp: new Date(activity.timestamp)
       });
     });
 
     // Add payments
     payments.forEach(payment => {
       items.push({
-        type: 'payment',
+        itemType: 'payment',
         ...payment,
+        type: payment.type, // Keep payment type from API
         timestamp: new Date(payment.createdAt)
       });
     });
@@ -94,21 +124,48 @@ export function SubscriptionActivityTimeline({
 
   const getActivityIcon = (action: string) => {
     switch (action.toUpperCase()) {
-      case 'PLAN_CHANGE':
-      case 'UPDATE':
+      case 'PLAN_CHANGED':
+      case 'PLAN_UPGRADED':
+      case 'PLAN_DOWNGRADED':
         return TrendingUp;
-      case 'RENEWAL':
-      case 'RENEW':
+      case 'SUBSCRIPTION_ACTIVATED':
+      case 'BILLING_CYCLE_RENEWED':
         return RefreshCw;
+      case 'SUBSCRIPTION_CANCELLED':
       case 'CANCEL':
       case 'CANCELLATION':
         return XCircle;
+      case 'SUBSCRIPTION_PAUSED':
       case 'PAUSE':
         return Pause;
+      case 'SUBSCRIPTION_RESUMED':
       case 'RESUME':
         return Play;
+      case 'SUBSCRIPTION_CREATED':
       case 'CREATE':
         return CreditCard;
+      case 'PAYMENT_RECEIVED':
+        return DollarSign;
+      case 'PAYMENT_FAILED':
+        return AlertCircle;
+      case 'TRIAL_STARTED':
+        return Clock;
+      case 'TRIAL_ENDED':
+        return AlertTriangle;
+      case 'DISCOUNT_APPLIED':
+        return Percent;
+      case 'REFUND_PROCESSED':
+        return RotateCcw;
+      case 'INVOICE_GENERATED':
+        return FileText;
+      case 'REMINDER_SENT':
+        return Bell;
+      case 'DUNNING_STARTED':
+        return AlertTriangle;
+      case 'SUBSCRIPTION_EXPIRED':
+        return AlertCircle;
+      case 'SUBSCRIPTION_REACTIVATED':
+        return Play;
       default:
         return Clock;
     }
@@ -116,21 +173,50 @@ export function SubscriptionActivityTimeline({
 
   const getActivityColor = (action: string) => {
     switch (action.toUpperCase()) {
-      case 'PLAN_CHANGE':
-      case 'UPDATE':
+      case 'PLAN_CHANGED':
+      case 'PLAN_UPGRADED':
+      case 'PLAN_DOWNGRADED':
         return 'text-blue-600 bg-blue-100';
+      case 'SUBSCRIPTION_ACTIVATED':
+      case 'BILLING_CYCLE_RENEWED':
       case 'RENEWAL':
       case 'RENEW':
         return 'text-green-600 bg-green-100';
+      case 'SUBSCRIPTION_CANCELLED':
       case 'CANCEL':
       case 'CANCELLATION':
         return 'text-red-600 bg-red-100';
+      case 'SUBSCRIPTION_PAUSED':
       case 'PAUSE':
         return 'text-orange-600 bg-orange-100';
+      case 'SUBSCRIPTION_RESUMED':
       case 'RESUME':
         return 'text-purple-600 bg-purple-100';
+      case 'SUBSCRIPTION_CREATED':
       case 'CREATE':
         return 'text-indigo-600 bg-indigo-100';
+      case 'PAYMENT_RECEIVED':
+        return 'text-green-600 bg-green-100';
+      case 'PAYMENT_FAILED':
+        return 'text-red-600 bg-red-100';
+      case 'TRIAL_STARTED':
+        return 'text-blue-600 bg-blue-100';
+      case 'TRIAL_ENDED':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'DISCOUNT_APPLIED':
+        return 'text-green-600 bg-green-100';
+      case 'REFUND_PROCESSED':
+        return 'text-orange-600 bg-orange-100';
+      case 'INVOICE_GENERATED':
+        return 'text-indigo-600 bg-indigo-100';
+      case 'REMINDER_SENT':
+        return 'text-blue-600 bg-blue-100';
+      case 'DUNNING_STARTED':
+        return 'text-red-600 bg-red-100';
+      case 'SUBSCRIPTION_EXPIRED':
+        return 'text-red-600 bg-red-100';
+      case 'SUBSCRIPTION_REACTIVATED':
+        return 'text-green-600 bg-green-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -185,9 +271,9 @@ export function SubscriptionActivityTimeline({
 
             <div className="space-y-6">
               {timeline.map((item, index) => {
-                if (item.type === 'activity') {
-                  const Icon = getActivityIcon(item.action);
-                  const colorClass = getActivityColor(item.action);
+                if (item.itemType === 'activity') {
+                  const Icon = getActivityIcon(item.type);
+                  const colorClass = getActivityColor(item.type);
 
                   return (
                     <div key={`activity-${item.id}-${index}`} className="relative pl-14">
@@ -204,46 +290,97 @@ export function SubscriptionActivityTimeline({
                               <h4 className="font-semibold text-gray-900">
                                 {item.description}
                               </h4>
-                              {item.action === 'PLAN_CHANGE' && item.changes?.plan && (
-                                <Badge variant="primary">
-                                  {item.changes.plan.old} → {item.changes.plan.new}
-                                </Badge>
-                              )}
+                              {/* Activity type badge */}
+                              <Badge 
+                                variant={
+                                  item.metadata?.severity === 'error' ? 'destructive' :
+                                  item.metadata?.severity === 'warning' ? 'warning' :
+                                  item.metadata?.severity === 'success' ? 'success' :
+                                  'secondary'
+                                }
+                              >
+                                {item.type?.replace(/_/g, ' ').toUpperCase()}
+                              </Badge>
                             </div>
                             
-                            {/* User info */}
-                            {item.user && (
+                            {/* User info from metadata */}
+                            {item.metadata?.performedBy && (
                               <p className="text-sm text-gray-600 mb-2">
                                 <User className="w-3 h-3 inline mr-1" />
-                                By: {item.user.firstName} {item.user.lastName} ({item.user.email})
+                                By: {item.metadata.performedBy.name} ({item.metadata.performedBy.email})
                                 <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded">
-                                  {item.user.role}
+                                  {item.metadata.performedBy.role}
                                 </span>
                               </p>
                             )}
 
-                            {/* Changes details */}
-                            {item.changes && Object.keys(item.changes).length > 0 && (
+                            {/* Enhanced metadata details */}
+                            {item.metadata && (
                               <div className="text-sm text-gray-700 space-y-1 mt-2">
-                                {item.changes.plan && (
-                                  <div>• Plan: <span className="line-through text-gray-400">{item.changes.plan.old}</span> → <span className="font-medium">{item.changes.plan.new}</span></div>
+                                {/* Plan information */}
+                                {item.metadata.planName && (
+                                  <div>• Plan: <span className="font-medium">{item.metadata.planName}</span></div>
                                 )}
-                                {item.changes.amount && (
-                                  <div>• Amount: <span className="line-through text-gray-400">${item.changes.amount.old}</span> → <span className="font-medium">${item.changes.amount.new}</span></div>
+                                
+                                {/* Amount information */}
+                                {item.metadata.amount !== undefined && (
+                                  <div>• Amount: <span className="font-semibold">{formatCurrency(item.metadata.amount, item.metadata.currency || 'USD')}</span></div>
                                 )}
-                                {item.changes.status && (
-                                  <div>• Status: <span className="line-through text-gray-400">{item.changes.status.old}</span> → <span className="font-medium">{item.changes.status.new}</span></div>
+                                
+                                {/* Status information */}
+                                {item.metadata.status && (
+                                  <div>• Status: <span className="font-medium capitalize">{item.metadata.status.toLowerCase()}</span></div>
                                 )}
-                                {item.changes.currentPeriodEnd && (
-                                  <div>• Period End: <span className="line-through text-gray-400">{formatDate(new Date(item.changes.currentPeriodEnd.old), 'MMM dd, yyyy')}</span> → <span className="font-medium">{formatDate(new Date(item.changes.currentPeriodEnd.new), 'MMM dd, yyyy')}</span></div>
+                                
+                                {/* Payment method */}
+                                {item.metadata.paymentMethod && (
+                                  <div>• Method: <span className="capitalize">{item.metadata.paymentMethod.toLowerCase()}</span></div>
                                 )}
-                              </div>
-                            )}
-
-                            {/* Additional details from JSON */}
-                            {item.details && typeof item.details === 'string' && (
-                              <div className="text-sm text-gray-600 mt-2">
-                                {item.details}
+                                
+                                {/* Transaction ID */}
+                                {item.metadata.transactionId && (
+                                  <div>• Transaction: <span className="font-mono text-xs">{item.metadata.transactionId}</span></div>
+                                )}
+                                
+                                {/* Invoice number */}
+                                {item.metadata.invoiceNumber && (
+                                  <div>• Invoice: <span className="font-mono text-xs">{item.metadata.invoiceNumber}</span></div>
+                                )}
+                                
+                                {/* Plan changes */}
+                                {item.metadata.newPlan && (
+                                  <div>• New Plan: <span className="font-medium">{item.metadata.newPlan.name} ({formatCurrency(item.metadata.newPlan.amount, item.metadata.currency || 'USD')})</span></div>
+                                )}
+                                
+                                {/* Previous plan */}
+                                {item.metadata.previousPlan && (
+                                  <div>• Previous: <span className="text-gray-500">{item.metadata.previousPlan.name} ({formatCurrency(item.metadata.previousPlan.amount, item.metadata.currency || 'USD')})</span></div>
+                                )}
+                                
+                                {/* Effective date */}
+                                {item.metadata.effectiveDate && (
+                                  <div>• Effective: <span className="font-medium">{formatDate(item.metadata.effectiveDate, 'MMM dd, yyyy')}</span></div>
+                                )}
+                                
+                                {/* Next billing date */}
+                                {item.metadata.nextBillingDate && (
+                                  <div>• Next Billing: <span className="font-medium">{formatDate(item.metadata.nextBillingDate, 'MMM dd, yyyy')}</span></div>
+                                )}
+                                
+                                {/* Trial end date */}
+                                {item.metadata.trialEndDate && (
+                                  <div>• Trial Ends: <span className="font-medium">{formatDate(item.metadata.trialEndDate, 'MMM dd, yyyy')}</span></div>
+                                )}
+                                
+                                {/* Reason */}
+                                {item.metadata.reason && (
+                                  <div>• Reason: <span className="italic text-gray-600">{item.metadata.reason}</span></div>
+                                )}
+                                
+                                {/* Source */}
+                                {item.metadata.source && (
+                                  <div>• Source: <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{item.metadata.source.replace(/_/g, ' ').toUpperCase()}</span></div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -279,8 +416,8 @@ export function SubscriptionActivityTimeline({
                             
                             <div className="text-sm text-gray-700 space-y-1">
                               <div>• Amount: <span className="font-semibold">{formatCurrency(item.amount, item.currency)}</span></div>
-                              <div>• Method: <span className="capitalize">{item.method.toLowerCase()}</span></div>
-                              <div>• Transaction: <span className="font-mono text-xs">{item.transactionId}</span></div>
+                              {item.method && <div>• Method: <span className="capitalize">{item.method.toLowerCase()}</span></div>}
+                              {item.transactionId && <div>• Transaction: <span className="font-mono text-xs">{item.transactionId}</span></div>}
                               {item.description && (
                                 <div className="text-gray-600 mt-2">{item.description}</div>
                               )}

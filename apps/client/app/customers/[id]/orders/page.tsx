@@ -156,7 +156,7 @@ export default function CustomerOrdersPage() {
           setTotalOrders(response.data?.total || 0);
           setTotalPages(Math.ceil((response.data?.total || 0) / 10));
         } else {
-          console.error('❌ CustomerOrdersPage: API error:', response.error);
+          console.error('❌ CustomerOrdersPage: API error:', response);
           setOrders([]);
           setTotalOrders(0);
           setTotalPages(1);

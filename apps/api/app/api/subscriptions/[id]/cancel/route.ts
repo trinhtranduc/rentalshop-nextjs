@@ -25,10 +25,39 @@ export async function POST(
         return NextResponse.json({ success: false, message: 'Subscription not found' }, { status: API.STATUS.NOT_FOUND });
       }
 
+      // Get reason from request body
+      const body = await request.json().catch(() => ({}));
+      const reason = body.reason || 'Cancelled by admin';
+
       // Cancel subscription
       const cancelledSubscription = await db.subscriptions.update(subscriptionId, {
         status: 'CANCELLED',
-        cancelledAt: new Date()
+        canceledAt: new Date(),
+        cancelReason: reason
+      });
+
+      // Log activity to database
+      await db.subscriptionActivities.create({
+        subscriptionId,
+        type: 'subscription_cancelled',
+        description: 'Subscription cancelled',
+        reason,
+        metadata: {
+          planId: existing.planId,
+          planName: existing.plan?.name,
+          previousStatus: existing.status,
+          newStatus: 'CANCELLED',
+          performedBy: {
+            userId: user.userId || user.id,
+            email: user.email,
+            role: user.role,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+          },
+          source: user.role === 'ADMIN' ? 'admin_panel' : 'merchant_panel',
+          severity: 'error',
+          category: 'billing'
+        },
+        performedBy: user.userId || user.id
       });
 
       return NextResponse.json({ success: true, data: cancelledSubscription });

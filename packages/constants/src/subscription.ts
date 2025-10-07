@@ -72,24 +72,44 @@ export const BILLING_CYCLES = {
 // RENEWAL DURATIONS
 // ============================================================================
 
-export const RENEWAL_DURATIONS = {
-  MONTHLY: {
+export const RENEWAL_DURATIONS = [
+  {
     id: 'monthly',
     name: 'Monthly',
+    months: 1,
     duration: 1,
     unit: 'month',
     description: 'Renew every month',
     isPopular: false
   },
-  YEARLY: {
+  {
+    id: 'quarterly',
+    name: 'Quarterly',
+    months: 3,
+    duration: 3,
+    unit: 'months',
+    description: 'Save 5% with quarterly billing',
+    isPopular: false
+  },
+  {
+    id: 'semiannual',
+    name: '6 Months',
+    months: 6,
+    duration: 6,
+    unit: 'months',
+    description: 'Save 10% with 6-month billing',
+    isPopular: false
+  },
+  {
     id: 'yearly',
     name: 'Yearly',
+    months: 12,
     duration: 12,
     unit: 'months',
     description: 'Save 20% with annual billing',
-    isPopular: false
+    isPopular: true
   }
-};
+];
 
 // ============================================================================
 // TRIAL CONFIGURATION

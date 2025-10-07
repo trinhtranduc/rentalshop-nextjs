@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
+import { Card, 
   CardHeader, 
   CardTitle, 
   CardContent,
@@ -18,9 +17,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  ToastContainer,
-  useToasts
-} from '@rentalshop/ui';
+  
+  useToast } from '@rentalshop/ui';
 import { 
   Search, 
   Filter, 
@@ -97,7 +95,7 @@ export default function PaymentsPage() {
   const [billingCycles, setBillingCycles] = useState<any[]>([]);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showPaymentDetail, setShowPaymentDetail] = useState(false);
-  const { addToast } = useToasts();
+  const { toastInfo } = useToast();
 
   useEffect(() => {
     fetchPayments();
@@ -168,7 +166,7 @@ export default function PaymentsPage() {
       const result = await paymentsApi.createManualPayment(formData);
       
       if (result.success) {
-        addToast('success', 'Payment Created', `Successfully created payment for ${formData.amount} ${formData.currency}`);
+        toastSuccess('Payment Created', `Successfully created payment for ${formData.amount} ${formData.currency}`);
         setShowPaymentForm(false);
         fetchPayments(); // Refresh the payments list
       } else {
@@ -176,7 +174,7 @@ export default function PaymentsPage() {
       }
     } catch (error: unknown) {
       console.error('Error creating payment:', error);
-      addToast('error', 'Error', `Failed to create payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toastError('Error', `Failed to create payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setFormLoading(false);
     }
@@ -192,13 +190,13 @@ export default function PaymentsPage() {
       // Here you would call your API to process the payment
       console.log('Processing payment:', paymentId);
       
-      addToast('success', 'Payment Processed', 'Payment has been successfully processed');
+      toastSuccess('Payment Processed', 'Payment has been successfully processed');
       
       setShowPaymentDetail(false);
       fetchPayments(); // Refresh the payments list
     } catch (error: unknown) {
       console.error('Error processing payment:', error);
-      addToast('error', 'Error', 'Failed to process payment. Please try again.');
+      toastError('Error', 'Failed to process payment. Please try again.');
     }
   };
 
@@ -207,13 +205,13 @@ export default function PaymentsPage() {
       // Here you would call your API to refund the payment
       console.log('Refunding payment:', paymentId);
       
-      addToast('success', 'Payment Refunded', 'Payment has been successfully refunded');
+      toastSuccess('Payment Refunded', 'Payment has been successfully refunded');
       
       setShowPaymentDetail(false);
       fetchPayments(); // Refresh the payments list
     } catch (error: unknown) {
       console.error('Error refunding payment:', error);
-      addToast('error', 'Error', 'Failed to refund payment. Please try again.');
+      toastError('Error', 'Failed to refund payment. Please try again.');
     }
   };
 
@@ -222,10 +220,10 @@ export default function PaymentsPage() {
       // Here you would call your API to download the receipt
       console.log('Downloading receipt for payment:', paymentId);
       
-      addToast('info', 'Receipt Downloaded', 'Payment receipt has been downloaded');
+      toastInfo('Receipt Downloaded', 'Payment receipt has been downloaded');
     } catch (error: unknown) {
       console.error('Error downloading receipt:', error);
-      addToast('error', 'Error', 'Failed to download receipt. Please try again.');
+      toastError('Error', 'Failed to download receipt. Please try again.');
     }
   };
 

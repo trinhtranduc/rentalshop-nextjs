@@ -62,7 +62,7 @@ export default function ProductOrdersPage() {
   }, [productId]);
 
   const handleBack = () => {
-    router.push(`/products/${productId}`);
+    router.push('/products');
   };
 
   if (loading) {

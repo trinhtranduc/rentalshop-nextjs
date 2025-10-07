@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { EditCustomerForm, CustomerPageHeader, ToastContainer, PageWrapper, PageHeader, PageContent } from '@rentalshop/ui';
 import { customersApi } from "@rentalshop/utils";
 import type { Customer, CustomerUpdateInput } from '@rentalshop/types';
-import { useToasts } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui';
 
 export default function EditCustomerPage() {
   const router = useRouter();
@@ -15,7 +14,7 @@ export default function EditCustomerPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toasts, showSuccess, removeToast } = useToasts();
+  const { toastSuccess, removeToast } = useToast();
 
   // Fetch customer data
   useEffect(() => {
@@ -76,13 +75,9 @@ export default function EditCustomerPage() {
       if (response.success) {
         console.log('✅ EditCustomerPage: Customer updated successfully');
         
-        // Show success toast
-        showSuccess('Customer Updated', 'Customer information has been updated successfully!');
-        
-        // Navigate back to customers list after a short delay to show the toast
-        setTimeout(() => {
-          router.push('/customers');
-        }, 1500);
+        // Navigate back to customers list immediately
+        // Toast will be handled by Customers component when the page loads
+        router.push('/customers');
       } else {
         console.error('❌ EditCustomerPage: API error:', response.error);
         throw new Error(response.error || 'Failed to update customer');
@@ -159,8 +154,6 @@ export default function EditCustomerPage() {
         />
       </PageContent>
       
-      {/* Toast Container for notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 }

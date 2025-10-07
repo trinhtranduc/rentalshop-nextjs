@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  PageWrapper,
+import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
@@ -11,9 +10,7 @@ import {
   BillingCycleForm,
   BillingCycleDetailDialog,
   ConfirmationDialog,
-  ToastContainer,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { billingCyclesApi } from '@rentalshop/utils';
 import { Plus, Search, Filter } from 'lucide-react';
 
@@ -28,7 +25,7 @@ export default function BillingCyclesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('sortOrder');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const { toasts, addToast, removeToast } = useToasts();
+  const { toastSuccess, toastError, toastWarning, toastInfo, removeToast } = useToast();
 
   useEffect(() => {
     fetchBillingCycles();
@@ -52,11 +49,11 @@ export default function BillingCyclesPage() {
         setBillingCycles(response.data.billingCycles || []);
       } else {
         console.error('Failed to fetch billing cycles:', response.message);
-        addToast('error', 'Error', 'Failed to fetch billing cycles');
+        toastError('Error', 'Failed to fetch billing cycles');
       }
-    } catch (error) {
-      console.error('Error fetching billing cycles:', error);
-      addToast('error', 'Error', 'Failed to fetch billing cycles');
+    } catch (err) {
+      console.error('Error fetching billing cycles:', err);
+      toastError('Error', 'Failed to fetch billing cycles');
     } finally {
       setLoading(false);
     }
@@ -69,13 +66,13 @@ export default function BillingCyclesPage() {
       if (response.success) {
         setBillingCycles(prev => [response.data, ...prev]);
         setShowCreateForm(false);
-        addToast('success', 'Success', 'Billing cycle created successfully');
+        toastSuccess('Success', 'Billing cycle created successfully');
       } else {
-        addToast('error', 'Error', response.message || 'Failed to create billing cycle');
+        toastError('Error', response.message || 'Failed to create billing cycle');
       }
-    } catch (error) {
-      console.error('Error creating billing cycle:', error);
-      addToast('error', 'Error', 'Failed to create billing cycle');
+    } catch (err) {
+      console.error('Error creating billing cycle:', err);
+      toastError('Error', 'Failed to create billing cycle');
     }
   };
 
@@ -92,13 +89,13 @@ export default function BillingCyclesPage() {
           )
         );
         setEditingCycle(null);
-        addToast('success', 'Success', 'Billing cycle updated successfully');
+        toastSuccess('Success', 'Billing cycle updated successfully');
       } else {
-        addToast('error', 'Error', response.message || 'Failed to update billing cycle');
+        toastError('Error', response.message || 'Failed to update billing cycle');
       }
-    } catch (error) {
-      console.error('Error updating billing cycle:', error);
-      addToast('error', 'Error', 'Failed to update billing cycle');
+    } catch (err) {
+      console.error('Error updating billing cycle:', err);
+      toastError('Error', 'Failed to update billing cycle');
     }
   };
 
@@ -111,13 +108,13 @@ export default function BillingCyclesPage() {
       if (response.success) {
         setBillingCycles(prev => prev.filter(cycle => cycle.id !== deletingCycle.id));
         setDeletingCycle(null);
-        addToast('success', 'Success', 'Billing cycle deleted successfully');
+        toastSuccess('Success', 'Billing cycle deleted successfully');
       } else {
-        addToast('error', 'Error', response.message || 'Failed to delete billing cycle');
+        toastError('Error', response.message || 'Failed to delete billing cycle');
       }
-    } catch (error) {
-      console.error('Error deleting billing cycle:', error);
-      addToast('error', 'Error', 'Failed to delete billing cycle');
+    } catch (err) {
+      console.error('Error deleting billing cycle:', err);
+      toastError('Error', 'Failed to delete billing cycle');
     }
   };
 
@@ -133,13 +130,13 @@ export default function BillingCyclesPage() {
             c.id === cycle.id ? { ...c, isActive: !c.isActive } : c
           )
         );
-        addToast('success', 'Success', `Billing cycle ${cycle.isActive ? 'deactivated' : 'activated'} successfully`);
+        toastSuccess('Success', `Billing cycle ${cycle.isActive ? 'deactivated' : 'activated'} successfully`);
       } else {
-        addToast('error', 'Error', response.message || 'Failed to update billing cycle status');
+        toastError('Error', response.message || 'Failed to update billing cycle status');
       }
-    } catch (error) {
-      console.error('Error updating billing cycle status:', error);
-      addToast('error', 'Error', 'Failed to update billing cycle status');
+    } catch (err) {
+      console.error('Error updating billing cycle status:', err);
+      toastError('Error', 'Failed to update billing cycle status');
     }
   };
 
@@ -271,7 +268,6 @@ export default function BillingCyclesPage() {
         />
 
         {/* Toast Notifications */}
-        <ToastContainer toasts={toasts} onClose={removeToast} />
       </PageContent>
     </PageWrapper>
   );

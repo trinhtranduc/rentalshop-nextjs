@@ -500,8 +500,8 @@ export default function PlansPage() {
                       {/* Features Preview */}
                       <div className="mt-2">
                         <span className="text-xs text-text-secondary">
-                          Features: {plan.features.slice(0, 3).join(', ')}
-                          {plan.features.length > 3 && ` +${plan.features.length - 3} more`}
+                          Features: {(Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')).slice(0, 3).join(', ')}
+                          {(Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')).length > 3 && ` +${(Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')).length - 3} more`}
                         </span>
                       </div>
                     </div>

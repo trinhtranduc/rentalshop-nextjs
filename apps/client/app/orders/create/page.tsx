@@ -2,19 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Card, 
+import { Card, 
   CardContent, 
   Button,
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
-  useToasts,
-  ToastContainer,
+  useToast,
   FormSkeleton
-} from '@rentalshop/ui';
-import { CreateOrderForm } from '@rentalshop/ui';
+ , useToast } from '@rentalshop/ui';
+import { CreateOrderForm , useToast } from '@rentalshop/ui';
 import type { CustomerSearchResult, ProductWithStock, OrderInput } from '@rentalshop/types';
 import { 
   customersApi, 
@@ -36,7 +34,7 @@ export default function CreateOrderPage() {
   const [resetForm, setResetForm] = useState<(() => void) | null>(null);
 
   // Toast notifications
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
 
   // Get merchant ID from user context
   const merchantId = user?.merchant?.id;
@@ -71,7 +69,7 @@ export default function CreateOrderPage() {
           console.log('✅ Loaded customers:', customersRes.data?.customers?.length || 0);
         } else {
           console.error('Failed to fetch customers:', customersRes.error);
-          showError('Load Error', 'Failed to load customers');
+          toastError('Load Error', 'Failed to load customers');
         }
 
         if (productsRes.success) {
@@ -80,7 +78,7 @@ export default function CreateOrderPage() {
           console.log('✅ Loaded products:', productsRes.data?.products?.length || 0);
         } else {
           console.error('Failed to fetch products:', productsRes.error);
-          showError('Load Error', 'Failed to load products');
+          toastError('Load Error', 'Failed to load products');
         }
 
         if (outletsRes.success) {
@@ -132,16 +130,16 @@ export default function CreateOrderPage() {
       const result = await ordersApi.createOrder(orderData);
       if (result.success) {
         // Show success message
-        showSuccess('Order created successfully!');
+        toastSuccess('Order created successfully!');
         // Navigate back to orders list after successful creation
         router.push('/orders');
       } else {
         throw new Error(result.error || 'Failed to create order');
       }
-    } catch (error) {
-      console.error('Create order failed:', error);
-      showError('Create order failed', (error as Error).message || 'Create order failed');
-    } finally {
+    } catch (err) {
+      console.error('Create order failed:', err);
+      toastError('Create order failed', (err as Error).message || 'Create order failed');
+    } finally{
       setSubmitting(false);
     }
   };
@@ -171,7 +169,6 @@ export default function CreateOrderPage() {
 
   return (
     <div className="min-h-screen bg-bg-primary">
-      <ToastContainer toasts={toasts} onClose={removeToast} />
       {loading ? (
         <div className="p-6">
           <FormSkeleton />

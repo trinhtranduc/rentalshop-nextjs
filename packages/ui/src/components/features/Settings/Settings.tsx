@@ -8,8 +8,9 @@ import {
   Building2,
   Store
 } from 'lucide-react';
-import { useAuth, useToastHandler } from '@rentalshop/hooks';
+import { useAuth } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
+import { useToast } from '@rentalshop/ui';
 
 // Import components
 import { SettingsLayout } from './components/SettingsLayout';
@@ -67,7 +68,7 @@ const settingsMenuItems = [
 
 export const SettingsComponent: React.FC = () => {
   const { user, logout, loading } = useAuth();
-  const { showSuccess, showError } = useToastHandler();
+  const { toastSuccess, toastError } = useToast();
   
   // Navigation state
   const [activeSection, setActiveSection] = useState('profile');
@@ -131,30 +132,86 @@ export const SettingsComponent: React.FC = () => {
         console.log('🔍 Settings - Subscription API response:', response);
         
         if (response.success && response.data) {
-          // API returns: { merchant, subscription, status, limits, usage }
-          // Transform to match SubscriptionSection expectations
+          // ============================================================================
+          // NEW FLAT API RESPONSE MAPPING
+          // ============================================================================
+          // API now returns flat structure:
+          // {
+          //   status: "CANCELED" | "EXPIRED" | "PAST_DUE" | "PAUSED" | "TRIAL" | "ACTIVE",
+          //   statusReason: "Canceled on 10/7/2025",
+          //   hasAccess: false,
+          //   daysRemaining: 31,
+          //   planName: "Basic",
+          //   currentPeriodEnd: "2025-11-07T12:17:28.045Z",  // ← Already flat!
+          //   billingAmount: 75050,                          // ← Already flat!
+          //   billingInterval: "quarter",                    // ← Already flat!
+          //   ...all other fields are flat
+          // }
+          
+          const data = response.data;
+          
+          // Map to SubscriptionSection format (keep compatibility)
           const transformedData = {
-            hasSubscription: !!response.data.subscription,
+            hasSubscription: true,
             subscription: {
-              ...response.data.subscription,
-              // Flatten nested structures for UI compatibility
-              currentPeriodEnd: response.data.subscription.currentPeriod?.end,
-              amount: response.data.subscription.billing?.amount || 0,
-              interval: response.data.subscription.billing?.interval || 'monthly'
+              // Core subscription info (already flat in response)
+              id: data.subscriptionId,
+              status: data.status,
+              planName: data.planName,
+              currentPeriodStart: data.currentPeriodStart,
+              currentPeriodEnd: data.currentPeriodEnd,
+              
+              // Billing info (already flat)
+              amount: data.billingAmount,
+              currency: data.billingCurrency,
+              interval: data.billingInterval,
+              
+              // Trial info
+              trialStart: data.trialStart,
+              trialEnd: data.trialEnd,
+              
+              // Cancellation info
+              cancelAtPeriodEnd: data.cancelAtPeriodEnd,
+              canceledAt: data.canceledAt,
+              cancelReason: data.cancelReason,
+              
+              // Plan details
+              plan: {
+                id: data.planId,
+                name: data.planName,
+                description: data.planDescription,
+                basePrice: data.planPrice,
+                currency: data.planCurrency
+              }
             },
-            status: response.data.status,
-            limits: response.data.limits,
-            usage: response.data.usage,
-            merchant: response.data.merchant,
-            // Add computed properties
-            isExpired: response.data.status?.isExpired || false,
-            isExpiringSoon: response.data.status?.isExpiringSoon || false,
-            isTrial: response.data.status?.isTrial || false,
-            isActive: response.data.status?.isActive || false,
-            daysRemaining: response.data.subscription?.trial?.daysRemaining || null
+            
+            // Status flags (derived from computed status)
+            status: data.status,
+            statusReason: data.statusReason,
+            isActive: data.status === 'ACTIVE',
+            isExpired: data.status === 'EXPIRED',
+            isTrial: data.status === 'TRIAL',
+            isCanceled: data.status === 'CANCELED',
+            hasAccess: data.hasAccess,
+            isExpiringSoon: data.isExpiringSoon,
+            daysRemaining: data.daysRemaining,
+            
+            // Merchant info
+            merchant: {
+              id: data.merchantId,
+              name: data.merchantName,
+              email: data.merchantEmail
+            },
+            
+            // Limits & usage
+            limits: data.limits,
+            usage: data.usage,
+            
+            // Features
+            features: data.features
           };
           
-          console.log('✅ Settings - Transformed subscription data:', transformedData);
+          console.log('✅ Settings - Mapped subscription data:', transformedData);
           setSubscriptionData(transformedData);
         } else {
           console.log('❌ Settings - No subscription data:', response);
@@ -237,12 +294,12 @@ export const SettingsComponent: React.FC = () => {
       const response = await settingsApi.updateUserProfile(personalFormData);
       if (response.success) {
         setIsEditingPersonal(false);
-        showSuccess('Success', 'Personal profile updated successfully!');
+        toastSuccess('Success', 'Personal profile updated successfully!');
       } else {
-        showError('Error', response.error || 'Failed to update personal profile');
+        toastError('Error', response.error || 'Failed to update personal profile');
       }
     } catch (error) {
-      showError('Error', 'Failed to update personal profile. Please try again.');
+      toastError('Error', 'Failed to update personal profile. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -256,12 +313,12 @@ export const SettingsComponent: React.FC = () => {
       const response = await settingsApi.updateMerchantInfo(merchantFormData);
       if (response.success) {
         setIsEditingMerchant(false);
-        showSuccess('Success', 'Business information updated successfully!');
+        toastSuccess('Success', 'Business information updated successfully!');
       } else {
-        showError('Error', response.error || 'Failed to update business information');
+        toastError('Error', response.error || 'Failed to update business information');
       }
     } catch (error) {
-      showError('Error', 'Failed to update business information. Please try again.');
+      toastError('Error', 'Failed to update business information. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -275,12 +332,12 @@ export const SettingsComponent: React.FC = () => {
       const response = await settingsApi.updateOutletInfo(outletFormData);
       if (response.success) {
         setIsEditingOutlet(false);
-        showSuccess('Success', 'Outlet information updated successfully!');
+        toastSuccess('Success', 'Outlet information updated successfully!');
       } else {
-        showError('Error', response.error || 'Failed to update outlet information');
+        toastError('Error', response.error || 'Failed to update outlet information');
       }
     } catch (error) {
-      showError('Error', 'Failed to update outlet information. Please try again.');
+      toastError('Error', 'Failed to update outlet information. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -305,13 +362,13 @@ export const SettingsComponent: React.FC = () => {
       
       const response = await usersApi.deleteAccount(user.id);
       if (response.success) {
-        showSuccess('Account Deleted', 'Your account has been deleted successfully.');
+        toastSuccess('Account Deleted', 'Your account has been deleted successfully.');
         await logout();
       } else {
-        showError('Delete Failed', response.message || 'Failed to delete account');
+        toastError('Delete Failed', response.message || 'Failed to delete account');
       }
     } catch (error) {
-      showError('Delete Failed', 'Failed to delete account. Please try again.');
+      toastError('Delete Failed', 'Failed to delete account. Please try again.');
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -331,12 +388,12 @@ export const SettingsComponent: React.FC = () => {
       if (response.success) {
         setShowChangePassword(false);
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        showSuccess('Password Changed', 'Your password has been changed successfully!');
+        toastSuccess('Password Changed', 'Your password has been changed successfully!');
       } else {
         throw new Error(response.message || 'Failed to change password');
       }
     } catch (error) {
-      showError('Password Change Failed', error instanceof Error ? error.message : 'Failed to change password');
+      toastError('Password Change Failed', error instanceof Error ? error.message : 'Failed to change password');
     } finally {
       setIsChangingPassword(false);
     }

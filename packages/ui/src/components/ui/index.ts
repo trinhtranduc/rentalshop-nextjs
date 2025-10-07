@@ -77,5 +77,5 @@ export { SearchableSelect } from './searchable-select';
 // ============================================================================
 // TOAST COMPONENTS
 // ============================================================================
-export { Toast, ToastContainer, ToastProvider, useToasts } from './toast';
+export { Toast, ToastContainer, ToastProvider, useToasts, useToast } from './toast';
 export type { ToastType, ToastProps, ToastContainerProps } from './toast';

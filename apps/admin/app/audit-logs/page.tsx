@@ -10,8 +10,7 @@ import {
 } from '@rentalshop/utils';
 import { usePagination } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
-import { 
-  Card,
+import { Card,
   CardContent,
   CardHeader,
   CardTitle,
@@ -24,8 +23,7 @@ import {
   SelectValue,
   Badge,
   Pagination,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { 
   Search,
   Filter,
@@ -382,7 +380,7 @@ export default function AuditLogsPage() {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'logs' | 'stats'>('logs');
-  const { addToast } = useToasts();
+  const { toastInfo } = useToast();
 
   // Load audit logs
   const loadAuditLogs = async (newFilter?: AuditLogFilter) => {
@@ -399,7 +397,7 @@ export default function AuditLogsPage() {
         hasMore: false
       });
     } catch (error: any) {
-      addToast('error', 'Failed to load audit logs', error.message || 'Please try again later.');
+      toastError('Failed to load audit logs', error.message || 'Please try again later.');
     } finally {
       setLoading(false);
     }

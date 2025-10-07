@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
+import { Card, 
   CardHeader, 
   CardTitle, 
   CardContent,
@@ -27,8 +26,7 @@ import {
   DialogFooter,
   DialogTrigger,
   Toast,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { 
   Plus, 
   Edit, 
@@ -77,7 +75,7 @@ export default function PlanVariantsPage() {
   const [bulkDiscountPlan, setBulkDiscountPlan] = useState<{ planId: string; discount: number } | null>(null);
   
   // Toast hook
-  const { showSuccess, showError } = useToasts();
+  const { toastSuccess, showError } = useToast();
 
   useEffect(() => {
     fetchVariants();
@@ -166,13 +164,13 @@ export default function PlanVariantsPage() {
         await fetchVariants();
         await fetchDeletedVariants();
         setDeletingVariant(null);
-        showSuccess("Plan variant deleted successfully");
+        toastSuccess("Plan variant deleted successfully");
       } else {
-        showError(`Failed to delete plan variant: ${response.error}`);
+        toastError(`Failed to delete plan variant: ${response.error}`);
       }
     } catch (error) {
       console.error('Error deleting plan variant:', error);
-      showError("Error deleting plan variant");
+      toastError("Error deleting plan variant");
     }
   };
 
@@ -185,13 +183,13 @@ export default function PlanVariantsPage() {
         await fetchVariants();
         await fetchDeletedVariants();
         setRestoringVariant(null);
-        showSuccess("Plan variant restored successfully");
+        toastSuccess("Plan variant restored successfully");
       } else {
-        showError(`Failed to restore plan variant: ${response.error}`);
+        toastError(`Failed to restore plan variant: ${response.error}`);
       }
     } catch (error) {
       console.error('Error restoring plan variant:', error);
-      showError("Error restoring plan variant");
+      toastError("Error restoring plan variant");
     }
   };
 
@@ -203,13 +201,13 @@ export default function PlanVariantsPage() {
       if (response.success) {
         await fetchVariants();
         setBulkDiscountPlan(null);
-        showSuccess(`Applied ${discount}% discount to variants`);
+        toastSuccess(`Applied ${discount}% discount to variants`);
       } else {
-        showError(`Failed to apply discount: ${response.error}`);
+        toastError(`Failed to apply discount: ${response.error}`);
       }
     } catch (error) {
       console.error('Error applying discount:', error);
-      showError("Error applying discount");
+      toastError("Error applying discount");
     }
   };
 
@@ -225,13 +223,13 @@ export default function PlanVariantsPage() {
         await fetchVariants();
         setShowCreateForm(false);
         setEditingVariant(null);
-        showSuccess(editingVariant ? "Plan variant updated successfully" : "Plan variant created successfully");
+        toastSuccess(editingVariant ? "Plan variant updated successfully" : "Plan variant created successfully");
       } else {
-        showError(`Failed to save plan variant: ${response.error}`);
+        toastError(`Failed to save plan variant: ${response.error}`);
       }
     } catch (error) {
       console.error('Error saving plan variant:', error);
-      showError("Error saving plan variant");
+      toastError("Error saving plan variant");
     }
   };
 

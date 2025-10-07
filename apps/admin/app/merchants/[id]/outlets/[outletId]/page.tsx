@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  PageWrapper,
+import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
@@ -17,9 +16,7 @@ import {
   Textarea,
   Label,
   StatusBadge,
-  ToastContainer,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { Building2, Edit, ArrowLeft, Users, Package, ShoppingCart } from 'lucide-react';
 import type { Outlet } from '@rentalshop/types';
 
@@ -41,7 +38,7 @@ interface OutletDetail {
 }
 
 export default function OutletDetailPage() {
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
   const params = useParams();
   const router = useRouter();
   const merchantId = params.id as string;
@@ -89,16 +86,16 @@ export default function OutletDetailPage() {
         setOutlet(data.data);
         setIsEditing(false);
         // Show success toast
-        showSuccess('Outlet updated', 'Changes saved successfully.');
+        toastSuccess('Outlet updated', 'Changes saved successfully.');
       } else {
         const msg = data.message || 'Failed to update outlet';
         setError(msg);
-        showError('Update failed', msg);
+        toastError('Update failed', msg);
       }
     } catch (error) {
       console.error('Error updating outlet:', error);
       setError('Failed to update outlet');
-      showError('Update failed', error instanceof Error ? error.message : 'Unknown error');
+      toastError('Update failed', error instanceof Error ? error.message : 'Unknown error');
     }
   };
 
@@ -192,7 +189,6 @@ export default function OutletDetailPage() {
       </PageHeader>
 
       <PageContent>
-        <ToastContainer toasts={toasts} onClose={removeToast} />
         <div className="space-y-6">
           {/* Outlet Information */}
           <Card>

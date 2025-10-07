@@ -99,6 +99,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * POST /api/products
  * Create a new product using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
+ * Requires active subscription
  */
 export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/products - User: ${user.email} (${user.role})`);

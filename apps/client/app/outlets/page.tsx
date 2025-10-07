@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Card, 
+import { Card, 
   CardContent, 
   Button,
   PageWrapper,
@@ -25,9 +24,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ToastContainer,
-  useToasts
-} from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { 
   Plus, 
   Edit, 
@@ -36,7 +33,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useCanExportData } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
 import { Outlet, OutletCreateInput, OutletUpdateInput } from '@rentalshop/types';
 
@@ -54,7 +51,8 @@ interface OutletFormData {
 export default function OutletsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { toasts, showSuccess, showError, showWarning, showInfo, removeToast } = useToasts();
+  const { toastSuccess, toastError, toastWarning, toastInfo, removeToast } = useToast();
+  const canExport = useCanExportData();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -117,12 +115,12 @@ export default function OutletsPage() {
       } else {
         console.error('❌ Failed to fetch outlets:', result.error);
         setOutlets([]); // Ensure outlets is always an array
-        showError('Failed to fetch outlets', result.error || 'Unknown error occurred');
+        toastError('Failed to fetch outlets', result.error || 'Unknown error occurred');
       }
-    } catch (error) {
-      console.error('💥 Error fetching outlets:', error);
+    } catch (err) {
+      console.error('💥 Error fetching outlets:', err);
       setOutlets([]); // Ensure outlets is always an array
-      showError('Error fetching outlets', 'An unexpected error occurred while loading outlets');
+      toastError('Error fetching outlets', 'An unexpected error occurred while loading outlets');
     } finally {
       setLoading(false);
     }
@@ -151,9 +149,9 @@ export default function OutletsPage() {
           setShowAddDialog(false);
           setEditingOutlet(null);
           resetForm();
-          showSuccess('Outlet updated successfully', `Outlet "${formData.name}" has been updated`);
+          toastSuccess('Outlet updated successfully', `Outlet "${formData.name}" has been updated`);
         } else {
-          showError('Failed to update outlet', result.error || 'Unknown error occurred');
+          toastError('Failed to update outlet', result.error || 'Unknown error occurred');
         }
       } else {
         // Create new outlet
@@ -173,14 +171,14 @@ export default function OutletsPage() {
           await fetchOutlets();
           setShowAddDialog(false);
           resetForm();
-          showSuccess('Outlet created successfully', `Outlet "${formData.name}" has been created`);
+          toastSuccess('Outlet created successfully', `Outlet "${formData.name}" has been created`);
         } else {
-          showError('Failed to create outlet', result.error || 'Unknown error occurred');
+          toastError('Failed to create outlet', result.error || 'Unknown error occurred');
         }
       }
-    } catch (error) {
-      console.error('Error saving outlet:', error);
-      showError('Error saving outlet', 'An unexpected error occurred while saving the outlet');
+    } catch (err) {
+      console.error('Error saving outlet:', err);
+      toastError('Error saving outlet', 'An unexpected error occurred while saving the outlet');
     }
   };
 
@@ -220,13 +218,13 @@ export default function OutletsPage() {
       });
       if (result.success) {
         await fetchOutlets();
-        showSuccess('Outlet enabled successfully', `Outlet "${outlet.name}" has been enabled`);
+        toastSuccess('Outlet enabled successfully', `Outlet "${outlet.name}" has been enabled`);
       } else {
-        showError('Failed to enable outlet', result.error || 'Unknown error occurred');
+        toastError('Failed to enable outlet', result.error || 'Unknown error occurred');
       }
-    } catch (error) {
-      console.error('Error enabling outlet:', error);
-      showError('Error enabling outlet', 'An unexpected error occurred while enabling the outlet');
+    } catch (err) {
+      console.error('Error enabling outlet:', err);
+      toastError('Error enabling outlet', 'An unexpected error occurred while enabling the outlet');
     }
   };
 
@@ -262,13 +260,13 @@ export default function OutletsPage() {
       });
       if (result.success) {
         await fetchOutlets();
-        showSuccess('Outlet disabled successfully', `Outlet "${outletToDisable.name}" has been disabled`);
+        toastSuccess('Outlet disabled successfully', `Outlet "${outletToDisable.name}" has been disabled`);
       } else {
-        showError('Failed to disable outlet', result.error || 'Unknown error occurred');
+        toastError('Failed to disable outlet', result.error || 'Unknown error occurred');
       }
-    } catch (error) {
-      console.error('Error disabling outlet:', error);
-      showError('Error disabling outlet', 'An unexpected error occurred while disabling the outlet');
+    } catch (err) {
+      console.error('Error disabling outlet:', err);
+      toastError('Error disabling outlet', 'An unexpected error occurred while disabling the outlet');
     } finally {
       setShowDisableConfirm(false);
       setOutletToDisable(null);
@@ -318,18 +316,20 @@ export default function OutletsPage() {
             <p className="text-gray-600">Manage your business outlets and branches</p>
           </div>
           <div className="flex gap-3">
-            <button 
-              onClick={() => {
-                // TODO: Implement export functionality
-                showInfo('Export functionality coming soon!', 'This feature is currently under development');
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              Export
-            </button>
+            {canExport && (
+              <button 
+                onClick={() => {
+                  // TODO: Implement export functionality
+                  toastInfo('Export functionality coming soon!', 'This feature is currently under development');
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Export
+              </button>
+            )}
             <Button 
               onClick={openAddDialog}
               className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
@@ -652,7 +652,6 @@ export default function OutletsPage() {
           </DialogContent>
         </Dialog>
       </PageContent>
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </PageWrapper>
   );
 }

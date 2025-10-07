@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MerchantRegistrationForm } from '@rentalshop/ui';
+import { MerchantRegistrationForm, useToast } from '@rentalshop/ui';
 import { useRouter } from 'next/navigation';
-import { useToastHandler } from '@rentalshop/hooks';
 import { merchantsApi } from '@rentalshop/utils';
 
 interface MerchantRegistrationData {
@@ -24,7 +23,7 @@ interface MerchantRegistrationData {
 export default function RegisterMerchantPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const { showSuccess, showError } = useToastHandler();
+  const { toastSuccess, toastError } = useToast();
 
   const handleSubmit = async (data: MerchantRegistrationData) => {
     setLoading(true);
@@ -33,16 +32,16 @@ export default function RegisterMerchantPage() {
       const result = await merchantsApi.register(data);
 
       if (result.success) {
-        showSuccess('Registration Successful!', `Welcome to RentalShop! Your 14-day free trial has started.`);
+        toastSuccess('Registration Successful!', `Welcome to RentalShop! Your 14-day free trial has started.`);
 
         // Redirect to login or dashboard
         router.push('/login?message=registration-success');
       } else {
-        showError('Registration Failed', result.message || 'Please try again.');
+        toastError('Registration Failed', result.message || 'Please try again.');
       }
-    } catch (error) {
-      console.error('Registration error:', error);
-      showError('Registration Failed', 'An error occurred. Please try again.');
+    } catch (err) {
+      console.error('Registration error:', err);
+      toastError('Registration Failed', 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

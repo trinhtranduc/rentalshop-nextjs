@@ -3,16 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  PageWrapper,
+import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
   ProductForm,
-  ToastContainer,
-  useToasts,
-  Button
-} from '@rentalshop/ui';
+  useToast,
+  Button , useToast } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import type { ProductInput } from '@rentalshop/types';
 
@@ -28,7 +25,7 @@ export default function ProductEditPage() {
   const merchantId = params.id as string;
   const productId = params.productId as string;
   
-  const { toasts, showSuccess, showError, removeToast } = useToasts();
+  const { toastSuccess, toastError, removeToast } = useToast();
   
   const [productData, setProductData] = useState<ProductDetailData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,18 +66,18 @@ export default function ProductEditPage() {
       const data = await response.json();
 
       if (data.success) {
-        showSuccess('Product updated', 'Changes saved successfully.');
+        toastSuccess('Product updated', 'Changes saved successfully.');
         // Navigate back to products list
         router.push(`/merchants/${merchantId}/products`);
       } else {
         const msg = data.message || 'Failed to update product';
         setError(msg);
-        showError('Update failed', msg);
+        toastError('Update failed', msg);
       }
     } catch (error) {
       console.error('Error updating product:', error);
       setError('Failed to update product');
-      showError('Update failed', error instanceof Error ? error.message : 'Unknown error');
+      toastError('Update failed', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setSaving(false);
     }
@@ -148,7 +145,6 @@ export default function ProductEditPage() {
       </PageHeader>
 
       <PageContent>
-        <ToastContainer toasts={toasts} onClose={removeToast} />
         
         <ProductForm
           initialData={productData.product}

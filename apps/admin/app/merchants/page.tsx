@@ -2,20 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Merchants,
+import { Merchants,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
-} from '@rentalshop/ui';
+  PageContent, useToast } from '@rentalshop/ui';
 import { merchantsApi, type Merchant as ApiMerchant, handleAuthError } from '@rentalshop/utils';
-import { useToasts } from '@rentalshop/ui';
 import type { Merchant } from '@rentalshop/types';
 
 export default function MerchantsPage() {
   const router = useRouter();
-  const { showError } = useToasts();
+  const { toastError } = useToast();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [totalMerchants, setTotalMerchants] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -75,7 +72,7 @@ export default function MerchantsPage() {
         setTotalMerchants(response.data.total || 0);
       } else {
         console.error('Failed to fetch merchants:', response.error);
-        showError('Error', `Failed to fetch merchants: ${response.error}`);
+        toastError('Error', `Failed to fetch merchants: ${response.error}`);
         // Set empty state on error
         setMerchants([]);
         setTotalMerchants(0);
@@ -83,7 +80,7 @@ export default function MerchantsPage() {
     } catch (error) {
       console.error('Error fetching merchants:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch merchants';
-      showError('Error', errorMessage);
+      toastError('Error', errorMessage);
       // Set empty state on error
       setMerchants([]);
       setTotalMerchants(0);

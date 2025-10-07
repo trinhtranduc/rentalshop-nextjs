@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
+import { Card, 
   CardHeader, 
   CardTitle, 
   CardContent,
@@ -18,8 +17,7 @@ import {
   formatDate,
   formatCurrency,
   SearchableSelect,
-  useToasts
-} from '@rentalshop/ui';
+  useToast  } from '@rentalshop/ui';
 import type { 
   OrderInput, 
   OrderItemInput, 
@@ -68,7 +66,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   loading = false,
   layout = 'stacked',
 }) => {
-  const { showError, showWarning } = useToasts();
+  const { toastError, toastWarning } = useToast();
   
   const [formData, setFormData] = useState<Partial<OrderInput>>({
     orderType: 'RENT',
@@ -199,17 +197,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     e.preventDefault();
     
     if (!formData.outletId) {
-      showError('Validation Error', 'Please select an outlet');
+      toastError('Validation Error', 'Please select an outlet');
       return;
     }
 
     if (orderItems.length === 0) {
-      showError('Validation Error', 'Please add at least one product');
+      toastError('Validation Error', 'Please add at least one product');
       return;
     }
 
     if (orderItems.some(item => !item.productId)) {
-      showError('Validation Error', 'Please select a product for all items');
+      toastError('Validation Error', 'Please select a product for all items');
       return;
     }
 

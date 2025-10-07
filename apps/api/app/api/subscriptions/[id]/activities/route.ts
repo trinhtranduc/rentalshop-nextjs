@@ -25,11 +25,47 @@ export async function GET(
         return NextResponse.json({ success: false, message: 'Subscription not found' }, { status: API.STATUS.NOT_FOUND });
       }
 
-      // TODO: Implement subscription activities functionality
-      return NextResponse.json(
-        { success: false, message: 'Subscription activities functionality not yet implemented' },
-        { status: 501 }
+      // Get query parameters
+      const { searchParams } = new URL(request.url);
+      const limit = parseInt(searchParams.get('limit') || '50');
+      const offset = parseInt(searchParams.get('offset') || '0');
+
+      // Get activities from database
+      const { activities: dbActivities, total } = await db.subscriptionActivities.getBySubscriptionId(
+        subscriptionId,
+        { limit, offset }
       );
+
+      // Transform database activities to API format
+      const activities = dbActivities.map((activity: any) => ({
+        id: activity.id,
+        type: activity.type,
+        description: activity.description,
+        timestamp: activity.createdAt.toISOString(),
+        metadata: {
+          ...activity.metadata,
+          reason: activity.reason,
+          performedBy: activity.user ? {
+            userId: activity.user.id,
+            email: activity.user.email,
+            role: activity.user.role,
+            name: `${activity.user.firstName} ${activity.user.lastName}`.trim()
+          } : activity.metadata?.performedBy
+        }
+      }));
+
+      // Return activities from database
+      return NextResponse.json({
+        success: true,
+        data: activities,
+        total,
+        pagination: {
+          limit,
+          offset,
+          hasMore: offset + limit < total
+        }
+      });
+
     } catch (error) {
       console.error('Error fetching subscription activities:', error);
       

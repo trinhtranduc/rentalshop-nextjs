@@ -3,13 +3,13 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Products } from '@rentalshop/ui';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useCanExportData } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
 
 export default function ProductsPage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
-  const isMerchantLevel = currentUser && ((currentUser.role === 'ADMIN' && !currentUser.outlet?.id) || currentUser.role === 'MERCHANT');
+  const canExport = useCanExportData();
 
   const handleProductAction = (action: string, productId: number) => {
     switch (action) {
@@ -28,8 +28,8 @@ export default function ProductsPage() {
       mode="management"
       title="Products"
       subtitle="Manage your product catalog with outlet stock allocation"
-      showExportButton={!!isMerchantLevel}
-      showAddButton={!!isMerchantLevel}
+      showExportButton={canExport}
+      showAddButton={canExport}
       addButtonText="Add Product"
       exportButtonText="Export Products"
       showStats={false}
