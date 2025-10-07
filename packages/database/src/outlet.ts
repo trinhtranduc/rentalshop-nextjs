@@ -543,5 +543,10 @@ export const simplifiedOutlets = {
       limit,
       hasMore: skip + limit < total
     };
+  },
+
+  count: async (options?: { where?: any }) => {
+    const where = options?.where || {};
+    return await prisma.outlet.count({ where });
   }
 };

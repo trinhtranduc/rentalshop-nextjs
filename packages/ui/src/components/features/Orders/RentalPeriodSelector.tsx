@@ -11,24 +11,43 @@ interface RentalPeriodSelectorProps {
   merchant: Merchant;
   onPeriodChange: (startAt: Date, endAt: Date) => void;
   onPriceChange?: (pricing: any) => void;
+  initialStartDate?: string; // ISO date string from formData
+  initialEndDate?: string; // ISO date string from formData
 }
 
 export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
   product,
   merchant,
   onPeriodChange,
-  onPriceChange
+  onPriceChange,
+  initialStartDate,
+  initialEndDate
 }) => {
-  const [rentalStartAt, setRentalStartAt] = useState<Date | null>(null);
-  const [rentalEndAt, setRentalEndAt] = useState<Date | null>(null);
+  // Initialize with formData values if available
+  const [rentalStartAt, setRentalStartAt] = useState<Date | null>(() => 
+    initialStartDate ? new Date(initialStartDate) : null
+  );
+  const [rentalEndAt, setRentalEndAt] = useState<Date | null>(() => 
+    initialEndDate ? new Date(initialEndDate) : null
+  );
   const [validationResult, setValidationResult] = useState<any>(null);
   const [lastNotifiedDates, setLastNotifiedDates] = useState<string>('');
   
   const config = PricingResolver.getEffectivePricingConfig(product, merchant);
   
   // Hourly-specific state (must be at component level, not inside render function)
-  const [pickupHour, setPickupHour] = useState<number>(9);
-  const [returnHour, setReturnHour] = useState<number>(17);
+  const [pickupHour, setPickupHour] = useState<number>(() => {
+    if (initialStartDate) {
+      return new Date(initialStartDate).getHours();
+    }
+    return 9;
+  });
+  const [returnHour, setReturnHour] = useState<number>(() => {
+    if (initialEndDate) {
+      return new Date(initialEndDate).getHours();
+    }
+    return 17;
+  });
   
   // Debug logs
   console.log('🔍 RentalPeriodSelector rendered:', {

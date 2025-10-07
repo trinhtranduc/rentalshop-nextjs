@@ -110,8 +110,13 @@ export async function PUT(
         );
       }
 
+      // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
+      const { subtotal, taxAmount, id, ...validUpdateData } = body;
+      
+      console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
+
       // Update the order using the simplified database API
-      const updatedOrder = await db.orders.update(orderIdNum, body);
+      const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
       console.log('✅ Order updated successfully:', updatedOrder);
 
       return NextResponse.json({

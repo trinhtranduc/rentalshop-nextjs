@@ -43,7 +43,8 @@ export default function ClientLayout({
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forget-password';
   
   // Check if we're on full-width pages - hide sidebar for better space
-  const isFullWidthPage = pathname === '/orders/create' || pathname?.startsWith('/orders/edit/');
+  // Edit order route: /orders/[id]/edit
+  const isFullWidthPage = pathname === '/orders/create' || pathname?.includes('/edit');
   
   // Redirect to login if not authenticated (except on auth pages)
   if (!user && !isAuthPage) {

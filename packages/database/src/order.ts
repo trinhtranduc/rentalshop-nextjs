@@ -339,6 +339,7 @@ export async function updateOrder(
     returnNotes: string
     damageNotes: string
     customerId: number
+    outletId: number
     orderItems?: Array<{
       productId: number
       quantity: number
@@ -354,11 +355,47 @@ export async function updateOrder(
   console.log('🔧 updateOrder data keys:', Object.keys(data));
   console.log('🔧 updateOrder has orderItems?:', !!data.orderItems, 'length:', data.orderItems?.length);
   
-  // Extract orderItems from data if present
-  const { orderItems, ...orderData } = data
+  // Extract relationship IDs and orderItems from data
+  const { 
+    orderItems, 
+    customerId, 
+    outletId,
+    ...allFields 
+  } = data;
   
-  // Build update data
-  const updateData: any = { ...orderData }
+  // WHITELIST: Only valid Order model fields from schema
+  const validFields: (keyof typeof allFields)[] = [
+    'orderType', 'status', 'totalAmount', 'depositAmount', 
+    'securityDeposit', 'damageFee', 'lateFee', 'discountType', 
+    'discountValue', 'discountAmount', 'pickupPlanAt', 'returnPlanAt',
+    'pickedUpAt', 'returnedAt', 'rentalDuration', 'isReadyToDeliver',
+    'collateralType', 'collateralDetails', 'notes', 'pickupNotes',
+    'returnNotes', 'damageNotes'
+  ];
+  
+  // Build update data - filter to only valid fields
+  const updateData: any = {};
+  validFields.forEach(field => {
+    if (field in allFields && allFields[field as keyof typeof allFields] !== undefined) {
+      updateData[field] = allFields[field as keyof typeof allFields];
+    }
+  });
+  
+  console.log('🔧 Filtered update fields:', Object.keys(updateData));
+  
+  // Handle customer relationship if provided
+  if (customerId !== undefined) {
+    if (customerId === null) {
+      updateData.customer = { disconnect: true };
+    } else {
+      updateData.customer = { connect: { id: customerId } };
+    }
+  }
+  
+  // Handle outlet relationship if provided (should not change usually)
+  if (outletId !== undefined) {
+    updateData.outlet = { connect: { id: outletId } };
+  }
   
   // Handle order items separately if provided
   if (orderItems && orderItems.length > 0) {
@@ -380,12 +417,11 @@ export async function updateOrder(
     console.log('🔧 Converted orderItems to nested write format');
   }
   
-  console.log('🔧 Final update data structure:', JSON.stringify({
+  console.log('🔧 Final update data structure:', {
     hasOrderItems: !!updateData.orderItems,
-    orderItemsType: updateData.orderItems ? typeof updateData.orderItems : 'none',
-    orderItemsIsArray: Array.isArray(updateData.orderItems),
-    orderItemsKeys: updateData.orderItems ? Object.keys(updateData.orderItems) : []
-  }));
+    hasCustomer: !!updateData.customer,
+    hasOutlet: !!updateData.outlet
+  });
   
   const order = await prisma.order.update({
     where: { id },
@@ -694,24 +730,10 @@ export const simplifiedOrders = {
   },
 
   /**
-   * Update order (simplified API)
+   * Update order (simplified API) - Now uses proper updateOrder function
    */
   update: async (id: number, data: any) => {
-    return await prisma.order.update({
-      where: { id },
-      data,
-      include: {
-        customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
-        outlet: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
-        orderItems: {
-          include: {
-            product: { select: { id: true, name: true, barcode: true } }
-          }
-        },
-        payments: true
-      }
-    });
+    return await updateOrder(id, data);
   },
 
   /**
