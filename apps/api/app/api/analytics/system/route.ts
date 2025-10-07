@@ -47,16 +47,16 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       totalRevenue
     ] = await Promise.all([
       // Total merchants
-      db.merchants.getStats({ where: { isActive: true } }),
+      db.merchants.count({ where: { isActive: true } }),
       
       // Total outlets
-      db.outlets.getStats({ where: { isActive: true } }),
+      db.outlets.count({ where: { isActive: true } }),
       
       // Total users
-      db.users.getStats({ where: { isActive: true } }),
+      db.users.count({ where: { isActive: true } }),
       
       // Total products
-      db.products.getStats({ where: { isActive: true } }),
+      db.products.count({ where: { isActive: true } }),
       
       // Total customers
       db.customers.getStats({ where: { isActive: true } }),
@@ -65,7 +65,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       db.orders.getStats(),
       
       // Active merchants (with recent activity in date range)
-      db.merchants.getStats({ 
+      db.merchants.count({ 
         where: { 
           isActive: true,
           outlets: {
@@ -84,7 +84,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       }),
       
       // New merchants in date range
-      db.merchants.getStats({ 
+      db.merchants.count({ 
         where: { 
           isActive: true,
           createdAt: { 
@@ -95,7 +95,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       }),
       
       // New merchants this year (keep for comparison)
-      db.merchants.getStats({ 
+      db.merchants.count({ 
         where: { 
           isActive: true,
           createdAt: { 
@@ -126,14 +126,14 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
         const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
         const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
         
-        const newMerchants = await db.merchants.getStats({
+        const newMerchants = await db.merchants.count({
           where: {
             isActive: true,
             createdAt: { gte: monthStart, lte: monthEnd }
           }
         });
         
-        const activeMerchants = await db.merchants.getStats({
+        const activeMerchants = await db.merchants.count({
           where: {
             isActive: true,
             createdAt: { lte: monthEnd }
@@ -155,14 +155,14 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
         const dayStart = new Date(current.getFullYear(), current.getMonth(), current.getDate());
         const dayEnd = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
         
-        const newMerchants = await db.merchants.getStats({
+        const newMerchants = await db.merchants.count({
           where: {
             isActive: true,
             createdAt: { gte: dayStart, lte: dayEnd }
           }
         });
         
-        const activeMerchants = await db.merchants.getStats({
+        const activeMerchants = await db.merchants.count({
           where: {
             isActive: true,
             createdAt: { lte: dayEnd }
@@ -186,7 +186,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       totalProducts,
       totalCustomers,
       totalOrders,
-      totalRevenue: totalRevenue._sum.totalAmount || 0,
+      totalRevenue: totalRevenue?._sum?.totalAmount || 0,
       activeMerchants,
       newMerchantsThisMonth: newMerchantsThisMonth, // New merchants in date range
       newMerchantsThisYear,

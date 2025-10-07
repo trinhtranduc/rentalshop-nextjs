@@ -179,6 +179,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   deposit: 0
                 }}
                 merchant={merchantData}
+                initialStartDate={formData.pickupPlanAt}
+                initialEndDate={formData.returnPlanAt}
                 onPeriodChange={(startAt, endAt) => {
                   const startDate = startAt.toISOString().split('T')[0];
                   const endDate = endAt.toISOString().split('T')[0];

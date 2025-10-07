@@ -274,6 +274,14 @@ export async function getStats(id: number) {
   };
 }
 
+/**
+ * Count merchants with optional where clause
+ */
+export async function count(options?: { where?: any }) {
+  const where = options?.where || {};
+  return await prisma.merchant.count({ where });
+}
+
 // ============================================================================
 // EXPORT SIMPLIFIED INTERFACE
 // ============================================================================
@@ -285,5 +293,6 @@ export const simplifiedMerchants = {
   create,
   update,
   remove,
-  getStats
+  getStats,
+  count
 };

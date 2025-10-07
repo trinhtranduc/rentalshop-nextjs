@@ -882,5 +882,10 @@ export const simplifiedProducts = {
       limit,
       hasMore: skip + limit < total
     };
+  },
+
+  count: async (options?: { where?: any }) => {
+    const where = options?.where || {};
+    return await prisma.product.count({ where });
   }
 };
