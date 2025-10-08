@@ -21,7 +21,21 @@ const nextConfig = {
   // Prevent webpack from bundling Prisma during build
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.externals = [...(config.externals || []), '@prisma/client', '.prisma/client'];
+      // Mark Prisma as external to prevent bundling
+      const externals = config.externals || [];
+      config.externals = [
+        ...externals,
+        '@prisma/client',
+        '.prisma/client',
+        'prisma',
+      ];
+      
+      // Add alias to ensure Prisma Client is loaded from correct location
+      config.resolve = config.resolve || {};
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '.prisma/client': require.resolve('@prisma/client'),
+      };
     }
     return config;
   },
