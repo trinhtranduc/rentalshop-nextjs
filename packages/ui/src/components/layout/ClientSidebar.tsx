@@ -55,7 +55,6 @@ const clientMenuItems: MenuItem[] = [
     label: 'Orders',
     href: '/orders',
     icon: ShoppingCart,
-    badge: '3',
   },
   {
     label: 'Products',
@@ -392,14 +391,6 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              {notificationsCount > 0 && (
-                <div className="relative">
-                  <Bell className="w-4 h-4 text-gray-500" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                    {notificationsCount}
-                  </span>
-                </div>
-              )}
               {cartItemsCount > 0 && (
                 <div className="relative">
                   <ShoppingCart className="w-4 h-4 text-gray-500" />

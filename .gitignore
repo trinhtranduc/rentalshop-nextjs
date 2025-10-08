@@ -296,8 +296,14 @@ coverage/
 
 # Build outputs
 build/
-dist/
 out/
+
+# Apps build outputs (ignore)
+apps/**/dist/
+apps/**/.next/
+
+# Packages dist (COMMIT TO GIT for Vercel deployment)
+# packages/**/dist/ - COMMENTED to allow committing built packages
 
 # Storybook build outputs
 .out

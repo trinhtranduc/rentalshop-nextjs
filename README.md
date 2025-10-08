@@ -2,6 +2,11 @@
 
 A comprehensive rental shop management system built with Next.js, featuring a monorepo architecture with shared packages for authentication, database operations, UI components, and business logic.
 
+## 📚 Documentation
+
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Setup Supabase, Cloudinary, and Vercel
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deploy your apps to production
+
 ## 🚀 Quick Start
 
 ### **Complete System Setup (Recommended)**

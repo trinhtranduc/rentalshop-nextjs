@@ -23,7 +23,7 @@ import { CreateOrderForm,
   PageTitle,
   PageContent, 
   useToast,
-  Button , useToast } from '@rentalshop/ui';
+  Button } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { customersApi, productsApi, outletsApi, ordersApi, categoriesApi } from '@rentalshop/utils';
 import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category } from '@rentalshop/types';

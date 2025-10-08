@@ -1,0 +1,9 @@
+# Files to ignore when deploying to Vercel
+dev.db
+prisma/dev.db
+*.db
+*.sqlite
+.env.local
+.env.*.local
+node_modules
+.turbo

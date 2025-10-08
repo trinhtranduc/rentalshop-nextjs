@@ -9,7 +9,7 @@ import { PageWrapper,
   PageContent,
   ProductForm,
   useToast,
-  Button , useToast } from '@rentalshop/ui';
+  Button } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import type { ProductInput } from '@rentalshop/types';
 
