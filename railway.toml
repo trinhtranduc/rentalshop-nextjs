@@ -1,12 +1,6 @@
 [build]
 builder = "NIXPACKS"
 
-[[build.buildCommand]]
-cmd = "npx prisma generate"
-
-[[build.buildCommand]]
-cmd = "npx turbo run build"
-
 [deploy]
 startCommand = "yarn start"
 healthcheckPath = "/api/health"
