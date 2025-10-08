@@ -20,13 +20,25 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  // Skip static page generation entirely for API-only app
+  // This prevents "Collecting page data" phase which tries to initialize Prisma
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+    // Skip static generation completely
+    isrMemoryCacheSize: 0,
   },
-  // Force dynamic rendering for all routes (API-only app)
-  // This prevents Next.js from trying to statically generate API routes during build
-  // which would fail because Prisma client needs runtime database connection
-  output: 'standalone',
+  // Disable optimizations that trigger page collection
+  images: {
+    unoptimized: true,
+  },
+  // Webpack config to externalize Prisma and prevent build-time initialization
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Externalize Prisma to prevent bundling and build-time initialization
+      config.externals = [...(config.externals || []), '@prisma/client', '.prisma/client'];
+    }
+    return config;
+  },
   async headers() {
     // Avoid requiring TS files here; compute CORS origins directly from env
     const csv = process.env.CORS_ORIGINS || '';

@@ -45,20 +45,12 @@ module.exports = __toCommonJS(src_exports);
 // src/client.ts
 var import_client = require("@prisma/client");
 var globalForPrisma = globalThis;
-function getPrismaClient() {
-  if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = new import_client.PrismaClient({
-      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
-    });
-  }
-  return globalForPrisma.prisma;
-}
-var prisma = new Proxy({}, {
-  get(target, prop) {
-    const client = getPrismaClient();
-    return client[prop];
-  }
+var prisma = globalForPrisma.prisma ?? new import_client.PrismaClient({
+  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
 });
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
 
 // src/user.ts
 var simplifiedUsers = {
