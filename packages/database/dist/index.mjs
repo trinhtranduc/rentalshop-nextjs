@@ -9,10 +9,18 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 // src/client.ts
 import { PrismaClient } from "@prisma/client";
 var globalForPrisma = globalThis;
-var prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
-});
-if (process.env.NODE_ENV !== "production") {
+function createPrismaClient() {
+  try {
+    return new PrismaClient({
+      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
+    });
+  } catch (error) {
+    console.warn("Prisma Client initialization deferred (likely during build)");
+    return null;
+  }
+}
+var prisma = globalForPrisma.prisma ?? createPrismaClient();
+if (process.env.NODE_ENV !== "production" && prisma) {
   globalForPrisma.prisma = prisma;
 }
 
