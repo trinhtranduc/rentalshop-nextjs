@@ -112,7 +112,7 @@ const orderSelect = {
   outletId: true,
   customerId: true,
   createdById: true,
-} satisfies Prisma.OrderSelect
+} as const
 
 const orderInclude = {
   customer: {
@@ -171,7 +171,7 @@ const orderInclude = {
       processedAt: true,
     }
   }
-} satisfies Prisma.OrderInclude
+} as const
 
 function transformOrder(order: any): OrderWithRelations {
   return {
@@ -445,7 +445,7 @@ export async function deleteOrder(id: number): Promise<boolean> {
 }
 
 export async function getOrderCount(outletId?: number, status?: string): Promise<number> {
-  const where: Prisma.OrderWhereInput = {}
+  const where: any = {}
   if (outletId) where.outletId = outletId
   if (status) where.status = status
 

@@ -29,23 +29,7 @@ declare function getActivitiesBySubscriptionId(subscriptionId: number, options?:
     limit?: number;
     offset?: number;
 }): Promise<{
-    activities: {
-        metadata: any;
-        user: {
-            id: number;
-            email: string;
-            firstName: string;
-            lastName: string;
-            role: string;
-        } | null;
-        id: number;
-        createdAt: Date;
-        subscriptionId: number;
-        type: string;
-        description: string;
-        reason: string | null;
-        performedBy: number | null;
-    }[];
+    activities: any[];
     total: number;
 }>;
 /**
@@ -461,7 +445,7 @@ declare function count(options?: {
 /**
  * Create payment
  */
-declare function createPayment(data: Prisma.PaymentCreateInput): Promise<{
+declare function createPayment(data: any): Promise<{
     order: ({
         outlet: {
             name: string;

@@ -53,7 +53,7 @@ export async function getActivitiesBySubscriptionId(
 
   // Parse metadata JSON
   return {
-    activities: activities.map(activity => ({
+    activities: activities.map((activity: any) => ({
       ...activity,
       metadata: activity.metadata ? JSON.parse(activity.metadata) : null
     })),
