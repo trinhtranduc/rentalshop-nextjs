@@ -4,9 +4,11 @@ let prismaInstance: any;
 
 // Function to get or create Prisma client with lazy loading
 function getPrismaClient() {
-  // Skip Prisma during build phase when DATABASE_URL is not available
-  if (!process.env.DATABASE_URL) {
-    console.warn('⚠️ Prisma Client skipped (no DATABASE_URL)');
+  // Skip Prisma during build phase when DATABASE_URL is placeholder
+  // Railway sets DATABASE_URL=postgresql://placeholder during build
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl || dbUrl.includes('placeholder')) {
+    console.warn('⚠️ Prisma Client skipped (build phase)');
     // Return minimal mock for build compatibility
     return {
       $connect: () => Promise.resolve(),
@@ -15,7 +17,7 @@ function getPrismaClient() {
     } as any;
   }
 
-  // Lazy load PrismaClient only when DATABASE_URL is available
+  // Lazy load PrismaClient only when DATABASE_URL is real
   if (!PrismaClient) {
     try {
       PrismaClient = require('@prisma/client').PrismaClient;
