@@ -9,12 +9,20 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 // src/client.ts
 import { PrismaClient } from "@prisma/client";
 var globalForPrisma = globalThis;
-var prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
-});
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getPrismaClient() {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient({
+      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
+    });
+  }
+  return globalForPrisma.prisma;
 }
+var prisma = new Proxy({}, {
+  get(target, prop) {
+    const client = getPrismaClient();
+    return client[prop];
+  }
+});
 
 // src/user.ts
 var simplifiedUsers = {

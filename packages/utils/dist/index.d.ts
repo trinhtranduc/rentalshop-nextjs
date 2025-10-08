@@ -2466,9 +2466,9 @@ declare const ordersQuerySchema: z.ZodObject<{
     returnDate?: Date | undefined;
     minAmount?: number | undefined;
     maxAmount?: number | undefined;
-    userId?: number | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    userId?: number | undefined;
 }>;
 declare const orderCreateSchema: z.ZodObject<{
     orderId: z.ZodOptional<z.ZodNumber>;
@@ -2552,7 +2552,6 @@ declare const orderCreateSchema: z.ZodObject<{
     returnPlanAt?: Date | undefined;
     isReadyToDeliver?: boolean | undefined;
     notes?: string | undefined;
-    orderNumber?: string | undefined;
     securityDeposit?: number | undefined;
     damageFee?: number | undefined;
     lateFee?: number | undefined;
@@ -2565,6 +2564,7 @@ declare const orderCreateSchema: z.ZodObject<{
     pickupNotes?: string | undefined;
     returnNotes?: string | undefined;
     damageNotes?: string | undefined;
+    orderNumber?: string | undefined;
     orderId?: number | undefined;
     taxAmount?: number | undefined;
     customerName?: string | undefined;
@@ -2592,7 +2592,6 @@ declare const orderCreateSchema: z.ZodObject<{
     returnPlanAt?: Date | undefined;
     isReadyToDeliver?: boolean | undefined;
     notes?: string | undefined;
-    orderNumber?: string | undefined;
     securityDeposit?: number | undefined;
     damageFee?: number | undefined;
     lateFee?: number | undefined;
@@ -2605,6 +2604,7 @@ declare const orderCreateSchema: z.ZodObject<{
     pickupNotes?: string | undefined;
     returnNotes?: string | undefined;
     damageNotes?: string | undefined;
+    orderNumber?: string | undefined;
     orderId?: number | undefined;
     taxAmount?: number | undefined;
     customerName?: string | undefined;
@@ -2697,7 +2697,6 @@ declare const orderUpdateSchema: z.ZodObject<{
     }[] | undefined;
     isReadyToDeliver?: boolean | undefined;
     notes?: string | undefined;
-    orderNumber?: string | undefined;
     securityDeposit?: number | undefined;
     damageFee?: number | undefined;
     lateFee?: number | undefined;
@@ -2712,6 +2711,7 @@ declare const orderUpdateSchema: z.ZodObject<{
     pickupNotes?: string | undefined;
     returnNotes?: string | undefined;
     damageNotes?: string | undefined;
+    orderNumber?: string | undefined;
     orderId?: number | undefined;
     subtotal?: number | undefined;
     taxAmount?: number | undefined;
@@ -2740,7 +2740,6 @@ declare const orderUpdateSchema: z.ZodObject<{
     }[] | undefined;
     isReadyToDeliver?: boolean | undefined;
     notes?: string | undefined;
-    orderNumber?: string | undefined;
     securityDeposit?: number | undefined;
     damageFee?: number | undefined;
     lateFee?: number | undefined;
@@ -2755,6 +2754,7 @@ declare const orderUpdateSchema: z.ZodObject<{
     pickupNotes?: string | undefined;
     returnNotes?: string | undefined;
     damageNotes?: string | undefined;
+    orderNumber?: string | undefined;
     orderId?: number | undefined;
     subtotal?: number | undefined;
     taxAmount?: number | undefined;
@@ -2970,6 +2970,7 @@ declare const planCreateSchema: z.ZodObject<{
     basePrice: number;
     currency: string;
     trialDays: number;
+    isPopular: boolean;
     limits: {
         outlets: number;
         users: number;
@@ -2977,7 +2978,6 @@ declare const planCreateSchema: z.ZodObject<{
         customers: number;
     };
     features: string[];
-    isPopular: boolean;
 }, {
     name: string;
     description: string;
@@ -2992,8 +2992,8 @@ declare const planCreateSchema: z.ZodObject<{
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
     currency?: string | undefined;
-    features?: string[] | undefined;
     isPopular?: boolean | undefined;
+    features?: string[] | undefined;
 }>;
 declare const planUpdateSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
@@ -3029,6 +3029,7 @@ declare const planUpdateSchema: z.ZodObject<{
     basePrice?: number | undefined;
     currency?: string | undefined;
     trialDays?: number | undefined;
+    isPopular?: boolean | undefined;
     limits?: {
         outlets: number;
         users: number;
@@ -3036,7 +3037,6 @@ declare const planUpdateSchema: z.ZodObject<{
         customers: number;
     } | undefined;
     features?: string[] | undefined;
-    isPopular?: boolean | undefined;
 }, {
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
@@ -3045,6 +3045,7 @@ declare const planUpdateSchema: z.ZodObject<{
     basePrice?: number | undefined;
     currency?: string | undefined;
     trialDays?: number | undefined;
+    isPopular?: boolean | undefined;
     limits?: {
         outlets: number;
         users: number;
@@ -3052,7 +3053,6 @@ declare const planUpdateSchema: z.ZodObject<{
         customers: number;
     } | undefined;
     features?: string[] | undefined;
-    isPopular?: boolean | undefined;
 }>;
 declare const plansQuerySchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
@@ -3075,9 +3075,9 @@ declare const plansQuerySchema: z.ZodObject<{
     sortBy?: "sortOrder" | "name" | "createdAt" | "price" | "basePrice" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     isActive?: boolean | undefined;
-    isPopular?: boolean | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    isPopular?: boolean | undefined;
 }>;
 type PlanCreateInput = z.infer<typeof planCreateSchema>;
 type PlanUpdateInput = z.infer<typeof planUpdateSchema>;
@@ -3098,8 +3098,8 @@ declare const planVariantCreateSchema: z.ZodObject<{
     name: string;
     planId: string;
     isPopular: boolean;
-    discount: number;
     duration: number;
+    discount: number;
     price?: number | undefined;
     basePrice?: number | undefined;
 }, {
@@ -3132,8 +3132,8 @@ declare const planVariantUpdateSchema: z.ZodObject<{
     price?: number | undefined;
     basePrice?: number | undefined;
     isPopular?: boolean | undefined;
-    discount?: number | undefined;
     duration?: number | undefined;
+    discount?: number | undefined;
 }, {
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
@@ -3142,8 +3142,8 @@ declare const planVariantUpdateSchema: z.ZodObject<{
     price?: number | undefined;
     basePrice?: number | undefined;
     isPopular?: boolean | undefined;
-    discount?: number | undefined;
     duration?: number | undefined;
+    discount?: number | undefined;
 }>;
 declare const planVariantsQuerySchema: z.ZodObject<{
     planId: z.ZodOptional<z.ZodString>;
@@ -3158,7 +3158,7 @@ declare const planVariantsQuerySchema: z.ZodObject<{
     sortBy: z.ZodDefault<z.ZodEnum<["name", "price", "duration", "discount", "createdAt", "sortOrder"]>>;
     sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
-    sortBy: "sortOrder" | "name" | "createdAt" | "price" | "discount" | "duration";
+    sortBy: "sortOrder" | "name" | "createdAt" | "price" | "duration" | "discount";
     sortOrder: "asc" | "desc";
     limit: number;
     offset: number;
@@ -3171,15 +3171,15 @@ declare const planVariantsQuerySchema: z.ZodObject<{
     duration?: number | undefined;
 }, {
     search?: string | undefined;
-    sortBy?: "sortOrder" | "name" | "createdAt" | "price" | "discount" | "duration" | undefined;
+    sortBy?: "sortOrder" | "name" | "createdAt" | "price" | "duration" | "discount" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     isActive?: boolean | undefined;
     planId?: string | undefined;
     minPrice?: number | undefined;
     maxPrice?: number | undefined;
-    isPopular?: boolean | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    isPopular?: boolean | undefined;
     duration?: number | undefined;
 }>;
 type PlanVariantCreateInput = z.infer<typeof planVariantCreateSchema>;
@@ -3206,9 +3206,9 @@ declare const subscriptionCreateSchema: z.ZodObject<{
     planId: string;
     amount: number;
     currency: string;
-    cancelAtPeriodEnd: boolean;
     billingInterval: "month" | "quarter" | "semiAnnual" | "year";
     planVariantId: string;
+    cancelAtPeriodEnd: boolean;
     notes?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
@@ -3225,10 +3225,10 @@ declare const subscriptionCreateSchema: z.ZodObject<{
     currency?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
-    cancelAtPeriodEnd?: boolean | undefined;
     billingInterval?: "month" | "quarter" | "semiAnnual" | "year" | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
+    cancelAtPeriodEnd?: boolean | undefined;
     cancelledAt?: Date | undefined;
 }>;
 declare const subscriptionUpdateSchema: z.ZodObject<{
@@ -3258,11 +3258,11 @@ declare const subscriptionUpdateSchema: z.ZodObject<{
     currency?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
-    cancelAtPeriodEnd?: boolean | undefined;
     billingInterval?: "month" | "quarter" | "semiAnnual" | "year" | undefined;
     planVariantId?: string | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
+    cancelAtPeriodEnd?: boolean | undefined;
     cancelledAt?: Date | undefined;
 }, {
     merchantId?: number | undefined;
@@ -3274,11 +3274,11 @@ declare const subscriptionUpdateSchema: z.ZodObject<{
     currency?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
-    cancelAtPeriodEnd?: boolean | undefined;
     billingInterval?: "month" | "quarter" | "semiAnnual" | "year" | undefined;
     planVariantId?: string | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
+    cancelAtPeriodEnd?: boolean | undefined;
     cancelledAt?: Date | undefined;
 }>;
 declare const subscriptionsQuerySchema: z.ZodObject<{

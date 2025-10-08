@@ -9,15 +9,15 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "build#@rentalshop/api": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "build#@rentalshop/client": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "build#@rentalshop/admin": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "lint": {

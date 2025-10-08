@@ -23,6 +23,10 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
   },
+  // Force dynamic rendering for all routes (API-only app)
+  // This prevents Next.js from trying to statically generate API routes during build
+  // which would fail because Prisma client needs runtime database connection
+  output: 'standalone',
   async headers() {
     // Avoid requiring TS files here; compute CORS origins directly from env
     const csv = process.env.CORS_ORIGINS || '';
