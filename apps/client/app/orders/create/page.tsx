@@ -10,9 +10,8 @@ import { Card,
   PageTitle,
   PageContent,
   useToast,
-  FormSkeleton
- , useToast } from '@rentalshop/ui';
-import { CreateOrderForm , useToast } from '@rentalshop/ui';
+  FormSkeleton } from '@rentalshop/ui';
+import { CreateOrderForm } from '@rentalshop/ui';
 import type { CustomerSearchResult, ProductWithStock, OrderInput } from '@rentalshop/types';
 import { 
   customersApi, 

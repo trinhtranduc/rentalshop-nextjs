@@ -10,9 +10,8 @@ import { Card,
   PageTitle,
   PageContent,
   ConfirmationDialog,
-  useToast
- , useToast } from '@rentalshop/ui';
-import { ProductDetail , useToast } from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
+import { ProductDetail } from '@rentalshop/ui';
 
 import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';

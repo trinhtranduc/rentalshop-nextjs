@@ -279,14 +279,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 {user.role}
               </p>
             </div>
-            {notificationsCount > 0 && (
-              <div className="relative">
-                <Bell className="w-4 h-4 text-text-secondary" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {notificationsCount}
-                </span>
-              </div>
-            )}
           </div>
         )}
 
@@ -295,14 +287,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-white" />
             </div>
-            {notificationsCount > 0 && (
-              <div className="relative">
-                <Bell className="w-4 h-4 text-text-secondary" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {notificationsCount}
-                </span>
-              </div>
-            )}
           </div>
         )}
 

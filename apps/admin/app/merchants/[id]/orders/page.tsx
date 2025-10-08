@@ -9,8 +9,7 @@ import { PageWrapper,
   PageContent,
   Orders,
   Button,
-  useToast
- , useToast } from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { ArrowLeft, Plus } from 'lucide-react';
 import type { Order, OrderFilters, OrderListData, OrderStats } from '@rentalshop/types';
 

@@ -4,6 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "moduleResolution": "bundler",
+    "skipLibCheck": true,
     "paths": {
       "@rentalshop/auth": ["../../packages/auth/src"],
       "@rentalshop/ui": ["../../packages/ui/src"],

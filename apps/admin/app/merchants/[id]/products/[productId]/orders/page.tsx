@@ -13,8 +13,7 @@ import { PageWrapper,
   CardTitle,
   Badge,
   EmptyState,
-  useToast
- , useToast } from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import { 
   ArrowLeft, 
   ShoppingCart, 

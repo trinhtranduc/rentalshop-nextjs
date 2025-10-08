@@ -8,6 +8,18 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
+    "build#@rentalshop/api": {
+      "dependsOn": [],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "build#@rentalshop/client": {
+      "dependsOn": [],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "build#@rentalshop/admin": {
+      "dependsOn": [],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
@@ -20,4 +32,4 @@
       "persistent": true
     }
   }
-} 
+}

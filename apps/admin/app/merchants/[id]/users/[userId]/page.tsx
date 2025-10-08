@@ -13,7 +13,7 @@ import { PageWrapper,
   AccountManagementCard,
   ConfirmationDialog,
   useToast,
-  UserForm , useToast } from '@rentalshop/ui';
+  UserForm } from '@rentalshop/ui';
 import { Edit, ArrowLeft, UserCheck, UserX, Trash2, Key } from 'lucide-react';
 import type { User, UserUpdateInput } from '@rentalshop/types';
 

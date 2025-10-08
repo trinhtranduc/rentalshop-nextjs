@@ -125,11 +125,6 @@ export function ServerTopNavigation({
                 className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
               >
                 <Bell className="w-5 h-5" />
-                {notificationsCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                    {notificationsCount > 9 ? '9+' : notificationsCount}
-                  </Badge>
-                )}
               </Button>
 
               {/* Cart Items - Only for client */}
