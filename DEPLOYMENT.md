@@ -96,13 +96,17 @@ Each app has its own `railway.json` that Railway uses for deployment:
 ### **apps/api/railway.json**
 ```json
 {
+  "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd ../.. && yarn install && yarn build --filter=@rentalshop/api"
+    "buildCommand": "npx prisma generate && yarn build --filter=@rentalshop/api"
   },
   "deploy": {
     "startCommand": "cd apps/api && yarn start",
-    "healthcheckPath": "/api/health"
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
   }
 }
 ```
@@ -110,13 +114,17 @@ Each app has its own `railway.json` that Railway uses for deployment:
 ### **apps/client/railway.json**
 ```json
 {
+  "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd ../.. && yarn install && yarn build --filter=@rentalshop/client"
+    "buildCommand": "yarn build --filter=@rentalshop/client"
   },
   "deploy": {
     "startCommand": "cd apps/client && yarn start",
-    "healthcheckPath": "/"
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
   }
 }
 ```
@@ -124,22 +132,28 @@ Each app has its own `railway.json` that Railway uses for deployment:
 ### **apps/admin/railway.json**
 ```json
 {
+  "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd ../.. && yarn install && yarn build --filter=@rentalshop/admin"
+    "buildCommand": "yarn build --filter=@rentalshop/admin"
   },
   "deploy": {
     "startCommand": "cd apps/admin && yarn start",
-    "healthcheckPath": "/"
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
   }
 }
 ```
 
 **Key Points:**
-- ✅ Each app builds from monorepo root (`cd ../..`)
+- ✅ Railway auto-detects Yarn from `yarn.lock` at monorepo root
 - ✅ Turborepo filter builds only needed packages (`--filter`)
+- ✅ API generates Prisma Client before build (`npx prisma generate`)
 - ✅ Start command runs from app directory
 - ✅ Healthcheck ensures service is running
+- ✅ Consistent configuration across all apps
 
 ## 🔧 **Environment Variables Setup**
 
