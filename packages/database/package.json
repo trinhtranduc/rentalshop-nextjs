@@ -7,9 +7,6 @@
   "types": "./dist/index.d.ts",
   "sideEffects": false,
   "license": "MIT",
-  "prisma": {
-    "schema": "../../prisma/schema.prisma"
-  },
   "files": [
     "dist/**"
   ],

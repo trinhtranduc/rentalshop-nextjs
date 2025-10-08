@@ -7,44 +7,14 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 });
 
 // src/client.ts
-var PrismaClient;
-var prismaInstance;
-function getPrismaClient() {
-  const dbUrl = process.env.DATABASE_URL;
-  if (!dbUrl || dbUrl.includes("placeholder")) {
-    console.warn("\u26A0\uFE0F Prisma Client skipped (build phase)");
-    return {
-      $connect: () => Promise.resolve(),
-      $disconnect: () => Promise.resolve(),
-      $transaction: (fn) => fn({})
-    };
-  }
-  if (!PrismaClient) {
-    try {
-      PrismaClient = __require("@prisma/client").PrismaClient;
-    } catch (error) {
-      console.error("\u274C Failed to load Prisma Client:", error);
-      throw error;
-    }
-  }
-  if (!prismaInstance) {
-    try {
-      prismaInstance = new PrismaClient({
-        log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
-      });
-    } catch (error) {
-      console.error("\u274C Prisma Client initialization failed:", error);
-      throw error;
-    }
-  }
-  return prismaInstance;
-}
-var prisma = new Proxy({}, {
-  get: (target, prop) => {
-    const client = getPrismaClient();
-    return client[prop];
-  }
+import { PrismaClient } from "@prisma/client";
+var globalForPrisma = globalThis;
+var prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
 });
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
 
 // src/user.ts
 var simplifiedUsers = {
