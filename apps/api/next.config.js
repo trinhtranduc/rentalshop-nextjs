@@ -1,3 +1,8 @@
+// Mock Prisma during build to prevent initialization errors
+if (process.env.RAILWAY_ENVIRONMENT || process.env.CI) {
+  require('./next.config.build-mock');
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
