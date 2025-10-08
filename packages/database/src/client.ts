@@ -1,16 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+// Lazy import Prisma Client to prevent bundling during build
+let PrismaClient: any;
+let prismaInstance: any;
 
-// Global Prisma client instance for singleton pattern
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-// Function to create Prisma client with error handling for Railway builds
-function createPrismaClient() {
-  // Skip Prisma initialization during Next.js build phase
-  // Railway/Next.js: Build phase doesn't have DATABASE_URL and doesn't need Prisma
-  if (!process.env.DATABASE_URL || process.env.RAILWAY_STATIC_URL) {
-    console.warn('⚠️ Prisma Client skipped (build phase or no DATABASE_URL)');
+// Function to get or create Prisma client with lazy loading
+function getPrismaClient() {
+  // Skip Prisma during build phase when DATABASE_URL is not available
+  if (!process.env.DATABASE_URL) {
+    console.warn('⚠️ Prisma Client skipped (no DATABASE_URL)');
     // Return minimal mock for build compatibility
     return {
       $connect: () => Promise.resolve(),
@@ -19,21 +15,35 @@ function createPrismaClient() {
     } as any;
   }
 
-  try {
-    return new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    });
-  } catch (error) {
-    console.error('❌ Prisma Client initialization failed:', error);
-    throw error;
+  // Lazy load PrismaClient only when DATABASE_URL is available
+  if (!PrismaClient) {
+    try {
+      PrismaClient = require('@prisma/client').PrismaClient;
+    } catch (error) {
+      console.error('❌ Failed to load Prisma Client:', error);
+      throw error;
+    }
   }
+
+  // Create singleton instance
+  if (!prismaInstance) {
+    try {
+      prismaInstance = new PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      });
+    } catch (error) {
+      console.error('❌ Prisma Client initialization failed:', error);
+      throw error;
+    }
+  }
+
+  return prismaInstance;
 }
 
-// Create a singleton Prisma client instance
-// Railway/Next.js: Lazy initialization to handle build-time issues
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-// Store the instance globally in development to prevent multiple instances
-if (process.env.NODE_ENV !== 'production' && prisma) {
-  globalForPrisma.prisma = prisma;
-} 
+// Export a Proxy that lazy-loads Prisma Client on first access
+export const prisma = new Proxy({} as any, {
+  get: (target, prop) => {
+    const client = getPrismaClient();
+    return client[prop];
+  }
+}); 
