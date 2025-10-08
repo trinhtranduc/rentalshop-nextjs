@@ -10,13 +10,21 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 import { PrismaClient } from "@prisma/client";
 var globalForPrisma = globalThis;
 function createPrismaClient() {
+  if (!process.env.DATABASE_URL || process.env.RAILWAY_STATIC_URL) {
+    console.warn("\u26A0\uFE0F Prisma Client skipped (build phase or no DATABASE_URL)");
+    return {
+      $connect: () => Promise.resolve(),
+      $disconnect: () => Promise.resolve(),
+      $transaction: (fn) => fn({})
+    };
+  }
   try {
     return new PrismaClient({
       log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
     });
   } catch (error) {
-    console.warn("Prisma Client initialization deferred (likely during build)");
-    return null;
+    console.error("\u274C Prisma Client initialization failed:", error);
+    throw error;
   }
 }
 var prisma = globalForPrisma.prisma ?? createPrismaClient();

@@ -5,17 +5,27 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Function to create Prisma client with error handling
+// Function to create Prisma client with error handling for Railway builds
 function createPrismaClient() {
+  // Skip Prisma initialization during Next.js build phase
+  // Railway/Next.js: Build phase doesn't have DATABASE_URL and doesn't need Prisma
+  if (!process.env.DATABASE_URL || process.env.RAILWAY_STATIC_URL) {
+    console.warn('⚠️ Prisma Client skipped (build phase or no DATABASE_URL)');
+    // Return minimal mock for build compatibility
+    return {
+      $connect: () => Promise.resolve(),
+      $disconnect: () => Promise.resolve(),
+      $transaction: (fn: any) => fn({}),
+    } as any;
+  }
+
   try {
     return new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
   } catch (error) {
-    // During Next.js build, Prisma might not be fully initialized
-    // Return a mock client that won't be used at runtime
-    console.warn('Prisma Client initialization deferred (likely during build)');
-    return null as any;
+    console.error('❌ Prisma Client initialization failed:', error);
+    throw error;
   }
 }
 

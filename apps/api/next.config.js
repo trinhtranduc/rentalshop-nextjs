@@ -1,8 +1,3 @@
-// Mock Prisma during build to prevent initialization errors
-if (process.env.RAILWAY_ENVIRONMENT || process.env.CI) {
-  require('./next.config.build-mock');
-}
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
@@ -14,38 +9,17 @@ const nextConfig = {
     '@rentalshop/types'
   ],
   eslint: {
-    // Temporarily disable ESLint during builds to allow development to continue
-    // TODO: Re-enable and fix ESLint errors incrementally
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
     ignoreBuildErrors: true,
   },
-  // Skip static page generation entirely for API-only app
-  // This prevents "Collecting page data" phase which tries to initialize Prisma
+  // Externalize Prisma for Railway - prevents bundling during build
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
-    // Skip static generation completely
-    isrMemoryCacheSize: 0,
   },
-  // Disable optimizations that trigger page collection
-  images: {
-    unoptimized: true,
-  },
-  // Webpack config to externalize Prisma and prevent build-time initialization
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Externalize Prisma to prevent bundling and build-time initialization
-      config.externals = [...(config.externals || []), '@prisma/client', '.prisma/client'];
-    }
-    return config;
-  },
+  // CORS headers
   async headers() {
-    // Avoid requiring TS files here; compute CORS origins directly from env
     const csv = process.env.CORS_ORIGINS || '';
     const envOrigins = csv
       .split(',')
@@ -61,7 +35,6 @@ const nextConfig = {
     ].filter(Boolean);
     const origins = envOrigins.length ? envOrigins : fallbacks;
     
-    // For development, allow all localhost origins
     const allowOrigin = process.env.NODE_ENV === 'development' 
       ? '*' 
       : (origins[0] || '*');

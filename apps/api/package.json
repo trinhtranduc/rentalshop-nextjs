@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "prisma generate --schema=../../prisma/schema.prisma && next build",
+    "build": "prisma generate --schema=../../prisma/schema.prisma && SKIP_ENV_VALIDATION=true next build",
     "start": "next start",
     "lint": "next lint"
   },
