@@ -6,7 +6,7 @@ Trước khi deploy, đảm bảo:
 
 - ✅ Railway account created (https://railway.app)
 - ✅ GitHub repository pushed
-- ✅ Cloudinary account setup (for image uploads)
+- ✅ File upload configuration (optional)
 - ✅ Local build successful (`yarn build`)
 
 ---
@@ -119,12 +119,9 @@ JWT_EXPIRES_IN=1d
 NEXTAUTH_SECRET=generate-with-openssl-rand-base64-32
 NEXTAUTH_URL=https://rentalshop-api.up.railway.app
 
-# Cloudinary (your credentials)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-UPLOAD_PROVIDER=cloudinary
-MAX_FILE_SIZE=10485760
+# File uploads (optional - disabled by default)
+# UPLOAD_PROVIDER=local
+# MAX_FILE_SIZE=10485760
 
 # URLs (update sau khi deploy client/admin)
 API_URL=https://rentalshop-api.up.railway.app
@@ -170,8 +167,7 @@ openssl rand -base64 32  # Copy cho NEXTAUTH_SECRET
 **Settings → Variables:**
 ```bash
 NEXT_PUBLIC_API_URL=https://rentalshop-api.up.railway.app
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=rentalshop_products
+# File uploads disabled by default
 NEXTAUTH_SECRET=same-as-api-service
 NEXTAUTH_URL=https://rentalshop-client.up.railway.app
 NODE_ENV=production
@@ -202,8 +198,7 @@ CI=true
 **Settings → Variables:**
 ```bash
 NEXT_PUBLIC_API_URL=https://rentalshop-api.up.railway.app
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=rentalshop_products
+# File uploads disabled by default
 NEXTAUTH_SECRET=same-as-api-service
 NEXTAUTH_URL=https://rentalshop-admin.up.railway.app
 NODE_ENV=production
@@ -551,7 +546,7 @@ Your RentalShop is now deployed on Railway!
 **Stack:**
 - ☁️  Hosting: Railway ($5-20/month)
 - 🗄️  Database: Railway PostgreSQL (included)
-- 🖼️  Images: Cloudinary (25GB free)
+- 📁  Files: Local storage (or external service if needed)
 
 **Total Cost:** ~$5-20/month 💰
 

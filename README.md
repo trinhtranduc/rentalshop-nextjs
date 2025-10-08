@@ -4,8 +4,7 @@ A comprehensive rental shop management system built with Next.js, featuring a mo
 
 ## 📚 Documentation
 
-- **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** - 🚀 Deploy to Railway (Recommended)
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deploy options and legacy Vercel guide
+- **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** - 🚀 Deploy to Railway (Production Deployment Guide)
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Local development setup
 
 ## 🚀 Quick Start

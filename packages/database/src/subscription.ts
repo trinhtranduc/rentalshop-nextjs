@@ -942,7 +942,7 @@ export async function getSubscriptionPaymentHistory(
   const hasMore = offset + limit < total;
 
   return {
-    payments: payments.map(p => ({
+    payments: payments.map((p: any) => ({
       id: p.id,
       subscriptionId: subscriptionId,
       amount: p.amount,
@@ -1005,7 +1005,7 @@ export async function renewSubscription(
   const newPeriodEnd = calculatePeriodEnd(newPeriodStart, 'month');
 
   // 4. Use database transaction to ensure atomicity
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: any) => {
     // Create payment record
     const payment = await tx.payment.create({
       data: {
