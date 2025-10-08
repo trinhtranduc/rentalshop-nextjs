@@ -1,13 +1,63 @@
-# 🚀 Deployment Guide - Deploy to Vercel
+# 🚀 Deployment Guide - Deploy to Railway
 
 ## 📋 **Prerequisites**
 
-Before deploying, make sure you completed **SETUP_GUIDE.md**:
+Before deploying, make sure you have:
+
+- ✅ Railway account created (https://railway.app)
+- ✅ GitHub repository pushed
+- ✅ Cloudinary account setup with upload preset (Unsigned mode!)
+- ✅ Local build successful (`yarn build`)
+
+## 🎯 **Recommended: Railway Deployment**
+
+**For full deployment guide, see [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md)**
+
+### **Why Railway?**
+
+| Feature | Railway | Vercel |
+|---------|---------|--------|
+| **Database** | ✅ Built-in PostgreSQL | ❌ Need external ($25/mo) |
+| **Backend** | ✅ Full support | ⚠️ Serverless only |
+| **Storage** | ✅ Persistent volumes | ❌ Need external |
+| **Cost** | **$5-20/month** | $45+/month |
+
+**Railway is better for full-stack apps with database!** 🚀
+
+---
+
+## 🚂 **Quick Railway Deploy**
+
+```bash
+# 1. Install Railway CLI
+npm i -g @railway/cli
+
+# 2. Login
+railway login
+
+# 3. Create project
+railway init
+
+# 4. Add PostgreSQL
+railway add postgresql
+
+# 5. Deploy services (Railway auto-detects monorepo!)
+# Just push to GitHub and Railway will deploy automatically
+```
+
+**See [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) for detailed step-by-step guide.**
+
+---
+
+## ⚠️ **Legacy: Vercel Deployment (Not Recommended)**
+
+**Note: Vercel deployment still works but requires external database (Supabase) and costs more.**
+
+### **Prerequisites for Vercel:**
 
 - ✅ Supabase database created & migrated
-- ✅ Cloudinary account setup with upload preset (Unsigned mode!)
+- ✅ Cloudinary account setup
 - ✅ Vercel CLI installed
-- ✅ Local build successful (`yarn build`)
 
 ## 🎯 **Expert Strategy (Simplified)**
 
@@ -211,7 +261,7 @@ vercel --prod
 
 Click **"Add"** cho từng biến (chọn **Production**):
 
-```bash
+   ```bash
 # Database (Supabase)
 DATABASE_URL
 postgresql://postgres:Anhiuem123@@db.yqbjnaitiptdagpjsndx.supabase.co:5432/postgres
@@ -461,7 +511,7 @@ Error: Can't reach database server
 1. Verify `DATABASE_URL` in Vercel env vars
 2. Check password is correct
 3. Test connection locally:
-   ```bash
+```bash
    DATABASE_URL="postgresql://..." npx prisma db execute --stdin <<< "SELECT 1"
    ```
 
