@@ -4,8 +4,9 @@ A comprehensive rental shop management system built with Next.js, featuring a mo
 
 ## 📚 Documentation
 
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Setup Supabase, Cloudinary, and Vercel
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deploy your apps to production
+- **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** - 🚀 Deploy to Railway (Recommended)
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deploy options and legacy Vercel guide
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Local development setup
 
 ## 🚀 Quick Start
 
@@ -410,11 +411,40 @@ export function AuditLogViewer() {
 - **Frontend**: Next.js 13+ with App Router
 - **Backend**: Next.js API routes
 - **Database**: PostgreSQL with Prisma ORM
+- **Deployment**: Railway (recommended) or Vercel
 - **Authentication**: JWT-based with role-based access control
 - **UI**: Tailwind CSS with custom component library
 - **State Management**: React hooks and context
 - **Type Safety**: Full TypeScript support
 - **Monorepo**: Yarn workspaces with Turborepo
+
+## 🚀 **Deployment**
+
+### **Recommended: Railway**
+
+**Why Railway?**
+- ✅ Built-in PostgreSQL database (no external service needed)
+- ✅ Full backend support (not just serverless)
+- ✅ Persistent storage with volumes
+- ✅ Lower cost: $5-20/month vs $45+/month (Vercel + Supabase)
+
+**Quick Deploy:**
+```bash
+# Install Railway CLI
+npm i -g @railway/cli
+
+# Login and deploy
+railway login
+railway init
+
+# Add database
+railway add postgresql
+
+# Deploy (auto-detects monorepo)
+git push origin main
+```
+
+**See [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) for complete guide.**
 
 ## 📚 **Documentation**
 

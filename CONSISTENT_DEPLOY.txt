@@ -1,0 +1,249 @@
+════════════════════════════════════════════════════════════════
+🚂 DEPLOYMENT WORKFLOW - RAILWAY (CONSISTENT & FINAL)
+════════════════════════════════════════════════════════════════
+
+QUY TẮC VÀNG:
+-------------
+Railway tự động detect monorepo và deploy đúng directory!
+Không cần cd vào từng app như Vercel.
+
+════════════════════════════════════════════════════════════════
+CHUẨN BỊ - LẦN ĐẦU
+════════════════════════════════════════════════════════════════
+
+1. Install Railway CLI:
+   npm install -g @railway/cli
+   
+2. Login Railway:
+   railway login
+   
+3. Verify:
+   railway whoami
+
+════════════════════════════════════════════════════════════════
+BƯỚC 1: TẠO PROJECT & DATABASE
+════════════════════════════════════════════════════════════════
+
+1. Tạo project trên Railway Dashboard:
+   https://railway.app → New Project → Empty Project
+   
+2. Đặt tên project:
+   rentalshop-nextjs
+   
+3. Add PostgreSQL Database:
+   → Add Service → Database → PostgreSQL
+   
+4. Copy DATABASE_URL:
+   PostgreSQL service → Variables → DATABASE_URL
+
+════════════════════════════════════════════════════════════════
+BƯỚC 2: DEPLOY 3 SERVICES (API, CLIENT, ADMIN)
+════════════════════════════════════════════════════════════════
+
+Từ ROOT directory:
+cd /Users/mac/Source-Code/rentalshop-nextjs
+
+────────────────────────────────────────────────────────────────
+A. DEPLOY API SERVICE
+────────────────────────────────────────────────────────────────
+
+railway up
+
+? Select a service → Create new service
+? Service name → api
+? Root directory → apps/api
+
+Railway sẽ:
+✅ Auto-detect Next.js
+✅ Install dependencies từ ROOT
+✅ Build app
+✅ Deploy!
+
+────────────────────────────────────────────────────────────────
+B. DEPLOY CLIENT SERVICE  
+────────────────────────────────────────────────────────────────
+
+railway up
+
+? Select a service → Create new service
+? Service name → client
+? Root directory → apps/client
+
+────────────────────────────────────────────────────────────────
+C. DEPLOY ADMIN SERVICE
+────────────────────────────────────────────────────────────────
+
+railway up
+
+? Select a service → Create new service
+? Service name → admin
+? Root directory → apps/admin
+
+════════════════════════════════════════════════════════════════
+BƯỚC 3: SET ENVIRONMENT VARIABLES
+════════════════════════════════════════════════════════════════
+
+Railway Dashboard → Project → Mỗi service → Variables
+
+────────────────────────────────────────────────────────────────
+API SERVICE VARIABLES:
+────────────────────────────────────────────────────────────────
+
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+
+JWT_SECRET=your-super-secret-jwt-key-32-chars-minimum
+JWT_EXPIRES_IN=1d
+
+NEXTAUTH_SECRET=your-super-secret-nextauth-key-32-chars
+NEXTAUTH_URL=https://${{API.RAILWAY_PUBLIC_DOMAIN}}
+
+API_URL=https://${{API.RAILWAY_PUBLIC_DOMAIN}}
+CLIENT_URL=https://${{CLIENT.RAILWAY_PUBLIC_DOMAIN}}
+ADMIN_URL=https://${{ADMIN.RAILWAY_PUBLIC_DOMAIN}}
+
+CORS_ORIGINS=https://${{CLIENT.RAILWAY_PUBLIC_DOMAIN}},https://${{ADMIN.RAILWAY_PUBLIC_DOMAIN}}
+
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+NODE_ENV=production
+HUSKY=0
+
+────────────────────────────────────────────────────────────────
+CLIENT SERVICE VARIABLES:
+────────────────────────────────────────────────────────────────
+
+NEXT_PUBLIC_API_URL=https://${{API.RAILWAY_PUBLIC_DOMAIN}}
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=rentalshop_products
+
+NEXTAUTH_SECRET=your-super-secret-nextauth-key-32-chars
+NEXTAUTH_URL=https://${{CLIENT.RAILWAY_PUBLIC_DOMAIN}}
+
+NODE_ENV=production
+
+────────────────────────────────────────────────────────────────
+ADMIN SERVICE VARIABLES:
+────────────────────────────────────────────────────────────────
+
+NEXT_PUBLIC_API_URL=https://${{API.RAILWAY_PUBLIC_DOMAIN}}
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=rentalshop_products
+
+NEXTAUTH_SECRET=your-super-secret-nextauth-key-32-chars
+NEXTAUTH_URL=https://${{ADMIN.RAILWAY_PUBLIC_DOMAIN}}
+
+NODE_ENV=production
+
+════════════════════════════════════════════════════════════════
+BƯỚC 4: RUN DATABASE MIGRATION (CHỈ 1 LẦN)
+════════════════════════════════════════════════════════════════
+
+Từ ROOT directory:
+
+# Link project
+railway link
+
+# Select service API
+railway service api
+
+# Run migration
+railway run npx prisma migrate deploy --schema=./prisma/schema.prisma
+
+# Seed database (optional)
+railway run node scripts/regenerate-entire-system-2025.js
+
+════════════════════════════════════════════════════════════════
+BƯỚC 5: GENERATE DOMAINS & UPDATE VARIABLES
+════════════════════════════════════════════════════════════════
+
+1. Railway auto-generate domains:
+   - API:    https://api-production-xxxx.up.railway.app
+   - Client: https://client-production-xxxx.up.railway.app
+   - Admin:  https://admin-production-xxxx.up.railway.app
+
+2. Update hardcoded URLs trong variables (nếu cần)
+   Hoặc dùng ${{SERVICE.RAILWAY_PUBLIC_DOMAIN}} như trên
+
+3. Redeploy nếu cần:
+   railway up --service api
+   railway up --service client
+   railway up --service admin
+
+════════════════════════════════════════════════════════════════
+UPDATE DEPLOYMENT (Khi có thay đổi code)
+════════════════════════════════════════════════════════════════
+
+Từ ROOT directory:
+
+# Update một service cụ thể
+railway up --service api
+railway up --service client
+railway up --service admin
+
+# Hoặc update tất cả
+railway up --service api && railway up --service client && railway up --service admin
+
+════════════════════════════════════════════════════════════════
+USEFUL COMMANDS
+════════════════════════════════════════════════════════════════
+
+# View logs
+railway logs --service api
+
+# Open service URL
+railway open --service api
+
+# View environment variables
+railway variables --service api
+
+# Connect to database
+railway connect postgres
+
+# Run commands in Railway environment
+railway run <command>
+
+════════════════════════════════════════════════════════════════
+TÓM TẮT - RAILWAY vs VERCEL
+════════════════════════════════════════════════════════════════
+
+✅ RAILWAY ADVANTAGES:
+- Database built-in (PostgreSQL included!)
+- Simpler deployment (railway up)
+- Better for monorepos (auto-detect structure)
+- All-in-one pricing ($5-20/month for everything)
+- Long-running processes supported
+- WebSockets supported
+- Private networking between services
+
+✅ DEPLOYMENT STEPS:
+1. railway login
+2. Tạo project + PostgreSQL trên Dashboard
+3. railway up (3 lần cho 3 services)
+4. Set environment variables cho 3 services
+5. railway run prisma migrate deploy
+6. Done! ✨
+
+SIMPLE & POWERFUL! 🚂
+
+════════════════════════════════════════════════════════════════
+PRICING COMPARISON
+════════════════════════════════════════════════════════════════
+
+VERCEL (Old):
+- Hosting: $20/month
+- Database: $25/month (Supabase/PlanetScale)
+- Storage: $10/month (Vercel Blob/Cloudinary)
+- TOTAL: $55/month minimum
+
+RAILWAY (New):
+- Everything: $5-20/month
+  - Hosting: Included
+  - PostgreSQL: Included
+  - Storage: Included (volumes)
+- TOTAL: $5-20/month
+
+💰 SAVE: $35-50/month!
+
+════════════════════════════════════════════════════════════════

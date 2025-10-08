@@ -27,7 +27,11 @@
     "db:migrate-pricing": "node scripts/migrate-merchant-pricing.js migrate",
     "db:validate-pricing": "node scripts/migrate-merchant-pricing.js validate",
     "db:rollback-pricing": "node scripts/migrate-merchant-pricing.js rollback",
-    "test:pricing": "node scripts/test-pricing-system.js"
+    "test:pricing": "node scripts/test-pricing-system.js",
+    "railway:migrate": "npx prisma migrate deploy --schema=./prisma/schema.prisma",
+    "railway:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "railway:seed": "node scripts/regenerate-entire-system-2025.js",
+    "railway:setup": "yarn railway:generate && yarn railway:migrate && yarn railway:seed"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
