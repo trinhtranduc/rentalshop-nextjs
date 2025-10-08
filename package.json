@@ -8,6 +8,7 @@
     "apps/*"
   ],
   "scripts": {
+    "postinstall": "prisma generate",
     "build": "turbo run build --concurrency=12",
     "dev": "turbo run dev",
     "dev:all": "turbo run dev --concurrency=20",

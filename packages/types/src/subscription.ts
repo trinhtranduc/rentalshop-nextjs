@@ -3,9 +3,9 @@
 // ============================================================================
 
 import { Plan } from './plans';
-import { SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
+import type { SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
 
-// Re-export types from centralized constants
+// Re-export types from centralized constants (Single Source of Truth)
 export type { SubscriptionStatus, BillingInterval };
 export type BillingPeriod = 1 | 3 | 6 | 12; // months
 

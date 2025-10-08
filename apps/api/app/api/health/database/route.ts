@@ -3,6 +3,10 @@ import { prisma } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
+// Force dynamic rendering - database health check needs runtime connection
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     console.log('Database health check started');

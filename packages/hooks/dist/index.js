@@ -28,8 +28,8 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/index.ts
-var index_exports = {};
-__export(index_exports, {
+var src_exports = {};
+__export(src_exports, {
   CurrencyProvider: () => CurrencyProvider,
   useAuth: () => useAuth,
   useAuthErrorHandler: () => useAuthErrorHandler,
@@ -56,7 +56,7 @@ __export(index_exports, {
   useUserManagement: () => useUserManagement,
   useUserRole: () => useUserRole
 });
-module.exports = __toCommonJS(index_exports);
+module.exports = __toCommonJS(src_exports);
 
 // src/hooks/useAuth.ts
 var import_react = require("react");
@@ -247,7 +247,8 @@ function useAuth() {
   (0, import_react.useEffect)(() => {
     const checkTokenExpiry = () => {
       const token = (0, import_utils.getAuthToken)();
-      if (!token) return;
+      if (!token)
+        return;
       try {
         const parts = token.split(".");
         if (parts.length === 3) {
@@ -401,7 +402,8 @@ function useSubscriptionStatusInfo(options = {}) {
     fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
   (0, import_react3.useEffect)(() => {
-    if (!user) return;
+    if (!user)
+      return;
     const interval = setInterval(fetchSubscriptionStatus, checkInterval);
     return () => clearInterval(interval);
   }, [user, fetchSubscriptionStatus, checkInterval]);
@@ -605,7 +607,8 @@ function CurrencyProvider({
     return (0, import_utils3.getCurrency)(code);
   }, []);
   const convertAmount = (0, import_react5.useCallback)((amount, from, to) => {
-    if (from === to) return amount;
+    if (from === to)
+      return amount;
     const fromCurrency = (0, import_utils3.getCurrency)(from);
     const toCurrency = (0, import_utils3.getCurrency)(to);
     if (!fromCurrency || !toCurrency) {
@@ -904,7 +907,8 @@ var useCustomerManagement = (options = {}) => {
     }
   }, [customers, searchTerm, cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter, useSearchCustomers]);
   const stats = (0, import_react8.useMemo)(() => {
-    if (!enableStats) return void 0;
+    if (!enableStats)
+      return void 0;
     const customersArray = customers || [];
     const totalCustomers = customersArray.length;
     const activeCustomers = customersArray.filter((c) => c.isActive).length;
@@ -962,7 +966,8 @@ var useCustomerManagement = (options = {}) => {
   }, []);
   const handleCustomerRowAction = (0, import_react8.useCallback)((action, customerId) => {
     const customer = customers.find((c) => c.id === customerId);
-    if (!customer) return;
+    if (!customer)
+      return;
     switch (action) {
       case "view":
         handleViewCustomer(customer);
@@ -1035,7 +1040,8 @@ var useCustomerManagement = (options = {}) => {
     }
   }, [fetchCustomers]);
   const handleCustomerUpdatedAsync = (0, import_react8.useCallback)(async (customerData) => {
-    if (!selectedCustomer) return;
+    if (!selectedCustomer)
+      return;
     try {
       const response = await import_utils4.customersApi.updateCustomer(selectedCustomer.id, customerData);
       if (response.success) {
@@ -1195,7 +1201,8 @@ function useOrderManagement(options = {}) {
     }
   }, [pagination.limit, useSearchOrders, updatePaginationFromResponse]);
   const fetchStats = (0, import_react9.useCallback)(async () => {
-    if (!enableStats) return;
+    if (!enableStats)
+      return;
     try {
       console.log("Fetching order stats...");
       const response = await import_utils5.ordersApi.getOrderStats();
@@ -1415,11 +1422,14 @@ function useProductAvailability() {
       };
     }
     const conflicts = existingOrders.filter((order) => {
-      if (order.orderType !== "RENT") return false;
+      if (order.orderType !== "RENT")
+        return false;
       const activeStatuses = ["RESERVED", "PICKUPED"];
-      if (!activeStatuses.includes(order.status)) return false;
+      if (!activeStatuses.includes(order.status))
+        return false;
       const hasProduct = order.orderItems.some((item) => item.productId === product.id);
-      if (!hasProduct) return false;
+      if (!hasProduct)
+        return false;
       const orderPickup = new Date(order.pickupPlanAt);
       const orderReturn = new Date(order.returnPlanAt);
       return pickup <= orderReturn && return_ >= orderPickup || orderPickup <= return_ && orderReturn >= pickup;
@@ -1729,7 +1739,8 @@ var useProductManagement = (options = {}) => {
     }
   }, [products, searchTerm, categoryFilter, outletFilter, availabilityFilter, statusFilter, useSearchProducts]);
   const stats = (0, import_react12.useMemo)(() => {
-    if (!enableStats) return void 0;
+    if (!enableStats)
+      return void 0;
     const productsArray = products || [];
     const totalProducts = productsArray.length;
     const activeProducts = productsArray.filter((p) => p.isActive).length;
@@ -1810,7 +1821,8 @@ var useProductManagement = (options = {}) => {
   }, []);
   const handleProductRowAction = (0, import_react12.useCallback)((action, productId) => {
     const product = products.find((p) => p.id === productId);
-    if (!product) return;
+    if (!product)
+      return;
     switch (action) {
       case "view":
         handleViewProduct(product);
@@ -1887,7 +1899,8 @@ var useProductManagement = (options = {}) => {
     }
   }, [fetchProducts]);
   const handleProductUpdatedAsync = (0, import_react12.useCallback)(async (productData) => {
-    if (!selectedProduct) return;
+    if (!selectedProduct)
+      return;
     try {
       const response = await import_utils7.productsApi.updateProduct(selectedProduct.id, productData);
       if (response.success) {
@@ -2158,7 +2171,8 @@ var useUserManagement = (options = {}) => {
     }
   }, [users, searchTerm, roleFilter, statusFilter, useSearchUsers]);
   const stats = (0, import_react14.useMemo)(() => {
-    if (!enableStats) return void 0;
+    if (!enableStats)
+      return void 0;
     const usersArray = users || [];
     const totalUsers = usersArray.length;
     const activeUsers = usersArray.filter((u) => u.isActive).length;
@@ -2202,7 +2216,8 @@ var useUserManagement = (options = {}) => {
   }, []);
   const handleUserRowAction = (0, import_react14.useCallback)((action, userId) => {
     const user = users.find((u) => u.id === userId);
-    if (!user) return;
+    if (!user)
+      return;
     switch (action) {
       case "view":
         handleViewUser(user);
@@ -2259,7 +2274,8 @@ var useUserManagement = (options = {}) => {
     }
   }, [fetchUsers]);
   const handleUserUpdatedAsync = (0, import_react14.useCallback)(async (userData) => {
-    if (!selectedUser) return;
+    if (!selectedUser)
+      return;
     try {
       const response = await import_utils8.usersApi.updateUserByPublicId(selectedUser.id, userData);
       if (response.success) {
