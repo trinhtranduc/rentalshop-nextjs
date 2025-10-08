@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd ../.. && npm install -g corepack && corepack enable && yarn install && yarn build --filter=@rentalshop/admin"
+    "buildCommand": "npm install -g corepack && corepack enable && cd ../.. && yarn install && yarn build --filter=@rentalshop/admin"
   },
   "deploy": {
     "startCommand": "cd apps/admin && yarn start",
