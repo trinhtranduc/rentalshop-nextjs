@@ -1,0 +1,31 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "yarn start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[environments.production.variables]
+NODE_ENV = "production"
+LOG_LEVEL = "warn"
+
+[environments.production.services.api]
+source = "apps/api"
+buildCommand = "cd ../.. && yarn install && yarn build --filter=@rentalshop/api"
+startCommand = "cd apps/api && yarn start"
+healthcheckPath = "/api/health"
+
+[environments.production.services.client]
+source = "apps/client"
+buildCommand = "cd ../.. && yarn install && yarn build --filter=@rentalshop/client"
+startCommand = "cd apps/client && yarn start"
+healthcheckPath = "/"
+
+[environments.production.services.admin]
+source = "apps/admin"
+buildCommand = "cd ../.. && yarn install && yarn build --filter=@rentalshop/admin"
+startCommand = "cd apps/admin && yarn start"
+healthcheckPath = "/"
