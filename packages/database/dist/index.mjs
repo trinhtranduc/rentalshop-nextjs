@@ -10,8 +10,9 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 var PrismaClient;
 var prismaInstance;
 function getPrismaClient() {
-  if (!process.env.DATABASE_URL) {
-    console.warn("\u26A0\uFE0F Prisma Client skipped (no DATABASE_URL)");
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl || dbUrl.includes("placeholder")) {
+    console.warn("\u26A0\uFE0F Prisma Client skipped (build phase)");
     return {
       $connect: () => Promise.resolve(),
       $disconnect: () => Promise.resolve(),

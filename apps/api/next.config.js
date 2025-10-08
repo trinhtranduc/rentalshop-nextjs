@@ -14,23 +14,17 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Force dynamic rendering for all routes - prevent static optimization during build
-  // This is critical for Railway deployment where DATABASE_URL is not available during build
+  // CRITICAL: Disable ALL static page generation during build
+  // Railway builds without DATABASE_URL, so Prisma Client cannot initialize
+  // All routes MUST be dynamic to prevent "Collecting page data" phase
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
   },
-  // Webpack config to externalize Prisma - prevents Prisma from being bundled
-  // This fixes the "Prisma Client did not initialize yet" error during Next.js build
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Externalize Prisma Client to prevent webpack from bundling it
-      config.externals = config.externals || [];
-      config.externals.push({
-        '@prisma/client': 'commonjs @prisma/client',
-        '.prisma/client': 'commonjs .prisma/client',
-      });
-    }
-    return config;
+  // Export only server code - skip static generation completely
+  output: 'standalone',
+  // Disable image optimization to prevent static analysis
+  images: {
+    unoptimized: true,
   },
   // CORS headers
   async headers() {
