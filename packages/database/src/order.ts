@@ -619,7 +619,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
   const totalPages = Math.ceil(total / limit);
   const page = Math.floor(offset / limit) + 1;
 
-  const transformedOrders: OrderSearchResult[] = orders.map(order => ({
+  const transformedOrders: OrderSearchResult[] = orders.map((order: any) => ({
     id: order.id,
     orderNumber: order.orderNumber,
     orderType: order.orderType as any,
