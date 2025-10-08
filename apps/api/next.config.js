@@ -14,17 +14,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // CRITICAL: Disable ALL static page generation during build
-  // Railway builds without DATABASE_URL, so Prisma Client cannot initialize
-  // All routes MUST be dynamic to prevent "Collecting page data" phase
+  // Externalize Prisma to prevent webpack bundling issues
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
   },
-  // Export only server code - skip static generation completely
-  output: 'standalone',
-  // Disable image optimization to prevent static analysis
-  images: {
-    unoptimized: true,
+  // Prevent webpack from bundling Prisma during build
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...(config.externals || []), '@prisma/client', '.prisma/client'];
+    }
+    return config;
   },
   // CORS headers
   async headers() {

@@ -160,6 +160,11 @@ Each app has its own `railway.json` that Railway uses for deployment:
 After deploying, set environment variables for each service:
 
 ### **API Service Variables:**
+
+**⚠️ CRITICAL: Set DATABASE_URL BEFORE first deploy!**
+
+Railway needs DATABASE_URL during build phase for Next.js to collect page data.
+
 ```bash
 # Database (use Railway PostgreSQL reference)
 DATABASE_URL=${{Postgres.DATABASE_URL}}
