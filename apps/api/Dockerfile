@@ -26,8 +26,9 @@ COPY apps/api/package.json ./apps/api/
 COPY apps/admin/package.json ./apps/admin/
 COPY apps/client/package.json ./apps/client/
 
-# Install ALL dependencies (needed for build)
-RUN yarn install --frozen-lockfile
+# Install ALL dependencies including devDependencies (needed for build)
+# Use --production=false to force install devDependencies (tsup, typescript, etc)
+RUN yarn install --frozen-lockfile --production=false
 
 # ===================================
 # STAGE 2: Builder
