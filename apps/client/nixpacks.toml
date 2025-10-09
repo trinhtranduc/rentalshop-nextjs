@@ -1,0 +1,19 @@
+# Railway Nixpacks Configuration for Client Service (Monorepo)
+
+[phases.setup]
+nixPkgs = ['nodejs_18']
+
+[phases.install]
+cmds = ['echo "Skipping auto-install phase"']
+
+[phases.build]
+cmds = [
+  'cd ../..',
+  'npm install',
+  'npx turbo run build --filter=@rentalshop/client',
+  'cd apps/client'
+]
+
+[start]
+cmd = 'node .next/standalone/apps/client/server.js'
+

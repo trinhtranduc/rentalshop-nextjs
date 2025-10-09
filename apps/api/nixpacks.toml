@@ -1,0 +1,23 @@
+# Railway Nixpacks Configuration for API Service (Monorepo)
+# This configures how Railway builds and deploys the API service
+
+[phases.setup]
+nixPkgs = ['nodejs_18', 'openssl']
+
+[phases.install]
+# Skip auto-install - we'll handle it in build phase
+cmds = ['echo "Skipping auto-install phase"']
+
+[phases.build]
+# Build from monorepo root with all workspace dependencies
+cmds = [
+  'cd ../..',
+  'npm install',
+  'npx prisma generate --schema=./prisma/schema.prisma',
+  'npx turbo run build --filter=@rentalshop/api',
+  'cd apps/api'
+]
+
+[start]
+cmd = 'node .next/standalone/apps/api/server.js'
+
