@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // CRITICAL for Railway deployment - reduces bundle size by 90%
-  output: 'standalone',
+  // Standalone mode disabled for Railpack deployment
+  // Railpack doesn't properly trace Prisma binaries in monorepo
+  // Trade-off: Larger bundle (~300MB) but deployment works
   
   transpilePackages: [
+    '@rentalshop/database',
     '@rentalshop/auth',
-    '@rentalshop/database', 
     '@rentalshop/middleware',
     '@rentalshop/utils',
     '@rentalshop/constants',
@@ -23,17 +24,10 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
-  experimental: {
-    outputFileTracingRoot: require('path').join(__dirname, '../../'),
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
-    // Include Prisma engine files in output - CRITICAL for standalone mode
-    outputFileTracingIncludes: {
-      '/**/*': ['../../node_modules/.prisma/client/**/*'],
-    },
-  },
   // Webpack config for Prisma in monorepo  
   webpack: (config, { isServer }) => {
     if (isServer) {
+      // Ensure Prisma Client resolves to root node_modules
       config.resolve.alias = {
         ...config.resolve.alias,
         '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
