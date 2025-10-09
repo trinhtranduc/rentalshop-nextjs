@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // CRITICAL for Railway deployment - reduces bundle size by 90%
+  output: 'standalone',
+  
   transpilePackages: [
     '@rentalshop/auth',
     '@rentalshop/database', 
@@ -21,7 +24,22 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   experimental: {
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
     serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+    // Include Prisma engine files in output
+    outputFileTracingIncludes: {
+      '/api/**/*': ['../../node_modules/.prisma/client/**/*'],
+    },
+  },
+  // Webpack config for Prisma in monorepo  
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
+      };
+    }
+    return config;
   },
   async headers() {
     // Avoid requiring TS files here; compute CORS origins directly from env

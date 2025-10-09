@@ -1,0 +1,22 @@
+# Nixpacks configuration for Railway deployment (Client App)
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "yarn"]
+
+[phases.install]
+cmds = [
+  "yarn install --frozen-lockfile"
+]
+
+[phases.build]
+cmds = [
+  # Build client app from root to ensure workspace packages are available
+  "cd apps/client && yarn build"
+]
+
+[start]
+cmd = "cd apps/client && yarn start:standalone"
+
+[variables]
+NODE_ENV = "production"
+

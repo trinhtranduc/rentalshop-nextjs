@@ -1,7 +1,7 @@
 import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { prisma } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
 import {API} from '@rentalshop/constants';
 

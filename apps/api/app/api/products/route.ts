@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { prisma } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';

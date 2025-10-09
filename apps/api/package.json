@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "next build",
-    "start": "next start",
+    "build": "SKIP_ENV_VALIDATION=true next build",
+    "build:railway": "npx prisma generate --schema=../../prisma/schema.prisma && next build",
+    "start": "next start -p 3002",
     "lint": "next lint"
   },
   "dependencies": {
