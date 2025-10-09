@@ -1,4 +1,4 @@
-import { PrismaClient } from './generated/client';
+import { PrismaClient } from '@prisma/client';
 
 // Global Prisma client instance for singleton pattern
 const globalForPrisma = globalThis as unknown as {
