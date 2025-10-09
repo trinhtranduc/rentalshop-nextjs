@@ -5,7 +5,8 @@ nixPkgs = ['nodejs_18', 'openssl']
 
 [phases.install]
 # Install from monorepo root to handle workspace dependencies
-cmds = ['cd ../.. && npm install && cd apps/api']
+# Clear npm cache first to avoid conflicts
+cmds = ['cd ../.. && npm cache clean --force && npm install && cd apps/api']
 
 [phases.build]
 # Build from root with turbo
