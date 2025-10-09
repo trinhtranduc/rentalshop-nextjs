@@ -8,7 +8,8 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npx prisma generate --schema=./prisma/schema.prisma && turbo run build --concurrency=12",
+    "postinstall": "npx prisma generate --schema=./prisma/schema.prisma",
+    "build": "turbo run build --concurrency=12",
     "dev": "turbo run dev",
     "dev:all": "turbo run dev --concurrency=20",
     "dev:client": "cd apps/client && yarn dev",
