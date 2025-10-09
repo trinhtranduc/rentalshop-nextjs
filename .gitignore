@@ -8,7 +8,7 @@ lerna-debug.log*
 
 # Package manager files
 package-lock.json
-yarn.lock
+# yarn.lock          ← MUST COMMIT for Railway deployment!
 pnpm-lock.yaml
 
 # Yarn v2
