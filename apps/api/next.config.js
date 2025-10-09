@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // CRITICAL for Railway deployment - reduces bundle size by 90%
-  output: 'standalone',
+  // Temporarily disabled standalone mode due to Prisma binary issues
+  // TODO: Re-enable after fixing Prisma binary tracing
+  // output: 'standalone',
   
   transpilePackages: [
     '@rentalshop/auth',
