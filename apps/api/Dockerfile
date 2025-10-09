@@ -47,10 +47,8 @@ COPY . .
 # Generate Prisma Client with all binary targets
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-# Install tsup globally for build (Alpine needs explicit PATH setup)
-RUN yarn global add tsup
-
 # Build packages using Turbo (respects dependency order)
+# Use yarn instead of direct tsup command to find local node_modules/.bin/tsup
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
 RUN yarn build
