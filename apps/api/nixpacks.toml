@@ -13,5 +13,5 @@ cmds = ['cd ../.. && npm cache clean --force && npm install && cd apps/api']
 cmds = ['cd ../.. && npx prisma generate --schema=./prisma/schema.prisma && npx turbo run build --filter=@rentalshop/api && cd apps/api']
 
 [start]
-cmd = 'node .next/standalone/apps/api/server.js'
+cmd = 'npm run start:standalone'
 
