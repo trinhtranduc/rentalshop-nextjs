@@ -45,6 +45,9 @@ module.exports = __toCommonJS(src_exports);
 // src/client.ts
 var globalForPrisma = globalThis;
 function getPrismaClient() {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return {};
+  }
   if (globalForPrisma.prisma) {
     return globalForPrisma.prisma;
   }

@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // CRITICAL for Railway deployment - reduces bundle size by 90%
+  output: 'standalone',
+  
+  // CRITICAL for monorepo - enables Next.js to trace workspace dependencies
+  experimental: {
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+  },
+  
   transpilePackages: [
     '@rentalshop/auth',
     '@rentalshop/database', 
@@ -21,20 +29,6 @@ const nextConfig = {
     // your project has type errors.
     // !! WARN !!
     ignoreBuildErrors: true,
-  },
-  // Performance optimizations
-  experimental: {
-    // Enable optimizations for better performance
-    optimizeCss: true,
-    optimizePackageImports: ['@rentalshop/ui', '@rentalshop/utils', '@rentalshop/hooks'],
-    // Enable modern JavaScript features for better performance
-    modern: true,
-    // Disable automatic timestamp parameters (_t) in development
-    disableOptimizedLoading: true,
-    // Disable automatic PostCSS optimizations that can add timestamps
-    disablePostcssPresetEnv: true,
-    // Disable automatic CSS optimizations that can add timestamps
-    disableOptimizedCSS: true,
   },
   
   // Disable development caching that adds timestamp parameters

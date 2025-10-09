@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useCallback } from 'react';
 import { Input } from '../../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';

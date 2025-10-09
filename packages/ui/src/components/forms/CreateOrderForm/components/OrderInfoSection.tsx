@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * OrderInfoSection - Component for order information (customer, outlet, dates, etc.)
  */

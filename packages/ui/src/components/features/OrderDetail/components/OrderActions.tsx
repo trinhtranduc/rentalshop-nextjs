@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Button, ConfirmationDialog } from '@rentalshop/ui';
 import { X, Printer, Package, RotateCcw } from 'lucide-react';
