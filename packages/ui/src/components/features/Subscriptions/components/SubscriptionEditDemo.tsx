@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Button, Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { SubscriptionEditDialog } from './SubscriptionEditDialog';

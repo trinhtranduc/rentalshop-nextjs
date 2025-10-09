@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // CRITICAL for Railway deployment - reduces bundle size by 90%
+  output: 'standalone',
+  
+  // CRITICAL for monorepo - enables Next.js to trace workspace dependencies
+  experimental: {
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+  },
+  
   transpilePackages: [
     '@rentalshop/auth',
     '@rentalshop/database', 
@@ -13,10 +22,6 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  },
-  // Externalize Prisma to prevent webpack bundling issues
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
   },
   // Prevent webpack from bundling Prisma during build
   webpack: (config, { isServer }) => {

@@ -7,6 +7,11 @@ const globalForPrisma = globalThis as unknown as {
 
 // Lazy load Prisma Client to avoid build-time issues
 function getPrismaClient(): PrismaClientType {
+  // During Next.js build phase, return a mock to prevent errors
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return {} as PrismaClientType;
+  }
+
   if (globalForPrisma.prisma) {
     return globalForPrisma.prisma;
   }

@@ -9,6 +9,9 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 // src/client.ts
 var globalForPrisma = globalThis;
 function getPrismaClient() {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return {};
+  }
   if (globalForPrisma.prisma) {
     return globalForPrisma.prisma;
   }

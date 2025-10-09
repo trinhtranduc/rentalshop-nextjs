@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * CreateOrderForm - Main refactored component using smaller components and hooks
  * 

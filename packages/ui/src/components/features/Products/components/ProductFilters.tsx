@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Input } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';

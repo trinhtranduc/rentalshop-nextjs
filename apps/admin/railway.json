@@ -1,10 +1,11 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "yarn install --frozen-lockfile && yarn build --filter=@rentalshop/admin"
   },
   "deploy": {
-    "startCommand": "cd apps/admin && yarn start",
+    "startCommand": "node .next/standalone/apps/admin/server.js",
     "healthcheckPath": "/",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",

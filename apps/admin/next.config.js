@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // CRITICAL for Railway deployment - reduces bundle size by 90%
+  output: 'standalone',
+  
+  // CRITICAL for monorepo - enables Next.js to trace workspace dependencies
+  experimental: {
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+  },
+  
   transpilePackages: [
     '@rentalshop/auth',
     '@rentalshop/database', 
@@ -43,16 +51,6 @@ const nextConfig = {
       },
     ];
   },
-  // Add this to ensure app directory works properly
-  experimental: {
-    appDir: true,
-  },
-  // Ensure proper routing
-  trailingSlash: false,
-  // Disable static optimization for development
-  ...(process.env.NODE_ENV === 'development' && {
-    staticPageGenerationTimeout: 0,
-  }),
 };
 
 module.exports = nextConfig; 
