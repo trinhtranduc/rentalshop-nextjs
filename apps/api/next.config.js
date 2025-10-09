@@ -26,9 +26,9 @@ const nextConfig = {
   experimental: {
     outputFileTracingRoot: require('path').join(__dirname, '../../'),
     serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
-    // Include Prisma engine files in output
+    // Include Prisma engine files in output - CRITICAL for standalone mode
     outputFileTracingIncludes: {
-      '/api/**/*': ['../../node_modules/.prisma/client/**/*'],
+      '/**/*': ['../../node_modules/.prisma/client/**/*'],
     },
   },
   // Webpack config for Prisma in monorepo  
