@@ -187,7 +187,8 @@ function useAuth() {
   useEffect(() => {
     const checkTokenExpiry = () => {
       const token = getAuthToken();
-      if (!token) return;
+      if (!token)
+        return;
       try {
         const parts = token.split(".");
         if (parts.length === 3) {
@@ -341,7 +342,8 @@ function useSubscriptionStatusInfo(options = {}) {
     fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
   useEffect2(() => {
-    if (!user) return;
+    if (!user)
+      return;
     const interval = setInterval(fetchSubscriptionStatus, checkInterval);
     return () => clearInterval(interval);
   }, [user, fetchSubscriptionStatus, checkInterval]);
@@ -549,7 +551,8 @@ function CurrencyProvider({
     return getCurrency(code);
   }, []);
   const convertAmount = useCallback5((amount, from, to) => {
-    if (from === to) return amount;
+    if (from === to)
+      return amount;
     const fromCurrency = getCurrency(from);
     const toCurrency = getCurrency(to);
     if (!fromCurrency || !toCurrency) {
@@ -848,7 +851,8 @@ var useCustomerManagement = (options = {}) => {
     }
   }, [customers, searchTerm, cityFilter, stateFilter, countryFilter, idTypeFilter, statusFilter, useSearchCustomers]);
   const stats = useMemo(() => {
-    if (!enableStats) return void 0;
+    if (!enableStats)
+      return void 0;
     const customersArray = customers || [];
     const totalCustomers = customersArray.length;
     const activeCustomers = customersArray.filter((c) => c.isActive).length;
@@ -906,7 +910,8 @@ var useCustomerManagement = (options = {}) => {
   }, []);
   const handleCustomerRowAction = useCallback8((action, customerId) => {
     const customer = customers.find((c) => c.id === customerId);
-    if (!customer) return;
+    if (!customer)
+      return;
     switch (action) {
       case "view":
         handleViewCustomer(customer);
@@ -979,7 +984,8 @@ var useCustomerManagement = (options = {}) => {
     }
   }, [fetchCustomers]);
   const handleCustomerUpdatedAsync = useCallback8(async (customerData) => {
-    if (!selectedCustomer) return;
+    if (!selectedCustomer)
+      return;
     try {
       const response = await customersApi.updateCustomer(selectedCustomer.id, customerData);
       if (response.success) {
@@ -1139,7 +1145,8 @@ function useOrderManagement(options = {}) {
     }
   }, [pagination.limit, useSearchOrders, updatePaginationFromResponse]);
   const fetchStats = useCallback9(async () => {
-    if (!enableStats) return;
+    if (!enableStats)
+      return;
     try {
       console.log("Fetching order stats...");
       const response = await ordersApi.getOrderStats();
@@ -1359,11 +1366,14 @@ function useProductAvailability() {
       };
     }
     const conflicts = existingOrders.filter((order) => {
-      if (order.orderType !== "RENT") return false;
+      if (order.orderType !== "RENT")
+        return false;
       const activeStatuses = ["RESERVED", "PICKUPED"];
-      if (!activeStatuses.includes(order.status)) return false;
+      if (!activeStatuses.includes(order.status))
+        return false;
       const hasProduct = order.orderItems.some((item) => item.productId === product.id);
-      if (!hasProduct) return false;
+      if (!hasProduct)
+        return false;
       const orderPickup = new Date(order.pickupPlanAt);
       const orderReturn = new Date(order.returnPlanAt);
       return pickup <= orderReturn && return_ >= orderPickup || orderPickup <= return_ && orderReturn >= pickup;
@@ -1677,7 +1687,8 @@ var useProductManagement = (options = {}) => {
     }
   }, [products, searchTerm, categoryFilter, outletFilter, availabilityFilter, statusFilter, useSearchProducts]);
   const stats = useMemo3(() => {
-    if (!enableStats) return void 0;
+    if (!enableStats)
+      return void 0;
     const productsArray = products || [];
     const totalProducts = productsArray.length;
     const activeProducts = productsArray.filter((p) => p.isActive).length;
@@ -1758,7 +1769,8 @@ var useProductManagement = (options = {}) => {
   }, []);
   const handleProductRowAction = useCallback12((action, productId) => {
     const product = products.find((p) => p.id === productId);
-    if (!product) return;
+    if (!product)
+      return;
     switch (action) {
       case "view":
         handleViewProduct(product);
@@ -1835,7 +1847,8 @@ var useProductManagement = (options = {}) => {
     }
   }, [fetchProducts]);
   const handleProductUpdatedAsync = useCallback12(async (productData) => {
-    if (!selectedProduct) return;
+    if (!selectedProduct)
+      return;
     try {
       const response = await productsApi.updateProduct(selectedProduct.id, productData);
       if (response.success) {
@@ -2106,7 +2119,8 @@ var useUserManagement = (options = {}) => {
     }
   }, [users, searchTerm, roleFilter, statusFilter, useSearchUsers]);
   const stats = useMemo4(() => {
-    if (!enableStats) return void 0;
+    if (!enableStats)
+      return void 0;
     const usersArray = users || [];
     const totalUsers = usersArray.length;
     const activeUsers = usersArray.filter((u) => u.isActive).length;
@@ -2150,7 +2164,8 @@ var useUserManagement = (options = {}) => {
   }, []);
   const handleUserRowAction = useCallback14((action, userId) => {
     const user = users.find((u) => u.id === userId);
-    if (!user) return;
+    if (!user)
+      return;
     switch (action) {
       case "view":
         handleViewUser(user);
@@ -2207,7 +2222,8 @@ var useUserManagement = (options = {}) => {
     }
   }, [fetchUsers]);
   const handleUserUpdatedAsync = useCallback14(async (userData) => {
-    if (!selectedUser) return;
+    if (!selectedUser)
+      return;
     try {
       const response = await usersApi.updateUserByPublicId(selectedUser.id, userData);
       if (response.success) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { z } from 'zod';
-import { db } from '@rentalshop/database';
+import { prisma } from '@rentalshop/database';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse } from '@rentalshop/utils';
 import { handleApiError } from '@rentalshop/utils';
 

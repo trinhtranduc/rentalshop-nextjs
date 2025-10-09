@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { prisma } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { planCreateSchema, handleApiError } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';

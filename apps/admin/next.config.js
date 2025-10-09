@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // CRITICAL for Railway deployment - reduces bundle size by 90%
+  output: 'standalone',
+  
   transpilePackages: [
     '@rentalshop/auth',
     '@rentalshop/database', 
