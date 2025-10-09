@@ -698,6 +698,22 @@
   dependencies:
     "@radix-ui/react-slot" "1.2.3"
 
+"@radix-ui/react-radio-group@^1.2.2":
+  version "1.3.8"
+  resolved "https://registry.yarnpkg.com/@radix-ui/react-radio-group/-/react-radio-group-1.3.8.tgz#93f102b5b948d602c2f2adb1bc5c347cbaf64bd9"
+  integrity sha512-VBKYIYImA5zsxACdisNQ3BjCBfmbGH3kQlnFVqlWU4tXwjy7cGX8ta80BcrO+WJXIn5iBylEH3K6ZTlee//lgQ==
+  dependencies:
+    "@radix-ui/primitive" "1.1.3"
+    "@radix-ui/react-compose-refs" "1.1.2"
+    "@radix-ui/react-context" "1.1.2"
+    "@radix-ui/react-direction" "1.1.1"
+    "@radix-ui/react-presence" "1.1.5"
+    "@radix-ui/react-primitive" "2.1.3"
+    "@radix-ui/react-roving-focus" "1.1.11"
+    "@radix-ui/react-use-controllable-state" "1.2.2"
+    "@radix-ui/react-use-previous" "1.1.1"
+    "@radix-ui/react-use-size" "1.1.1"
+
 "@radix-ui/react-roving-focus@1.1.11":
   version "1.1.11"
   resolved "https://registry.npmjs.org/@radix-ui/react-roving-focus/-/react-roving-focus-1.1.11.tgz"
@@ -854,9 +870,6 @@
 
 "@rentalshop/database@file:packages/database":
   version "1.0.0"
-  dependencies:
-    "@prisma/client" "6.16.2"
-    prisma "6.16.2"
 
 "@rentalshop/errors@file:packages/errors":
   version "1.0.0"
@@ -864,32 +877,35 @@
 "@rentalshop/hooks@file:packages/hooks":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-5f3564cc-1a9e-4a36-a18f-5e29f833b663-1760010837250/node_modules/@rentalshop/constants"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-5f3564cc-1a9e-4a36-a18f-5e29f833b663-1760010837250/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-5f3564cc-1a9e-4a36-a18f-5e29f833b663-1760010837250/node_modules/@rentalshop/utils"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-65937f38-ef36-4c92-98a1-8d975393c078-1760017393666/node_modules/@rentalshop/constants"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-65937f38-ef36-4c92-98a1-8d975393c078-1760017393666/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-65937f38-ef36-4c92-98a1-8d975393c078-1760017393666/node_modules/@rentalshop/utils"
 
 "@rentalshop/middleware@file:packages/middleware":
   version "1.0.0"
   dependencies:
-    "@rentalshop/auth" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-52e2e55a-1dc4-40d4-a197-891029c91472-1760010837252/node_modules/@rentalshop/auth"
-    "@rentalshop/database" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-52e2e55a-1dc4-40d4-a197-891029c91472-1760010837252/node_modules/@rentalshop/database"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-52e2e55a-1dc4-40d4-a197-891029c91472-1760010837252/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-52e2e55a-1dc4-40d4-a197-891029c91472-1760010837252/node_modules/@rentalshop/utils"
+    "@rentalshop/auth" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-000f194e-06fb-4054-a973-668d4eeabaf4-1760017393668/node_modules/@rentalshop/auth"
+    "@rentalshop/database" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-000f194e-06fb-4054-a973-668d4eeabaf4-1760017393668/node_modules/@rentalshop/database"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-000f194e-06fb-4054-a973-668d4eeabaf4-1760017393668/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-000f194e-06fb-4054-a973-668d4eeabaf4-1760017393668/node_modules/@rentalshop/utils"
 
 "@rentalshop/types@file:packages/types":
   version "1.0.0"
+  dependencies:
+    "@rentalshop/constants" "*"
 
 "@rentalshop/ui@file:packages/ui":
   version "1.0.0"
   dependencies:
     "@radix-ui/react-dialog" "^1.1.2"
+    "@radix-ui/react-radio-group" "^1.2.2"
     "@radix-ui/react-select" "^2.2.5"
     "@radix-ui/react-slot" "^1.1.2"
     "@radix-ui/react-tabs" "^1.1.2"
     "@radix-ui/react-toast" "^1.2.5"
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-f72e1ea9-dc13-454e-857b-244aba56888e-1760010837252/node_modules/@rentalshop/constants"
-    "@rentalshop/hooks" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-f72e1ea9-dc13-454e-857b-244aba56888e-1760010837252/node_modules/@rentalshop/hooks"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-f72e1ea9-dc13-454e-857b-244aba56888e-1760010837252/node_modules/@rentalshop/types"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-e5b5886d-99a5-4e32-bb4a-625e994221d0-1760017393667/node_modules/@rentalshop/constants"
+    "@rentalshop/hooks" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-e5b5886d-99a5-4e32-bb4a-625e994221d0-1760017393667/node_modules/@rentalshop/hooks"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-e5b5886d-99a5-4e32-bb4a-625e994221d0-1760017393667/node_modules/@rentalshop/types"
     class-variance-authority "^0.7.1"
     clsx "^2.1.1"
     lucide-react "^0.344.0"
@@ -902,7 +918,7 @@
 "@rentalshop/utils@file:packages/utils":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-131ab853-c820-4db5-a7b3-27997acfdaf7-1760010837250/node_modules/@rentalshop/constants"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-457f1b0d-2e59-40ed-be66-7562dd3a9785-1760017393665/node_modules/@rentalshop/constants"
     date-fns "^2.30.0"
     stripe "^14.0.0"
     zod "^3.22.0"
