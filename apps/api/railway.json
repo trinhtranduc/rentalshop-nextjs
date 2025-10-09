@@ -5,7 +5,7 @@
     "buildCommand": "npx prisma generate --schema=./prisma/schema.prisma && yarn workspace @rentalshop/api build --force"
   },
   "deploy": {
-    "startCommand": "cd apps/api && NODE_ENV=production node .next/standalone/apps/api/server.js",
+    "startCommand": "cd apps/api && yarn start",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
