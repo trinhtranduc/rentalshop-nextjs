@@ -7,11 +7,9 @@ nixPkgs = ['nodejs_18']
 cmds = ['echo "Skipping auto-install phase"']
 
 [phases.build]
+# All commands run in single RUN to maintain working directory
 cmds = [
-  'cd ../..',
-  'npm install',
-  'npx turbo run build --filter=@rentalshop/admin',
-  'cd apps/admin'
+  'cd ../.. && npm install && npx turbo run build --filter=@rentalshop/admin && cd apps/admin'
 ]
 
 [start]
