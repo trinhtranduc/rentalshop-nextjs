@@ -28,6 +28,7 @@ COPY apps/client/package.json ./apps/client/
 
 # Install ALL dependencies including devDependencies (needed for build)
 # Use --production=false to force install devDependencies (tsup, typescript, etc)
+# IMPORTANT: Must install devDependencies for build stage (v2)
 RUN yarn install --frozen-lockfile --production=false
 
 # ===================================
