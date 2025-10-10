@@ -18,9 +18,9 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  default: () => src_default,
+var index_exports = {};
+__export(index_exports, {
+  default: () => index_default,
   env: () => env,
   getCorsOrigins: () => getCorsOrigins,
   getDatabaseUrl: () => getDatabaseUrl,
@@ -29,7 +29,7 @@ __export(src_exports, {
   isTest: () => isTest,
   printEnvironmentInfo: () => printEnvironmentInfo
 });
-module.exports = __toCommonJS(src_exports);
+module.exports = __toCommonJS(index_exports);
 var import_zod = require("zod");
 var envSchema = import_zod.z.object({
   // Node Environment
@@ -149,7 +149,7 @@ function printEnvironmentInfo() {
 if (isDevelopment() && env.ENABLE_DEBUG_LOGS) {
   printEnvironmentInfo();
 }
-var src_default = env;
+var index_default = env;
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   env,

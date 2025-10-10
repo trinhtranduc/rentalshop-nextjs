@@ -118,9 +118,9 @@ function printEnvironmentInfo() {
 if (isDevelopment() && env.ENABLE_DEBUG_LOGS) {
   printEnvironmentInfo();
 }
-var src_default = env;
+var index_default = env;
 export {
-  src_default as default,
+  index_default as default,
   env,
   getCorsOrigins,
   getDatabaseUrl,

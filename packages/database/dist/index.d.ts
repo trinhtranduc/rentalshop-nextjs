@@ -18,9 +18,9 @@ declare function createActivity(data: {
     subscriptionId: number;
     type: string;
     description: string;
-    reason: string | null;
     metadata: string | null;
     performedBy: number | null;
+    reason: string | null;
 }>;
 /**
  * Get activities for a subscription
@@ -43,8 +43,8 @@ declare function getActivitiesBySubscriptionId(subscriptionId: number, options?:
         subscriptionId: number;
         type: string;
         description: string;
-        reason: string | null;
         performedBy: number | null;
+        reason: string | null;
     }[];
     total: number;
 }>;
@@ -198,18 +198,18 @@ declare function findById$1(id: number): Promise<({
     description: string | null;
     address: string | null;
     city: string | null;
-    country: string | null;
     state: string | null;
     zipCode: string | null;
+    country: string | null;
     businessType: string | null;
-    pricingType: string | null;
     taxId: string | null;
     website: string | null;
-    pricingConfig: string | null;
     planId: number | null;
     subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
+    pricingConfig: string | null;
+    pricingType: string | null;
 }) | null>;
 /**
  * Find merchant by email
@@ -264,18 +264,18 @@ declare function findByEmail(email: string): Promise<({
     description: string | null;
     address: string | null;
     city: string | null;
-    country: string | null;
     state: string | null;
     zipCode: string | null;
+    country: string | null;
     businessType: string | null;
-    pricingType: string | null;
     taxId: string | null;
     website: string | null;
-    pricingConfig: string | null;
     planId: number | null;
     subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
+    pricingConfig: string | null;
+    pricingType: string | null;
 }) | null>;
 /**
  * Search merchants with filtering and pagination
@@ -334,18 +334,18 @@ declare function create(data: MerchantCreateData): Promise<{
     description: string | null;
     address: string | null;
     city: string | null;
-    country: string | null;
     state: string | null;
     zipCode: string | null;
+    country: string | null;
     businessType: string | null;
-    pricingType: string | null;
     taxId: string | null;
     website: string | null;
-    pricingConfig: string | null;
     planId: number | null;
     subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
+    pricingConfig: string | null;
+    pricingType: string | null;
 }>;
 /**
  * Update merchant
@@ -400,18 +400,18 @@ declare function update(id: number, data: MerchantUpdateData): Promise<{
     description: string | null;
     address: string | null;
     city: string | null;
-    country: string | null;
     state: string | null;
     zipCode: string | null;
+    country: string | null;
     businessType: string | null;
-    pricingType: string | null;
     taxId: string | null;
     website: string | null;
-    pricingConfig: string | null;
     planId: number | null;
     subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
+    pricingConfig: string | null;
+    pricingType: string | null;
 }>;
 /**
  * Delete merchant (soft delete)
@@ -427,18 +427,18 @@ declare function remove(id: number): Promise<{
     description: string | null;
     address: string | null;
     city: string | null;
-    country: string | null;
     state: string | null;
     zipCode: string | null;
+    country: string | null;
     businessType: string | null;
-    pricingType: string | null;
     taxId: string | null;
     website: string | null;
-    pricingConfig: string | null;
     planId: number | null;
     subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
+    pricingConfig: string | null;
+    pricingType: string | null;
 }>;
 /**
  * Get merchant statistics
@@ -1254,17 +1254,17 @@ declare const db: {
                 description: string | null;
                 address: string | null;
                 city: string | null;
-                country: string | null;
                 state: string | null;
                 zipCode: string | null;
+                country: string | null;
                 businessType: string | null;
-                pricingType: string | null;
                 taxId: string | null;
                 website: string | null;
                 planId: number | null;
                 subscriptionStatus: string;
                 totalRevenue: number;
                 lastActiveAt: Date | null;
+                pricingType: string | null;
             } | null;
             outlet: {
                 name: string;
@@ -1354,9 +1354,9 @@ declare const db: {
                 description: string | null;
                 address: string | null;
                 city: string | null;
-                country: string | null;
                 state: string | null;
                 zipCode: string | null;
+                country: string | null;
                 businessType: string | null;
                 taxId: string | null;
                 website: string | null;
@@ -1493,9 +1493,9 @@ declare const db: {
             notes: string | null;
             address: string | null;
             city: string | null;
-            country: string | null;
             state: string | null;
             zipCode: string | null;
+            country: string | null;
             dateOfBirth: Date | null;
             idNumber: string | null;
             idType: string | null;
@@ -1518,9 +1518,9 @@ declare const db: {
             notes: string | null;
             address: string | null;
             city: string | null;
-            country: string | null;
             state: string | null;
             zipCode: string | null;
+            country: string | null;
             dateOfBirth: Date | null;
             idNumber: string | null;
             idType: string | null;
@@ -1543,9 +1543,9 @@ declare const db: {
             notes: string | null;
             address: string | null;
             city: string | null;
-            country: string | null;
             state: string | null;
             zipCode: string | null;
+            country: string | null;
             dateOfBirth: Date | null;
             idNumber: string | null;
             idType: string | null;
@@ -1572,9 +1572,9 @@ declare const db: {
                 notes: string | null;
                 address: string | null;
                 city: string | null;
-                country: string | null;
                 state: string | null;
                 zipCode: string | null;
+                country: string | null;
                 dateOfBirth: Date | null;
                 idNumber: string | null;
                 idType: string | null;
@@ -1827,28 +1827,6 @@ declare const db: {
                 lastName: string;
                 phone: string;
             } | null;
-            createdBy: {
-                id: number;
-                firstName: string;
-                lastName: string;
-            };
-            orderItems: ({
-                product: {
-                    name: string;
-                    id: number;
-                    barcode: string | null;
-                };
-            } & {
-                id: number;
-                notes: string | null;
-                orderId: number;
-                deposit: number;
-                productId: number;
-                quantity: number;
-                unitPrice: number;
-                totalPrice: number;
-                rentalDays: number | null;
-            })[];
             payments: {
                 id: number;
                 createdAt: Date;
@@ -1871,6 +1849,28 @@ declare const db: {
                 processedBy: string | null;
                 orderId: number | null;
             }[];
+            createdBy: {
+                id: number;
+                firstName: string;
+                lastName: string;
+            };
+            orderItems: ({
+                product: {
+                    name: string;
+                    id: number;
+                    barcode: string | null;
+                };
+            } & {
+                id: number;
+                notes: string | null;
+                orderId: number;
+                deposit: number;
+                productId: number;
+                quantity: number;
+                unitPrice: number;
+                totalPrice: number;
+                rentalDays: number | null;
+            })[];
         } & {
             id: number;
             createdAt: Date;
@@ -1919,28 +1919,6 @@ declare const db: {
                 lastName: string;
                 phone: string;
             } | null;
-            createdBy: {
-                id: number;
-                firstName: string;
-                lastName: string;
-            };
-            orderItems: ({
-                product: {
-                    name: string;
-                    id: number;
-                    barcode: string | null;
-                };
-            } & {
-                id: number;
-                notes: string | null;
-                orderId: number;
-                deposit: number;
-                productId: number;
-                quantity: number;
-                unitPrice: number;
-                totalPrice: number;
-                rentalDays: number | null;
-            })[];
             payments: {
                 id: number;
                 createdAt: Date;
@@ -1963,6 +1941,28 @@ declare const db: {
                 processedBy: string | null;
                 orderId: number | null;
             }[];
+            createdBy: {
+                id: number;
+                firstName: string;
+                lastName: string;
+            };
+            orderItems: ({
+                product: {
+                    name: string;
+                    id: number;
+                    barcode: string | null;
+                };
+            } & {
+                id: number;
+                notes: string | null;
+                orderId: number;
+                deposit: number;
+                productId: number;
+                quantity: number;
+                unitPrice: number;
+                totalPrice: number;
+                rentalDays: number | null;
+            })[];
         } & {
             id: number;
             createdAt: Date;
@@ -2006,28 +2006,6 @@ declare const db: {
                 lastName: string;
                 phone: string;
             } | null;
-            createdBy: {
-                id: number;
-                firstName: string;
-                lastName: string;
-            };
-            orderItems: ({
-                product: {
-                    name: string;
-                    id: number;
-                    barcode: string | null;
-                };
-            } & {
-                id: number;
-                notes: string | null;
-                orderId: number;
-                deposit: number;
-                productId: number;
-                quantity: number;
-                unitPrice: number;
-                totalPrice: number;
-                rentalDays: number | null;
-            })[];
             payments: {
                 id: number;
                 createdAt: Date;
@@ -2050,6 +2028,28 @@ declare const db: {
                 processedBy: string | null;
                 orderId: number | null;
             }[];
+            createdBy: {
+                id: number;
+                firstName: string;
+                lastName: string;
+            };
+            orderItems: ({
+                product: {
+                    name: string;
+                    id: number;
+                    barcode: string | null;
+                };
+            } & {
+                id: number;
+                notes: string | null;
+                orderId: number;
+                deposit: number;
+                productId: number;
+                quantity: number;
+                unitPrice: number;
+                totalPrice: number;
+                rentalDays: number | null;
+            })[];
         } & {
             id: number;
             createdAt: Date;
@@ -2143,8 +2143,8 @@ declare const db: {
                     phone: string;
                 } | null;
                 _count: {
-                    orderItems: number;
                     payments: number;
+                    orderItems: number;
                 };
                 createdBy: {
                     id: number;
@@ -2396,11 +2396,11 @@ declare const db: {
             merchantId: number;
             description: string | null;
             address: string | null;
-            isDefault: boolean;
             city: string | null;
-            country: string | null;
             state: string | null;
             zipCode: string | null;
+            country: string | null;
+            isDefault: boolean;
         }) | null>;
         create: (data: any) => Promise<{
             merchant: {
@@ -2417,11 +2417,11 @@ declare const db: {
             merchantId: number;
             description: string | null;
             address: string | null;
-            isDefault: boolean;
             city: string | null;
-            country: string | null;
             state: string | null;
             zipCode: string | null;
+            country: string | null;
+            isDefault: boolean;
         }>;
         update: (id: number, data: any) => Promise<{
             merchant: {
@@ -2438,11 +2438,11 @@ declare const db: {
             merchantId: number;
             description: string | null;
             address: string | null;
-            isDefault: boolean;
             city: string | null;
-            country: string | null;
             state: string | null;
             zipCode: string | null;
+            country: string | null;
+            isDefault: boolean;
         }>;
         findFirst: (where: any) => Promise<({
             merchant: {
@@ -2464,11 +2464,11 @@ declare const db: {
             merchantId: number;
             description: string | null;
             address: string | null;
-            isDefault: boolean;
             city: string | null;
-            country: string | null;
             state: string | null;
             zipCode: string | null;
+            country: string | null;
+            isDefault: boolean;
         }) | null>;
         getStats: (options: any) => Promise<number>;
         updateMany: (where: any, data: any) => Promise<_prisma_client.Prisma.BatchPayload>;
@@ -2492,11 +2492,11 @@ declare const db: {
                 merchantId: number;
                 description: string | null;
                 address: string | null;
-                isDefault: boolean;
                 city: string | null;
-                country: string | null;
                 state: string | null;
                 zipCode: string | null;
+                country: string | null;
+                isDefault: boolean;
             })[];
             total: number;
             page: any;
