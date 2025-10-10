@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, db } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -31,31 +31,16 @@ export async function GET(
       const offset = parseInt(searchParams.get('offset') || '0');
 
       // Get payments for this subscription from Payment table
-      const payments = await prisma.payment.findMany({
-        where: {
-          subscriptionId: subscriptionId
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: limit,
-        skip: offset
-      });
-
-      const total = await prisma.payment.count({
-        where: {
-          subscriptionId: subscriptionId
-        }
-      });
+      const paymentsData = await db.payments.findBySubscriptionId(subscriptionId, { limit });
 
       return NextResponse.json({
         success: true,
-        data: payments,
+        data: paymentsData,
         pagination: {
-          total,
+          total: paymentsData.length,
           limit,
           offset,
-          hasMore: offset + limit < total
+          hasMore: paymentsData.length === limit
         }
       });
     } catch (error) {
