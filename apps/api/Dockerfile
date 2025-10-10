@@ -27,9 +27,10 @@ COPY apps/admin/package.json ./apps/admin/
 COPY apps/client/package.json ./apps/client/
 
 # Install ALL dependencies including devDependencies (needed for build)
-# Use --production=false to force install devDependencies (tsup, typescript, etc)
-# IMPORTANT: Must install devDependencies for build stage (v2)
-RUN yarn install --frozen-lockfile --production=false
+# Set NODE_ENV=development to ensure workspace devDependencies are installed
+# This includes tsup, typescript, etc. needed for package builds
+ENV NODE_ENV=development
+RUN yarn install --frozen-lockfile
 
 # ===================================
 # STAGE 2: Builder
