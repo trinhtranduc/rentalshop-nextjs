@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
