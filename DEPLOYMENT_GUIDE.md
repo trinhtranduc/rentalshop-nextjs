@@ -1,4 +1,6 @@
-# 🚀 Deployment Guide - Deploy to Railway
+# 🚀 Deployment Guide - Railway
+
+Complete guide for deploying the Rental Shop Next.js monorepo to Railway.
 
 ## 📋 **Prerequisites**
 
@@ -6,800 +8,448 @@ Before deploying, make sure you have:
 
 - ✅ Railway account created (https://railway.app)
 - ✅ GitHub repository pushed
-- ✅ Cloudinary account setup with upload preset (Unsigned mode!)
+- ✅ Cloudinary account setup (optional - for image uploads)
 - ✅ Local build successful (`yarn build`)
 
-## 🎯 **Recommended: Railway Deployment**
+## 🎯 **Why Railway?**
 
-**For full deployment guide, see [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md)**
-
-### **Why Railway?**
-
-| Feature | Railway | Vercel |
-|---------|---------|--------|
+| Feature | Railway | Other Platforms |
+|---------|---------|----------------|
 | **Database** | ✅ Built-in PostgreSQL | ❌ Need external ($25/mo) |
-| **Backend** | ✅ Full support | ⚠️ Serverless only |
+| **Backend** | ✅ Full Node.js support | ⚠️ Limited or serverless only |
 | **Storage** | ✅ Persistent volumes | ❌ Need external |
+| **Monorepo** | ✅ Native support | ⚠️ Complex setup |
 | **Cost** | **$5-20/month** | $45+/month |
+| **Setup** | ⚠️ 15 minutes | 1+ hours |
 
-**Railway is better for full-stack apps with database!** 🚀
+**Railway is perfect for full-stack monorepos with database!** 🚀
 
 ---
 
 ## 🚂 **Quick Railway Deploy**
 
+### **Step 1: Install Railway CLI**
+
 ```bash
-# 1. Install Railway CLI
-npm i -g @railway/cli
+npm install -g @railway/cli
+```
 
-# 2. Login
+### **Step 2: Login**
+
+```bash
 railway login
+```
 
-# 3. Create project
+### **Step 3: Create Project**
+
+**Option A: From CLI**
+
+```bash
+# In your project directory
 railway init
 
-# 4. Add PostgreSQL
+# Select "Create new project"
+# Choose your workspace
+```
+
+**Option B: From Dashboard**
+
+1. Go to https://railway.app/dashboard
+2. Click **"New Project"**
+3. Choose **"Empty Project"**
+4. Name it (e.g., "rentalshop-nextjs")
+
+### **Step 4: Connect GitHub Repository**
+
+1. In Railway Dashboard, click your project
+2. Click **"New"** → **"GitHub Repo"**
+3. Select your repository
+4. Railway will detect the monorepo structure automatically
+
+### **Step 5: Add PostgreSQL Database**
+
+```bash
+# Via CLI
 railway add postgresql
 
-# 5. Deploy services (Railway auto-detects monorepo!)
-# Just push to GitHub and Railway will deploy automatically
+# Or via Dashboard:
+# Click "New" → "Database" → "Add PostgreSQL"
 ```
 
-**See [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) for detailed step-by-step guide.**
+### **Step 6: Configure Services**
 
----
+Railway will auto-detect your services from Dockerfiles and `railway.json` files:
 
-## ⚠️ **Legacy: Vercel Deployment (Not Recommended)**
+- ✅ **apis** - Backend API (port 3002)
+- ✅ **admin** - Admin Dashboard (port 3001)
+- ✅ **client** - Client App (port 3000)
+- ✅ **postgres** - PostgreSQL Database
 
-**Note: Vercel deployment still works but requires external database (Supabase) and costs more.**
+### **Step 7: Set Environment Variables**
 
-### **Prerequisites for Vercel:**
-
-- ✅ Supabase database created & migrated
-- ✅ Cloudinary account setup
-- ✅ Vercel CLI installed
-
-## 🎯 **Expert Strategy (Simplified)**
-
-### **🔍 Tại Sao Deploy 3 Projects Riêng Biệt?**
-
-**Vercel Monorepo Deployment Options:**
-
-| Approach | Complexity | Flexibility | Recommended |
-|----------|-----------|-------------|-------------|
-| **Separate Projects** (đang dùng) | Medium | ⭐⭐⭐⭐⭐ | ✅ **YES** |
-| **Single Monorepo Project** | High | ⭐⭐ | ❌ No |
-
-### **💡 Lý Do Chọn Separate Projects:**
-
-**✅ Advantages:**
-1. **Independent Domains:**
-   - `api.yourdomain.com`
-   - `yourdomain.com` (client)
-   - `admin.yourdomain.com`
-
-2. **Isolated Deployments:**
-   - Update API không ảnh hưởng Client/Admin
-   - Rollback từng app riêng biệt
-   - Deploy schedule linh hoạt
-
-3. **Better Scaling:**
-   - Scale API độc lập (nhiều traffic hơn)
-   - Client/Admin ít traffic hơn
-   - Optimize từng app riêng
-
-4. **Security:**
-   - API có env vars riêng (DATABASE_URL, secrets)
-   - Client/Admin chỉ có public env vars
-   - Isolated failures
-
-5. **Team Workflow:**
-   - Backend team deploy API
-   - Frontend team deploy Client/Admin
-   - Không conflict
-
-**❌ Tradeoff:**
-- Phải deploy 3 lần (nhưng có script `deploy-all.sh`)
-- Set env vars 3 lần (nhưng copy-paste nhanh)
-
-### **🏢 Industry Examples:**
-
-- **Netflix:** 40+ separate Vercel projects cho monorepo
-- **Uber:** Separate projects cho web, admin, driver apps
-- **Airbnb:** Separate deployments cho mỗi app
-- **Vercel Official:** Khuyên dùng separate projects
-
-### **📦 Monorepo Deployment Approach:**
-
-```
-┌─────────────────────────────────────────┐
-│  LOCAL: yarn dev:all (không đổi)        │
-│  ├── packages/*/src/ (source code)      │
-│  ├── Hot reload ✅                       │
-│  └── SQLite database ✅                  │
-│                                          │
-│  PRODUCTION: 3 Vercel Projects          │
-│  ├── rentalshop-api ✅                   │
-│  ├── rentalshop-client ✅                │
-│  ├── rentalshop-admin ✅                 │
-│  │                                       │
-│  ├── packages/*/dist/ (pre-built) ✅     │
-│  ├── Apps build only ✅                  │
-│  └── PostgreSQL (auto-convert) ✅        │
-└─────────────────────────────────────────┘
-```
-
-**Why This Works:**
-- ✅ **Local dev không ảnh hưởng** - `yarn dev:all` vẫn dùng source code
-- ✅ **Vercel đơn giản** - chỉ build Next.js apps, không build packages
-- ✅ **Nhanh & ổn định** - no npm/rollup errors
-- ✅ **Industry standard** - Netflix, Airbnb dùng approach này
-- ✅ **Scalable** - easy to add more apps later
-
-## 🗄️ **Database Strategy**
-
-**Local Development:**
-- ✅ SQLite (`file:./prisma/dev.db`)
-- ✅ `yarn dev:all` dùng SQLite
-- ✅ Fast, no setup needed
-
-**Production (Vercel):**
-- ✅ PostgreSQL (Supabase)
-- ✅ Auto-converted trong build command
-- ✅ Scalable, production-ready
-
-**Auto-Conversion:**
-- Build command tự động convert schema: `sqlite` → `postgresql`
-- Generate Prisma Client cho PostgreSQL
-- Build Next.js apps
-- Deploy!
-
----
-
-## 📦 **Step 0: Commit Pre-Built Packages (1 lần)**
-
-**Note:** Packages đã được build (`yarn build`) và staged. Chỉ cần commit:
+**Automated Setup (Recommended):**
 
 ```bash
-cd /Users/mac/Source-Code/rentalshop-nextjs
-
-# Commit packages/dist vào Git
-git add .
-git commit -m "feat: add pre-built packages for Vercel deployment"
-git push origin dev
+# Run the automated setup script
+./scripts/setup-railway-env.sh
 ```
 
-**Giải thích:**
-- Packages `dist/` cần có trong Git để Vercel deploy
-- Không ảnh hưởng local development
-- Next.js vẫn dùng source code khi dev
+This script will:
+1. Generate secure secrets (JWT_SECRET, NEXTAUTH_SECRET)
+2. Set all environment variables for each service
+3. Push Prisma schema to Railway database
+4. Seed database with initial data
 
----
+**Manual Setup:**
 
-## ⚡ **Quick Deploy (30 phút)**
+See [RAILWAY_ENV_SETUP.md](./RAILWAY_ENV_SETUP.md) for detailed manual setup instructions.
 
-### Step 1: Deploy API Server (5 phút)
+### **Step 8: Deploy**
 
 ```bash
-cd /Users/mac/Source-Code/rentalshop-nextjs/apps/api
-vercel --prod
+# Push to GitHub to trigger deployment
+git push
+
+# Or deploy directly via CLI
+railway up
 ```
 
-**When prompted:**
-```
-? Set up and deploy? → Y
-? Which scope? → trinhduc20-gmailcoms-projects
-? Link to existing project? → N
-? Project name? → rentalshop-api
-? In which directory? → ./
-? Want to modify settings? → N
-? Connect Git repository? → Y (auto-deploy on push)
-```
+### **Step 9: Monitor Deployment**
 
-**Save the deployment URL!**
-```
-✅ Deployed: https://rentalshop-api.vercel.app
+```bash
+# View logs
+railway logs --service apis
+
+# Check status
+railway status
 ```
 
 ---
 
-### Step 2: Deploy Client App (5 phút)
+## 📊 **Service Configuration**
 
-```bash
-cd /Users/mac/Source-Code/rentalshop-nextjs/apps/client
-vercel --prod
+### **API Service (apps/api)**
+
+**Environment Variables:**
+
+```env
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+NODE_ENV=production
+JWT_SECRET=your-super-secret-jwt-key-32-chars-min
+JWT_EXPIRES_IN=1d
+NEXTAUTH_SECRET=your-nextauth-secret-32-chars-min
+NEXTAUTH_URL=https://apis-development.up.railway.app
+API_URL=https://apis-development.up.railway.app
+CLIENT_URL=https://client-development.up.railway.app
+ADMIN_URL=https://admin-development.up.railway.app
+CORS_ORIGINS=https://client-development.up.railway.app,https://admin-development.up.railway.app
 ```
 
-**When prompted:**
-```
-? Set up and deploy? → Y
-? Which scope? → trinhduc20-gmailcoms-projects
-? Link to existing project? → N
-? Project name? → rentalshop-client
-? In which directory? → ./
-? Connect Git? → Y
+**Build Configuration:**
+- Dockerfile: `apps/api/Dockerfile`
+- Start Command: `cd apps/api && yarn start`
+- Health Check: `/api/health`
+
+### **Admin Service (apps/admin)**
+
+**Environment Variables:**
+
+```env
+NODE_ENV=production
+NEXT_PUBLIC_API_URL=https://apis-development.up.railway.app
+NEXTAUTH_SECRET=same-as-api-service
+NEXTAUTH_URL=https://admin-development.up.railway.app
 ```
 
-**Save the deployment URL!**
+**Build Configuration:**
+- Dockerfile: `apps/admin/Dockerfile`
+- Start Command: `cd apps/admin && yarn start`
+- Health Check: `/`
+
+### **Client Service (apps/client)**
+
+**Environment Variables:**
+
+```env
+NODE_ENV=production
+NEXT_PUBLIC_API_URL=https://apis-development.up.railway.app
+NEXTAUTH_SECRET=same-as-api-service
+NEXTAUTH_URL=https://client-development.up.railway.app
 ```
-✅ Deployed: https://rentalshop-client.vercel.app
-```
+
+**Build Configuration:**
+- Dockerfile: `apps/client/Dockerfile`
+- Start Command: `cd apps/client && yarn start`
+- Health Check: `/`
 
 ---
 
-### Step 3: Deploy Admin Dashboard (5 phút)
+## 🔑 **Default Login Credentials**
 
-```bash
-cd /Users/mac/Source-Code/rentalshop-nextjs/apps/admin
-vercel --prod
-```
+After database seeding:
 
-**When prompted:**
-```
-? Set up and deploy? → Y
-? Which scope? → trinhduc20-gmailcoms-projects  
-? Link to existing project? → N
-? Project name? → rentalshop-admin
-? In which directory? → ./
-? Connect Git? → Y
-```
+### **👑 Super Admin (System-wide Access)**
+- Email: `admin@rentalshop.com`
+- Password: `admin123`
+- **Access**: Full system access to all merchants and outlets
 
-**Save the deployment URL!**
-```
-✅ Deployed: https://rentalshop-admin.vercel.app
-```
+### **🏢 Merchant Accounts (Business Owners)**
+- Merchant 1: `merchant1@example.com` / `merchant123`
+- Merchant 2: `merchant2@example.com` / `merchant123`
+- **Access**: Organization-wide access within their merchant
 
----
+### **🏪 Outlet Admins (Outlet Managers)**
+- Outlet 1: `admin.outlet1@example.com` / `admin123`
+- Outlet 2: `admin.outlet2@example.com` / `admin123`
+- Outlet 3: `admin.outlet3@example.com` / `admin123`
+- Outlet 4: `admin.outlet4@example.com` / `admin123`
+- **Access**: Full access to their assigned outlet
 
-## ⚙️ **Step 4: Set Environment Variables (10 phút)**
-
-**Important:** Set environment variables cho **TẤT CẢ 3 projects** trước khi redeploy!
-
-### API Server (rentalshop-api)
-
-**Vercel Dashboard → rentalshop-api → Settings → Environment Variables**
-
-Click **"Add"** cho từng biến (chọn **Production**):
-
-   ```bash
-# Database (Supabase)
-DATABASE_URL
-postgresql://postgres:Anhiuem123@@db.yqbjnaitiptdagpjsndx.supabase.co:5432/postgres
-
-# Authentication (Generated secrets)
-JWT_SECRET
-c078b5563dacc05139fc46d09337e42a5e99af2d95cd9a2a555afc0e66c01d62
-
-JWT_EXPIRES_IN
-1d
-
-NEXTAUTH_SECRET
-45264662a1976492ba7bdc929bf0b07ffd4066a37417f0c5205dcad85b09f599
-
-NEXTAUTH_URL
-https://rentalshop-api.vercel.app
-
-# Cloudinary (Your credentials)
-CLOUDINARY_CLOUD_NAME
-dewd6fwn0
-
-CLOUDINARY_API_KEY
-895686533155893
-
-CLOUDINARY_API_SECRET
-PSHE8NBY0R1c2Yl8oQDAdbEmN9M
-
-UPLOAD_PROVIDER
-cloudinary
-
-MAX_FILE_SIZE
-10485760
-
-# URLs (Update sau khi deploy client/admin)
-API_URL
-https://rentalshop-api.vercel.app
-
-CLIENT_URL
-https://rentalshop-client.vercel.app
-
-ADMIN_URL
-https://rentalshop-admin.vercel.app
-
-CORS_ORIGINS
-https://rentalshop-client.vercel.app,https://rentalshop-admin.vercel.app
-
-# Environment
-NODE_ENV
-production
-
-LOG_LEVEL
-warn
-```
-
-### Client App (rentalshop-client)
-
-**Vercel Dashboard → rentalshop-client → Settings → Environment Variables**
-
-```bash
-NEXT_PUBLIC_API_URL
-https://rentalshop-api.vercel.app
-
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-dewd6fwn0
-
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-rentalshop_products
-
-NEXTAUTH_SECRET
-45264662a1976492ba7bdc929bf0b07ffd4066a37417f0c5205dcad85b09f599
-
-NEXTAUTH_URL
-https://rentalshop-client.vercel.app
-
-NODE_ENV
-production
-```
-
-### Admin Dashboard (rentalshop-admin)
-
-**Vercel Dashboard → rentalshop-admin → Settings → Environment Variables**
-
-```bash
-NEXT_PUBLIC_API_URL
-https://rentalshop-api.vercel.app
-
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-dewd6fwn0
-
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-rentalshop_products
-
-NEXTAUTH_SECRET
-45264662a1976492ba7bdc929bf0b07ffd4066a37417f0c5205dcad85b09f599
-
-NEXTAUTH_URL
-https://rentalshop-admin.vercel.app
-
-NODE_ENV
-production
-```
-
-**⚠️ Lưu Ý:**
-- Tất cả 3 apps phải dùng **CÙNG** `NEXTAUTH_SECRET`
-- `CORS_ORIGINS` KHÔNG CÓ SPACES: `url1.com,url2.com`
-- Cloudinary preset phải **Unsigned** mode!
+### **👥 Outlet Staff (Outlet Employees)**
+- Outlet 1: `staff.outlet1@example.com` / `staff123`
+- Outlet 2: `staff.outlet2@example.com` / `staff123`
+- Outlet 3: `staff.outlet3@example.com` / `staff123`
+- Outlet 4: `staff.outlet4@example.com` / `staff123`
+- **Access**: Limited access to their assigned outlet
 
 ---
 
-## 🔄 **Step 5: Redeploy with Environment Variables (3 phút)**
+## 🔍 **Common Issues & Solutions**
 
-Sau khi set xong **TẤT CẢ** environment variables cho cả 3 projects, redeploy:
+### **Issue 1: DATABASE_URL not found**
 
-```bash
-# API
-cd /Users/mac/Source-Code/rentalshop-nextjs/apps/api
-vercel --prod --force
-
-# Client
-cd /Users/mac/Source-Code/rentalshop-nextjs/apps/client
-vercel --prod --force
-
-# Admin
-cd /Users/mac/Source-Code/rentalshop-nextjs/apps/admin
-vercel --prod --force
-```
-
-**Hoặc dùng script tự động để redeploy cả 3:**
-```bash
-cd /Users/mac/Source-Code/rentalshop-nextjs
-
-# Redeploy all 3 apps
-cd apps/api && vercel --prod --force && cd ../client && vercel --prod --force && cd ../admin && vercel --prod --force
-```
-
-**⏱️ Time:**
-- Manual redeploy cả 3: ~2-3 phút
-- Automated script: ~2 phút
-
----
-
-## ✅ **Step 6: Testing (5 phút)**
-
-### Test API Health
-
-```bash
-curl https://rentalshop-api.vercel.app/api/health
-```
-
-**Expected:** `{"status":"ok","timestamp":"..."}`
-
-### Test Login API
-
-```bash
-curl -X POST https://rentalshop-api.vercel.app/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@rentalshop.com","password":"admin123"}'
-```
-
-**Expected:** `{"success":true,"token":"...","user":{...}}`
-
-### Test Client App
-
-1. **Open:** https://rentalshop-client.vercel.app
-2. **Login:**
-   - Email: `admin@rentalshop.com`
-   - Password: `admin123`
-3. **Check:** Dashboard loads, data displays correctly
-4. **Test:** Navigate to Products, Orders, Customers
-
-### Test Admin Dashboard
-
-1. **Open:** https://rentalshop-admin.vercel.app
-2. **Login:** Same credentials
-3. **Test features:**
-   - ✅ View products
-   - ✅ View orders
-   - ✅ Upload image (test Cloudinary)
-   - ✅ Create new order
-   - ✅ View analytics
-
-### Test Image Upload
-
-1. Admin → Products → Add Product
-2. Upload image
-3. Check: Cloudinary Media Library → `rentalshop/products/`
-4. Verify: Image URL works
-
----
-
-## 🎯 **Deployment Checklist**
-
-### Pre-Deployment
-- [x] Local build successful (`yarn build`)
-- [x] Packages pre-built and committed
-- [x] Supabase database migrated
-- [x] Cloudinary upload preset created (Unsigned!)
-- [x] Secrets generated
-- [x] Vercel CLI installed
-
-### Deployment
-- [ ] API deployed successfully
-- [ ] Client deployed successfully
-- [ ] Admin deployed successfully
-- [ ] All environment variables set (cả 3 projects!)
-- [ ] Apps redeployed with env vars
-
-### Testing
-- [ ] API health check passed (`curl .../api/health`)
-- [ ] Login working (admin@rentalshop.com)
-- [ ] Database connected (data hiển thị)
-- [ ] Image upload working (Cloudinary)
-- [ ] No console errors (F12)
-- [ ] Mobile responsive
-- [ ] All features working
-
----
-
-## 🚨 **Troubleshooting**
-
-### Issue: Prisma Client Not Found
-
-```
-Error: @prisma/client did not initialize
-```
+**Symptoms:**
+- API service fails to start
+- Error: "DATABASE_URL is required"
 
 **Solution:**
+1. Make sure PostgreSQL database is added to Railway project
+2. Use variable reference: `${{Postgres.DATABASE_URL}}`
+3. Restart API service
 
-Add to `apps/api/package.json`:
-```json
-{
-  "scripts": {
-    "postinstall": "prisma generate"
-  }
-}
-```
+### **Issue 2: Build timeout**
 
-Redeploy: `vercel --prod --force`
-
-### Issue: Database Connection Failed
-
-```
-Error: Can't reach database server
-```
+**Symptoms:**
+- Build fails after 15-20 minutes
+- Error: "Build exceeded maximum time"
 
 **Solution:**
-1. Verify `DATABASE_URL` in Vercel env vars
-2. Check password is correct
-3. Test connection locally:
-```bash
-   DATABASE_URL="postgresql://..." npx prisma db execute --stdin <<< "SELECT 1"
-   ```
+1. Check Dockerfile optimization
+2. Use build cache properly
+3. Contact Railway support to increase timeout
 
-### Issue: CORS Error
+### **Issue 3: CORS errors**
 
-```
-CORS policy blocked
-```
+**Symptoms:**
+- Frontend can't connect to API
+- Error: "CORS policy: No 'Access-Control-Allow-Origin'"
 
 **Solution:**
-1. Check `CORS_ORIGINS` in API env vars
-2. Format must be: `https://url1.com,https://url2.com` (NO SPACES!)
-3. Redeploy API: `vercel --prod --force`
+1. Check `CORS_ORIGINS` includes all frontend URLs
+2. Make sure URLs use `https://` (not `http://`)
+3. No trailing slashes in URLs
+4. Restart API service
 
-### Issue: Environment Variables Not Loaded
+### **Issue 4: Port binding issues**
 
-```
-JWT_SECRET is undefined
-```
+**Symptoms:**
+- Service fails to start
+- Error: "Port already in use"
 
 **Solution:**
-1. Verify variables are set: Vercel Dashboard → Settings → Environment Variables
-2. Check environment: **Production** (not Preview or Development)
-3. Redeploy: `vercel --prod --force`
+1. Railway automatically assigns PORT variable
+2. Make sure your app uses `process.env.PORT`
+3. Don't hardcode ports in production
 
----
+### **Issue 5: Memory limit exceeded**
 
-## 🔄 **Update Deployment**
+**Symptoms:**
+- Service crashes randomly
+- Error: "Out of memory"
 
-### Deploy New Changes
-
-```bash
-# Make changes to code
-git add .
-git commit -m "feat: new feature"
-
-# Deploy
-cd apps/api && vercel --prod
-cd apps/client && vercel --prod
-cd apps/admin && vercel --prod
-```
-
-### Rollback
-
-If something goes wrong:
-
-```bash
-# Vercel Dashboard → Project → Deployments
-# → Find previous working deployment
-# → Click "..." → Promote to Production
-```
-
----
-
-## 🌐 **Custom Domain (Optional)**
-
-### Add Custom Domain
-
-1. **Buy domain** (Namecheap, GoDaddy, etc.)
-2. **Vercel Dashboard** → Project → Settings → Domains
-3. **Add domain**:
-   - API: `api.yourdomain.com`
-   - Client: `yourdomain.com`
-   - Admin: `admin.yourdomain.com`
-4. **Update DNS** records (Vercel will guide you)
-5. **Update environment variables** with new domains
-6. **Redeploy** all apps
-
----
-
-## 📊 **Monitoring**
-
-### Vercel Dashboard
-
-- **Analytics**: Page views, performance
-- **Logs**: Function logs, errors
-- **Deployments**: History, status
-
-### Supabase Dashboard
-
-- **Database**: Size, connections
-- **Tables**: Data viewer
-- **Logs**: Query logs
-
-### Cloudinary Dashboard
-
-- **Usage**: Storage, bandwidth
-- **Media Library**: All images
-- **Transformations**: Image optimizations
+**Solution:**
+1. Upgrade to higher plan ($10/mo → 2GB RAM)
+2. Optimize your application
+3. Check for memory leaks
 
 ---
 
 ## 📚 **Useful Commands**
 
-```bash
-# View Vercel env vars
-vercel env ls
-
-# Pull env vars to local
-vercel env pull .env.vercel.local
-
-# View deployment logs
-vercel logs <deployment-url>
-
-# Force redeploy
-vercel --prod --force
-
-# Remove deployment
-vercel remove <deployment-name>
-```
-
----
-
-## 🎉 **Success!**
-
-Your RentalShop is now deployed and running on:
-
-```
-✅ API:    https://rentalshop-api.vercel.app
-✅ Client: https://rentalshop-client.vercel.app
-✅ Admin:  https://rentalshop-admin.vercel.app
-```
-
-**Stack:**
-- ☁️  Hosting: Vercel (100GB bandwidth)
-- 🗄️  Database: Supabase PostgreSQL (500MB)
-- 🖼️  Images: Cloudinary (25GB storage)
-
-**Total Cost:** $0/month 💰
-
-**Default Login:**
-- Email: `admin@rentalshop.com`
-- Password: `admin123`
-
-**Update Passwords:**
-```bash
-# Sau khi login lần đầu, đổi password ngay!
-# Settings → Change Password
-```
-
----
-
-## 💡 **Post-Deployment Tips**
-
-### Update CORS After All Apps Deployed
-
-Sau khi deploy cả 3 apps, update `CORS_ORIGINS` trong API:
+### **Railway CLI**
 
 ```bash
-# Vercel Dashboard → rentalshop-api → Settings → Environment Variables
-# Update CORS_ORIGINS với URLs thực tế:
+# Check status
+railway status
 
-CORS_ORIGINS=https://rentalshop-client.vercel.app,https://rentalshop-admin.vercel.app
+# View logs (follow mode)
+railway logs --service apis -f
+
+# View environment variables
+railway variables --service apis
+
+# Set environment variable
+railway variables --set KEY=value --service apis
+
+# Run command in Railway environment
+railway run --service apis npx prisma studio
+
+# Open service in browser
+railway open --service apis
+
+# Restart service
+railway restart --service apis
+
+# Delete service
+railway service delete
 ```
 
-Redeploy API:
-```bash
-cd apps/api && vercel --prod --force
-```
-
-### Monitor Usage
-
-**Supabase:**
-- Database: 500MB limit
-- Check: https://app.supabase.com → Database size
-
-**Cloudinary:**
-- Storage: 25GB limit
-- Bandwidth: 25GB/month
-- Check: https://console.cloudinary.com → Usage
-
-**Vercel:**
-- Bandwidth: 100GB/month
-- Functions: Monitor execution time
-- Check: https://vercel.com/dashboard → Analytics
-
----
-
-## 📞 **Support**
-
-- **Vercel Discord**: https://vercel.com/discord
-- **Supabase Discord**: https://discord.supabase.com
-- **Cloudinary Community**: https://community.cloudinary.com
-
----
-
-**Congratulations! You're live! 🎊**
-
----
-
-## ❓ **FAQ - Deployment Strategy**
-
-### Q: Tại sao phải deploy 3 projects riêng biệt?
-
-**A:** Đây là **best practice** cho production apps! 
-
-**Benefits:**
-- ✅ Independent domains (api.domain.com, domain.com, admin.domain.com)
-- ✅ Isolated deployments (update API không ảnh hưởng Frontend)
-- ✅ Better scaling (scale API riêng khi cần)
-- ✅ Security (API env vars isolated)
-- ✅ Team workflow (backend/frontend deploy độc lập)
-
-**Tradeoff:**
-- Deploy 3 lần (có script `deploy-all.sh` giúp)
-- Set env vars 3 lần (copy-paste nhanh)
-
-### Q: Có cách deploy 1 lần cho cả 3 apps không?
-
-**A:** Có, nhưng **KHÔNG khuyên dùng** cho production!
-
-**Lý do:**
-- ❌ Phức tạp hơn (config routing, rewrites)
-- ❌ Không linh hoạt (phải dùng 1 domain)
-- ❌ Khó scale (không thể scale riêng API)
-- ❌ Khó debug (errors mixed together)
-
-**Kết luận:** Separate projects tốt hơn, đặc biệt khi app lớn lên!
-
-### Q: Local dev (yarn dev:all) vẫn hoạt động không?
-
-**A:** **CÓ! 100% hoạt động bình thường!**
-
-Local dev:
-- Dùng: `packages/*/src/` (source code)
-- Build: On-the-fly transpile
-- Database: SQLite
-- Hot reload: Instant
-
-Production:
-- Dùng: `packages/*/dist/` (pre-built)
-- Build: 1 lần
-- Database: PostgreSQL
-- Hot reload: N/A (production)
-
-**Không ảnh hưởng nhau!** ✅
-
-### Q: Khi nào cần rebuild packages?
-
-**A:** Khi thay đổi code trong `packages/*/src/`:
+### **Database Management**
 
 ```bash
-# Rebuild packages
-yarn build
+# Open Prisma Studio
+railway run --service apis npx prisma studio
 
-# Commit
-git add packages/*/dist
-git commit -m "feat: update packages"
-git push
+# Push schema changes
+railway run --service apis npx prisma db push
 
-# Vercel auto-deploy (nếu connect Git)
-# Hoặc manual: vercel --prod --force
+# Run migrations
+railway run --service apis npx prisma migrate deploy
+
+# Seed database
+railway run --service apis yarn db:regenerate-system
+
+# Reset database (DANGER!)
+railway run --service apis npx prisma migrate reset
 ```
 
-**Lưu ý:** Không cần rebuild nếu chỉ đổi code trong `apps/`
+### **Debugging**
 
-### Q: Script deploy-all.sh có an toàn không?
+```bash
+# Check build logs
+railway logs --service apis --deployment <deployment-id>
 
-**A:** **CÓ! Hoàn toàn an toàn!**
+# Check runtime logs
+railway logs --service apis -f
 
-Script chỉ:
-- ✅ Run `vercel --prod` cho từng app
-- ✅ Show env vars cần set
-- ✅ Không tự động set secrets (manual để an toàn)
-- ✅ Không delete/modify code
+# SSH into service (if available)
+railway shell --service apis
 
-Bạn vẫn control từng bước!
-
----
-
-## 🎓 **Best Practices Summary**
-
-### Do's ✅
-- ✅ Deploy 3 projects riêng biệt
-- ✅ Commit pre-built packages/dist
-- ✅ Use same NEXTAUTH_SECRET cho 3 apps
-- ✅ Connect Git for auto-deploy
-- ✅ Monitor usage (Supabase, Cloudinary, Vercel)
-- ✅ Test thoroughly after deployment
-
-### Don'ts ❌
-- ❌ Deploy từ single project (phức tạp)
-- ❌ Skip setting environment variables
-- ❌ Dùng weak secrets (phải 32+ chars)
-- ❌ Commit secrets vào Git (.env.local)
-- ❌ Skip testing sau deployment
-- ❌ Forget to update CORS after deploy
+# View service metrics
+railway metrics --service apis
+```
 
 ---
 
-**Tóm tắt:** Deploy 3 projects riêng = **ĐÚNG & TỐT NHẤT!** ✅
+## 🎯 **Production Best Practices**
+
+### **Security**
+
+- ✅ Use strong secrets (32+ characters)
+- ✅ Enable HTTPS only (Railway provides SSL)
+- ✅ Set proper CORS origins
+- ✅ Use environment variables for secrets
+- ✅ Enable rate limiting
+- ✅ Regular security audits
+
+### **Performance**
+
+- ✅ Enable caching (Redis if needed)
+- ✅ Optimize Docker images
+- ✅ Use CDN for static assets
+- ✅ Monitor response times
+- ✅ Optimize database queries
+
+### **Monitoring**
+
+- ✅ Set up error tracking (Sentry)
+- ✅ Monitor service logs
+- ✅ Track database usage
+- ✅ Set up alerts for downtime
+- ✅ Regular backups
+
+### **Scaling**
+
+- ✅ Start with basic plan ($5/mo)
+- ✅ Monitor resource usage
+- ✅ Upgrade as needed
+- ✅ Consider horizontal scaling
+- ✅ Use load balancer if needed
+
+---
+
+## 💰 **Cost Estimation**
+
+### **Development Environment**
+
+- **Basic Plan**: $5/month
+  - 512MB RAM per service
+  - 1GB storage
+  - 100GB bandwidth
+  - **Total**: ~$5-10/month (for all services)
+
+### **Production Environment**
+
+- **Pro Plan**: $20/month
+  - 2GB RAM per service
+  - 10GB storage
+  - 1TB bandwidth
+  - **Total**: ~$20-30/month (for all services)
+
+### **Additional Costs**
+
+- **Cloudinary** (Optional): Free tier (25GB storage)
+- **Custom Domain**: Free on Railway
+- **SSL Certificate**: Free on Railway
+
+**Total Production Cost**: ~$20-30/month 🎉
+
+---
+
+## 📖 **Additional Resources**
+
+- **Railway Documentation**: https://docs.railway.app/
+- **Railway Discord**: https://discord.gg/railway
+- **Prisma Railway Guide**: https://www.prisma.io/docs/guides/deployment/deployment-guides/deploying-to-railway
+- **Next.js Railway Template**: https://railway.app/template/next
+
+---
+
+## ✅ **Deployment Checklist**
+
+Before going to production:
+
+- [ ] All environment variables set
+- [ ] Database migrated and seeded
+- [ ] Services deployed and running
+- [ ] Health checks passing
+- [ ] CORS configured correctly
+- [ ] SSL/HTTPS enabled
+- [ ] Custom domains set up (optional)
+- [ ] Error tracking enabled
+- [ ] Monitoring set up
+- [ ] Backups configured
+- [ ] Load testing completed
+- [ ] Security audit passed
+- [ ] Documentation updated
+- [ ] Team access configured
+
+---
+
+## 🎉 **You're Done!**
+
+Your Rental Shop application is now deployed on Railway! 🚀
+
+**Next Steps:**
+1. Test all features thoroughly
+2. Set up monitoring and alerts
+3. Configure custom domains
+4. Train your team
+5. Launch! 🎉
+
+For issues or questions, check:
+- [RAILWAY_ENV_SETUP.md](./RAILWAY_ENV_SETUP.md) - Environment setup guide
+- [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) - Detailed deployment guide
+- [RAILWAY_SIMPLE_GUIDE.md](./RAILWAY_SIMPLE_GUIDE.md) - Simplified guide
+
+**Happy deploying!** 🚂✨

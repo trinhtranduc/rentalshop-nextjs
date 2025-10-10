@@ -426,7 +426,7 @@ export function AuditLogViewer() {
 - ✅ Built-in PostgreSQL database (no external service needed)
 - ✅ Full backend support (not just serverless)
 - ✅ Persistent storage with volumes
-- ✅ Lower cost: $5-20/month vs $45+/month (Vercel + Supabase)
+- ✅ Lower cost: $5-20/month
 
 **Quick Deploy:**
 ```bash

@@ -288,7 +288,7 @@ function getApiBaseUrlInternal(): string {
       return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     
     case 'development':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.dev.rentalshop.com';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://apis-development.up.railway.app';
     
     case 'production':
       return process.env.NEXT_PUBLIC_API_URL || 'https://api.rentalshop.com';
@@ -431,7 +431,7 @@ function getApiConfig(): ApiConfig {
         urls: {
           client: process.env.CLIENT_URL || 'https://rentalshop.com',
           admin: process.env.ADMIN_URL || 'https://admin.rentalshop.com',
-          api: process.env.API_URL || 'https://api.rentalshop.com',
+          api: process.env.API_URL || 'https://apis-development.up.railway.app',
           mobile: process.env.MOBILE_URL || 'https://mobile.rentalshop.com'
         },
         logging: {
