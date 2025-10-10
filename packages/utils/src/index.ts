@@ -1,5 +1,19 @@
-export * from './common';
-export * from './date';
-export * from './validation';
+// ============================================================================
+// UTILS PACKAGE EXPORTS - SIMPLIFIED STRUCTURE
+// ============================================================================
+
+// API utilities
+export * from './api';
+export * from './api/upload';
+
+// Configuration
 export * from './config';
-export * from './errors'; 
+
+// Core utilities (everything else)
+export * from './core';
+
+// Unified Error handling (consolidated from api-errors.ts)
+export * from './core/errors';
+
+// Performance monitoring
+export * from './performance';

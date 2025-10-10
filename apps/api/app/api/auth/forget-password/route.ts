@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { handleApiError } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 const forgetPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -29,21 +31,8 @@ export async function POST(request: NextRequest) {
     
   } catch (error: any) {
     console.error('Forget password error:', error);
-    
-    // Handle validation errors
-    if (error.name === 'ZodError') {
-      return NextResponse.json({
-        success: false,
-        message: 'Invalid email address',
-        errors: error.errors
-      }, { status: 400 });
-    }
-    
-    // Generic error
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to process password reset request',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 } 

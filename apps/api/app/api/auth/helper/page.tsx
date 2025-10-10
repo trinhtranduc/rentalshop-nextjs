@@ -16,9 +16,6 @@ export default function AuthHelperPage() {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ email, password }),
       });
 
@@ -26,13 +23,16 @@ export default function AuthHelperPage() {
 
       if (response.ok) {
         setToken(data.data.token);
-        localStorage.setItem('authToken', data.data.token);
+        // Use consolidated storeAuthData function
+        const { storeAuthData } = await import('@rentalshop/utils');
+        storeAuthData(data.data.token, data.data.user);
         setMessage('✅ Login successful! Token saved to localStorage.');
       } else {
         setMessage(`❌ Login failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
-      setMessage(`❌ Error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setMessage(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -59,13 +59,16 @@ export default function AuthHelperPage() {
 
       if (response.ok) {
         setToken(data.data.token);
-        localStorage.setItem('authToken', data.data.token);
+        // Use consolidated storeAuthData function
+        const { storeAuthData } = await import('@rentalshop/utils');
+        storeAuthData(data.data.token, data.data.user);
         setMessage('✅ Registration successful! Token saved to localStorage.');
       } else {
         setMessage(`❌ Registration failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
-      setMessage(`❌ Error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setMessage(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

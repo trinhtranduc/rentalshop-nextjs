@@ -1,162 +1,306 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
-import { getCustomers, createCustomer } from '@rentalshop/database';
-import type { CustomerFilters, CustomerInput } from '@rentalshop/database';
+import { withAuthRoles } from '@rentalshop/auth';
+import { prisma } from '@rentalshop/database';
+import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
+import { searchRateLimiter } from '@rentalshop/middleware';
+import { API } from '@rentalshop/constants';
+import crypto from 'crypto';
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/customers
+ * Get customers with filtering and pagination using simplified database API
+ * REFACTORED: Now uses unified withAuth pattern
+ */
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  console.log(`🔍 GET /api/customers - User: ${user.email} (${user.role})`);
+  
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
+    // Apply rate limiting
+    const rateLimitResult = searchRateLimiter(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
     }
 
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Get query parameters
     const { searchParams } = new URL(request.url);
-    const merchantId = searchParams.get('merchantId');
-    const isActive = searchParams.get('isActive');
-    const search = searchParams.get('search');
-    const city = searchParams.get('city');
-    const state = searchParams.get('state');
-    const country = searchParams.get('country');
-    const idType = searchParams.get('idType') as any;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-
-    // Build filters
-    const filters: CustomerFilters = {};
-
-    if (merchantId) {
-      filters.merchantId = merchantId;
+    console.log('Search params:', Object.fromEntries(searchParams.entries()));
+    
+    const parsed = customersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+    if (!parsed.success) {
+      console.log('Validation error:', parsed.error.flatten());
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid query', 
+        error: parsed.error.flatten() 
+      }, { status: 400 });
     }
 
-    if (isActive !== null) {
-      filters.isActive = isActive === 'true';
+    const { 
+      page, 
+      limit, 
+      q, 
+      search, 
+      merchantId,
+      isActive,
+      city,
+      state,
+      country
+    } = parsed.data;
+
+    console.log('Parsed filters:', { 
+      page, limit, q, search, merchantId, isActive, 
+      city, state, country 
+    });
+
+    // Determine merchantId for filtering
+    let filterMerchantId = userScope.merchantId;
+    
+    // For ADMIN users, they can specify merchantId in query to view other merchants' customers
+    // For other roles, use their assigned merchantId
+    if (user.role === 'ADMIN' && merchantId) {
+      filterMerchantId = merchantId;
+    } else if (user.role !== 'ADMIN' && merchantId && merchantId !== userScope.merchantId) {
+      // Non-ADMIN users cannot view other merchants' customers
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Access denied: Cannot view customers from other merchants' 
+        },
+        { status: 403 }
+      );
     }
 
-    if (search) {
-      filters.search = search;
-    }
+    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);
 
-    if (city) {
-      filters.city = city;
-    }
+    // Build search filters for customer search
+    const searchFilters = {
+      merchantId: filterMerchantId,
+      isActive,
+      city,
+      state,
+      country,
+      search: q || search,
+      page: page || 1,
+      limit: limit || 20
+    };
 
-    if (state) {
-      filters.state = state;
-    }
+    console.log('🔍 Using simplified db.customers.search with filters:', searchFilters);
 
-    if (country) {
-      filters.country = country;
-    }
+    // Use simplified database API
+    const result = await db.customers.search(searchFilters);
+    console.log('✅ Search completed, found:', result.total || 0, 'customers');
 
-    if (idType) {
-      filters.idType = idType;
-    }
-
-    // Get customers
-    const result = await getCustomers(filters, page, limit);
-
-    return NextResponse.json({
+    // Create response body for ETag calculation
+    const responseData = {
       success: true,
-      data: result
+      data: {
+        customers: result.data || [],
+        total: result.total || 0,
+        page: result.page || 1,
+        limit: result.limit || 20,
+        hasMore: result.hasMore || false
+      }
+    };
+
+    const bodyString = JSON.stringify(responseData);
+    const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
+    const ifNoneMatch = request.headers.get('if-none-match');
+
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: { ETag: etag, 'Cache-Control': 'private, max-age=5' },
+      });
+    }
+
+    return new NextResponse(bodyString, {
+      status: API.STATUS.OK,
+      headers: {
+        'Content-Type': 'application/json',
+        ETag: etag,
+        'Cache-Control': 'private, max-age=5',
+      },
     });
 
   } catch (error) {
     console.error('Error fetching customers:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
-      { status: 500 }
+      { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/customers
+ * Create a new customer using simplified database API
+ * REFACTORED: Now uses unified withAuth pattern
+ */
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  console.log(`🔍 POST /api/customers - User: ${user.email} (${user.role})`);
+  
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Access token required' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyTokenSimple(token);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Parse request body
     const body = await request.json();
+    const parsed = customerCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid payload', 
+        error: parsed.error.flatten() 
+      }, { status: 400 });
+    }
 
-    // Validate required fields
-    const { firstName, lastName, email, phone, merchantId } = body;
-    if (!firstName || !lastName || !email || !phone || !merchantId) {
+    // Determine merchantId for customer creation
+    let merchantId = userScope.merchantId;
+    
+    // For ADMIN users, they need to specify merchantId in the request
+    // For other roles, use their assigned merchantId
+    if (user.role === 'ADMIN' && parsed.data.merchantId) {
+      merchantId = parsed.data.merchantId;
+    } else if (!merchantId) {
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Missing required fields: firstName, lastName, email, phone, merchantId' 
+          message: user.role === 'ADMIN' 
+            ? 'MerchantId is required for ADMIN users when creating customers' 
+            : 'User is not associated with any merchant'
         },
         { status: 400 }
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
+
+    // Check plan limits before creating customer
+    try {
+      await assertPlanLimit(merchantId, 'customers');
+      console.log('✅ Plan limit check passed for customers');
+    } catch (error: any) {
+      console.log('❌ Plan limit exceeded for customers:', error.message);
       return NextResponse.json(
-        { success: false, message: 'Invalid email format' },
-        { status: 400 }
+        { 
+          success: false, 
+          message: error.message || 'Plan limit exceeded for customers',
+          error: 'PLAN_LIMIT_EXCEEDED'
+        },
+        { status: 403 }
       );
     }
 
-    // Create customer data
-    const customerData: CustomerInput = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.toLowerCase().trim(),
-      phone: phone.trim(),
-      merchantId,
-      address: body.address?.trim(),
-      city: body.city?.trim(),
-      state: body.state?.trim(),
-      zipCode: body.zipCode?.trim(),
-      country: body.country?.trim(),
-      dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
-      idNumber: body.idNumber?.trim(),
-      idType: body.idType,
-      notes: body.notes?.trim()
+    // Find merchant by publicId to get CUID
+    const merchant = await db.merchants.findById(merchantId);
+
+    if (!merchant) {
+      throw new Error(`Merchant with ID ${merchantId} not found`);
+    }
+
+    // Use merchant CUID for customer creation
+    const customerData = {
+      ...parsed.data,
+      merchantId: merchant.id // Use CUID, not publicId
     };
 
-    // Create customer
-    const customer = await createCustomer(customerData);
+    console.log('🔍 Creating customer with data:', customerData);
+    
+    // Use simplified database API
+    const customer = await db.customers.create(customerData);
+    console.log('✅ Customer created successfully:', customer);
 
     return NextResponse.json({
       success: true,
       data: customer,
       message: 'Customer created successfully'
-    }, { status: 201 });
+    });
 
-  } catch (error) {
-    console.error('Error creating customer:', error);
+  } catch (error: any) {
+    console.error('Error in POST /api/customers:', error);
+    
+    // Handle specific Prisma errors
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { success: false, message: 'A customer with this email or phone already exists' },
+        { status: 409 }
+      );
+    }
+    
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: 'Failed to create customer' },
       { status: 500 }
     );
   }
-} 
+});
+
+/**
+ * PUT /api/customers/:id
+ * Update a customer using simplified database API  
+ * REFACTORED: Now uses unified withAuth pattern
+ */
+export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  console.log(`🔍 PUT /api/customers - User: ${user.email} (${user.role})`);
+  
+  try {
+    const body = await request.json();
+    const parsed = customerUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid payload', 
+        error: parsed.error.flatten() 
+      }, { status: 400 });
+    }
+
+    // Extract id from query params since it's not in schema
+    const { searchParams } = new URL(request.url);
+    const id = parseInt(searchParams.get('id') || '0');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: 'Customer ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get existing customer to check permissions
+    const existingCustomer = await db.customers.findById(id);
+    if (!existingCustomer) {
+      return NextResponse.json(
+        { success: false, message: 'Customer not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if user can access this customer (ADMIN can access all customers)
+    if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userScope.merchantId) {
+      return NextResponse.json(
+        { success: false, message: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+
+    console.log('🔍 Updating customer with data:', { id, ...parsed.data });
+    
+    // Use simplified database API
+    const updatedCustomer = await db.customers.update(id, parsed.data);
+    console.log('✅ Customer updated successfully:', updatedCustomer);
+
+    return NextResponse.json({
+      success: true,
+      data: updatedCustomer,
+      message: 'Customer updated successfully'
+    });
+
+  } catch (error: any) {
+    console.error('Error in PUT /api/customers:', error);
+    
+    // Handle specific Prisma errors
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { success: false, message: 'A customer with this email or phone already exists' },
+        { status: 409 }
+      );
+    }
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
+  }
+});

@@ -1,3 +1,5 @@
+import { getApiUrl } from '@rentalshop/utils';
+
 export const customerSwaggerConfig = {
   openapi: '3.0.0',
   info: {
@@ -11,8 +13,8 @@ export const customerSwaggerConfig = {
   },
   servers: [
     {
-      url: 'http://localhost:3002',
-      description: 'Development server'
+      url: getApiUrl(),
+      description: 'API server'
     }
   ],
   tags: [

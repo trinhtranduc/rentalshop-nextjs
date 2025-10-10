@@ -55,7 +55,7 @@ Response:
       "totalOrders": 140,
       "statusBreakdown": {
         "COMPLETED": 100,
-        "CONFIRMED": 40
+        "BOOKED": 40
       },
       "groupedData": [...],
       "period": {...}
@@ -134,7 +134,7 @@ Response:
           <h2 className="text-2xl font-semibold mb-4">Future Income Analytics</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="text-lg font-medium mb-2">GET /api/analytics/future-income</h3>
-            <p className="text-gray-600 mb-4">Get future income from confirmed but not completed rentals.</p>
+            <p className="text-gray-600 mb-4">Get future income from booked but not completed rentals.</p>
             
             <h4 className="font-medium mb-2">Query Parameters:</h4>
             <ul className="list-disc list-inside space-y-1 text-sm">
@@ -174,7 +174,7 @@ Response:
     "totalOrders": 140,
     "statusBreakdown": {
       "PENDING": 20,
-      "CONFIRMED": 40,
+              "BOOKED": 40,
       "ACTIVE": 30,
       "COMPLETED": 100,
       "CANCELLED": 10
@@ -187,7 +187,7 @@ Response:
         "totalOrders": 80,
         "statusBreakdown": {
           "COMPLETED": 60,
-          "CONFIRMED": 20
+          "BOOKED": 20
         }
       }
     ],

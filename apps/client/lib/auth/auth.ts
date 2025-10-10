@@ -1,15 +1,9 @@
 /**
- * Authentication utilities for client app
- * Handles token storage and API requests with authentication
+ * Authentication utilities for client app (reusing shared package)
  */
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  phone?: string;
-}
+// Use shared User type from @rentalshop/types
+import type { User } from '@rentalshop/types';
+export type { User };
 
 export interface AuthResponse {
   success: boolean;
@@ -20,101 +14,76 @@ export interface AuthResponse {
   message?: string;
 }
 
-/**
- * Get stored authentication token
- */
-export const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('authToken');
-};
+// Important: Use browser-only entrypoint to avoid bundling Prisma on the client
+export {
+  getAuthToken,
+  getStoredUser,
+  storeAuthData,
+  clearAuthData,
+  authenticatedFetch,
+  handleApiResponse,
+} from '@rentalshop/utils';
 
-/**
- * Get stored user data
- */
-export const getStoredUser = (): User | null => {
-  if (typeof window === 'undefined') return null;
-  const userStr = localStorage.getItem('user');
-  return userStr ? JSON.parse(userStr) : null;
-};
-
-/**
- * Store authentication data
- */
-export const storeAuthData = (token: string, user: User): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('authToken', token);
-  localStorage.setItem('user', JSON.stringify(user));
-};
-
-/**
- * Clear authentication data
- */
-export const clearAuthData = (): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
-};
-
-/**
- * Check if user is authenticated
- */
 export const isAuthenticated = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const { getAuthToken } = require('@rentalshop/utils');
   const token = getAuthToken();
   return !!token;
 };
 
-/**
- * Create authenticated fetch request
- */
-export const authenticatedFetch = async (
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> => {
-  const token = getAuthToken();
-  
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+export const verifyTokenWithServer = async (): Promise<boolean> => {
+  try {
+    const token = (await import('@rentalshop/utils')).getAuthToken();
+    if (!token) return false;
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    const { apiUrls } = await import('@rentalshop/utils');
+    const response = await fetch(apiUrls.auth.verify, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+
+    if (response.status === 401) {
+      (await import('@rentalshop/utils')).clearAuthData();
+      return false;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data?.success && data?.data?.user) {
+        const existingToken = (await import('@rentalshop/utils')).getAuthToken();
+        if (existingToken) {
+          (await import('@rentalshop/utils')).storeAuthData(existingToken, data.data.user);
+        }
+      }
+      return data.success === true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    return isAuthenticated();
   }
+};
 
-  return fetch(url, {
-    ...options,
-    headers,
-  });
+export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
+  if (!isAuthenticated()) return false;
+  return await verifyTokenWithServer();
 };
 
 /**
- * Handle API response and check for authentication errors
- */
-export const handleApiResponse = async (response: Response) => {
-  if (response.status === 401) {
-    // Token expired or invalid
-    clearAuthData();
-    window.location.href = '/login';
-    throw new Error('Authentication required');
-  }
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
-};
-
-/**
- * Login user
+ * Login user - DEPRECATED: Use useAuth hook instead
+ * @deprecated Use the useAuth hook from @rentalshop/hooks for authentication
  */
 export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
+  console.warn('⚠️ loginUser is deprecated. Use useAuth hook instead.');
+  
   try {
     console.log('🔐 loginUser called with:', { email });
-    console.log('🌐 Making request to /api/auth/login...');
     
-    const response = await fetch('/api/auth/login', {
+    // Use centralized API URL configuration
+    const { apiUrls } = await import('@rentalshop/utils');
+    console.log('🌐 Making request to API:', apiUrls.auth.login);
+    
+    const response = await fetch(apiUrls.auth.login, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -129,7 +98,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
 
     if (data.success && data.data?.token) {
       console.log('✅ Login successful, storing auth data...');
-      storeAuthData(data.data.token, data.data.user);
+      (await import('@rentalshop/utils')).storeAuthData(data.data.token, data.data.user);
       console.log('💾 Auth data stored successfully');
     } else {
       console.log('❌ Login failed:', data.message);
@@ -146,7 +115,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
  * Logout user
  */
 export const logoutUser = (): void => {
-  clearAuthData();
+  (async () => (await import('@rentalshop/utils')).clearAuthData())();
   window.location.href = '/login';
 };
 
@@ -155,9 +124,9 @@ export const logoutUser = (): void => {
  */
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const response = await authenticatedFetch('/api/auth/me');
-    const data = await handleApiResponse(response);
-    return data.success ? data.data : null;
+    const { profileApi } = await import('@rentalshop/utils');
+    const result = await profileApi.getProfile();
+    return result.success && result.data ? result.data : null;
   } catch (error) {
     console.error('Failed to get current user:', error);
     return null;

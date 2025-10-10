@@ -1,0 +1,38 @@
+{
+  "name": "@rentalshop/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "license": "MIT",
+  "prisma": {
+    "schema": "../../prisma/schema.prisma"
+  },
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "yarn tsup src/index.ts --format esm,cjs --dts",
+    "dev": "yarn tsup src/index.ts --format esm,cjs --watch --dts",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "db:generate": "prisma generate --schema=../../prisma/schema.prisma",
+    "db:push": "prisma db push --schema=../../prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=../../prisma/schema.prisma",
+    "db:studio": "prisma studio --schema=../../prisma/schema.prisma",
+    "db:seed": "tsx src/seed.ts",
+    "db:reset": "prisma migrate reset --force --schema=../../prisma/schema.prisma && yarn db:seed"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "tsup": "^7.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@prisma/client": "6.16.2"
+  },
+  "dependencies": {}
+}

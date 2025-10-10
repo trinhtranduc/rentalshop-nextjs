@@ -1,27 +1,10 @@
 {
-  "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": false,
-    "noEmit": true,
-    "incremental": true,
-    "module": "esnext",
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
-  },
+  // ============================================================================
+  // API TSCONFIG - EXTENDS SHARED NEXT.JS CONFIG
+  // ============================================================================
+  // REFACTORED: Now uses shared config instead of duplication
+  
+  "extends": "../../shared-configs/tsconfig.nextjs.json",
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",

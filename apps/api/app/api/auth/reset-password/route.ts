@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { handleApiError } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
@@ -33,29 +35,8 @@ export async function POST(request: NextRequest) {
     
   } catch (error: any) {
     console.error('Reset password error:', error);
-    
-    // Handle validation errors
-    if (error.name === 'ZodError') {
-      return NextResponse.json({
-        success: false,
-        message: 'Validation failed',
-        errors: error.errors
-      }, { status: 400 });
-    }
-    
-    // Handle specific errors
-    if (error.message === 'Invalid or expired reset token') {
-      return NextResponse.json({
-        success: false,
-        message: 'Invalid or expired reset token'
-      }, { status: 400 });
-    }
-    
-    // Generic error
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to reset password',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 } 

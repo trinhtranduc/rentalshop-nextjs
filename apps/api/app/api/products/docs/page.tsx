@@ -121,7 +121,7 @@ export default function ProductDocsPage() {
                     Get products with filtering and pagination
                   </p>
                   <div className="text-xs text-gray-500">
-                    Query params: outletId, categoryId, isActive, search, minPrice, maxPrice, page, limit, sortBy, sortOrder
+                    Query params: outletId, categoryId, isActive, search, page, limit, sortBy, sortOrder
                   </div>
                 </div>
 
@@ -263,7 +263,7 @@ export default function ProductDocsPage() {
                   <div className="bg-gray-100 p-4 rounded-lg text-sm">
                     <pre className="whitespace-pre-wrap">
 {`{
-  id: string
+  id: number
   name: string
   description: string | null
   barcode: string | null
@@ -278,15 +278,15 @@ export default function ProductDocsPage() {
   createdAt: string
   updatedAt: string
   outlet: {
-    id: string
+    id: number
     name: string
     merchant: {
-      id: string
+      id: number
       companyName: string
     }
   }
   category: {
-    id: string
+    id: number
     name: string
   }
 }`}
@@ -306,8 +306,8 @@ export default function ProductDocsPage() {
   rentPrice: number (required, min: 0)
   salePrice?: number (min: 0)
   deposit: number (required, min: 0)
-  categoryId: string (required)
-  outletId: string (required)
+  categoryId: number (required)
+  outletId: number (required)
   images?: string[]
 }`}
                     </pre>
@@ -326,8 +326,8 @@ export default function ProductDocsPage() {
   rentPrice?: number (min: 0)
   salePrice?: number (min: 0)
   deposit?: number (min: 0)
-  categoryId?: string
-  outletId?: string
+  categoryId?: number
+  outletId?: number
   images?: string[]
   isActive?: boolean
 }`}

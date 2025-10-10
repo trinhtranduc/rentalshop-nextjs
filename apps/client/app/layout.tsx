@@ -1,8 +1,16 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import ClientLayout from './components/ClientLayout'
+import { CurrencyProvider } from '@rentalshop/hooks'
+// AuthProvider removed - using centralized useAuth hook from @rentalshop/hooks
+import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
+import Script from 'next/script'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'Rental Shop - Client',
@@ -15,9 +23,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi">
-      <body className={inter.className}>
-        {children}
+    <html lang="en">
+      <body className={`${inter.variable} font-sans`}>
+        <CurrencyProvider>
+          <ToastProvider>
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </ToastProvider>
+        </CurrencyProvider>
+        <Script src="/mobile-menu.js" />
       </body>
     </html>
   )

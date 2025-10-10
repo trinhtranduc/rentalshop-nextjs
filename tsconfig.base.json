@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["es6", "dom", "dom.iterable"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "esnext",
     "moduleResolution": "node",
     "esModuleInterop": true,
@@ -14,13 +14,18 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "jsx": "preserve",
+    "jsxImportSource": "react",
     "baseUrl": ".",
     "paths": {
       "@rentalshop/ui": ["./packages/ui/src"],
       "@rentalshop/auth": ["./packages/auth/src"],
       "@rentalshop/database": ["./packages/database/src"],
-      "@rentalshop/utils": ["./packages/utils/src"]
+      "@rentalshop/utils": ["./packages/utils/src"],
+      "@rentalshop/types": ["./packages/types/src"],
+      "@rentalshop/hooks": ["./packages/hooks/src"],
+      "@rentalshop/constants": ["./packages/constants/src"]
     }
   },
-  "exclude": ["node_modules", "dist", ".next"]
+  "exclude": ["node_modules", "dist", ".next", "**/node_modules"]
 } 

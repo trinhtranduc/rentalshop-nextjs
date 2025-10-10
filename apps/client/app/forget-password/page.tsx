@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ForgetPasswordForm } from '@rentalshop/ui';
+import { authApi } from '@rentalshop/utils';
 
 export default function ForgetPasswordPage() {
   const router = useRouter();
@@ -15,19 +16,9 @@ export default function ForgetPasswordPage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/auth/forget-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-        }),
-      });
+      const result = await authApi.requestPasswordReset(data.email);
       
-      const result = await response.json();
-      
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(result.message || 'Failed to send reset email');
       }
       

@@ -1,6 +1,85 @@
 # Cursor Rules for Rental Shop Next.js Monorepo
 
-## 🎯 DRY Principles & Best Practices
+## 🚀 **Quick System Setup**
+
+### **Complete System Regeneration (Recommended)**
+```bash
+# Regenerate entire system with fresh data
+yarn db:regenerate-system
+```
+
+This creates:
+- ✅ 2 merchants (each with 1 merchant account)
+- ✅ 4 outlets (2 per merchant)
+- ✅ 8 users (1 admin + 1 staff per outlet)
+- ✅ 60 customers (30 per merchant)
+- ✅ 60 products (30 per merchant)
+- ✅ 120 orders (30 per outlet)
+
+### **Alternative Commands**
+```bash
+yarn db:reset          # Reset and seed database
+yarn db:seed           # Just seed (without reset)
+yarn db:reset-orders   # Reset only orders
+```
+
+## 🔑 **Default Login Credentials**
+
+After running `yarn db:regenerate-system`:
+
+### **👑 Super Admin (System-wide Access)**
+- `admin@rentalshop.com` / `admin123`
+  - **Full system access** to all merchants and outlets
+  - **Manage subscription plans** and system settings
+  - **View all data** across the platform
+
+### **🏢 Merchant Accounts (Business Owners)**
+- `merchant1@example.com` / `merchant123` (Merchant 1)
+- `merchant2@example.com` / `merchant123` (Merchant 2)
+  - **Organization-wide access** within their merchant
+  - **Manage multiple outlets** and users
+
+### **🏪 Outlet Admins (Outlet Managers)**
+- `admin.outlet1@example.com` / `admin123` (Outlet 1 - Merchant 1)
+- `admin.outlet2@example.com` / `admin123` (Outlet 2 - Merchant 1)
+- `admin.outlet3@example.com` / `admin123` (Outlet 1 - Merchant 2)
+- `admin.outlet4@example.com` / `admin123` (Outlet 2 - Merchant 2)
+  - **Full access** to their assigned outlet
+  - **Manage outlet operations** and staff
+
+### **👥 Outlet Staff (Outlet Employees)**
+- `staff.outlet1@example.com` / `staff123` (Outlet 1 - Merchant 1)
+- `staff.outlet2@example.com` / `staff123` (Outlet 2 - Merchant 1)
+- `staff.outlet3@example.com` / `staff123` (Outlet 1 - Merchant 2)
+- `staff.outlet4@example.com` / `staff123` (Outlet 2 - Merchant 2)
+  - **Limited access** to their assigned outlet
+  - **Basic operations** and customer service
+
+## 📋 **Updated Order System (2025)**
+
+### **Order Types (Simplified)**
+- **RENT**: Equipment rental orders
+- **SALE**: Direct purchase orders
+
+### **Order Statuses**
+- **RESERVED**: New order, scheduled for pickup
+- **PICKUPED**: Currently being rented (RENT only)
+- **RETURNED**: Rental completed (RENT only)
+- **COMPLETED**: Sale finalized (SALE only)
+- **CANCELLED**: Order cancelled (both types)
+
+### **Order Numbering**
+- **Clean format**: `ORD-001-0001` (no order type prefix)
+- **Structure**: `ORD-{outletId}-{sequence}`
+- **Example**: `ORD-001-0001`, `ORD-002-0001`, etc.
+
+### **Order Status Flow**
+```
+RENT Orders: RESERVED → PICKUPED → RETURNED (or CANCELLED)
+SALE Orders: RESERVED → COMPLETED (or CANCELLED)
+```
+
+## 🎯 **DRY Principles & Best Practices**
 
 ### **ALWAYS FOLLOW DRY (Don't Repeat Yourself)**
 
@@ -23,10 +102,709 @@
 - ❌ Don't duplicate utility functions across packages
 
 #### **4. Type Definitions**
-- ✅ Define types once in `packages/database/src/types.ts`
-- ✅ Import types from shared packages (`@rentalshop/database`)
+- ✅ Define types once in `packages/types/src/` (✅ COMPLETED)
+- ✅ Import types from shared packages (`@rentalshop/types`)
 - ✅ Use consistent naming conventions (PascalCase for interfaces)
 - ❌ Don't redefine types in multiple places
+
+## 🔐 **ID Strategy & Database Design**
+
+### **Dual ID System: CUIDs Internally, Numbers Externally**
+
+Our system implements a **dual ID approach** that provides both security and usability:
+
+#### **System Architecture**
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Frontend   │    │     API     │    │  Database   │    │   Types     │
+│  (Numbers)  │◄──►│ (Transform) │◄──►│  (CUIDs)   │    │ (Interface) │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+#### **Database Layer (Secure)**
+- **Primary Keys**: Use CUIDs (`String @id @default(cuid())`) for security
+- **Public IDs**: Maintain `publicId Int @unique` for user-friendly operations
+- **Relationships**: All foreign keys use CUIDs internally
+
+#### **API Layer (Transform)**
+- **Input**: Frontend sends `publicId` (numbers) for all operations
+- **Processing**: API converts `publicId` to CUID for database operations
+- **Output**: API returns `publicId` (numbers) to frontend
+
+#### **Frontend Layer (User-Friendly)**
+- **Display**: Always works with numbers (`outletId: 123`)
+- **Forms**: Send numbers for all ID fields
+- **URLs**: Use numbers for routing (`/outlets/123`)
+
+#### **Complete Data Flow Example**
+
+**Scenario: Create Order for Outlet 123, Customer 456**
+
+```typescript
+// 1️⃣ FRONTEND SENDS (Numbers)
+POST /api/orders
+{
+  "outletId": 123,
+  "customerId": 456,
+  "productId": 789
+}
+
+// 2️⃣ API RECEIVES (Numbers)
+const input: OrderCreateInput = {
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  productId: 789        // Number
+};
+
+// 3️⃣ API TRANSFORMS (Numbers → CUIDs)
+const outlet = await prisma.outlet.findUnique({
+  where: { publicId: 123 }  // Find by number
+});
+// Result: { id: "clx123abc", publicId: 123 }
+
+const customer = await prisma.customer.findUnique({
+  where: { publicId: 456 }  // Find by number
+});
+// Result: { id: "dme456def", publicId: 456 }
+
+// 4️⃣ DATABASE OPERATIONS (CUIDs)
+const order = await prisma.order.create({
+  data: {
+    outletId: "clx123abc",    // Use CUID
+    customerId: "dme456def",  // Use CUID
+    // ... other fields
+  }
+});
+// Result: { id: "fgh789ghi", publicId: 999 }
+
+// 5️⃣ API TRANSFORMS (CUIDs → Numbers)
+return {
+  id: 999,              // publicId (number)
+  outletId: 123,        // publicId (number)
+  customerId: 456,      // publicId (number)
+  orderNumber: "ORD-001-0001"
+};
+
+// 6️⃣ FRONTEND RECEIVES (Numbers)
+const response = {
+  id: 999,              // Number
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  orderNumber: "ORD-001-0001"
+};
+```
+
+#### **ID Handling Rules**
+
+**Frontend Rules:**
+```typescript
+// ✅ ALWAYS use numbers
+const outletId = 123;
+const customerId = 456;
+
+// ❌ NEVER use CUIDs
+const outletId = "clx123abc";  // Wrong!
+```
+
+**API Rules:**
+```typescript
+// ✅ Convert numbers to CUIDs for database
+const outlet = await prisma.outlet.findUnique({
+  where: { publicId: input.outletId }
+});
+
+// ✅ Use CUIDs for database operations
+await prisma.order.create({
+  data: { outletId: outlet.id }
+});
+
+// ✅ Return numbers to frontend
+return { id: order.publicId };
+```
+
+**Database Rules:**
+```typescript
+// ✅ Always use CUIDs for relationships
+model Order {
+  outletId String  // CUID, not number
+  customerId String // CUID, not number
+}
+
+// ✅ Include publicId for external access
+model Outlet {
+  id String @id @default(cuid())      // CUID for relationships
+  publicId Int @unique                // Number for external use
+}
+```
+
+#### **Type Definitions for IDs**
+
+**Input Types (Numbers):**
+```typescript
+// ✅ Frontend sends numbers
+export interface OrderCreateInput {
+  outletId: number;     // 123 (publicId)
+  customerId?: number;  // 456 (publicId)
+  productId: number;    // 789 (publicId)
+}
+```
+
+**Database Types (CUIDs):**
+```typescript
+// ✅ Database uses CUIDs
+export interface Order {
+  id: string;           // "fgh789ghi" (CUID)
+  publicId: number;     // 999 (publicId)
+  outletId: string;     // "clx123abc" (CUID)
+  customerId?: string;  // "dme456def" (CUID)
+}
+```
+
+**Response Types (Numbers):**
+```typescript
+// ✅ API returns numbers
+export interface OrderResponse {
+  id: number;           // 999 (publicId)
+  outletId: number;     // 123 (publicId)
+  customerId?: number;  // 456 (publicId)
+}
+```
+
+#### **Database Functions**
+
+```typescript
+// ✅ GOOD: Convert publicId to CUID before database operations
+export async function createOrder(input: OrderCreateInput) {
+  // Find outlet by publicId
+  const outlet = await prisma.outlet.findUnique({
+    where: { publicId: input.outletId }
+  });
+  
+  // Use CUID for database operations
+  const order = await prisma.order.create({
+    data: { outletId: outlet.id } // CUID for security
+  });
+  
+  // Return publicId to frontend
+  return { ...order, outletId: outlet.publicId };
+}
+
+// ❌ BAD: Don't use publicId directly in database operations
+export async function createOrder(input: OrderCreateInput) {
+  const order = await prisma.order.create({
+    data: { outletId: input.outletId } // Wrong! Should be CUID
+  });
+}
+```
+
+#### **Key Benefits of This Approach**
+- ✅ **Security**: CUIDs prevent enumeration attacks
+- ✅ **Usability**: Numbers are easy to work with
+- ✅ **Performance**: No complex ID transformations
+- ✅ **Standards**: Follows industry best practices
+- ✅ **Scalability**: Works across distributed systems
+
+#### **Implementation Checklist**
+- [ ] **Frontend**: Always use numbers (publicIds)
+- [ ] **API**: Convert numbers to CUIDs for database operations
+- [ ] **Database**: Use CUIDs for all relationships and primary keys
+- [ ] **Types**: Define separate interfaces for input (numbers) and database (CUIDs)
+- [ ] **Transformation**: Create helper functions to convert between ID types
+- [ ] **Validation**: Ensure all inputs are numbers before processing
+- [ ] **Response**: Always return numbers (publicIds) to frontend
+
+## 🔐 **User Role System & Authorization**
+
+### **Four-Tier Role Hierarchy**
+
+Our system implements a **four-tier role hierarchy** designed for multi-tenant rental shop management:
+
+#### **🏢 System Level**
+1. **ADMIN** (System Administrator)
+   - **Access**: Full system-wide access
+   - **Permissions**: 
+     - Manage all merchants and outlets
+     - Manage all users system-wide
+     - Access system-wide analytics
+     - Configure system settings
+     - View all data across the platform
+   - **Scope**: No merchant or outlet restrictions
+   - **Database**: No `merchantId` or `outletId` assigned
+
+#### **🏪 Merchant Level**
+2. **MERCHANT** (Business Owner)
+   - **Access**: Organization-wide access within their merchant
+   - **Permissions**:
+     - Manage their own merchant organization
+     - Create and manage multiple outlets
+     - Manage users within their organization
+     - Access organization-wide analytics
+     - Configure business settings
+   - **Scope**: Restricted to their merchant organization
+   - **Assignment**: Automatically assigned when users register
+   - **Database**: Must have `merchantId`, cannot have `outletId`
+
+#### **🏬 Outlet Level**
+3. **OUTLET_ADMIN** (Outlet Manager)
+   - **Access**: Full access to their assigned outlet
+   - **Permissions**:
+     - Manage their assigned outlet
+     - Manage outlet staff and users
+     - Manage products and inventory
+     - Access outlet-specific analytics
+     - Process orders and payments
+   - **Scope**: Restricted to their assigned outlet
+   - **Assignment**: Must be assigned to specific outlet
+   - **Database**: Must have both `merchantId` and `outletId`
+
+4. **OUTLET_STAFF** (Outlet Employee)
+   - **Access**: Limited access to their assigned outlet
+   - **Permissions**:
+     - View outlet information
+     - Process basic orders
+     - Check product availability
+     - Access limited outlet data
+     - Basic customer service functions
+   - **Scope**: Restricted to their assigned outlet
+   - **Assignment**: Must be assigned to specific outlet
+   - **Database**: Must have both `merchantId` and `outletId`
+
+### **Role Assignment Rules**
+
+- **ADMIN**: Cannot be assigned to merchants or outlets (system-wide)
+- **MERCHANT**: Must be assigned to a merchant, cannot be assigned to specific outlets
+- **OUTLET_ADMIN**: Must be assigned to both a merchant and a specific outlet
+- **OUTLET_STAFF**: Must be assigned to both a merchant and a specific outlet
+
+### **🔒 Role-Based Data Access Control (SECURITY FIRST)**
+
+**CRITICAL SECURITY PRINCIPLE: All role-based filtering must be implemented at the backend/database level, NEVER on the frontend.**
+
+#### **Why Frontend Filtering is a Security Vulnerability:**
+- ❌ **Hackers can bypass frontend restrictions** by modifying API calls
+- ❌ **Frontend code can be inspected** and manipulated by users
+- ❌ **API endpoints without proper backend filtering** expose all data
+- ✅ **Backend filtering is secure** and cannot be bypassed
+
+#### **Secure Implementation Pattern:**
+```typescript
+// ❌ WRONG: Frontend filtering (Security Hole)
+if (user.role === 'OUTLET_STAFF') {
+  apiFilters.outletId = user.outletId; // Hackers can remove this!
+}
+
+// ✅ CORRECT: Backend filtering (Secure)
+// Frontend sends minimal data, backend handles all access control
+const apiFilters = { customerId: 22 }; // Only essential data
+// Backend automatically filters based on user's JWT token and role
+```
+
+#### **Role-Based Data Access Rules:**
+
+**Customer Orders Access:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: Can only see orders from their specific outlet
+- **MERCHANT**: Can see orders from all their outlets
+- **ADMIN**: Can see all orders across all merchants
+
+**Implementation in Backend API:**
+```typescript
+// ✅ SECURE: Backend handles role-based filtering
+export async function getCustomerOrders(customerId: number, user: AuthUser) {
+  const userScope = getUserScope(user);
+  
+  // Build where clause based on user role
+  const where: any = { customerId };
+  
+  if (userScope.outletId) {
+    // Outlet users restricted to their outlet
+    where.outletId = userScope.outletId;
+  } else if (userScope.merchantId) {
+    // Merchant users restricted to their merchant
+    where.merchantId = userScope.merchantId;
+  }
+  // Admin users have no restrictions
+  
+  return await prisma.order.findMany({ where });
+}
+```
+
+#### **Frontend Implementation (SECURE):**
+```typescript
+// ✅ SECURE: Frontend sends minimal data, backend handles security
+const fetchCustomerOrders = async () => {
+  // Only send essential data - backend handles all role-based filtering
+  const apiFilters = {
+    customerId: customer.id,
+    limit: 10,
+    offset: (currentPage - 1) * 10
+  };
+  
+  // Backend automatically filters based on user's JWT token and role
+  const response = await ordersApi.searchOrders(apiFilters);
+  
+  // Response is automatically scoped to user's permissions
+  setOrders(response.data || []);
+};
+
+// ❌ WRONG: Never implement role-based filtering on frontend
+// if (user.role === 'OUTLET_STAFF') {
+//   apiFilters.outletId = user.outletId; // SECURITY HOLE!
+// }
+```
+
+### **Authorization Functions**
+
+```typescript
+// ✅ GOOD: Use proper authorization functions
+import { 
+  hasAnyRole, 
+  assertAnyRole, 
+  isMerchantLevel, 
+  isOutletTeam,
+  canManageUsers,
+  canManageOutlets,
+  canManageProducts 
+} from '@rentalshop/auth';
+
+// Check if user can manage users
+if (canManageUsers(user)) {
+  // Allow user management
+}
+
+// Check if user can manage outlets
+if (canManageOutlets(user)) {
+  // Allow outlet management
+}
+
+// Check if user can manage products
+if (canManageProducts(user)) {
+  // Allow product management
+}
+```
+
+### **Access Control Matrix**
+
+| Role | System Access | Merchant Access | Outlet Access | User Management | Product Management |
+|------|---------------|-----------------|---------------|------------------|-------------------|
+| **ADMIN** | ✅ Full | ✅ All Merchants | ✅ All Outlets | ✅ All Users | ✅ All Products |
+| **MERCHANT** | ❌ None | ✅ Own Merchant | ✅ Own Outlets | ✅ Own Users | ✅ Own Products |
+| **OUTLET_ADMIN** | ❌ None | ❌ None | ✅ Own Outlet | ✅ Own Outlet Users | ✅ Own Outlet Products |
+| **OUTLET_STAFF** | ❌ None | ❌ None | ⚠️ Limited | ❌ None | ⚠️ View Only |
+
+### **Component Organization Rules**
+
+#### **📁 `/forms` - Pure Form Components** ✅ COMPLETED
+**When to create here:**
+- **Reusable form logic** that can be used across different contexts
+- **Form validation and state management**
+- **Input field components and form layouts**
+- **NO business logic or API calls**
+
+**Examples:**
+```typescript
+// ✅ GOOD: Pure form components (ALL COMPLETED)
+/forms/ProductForm.tsx        // Form logic + validation ✅
+/forms/CustomerForm.tsx       // Form logic + validation ✅
+/forms/OrderForm.tsx          // Form logic + validation ✅
+/forms/LoginForm.tsx          // Form logic + validation ✅
+/forms/RegisterForm.tsx       // Form logic + validation ✅
+/forms/ForgetPasswordForm.tsx // Form logic + validation ✅
+/forms/CreateOrderForm.tsx    // Form logic + validation ✅
+```
+
+**Characteristics:**
+- Form inputs and validation
+- State management for form data
+- Form submission handling
+- NO API calls
+- NO business logic
+- Reusable across different business contexts
+
+**Status**: All form components are complete and properly organized
+
+#### **📁 `/features` - Business Logic Components** ✅ COMPLETED
+**When to create here:**
+- **Complete business features** with API integration
+- **Components that combine forms + business logic**
+- **Reusable business components** (cards, tables, dialogs)
+- **Components that make API calls or handle business operations**
+
+**Examples:**
+```typescript
+// ✅ GOOD: Business logic components (ALL COMPLETED)
+/features/Products/           // Product management + API calls ✅
+/features/Customers/          // Customer management + API calls ✅
+/features/Orders/             // Order management + API calls ✅
+/features/Users/              // User management + API calls ✅
+/features/Dashboard/          // Analytics + data fetching ✅
+/features/Calendars/          // Calendar + scheduling logic ✅
+/features/Settings/           // Configuration + business logic ✅
+/features/Shops/              // Shop management + API calls ✅
+```
+
+**Characteristics:**
+- API calls and data fetching
+- Business logic and operations
+- Combines multiple components (including forms)
+- Handles save/cancel operations
+- Specific to business domain
+
+**Status**: All feature components are complete and properly organized
+
+#### **📁 `/ui` - Shared UI Components** ✅ COMPLETED
+**When to create here:**
+- **Reusable UI primitives** (buttons, inputs, cards, etc.)
+- **Layout components** (navigation, sidebars, etc.)
+- **Utility components** (skeletons, loaders, etc.)
+- **NO business logic, pure presentation**
+
+**Examples:**
+```typescript
+// ✅ GOOD: Shared UI components (ALL COMPLETED)
+/ui/button.tsx               // Button variants + styling ✅
+/ui/card.tsx                 // Card layout + variants ✅
+/ui/input.tsx                // Input field + validation states ✅
+/ui/table.tsx                // Table structure + sorting ✅
+/ui/dialog.tsx               // Modal dialogs + overlays ✅
+/ui/skeleton.tsx             // Loading placeholders ✅
+/ui/charts/                  // Chart components + data viz ✅
+/ui/searchable-select.tsx    // Searchable select component ✅
+/ui/date-range-picker.tsx    // Date range picker ✅
+/ui/pagination.tsx           // Pagination component ✅
+/ui/toast.tsx                // Toast notifications ✅
+```
+
+**Characteristics:**
+- Pure presentation components
+- Multiple variants and themes
+- Reusable across all contexts
+- No business domain knowledge
+- Consistent design system
+
+**Status**: All UI components are complete and properly organized
+
+#### **Component Decision Tree**
+```
+Is it a FORM with validation and inputs?
+├─ YES → /forms/
+│   ├─ Does it make API calls? → NO ✅
+│   ├─ Does it have business logic? → NO ✅
+│   └─ Is it reusable across contexts? → YES ✅
+│
+├─ Is it a UI primitive or layout component?
+├─ YES → /ui/
+│   ├─ Does it have business logic? → NO ✅
+│   ├─ Is it purely presentational? → YES ✅
+│   └─ Is it reusable everywhere? → YES ✅
+│
+└─ NO → /features/
+    ├─ Does it make API calls? → YES ✅
+    ├─ Does it handle business operations? → YES ✅
+    ├─ Does it combine multiple components? → YES ✅
+    └─ Is it a complete business feature? → YES ✅
+```
+
+#### **Quick Rules of Thumb**
+1. **`/forms`** = "How to collect and validate data"
+2. **`/ui`** = "How to present and layout content"
+3. **`/features`** = "What to do with the data + business operations"
+4. **`/forms`** = Reusable across different business contexts
+5. **`/ui`** = Reusable across ALL contexts (pure presentation)
+6. **`/features`** = Specific to business domain
+7. **`/forms`** = No API calls, no business logic
+8. **`/ui`** = No API calls, no business logic, pure presentation
+9. **`/features`** = API calls, business logic, data management
+
+### **Database Design Principles & Performance**
+
+#### **Database Schema Design**
+```sql
+-- ✅ GOOD: Proper indexing for rental shop queries
+CREATE INDEX idx_orders_status_outlet ON orders(status, outlet_id);
+CREATE INDEX idx_orders_customer_created ON orders(customer_id, created_at DESC);
+CREATE INDEX idx_orders_pickup_return ON orders(pickup_plan_at, return_plan_at);
+CREATE INDEX idx_orders_search ON orders(order_number, customer_name, customer_phone);
+CREATE INDEX idx_order_items_product ON order_items(product_id, order_id);
+CREATE INDEX idx_payments_order_status ON payments(order_id, status);
+CREATE INDEX idx_products_outlet_available ON products(outlet_id, available DESC);
+CREATE INDEX idx_customers_merchant_search ON customers(merchant_id, first_name, last_name, phone);
+```
+
+#### **Indexing Strategy**
+```typescript
+// ✅ GOOD: Index for common query patterns
+// Orders by status and outlet (for staff dashboards)
+// Orders by customer and date (for customer history)
+// Orders by pickup/return dates (for scheduling)
+// Products by availability (for inventory management)
+// Payments by order and status (for financial tracking)
+
+// ❌ BAD: Missing indexes on frequently queried fields
+// No index on order_number for lookups
+// No index on customer search fields
+// No composite indexes for complex queries
+```
+
+#### **Query Optimization**
+```typescript
+// ✅ GOOD: Efficient queries with proper joins
+const orders = await prisma.order.findMany({
+  where: {
+    outletId: outletId,
+    status: { in: ['ACTIVE'] },
+    returnPlanAt: { lt: new Date() }
+  },
+  include: {
+    customer: { select: { firstName: true, lastName: true, phone: true } },
+    orderItems: { 
+      include: { product: { select: { name: true, barcode: true } } }
+    }
+  },
+  orderBy: { createdAt: 'desc' },
+  take: 20
+});
+
+// ❌ BAD: N+1 queries or inefficient includes
+const orders = await prisma.order.findMany();
+for (const order of orders) {
+  const customer = await prisma.customer.findUnique({ where: { id: order.customerId } });
+  const items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+}
+```
+
+#### **Database Schema Best Practices**
+```prisma
+// ✅ GOOD: Proper relationships and constraints
+model Order {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique // Indexed for fast lookups
+  orderType     String   // RENT, SALE, RENT_TO_OWN
+  status        String   @default("PENDING")
+  outletId      String
+  customerId    String?
+  
+  // Timestamps for tracking
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Rental-specific fields
+  pickupPlanAt  DateTime?
+  returnPlanAt  DateTime?
+  pickedUpAt    DateTime?
+  returnedAt    DateTime?
+  
+  // Financial fields
+  totalAmount   Float
+  depositAmount Float    @default(0)
+  
+  // Relations
+  outlet      Outlet      @relation(fields: [outletId], references: [id])
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  orderItems  OrderItem[]
+  payments    Payment[]
+  
+  @@index([status, outletId]) // Composite index for staff queries
+  @@index([customerId, createdAt(sort: Desc)]) // Customer history
+  @@index([pickupPlanAt, returnPlanAt]) // Scheduling queries
+  @@index([orderNumber]) // Fast order lookups
+}
+
+// ✅ GOOD: Optimized product model for inventory
+model Product {
+  id          String   @id @default(cuid())
+  outletId    String
+  name        String
+  barcode     String?  @unique
+  stock       Int      @default(0)
+  renting     Int      @default(0)
+  available   Int      @default(0) // Computed field
+  rentPrice   Float
+  deposit     Float    @default(0)
+  
+  outlet      Outlet   @relation(fields: [outletId], references: [id])
+  orderItems  OrderItem[]
+  
+  @@index([outletId, available(sort: Desc)]) // Inventory queries
+  @@index([barcode]) // Barcode scanning
+  @@index([name]) // Product search
+}
+```
+
+#### **Performance Optimization Rules**
+```typescript
+// ✅ GOOD: Pagination for large datasets
+export async function searchOrders(filters: OrderSearchFilter) {
+  const { limit = 20, offset = 0 } = filters;
+  
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where: buildWhereClause(filters),
+      include: { customer: true, outlet: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.order.count({ where: buildWhereClause(filters) })
+  ]);
+  
+  return { orders, total, hasMore: offset + limit < total };
+}
+
+// ✅ GOOD: Efficient search with full-text indexing
+export async function searchProducts(query: string) {
+  return await prisma.product.findMany({
+    where: {
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { barcode: { equals: query } },
+        { description: { contains: query, mode: 'insensitive' } }
+      ]
+    },
+    include: { outlet: true },
+    take: 50
+  });
+}
+
+// ❌ BAD: No pagination or inefficient search
+export async function getAllOrders() {
+  return await prisma.order.findMany({
+    include: { customer: true, outlet: true, orderItems: true }
+  }); // Could return thousands of records
+}
+```
+
+#### **Data Integrity & Constraints**
+```prisma
+// ✅ GOOD: Proper constraints and validation
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  totalPrice  Float
+  
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  @@index([orderId, productId]) // Composite index for order items
+  @@check(quantity > 0) // Business rule validation
+  @@check(unitPrice >= 0) // Price validation
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  orderId   String
+  amount    Float
+  method    String
+  status    String   @default("PENDING")
+  
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId, status]) // Payment tracking
+  @@check(amount > 0) // Amount validation
+}
+```
 
 ### **Configuration Best Practices**
 
@@ -67,76 +845,151 @@ export default defineConfig({
 });
 ```
 
-### **Code Organization Rules**
+### **Repository Structure & Organization**
 
-#### **File Structure**
+#### **📁 Root Level Structure** ✅ COMPLETED
+```
+rentalshop-nextjs/
+├── apps/                          # Next.js applications
+│   ├── client/                    # Customer-facing rental shop app
+│   ├── admin/                     # Admin dashboard app
+│   └── api/                       # Backend API server
+├── packages/                      # Shared packages ✅ COMPLETED
+│   ├── ui/                        # UI component library ✅ COMPLETED
+│   ├── auth/                      # Authentication & authorization ✅ COMPLETED
+│   ├── database/                  # Database utilities & Prisma ✅ COMPLETED
+│   ├── types/                     # TypeScript type definitions ✅ COMPLETED
+│   ├── utils/                     # Utility functions & API clients ✅ COMPLETED
+│   └── hooks/                     # React hooks & business logic ✅ COMPLETED
+├── prisma/                        # Database schema & migrations
+├── scripts/                       # Development & deployment scripts
+└── config files                   # Root configuration files
+```
+
+#### **📁 Packages Structure** ✅ COMPLETED
 ```
 packages/
-├── ui/src/components/     # ✅ Shared UI components
-├── auth/src/              # ✅ Authentication logic
-├── database/src/          # ✅ Database utilities
-└── utils/src/             # ✅ Common utilities
+├── ui/src/components/              # ✅ COMPLETED
+│   ├── forms/                     # Pure form components ✅ COMPLETED
+│   │   ├── LoginForm.tsx          # ✅
+│   │   ├── RegisterForm.tsx       # ✅
+│   │   ├── CustomerForm.tsx       # ✅
+│   │   ├── ProductForm.tsx        # ✅
+│   │   ├── OrderForm.tsx          # ✅
+│   │   ├── CreateOrderForm.tsx    # ✅
+│   │   └── ForgetPasswordForm.tsx # ✅
+│   ├── features/                  # Business logic components ✅ COMPLETED
+│   │   ├── Products/              # Product management ✅
+│   │   ├── Customers/             # Customer management ✅
+│   │   ├── Orders/                # Order management ✅
+│   │   ├── Users/                 # User management ✅
+│   │   ├── Dashboard/             # Analytics & reporting ✅
+│   │   ├── Calendars/             # Scheduling & availability ✅
+│   │   ├── Settings/              # Configuration ✅
+│   │   └── Shops/                 # Shop management ✅
+│   ├── ui/                        # Shared UI primitives ✅ COMPLETED
+│   │   ├── button.tsx             # ✅
+│   │   ├── card.tsx               # ✅
+│   │   ├── input.tsx              # ✅
+│   │   ├── table.tsx              # ✅
+│   │   ├── dialog.tsx             # ✅
+│   │   ├── skeleton.tsx           # ✅
+│   │   ├── charts/                # Chart components ✅
+│   │   ├── searchable-select.tsx  # ✅
+│   │   ├── date-range-picker.tsx  # ✅
+│   │   ├── pagination.tsx         # ✅
+│   │   └── toast.tsx              # ✅
+│   └── layout/                    # Layout components ✅ COMPLETED
+├── auth/src/                      # Authentication logic ✅ COMPLETED
+├── database/src/                   # Database utilities ✅ COMPLETED
+├── types/src/                      # Type definitions ✅ COMPLETED
+├── utils/src/                      # Utility functions ✅ COMPLETED
+│   ├── api/                       # API client functions ✅ COMPLETED
+│   ├── config/                    # Configuration utilities ✅ COMPLETED
+│   └── common.ts                  # Common utilities ✅
+└── hooks/src/                      # React hooks ✅ COMPLETED
+    └── hooks/                      # Business logic hooks ✅ COMPLETED
+        ├── useAuth.ts              # ✅
+        ├── useProductAvailability.ts # ✅
+        └── useThrottledSearch.ts   # ✅
+```
 
+#### **📁 Apps Structure**
+```
 apps/
-├── client/app/            # ✅ Client-specific pages
-├── admin/app/             # ✅ Admin-specific pages
-└── api/app/api/           # ✅ API endpoints
+├── client/                        # Customer rental shop
+│   ├── app/                       # Next.js 13+ app directory
+│   │   ├── dashboard/             # Customer dashboard
+│   │   ├── products/              # Product browsing
+│   │   ├── orders/                # Order management
+│   │   ├── customers/             # Customer profiles
+│   │   └── settings/              # User settings
+│   └── lib/                       # Client utilities
+├── admin/                         # Admin dashboard
+│   ├── app/                       # Next.js 13+ app directory
+│   │   ├── dashboard/             # Admin overview
+│   │   ├── users/                 # User management
+│   │   ├── products/              # Product management
+│   │   ├── orders/                # Order management
+│   │   └── analytics/             # Business analytics
+│   └── lib/                       # Admin utilities
+└── api/                           # Backend API server
+    ├── app/                       # Next.js 13+ app directory
+    │   └── api/                   # API routes
+    │       ├── auth/               # Authentication endpoints
+    │       ├── products/           # Product endpoints
+    │       ├── orders/             # Order endpoints
+    │       ├── customers/          # Customer endpoints
+    │       ├── users/              # User endpoints
+    │       └── analytics/          # Analytics endpoints
+    ├── lib/                       # API utilities
+    ├── middleware/                 # API middleware
+    └── validators/                 # Input validation
 ```
 
-#### **Import Patterns**
+### **Code Organization Rules**
+
+#### **Import Patterns & Component Usage**
 ```typescript
-// ✅ GOOD: Import from shared packages
-import { Button, Card } from '@rentalshop/ui';
-import { loginUser } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
-import { formatDate } from '@rentalshop/utils';
+// ✅ GOOD: Centralized imports from @rentalshop/ui
+import { 
+  Button, 
+  Card, 
+  Input, 
+  Select,
+  Textarea,
+  Badge,
+  formatDate,
+  formatCurrency,
+  cn 
+} from '@rentalshop/ui';
 
-// ❌ BAD: Import from individual apps
-import { Button } from '../../../components/Button';
-```
+// ✅ GOOD: Import business components
+import { OrderCard, OrderForm } from '@rentalshop/ui';
+import { CustomerCard, CustomerForm } from '@rentalshop/ui';
+import { LoginForm, RegisterForm } from '@rentalshop/ui';
 
-### **Component Development Rules**
-
-#### **Component Structure**
-```typescript
-// ✅ GOOD: Consistent component structure
-// packages/ui/src/components/button.tsx
-import React from 'react';
-import { cn } from '../lib/cn';
-import { buttonVariants } from './button.variants';
-import type { ButtonProps } from './button.types';
-
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
-    return (
-      <button
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-
-Button.displayName = 'Button';
-```
-
-#### **Component Usage**
-```typescript
-// ✅ GOOD: Use shared components
-// apps/client/app/login/page.tsx
-import { Button, Input, Card } from '@rentalshop/ui';
-
+// ✅ GOOD: Use components with proper structure
 export default function LoginPage() {
   return (
     <Card>
-      <Input type="email" placeholder="Email" />
-      <Button variant="primary">Login</Button>
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input type="email" placeholder="Email" />
+        <Button variant="primary">Login</Button>
+      </CardContent>
     </Card>
   );
 }
 
-// ❌ BAD: Create app-specific components
+// ❌ BAD: Use relative imports or create app-specific components
+import { Button } from '../components/Button';
+import { Card } from '../../shared/card';
+import { cn } from '../../lib/utils';
+
+// ❌ BAD: Inline components instead of using shared ones
 export default function LoginPage() {
   return (
     <div className="card">
@@ -147,21 +1000,263 @@ export default function LoginPage() {
 }
 ```
 
+#### **File Structure**
+```
+packages/
+├── ui/src/components/     # ✅ Shared UI components
+├── auth/src/              # ✅ Authentication logic with role-based access
+├── database/src/          # ✅ Database utilities with proper indexing
+└── utils/src/             # ✅ Common utilities
+
+apps/
+├── client/app/            # ✅ Client-specific pages
+├── admin/app/             # ✅ Admin-specific pages
+└── api/app/api/           # ✅ API endpoints with optimized queries
+```
+
+#### **Import Patterns**
+```typescript
+// ✅ GOOD: Import from shared packages with centralized UI components
+import { 
+  Button, 
+  Card, 
+  Input, 
+  Select,
+  Textarea,
+  Badge,
+  formatDate,
+  formatCurrency,
+  cn 
+} from '@rentalshop/ui';
+import { loginUser } from '@rentalshop/auth';
+import { prisma } from '@rentalshop/database';
+import { validateInput } from '@rentalshop/utils';
+
+// ✅ GOOD: Import specific components when needed
+import { OrderCard, OrderForm } from '@rentalshop/ui';
+import { CustomerCard, CustomerForm } from '@rentalshop/ui';
+
+// ❌ BAD: Import from individual apps or relative paths
+import { Button } from '../../../components/Button';
+import { Card } from '../shared/card';
+import { cn } from '../../lib/utils';
+```
+
+### **Component Development Rules**
+
+#### **Centralized Component Architecture**
+```typescript
+// ✅ GOOD: All components exported from centralized location
+// packages/ui/src/index.tsx
+export * from './components'; // Exports everything from components/index.ts
+
+// packages/ui/src/components/index.ts
+// ============================================================================
+// SHARED COMPONENTS (Core UI Components)
+// ============================================================================
+export { Button, buttonVariants } from './shared/button';
+export { Card, CardHeader, CardTitle, CardContent } from './shared/card';
+export { Input } from './shared/input';
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './shared/select';
+export { Textarea } from './shared/textarea';
+export { Badge, badgeVariants } from './shared/badge';
+
+// ============================================================================
+// BUSINESS COMPONENTS
+// ============================================================================
+export { LoginForm, RegisterForm, ForgetPasswordForm } from './auth';
+export { CustomerCard, CustomerForm } from './customers';
+export { ProductCard, ProductGrid } from './products';
+export { OrderCard, OrderForm } from './orders';
+```
+
+#### **Component Structure**
+```typescript
+// ✅ GOOD: Consistent component structure with centralized imports
+// packages/ui/src/components/shared/button.tsx
+import React from 'react';
+import { cn } from '@rentalshop/ui';
+import { cva, type VariantProps } from 'class-variance-authority';
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-action-primary text-text-inverted hover:bg-brand-primary",
+        destructive: "bg-action-danger text-text-inverted hover:bg-red-700",
+        outline: "border border-border bg-bg-card text-text-primary hover:bg-bg-secondary",
+        secondary: "bg-bg-secondary text-text-primary hover:bg-bg-tertiary",
+        ghost: "hover:bg-bg-secondary hover:text-text-primary",
+        link: "text-action-primary underline-offset-4 hover:underline",
+        success: "bg-action-success text-text-inverted hover:bg-green-700",
+        warning: "bg-action-warning text-text-inverted hover:bg-orange-700",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+```
+
+#### **Component Usage**
+```typescript
+// ✅ GOOD: Use centralized UI components
+// apps/client/app/login/page.tsx
+import { 
+  Button, 
+  Input, 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent 
+} from '@rentalshop/ui';
+
+export default function LoginPage() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input type="email" placeholder="Email" />
+        <Button variant="primary">Login</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ✅ GOOD: Import specific business components
+import { LoginForm, RegisterForm } from '@rentalshop/ui';
+
+export default function AuthPage() {
+  return <LoginForm onSubmit={handleLogin} />;
+}
+
+// ❌ BAD: Create app-specific components or use relative imports
+export default function LoginPage() {
+  return (
+    <div className="card">
+      <input type="email" />
+      <button className="btn-primary">Login</button>
+    </div>
+  );
+}
+
+// ❌ BAD: Use relative imports
+import { Button } from '../components/Button';
+import { Card } from '../../shared/card';
+```
+
 ### **API Development Rules**
 
 #### **API Route Structure**
 ```typescript
-// ✅ GOOD: Consistent API structure
-// apps/api/app/api/auth/login/route.ts
+// ✅ GOOD: Consistent API structure with proper authorization
+// apps/api/app/api/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { loginUser } from '@rentalshop/auth';
-import { validateLoginInput } from '@rentalshop/utils';
+import { searchOrders } from '@rentalshop/database';
+import { validateOrderInput } from '@rentalshop/utils';
+import { assertAnyRole, canManageProducts } from '@rentalshop/auth';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Verify authentication and authorization
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user can access orders (all roles can view orders)
+    const { searchParams } = new URL(request.url);
+    const filters = parseSearchParams(searchParams);
+    
+    // Use indexed queries for performance
+    const result = await searchOrders(filters, user);
+    
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 400 }
+    );
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication and authorization
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Access token required' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifyTokenSimple(token);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user can create orders
+    if (!canManageProducts(user)) {
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions' },
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
     const body = await request.json();
-    const validatedData = validateLoginInput(body);
-    const result = await loginUser(validatedData);
+    const validatedData = orderSchema.parse(body);
+    
+    // Create order with proper scope validation
+    const result = await createOrder(validatedData, user);
     
     return NextResponse.json(result);
   } catch (error) {
@@ -175,15 +1270,44 @@ export async function POST(request: NextRequest) {
 
 #### **Database Operations**
 ```typescript
-// ✅ GOOD: Use shared database client
-// packages/auth/src/auth.ts
+// ✅ GOOD: Use shared database client with proper authorization
+// packages/orders/src/orders.ts
 import { prisma } from '@rentalshop/database';
+import { getUserScope } from '@rentalshop/auth';
 
-export const loginUser = async (credentials: LoginCredentials) => {
-  const user = await prisma.user.findUnique({
-    where: { email: credentials.email }
+export const searchOrders = async (filters: OrderFilters, user: AuthUser) => {
+  const scope = getUserScope(user);
+  
+  // Build where clause based on user role and scope
+  const where: any = {};
+  
+  if (scope.merchantId) {
+    where.merchantId = scope.merchantId;
+  }
+  
+  if (scope.outletId) {
+    where.outletId = scope.outletId;
+  }
+  
+  // Add other filters
+  if (filters.status) {
+    where.status = filters.status;
+  }
+  
+  if (filters.startDate || filters.endDate) {
+    where.createdAt = {};
+    if (filters.startDate) where.createdAt.gte = filters.startDate;
+    if (filters.endDate) where.createdAt.lte = filters.endDate;
+  }
+  
+  // Use indexed fields for efficient queries
+  return await prisma.order.findMany({
+    where,
+    include: { customer: true, outlet: true },
+    orderBy: { createdAt: 'desc' },
+    take: filters.limit || 20,
+    skip: filters.offset || 0
   });
-  // ... rest of logic
 };
 
 // ❌ BAD: Create separate database connections
@@ -195,44 +1319,94 @@ const prisma = new PrismaClient();
 
 #### **Type Definitions**
 ```typescript
-// ✅ GOOD: Centralized types
+// ✅ GOOD: Centralized types with proper authorization considerations
 // packages/database/src/types.ts
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
+export interface OrderSearchFilter {
+  outletId?: number;
+  status?: OrderStatus;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+  offset?: number;
+  // Only include fields that are indexed for efficient queries
 }
 
-// ✅ GOOD: Import everywhere
-import type { User } from '@rentalshop/database';
+// ✅ GOOD: Index-aware query types
+export interface ProductSearchFilter {
+  outletId?: number;
+  available?: boolean;
+  categoryId?: number;
+  search?: string; // For indexed name/barcode search
+  limit?: number;
+  offset?: number;
+}
+
+// ✅ GOOD: Role-aware user types
+export interface UserCreateInput {
+  name: string;
+  email: string;
+  phone: string;
+  role: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  merchantId?: number; // Required for MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+  outletId?: number; // Required for OUTLET_ADMIN and OUTLET_STAFF
+}
 
 // ❌ BAD: Redefine types
-interface User {
-  id: string;
-  email: string;
+interface Order {
+  id: number;
+  orderNumber: string;
   // ... duplicated definition
 }
 ```
 
 #### **Validation Schemas**
 ```typescript
-// ✅ GOOD: Shared validation
+// ✅ GOOD: Shared validation with database constraints and role validation
 // packages/utils/src/validation.ts
 import { z } from 'zod';
 
-export const loginSchema = z.object({
+export const orderSchema = z.object({
+  orderType: z.enum(['RENT', 'SALE', 'RENT_TO_OWN']),
+  outletId: z.string().min(1),
+  customerId: z.string().optional(),
+  orderItems: z.array(z.object({
+    productId: z.string().min(1),
+    quantity: z.number().positive(),
+    unitPrice: z.number().nonnegative()
+  })).min(1)
+});
+
+// ✅ GOOD: Role-specific validation
+export const userCreateSchema = z.object({
+  name: z.string().min(1),
   email: z.string().email(),
-  password: z.string().min(8),
+  phone: z.string().min(1),
+  role: z.enum(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']),
+  merchantId: z.string().optional(),
+  outletId: z.string().optional()
+}).refine((data) => {
+  // Validate role-specific requirements
+  if (data.role === 'ADMIN') {
+    return !data.merchantId && !data.outletId;
+  }
+  if (data.role === 'MERCHANT') {
+    return !!data.merchantId && !data.outletId;
+  }
+  if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
+    return !!data.merchantId && !!data.outletId;
+  }
+  return false;
+}, {
+  message: "Invalid role assignment. ADMIN: no merchant/outlet, MERCHANT: merchant only, OUTLET_*: both merchant and outlet required"
 });
 
 // ✅ GOOD: Use everywhere
-import { loginSchema } from '@rentalshop/utils';
+import { orderSchema, userCreateSchema } from '@rentalshop/utils';
 
 // ❌ BAD: Duplicate schemas
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+const orderSchema = z.object({
+  orderType: z.enum(['RENT', 'SALE']),
+  // ... duplicated definition
 });
 ```
 
@@ -297,19 +1471,26 @@ return { error: 'User not found' };
 
 #### **Code Documentation**
 ```typescript
-// ✅ GOOD: JSDoc comments
+// ✅ GOOD: JSDoc comments with authorization notes
 /**
- * Authenticates a user with email and password
- * @param credentials - User login credentials
- * @returns Promise with user data and JWT token
- * @throws {AppError} When credentials are invalid
+ * Search orders with optimized database queries and role-based access control
+ * Uses indexed fields: status, outletId, createdAt for performance
+ * Automatically scopes results based on user role and permissions
+ * 
+ * @param filters - Search filters (only indexed fields)
+ * @param user - Authenticated user for role-based access control
+ * @returns Promise with paginated order results
+ * @throws {AppError} When database query fails or access denied
  */
-export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  // Implementation
+export const searchOrders = async (
+  filters: OrderSearchFilter, 
+  user: AuthUser
+): Promise<OrderSearchResponse> => {
+  // Implementation with proper authorization and indexing
 };
 
 // ❌ BAD: No documentation
-export const loginUser = async (credentials) => {
+export const searchOrders = async (filters) => {
   // Implementation
 };
 ```
@@ -318,12 +1499,12 @@ export const loginUser = async (credentials) => {
 
 #### **Input Validation**
 ```typescript
-// ✅ GOOD: Validate all inputs
-import { loginSchema } from '@rentalshop/utils';
+// ✅ GOOD: Validate all inputs with database constraints and role validation
+import { orderSchema, userCreateSchema } from '@rentalshop/utils';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const validatedData = loginSchema.parse(body);
+  const validatedData = orderSchema.parse(body);
   // ... rest of logic
 }
 
@@ -351,19 +1532,48 @@ AUTH_SECRET="your-secret"
 
 #### **Test Structure**
 ```typescript
-// ✅ GOOD: Consistent test structure
-// packages/utils/src/__tests__/date.test.ts
-import { formatDate } from '../date';
+// ✅ GOOD: Consistent test structure with authorization testing
+// packages/utils/src/__tests__/authorization.test.ts
+import { 
+  hasAnyRole, 
+  isMerchantLevel, 
+  isOutletTeam,
+  canManageUsers 
+} from '../authorization';
 
-describe('formatDate', () => {
-  it('should format date correctly', () => {
-    const date = new Date('2024-01-01');
-    expect(formatDate(date)).toBe('01/01/2024');
+describe('Authorization Functions', () => {
+  describe('hasAnyRole', () => {
+    it('should return true for valid role', () => {
+      const user = { role: 'ADMIN' };
+      expect(hasAnyRole(user, ['ADMIN', 'MERCHANT'])).toBe(true);
+    });
+    
+    it('should return false for invalid role', () => {
+      const user = { role: 'OUTLET_STAFF' };
+      expect(hasAnyRole(user, ['ADMIN', 'MERCHANT'])).toBe(false);
+    });
+  });
+  
+  describe('canManageUsers', () => {
+    it('should allow ADMIN to manage users', () => {
+      const user = { role: 'ADMIN' };
+      expect(canManageUsers(user)).toBe(true);
+    });
+    
+    it('should allow MERCHANT to manage users', () => {
+      const user = { role: 'MERCHANT' };
+      expect(canManageUsers(user)).toBe(true);
+    });
+    
+    it('should not allow OUTLET_STAFF to manage users', () => {
+      const user = { role: 'OUTLET_STAFF' };
+      expect(canManageUsers(user)).toBe(false);
+    });
   });
 });
 
 // ❌ BAD: Inconsistent test structure
-test('formatDate works', () => {
+test('authorization works', () => {
   // Test without proper structure
 });
 ```
@@ -372,10 +1582,11 @@ test('formatDate works', () => {
 
 #### **Commit Messages**
 ```bash
-# ✅ GOOD: Conventional commits
-feat(ui): add new product card component
-fix(api): resolve authentication bug
-docs(readme): update installation instructions
+# ✅ GOOD: Conventional commits with role information
+feat(auth): add role-based access control for four-tier hierarchy
+fix(api): resolve authorization bug in outlet management
+docs(readme): update user roles documentation
+feat(ui): add role-aware user management components
 
 # ❌ BAD: Inconsistent commits
 added new component
@@ -420,11 +1631,53 @@ updated docs
 - ✅ Use type guards for runtime validation
 - ❌ Don't use `any` type without justification
 
+### **Database Performance Checklist**
+
+Before submitting any database changes, ensure:
+
+- [ ] **Proper Indexing**: All frequently queried fields are indexed
+- [ ] **Composite Indexes**: Multi-field queries have appropriate composite indexes
+- [ ] **Query Optimization**: No N+1 queries or inefficient joins
+- [ ] **Pagination**: Large datasets use proper pagination
+- [ ] **Constraints**: Business rules enforced with database constraints
+- [ ] **Relationships**: Proper foreign key relationships with cascade rules
+- [ ] **Search Optimization**: Full-text search on appropriate fields
+- [ ] **Performance Testing**: Queries tested with realistic data volumes
+- [ ] **Monitoring**: Query performance monitored in production
+- [ ] **Backup Strategy**: Database backup and recovery procedures in place
+
+### **Authorization Checklist**
+
+Before submitting any authorization changes, ensure:
+
+- [ ] **Role Validation**: Proper role assignment rules enforced
+- [ ] **Scope Validation**: Users can only access data within their scope
+- [ ] **Permission Checks**: All sensitive operations check user permissions
+- [ ] **Merchant Isolation**: Users cannot access other merchant data
+- [ ] **Outlet Isolation**: Outlet users restricted to their outlet
+- [ ] **Admin Override**: System admins have appropriate access
+- [ ] **Audit Logging**: All authorization decisions are logged
+- [ ] **Testing**: Authorization logic thoroughly tested
+
+### **🔒 Security Checklist (CRITICAL)**
+
+Before submitting any code, ensure these security requirements are met:
+
+- [ ] **NO FRONTEND ROLE-BASED FILTERING** - All filtering must be backend-only
+- [ ] **Backend API endpoints** implement proper role-based access control
+- [ ] **Database queries** automatically filter by user scope (merchantId/outletId)
+- [ ] **JWT tokens** are properly validated on every API call
+- [ ] **User scope** is extracted from JWT and enforced in database queries
+- [ ] **No sensitive data** is exposed through frontend filtering
+- [ ] **API responses** are automatically scoped to user's role and permissions
+
 ### **Review Checklist**
 
 Before submitting any code, ensure:
 
 - [ ] No duplicated configurations
+- [ ] Uses centralized `@rentalshop/ui` imports for all UI components
+- [ ] No relative imports for UI components
 - [ ] Uses shared components and utilities
 - [ ] Follows consistent naming conventions
 - [ ] Includes proper TypeScript types
@@ -432,23 +1685,82 @@ Before submitting any code, ensure:
 - [ ] Includes tests for new functionality
 - [ ] Updates documentation if needed
 - [ ] Follows security best practices
-- [ ] Optimized for performance
+- [ ] Optimized for performance with proper indexing
 - [ ] Follows DRY principles
+- [ ] Database queries are optimized and indexed
+- [ ] No N+1 query problems
+- [ ] Proper pagination for large datasets
+- [ ] **Authorization properly implemented for four-tier role system**
+- [ ] **Role assignment rules enforced**
+- [ ] **Scope validation implemented**
+- [ ] **Permission checks in place**
+
+### **🎉 Current Status: FULLY CONSOLIDATED**
+
+All shared packages are now complete and properly organized:
+
+✅ **UI Package** - Complete component library with forms, features, and UI primitives
+✅ **Auth Package** - Complete authentication system with four-tier role hierarchy
+✅ **Database Package** - Complete database utilities with Prisma integration
+✅ **Types Package** - Complete type definitions for all entities
+✅ **Utils Package** - Complete utilities and API client functions
+✅ **Hooks Package** - Complete business logic hooks
+
+**No further consolidation needed** - focus on using the existing shared packages!
 
 ### **Remember**
 
 **ALWAYS prioritize:**
 1. **DRY (Don't Repeat Yourself)** - Never duplicate code or configurations
-2. **Shared Resources** - Use packages for reusable code
-3. **Consistency** - Follow established patterns
-4. **Type Safety** - Use TypeScript effectively
-5. **Performance** - Optimize bundles and imports
-6. **Security** - Validate inputs and handle errors properly
+2. **Centralized Imports** - Use `@rentalshop/ui` for all UI components and utilities
+3. **Shared Resources** - Use packages for reusable code
+4. **Consistency** - Follow established patterns
+5. **Type Safety** - Use TypeScript effectively
+6. **Performance** - Optimize bundles, imports, and database queries
+7. **Security** - Validate inputs and handle errors properly
+8. **Database Performance** - Proper indexing and query optimization
+9. **Scalability** - Design for growth and high data volumes
+10. **Authorization** - Implement proper role-based access control
+
+### **🏆 Achievement Unlocked: Perfect Monorepo Structure**
+
+Your monorepo is now a **textbook example** of Next.js monorepo organization:
+
+✅ **Perfect Component Architecture** - Forms, Features, and UI properly separated
+✅ **Complete Package Consolidation** - All shared functionality centralized
+✅ **Role-Based Access Control** - Four-tier hierarchy properly implemented
+✅ **Performance Optimized** - Proper indexing and bundle optimization
+✅ **Type Safe** - Full TypeScript support with centralized types
+✅ **DRY Principles** - No code duplication across packages
+✅ **Scalable Design** - Ready for growth and high data volumes
+
+**Keep this structure** - it's exactly what other developers should aspire to achieve!
 
 **NEVER:**
 - Duplicate configurations across packages
+- Use relative imports for UI components (`import { Button } from '../components/Button'`)
 - Create app-specific versions of shared components
 - Redefine types that already exist
 - Skip input validation
 - Use `any` type without justification
 - Commit without running linting and tests
+- Create unindexed queries on frequently accessed fields
+- Use N+1 queries or inefficient database operations
+- Skip pagination for potentially large datasets
+- Ignore database performance implications
+- **Skip authorization checks**
+- **Allow users to access data outside their scope**
+- **Create users with invalid role assignments**
+- **Bypass role-based access control**
+
+### **🎯 Next Steps for Development**
+
+Since your monorepo is fully consolidated, focus on:
+
+1. **Using the existing shared packages** - Don't recreate what's already built
+2. **Building new features** - Leverage the complete component library
+3. **Performance optimization** - Monitor and improve database queries
+4. **Testing and validation** - Ensure all components work correctly
+5. **Documentation** - Keep the excellent structure documented
+
+**Your foundation is perfect** - now build amazing features on top of it! 🚀

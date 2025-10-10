@@ -1,163 +1,167 @@
-// This is your Prisma schema file
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL_LOCAL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// User Management
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("CLIENT") // CLIENT, MERCHANT, OUTLET_STAFF, ADMIN
-  phone     String?
-  avatar    String?
-  isActive  Boolean  @default(true)
-  emailVerified Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                     Int                    @id @default(autoincrement())
+  email                  String                 @unique
+  password               String
+  firstName              String
+  lastName               String
+  phone                  String?
+  role                   String                 @default("OUTLET_STAFF")
+  isActive               Boolean                @default(true)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  merchantId             Int?
+  outletId               Int?
+  deletedAt              DateTime?
+  auditLogs              AuditLog[]
+  createdOrders          Order[]
+  subscriptionActivities SubscriptionActivity[]
+  merchant               Merchant?              @relation(fields: [merchantId], references: [id])
+  outlet                 Outlet?                @relation(fields: [outletId], references: [id])
 
-  // Relations
-  merchant    Merchant?
-  admin       Admin?
-  outletStaff OutletStaff?
-  rentals     Rental[]
-  payments    Payment[]
-  notifications Notification[]
-  passwordResetTokens PasswordResetToken[]
-  emailVerificationTokens EmailVerificationToken[]
-  sessions    Session[]
-
-  @@map("users")
+  @@unique([merchantId, email])
+  @@unique([merchantId, phone])
+  @@index([email])
+  @@index([merchantId])
+  @@index([outletId])
+  @@index([deletedAt])
 }
 
-// Business Management
 model Merchant {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  companyName String
-  businessLicense String?
-  address     String
-  description String?
-  isVerified  Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 Int           @id @default(autoincrement())
+  name               String
+  email              String        @unique
+  phone              String?
+  address            String?
+  city               String?
+  state              String?
+  zipCode            String?
+  country            String?
+  businessType       String?
+  taxId              String?
+  website            String?
+  description        String?
+  planId             Int?
+  subscriptionStatus String        @default("trial")
+  totalRevenue       Float         @default(0)
+  lastActiveAt       DateTime?
+  isActive           Boolean       @default(true)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  pricingConfig      String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
+  pricingType        String?
+  categories         Category[]
+  customers          Customer[]
+  Plan               Plan?         @relation(fields: [planId], references: [id])
+  outlets            Outlet[]
+  payments           Payment[]
+  products           Product[]
+  subscription       Subscription?
+  users              User[]
 
-  // Relations
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlets   Outlet[]
-  customers Customer[]
-
-  @@map("merchants")
+  @@index([name])
+  @@index([email])
+  @@index([subscriptionStatus])
+  @@index([planId])
 }
 
 model Outlet {
-  id          String   @id @default(cuid())
-  merchantId  String
+  id          Int           @id @default(autoincrement())
   name        String
-  address     String
+  address     String?
   description String?
-  phone       String
-  email       String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean       @default(true)
+  isDefault   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  merchantId  Int
+  phone       String?
+  city        String?
+  country     String?
+  state       String?
+  zipCode     String?
+  orders      Order[]
+  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products    OutletStock[]
+  users       User[]
 
-  // Relations
-  merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  outletStaff OutletStaff[]
-  products    Product[]
-  rentals     Rental[]
-
-  @@map("outlets")
+  @@index([merchantId])
+  @@index([name])
+  @@index([isDefault])
 }
 
-model OutletStaff {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  outletId  String
-  role      String   @default("STAFF") // STAFF, MANAGER
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
-
-  @@map("outlet_staff")
-}
-
-model Admin {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  level     String   @default("STAFF") // STAFF, MANAGER, SUPER_ADMIN
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("admins")
-}
-
-// Product Management
 model Category {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          Int       @id @default(autoincrement())
+  name        String
   description String?
-  icon        String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  merchantId  Int
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products    Product[]
 
-  // Relations
-  products Product[]
-
-  @@map("categories")
+  @@unique([merchantId, name])
+  @@index([merchantId])
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  outletId    String
-  categoryId  String
+  id          Int           @id @default(autoincrement())
   name        String
   description String?
-  barcode     String?  @unique // Product barcode for scanning
-  stock       Int      @default(0) // Total available stock
-  renting     Int      @default(0) // Currently being rented
-  available   Int      @default(0) // Available for rent (stock - renting)
-  rentPrice   Float    // Daily rental price
-  salePrice   Float?   // Sale price (optional - for products that can be sold)
-  deposit     Float    @default(0) // Security deposit
-  images      String   // JSON string of image URLs
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  barcode     String?       @unique
+  totalStock  Int           @default(0)
+  rentPrice   Float
+  salePrice   Float?
+  deposit     Float         @default(0)
+  images      String?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  merchantId  Int
+  categoryId  Int
+  orderItems  OrderItem[]
+  outletStock OutletStock[]
+  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  // Relations
-  outlet   Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id])
-  rentals  Rental[]
-
-  @@map("products")
+  @@index([merchantId])
+  @@index([categoryId])
+  @@index([barcode])
+  @@index([name])
 }
 
-// Customer Management
+model OutletStock {
+  id        Int      @id @default(autoincrement())
+  stock     Int      @default(0)
+  available Int      @default(0)
+  renting   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  productId Int
+  outletId  Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  outlet    Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, outletId])
+  @@index([outletId, available])
+  @@index([productId])
+}
+
 model Customer {
-  id          String   @id @default(cuid())
-  merchantId  String
+  id          Int       @id @default(autoincrement())
   firstName   String
   lastName    String
-  email       String
+  email       String?
   phone       String
   address     String?
   city        String?
@@ -166,116 +170,204 @@ model Customer {
   country     String?
   dateOfBirth DateTime?
   idNumber    String?
-  idType      String?  // passport, drivers_license, national_id, other
-  isActive    Boolean  @default(true)
+  idType      String?
   notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  merchantId  Int
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  orders      Order[]
 
-  // Relations
-  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  rentals  Rental[]
-
-  @@map("customers")
+  @@unique([merchantId, phone])
+  @@index([merchantId, firstName, lastName])
 }
 
-// Rental Management
-model Rental {
-  id          String   @id @default(cuid())
-  userId      String
-  customerId  String?  // Optional - can be rented by user or customer
-  outletId    String
-  productId   String
-  startDate   DateTime
-  endDate     DateTime
-  totalPrice  Float    // Total rental cost
-  deposit     Float    // Security deposit amount
-  status      String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED, OVERDUE
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Order {
+  id                Int         @id @default(autoincrement())
+  orderNumber       String      @unique
+  orderType         String
+  status            String      @default("RESERVED")
+  totalAmount       Float
+  depositAmount     Float       @default(0)
+  securityDeposit   Float       @default(0)
+  damageFee         Float       @default(0)
+  lateFee           Float       @default(0)
+  discountType      String?
+  discountValue     Float       @default(0)
+  discountAmount    Float       @default(0)
+  pickupPlanAt      DateTime?
+  returnPlanAt      DateTime?
+  pickedUpAt        DateTime?
+  returnedAt        DateTime?
+  rentalDuration    Int?
+  isReadyToDeliver  Boolean     @default(false)
+  collateralType    String?
+  collateralDetails String?
+  notes             String?
+  pickupNotes       String?
+  returnNotes       String?
+  damageNotes       String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  outletId          Int
+  customerId        Int?
+  createdById       Int
+  customer          Customer?   @relation(fields: [customerId], references: [id])
+  outlet            Outlet      @relation(fields: [outletId], references: [id])
+  createdBy         User        @relation(fields: [createdById], references: [id])
+  orderItems        OrderItem[]
+  payments          Payment[]
 
-  // Relations
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  outlet   Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  product  Product  @relation(fields: [productId], references: [id])
-  payments Payment[]
-
-  @@map("rentals")
+  @@index([status, outletId])
+  @@index([customerId, createdAt(sort: Desc)])
+  @@index([pickupPlanAt, returnPlanAt])
+  @@index([orderNumber])
+  @@index([isReadyToDeliver, outletId])
+  @@index([createdAt])
+  @@index([outletId, createdAt])
+  @@index([orderType, status])
+  @@index([outletId, status, createdAt])
+  @@index([createdById, createdAt])
+  @@index([totalAmount])
+  @@index([status, orderType, createdAt])
 }
 
-// Payment Management
+model OrderItem {
+  id         Int     @id @default(autoincrement())
+  quantity   Int     @default(1)
+  unitPrice  Float
+  totalPrice Float
+  deposit    Float   @default(0)
+  orderId    Int
+  productId  Int
+  notes      String?
+  rentalDays Int?
+  product    Product @relation(fields: [productId], references: [id])
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, productId])
+}
+
 model Payment {
-  id        String   @id @default(cuid())
-  rentalId  String
-  userId    String
-  amount    Float
-  method    String   // CASH, BANK_TRANSFER, CREDIT_CARD, DIGITAL_WALLET
-  status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
-  reference String?  // External payment reference
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             Int           @id @default(autoincrement())
+  amount         Float
+  currency       String        @default("USD")
+  method         String
+  type           String
+  status         String        @default("PENDING")
+  reference      String?
+  transactionId  String?
+  invoiceNumber  String?
+  description    String?
+  notes          String?
+  failureReason  String?
+  metadata       String?
+  processedAt    DateTime?
+  processedBy    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  orderId        Int?
+  subscriptionId Int?
+  merchantId     Int?
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  merchant       Merchant?     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
-  // Relations
-  rental Rental  @relation(fields: [rentalId], references: [id], onDelete: Cascade)
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("payments")
+  @@index([orderId, status])
+  @@index([subscriptionId, status])
+  @@index([merchantId, status])
+  @@index([status])
+  @@index([type])
+  @@index([method])
+  @@index([currency])
 }
 
-// Notification System
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      String   // INFO, SUCCESS, WARNING, ERROR
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+model Plan {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  description   String
+  basePrice     Float
+  currency      String         @default("USD")
+  trialDays     Int            @default(14)
+  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
+  features      String         @default("[]")
+  isActive      Boolean        @default(true)
+  isPopular     Boolean        @default(false)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  Merchant      Merchant[]
+  subscriptions Subscription[]
 
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
+  @@index([isActive])
+  @@index([sortOrder])
+  @@index([deletedAt])
 }
 
-// Authentication & Security
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+model Subscription {
+  id                 Int                    @id @default(autoincrement())
+  merchantId         Int                    @unique
+  planId             Int
+  status             String                 @default("trial")
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialStart         DateTime?
+  trialEnd           DateTime?
+  cancelAtPeriodEnd  Boolean                @default(false)
+  canceledAt         DateTime?
+  cancelReason       String?
+  amount             Float
+  currency           String                 @default("USD")
+  interval           String                 @default("month")
+  intervalCount      Int                    @default(1)
+  period             Int                    @default(1)
+  discount           Float                  @default(0)
+  savings            Float                  @default(0)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  payments           Payment[]
+  plan               Plan                   @relation(fields: [planId], references: [id])
+  merchant           Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  activities         SubscriptionActivity[]
 
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("password_reset_tokens")
+  @@index([merchantId])
+  @@index([planId])
+  @@index([status])
 }
 
-model EmailVerificationToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+model SubscriptionActivity {
+  id             Int          @id @default(autoincrement())
+  subscriptionId Int
+  type           String
+  description    String
+  metadata       String?
+  performedBy    Int?
+  createdAt      DateTime     @default(now())
+  reason         String?
+  user           User?        @relation(fields: [performedBy], references: [id])
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("email_verification_tokens")
+  @@index([subscriptionId])
+  @@index([type])
+  @@index([createdAt])
 }
 
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  entityType String
+  entityId   String
+  action     String
+  details    String
+  userId     Int?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
 
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-} 
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
