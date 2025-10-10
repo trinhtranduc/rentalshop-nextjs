@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsup';
 
-export const createBaseConfig = (entry: string, external: string[] = []) => 
+export const createBaseConfig = (entry: string, external: string[] = [], options: any = {}) => 
   defineConfig({
     entry: [entry],
     format: ['esm', 'cjs'],
@@ -15,4 +15,5 @@ export const createBaseConfig = (entry: string, external: string[] = []) =>
     clean: true,
     sourcemap: true,
     minify: false,
+    ...options,
   }); 

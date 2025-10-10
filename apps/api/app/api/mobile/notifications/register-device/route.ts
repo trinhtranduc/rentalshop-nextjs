@@ -1,5 +1,7 @@
+import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { config } from '../../../../../lib/config';
+import { apiConfig } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * @swagger
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       message: 'Device registration failed',
-      error: config.logging.level === 'debug' ? error.message : 'Internal server error'
-    }, { status: 500 });
+      error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
+    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

@@ -1,12 +1,18 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import AdminLayout from './components/AdminLayout'
+// AuthProvider removed - using centralized useAuth hook from @rentalshop/hooks
+import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'Rental Shop - Admin',
-  description: 'Admin panel for rental shop management system',
+  description: 'Rental shop administration system',
 }
 
 export default function RootLayout({
@@ -15,9 +21,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi">
-      <body className={inter.className}>
-        {children}
+    <html lang="en">
+      <body className={`${inter.variable} font-sans`}>
+        <ToastProvider>
+          <AdminLayout>
+            {children}
+          </AdminLayout>
+        </ToastProvider>
       </body>
     </html>
   )

@@ -73,28 +73,53 @@
 
 /* Custom Brand Colors */
 :root {
-  --brand-primary: #0F9347;
-  --brand-secondary: #2B3349;
-  --action-primary: #008AE8;
-  --action-success: #10B981;
-  --action-danger: #EF4444;
-  --action-warning: #f19920;
-}
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
-:root {
-  /* Brand Colors */
-  --brand-primary: #0F9347;
-  --brand-secondary: #2B3349;
+  /* Green Theme – Clean & Less Eye-Straining */
+  --brand-primary: #4CAF50;
+  --brand-secondary: #81C784;
+  
+  /* Action Colors - Reduced Saturation */
+  --action-primary: #4CAF50;
+  --action-success: #2E7D32;
+  --action-danger: #E53935;
+  --action-warning: #FFC107;
   
   /* Text Colors */
-  --text-primary: #323334;
-  --text-secondary: #6B7280;
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --text-tertiary: #9E9E9E;
+  --text-inverted: #ffffff;
+  --text-muted: #BDBDBD;
   
   /* Background Colors */
-  --background-primary: #F5F5F5;
-  --background-card: #FFFFFF;
+  --background-primary: #F8FAFC;
+  --background-secondary: #F1F5F9;
+  --background-tertiary: #E2E8F0;
+  --background-card: #ffffff;
+  
+  /* Font Variables */
+  --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  
+  /* Shadcn/UI Variables - Required for proper styling */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 142 71% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 142 71% 45%;
+  --radius: 0.5rem;
 }
 
 * {

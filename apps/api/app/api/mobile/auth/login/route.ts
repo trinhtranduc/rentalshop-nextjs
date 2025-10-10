@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@rentalshop/auth';
-import { loginSchema } from '@rentalshop/utils';
-import { config } from '../../../../../lib/config';
+import { loginSchema, handleApiError } from '@rentalshop/utils';
+import { apiConfig } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * @swagger
@@ -108,28 +109,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Mobile login error:', error);
     
-    // Handle validation errors
-    if (error.name === 'ZodError') {
-      return NextResponse.json({
-        success: false,
-        message: 'Validation failed',
-        errors: error.errors
-      }, { status: 400 });
-    }
-    
-    // Handle auth errors
-    if (error.message === 'Invalid credentials') {
-      return NextResponse.json({
-        success: false,
-        message: 'Invalid email or password'
-      }, { status: 401 });
-    }
-    
-    // Generic error
-    return NextResponse.json({
-      success: false,
-      message: 'Mobile login failed',
-      error: config.logging.level === 'debug' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 } 

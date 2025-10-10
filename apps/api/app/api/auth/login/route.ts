@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loginUser } from '@rentalshop/auth';
+import { prisma } from '@rentalshop/database';
+import { comparePassword, generateToken } from '@rentalshop/auth';
 import { loginSchema } from '@rentalshop/utils';
+import { handleApiError, ErrorCode } from '@rentalshop/utils';
+import {API} from '@rentalshop/constants';
 
 /**
  * @swagger
@@ -100,6 +103,22 @@ import { loginSchema } from '@rentalshop/utils';
  *                 message:
  *                   type: string
  *                   example: "Account is deactivated. Please contact support."
+ *       402:
+ *         description: Subscription issue (expired, cancelled, paused, etc.)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Your subscription has expired. Please renew to continue using our services."
+ *                 errorCode:
+ *                   type: string
+ *                   example: "SUBSCRIPTION_ERROR"
  *       500:
  *         description: Internal server error
  *         content:
@@ -121,50 +140,65 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = loginSchema.parse(body);
     
-    // Login user
-    const result = await loginUser({
-      email: validatedData.email,
-      password: validatedData.password,
-    });
-    
-    return NextResponse.json({
+    // Find user in database by email
+    const user = await db.users.findByEmail(validatedData.email);
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return NextResponse.json(
+        { success: false, message: 'Account is deactivated. Please contact support.' },
+        { status: 403 }
+      );
+    }
+
+    // Verify password
+    const isPasswordValid = await comparePassword(validatedData.password, user.password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Generate token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      merchantId: user.merchantId,
+      outletId: user.outletId,
+    } as any);
+
+    const result = {
       success: true,
       message: 'Login successful',
-      data: result
-    });
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.firstName + ' ' + user.lastName,
+          role: user.role,
+          merchantId: user.merchantId,
+          outletId: user.outletId,
+        },
+        token,
+      },
+    };
+    
+    return NextResponse.json(result);
     
   } catch (error: any) {
     console.error('Login error:', error);
     
-    // Handle validation errors
-    if (error.name === 'ZodError') {
-      return NextResponse.json({
-        success: false,
-        message: 'Validation failed',
-        errors: error.errors
-      }, { status: 400 });
-    }
-    
-    // Handle auth errors
-    if (error.message === 'Invalid credentials') {
-      return NextResponse.json({
-        success: false,
-        message: 'Invalid email or password'
-      }, { status: 401 });
-    }
-    
-    if (error.message === 'Account is deactivated') {
-      return NextResponse.json({
-        success: false,
-        message: 'Account is deactivated. Please contact support.'
-      }, { status: 403 });
-    }
-    
-    // Generic error
-    return NextResponse.json({
-      success: false,
-      message: 'Login failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    }, { status: 500 });
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 } 

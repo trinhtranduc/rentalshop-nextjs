@@ -3,41 +3,37 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoginForm } from '@rentalshop/ui';
-import { loginUser } from '../../lib/auth/auth';
+import { useAuth } from '@rentalshop/hooks';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { login, error: authError, loading: authLoading, clearError } = useAuth();
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleLogin = async (data: any) => {
     try {
       console.log('🔐 Login attempt started with:', { email: data.email });
-      setLoading(true);
-      setError(null);
+      setLocalError(null);
+      // Note: Don't clear authError here - let useAuth handle it
       
-      console.log('📞 Calling loginUser function...');
-      const result = await loginUser(data.email, data.password);
-      console.log('📥 Login result received:', result);
+      console.log('📞 Calling login function from useAuth hook...');
+      const success = await login(data.email, data.password);
+      console.log('📥 Login result received:', success);
       
-      if (result.success) {
-        console.log('✅ Login successful:', result);
-        console.log('🔄 Redirecting to dashboard...');
-        // Small delay to ensure token is stored
+      if (success) {
+        console.log('✅ Login successful, redirecting to dashboard...');
+        // Small delay to ensure auth state is updated
         setTimeout(() => {
           router.push('/dashboard');
-        }, 100);
+        }, 200);
       } else {
-        console.log('❌ Login failed:', result.message);
-        throw new Error(result.message || 'Login failed');
+        console.log('❌ Login failed');
+        // Don't set local error - let authError from useAuth handle it
       }
       
     } catch (error: any) {
       console.error('💥 Login error caught:', error);
-      setError(error.message || 'Login failed. Please try again.');
-    } finally {
-      console.log('🏁 Login attempt finished');
-      setLoading(false);
+      setLocalError(error.message || 'Login failed. Please try again.');
     }
   };
 
@@ -49,8 +45,12 @@ export default function LoginPage() {
     <LoginForm
       onLogin={handleLogin}
       onNavigate={handleNavigate}
-      error={error}
-      loading={loading}
+      error={authError || localError}
+      loading={authLoading}
+      onInputChange={() => {
+        clearError();
+        setLocalError(null);
+      }}
     />
   );
 } 

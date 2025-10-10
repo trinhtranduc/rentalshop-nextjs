@@ -1,485 +1,466 @@
-# 🏪 Rental Shop Next.js Monorepo
+# Rental Shop Next.js Monorepo
 
-A comprehensive rental shop management system built with Next.js, featuring a multi-tenant architecture with Super Admin → Merchant → Outlet → Staff hierarchy.
+A comprehensive rental shop management system built with Next.js, featuring a monorepo architecture with shared packages for authentication, database operations, UI components, and business logic.
 
-## 🏗️ Architecture
+## 📚 Documentation
 
-```
-Super Admin (System Admin)
-├── Manages entire system
-├── Can create/manage merchants
-└── Has full access to all data
+- **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** - 🚀 Deploy to Railway (Recommended)
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deploy options and legacy Vercel guide
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Local development setup
 
-Merchants (Business Owners)
-├── Each merchant has 1 owner account
-├── Can have multiple outlets
-├── Manages their business operations
-└── Can create outlet managers and staff
+## 🚀 Quick Start
 
-Outlets (Physical Locations)
-├── Each outlet belongs to 1 merchant
-├── Has outlet manager and staff
-├── Contains products for rental
-└── Handles local operations
-
-Outlet Staff
-├── Outlet Manager: Manages specific outlet
-└── Outlet Staff: Handles daily operations
-```
-
-## 🚀 Quick Start Guide
-
-### Prerequisites
-
-- **Node.js** 18.0.0 or higher
-- **Yarn** package manager
-- **Git**
-
-### Step 1: Clone and Setup
-
+### **Complete System Setup (Recommended)**
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd rentalshop-nextjs
-
-# Install dependencies
-yarn install
+# Regenerate entire system with fresh data
+yarn db:regenerate-system
 ```
 
-### Step 2: Environment Configuration
+This single command will create:
+- ✅ 2 merchants (each with 1 merchant account)
+- ✅ 4 outlets (2 per merchant)
+- ✅ 8 users (1 admin + 1 staff per outlet)
+- ✅ 60 customers (30 per merchant)
+- ✅ 60 products (30 per merchant)
+- ✅ 120 orders (30 per outlet)
 
+### **Alternative Setup Options**
 ```bash
-# Copy environment template
-cp env.example .env.local
-
-# Edit environment variables (optional for local development)
-# The default local environment uses SQLite and doesn't require external services
-```
-
-### Step 3: Database Setup (Local Development)
-
-```bash
-# One-command database setup (recommended)
-./scripts/setup-database.sh
-
-# Or manually:
-# Generate Prisma client
-yarn db:generate
-
-# Push schema to SQLite database
-yarn db:push
-
-# Seed with sample data
-yarn db:seed
-```
-
-### Step 4: Start Development Server
-
-```bash
-# Start all applications (recommended)
-yarn dev:all
-
-# Or start individual apps:
-# Client app only
-cd apps/client && yarn dev
-
-# Admin app only  
-cd apps/admin && yarn dev
-
-# API app only
-cd apps/api && yarn dev
-```
-
-## 🌐 Application URLs
-
-Once started, your applications will be available at:
-
-- **Client App (Shop Owner Portal)**: http://localhost:3000
-- **Admin App (Admin Panel)**: http://localhost:3001
-- **API Server**: http://localhost:3002
-
-## 🔐 Default Login Accounts
-
-After seeding the database, you can use these test accounts:
-
-### **🌐 Application Access**
-
-| Application | URL | Purpose |
-|-------------|-----|---------|
-| **Client App** | http://localhost:3000 | Customer-facing rental interface |
-| **Admin App** | http://localhost:3001 | Super admin dashboard |
-| **API Server** | http://localhost:3002 | Backend API & Documentation |
-
-### **👥 User Accounts**
-
-#### **Super Admin** (Full System Access)
-- **Email**: `admin@rentalshop.com`
-- **Password**: `admin123`
-- **Role**: `ADMIN` (Super Admin)
-- **Access**: All applications, full system control
-
-#### **Merchant** (Business Owner)
-- **Email**: `merchant@rentalshop.com`
-- **Password**: `merchant123`
-- **Role**: `MERCHANT`
-- **Access**: Business management, outlet creation
-
-#### **Outlet Manager** (Outlet Management)
-- **Email**: `manager@rentalshop.com`
-- **Password**: `manager123`
-- **Role**: `OUTLET_STAFF` (Manager)
-- **Access**: Specific outlet management
-
-#### **Outlet Staff** (Daily Operations)
-- **Email**: `staff@rentalshop.com`
-- **Password**: `staff123`
-- **Role**: `OUTLET_STAFF` (Staff)
-- **Access**: Daily operations, customer service
-
-#### **Client** (Customer)
-- **Email**: `client@rentalshop.com`
-- **Password**: `client123`
-- **Role**: `CLIENT`
-- **Access**: Product browsing, rentals, account management
-
-## 📊 Database Management
-
-### View Database Contents
-
-```bash
-# Open Prisma Studio (visual interface)
-yarn db:studio
-
-# Or use the command line viewer
-yarn db:view
-```
-
-### Database Commands
-
-```bash
-# Reset and reseed database
+# Reset and seed database
 yarn db:reset
 
-# Generate Prisma client
-yarn db:generate
+# Just seed (without reset)
+yarn db:seed
 
-# Push schema changes
-yarn db:push
+# Reset only orders
+yarn db:reset-orders
+```
+
+## 🔑 Default Login Credentials
+
+After running `yarn db:regenerate-system`:
+
+### **👑 Super Admin (System-wide Access)**
+- `admin@rentalshop.com` / `admin123`
+  - **Full system access** to all merchants and outlets
+  - **Manage subscription plans** and system settings
+  - **View all data** across the platform
+  - **Platform operations** and system management
+
+### **🏢 Merchant Accounts (Business Owners)**
+- `merchant1@example.com` / `merchant123` (Merchant 1)
+- `merchant2@example.com` / `merchant123` (Merchant 2)
+  - **Organization-wide access** within their merchant
+  - **Manage multiple outlets** and users
+
+### **🏪 Outlet Admins (Outlet Managers)**
+- `admin.outlet1@example.com` / `admin123` (Outlet 1 - Merchant 1)
+- `admin.outlet2@example.com` / `admin123` (Outlet 2 - Merchant 1)
+- `admin.outlet3@example.com` / `admin123` (Outlet 1 - Merchant 2)
+- `admin.outlet4@example.com` / `admin123` (Outlet 2 - Merchant 2)
+  - **Full access** to their assigned outlet
+  - **Manage outlet operations** and staff
+
+### **👥 Outlet Staff (Outlet Employees)**
+- `staff.outlet1@example.com` / `staff123` (Outlet 1 - Merchant 1)
+- `staff.outlet2@example.com` / `staff123` (Outlet 2 - Merchant 1)
+- `staff.outlet3@example.com` / `staff123` (Outlet 1 - Merchant 2)
+- `staff.outlet4@example.com` / `staff123` (Outlet 2 - Merchant 2)
+  - **Limited access** to their assigned outlet
+  - **Basic operations** and customer service
+
+## 🚀 Quick Start - Admin Panel
+
+### **1. Start All Services**
+```bash
+yarn dev:all
+```
+
+### **2. Access Admin Panel**
+- **URL**: `http://localhost:3001`
+- **Login**: `admin@rentalshop.com` / `admin123`
+
+### **3. Admin Dashboard Focus: System Operations**
+
+The admin dashboard is designed for **platform management** rather than individual business operations:
+
+#### **🏠 Dashboard (System Overview)**
+- **Platform Health Status** - API, Database, Uptime monitoring
+- **System Metrics** - Total merchants, users, revenue across platform
+- **Recent Activity** - New registrations, system alerts, maintenance notices
+- **Quick Actions** - Common admin tasks, emergency controls
+
+#### **🏢 Merchants (Merchant Management)**
+- **Merchant Directory** - View all merchants, search, filter by status
+- **Merchant Details** - Business info, subscription status, outlet count
+- **Merchant Actions** - Activate/deactivate, upgrade/downgrade plans
+- **Merchant Analytics** - Performance metrics, growth trends
+- **Bulk Operations** - Mass updates, bulk plan changes
+
+#### **📋 Plans (Subscription Management)**
+- **Plan Creation** - Design new subscription tiers with features
+- **Plan Configuration** - Set pricing, features, trial periods
+- **Plan Updates** - Modify existing plans, add/remove features
+- **Plan Analytics** - Popular plans, conversion rates, revenue per plan
+- **Trial Management** - Configure trial days, trial-to-paid conversion
+
+#### **💰 Payments (Billing & Revenue)**
+- **Payment History** - All transactions across platform
+- **Billing Management** - Invoice generation, payment tracking
+- **Revenue Analytics** - Platform revenue, merchant payments
+- **Refund Management** - Process refunds, handle disputes
+- **Tax Configuration** - Set tax rates, generate tax reports
+
+#### **👥 Users (User Management)**
+- **User Directory** - All users across platform
+- **Role Management** - Assign roles, manage permissions
+- **Access Control** - User access logs, security monitoring
+- **Bulk User Operations** - Mass role changes, bulk deactivation
+
+#### **⚙️ Settings (System Configuration)**
+- **Platform Configuration** - Site settings, feature toggles
+- **Email Templates** - Customize system emails
+- **Notification Settings** - Configure alerts, webhooks
+- **API Management** - API keys, rate limits, documentation
+- **Maintenance Mode** - System downtime, scheduled maintenance
+
+#### **📊 Analytics (Platform Analytics)**
+- **Platform Growth** - Merchant registration trends
+- **Revenue Analytics** - Platform earnings, growth metrics
+- **User Behavior** - Login patterns, feature usage
+- **Performance Metrics** - System performance, load times
+- **Business Intelligence** - Custom reports, data exports
+
+#### **🔒 Security (Security & Monitoring)**
+- **Security Monitoring** - Login attempts, suspicious activity
+- **Audit Logs** - All admin actions, system changes
+- **Data Privacy** - GDPR compliance, data export/deletion
+- **Backup Management** - Database backups, recovery procedures
+
+### **4. Key Benefits of Admin Panel**
+
+1. **🎯 System-Focused** - Admin focuses on platform operations, not individual business metrics
+2. **🏢 Merchant-Centric** - Easy management of all merchants and their subscriptions
+3. **📋 Plan Management** - Flexible subscription plan creation and management
+4. **💰 Revenue Control** - Complete oversight of platform revenue and billing
+5. **🔒 Security First** - Comprehensive security monitoring and access control
+6. **📊 Data-Driven** - Platform analytics for business decisions
+7. **⚙️ Configurable** - Flexible system settings and configurations
+
+### **5. Navigation Structure**
+
+```
+ADMIN DASHBOARD
+├── 🏠 Dashboard (System Overview)
+├── 🏢 Merchants (Merchant Management)
+├── 📋 Plans (Subscription Plans)
+├── 💰 Payments (Billing & Revenue)
+├── 👥 Users (User Management)
+├── ⚙️ Settings (System Configuration)
+├── 📊 Analytics (Platform Analytics)
+└── 🔒 Security (Security & Monitoring)
+```
+
+## 🏗️ Architecture Overview
+
+This monorepo follows a **dual ID system** for optimal security and usability:
+
+## 🔒 Security-First Design
+
+**CRITICAL: All role-based access control is implemented at the backend/database level, NEVER on the frontend.**
+
+### **Why This Matters:**
+- **Frontend filtering is a security vulnerability** - hackers can bypass restrictions
+- **Backend filtering is secure** - cannot be manipulated by users
+- **JWT tokens contain user scope** - automatically enforced in all database queries
+- **API responses are pre-filtered** - users only see data they're authorized to access
+
+### **Role-Based Data Access:**
+- **OUTLET_STAFF users**: Automatically restricted to their specific outlet
+- **OUTLET_ADMIN users**: Can access data from their assigned outlet
+- **MERCHANT users**: Can access data from all their outlets
+- **ADMIN users**: **Full system access** across all merchants and outlets
+
+## 📋 Updated Order System (2025)
+
+### **Order Types (Simplified)**
+- **RENT**: Equipment rental orders
+- **SALE**: Direct purchase orders
+
+### **Order Statuses**
+- **RESERVED**: New order, scheduled for pickup
+- **PICKUPED**: Currently being rented (RENT only)
+- **RETURNED**: Rental completed (RENT only)
+- **COMPLETED**: Sale finalized (SALE only)
+- **CANCELLED**: Order cancelled (both types)
+
+### **Order Numbering**
+- **Consistent format**: `ORD-{outletId}-{sequence}`
+- **Structure**: `ORD-{outletId}-{sequence}` where:
+  - `{outletId}`: 3-digit outlet identifier (e.g., 001, 002)
+  - `{sequence}`: 4-digit sequential order number per outlet (e.g., 0001, 0002)
+- **Examples**: `ORD-001-0001`, `ORD-001-0002`, `ORD-002-0001`
+- **Benefits**: Easy outlet identification, sequential tracking, human-readable
+
+### **Order Status Flow**
+```
+RENT Orders: RESERVED → PICKUPED → RETURNED (or CANCELLED)
+SALE Orders: RESERVED → COMPLETED (or CANCELLED)
+```
+
+## 🔐 **Dual ID Strategy: CUIDs Internally, Numbers Externally**
+
+Our system implements a **dual ID approach** that provides both security and usability:
+
+#### **System Architecture**
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Frontend   │    │     API     │    │  Database   │    │   Types     │
+│  (Numbers)  │◄──►│ (Transform) │◄──►│  (CUIDs)   │    │ (Interface) │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+#### **Database Layer (Secure)**
+- **Primary Keys**: Use CUIDs (`String @id @default(cuid())`) for security
+- **IDs**: Use `id Int @id @default(autoincrement())` for all operations
+- **Relationships**: All foreign keys use CUIDs internally
+
+#### **API Layer (Transform)**
+- **Input**: Frontend sends `id` (numbers) for all operations
+- **Processing**: API uses `id` directly for database operations
+- **Output**: API returns `id` (numbers) to frontend
+
+#### **Frontend Layer (User-Friendly)**
+- **Display**: Always works with numbers (`outletId: 123`)
+- **Forms**: Send numbers for all ID fields
+- **URLs**: Use numbers for routing (`/outlets/123`)
+
+#### **Complete Data Flow Example**
+
+**Scenario: Create Order for Outlet 123, Customer 456**
+
+```typescript
+// 1️⃣ FRONTEND SENDS (Numbers)
+POST /api/orders
+{
+  "outletId": 123,
+  "customerId": 456,
+  "productId": 789
+}
+
+// 2️⃣ API RECEIVES (Numbers)
+const input: OrderCreateInput = {
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  productId: 789        // Number
+};
+
+// 3️⃣ API TRANSFORMS (Numbers → CUIDs)
+const outlet = await prisma.outlet.findUnique({
+  where: { id: 123 }  // Find by number
+});
+// Result: { id: 123, name: "Outlet Name" }
+
+const customer = await prisma.customer.findUnique({
+  where: { id: 456 }  // Find by number
+});
+// Result: { id: 456, name: "Customer Name" }
+
+// 4️⃣ DATABASE OPERATIONS (CUIDs)
+const order = await prisma.order.create({
+  data: {
+    outletId: "clx123abc",    // Use CUID
+    customerId: "dme456def",  // Use CUID
+    // ... other fields
+  }
+});
+// Result: { id: 999, orderNumber: "ORD-001-0001" }
+
+// 5️⃣ API RETURNS (Numbers)
+return {
+  id: 999,              // id (number)
+  outletId: 123,        // id (number)
+  customerId: 456,      // id (number)
+  orderNumber: "ORD-001-0001"
+};
+
+// 6️⃣ FRONTEND RECEIVES (Numbers)
+const response = {
+  id: 999,              // Number
+  outletId: 123,        // Number
+  customerId: 456,      // Number
+  orderNumber: "ORD-001-0001"
+};
+```
+
+## 🎯 **Admin vs Client Application Focus**
+
+### **🏠 Admin Application (`apps/admin`)**
+- **Purpose**: Platform management and system operations
+- **Focus**: System-wide metrics, merchant management, subscription plans
+- **Users**: System administrators and platform operators
+- **Features**: Merchant management, plan configuration, system analytics
+
+### **🏪 Client Application (`apps/client`)**
+- **Purpose**: Individual business operations
+- **Focus**: Daily operations, customer management, order processing
+- **Users**: Merchant owners, outlet managers, staff
+- **Features**: Product management, customer service, order processing
+
+## 🚀 **Development Commands**
+
+### **Start All Applications**
+```bash
+# Start all apps (admin, client, api) concurrently
+yarn dev:all
+
+# Individual app development
+yarn dev:admin      # Admin panel (port 3001)
+yarn dev:client     # Client app (port 3000)
+yarn dev:api        # API server (port 3002)
+```
+
+### **Database Operations**
+```bash
+# Regenerate entire system
+yarn db:regenerate-system
+
+# Reset database
+yarn db:reset
 
 # Seed database
 yarn db:seed
 ```
 
-## 📁 Project Structure
+### **Build & Deploy**
+```bash
+# Build all packages
+yarn build
+
+# Build specific package
+yarn workspace @rentalshop/ui build
+```
+
+## 📁 **Project Structure**
 
 ```
 rentalshop-nextjs/
 ├── apps/
-│   ├── client/          # Customer-facing app (Port 3000)
-│   │   ├── app/         # Next.js 14 App Router
-│   │   ├── components/  # Client-specific components
-│   │   └── lib/         # Client utilities
-│   ├── admin/           # Admin dashboard (Port 3001)
-│   │   ├── app/         # Next.js 14 App Router
-│   │   ├── components/  # Admin-specific components
-│   │   └── lib/         # Admin utilities
-│   └── api/             # API server (Port 3002)
-│       ├── app/         # Next.js 14 App Router
-│       ├── lib/         # API utilities
-│       └── middleware/  # API middleware
+│   ├── admin/           # Admin dashboard (System operations)
+│   ├── client/          # Client application (Business operations)
+│   └── api/             # Backend API server
 ├── packages/
-│   ├── ui/              # Shared UI components
-│   ├── auth/            # Authentication utilities
-│   ├── database/        # Database client and utilities
-│   └── utils/           # Common utilities
-├── prisma/
-│   ├── schema.prisma    # Database schema (SQLite for local, PostgreSQL for production)
-│   └── migrations/      # Database migrations
-└── scripts/
-    ├── setup-database.sh # Database setup script
-    └── view-database.js  # Database viewer script
+│   ├── ui/              # Shared UI components (Pure presentation)
+│   ├── auth/            # Authentication & authorization
+│   ├── database/        # Database utilities & Prisma
+│   ├── types/           # TypeScript type definitions
+│   ├── utils/           # Utility functions & API clients
+│   └── hooks/           # React hooks & business logic
+├── prisma/              # Database schema & migrations
+└── scripts/             # Development & deployment scripts
 ```
 
-## 🛠️ Available Commands
+## 🔌 **API Architecture**
 
-### Development Commands
+### **Separation of Concerns**
+- **UI Components** (`packages/ui/`): Pure presentation components with no API logic
+- **API Clients** (`packages/utils/src/api/`): Centralized API request functions
+- **App Pages** (`apps/*/app/`): Business logic and API integration
+- **Backend APIs** (`apps/api/app/api/`): Server-side endpoints
 
+### **API Client Structure**
+```
+packages/utils/src/api/
+├── auth.ts              # Authentication API
+├── audit-logs.ts        # Audit logs API
+├── customers.ts         # Customer management API
+├── orders.ts            # Order management API
+├── products.ts          # Product management API
+├── settings.ts          # Settings management API
+├── users.ts             # User management API
+└── index.ts             # Export all API clients
+```
+
+### **Usage Pattern**
+```typescript
+// ✅ CORRECT: Use API clients in app pages
+// apps/admin/app/audit-logs/page.tsx
+import { getAuditLogs } from '@rentalshop/utils';
+
+export default function AuditLogsPage() {
+  const [logs, setLogs] = useState([]);
+  
+  useEffect(() => {
+    getAuditLogs().then(setLogs);
+  }, []);
+  
+  return <AuditLogViewer logs={logs} />;
+}
+
+// ❌ WRONG: Don't put API logic in UI components
+// packages/ui/src/components/features/AuditLogs/AuditLogViewer.tsx
+export function AuditLogViewer() {
+  // Don't make API calls here!
+  const [logs, setLogs] = useState([]);
+  // ...
+}
+```
+
+## 🔧 **Technology Stack**
+
+- **Frontend**: Next.js 13+ with App Router
+- **Backend**: Next.js API routes
+- **Database**: PostgreSQL with Prisma ORM
+- **Deployment**: Railway (recommended) or Vercel
+- **Authentication**: JWT-based with role-based access control
+- **UI**: Tailwind CSS with custom component library
+- **State Management**: React hooks and context
+- **Type Safety**: Full TypeScript support
+- **Monorepo**: Yarn workspaces with Turborepo
+
+## 🚀 **Deployment**
+
+### **Recommended: Railway**
+
+**Why Railway?**
+- ✅ Built-in PostgreSQL database (no external service needed)
+- ✅ Full backend support (not just serverless)
+- ✅ Persistent storage with volumes
+- ✅ Lower cost: $5-20/month
+
+**Quick Deploy:**
 ```bash
-# Start all applications
-yarn dev:all
+# Install Railway CLI
+npm i -g @railway/cli
 
-# Start with specific environment
-yarn dev:local        # Local environment (SQLite)
-yarn dev:development  # Development environment (PostgreSQL)
-yarn dev:production   # Production environment (PostgreSQL)
+# Login and deploy
+railway login
+railway init
 
-# Start individual apps
-cd apps/client && yarn dev    # Client app only
-cd apps/admin && yarn dev     # Admin app only
-cd apps/api && yarn dev       # API app only
+# Add database
+railway add postgresql
+
+# Deploy (auto-detects monorepo)
+git push origin main
 ```
 
-### Build Commands
+**See [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) for complete guide.**
 
-```bash
-# Build all packages and apps
-yarn build
+## 📚 **Documentation**
 
-# Build individual packages
-cd packages/ui && yarn build
-cd packages/auth && yarn build
-cd packages/database && yarn build
-cd packages/utils && yarn build
-```
+- **Environment Setup**: See `docs/ENVIRONMENT_SETUP.md`
+- **Database Setup**: See `DATABASE_SETUP.md`
+- **API Review**: See `API_REVIEW.md`
+- **Component Library**: See `packages/ui/README.md`
 
-### Database Commands
+## 🤝 **Contributing**
 
-```bash
-# Local environment (SQLite)
-yarn db:generate        # Generate Prisma client
-yarn db:push           # Push schema to database
-yarn db:seed           # Seed with sample data
+1. Follow the established monorepo structure
+2. Use shared packages for common functionality
+3. Maintain consistent TypeScript types
+4. Follow security-first principles
+5. Test all changes thoroughly
 
-# Database management
-yarn db:studio         # Open Prisma Studio
-yarn db:view           # View database summary
-yarn db:reset          # Reset and reseed database
-```
+## 📄 **License**
 
-### Utility Commands
-
-```bash
-yarn lint               # Run ESLint
-yarn format             # Format code with Prettier
-yarn clean              # Clean build artifacts
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### 1. Port Already in Use
-```bash
-# If you get "EADDRINUSE" error, kill existing processes
-lsof -ti:3000 | xargs kill -9  # Kill process on port 3000
-lsof -ti:3001 | xargs kill -9  # Kill process on port 3001
-lsof -ti:3002 | xargs kill -9  # Kill process on port 3002
-```
-
-#### 2. Dependencies Not Found
-```bash
-# Clean install dependencies
-rm -rf node_modules
-rm -rf apps/*/node_modules
-rm -rf packages/*/node_modules
-yarn install
-```
-
-#### 3. Database Connection Issues
-```bash
-# Reset local database
-rm -f prisma/dev.db
-yarn db:generate
-yarn db:push
-yarn db:seed
-
-# Or use the setup script
-./scripts/setup-database.sh
-```
-
-#### 4. Build Errors
-```bash
-# Clean and rebuild
-yarn clean
-yarn build
-```
-
-### MetaMask Integration
-
-If you see MetaMask connection errors:
-
-1. **Install MetaMask Extension**:
-   - Go to [metamask.io](https://metamask.io)
-   - Install the browser extension
-   - Create or import a wallet
-
-2. **Configure MetaMask**:
-   - Add test networks if needed
-   - Ensure MetaMask is unlocked
-   - Grant permission to the website
-
-3. **Alternative**: The MetaMask integration is optional for basic functionality
-
-## 🔐 Authentication & Authorization
-
-### User Roles
-
-1. **CLIENT**: Customers who rent items
-2. **MERCHANT**: Business owners with multiple outlets
-3. **OUTLET_STAFF**: Outlet managers and staff
-4. **ADMIN**: System administrators
-
-### Admin Levels
-
-1. **STAFF**: Basic admin access
-2. **MANAGER**: Enhanced admin access
-3. **SUPER_ADMIN**: Full system access
-
-## 📱 Applications Overview
-
-### Client App (`http://localhost:3000`)
-- **Purpose**: Customer-facing rental interface
-- **Features**:
-  - Product browsing and rental
-  - User account management
-  - Payment processing
-  - Order tracking
-- **Target Users**: End customers
-
-### Admin App (`http://localhost:3001`)
-- **Purpose**: Super admin dashboard
-- **Features**:
-  - Merchant management
-  - System-wide analytics
-  - User management
-  - System settings
-- **Target Users**: System administrators
-
-### API App (`http://localhost:3002`)
-- **Purpose**: Backend API server
-- **Features**:
-  - RESTful API endpoints
-  - Authentication services
-  - Database operations
-  - File upload handling
-- **Target Users**: Frontend applications
-
-## 🗄️ Database Configuration
-
-### Local Development (SQLite)
-- **Database File**: `./dev.db`
-- **No external dependencies required**
-- **Perfect for development and testing**
-
-### Production (PostgreSQL)
-- **Requires PostgreSQL database**
-- **Configure connection string in environment variables**
-- **Supports advanced features and scalability**
-
-## 🔄 Environment Types
-
-### Local Environment (`NODE_ENV=local`)
-- ✅ Uses SQLite database
-- ✅ Console email logging
-- ✅ Local file storage
-- ✅ Debug logging
-- ✅ No email verification required
-- ✅ **Recommended for development**
-
-### Development Environment (`NODE_ENV=development`)
-- Uses PostgreSQL database
-- Resend email service
-- Cloudinary file storage
-- Info logging
-- Email verification enabled
-
-### Production Environment (`NODE_ENV=production`)
-- Uses PostgreSQL database
-- Resend email service
-- Cloudinary file storage
-- Warn logging
-- Email verification enabled
-- Rate limiting enabled
-
-## 🧪 Testing
-
-```bash
-# Run tests
-yarn test
-
-# Run tests with coverage
-yarn test:coverage
-
-# Run tests in watch mode
-yarn test:watch
-```
-
-## 📊 Health Checks
-
-### API Health Check
-```bash
-curl http://localhost:3002/api/health
-```
-
-### Database Health Check
-```bash
-curl http://localhost:3002/api/health/database
-```
-
-## 🔒 Security Features
-
-- JWT-based authentication
-- Role-based access control
-- Password hashing with bcrypt
-- Rate limiting
-- CORS configuration
-- Input validation with Zod
-- SQL injection prevention (Prisma)
-
-## 📝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For support and questions:
-
-1. Check this documentation
-2. Search existing issues
-3. Create a new issue with detailed information
-
-## 🎯 Current Status
-
-✅ **All applications running successfully**
-- Client App: http://localhost:3000
-- Admin App: http://localhost:3001
-- API App: http://localhost:3002
-
-✅ **All packages building successfully**
-- UI Package: Shared components
-- Auth Package: Authentication utilities
-- Database Package: Database client
-- Utils Package: Common utilities
-
-✅ **Database seeded with sample data**
-- **5 Users**: Admin, Merchant, Manager, Staff, Client
-- **8 Categories**: Electronics, Tools, Party Supplies, etc.
-- **1 Merchant**: Sample Rental Company
-- **1 Outlet**: Main Outlet
-- **1 Admin**: Super Admin
-- **2 Staff**: Manager + Staff
-
-✅ **Authentication working**
-- JWT-based authentication
-- Role-based access control
-- Test accounts ready for all user types
-
-✅ **API Documentation available**
-- SwaggerUI: http://localhost:3002/docs
-- OpenAPI spec: http://localhost:3002/api/docs
-
-## 🚀 Next Steps
-
-1. **Explore the applications** using the provided test accounts
-2. **Customize the environment** by editing `.env.local`
-3. **Add your own data** through the admin interface
-4. **Extend functionality** by modifying the packages
-5. **Deploy to production** when ready 
+This project is proprietary software. All rights reserved.

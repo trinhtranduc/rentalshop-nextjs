@@ -6,18 +6,33 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  name: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
   role?: 'CLIENT' | 'SHOP_OWNER' | 'ADMIN';
 }
 
 export interface AuthUser {
-  id: string;
+  id: number; // id for frontend compatibility
   email: string;
+  firstName: string;
+  lastName: string;
   name: string;
   role: string;
   phone?: string;
-  avatar?: string;
+  merchantId?: number; // For quick access to merchant ID
+  outletId?: number;   // For quick access to outlet ID
+  merchant?: {
+    id: number;
+    name: string;
+    description?: string;
+  };
+  outlet?: {
+    id: number;
+    name: string;
+    address?: string;
+  };
 }
 
 export interface AuthResponse {

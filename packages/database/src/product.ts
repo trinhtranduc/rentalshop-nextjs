@@ -1,391 +1,95 @@
+// ============================================================================
+// NEW: CORRECT DUAL ID PRODUCT FUNCTIONS
+// ============================================================================
+// This file contains only the correct product functions that follow the dual ID system:
+// - Input: id (number)
+// - Database: queries by id, uses CUIDs for relationships
+// - Return: includes both id (CUID) and id (number)
+
 import { prisma } from './client';
-import type { ProductInput, ProductUpdateInput } from '@rentalshop/utils';
+import type { ProductSearchFilter } from '@rentalshop/types';
+
+// ============================================================================
+// PRODUCT LOOKUP FUNCTIONS (BY PUBLIC ID)
+// ============================================================================
 
 /**
- * Product service for CRUD operations
- * Centralized database operations following DRY principles
+ * Get product by id (number) - follows dual ID system
+ * SECURITY: Enforces merchant isolation to prevent cross-tenant access
  */
-
-export interface ProductFilters {
-  outletId?: string;
-  categoryId?: string;
-  isActive?: boolean;
-  search?: string;
-  minPrice?: number;
-  maxPrice?: number;
-}
-
-export interface ProductListOptions {
-  page?: number;
-  limit?: number;
-  sortBy?: 'name' | 'rentPrice' | 'createdAt';
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface ProductSearchFilter {
-  query?: string; // Search term for name or barcode
-  outletId?: string;
-  merchantId?: string;
-  categoryId?: string;
-  isActive?: boolean;
-  inStock?: boolean; // Only products with available stock > 0
-  limit?: number;
-  offset?: number;
-}
-
-export interface ProductSearchResult {
-  id: string;
-  name: string;
-  description: string | null;
-  barcode: string | null;
-  stock: number;
-  renting: number;
-  available: number;
-  rentPrice: number;
-  salePrice: number | null;
-  deposit: number;
-  images: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  outlet: {
-    id: string;
-    name: string;
-    merchant: {
-      id: string;
-      companyName: string;
-    };
-  };
-  category: {
-    id: string;
-    name: string;
-  };
-}
-
-export interface ProductSearchResponse {
-  products: ProductSearchResult[];
-  total: number;
-  limit: number;
-  offset: number;
-  hasMore: boolean;
-}
-
-/**
- * Create a new product
- * @param data - Product data
- * @returns Created product
- */
-export const createProduct = async (data: ProductInput) => {
-  const product = await prisma.product.create({
-    data: {
-      name: data.name,
-      description: data.description,
-      stock: data.stock,
-      rentPrice: data.rentPrice,
-      salePrice: data.salePrice,
-      deposit: data.deposit,
-      categoryId: data.categoryId,
-      outletId: data.outletId,
-      images: data.images ? JSON.stringify(data.images) : '[]',
-    },
-    include: {
-      outlet: true,
-      category: true,
-    },
+export async function getProductById(id: number, merchantId: number) {
+  // Find merchant by id
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { id: true }
   });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Get a product by ID
- * @param id - Product ID
- * @returns Product or null
- */
-export const getProductById = async (id: string) => {
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  if (!product) return null;
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Get products with filtering and pagination
- * @param filters - Filter options
- * @param options - Pagination and sorting options
- * @returns Products list and total count
- */
-export const getProducts = async (
-  filters: ProductFilters = {},
-  options: ProductListOptions = {}
-) => {
-  const {
-    page = 1,
-    limit = 10,
-    sortBy = 'createdAt',
-    sortOrder = 'desc',
-  } = options;
-
-  const skip = (page - 1) * limit;
-
-  // Build where clause
-  const where: any = {
-    isActive: true,
-  };
-
-  if (filters.outletId) where.outletId = filters.outletId;
-  if (filters.categoryId) where.categoryId = filters.categoryId;
-  if (filters.minPrice !== undefined) where.rentPrice = { gte: filters.minPrice };
-  if (filters.maxPrice !== undefined) {
-    where.rentPrice = { ...where.rentPrice, lte: filters.maxPrice };
-  }
-  if (filters.search) {
-    where.OR = [
-      { name: { contains: filters.search, mode: 'insensitive' } },
-      { description: { contains: filters.search, mode: 'insensitive' } },
-    ];
-  }
-
-  // Get total count
-  const total = await prisma.product.count({ where });
-
-  // Get products
-  const products = await prisma.product.findMany({
-    where,
-    include: {
-      outlet: true,
-      category: true,
-    },
-    orderBy: { [sortBy]: sortOrder },
-    skip,
-    take: limit,
-  });
-
-  const totalPages = Math.ceil(total / limit);
-
-  return {
-    products: products.map(product => ({
-      ...product,
-      images: JSON.parse(product.images),
-    })),
-    total,
-    page,
-    totalPages,
-  };
-};
-
-/**
- * Update a product
- * @param id - Product ID
- * @param data - Update data
- * @returns Updated product
- */
-export const updateProduct = async (id: string, data: ProductUpdateInput) => {
-  const updateData: any = {};
   
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.description !== undefined) updateData.description = data.description;
-  if (data.stock !== undefined) updateData.stock = data.stock;
-  if (data.rentPrice !== undefined) updateData.rentPrice = data.rentPrice;
-  if (data.salePrice !== undefined) updateData.salePrice = data.salePrice;
-  if (data.deposit !== undefined) updateData.deposit = data.deposit;
-  if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
-  if (data.images) {
-    updateData.images = JSON.stringify(data.images);
+  if (!merchant) {
+    throw new Error(`Merchant with id ${merchantId} not found`);
   }
 
-  const product = await prisma.product.update({
-    where: { id },
-    data: updateData,
-    include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Delete a product (soft delete by setting isActive to false)
- * @param id - Product ID
- * @returns Deleted product
- */
-export const deleteProduct = async (id: string) => {
-  const product = await prisma.product.update({
-    where: { id },
-    data: { isActive: false },
-    include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Hard delete a product (use with caution)
- * @param id - Product ID
- * @returns Deleted product
- */
-export const hardDeleteProduct = async (id: string) => {
-  const product = await prisma.product.delete({
-    where: { id },
-    include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Update product stock
- * @param id - Product ID
- * @param quantity - Quantity to add/subtract (positive for add, negative for subtract)
- * @returns Updated product
- */
-export const updateProductStock = async (id: string, quantity: number) => {
-  const product = await prisma.product.update({
-    where: { id },
-    data: {
-      stock: {
-        increment: quantity,
-      },
+  return await prisma.product.findFirst({
+    where: { 
+      id,
+      merchantId: merchant.id // Use CUID for merchant isolation
     },
     include: {
-      outlet: true,
-      category: true,
-    },
-  });
-
-  return {
-    ...product,
-    images: JSON.parse(product.images),
-  };
-};
-
-/**
- * Check if product is available for rent
- * @param id - Product ID
- * @returns Availability status
- */
-export const checkProductAvailability = async (id: string): Promise<boolean> => {
-  const product = await prisma.product.findUnique({
-    where: { id },
-    select: { stock: true, isActive: true },
-  });
-
-  return product ? product.stock > 0 && product.isActive : false;
-}; 
-
-/**
- * Search products by name or barcode with various filters
- */
-export const searchProducts = async (filter: ProductSearchFilter): Promise<ProductSearchResponse> => {
-  const {
-    query,
-    outletId,
-    merchantId,
-    categoryId,
-    isActive,
-    inStock,
-    limit = 20,
-    offset = 0,
-  } = filter;
-
-  // Build where clause
-  const whereClause: any = {};
-
-  // Search by name or barcode
-  if (query && query.trim()) {
-    const searchQuery = query.trim();
-    whereClause.OR = [
-      {
-        name: {
-          contains: searchQuery,
-          mode: 'insensitive', // Case-insensitive search
+      merchant: {
+        select: {
+          id: true,
+          name: true,
         },
       },
-      {
-        barcode: {
-          contains: searchQuery,
-          mode: 'insensitive',
+      category: {
+        select: {
+          id: true,
+          name: true,
         },
       },
-    ];
-  }
-
-  // Filter by outlet
-  if (outletId) {
-    whereClause.outletId = outletId;
-  }
-
-  // Filter by merchant
-  if (merchantId) {
-    whereClause.outlet = {
-      merchantId,
-    };
-  }
-
-  // Filter by category
-  if (categoryId) {
-    whereClause.categoryId = categoryId;
-  }
-
-  // Filter by active status
-  if (isActive !== undefined) {
-    whereClause.isActive = isActive;
-  }
-
-  // Filter by stock availability
-  if (inStock) {
-    whereClause.available = {
-      gt: 0,
-    };
-  }
-
-  // Get total count for pagination
-  const total = await prisma.product.count({
-    where: whereClause,
-  });
-
-  // Get products with pagination
-  const products = await prisma.product.findMany({
-    where: whereClause,
-    include: {
-      outlet: {
-        include: {
-          merchant: {
+      outletStock: {
+        select: {
+          id: true,
+          stock: true,
+          available: true,
+          renting: true,
+          outlet: {
             select: {
-              id: true,
-              companyName: true,
+      id: true,
+              name: true,
+              address: true,
             },
           },
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Get product by barcode - follows dual ID system
+ * SECURITY: Enforces merchant isolation to prevent cross-tenant access
+ */
+export async function getProductByBarcode(barcode: string, merchantId: number) {
+  // Find merchant by id to get the CUID
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { id: true }
+  });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with id ${merchantId} not found`);
+  }
+
+  return await prisma.product.findFirst({
+    where: { 
+      barcode,
+      merchantId: merchant.id // Use CUID for merchant isolation
+    },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          name: true,
         },
       },
       category: {
@@ -395,47 +99,341 @@ export const searchProducts = async (filter: ProductSearchFilter): Promise<Produ
         },
       },
     },
-    orderBy: [
-      {
-        name: 'asc',
-      },
-      {
-        createdAt: 'desc',
-      },
-    ],
-    take: limit,
-    skip: offset,
   });
+}
 
-  return {
-    products,
-    total,
-    limit,
-    offset,
-    hasMore: offset + limit < total,
-  };
-};
+// ============================================================================
+// PRODUCT SEARCH FUNCTIONS
+// ============================================================================
 
 /**
- * Search products by exact barcode match
+ * Build order by clause for product queries
  */
-export const searchProductByBarcode = async (barcode: string): Promise<ProductSearchResult | null> => {
-  const product = await prisma.product.findFirst({
-    where: {
-      barcode: {
-        equals: barcode,
+function buildProductOrderByClause(sortBy?: string, sortOrder?: string): any {
+  const validSortFields = [
+    'createdAt', 'updatedAt', 'name', 'rentPrice', 'salePrice', 'totalStock'
+  ];
+  
+  const field = validSortFields.includes(sortBy || '') ? sortBy : 'createdAt';
+  const order = sortOrder === 'asc' ? 'asc' : 'desc';
+  
+  return { [field as string]: order };
+}
+
+/**
+ * Search products - follows dual ID system
+ * Input: ids (numbers), Output: ids (numbers)
+ */
+export async function searchProducts(filters: ProductSearchFilter) {
+  const {
+    merchantId,
+    outletId,
+    categoryId,
+    search,
+    q, // Add q parameter support
+    page = 1,
+    limit = 20,
+    offset, // Add offset support
+    isActive = true,
+    available,
+    minPrice,
+    maxPrice,
+    sortBy,
+    sortOrder
+  } = filters;
+
+  // Use offset if provided, otherwise calculate from page
+  const skip = offset !== undefined ? offset : (page - 1) * limit;
+
+  // Build where clause
+  const where: any = {
+    isActive,
+  };
+
+  if (merchantId) {
+    // Find merchant by id
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      select: { id: true }
+    });
+    
+    if (merchant) {
+      where.merchantId = merchant.id; // Use CUID
+    }
+  }
+
+  if (categoryId) {
+    // Find category by id
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { id: true }
+    });
+    
+    if (category) {
+      where.categoryId = category.id; // Use CUID
+    }
+  }
+
+  // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
+  const searchQuery = q || search;
+  if (searchQuery) {
+    const searchTerm = searchQuery.toLowerCase().trim();
+    where.OR = [
+      { name: { contains: searchTerm } },
+      { description: { contains: searchTerm } },
+      { barcode: { equals: searchTerm } }
+    ];
+  }
+
+  // If outletId is specified, only show products that have stock at that outlet
+  if (outletId) {
+    // Find outlet by id
+    const outlet = await prisma.outlet.findUnique({
+      where: { id: outletId },
+      select: { id: true }
+    });
+    
+    if (outlet) {
+      where.outletStock = {
+        some: {
+          outletId: outlet.id, // Use CUID
+          stock: { gt: 0 }
+        }
+      };
+    }
+  }
+
+  // Add availability filter
+  if (available !== undefined) {
+    if (available) {
+      where.outletStock = {
+        some: {
+          available: { gt: 0 }
+        }
+      };
+    } else {
+      where.outletStock = {
+        none: {
+          available: { gt: 0 }
+        }
+      };
+    }
+  }
+
+  // Add price range filters
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.rentPrice = {};
+    if (minPrice !== undefined) where.rentPrice.gte = minPrice;
+    if (maxPrice !== undefined) where.rentPrice.lte = maxPrice;
+  }
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      select: {
+      id: true,
+        name: true,
+        description: true,
+        barcode: true,
+        totalStock: true,
+        rentPrice: true,
+        salePrice: true,
+        deposit: true,
+        images: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: {
+      id: true,
+            name: true
+          }
+        },
+        merchant: {
+          select: {
+      id: true,
+            name: true
+          }
+        },
+        outletStock: {
+          select: {
+            id: true,
+            stock: true,
+            available: true,
+            renting: true,
+            outlet: {
+              select: {
+      id: true,
+                name: true,
+                address: true
+              }
+            }
+          }
+        }
       },
-      isActive: true,
+      orderBy: buildProductOrderByClause(sortBy, sortOrder),
+      take: limit,
+      skip: skip
+    }),
+    prisma.product.count({ where })
+  ]);
+
+  // Transform to match expected types
+  const transformedProducts = products.map((product: any) => ({
+    id: product.id, // Return id (number) for external use
+    name: product.name,
+    description: product.description,
+    barcode: product.barcode,
+    totalStock: product.totalStock,
+    rentPrice: product.rentPrice,
+    salePrice: product.salePrice,
+    deposit: product.deposit,
+    images: product.images,
+    isActive: product.isActive,
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+    category: {
+      id: product.category.id, // Return id (number)
+      name: product.category.name,
     },
-    include: {
+    merchant: {
+      id: product.merchant.id, // Return id (number)
+      name: product.merchant.name,
+    },
+    outletStock: product.outletStock.map((stock: any) => ({
+      id: stock.id, // Keep CUID for internal use
+      stock: stock.stock,
+      available: stock.available,
+      renting: stock.renting,
       outlet: {
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              companyName: true,
-            },
-          },
+        id: stock.outlet.id, // Return id (number)
+        name: stock.outlet.name,
+        address: stock.outlet.address,
+      },
+    })),
+  }));
+
+  return {
+    products: transformedProducts,
+    total,
+    page: offset !== undefined ? Math.floor(offset / limit) + 1 : page,
+    limit,
+    offset: skip,
+    hasMore: skip + limit < total,
+    totalPages: Math.ceil(total / limit),
+  };
+}
+
+// ============================================================================
+// DEFAULT CATEGORY FUNCTIONS
+// ============================================================================
+
+/**
+ * Get or create default category for merchant
+ */
+async function getOrCreateDefaultCategory(merchantId: number): Promise<any> {
+  // First try to find existing default category
+  const existingDefault = await prisma.category.findFirst({
+    where: {
+      merchantId: merchantId, // merchantId is number (public ID)
+      name: 'General',
+      isActive: true
+    }
+  });
+
+  if (existingDefault) {
+    console.log('✅ Found existing default category:', existingDefault.id);
+    return existingDefault;
+  }
+
+  // Create default category if not exists
+  console.log('🔧 Creating default category for merchant:', merchantId);
+  
+  // Generate next category id
+  const lastCategory = await prisma.category.findFirst({
+    orderBy: { id: 'desc' },
+    select: { id: true }
+  });
+  const nextPublicId = (lastCategory?.id || 0) + 1;
+
+  const defaultCategory = await prisma.category.create({
+    data: {
+      id: nextPublicId,
+      name: 'General',
+      description: 'Default category for general products',
+      merchantId: merchantId,
+      isActive: true
+    }
+  });
+
+  console.log('✅ Created default category:', defaultCategory.id);
+  return defaultCategory;
+}
+
+// ============================================================================
+// PRODUCT CREATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Create new product - follows dual ID system
+ * Input: ids (numbers), Output: id (number)
+ */
+export async function createProduct(input: any): Promise<any> {
+  // Find merchant by id
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: input.merchantId }
+  });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with id ${input.merchantId} not found`);
+  }
+
+  // Find category by id if provided
+  let category = null;
+  if (input.categoryId) {
+    category = await prisma.category.findUnique({
+      where: { id: input.categoryId }
+    });
+    
+    if (!category) {
+      throw new Error(`Category with id ${input.categoryId} not found`);
+    }
+  }
+
+  // Generate next product id
+  const lastProduct = await prisma.product.findFirst({
+    orderBy: { id: 'desc' },
+    select: { id: true }
+  });
+  const nextPublicId = (lastProduct?.id || 0) + 1;
+
+  // Create product
+  const productData: any = {
+    id: nextPublicId,
+    name: input.name,
+    description: input.description,
+    barcode: input.barcode,
+    totalStock: input.totalStock || 0,
+    rentPrice: input.rentPrice,
+    salePrice: input.salePrice,
+    deposit: input.deposit || 0,
+    images: input.images,
+    isActive: input.isActive ?? true,
+    merchantId: merchant.id, // Use CUID
+  };
+
+  // Only add categoryId if category is provided
+  if (category) {
+    productData.categoryId = category.id;
+  }
+
+  const product = await prisma.product.create({
+    data: productData,
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          name: true,
         },
       },
       category: {
@@ -448,56 +446,73 @@ export const searchProductByBarcode = async (barcode: string): Promise<ProductSe
   });
 
   return product;
-};
+}
+
+// ============================================================================
+// PRODUCT UPDATE FUNCTIONS
+// ============================================================================
 
 /**
- * Get products by outlet with optional filters
+ * Update product - follows dual ID system
+ * Input: id (number), Output: id (number)
  */
-export const getProductsByOutlet = async (
-  outletId: string,
-  options: {
-    categoryId?: string;
-    isActive?: boolean;
-    inStock?: boolean;
-    limit?: number;
-    offset?: number;
-  } = {}
-): Promise<ProductSearchResponse> => {
-  const { categoryId, isActive, inStock, limit = 20, offset = 0 } = options;
-
-  const whereClause: any = {
-    outletId,
-  };
-
-  if (categoryId) {
-    whereClause.categoryId = categoryId;
-  }
-
-  if (isActive !== undefined) {
-    whereClause.isActive = isActive;
-  }
-
-  if (inStock) {
-    whereClause.available = {
-      gt: 0,
-    };
-  }
-
-  const total = await prisma.product.count({
-    where: whereClause,
+export async function updateProduct(
+  id: number,
+  input: any
+): Promise<any> {
+  // Find product by id
+  const existingProduct = await prisma.product.findUnique({
+    where: { id }
   });
 
-  const products = await prisma.product.findMany({
-    where: whereClause,
+  if (!existingProduct) {
+    throw new Error(`Product with id ${id} not found`);
+  }
+
+  // Handle category update if categoryId is provided
+  let categoryId = undefined;
+  if (input.categoryId !== undefined) {
+    if (input.categoryId === null || input.categoryId === 0) {
+      // Remove category
+      categoryId = null;
+    } else {
+      // Find category by id
+      const category = await prisma.category.findUnique({
+        where: { id: input.categoryId }
+      });
+      
+      if (!category) {
+        throw new Error(`Category with id ${input.categoryId} not found`);
+      }
+      
+      categoryId = category.id; // Use CUID for database
+    }
+  }
+
+  // Prepare update data
+  const updateData: any = {};
+  
+  // Only update fields that are provided
+  if (input.name !== undefined) updateData.name = input.name;
+  if (input.description !== undefined) updateData.description = input.description;
+  if (input.barcode !== undefined) updateData.barcode = input.barcode;
+  if (input.totalStock !== undefined) updateData.totalStock = input.totalStock;
+  if (input.rentPrice !== undefined) updateData.rentPrice = input.rentPrice;
+  if (input.salePrice !== undefined) updateData.salePrice = input.salePrice;
+  if (input.deposit !== undefined) updateData.deposit = input.deposit;
+  if (input.images !== undefined) updateData.images = input.images;
+  if (input.isActive !== undefined) updateData.isActive = input.isActive;
+  if (categoryId !== undefined) updateData.categoryId = categoryId;
+
+  // Update product
+  const updatedProduct = await prisma.product.update({
+    where: { id },
+    data: updateData,
     include: {
-      outlet: {
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              companyName: true,
-            },
-          },
+      merchant: {
+        select: {
+          id: true,
+          name: true,
         },
       },
       category: {
@@ -507,79 +522,32 @@ export const getProductsByOutlet = async (
         },
       },
     },
-    orderBy: [
-      {
-        name: 'asc',
-      },
-      {
-        createdAt: 'desc',
-      },
-    ],
-    take: limit,
-    skip: offset,
   });
 
-  return {
-    products,
-    total,
-    limit,
-    offset,
-    hasMore: offset + limit < total,
-  };
-};
+  return updatedProduct;
+}
+
+// ============================================================================
+// PRODUCT UTILITY FUNCTIONS
+// ============================================================================
 
 /**
- * Get products by merchant with optional filters
+ * Get products by merchant - follows dual ID system
  */
-export const getProductsByMerchant = async (
-  merchantId: string,
-  options: {
-    categoryId?: string;
-    isActive?: boolean;
-    inStock?: boolean;
-    limit?: number;
-    offset?: number;
-  } = {}
-): Promise<ProductSearchResponse> => {
-  const { categoryId, isActive, inStock, limit = 20, offset = 0 } = options;
-
-  const whereClause: any = {
-    outlet: {
-      merchantId,
-    },
-  };
-
-  if (categoryId) {
-    whereClause.categoryId = categoryId;
-  }
-
-  if (isActive !== undefined) {
-    whereClause.isActive = isActive;
-  }
-
-  if (inStock) {
-    whereClause.available = {
-      gt: 0,
-    };
-  }
-
-  const total = await prisma.product.count({
-    where: whereClause,
+export async function getProductsByMerchant(merchantId: number) {
+  // Find merchant by id
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { id: true }
   });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with id ${merchantId} not found`);
+  }
 
-  const products = await prisma.product.findMany({
-    where: whereClause,
+  return await prisma.product.findMany({
+    where: { merchantId: merchant.id }, // Use CUID
     include: {
-      outlet: {
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              companyName: true,
-            },
-          },
-        },
-      },
       category: {
         select: {
           id: true,
@@ -587,23 +555,337 @@ export const getProductsByMerchant = async (
         },
       },
     },
-    orderBy: [
-      {
-        name: 'asc',
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+/**
+ * Get products by category - follows dual ID system
+ */
+export async function getProductsByCategory(categoryId: number) {
+  // Find category by id
+  const category = await prisma.category.findUnique({
+    where: { id: categoryId },
+    select: { id: true }
+  });
+  
+  if (!category) {
+    throw new Error(`Category with id ${categoryId} not found`);
+  }
+
+  return await prisma.product.findMany({
+    where: { categoryId: category.id }, // Use CUID
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          name: true,
+        },
       },
-      {
-        createdAt: 'desc',
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+/**
+ * Update product stock - follows dual ID system
+ */
+export async function updateProductStock(
+  productId: number,
+  outletId: number,
+  stockChange: number
+): Promise<any> {
+  // Find product by id
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true }
+  });
+  
+  if (!product) {
+    throw new Error(`Product with id ${productId} not found`);
+  }
+
+  // Find outlet by id
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { id: true }
+  });
+  
+  if (!outlet) {
+    throw new Error(`Outlet with id ${outletId} not found`);
+  }
+
+  // Update or create outlet stock
+  const outletStock = await prisma.outletStock.upsert({
+    where: {
+      productId_outletId: {
+        productId: product.id, // Use CUID
+        outletId: outlet.id, // Use CUID
       },
-    ],
-    take: limit,
-    skip: offset,
+    },
+    update: {
+      stock: { increment: stockChange },
+      available: { increment: stockChange },
+    },
+    create: {
+      productId: product.id, // Use CUID
+      outletId: outlet.id, // Use CUID
+      stock: stockChange,
+      available: stockChange,
+      renting: 0,
+    },
   });
 
+  return outletStock;
+}
+
+/**
+ * Delete product - follows dual ID system
+ * Input: id (number), Output: deleted product data
+ */
+export async function deleteProduct(id: number): Promise<any> {
+  // Find product by id
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      merchant: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+  
+  if (!product) {
+    throw new Error(`Product with id ${id} not found`);
+  }
+
+  // Delete the product (this will cascade to outletStock due to Prisma schema)
+  const deletedProduct = await prisma.product.delete({
+    where: { id },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      merchant: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  // Transform to match expected types
   return {
-    products,
-    total,
-    limit,
-    offset,
-    hasMore: offset + limit < total,
+    id: deletedProduct.id,
+    name: deletedProduct.name,
+    description: deletedProduct.description,
+    barcode: deletedProduct.barcode,
+    totalStock: deletedProduct.totalStock,
+    rentPrice: deletedProduct.rentPrice,
+    salePrice: deletedProduct.salePrice,
+    deposit: deletedProduct.deposit,
+    images: deletedProduct.images,
+    isActive: deletedProduct.isActive,
+    createdAt: deletedProduct.createdAt,
+    updatedAt: deletedProduct.updatedAt,
+    category: {
+      id: deletedProduct.category.id,
+      name: deletedProduct.category.name,
+    },
+    merchant: {
+      id: deletedProduct.merchant.id,
+      name: deletedProduct.merchant.name,
+    },
   };
-}; 
+}
+
+// ============================================================================
+// SIMPLIFIED API FUNCTIONS (for db object)
+// ============================================================================
+
+export const simplifiedProducts = {
+  /**
+   * Find product by ID (simplified API)
+   */
+  findById: async (id: number) => {
+    return await prisma.product.findUnique({
+      where: { id },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Find product by barcode (simplified API)
+   */
+  findByBarcode: async (barcode: string) => {
+    return await prisma.product.findUnique({
+      where: { barcode },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Create new product (simplified API)
+   */
+  create: async (data: any) => {
+    try {
+      console.log('🔍 simplifiedProducts.create called with data:', data);
+      
+      // If no categoryId provided, get or create default category
+      if (!data.categoryId && data.merchant && data.merchant.connect && data.merchant.connect.id) {
+        const merchantPublicId = data.merchant.connect.id; // This is the public ID (number)
+        const defaultCategory = await getOrCreateDefaultCategory(merchantPublicId);
+        
+        // Add category connection to data
+        data.category = { connect: { id: defaultCategory.id } };
+        console.log('✅ Using default category:', defaultCategory.id, 'for merchant:', merchantPublicId);
+      }
+      
+      const product = await prisma.product.create({
+        data,
+        include: {
+          merchant: { select: { id: true, name: true } },
+          category: { select: { id: true, name: true } },
+          outletStock: {
+            include: {
+              outlet: { select: { id: true, name: true } }
+            }
+          }
+        }
+      });
+      
+      console.log('✅ Product created successfully:', product.id);
+      return product;
+    } catch (error) {
+      console.error('❌ Error in simplifiedProducts.create:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update product (simplified API)
+   */
+  update: async (id: number, data: any) => {
+    return await prisma.product.update({
+      where: { id },
+      data,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Delete product (soft delete) (simplified API)
+   */
+  delete: async (id: number) => {
+    return await prisma.product.update({
+      where: { id },
+      data: { isActive: false }
+    });
+  },
+
+  /**
+   * Get product statistics (simplified API)
+   */
+  getStats: async (where: any = {}) => {
+    return await prisma.product.count({ where });
+  },
+
+  /**
+   * Search products with simple filters (simplified API)
+   */
+  search: async (filters: any) => {
+    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
+    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    
+    // Text search
+    if (whereFilters.search) {
+      where.OR = [
+        { name: { contains: whereFilters.search } },
+        { description: { contains: whereFilters.search } },
+        { barcode: { contains: whereFilters.search } }
+      ];
+    }
+
+    // Price range
+    if (whereFilters.minPrice !== undefined || whereFilters.maxPrice !== undefined) {
+      where.rentPrice = {};
+      if (whereFilters.minPrice !== undefined) where.rentPrice.gte = whereFilters.minPrice;
+      if (whereFilters.maxPrice !== undefined) where.rentPrice.lte = whereFilters.maxPrice;
+    }
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          merchant: { select: { id: true, name: true } },
+          category: { select: { id: true, name: true } },
+          outletStock: {
+            include: {
+              outlet: { select: { id: true, name: true } }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.product.count({ where })
+    ]);
+
+    return {
+      data: products,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total
+    };
+  },
+
+  count: async (options?: { where?: any }) => {
+    const where = options?.where || {};
+    return await prisma.product.count({ where });
+  }
+};

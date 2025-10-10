@@ -1,14 +1,15 @@
 import { prisma } from '@rentalshop/database';
 import { comparePassword, hashPassword } from './password';
 import { generateToken } from './jwt';
-import type { LoginCredentials, RegisterData, AuthResponse } from './types';
+import { getSubscriptionError } from '@rentalshop/utils';
+import type { LoginCredentials, RegisterData, AuthResponse, AuthUser } from './types';
 
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   const user = await prisma.user.findUnique({
     where: { email: credentials.email },
     include: {
       merchant: true,
-      admin: true,
+      outlet: true,
     },
   });
 
@@ -25,20 +26,45 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
     throw new Error('Account is deactivated');
   }
 
+  // Check subscription status before allowing login
+  // This prevents users with expired/cancelled subscriptions from logging in
+  const subscriptionError = await getSubscriptionError({
+    role: user.role,
+    merchant: user.merchant
+  });
+  
+  if (subscriptionError) {
+    console.log('🔍 LOGIN: Subscription check failed:', subscriptionError.message);
+    throw subscriptionError; // This will be caught and return 402 status
+  }
+
   const token = generateToken({
-    userId: user.id,
+    userId: user.id, // Use id (number) for JWT token consistency
     email: user.email,
     role: user.role,
   });
 
   return {
     user: {
-      id: user.id,
+      id: user.id, // Return id to frontend (number)
       email: user.email,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: `${user.firstName} ${user.lastName}`,
       role: user.role,
       phone: user.phone || undefined,
-      avatar: user.avatar || undefined,
+      merchantId: user.merchantId ? Number(user.merchantId) : undefined,
+      outletId: user.outletId ? Number(user.outletId) : undefined,
+      merchant: user.merchant ? {
+        id: user.merchant.id, // Return merchant id to frontend (number)
+        name: user.merchant.name,
+        description: user.merchant.description || undefined,
+      } : undefined,
+      outlet: user.outlet ? {
+        id: user.outlet.id, // Return outlet id to frontend (number)
+        name: user.outlet.name,
+        address: user.outlet.address || undefined,
+      } : undefined,
     },
     token,
   };
@@ -59,26 +85,30 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
     data: {
       email: data.email,
       password: hashedPassword,
-      name: data.name,
+      firstName: data.firstName || data.name?.split(' ')[0] || '',
+      lastName: data.lastName || data.name?.split(' ').slice(1).join(' ') || '',
       phone: data.phone,
-      role: data.role || 'CLIENT',
+      role: data.role || 'OUTLET_STAFF',
     },
   });
 
   const token = generateToken({
-    userId: user.id,
+    userId: user.id, // Use id (number) for JWT token consistency
     email: user.email,
     role: user.role,
   });
 
   return {
     user: {
-      id: user.id,
+      id: user.id, // Return id to frontend (number)
       email: user.email,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: `${user.firstName} ${user.lastName}`,
       role: user.role,
       phone: user.phone || undefined,
-      avatar: user.avatar || undefined,
+      merchantId: user.merchantId ? Number(user.merchantId) : undefined,
+      outletId: user.outletId ? Number(user.outletId) : undefined,
     },
     token,
   };

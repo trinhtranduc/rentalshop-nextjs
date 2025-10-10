@@ -1,0 +1,54 @@
+{
+  "name": "rentalshop-nextjs",
+  "version": "1.0.0",
+  "description": "Rental Shop Next.js Monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npx prisma generate --schema=./prisma/schema.prisma && turbo run build --concurrency=12",
+    "dev": "turbo run dev",
+    "dev:all": "turbo run dev --concurrency=20",
+    "dev:client": "cd apps/client && yarn dev",
+    "dev:admin": "cd apps/admin && yarn dev",
+    "dev:api": "cd apps/api && yarn dev",
+    "start": "cd apps/api && NODE_ENV=production node .next/standalone/apps/api/server.js",
+    "start:api": "cd apps/api && yarn start",
+    "start:admin": "cd apps/admin && yarn start",
+    "start:client": "cd apps/client && yarn start",
+    "fresh:start": "yarn clean:all && yarn install:all && yarn dev:all",
+    "clean:all": "rm -rf node_modules && rm -rf packages/*/node_modules && rm -rf apps/*/node_modules && rm -rf packages/*/dist && rm -rf apps/*/dist && rm -rf .turbo",
+    "install:all": "yarn install",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "test": "turbo run test",
+    "db:regenerate-system": "node scripts/regenerate-entire-system-2025.js",
+    "db:update-order-numbers": "node scripts/update-order-numbers.js",
+    "db:add-discount-fields": "node scripts/add-discount-fields.js",
+    "db:migrate-pricing": "node scripts/migrate-merchant-pricing.js migrate",
+    "db:validate-pricing": "node scripts/migrate-merchant-pricing.js validate",
+    "db:rollback-pricing": "node scripts/migrate-merchant-pricing.js rollback",
+    "test:pricing": "node scripts/test-pricing-system.js",
+    "railway:migrate": "npx prisma migrate deploy --schema=./prisma/schema.prisma",
+    "railway:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "railway:seed": "node scripts/regenerate-entire-system-2025.js",
+    "railway:setup": "yarn railway:generate && yarn railway:migrate && yarn railway:seed"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "turbo": "^1.10.0",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "yarn@1.22.0",
+  "dependencies": {
+    "@prisma/client": "^6.16.3",
+    "@prisma/engines": "^6.16.2",
+    "bcryptjs": "^3.0.2",
+    "node-fetch": "^3.3.2",
+    "prisma": "6.16.2"
+  }
+}

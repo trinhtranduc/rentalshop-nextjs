@@ -8,7 +8,7 @@ lerna-debug.log*
 
 # Package manager files
 package-lock.json
-yarn.lock
+# yarn.lock          ← MUST COMMIT for Railway deployment!
 pnpm-lock.yaml
 
 # Yarn v2
@@ -75,12 +75,17 @@ next-env.d.ts
 .yarn-integrity
 
 # Environment variables
-.env
+# Strategy: Commit .env (dev defaults), .env.production (template), env.example
+# Ignore all others for security and personalization
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.local
+.env*.local
+apps/**/.env
+apps/**/.env.local
+packages/**/.env
+packages/**/.env.local
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -96,7 +101,8 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public - Commented out to allow committing apps/*/public folders for Docker
+# Docker needs public folders for Next.js apps
 
 # Vuepress build output
 .vuepress/dist
@@ -197,8 +203,9 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables
-.env
+# dotenv environment variables (duplicate section - keep first one)
+# .env is now committed (development defaults)
+# .env.production is committed (template)
 .env.local
 .env.development.local
 .env.test.local
@@ -290,8 +297,14 @@ coverage/
 
 # Build outputs
 build/
-dist/
 out/
+
+# Apps build outputs (ignore)
+apps/**/dist/
+apps/**/.next/
+
+# Packages dist (COMMIT TO GIT for Vercel deployment)
+# packages/**/dist/ - COMMENTED to allow committing built packages
 
 # Storybook build outputs
 .out

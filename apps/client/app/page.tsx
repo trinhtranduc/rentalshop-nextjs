@@ -472,7 +472,7 @@ const CTA = () => {
 const FAQ = () => {
   const [openItems, setOpenItems] = React.useState(new Set());
   
-  const toggleItem = (index) => {
+  const toggleItem = (index: number) => {
     const newOpenItems = new Set(openItems);
     if (newOpenItems.has(index)) {
       newOpenItems.delete(index);
@@ -543,7 +543,7 @@ const FAQ = () => {
 const Pricing = () => {
   const [selectedDuration, setSelectedDuration] = React.useState('3'); // '3', '6', '12'
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',

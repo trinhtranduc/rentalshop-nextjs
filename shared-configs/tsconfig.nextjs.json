@@ -1,0 +1,21 @@
+{
+  // ============================================================================
+  // SHARED NEXT.JS TSCONFIG - SINGLE SOURCE OF TRUTH
+  // ============================================================================
+  // This shared config eliminates duplication across Next.js apps (client, admin, api)
+  
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "../",
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true
+  }
+}
