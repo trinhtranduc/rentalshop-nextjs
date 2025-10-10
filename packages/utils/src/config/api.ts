@@ -283,6 +283,15 @@ function getEnvironment(): Environment {
 function getApiBaseUrlInternal(): string {
   const env = getEnvironment();
   
+  // Debug logging
+  console.log('🔍 Environment Detection:', {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+    APP_ENV: process.env.APP_ENV,
+    detectedEnv: env,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL
+  });
+  
   switch (env) {
     case 'local':
       return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
