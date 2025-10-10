@@ -84,7 +84,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
 
 # Copy API build output
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/.next ./apps/api/.next
-COPY --from=builder --chown=nextjs:nodejs /app/apps/api/public ./apps/api/public
+# Public folder is optional (may not exist for API-only apps)
+RUN mkdir -p ./apps/api/public
 
 # Copy Prisma schema (needed for runtime)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
