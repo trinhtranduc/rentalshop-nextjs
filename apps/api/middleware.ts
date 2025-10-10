@@ -56,17 +56,55 @@ export async function middleware(request: NextRequest) {
     headers: Object.fromEntries(request.headers.entries())
   });
 
-  // Allow OPTIONS requests to pass through for CORS preflight
+  // ============================================================================
+  // CORS CONFIGURATION - Best Practices Implementation
+  // ============================================================================
+  
+  // Get allowed origins from environment
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  
+  // Add localhost fallbacks for development
+  const allowedOrigins = [
+    ...corsOrigins,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+  ];
+  
+  // Get request origin
+  const requestOrigin = request.headers.get('origin') || '';
+  
+  // SECURITY: Exact match only - no startsWith to prevent subdomain attacks
+  const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
+  
+  // Use request origin if allowed, otherwise null (reject)
+  const allowOrigin = isAllowedOrigin ? requestOrigin : 'null';
+  
+  console.log('🔍 MIDDLEWARE: CORS check:', {
+    requestOrigin,
+    allowedOrigins,
+    isAllowed: isAllowedOrigin,
+    allowOrigin
+  });
+
+  // Common CORS headers for all responses
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+
+  // Handle OPTIONS preflight requests
   if (request.method === 'OPTIONS') {
-    console.log('🔍 MIDDLEWARE: OPTIONS request, returning CORS headers');
+    console.log('🔍 MIDDLEWARE: OPTIONS preflight request');
     return new NextResponse(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400',
-      },
+      status: 204,
+      headers: corsHeaders,
     });
   }
 
@@ -82,8 +120,15 @@ export async function middleware(request: NextRequest) {
   });
 
   if (isPublicRoute || !isApiRoute) {
-    console.log('🔍 MIDDLEWARE: Route is public or not API, allowing through');
-    return NextResponse.next();
+    console.log('🔍 MIDDLEWARE: Route is public or not API, allowing through with CORS headers');
+    const response = NextResponse.next();
+    
+    // Add CORS headers to response
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return response;
   }
 
   // Extract and validate authorization header
@@ -96,19 +141,19 @@ export async function middleware(request: NextRequest) {
   
   if (!authHeader) {
     console.log('🔍 MIDDLEWARE: No authorization header, returning 401');
-    return createUnauthorizedResponse('Authorization header required');
+    return createUnauthorizedResponse('Authorization header required', corsHeaders);
   }
 
   if (!authHeader.startsWith('Bearer ')) {
     console.log('🔍 MIDDLEWARE: Invalid authorization format, returning 401');
-    return createUnauthorizedResponse('Invalid authorization format');
+    return createUnauthorizedResponse('Invalid authorization format', corsHeaders);
   }
 
   const token = authHeader.slice(7); // Remove 'Bearer ' prefix
 
   if (!token.trim()) {
     console.log('🔍 MIDDLEWARE: Empty token, returning 401');
-    return createUnauthorizedResponse('Token is required');
+    return createUnauthorizedResponse('Token is required', corsHeaders);
   }
 
   try {
@@ -130,7 +175,7 @@ export async function middleware(request: NextRequest) {
       // Exception: /api/plans/public should remain accessible to all authenticated users
       if (!pathname.startsWith('/api/plans/public')) {
         console.log('🔍 MIDDLEWARE: Admin access required for:', pathname);
-        return createForbiddenResponse('Admin access required');
+        return createForbiddenResponse('Admin access required', corsHeaders);
       }
     }
 
@@ -149,21 +194,29 @@ export async function middleware(request: NextRequest) {
     console.log('🔍 MIDDLEWARE: x-user-email:', payload.email);
     console.log('🔍 MIDDLEWARE: x-user-role:', payload.role);
 
-    return NextResponse.next({ request: { headers: requestHeaders } });
+    // Forward request with CORS headers
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    
+    // Add CORS headers to response
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return response;
   } catch (error) {
     // Log error for debugging (but don't expose sensitive information)
     console.error('🔍 MIDDLEWARE: Authentication error:', error instanceof Error ? error.message : 'Unknown error');
     console.error('🔍 MIDDLEWARE: Error details:', error);
     
     // Return generic error message to prevent information leakage
-    return createUnauthorizedResponse('Authentication failed');
+    return createUnauthorizedResponse('Authentication failed', corsHeaders);
   }
 }
 
 /**
- * Create standardized unauthorized response
+ * Create standardized unauthorized response with CORS headers
  */
-function createUnauthorizedResponse(message: string): NextResponse {
+function createUnauthorizedResponse(message: string, corsHeaders: Record<string, string>): NextResponse {
   return NextResponse.json(
     { 
       success: false, 
@@ -173,6 +226,7 @@ function createUnauthorizedResponse(message: string): NextResponse {
     { 
       status: API.STATUS.UNAUTHORIZED,
       headers: {
+        ...corsHeaders,
         'WWW-Authenticate': 'Bearer'
       }
     }
@@ -180,9 +234,9 @@ function createUnauthorizedResponse(message: string): NextResponse {
 }
 
 /**
- * Create standardized forbidden response
+ * Create standardized forbidden response with CORS headers
  */
-function createForbiddenResponse(message: string): NextResponse {
+function createForbiddenResponse(message: string, corsHeaders: Record<string, string>): NextResponse {
   return NextResponse.json(
     { 
       success: false, 
@@ -190,7 +244,8 @@ function createForbiddenResponse(message: string): NextResponse {
       code: 'FORBIDDEN'
     }, 
     { 
-      status: API.STATUS.FORBIDDEN
+      status: API.STATUS.FORBIDDEN,
+      headers: corsHeaders
     }
   );
 }
