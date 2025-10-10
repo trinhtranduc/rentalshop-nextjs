@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';

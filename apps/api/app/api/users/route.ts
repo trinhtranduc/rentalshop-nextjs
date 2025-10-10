@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth'; // Direct import to avoid conflicts
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
