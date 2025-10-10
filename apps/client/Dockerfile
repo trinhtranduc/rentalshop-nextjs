@@ -45,7 +45,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build packages using Turbo (respects dependency order)
-ENV NODE_ENV=production
+# Don't override NODE_ENV - let Railway control it
 ENV SKIP_ENV_VALIDATION=true
 RUN yarn build
 
@@ -55,7 +55,7 @@ RUN yarn build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
+# Don't override NODE_ENV - let Railway control it
 ENV PORT=3000
 
 # Create nextjs user for security
