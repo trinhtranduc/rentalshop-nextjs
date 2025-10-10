@@ -1,8 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standalone mode disabled for Railpack deployment
-  // Railpack doesn't properly trace Prisma binaries in monorepo
-  // Trade-off: Larger bundle (~300MB) but deployment works
+  // Enable standalone output for proper Prisma binary handling
+  output: 'standalone',
   
   transpilePackages: [
     '@rentalshop/database',

@@ -49,8 +49,8 @@ fi
 
 echo ""
 echo "Choose deployment environment:"
-echo "1) Development"
-echo "2) Production"
+echo "1) Development (dev-apis, dev-client, dev-admin, dev-database)"
+echo "2) Production (apis, client, admin, database)"
 echo "3) Both (Development + Production)"
 echo ""
 
@@ -59,11 +59,11 @@ read -p "Enter your choice (1-3): " choice
 case $choice in
     1)
         log_info "Deploying to Development Environment..."
-        ./scripts/deploy-development.sh
+        bash "$(dirname "$0")/deploy-development.sh"
         ;;
     2)
         log_info "Deploying to Production Environment..."
-        ./scripts/deploy-production.sh
+        bash "$(dirname "$0")/deploy-production.sh"
         ;;
     3)
         log_info "Deploying to Both Environments..."
@@ -72,11 +72,11 @@ case $choice in
         echo ""
         
         log_info "Step 1: Deploying to Development..."
-        ./scripts/deploy-development.sh
+        bash "$(dirname "$0")/deploy-development.sh"
         
         echo ""
         log_info "Step 2: Deploying to Production..."
-        ./scripts/deploy-production.sh
+        bash "$(dirname "$0")/deploy-production.sh"
         
         log_success "Both environments deployed successfully! 🎉"
         ;;

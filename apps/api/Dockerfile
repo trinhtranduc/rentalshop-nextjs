@@ -27,8 +27,6 @@ COPY apps/admin/package.json ./apps/admin/
 COPY apps/client/package.json ./apps/client/
 
 # Install ALL dependencies including devDependencies (needed for build)
-# Set NODE_ENV=development to ensure workspace devDependencies are installed
-# This includes tsup, typescript, etc. needed for package builds
 ENV NODE_ENV=development
 RUN yarn install --frozen-lockfile
 
@@ -51,7 +49,6 @@ COPY . .
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Build packages using Turbo (respects dependency order)
-# Use yarn instead of direct tsup command to find local node_modules/.bin/tsup
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
 RUN yarn build
@@ -90,6 +87,10 @@ RUN mkdir -p ./apps/api/public
 # Copy Prisma schema (needed for runtime)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
+# CRITICAL: Copy Prisma binaries to correct location
+RUN mkdir -p ./apps/api/.next/server/.prisma/client
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma/client/* ./apps/api/.next/server/.prisma/client/
+
 USER nextjs
 
 EXPOSE 3002
@@ -98,4 +99,3 @@ WORKDIR /app/apps/api
 
 # Start Next.js server (normal mode, not standalone)
 CMD ["../../node_modules/.bin/next", "start", "-p", "3002"]
-
