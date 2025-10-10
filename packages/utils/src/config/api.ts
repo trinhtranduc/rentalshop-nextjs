@@ -268,6 +268,20 @@ function getEnvironment(): Environment {
     return explicitEnv;
   }
 
+  // Check Railway's native environment variable
+  const railwayEnv = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_ENVIRONMENT_NAME;
+  if (railwayEnv === 'development') {
+    return 'development';
+  }
+  if (railwayEnv === 'production') {
+    return 'production';
+  }
+
+  // Check if we're on Railway development domain
+  if (typeof window !== 'undefined' && window.location.hostname.includes('dev-client-development')) {
+    return 'development';
+  }
+
   // Fallback to NODE_ENV
   if (process.env.NODE_ENV === 'production') {
     return 'production';
@@ -288,6 +302,8 @@ function getApiBaseUrlInternal(): string {
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
     APP_ENV: process.env.APP_ENV,
+    RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+    RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
     detectedEnv: env,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL
   });
@@ -297,10 +313,10 @@ function getApiBaseUrlInternal(): string {
       return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     
     case 'development':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://apis-development.up.railway.app';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-apis-development.up.railway.app';
     
     case 'production':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.rentalshop.com';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://apis-development.up.railway.app';
     
     default:
       return 'http://localhost:3002';
@@ -438,9 +454,9 @@ function getApiConfig(): ApiConfig {
           rateLimiting: true
         },
         urls: {
-          client: process.env.CLIENT_URL || 'https://rentalshop.com',
-          admin: process.env.ADMIN_URL || 'https://admin.rentalshop.com',
-          api: process.env.API_URL || 'https://apis-development.up.railway.app',
+          client: process.env.CLIENT_URL || 'https://client-production-d10a.up.railway.app',
+          admin: process.env.ADMIN_URL || 'https://admin-production-89d0.up.railway.app',
+          api: process.env.API_URL || 'https://apis-production-b698.up.railway.app',
           mobile: process.env.MOBILE_URL || 'https://mobile.rentalshop.com'
         },
         logging: {
