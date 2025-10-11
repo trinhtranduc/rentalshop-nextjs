@@ -1,296 +1,221 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useTransition, useRef, useState } from 'react';
 import { 
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
   Categories,
-  Button
+  useToast,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  ConfirmationDialog
 } from '@rentalshop/ui';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useAuth, useCategoriesData } from '@rentalshop/hooks';
 import { categoriesApi } from '@rentalshop/utils';
-import { usePagination } from '@rentalshop/hooks';
-import { PAGINATION } from '@rentalshop/constants';
-import type { Category, CategorySearchParams, CategoryData } from '@rentalshop/types';
+import type { CategoryFilters, Category } from '@rentalshop/types';
 
+/**
+ * ✅ MODERN NEXT.JS 13+ CATEGORIES PAGE - URL STATE PATTERN
+ */
 export default function CategoriesPage() {
-  // State for categories and UI
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<CategorySearchParams>({ search: '' });
-  const [isClient, setIsClient] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const { toastSuccess, toastError } = useToast();
+  const [isPending, startTransition] = useTransition();
   
-  // Pagination hook
-  const { pagination, handlePageChange: paginationPageChange, updatePaginationFromResponse } = usePagination({
-    initialLimit: PAGINATION.DEFAULT_PAGE_SIZE,
-    initialOffset: 0
+  // Dialog states
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+
+  // ============================================================================
+  // URL PARAMS - Single Source of Truth
+  // ============================================================================
+  
+  const search = searchParams.get('q') || '';
+  const status = searchParams.get('status') || '';
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '25');
+  const sortBy = searchParams.get('sortBy') || 'name';
+  const sortOrder = (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc';
+
+  const merchantId = user?.merchant?.id || user?.merchantId;
+  
+  // ============================================================================
+  // DATA FETCHING
+  // ============================================================================
+  
+  const filtersRef = useRef<CategoryFilters | null>(null);
+  const filters: CategoryFilters = useMemo(() => {
+    const newFilters: CategoryFilters = {
+      q: search || undefined,
+      merchantId: merchantId ? Number(merchantId) : undefined,
+      isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
+      page,
+      limit,
+      sortBy,
+      sortOrder
+    };
+    
+    const filterString = JSON.stringify(newFilters);
+    const prevFilterString = JSON.stringify(filtersRef.current);
+    
+    if (filterString === prevFilterString && filtersRef.current) {
+      return filtersRef.current;
+    }
+    
+    filtersRef.current = newFilters;
+    return newFilters;
+  }, [search, merchantId, status, page, limit, sortBy, sortOrder]);
+
+  const { data, loading, error } = useCategoriesData({ 
+    filters,
+    debounceSearch: true,
+    debounceMs: 500
   });
+
+  // ============================================================================
+  // URL UPDATE HELPER
+  // ============================================================================
   
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const hasInitializedRef = useRef(false);
-
-  // Ensure we're on client side
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // Fetch categories on component mount
-  useEffect(() => {
-    if (!isClient) return; // Don't run on server side
+  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
     
-    // Add a small delay to ensure skeleton is visible
-    const timer = setTimeout(() => {
-      fetchCategories();
-    }, 100);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== '' && value !== 'all') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
     
-    return () => clearTimeout(timer);
-  }, [isClient]); // Only run when isClient becomes true
+    const newURL = `${pathname}?${params.toString()}`;
+    startTransition(() => {
+      router.push(newURL, { scroll: false });
+    });
+  }, [pathname, router, searchParams, startTransition]);
 
-  // Fetch categories when pagination or search changes
-  useEffect(() => {
-    if (hasInitializedRef.current) {
-      fetchCategories();
-    }
-  }, [pagination.offset, pagination.limit, searchQuery]);
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+  
+  const handleSearchChange = useCallback((searchValue: string) => {
+    updateURL({ q: searchValue, page: 1 });
+  }, [updateURL]);
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      console.log('🔍 fetchCategories called with params:', {
-        search: searchQuery,
-        limit: pagination.limit,
-        offset: pagination.offset,
-        currentPage: pagination.currentPage
-      });
+  const handlePageChange = useCallback((newPage: number) => {
+    updateURL({ page: newPage });
+  }, [updateURL]);
 
-      // Use paginated API if we have search or pagination
-      if (searchQuery || pagination.offset > 0) {
-        const response = await categoriesApi.getCategoriesPaginated(
-          pagination.currentPage,
-          pagination.limit
-        );
+  const handleSort = useCallback((column: string) => {
+    const newSortBy = column;
+    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
+    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
+  }, [sortBy, sortOrder, updateURL]);
+
+  const handleCategoryAction = useCallback(async (action: string, categoryId: number) => {
+    const category = data?.categories.find(c => c.id === categoryId);
+    
+    switch (action) {
+      case 'view':
+        if (category) {
+          setSelectedCategory(category);
+          setShowDetailDialog(true);
+        }
+        break;
         
-        if (response.success && response.data) {
-          const data = response.data;
-          console.log('🔍 Categories API response:', data);
-          
-          setCategories(data.categories || []);
-          
-          // Update pagination from API response
-          updatePaginationFromResponse({
-            total: data.total || 0,
-            limit: pagination.limit,
-            offset: pagination.offset,
-            hasMore: data.total > pagination.offset + pagination.limit
-          });
-        } else {
-          throw new Error(response.message || 'Failed to fetch categories');
+      case 'edit':
+        router.push(`/categories/${categoryId}/edit`);
+        break;
+        
+      case 'delete':
+        if (category) {
+          setCategoryToDelete(category);
+          setShowDeleteConfirm(true);
         }
-      } else {
-        // Use regular API for initial load
-        const response = await categoriesApi.getCategories();
-        if (response.success && response.data) {
-          setCategories(response.data);
-          
-          // Update pagination for regular response
-          updatePaginationFromResponse({
-            total: response.data.length,
-            limit: pagination.limit,
-            offset: 0,
-            hasMore: false
-          });
-        } else {
-          throw new Error(response.message || 'Failed to fetch categories');
+        break;
+        
+      case 'activate':
+      case 'deactivate':
+        if (category) {
+          try {
+            const response = await categoriesApi.updateCategory(categoryId, { 
+              isActive: action === 'activate' 
+            });
+            if (response.success) {
+              toastSuccess(
+                `Category ${action === 'activate' ? 'activated' : 'deactivated'}`, 
+                `Category "${category.name}" has been ${action === 'activate' ? 'activated' : 'deactivated'}`
+              );
+              router.refresh();
+            } else {
+              toastError(`Failed to ${action} category`, response.error || 'Unknown error occurred');
+            }
+          } catch (err) {
+            toastError(`Error ${action}ing category`, 'An unexpected error occurred');
+          }
         }
-      }
-      
-      hasInitializedRef.current = true;
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching categories:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch categories');
-    } finally {
-      setLoading(false);
+        break;
+        
+      default:
+        console.log('Unknown action:', action);
     }
-  }, [pagination.offset, pagination.limit, pagination.currentPage, searchQuery, updatePaginationFromResponse, isInitialLoad]);
+  }, [data?.categories, router, toastSuccess, toastError]);
 
-  const handleSearchChange = useCallback((search: string) => {
-    setSearchQuery(search);
-    setFilters(prev => ({ ...prev, search }));
-    // Reset pagination when search changes
-    paginationPageChange(1);
-  }, [paginationPageChange]);
-
-  const handleFiltersChange = useCallback((newFilters: CategorySearchParams) => {
-    setFilters(newFilters);
-    setSearchQuery(newFilters.search || '');
-    // Reset pagination when filters change
-    paginationPageChange(1);
-  }, [paginationPageChange]);
-
-  const handleClearFilters = useCallback(() => {
-    setFilters({ search: '' });
-    setSearchQuery('');
-    // Reset pagination when clearing filters
-    paginationPageChange(1);
-  }, [paginationPageChange]);
-
-  const handleCategoryAction = useCallback((action: string, categoryId: number) => {
-    console.log('Category action:', action, categoryId);
-    // Handle different actions here
-  }, []);
-
-  const handleCategoryCreated = useCallback(async (categoryData: Partial<Category>) => {
+  const handleConfirmDelete = useCallback(async () => {
+    if (!categoryToDelete) return;
+    
     try {
-      const response = await categoriesApi.createCategory(categoryData);
-      if (response.success && response.data) {
-        const newCategory = response.data;
-        setCategories(prev => [newCategory, ...prev]);
-        // Refresh the list to get updated data
-        fetchCategories();
-      } else {
-        throw new Error(response.message || 'Failed to create category');
-      }
-    } catch (error) {
-      console.error('Error creating category:', error);
-      throw error;
-    }
-  }, [fetchCategories]);
-
-  const handleCategoryUpdated = useCallback(async (categoryData: Partial<Category>) => {
-    try {
-      if (!categoryData.id) { throw new Error('Category ID is required for update'); }
-      const response = await categoriesApi.updateCategory(categoryData.id, categoryData);
-      if (response.success && response.data) {
-        const updatedCategory = response.data;
-        setCategories(prev => {
-          const newCategories: Category[] = prev.map(cat =>
-            cat.id === updatedCategory.id ? updatedCategory : cat
-          );
-          return newCategories;
-        });
-      } else {
-        throw new Error(response.message || 'Failed to update category');
-      }
-    } catch (error) {
-      console.error('Error updating category:', error);
-      throw error;
-    }
-  }, []);
-
-  const handleCategoryDeleted = useCallback(async (categoryId: number) => {
-    try {
-      const response = await categoriesApi.deleteCategory(categoryId);
+      const response = await categoriesApi.deleteCategory(categoryToDelete.id);
       if (response.success) {
-        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-        // Refresh the list to get updated data
-        fetchCategories();
+        toastSuccess('Category deleted successfully', `Category "${categoryToDelete.name}" has been deleted`);
+        router.refresh();
       } else {
-        throw new Error(response.message || 'Failed to delete category');
+        toastError('Failed to delete category', response.error || 'Unknown error occurred');
       }
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      throw error;
+    } catch (err) {
+      toastError('Error deleting category', 'An unexpected error occurred');
+    } finally {
+      setShowDeleteConfirm(false);
+      setCategoryToDelete(null);
     }
-  }, [fetchCategories]);
+  }, [categoryToDelete, router, toastSuccess, toastError]);
 
-  const handleError = useCallback((error: string) => {
-    setError(error);
-    // Clear error after 5 seconds
-    setTimeout(() => setError(null), 5000);
-  }, []);
+  // ============================================================================
+  // TRANSFORM DATA
+  // ============================================================================
+  
+  const categoryData = useMemo(() => {
+    if (!data) return undefined;
+    
+    return {
+      categories: data.categories || [],
+      total: data.total || 0,
+      currentPage: data.currentPage || page,
+      totalPages: data.totalPages || 1,
+      limit: data.limit || limit,
+      hasMore: data.hasMore || false
+    };
+  }, [data, page, limit]);
 
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          {/* Main Content with Skeleton Loading */}
-          <div className="container mx-auto px-4 py-6">
-            <Categories
-              categories={[]}
-              loading={true}
-              onCategoryAction={handleCategoryAction}
-              onCategoryCreated={handleCategoryCreated}
-              onCategoryUpdated={handleCategoryUpdated}
-              onCategoryDeleted={handleCategoryDeleted}
-              onError={handleError}
-              filters={{
-                filters: filters,
-                onFiltersChange: handleFiltersChange,
-                onSearchChange: handleSearchChange,
-                onClearFilters: handleClearFilters
-              }}
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              totalCategories={pagination.total}
-              limit={pagination.limit}
-              onPageChange={paginationPageChange}
-            />
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+  
   if (error) {
     return (
       <PageWrapper>
         <PageContent>
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="text-red-500 text-6xl mb-4">⚠️</div>
-              <h2 className="text-xl font-semibold mb-2">Error Loading Categories</h2>
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={fetchCategories} variant="outline">
-                Try Again
-              </Button>
-            </div>
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
-  // Don't render Categories component until we're on client side
-  if (!isClient) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <div className="container mx-auto px-4 py-6">
-            <div className="bg-white rounded-lg border p-6">
-              <div className="space-y-4">
-                {/* Table Header Skeleton */}
-                <div className="flex items-center space-x-4">
-                  <div className="h-4 bg-muted rounded w-12"></div>
-                  <div className="h-4 bg-muted rounded flex-1"></div>
-                  <div className="h-4 bg-muted rounded w-32"></div>
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                </div>
-                
-                {/* Table Rows Skeleton */}
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="flex items-center space-x-4 py-3">
-                    <div className="h-4 bg-muted rounded w-12"></div>
-                    <div className="h-4 bg-muted rounded flex-1"></div>
-                    <div className="h-4 bg-muted rounded w-32"></div>
-                    <div className="h-4 bg-muted rounded w-20"></div>
-                    <div className="h-4 bg-muted rounded w-24"></div>
-                    <div className="h-4 bg-muted rounded w-24"></div>
-                    <div className="h-4 bg-muted rounded w-24"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="text-center py-12">
+            <p className="text-red-500">{error}</p>
           </div>
         </PageContent>
       </PageWrapper>
@@ -299,31 +224,73 @@ export default function CategoriesPage() {
 
   return (
     <PageWrapper>
-      <PageContent>
-        {/* Main Content */}
-        <div className="container mx-auto px-4 py-6">
-          <Categories
-            categories={categories}
-            loading={loading}
-            onCategoryAction={handleCategoryAction}
-            onCategoryCreated={handleCategoryCreated}
-            onCategoryUpdated={handleCategoryUpdated}
-            onCategoryDeleted={handleCategoryDeleted}
-            onError={handleError}
-            filters={{
-              filters: filters,
-              onFiltersChange: handleFiltersChange,
-              onSearchChange: handleSearchChange,
-              onClearFilters: handleClearFilters
-            }}
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            totalCategories={pagination.total}
-            limit={pagination.limit}
-            onPageChange={paginationPageChange}
-          />
-        </div>
-      </PageContent>
+      <PageHeader>
+        <PageTitle subtitle="Manage your product categories">
+          Categories
+        </PageTitle>
+      </PageHeader>
+
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <Categories
+          data={categoryData}
+          filters={filters}
+          onSearchChange={handleSearchChange}
+          onCategoryAction={handleCategoryAction}
+          onPageChange={handlePageChange}
+          onSort={handleSort}
+        />
+      </div>
+
+      {/* View Category Dialog */}
+      {selectedCategory && (
+        <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Category Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Name</p>
+                <p className="mt-1 text-gray-900 font-medium">{selectedCategory.name}</p>
+              </div>
+              {selectedCategory.description && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Description</p>
+                  <p className="mt-1 text-gray-900 whitespace-pre-wrap">{selectedCategory.description}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-medium text-gray-700">Status</p>
+                <p className="mt-1">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    selectedCategory.isActive 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {selectedCategory.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        type="danger"
+        title="Delete Category"
+        description={`Are you sure you want to delete category "${categoryToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete Category"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setCategoryToDelete(null);
+        }}
+      />
     </PageWrapper>
   );
 }

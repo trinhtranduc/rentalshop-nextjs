@@ -490,8 +490,11 @@ export const simplifiedOutlets = {
    * Search outlets with pagination (simplified API)
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', ...whereFilters } = filters;
     const skip = (page - 1) * limit;
+
+    console.log('🔍 DB outlet.search - Received filters:', filters);
+    console.log('🔍 DB outlet.search - whereFilters:', whereFilters);
 
     // Build where clause
     const where: any = {};
@@ -501,21 +504,34 @@ export const simplifiedOutlets = {
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
     if (whereFilters.status) where.status = whereFilters.status;
     
-    // Text search across multiple fields
-    if (whereFilters.search) {
-      where.OR = [
-        { name: { contains: whereFilters.search } },
-        { address: { contains: whereFilters.search } },
-        { phone: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } }
-      ];
+    // Text search across multiple fields - ONLY search by name
+    const searchTerm = whereFilters.search?.trim();
+    console.log('🔍 DB outlet.search - searchTerm:', searchTerm, 'length:', searchTerm?.length);
+    
+    if (searchTerm && searchTerm.length > 0) {
+      where.name = { 
+        contains: searchTerm, 
+        mode: 'insensitive' 
+      };
+      console.log('✅ DB outlet.search - Added name filter:', where.name);
+    } else {
+      console.log('⚠️ DB outlet.search - No search term, will return all outlets for this merchant');
     }
+    
+    console.log('🔍 DB outlet.search - Final where clause:', JSON.stringify(where, null, 2));
 
-    // Specific field filters
-    if (whereFilters.name) where.name = { contains: whereFilters.name };
-    if (whereFilters.address) where.address = { contains: whereFilters.address };
-    if (whereFilters.phone) where.phone = { contains: whereFilters.phone };
-    if (whereFilters.email) where.email = { contains: whereFilters.email };
+    // Specific field filters (not used in current implementation)
+    if (whereFilters.name) where.name = { contains: whereFilters.name, mode: 'insensitive' };
+    if (whereFilters.address) where.address = { contains: whereFilters.address, mode: 'insensitive' };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: 'insensitive' };
+
+    // Build orderBy based on sortBy and sortOrder
+    const orderBy: any = {};
+    if (sortBy === 'name' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = 'desc'; // Default
+    }
 
     const [outlets, total] = await Promise.all([
       prisma.outlet.findMany({
@@ -529,7 +545,7 @@ export const simplifiedOutlets = {
             }
           }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit
       }),

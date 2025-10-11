@@ -1,6 +1,6 @@
 import { SubscriptionStatus, BillingInterval as BillingInterval$1, PlanLimits as PlanLimits$1 } from '@rentalshop/constants';
 import * as react_jsx_runtime from 'react/jsx-runtime';
-import React from 'react';
+import React$1 from 'react';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 
@@ -415,6 +415,27 @@ interface OutletUpdateInput$1 extends BaseUpdateInput {
     description?: string;
     isActive?: boolean;
     isDefault?: boolean;
+}
+/**
+ * Outlet filters interface
+ * Used for filtering outlets in management views
+ */
+interface OutletFilters {
+    q?: string;
+    search?: string;
+    status?: string;
+    merchantId?: number;
+    outletId?: number;
+    city?: string;
+    state?: string;
+    country?: string;
+    isActive?: boolean;
+    isDefault?: boolean;
+    page?: number;
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -837,6 +858,22 @@ interface Category extends BaseEntityWithMerchant {
         id: number;
         name: string;
     };
+}
+/**
+ * Category filters (alias for CategorySearchParams)
+ * Used for consistent API interface with other entities
+ */
+interface CategoryFilters {
+    q?: string;
+    search?: string;
+    merchantId?: number;
+    isActive?: boolean;
+    status?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
 }
 
 interface PlanLimits {
@@ -1659,7 +1696,7 @@ declare function formatProration(proration: ProrationCalculation): string;
 
 interface BadgeConfig {
     color: string;
-    icon: React.ComponentType<{
+    icon: React$1.ComponentType<{
         className?: string;
     }>;
     text: string;
@@ -2852,21 +2889,33 @@ type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 declare const outletsQuerySchema: z.ZodObject<{
     merchantId: z.ZodOptional<z.ZodNumber>;
     isActive: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodBoolean]>, boolean | "all" | undefined, string | boolean>>;
+    q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
+    sortBy: z.ZodOptional<z.ZodString>;
+    sortOrder: z.ZodOptional<z.ZodEnum<["asc", "desc"]>>;
     page: z.ZodDefault<z.ZodNumber>;
     limit: z.ZodDefault<z.ZodNumber>;
+    offset: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     page: number;
     limit: number;
     search?: string | undefined;
+    q?: string | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
     merchantId?: number | undefined;
     isActive?: boolean | "all" | undefined;
+    offset?: number | undefined;
 }, {
     search?: string | undefined;
+    q?: string | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
     merchantId?: number | undefined;
     isActive?: string | boolean | undefined;
     page?: number | undefined;
     limit?: number | undefined;
+    offset?: number | undefined;
 }>;
 declare const outletCreateSchema: z.ZodObject<{
     name: z.ZodString;
@@ -4045,6 +4094,10 @@ declare const outletsApi: {
      */
     getOutletsPaginated(page?: number, limit?: number): Promise<ApiResponse<OutletsResponse>>;
     /**
+     * Search outlets by name with filters
+     */
+    searchOutlets(filters: OutletFilters): Promise<ApiResponse<OutletsResponse>>;
+    /**
      * Get outlet by ID
      */
     getOutlet(outletId: number): Promise<ApiResponse<Outlet>>;
@@ -4399,6 +4452,10 @@ declare const categoriesApi: {
      * Get categories with pagination
      */
     getCategoriesPaginated(page?: number, limit?: number): Promise<ApiResponse<CategoriesResponse>>;
+    /**
+     * Search categories by name with filters
+     */
+    searchCategories(filters: CategoryFilters): Promise<ApiResponse<CategoriesResponse>>;
     /**
      * Create a new category
      */
@@ -5777,6 +5834,96 @@ declare function isDevelopmentEnvironment(): boolean;
 declare function isProductionEnvironment(): boolean;
 declare const databaseConfig: DatabaseConfig;
 
+/**
+ * Breadcrumb Helper Utilities
+ *
+ * Centralized breadcrumb generators for consistent navigation across the app
+ */
+interface BreadcrumbItem {
+    label: string;
+    href?: string;
+    icon?: React.ReactNode;
+}
+/**
+ * Products Module Breadcrumbs
+ */
+declare const productBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (productName: string, productId: number) => BreadcrumbItem[];
+    edit: (productName: string, productId: number) => BreadcrumbItem[];
+    orders: (productName: string, productId: number) => BreadcrumbItem[];
+};
+/**
+ * Orders Module Breadcrumbs
+ */
+declare const orderBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (orderNumber: string) => BreadcrumbItem[];
+    edit: (orderNumber: string, orderId: string) => BreadcrumbItem[];
+    create: () => BreadcrumbItem[];
+};
+/**
+ * Customers Module Breadcrumbs
+ */
+declare const customerBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (customerName: string, customerId: number) => BreadcrumbItem[];
+    edit: (customerName: string, customerId: number) => BreadcrumbItem[];
+    orders: (customerName: string, customerId: number) => BreadcrumbItem[];
+};
+/**
+ * Users Module Breadcrumbs
+ */
+declare const userBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (userName: string, userId: number) => BreadcrumbItem[];
+    edit: (userName: string, userId: number) => BreadcrumbItem[];
+};
+/**
+ * Outlets Module Breadcrumbs
+ */
+declare const outletBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (outletName: string, outletId: number) => BreadcrumbItem[];
+};
+/**
+ * Subscriptions Module Breadcrumbs (Admin)
+ */
+declare const subscriptionBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (subscriptionId: number, merchantName?: string) => BreadcrumbItem[];
+};
+/**
+ * Merchants Module Breadcrumbs (Admin)
+ */
+declare const merchantBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (merchantName: string, merchantId: number) => BreadcrumbItem[];
+    orders: (merchantName: string, merchantId: number) => BreadcrumbItem[];
+    orderDetail: (merchantName: string, merchantId: number, orderNumber: string, orderId: string) => BreadcrumbItem[];
+    orderEdit: (merchantName: string, merchantId: number, orderNumber: string, orderId: string) => BreadcrumbItem[];
+};
+/**
+ * Categories Module Breadcrumbs
+ */
+declare const categoryBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+};
+/**
+ * Reports Module Breadcrumbs
+ */
+declare const reportBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (reportType: string) => BreadcrumbItem[];
+};
+/**
+ * Settings Module Breadcrumbs
+ */
+declare const settingsBreadcrumbs: {
+    main: () => BreadcrumbItem[];
+    section: (sectionName: string) => BreadcrumbItem[];
+};
+
 interface PerformanceMetrics {
     queryName: string;
     duration: number;
@@ -5881,4 +6028,4 @@ declare class APIMonitor {
     static measureEndpoint<T>(method: string, path: string, handler: () => Promise<T>): Promise<T>;
 }
 
-export { APIMonitor, API_BASE_URL, type AnalyticsFilters, type ApiConfig, ApiError, type ApiErrorResponse, type ApiResponse, type ApiSuccessResponse, type ApiUrls, type AuditConfig, type AuditEntityConfig, AuditHelper, type AuditHelperContext, type AuditLog, type AuditLogFilter, type AuditLogResponse, type AuditLogStats, type AuditLogStatsResponse, AuditPerformanceMonitor, type AuthResponse, type AvailabilityBadgeProps, type BackupInfo, type BackupSchedule, type BackupVerification, type BadgeConfig, type BillingCycle, type BillingCycleCreateInput, type BillingCycleFilters, type BillingCycleUpdateInput, type BillingCyclesResponse, type BillingInterval, type BillingSettings, type CalculatedPricing, type CalendarApiResponse, type CalendarMeta, type CalendarOrderSummary, type CalendarQuery, type CalendarResponse, type CategoriesResponse, type CustomerAnalytics, type CustomerApiResponse, type CustomerListResponse, type CustomerSearchResponse, DEFAULT_CURRENCIES, DEFAULT_CURRENCY_SETTINGS, type DatabaseConfig, DatabaseMonitor, type DayOrders, DuplicateError, ERROR_MESSAGES, ERROR_STATUS_CODES, type Environment, ErrorCode, type ErrorInfo, type ErrorType, ForbiddenError, type ImageDimensions, type ImageValidationResult, type LocationBadgeProps, type LoginInput, type ManualPayment, type ManualPaymentCreateInput, MemoryMonitor, type Merchant, type MerchantSearchFilters, type MerchantSettings, type MerchantsResponse, NotFoundError, type Notification, type NotificationFilters, type NotificationsResponse, type OrderCreateInput, type OrderUpdatePayload, type OrdersQuery, type OrdersResponse, type OutletCreateInput, type OutletSettings, type OutletUpdateInput, type OutletsQuery, type OutletsResponse, type PaymentFilters, type PaymentGatewayConfig, type PaymentGatewayManager, type PaymentsResponse, type PerformanceMetrics, PerformanceMonitor, type PlanCreateInput, PlanLimitError, type PlanLimitsInfo, type PlanLimitsValidationResult, type PlanStats, type PlanUpdateInput, type PlanVariantCreateInput, type PlanVariantUpdateInput, type PlanVariantsQuery, type PlansQuery, type PlansResponse, type PricingBreakdown, type PricingConfig, type PricingInfo, PricingResolver, PricingValidator, type ProductAnalytics, type ProductCreateInput, type ProductUpdateInput, type ProductsQuery, type ProductsResponse, type ProrationCalculation, type RegisterInput, type RenewalConfig, type RenewalResult, type RenewalStats, type RentalInput, type RentalPeriodValidation, type RevenueData, type RoleBadgeProps, type StatusBadgeProps, type StoredUser, type SubscriptionCreateInput, SubscriptionManager, type SubscriptionPeriod, type SubscriptionRenewalConfig, type SubscriptionRenewalResult, type SubscriptionUpdateInput, type SubscriptionValidationOptions, type SubscriptionValidationResult, type SubscriptionsQuery, type SystemStats, UnauthorizedError, type UploadOptions, type UploadProgress, type UploadResponse, type UserApiResponse, type UserCreateInput, type UserProfile, type UserUpdateInput, type UsersQuery, ValidationError, type ValidationResult, addDaysToDate, analyticsApi, analyzeError, apiConfig, apiEnvironment, apiUrls, assertPlanLimit, auditPerformanceMonitor, authApi, authenticatedFetch, billingCyclesApi, buildApiUrl, calculateCustomerStats, calculateDiscountedPrice, calculateNewBillingDate, calculateProductStats, calculateProratedAmount, calculateProration, calculateRenewalPrice, calculateSavings, calculateStockPercentage, calculateSubscriptionPeriod, calculateSubscriptionPrice, calculateUserStats, calendarApi, canCreateUsers, canPerformOperation, canRentProduct, canSellProduct, capitalizeWords, categoriesApi, checkSubscriptionStatus, clearAuthData, compareOrderNumberFormats, convertCurrency, createApiUrl, createAuditHelper, createErrorResponse, createPaymentGatewayManager, createSuccessResponse, createUploadController, customerCreateSchema, customerUpdateSchema, customersApi, customersQuerySchema, databaseConfig, debounce, defaultAuditConfig, delay, exportAuditLogs, fileToBase64, filterCustomers, filterProducts, filterUsers, formatBillingCycle, formatCurrency, formatCurrencyAdvanced, formatCustomerForDisplay, formatDate, formatDateLong, formatDateShort, formatDateTime, formatDateTimeLong, formatDateTimeShort, formatPhoneNumber, formatProductPrice, formatProration, formatSubscriptionPeriod, generateRandomString, generateSlug, getAdminUrl, getAllPricingOptions, getAllowedOperations, getApiBaseUrl, getApiCorsOrigins, getApiDatabaseUrl, getApiJwtSecret, getApiUrl, getAuditConfig, getAuditEntityConfig, getAuditLogStats, getAuditLogs, getAuthToken, getAvailabilityBadge, getAvailabilityBadgeConfig, getBillingCycleDiscount, getClientUrl, getCurrency, getCurrencyDisplay, getCurrentCurrency, getCurrentDate, getCurrentEntityCounts, getCurrentEnvironment, getCurrentUser, getCustomerAddress, getCustomerAge, getCustomerContactInfo, getCustomerFullName, getCustomerIdTypeBadge, getCustomerLocationBadge, getCustomerStatusBadge, getDatabaseConfig, getDaysDifference, getDiscountPercentage, getEnvironmentUrls, getExchangeRate, getFormatRecommendations, getImageDimensions, getInitials, getLocationBadge, getLocationBadgeConfig, getMobileUrl, getOutletStats, getPlanLimitError, getPlanLimitErrorMessage, getPlanLimitsInfo, getPriceTrendBadge, getPriceTrendBadgeConfig, getPricingBreakdown, getPricingComparison, getProductAvailabilityBadge, getProductCategoryName, getProductDisplayName, getProductImageUrl, getProductOutletName, getProductStatusBadge, getProductStockStatus, getProductTypeBadge, getRoleBadge, getRoleBadgeConfig, getStatusBadge, getStatusBadgeConfig, getStoredUser, getSubscriptionError, getSubscriptionStatusBadge, getSubscriptionStatusPriority, getToastType, getTomorrow, getUserFullName, getUserRoleBadge, getUserStatusBadge, handleApiError, handleApiErrorForUI, handleApiResponse, handleBusinessError, handlePrismaError, handleValidationError, isAuthError, isAuthenticated, isBrowser, isDateAfter, isDateBefore, isDev, isDevelopment, isDevelopmentEnvironment, isEmpty, isErrorResponse, isGracePeriodExceeded, isLocal, isLocalEnvironment, isNetworkError, isPermissionError, isProd, isProduction, isProductionEnvironment, isServer, isSubscriptionExpired, isSuccessResponse, isTest, isValidCurrencyCode, isValidEmail, isValidPhone, isValidationError, loginSchema, memoize, merchantsApi, migrateOrderNumbers, normalizeWhitespace, notificationsApi, once, orderCreateSchema, orderUpdateSchema, ordersApi, ordersQuerySchema, outletCreateSchema, outletUpdateSchema, outletsApi, outletsQuerySchema, parseApiResponse, parseCurrency, paymentsApi, planCreateSchema, planUpdateSchema, planVariantCreateSchema, planVariantUpdateSchema, planVariantsQuerySchema, plansApi, plansQuerySchema, pricingCalculator, productCreateSchema, productUpdateSchema, productsApi, productsQuerySchema, profileApi, publicFetch, publicPlansApi, quickAuditLog, registerSchema, rentalSchema, resizeImage, retry, sanitizeFieldValue, settingsApi, shouldApplyProration, shouldLogEntity, shouldLogField, shouldSample, shouldThrowPlanLimitError, sortProducts, sortSubscriptionsByStatus, storeAuthData, subscriptionCreateSchema, subscriptionNeedsAttention, subscriptionUpdateSchema, subscriptionsApi, subscriptionsQuerySchema, systemApi, throttle, timeout, truncateText, uploadImage, uploadImages, userCreateSchema, userUpdateSchema, usersApi, usersQuerySchema, validateCustomer, validateForRenewal, validateImage, validateOrderNumberFormat, validatePlanLimits, validatePlatformAccess, validateProductPublicCheckAccess, validateSubscriptionAccess, withErrorHandlingForUI };
+export { APIMonitor, API_BASE_URL, type AnalyticsFilters, type ApiConfig, ApiError, type ApiErrorResponse, type ApiResponse, type ApiSuccessResponse, type ApiUrls, type AuditConfig, type AuditEntityConfig, AuditHelper, type AuditHelperContext, type AuditLog, type AuditLogFilter, type AuditLogResponse, type AuditLogStats, type AuditLogStatsResponse, AuditPerformanceMonitor, type AuthResponse, type AvailabilityBadgeProps, type BackupInfo, type BackupSchedule, type BackupVerification, type BadgeConfig, type BillingCycle, type BillingCycleCreateInput, type BillingCycleFilters, type BillingCycleUpdateInput, type BillingCyclesResponse, type BillingInterval, type BillingSettings, type BreadcrumbItem, type CalculatedPricing, type CalendarApiResponse, type CalendarMeta, type CalendarOrderSummary, type CalendarQuery, type CalendarResponse, type CategoriesResponse, type CustomerAnalytics, type CustomerApiResponse, type CustomerListResponse, type CustomerSearchResponse, DEFAULT_CURRENCIES, DEFAULT_CURRENCY_SETTINGS, type DatabaseConfig, DatabaseMonitor, type DayOrders, DuplicateError, ERROR_MESSAGES, ERROR_STATUS_CODES, type Environment, ErrorCode, type ErrorInfo, type ErrorType, ForbiddenError, type ImageDimensions, type ImageValidationResult, type LocationBadgeProps, type LoginInput, type ManualPayment, type ManualPaymentCreateInput, MemoryMonitor, type Merchant, type MerchantSearchFilters, type MerchantSettings, type MerchantsResponse, NotFoundError, type Notification, type NotificationFilters, type NotificationsResponse, type OrderCreateInput, type OrderUpdatePayload, type OrdersQuery, type OrdersResponse, type OutletCreateInput, type OutletSettings, type OutletUpdateInput, type OutletsQuery, type OutletsResponse, type PaymentFilters, type PaymentGatewayConfig, type PaymentGatewayManager, type PaymentsResponse, type PerformanceMetrics, PerformanceMonitor, type PlanCreateInput, PlanLimitError, type PlanLimitsInfo, type PlanLimitsValidationResult, type PlanStats, type PlanUpdateInput, type PlanVariantCreateInput, type PlanVariantUpdateInput, type PlanVariantsQuery, type PlansQuery, type PlansResponse, type PricingBreakdown, type PricingConfig, type PricingInfo, PricingResolver, PricingValidator, type ProductAnalytics, type ProductCreateInput, type ProductUpdateInput, type ProductsQuery, type ProductsResponse, type ProrationCalculation, type RegisterInput, type RenewalConfig, type RenewalResult, type RenewalStats, type RentalInput, type RentalPeriodValidation, type RevenueData, type RoleBadgeProps, type StatusBadgeProps, type StoredUser, type SubscriptionCreateInput, SubscriptionManager, type SubscriptionPeriod, type SubscriptionRenewalConfig, type SubscriptionRenewalResult, type SubscriptionUpdateInput, type SubscriptionValidationOptions, type SubscriptionValidationResult, type SubscriptionsQuery, type SystemStats, UnauthorizedError, type UploadOptions, type UploadProgress, type UploadResponse, type UserApiResponse, type UserCreateInput, type UserProfile, type UserUpdateInput, type UsersQuery, ValidationError, type ValidationResult, addDaysToDate, analyticsApi, analyzeError, apiConfig, apiEnvironment, apiUrls, assertPlanLimit, auditPerformanceMonitor, authApi, authenticatedFetch, billingCyclesApi, buildApiUrl, calculateCustomerStats, calculateDiscountedPrice, calculateNewBillingDate, calculateProductStats, calculateProratedAmount, calculateProration, calculateRenewalPrice, calculateSavings, calculateStockPercentage, calculateSubscriptionPeriod, calculateSubscriptionPrice, calculateUserStats, calendarApi, canCreateUsers, canPerformOperation, canRentProduct, canSellProduct, capitalizeWords, categoriesApi, categoryBreadcrumbs, checkSubscriptionStatus, clearAuthData, compareOrderNumberFormats, convertCurrency, createApiUrl, createAuditHelper, createErrorResponse, createPaymentGatewayManager, createSuccessResponse, createUploadController, customerBreadcrumbs, customerCreateSchema, customerUpdateSchema, customersApi, customersQuerySchema, databaseConfig, debounce, defaultAuditConfig, delay, exportAuditLogs, fileToBase64, filterCustomers, filterProducts, filterUsers, formatBillingCycle, formatCurrency, formatCurrencyAdvanced, formatCustomerForDisplay, formatDate, formatDateLong, formatDateShort, formatDateTime, formatDateTimeLong, formatDateTimeShort, formatPhoneNumber, formatProductPrice, formatProration, formatSubscriptionPeriod, generateRandomString, generateSlug, getAdminUrl, getAllPricingOptions, getAllowedOperations, getApiBaseUrl, getApiCorsOrigins, getApiDatabaseUrl, getApiJwtSecret, getApiUrl, getAuditConfig, getAuditEntityConfig, getAuditLogStats, getAuditLogs, getAuthToken, getAvailabilityBadge, getAvailabilityBadgeConfig, getBillingCycleDiscount, getClientUrl, getCurrency, getCurrencyDisplay, getCurrentCurrency, getCurrentDate, getCurrentEntityCounts, getCurrentEnvironment, getCurrentUser, getCustomerAddress, getCustomerAge, getCustomerContactInfo, getCustomerFullName, getCustomerIdTypeBadge, getCustomerLocationBadge, getCustomerStatusBadge, getDatabaseConfig, getDaysDifference, getDiscountPercentage, getEnvironmentUrls, getExchangeRate, getFormatRecommendations, getImageDimensions, getInitials, getLocationBadge, getLocationBadgeConfig, getMobileUrl, getOutletStats, getPlanLimitError, getPlanLimitErrorMessage, getPlanLimitsInfo, getPriceTrendBadge, getPriceTrendBadgeConfig, getPricingBreakdown, getPricingComparison, getProductAvailabilityBadge, getProductCategoryName, getProductDisplayName, getProductImageUrl, getProductOutletName, getProductStatusBadge, getProductStockStatus, getProductTypeBadge, getRoleBadge, getRoleBadgeConfig, getStatusBadge, getStatusBadgeConfig, getStoredUser, getSubscriptionError, getSubscriptionStatusBadge, getSubscriptionStatusPriority, getToastType, getTomorrow, getUserFullName, getUserRoleBadge, getUserStatusBadge, handleApiError, handleApiErrorForUI, handleApiResponse, handleBusinessError, handlePrismaError, handleValidationError, isAuthError, isAuthenticated, isBrowser, isDateAfter, isDateBefore, isDev, isDevelopment, isDevelopmentEnvironment, isEmpty, isErrorResponse, isGracePeriodExceeded, isLocal, isLocalEnvironment, isNetworkError, isPermissionError, isProd, isProduction, isProductionEnvironment, isServer, isSubscriptionExpired, isSuccessResponse, isTest, isValidCurrencyCode, isValidEmail, isValidPhone, isValidationError, loginSchema, memoize, merchantBreadcrumbs, merchantsApi, migrateOrderNumbers, normalizeWhitespace, notificationsApi, once, orderBreadcrumbs, orderCreateSchema, orderUpdateSchema, ordersApi, ordersQuerySchema, outletBreadcrumbs, outletCreateSchema, outletUpdateSchema, outletsApi, outletsQuerySchema, parseApiResponse, parseCurrency, paymentsApi, planCreateSchema, planUpdateSchema, planVariantCreateSchema, planVariantUpdateSchema, planVariantsQuerySchema, plansApi, plansQuerySchema, pricingCalculator, productBreadcrumbs, productCreateSchema, productUpdateSchema, productsApi, productsQuerySchema, profileApi, publicFetch, publicPlansApi, quickAuditLog, registerSchema, rentalSchema, reportBreadcrumbs, resizeImage, retry, sanitizeFieldValue, settingsApi, settingsBreadcrumbs, shouldApplyProration, shouldLogEntity, shouldLogField, shouldSample, shouldThrowPlanLimitError, sortProducts, sortSubscriptionsByStatus, storeAuthData, subscriptionBreadcrumbs, subscriptionCreateSchema, subscriptionNeedsAttention, subscriptionUpdateSchema, subscriptionsApi, subscriptionsQuerySchema, systemApi, throttle, timeout, truncateText, uploadImage, uploadImages, userBreadcrumbs, userCreateSchema, userUpdateSchema, usersApi, usersQuerySchema, validateCustomer, validateForRenewal, validateImage, validateOrderNumberFormat, validatePlanLimits, validatePlatformAccess, validateProductPublicCheckAccess, validateSubscriptionAccess, withErrorHandlingForUI };

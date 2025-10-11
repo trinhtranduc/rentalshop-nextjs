@@ -96,12 +96,8 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
 
   return (
     <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-          Product Filters
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="pt-6 space-y-4">
         {/* Search and Basic Filters */}
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search field - takes more space */}

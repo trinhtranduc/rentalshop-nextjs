@@ -1,7 +1,7 @@
 import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../core';
-import type { Outlet, OutletCreateInput, OutletUpdateInput } from '@rentalshop/types';
+import type { Outlet, OutletCreateInput, OutletUpdateInput, OutletFilters } from '@rentalshop/types';
 
 export interface OutletsResponse {
   outlets: Outlet[];
@@ -32,6 +32,32 @@ export const outletsApi = {
       page: page.toString(),
       limit: limit.toString()
     });
+    
+    const response = await authenticatedFetch(`${apiUrls.outlets.list}?${params.toString()}`);
+    return await parseApiResponse<OutletsResponse>(response);
+  },
+
+  /**
+   * Search outlets by name with filters
+   */
+  async searchOutlets(filters: OutletFilters): Promise<ApiResponse<OutletsResponse>> {
+    const params = new URLSearchParams();
+    
+    // Search by outlet name (primary)
+    const searchQuery = filters.q || filters.search;
+    if (searchQuery) params.append('q', searchQuery);
+    
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+    
+    // Add pagination parameters
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.page) params.append('page', filters.page.toString());
+    
+    // Add sorting parameters
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
     
     const response = await authenticatedFetch(`${apiUrls.outlets.list}?${params.toString()}`);
     return await parseApiResponse<OutletsResponse>(response);

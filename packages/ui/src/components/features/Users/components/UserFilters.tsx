@@ -38,12 +38,8 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
 
   return (
     <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-          User Search & Filters
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="pt-6 space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search - Full Width */}
           <div className="flex-1 space-y-2">
@@ -59,12 +55,12 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
           </div>
 
           {/* Role Filter - Right Aligned */}
-          <div className="space-y-2 md:w-32">
+          <div className="space-y-2 md:w-56">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Role
             </label>
             <Select value={filters.role} onValueChange={(value) => handleFilterChange('role', value)}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full py-3">
                 <SelectValue placeholder="All roles" />
               </SelectTrigger>
               <SelectContent>

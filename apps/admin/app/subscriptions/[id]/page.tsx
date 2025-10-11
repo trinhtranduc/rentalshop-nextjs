@@ -9,6 +9,8 @@ import { Card,
   Button,
   Badge,
   StatusBadge,
+  Breadcrumb,
+  PageWrapper,
   Table,
   TableBody,
   TableCell,
@@ -26,6 +28,7 @@ import { Card,
   Label,
   ConfirmationDialog,
   useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   ArrowLeft,
   Edit,
@@ -260,26 +263,28 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     );
   }
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Subscriptions', href: '/subscriptions' },
+    { label: `#${subscription.id} - ${subscription.merchant?.name || 'Subscription'}` }
+  ];
+
   return (
-    <div className="space-y-6">
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-6" />
+
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            onClick={() => window.location.href = '/admin/subscriptions'}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Subscription #{subscription.id}
-            </h1>
-            <p className="text-gray-600">
-              {subscription.merchant?.name} - {subscription.plan?.name}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Subscription #{subscription.id}
+          </h1>
+          <p className="text-gray-600">
+            {subscription.merchant?.name} - {subscription.plan?.name}
+          </p>
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -674,6 +679,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       />
 
       {/* Toast Container */}
-    </div>
+      </div>
+    </PageWrapper>
   );
 }

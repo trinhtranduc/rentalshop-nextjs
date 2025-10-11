@@ -5,9 +5,10 @@ import { OrderStats } from '@rentalshop/types';
 interface OrderHeaderProps {
   totalOrders: number;
   stats?: OrderStats;
+  showStats?: boolean;
 }
 
-export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
+export const OrderHeader = React.memo(function OrderHeader({ totalOrders, stats, showStats = true }: OrderHeaderProps) {
   console.log('OrderHeader received stats:', stats);
   console.log('OrderHeader received totalOrders:', totalOrders);
   
@@ -31,6 +32,11 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
     cancelledOrders: stats?.cancelledOrders ?? 0,
     averageOrderValue: stats?.averageOrderValue ?? 0
   };
+
+  // Don't render anything if showStats is false
+  if (!showStats) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
@@ -102,4 +108,4 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
       </div>
     </div>
   );
-}
+});

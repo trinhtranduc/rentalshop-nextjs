@@ -71,10 +71,9 @@ import { ordersApi } from '@rentalshop/utils';
 // Skeleton component for OrderDetail
 const OrderDetailSkeleton: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="space-y-4">
         {/* Header Skeleton */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <Skeleton className="h-8 w-64" />
@@ -91,9 +90,9 @@ const OrderDetailSkeleton: React.FC = () => {
         </div>
 
         {/* Main Content Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column Skeleton */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Order Information Card Skeleton */}
             <Card className="flex flex-col">
               <CardHeader>
@@ -155,7 +154,7 @@ const OrderDetailSkeleton: React.FC = () => {
           </div>
 
           {/* Right Column Skeleton */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Order Summary Card Skeleton */}
             <Card>
               <CardHeader>
@@ -217,7 +216,6 @@ const OrderDetailSkeleton: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };
@@ -555,10 +553,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="space-y-4">
         {/* Header */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
@@ -595,9 +592,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Order Information & Products (2/3 width) */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Order Information Card */}
             <Card className="flex flex-col">
               <CardHeader>
@@ -1097,7 +1094,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
             </div>
           </div>
         )}
-      </div>
+      
       {/* Collection Modal */}
       <CollectionReturnModal
         isOpen={isCollectionModalOpen}

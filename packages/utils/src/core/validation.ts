@@ -300,16 +300,20 @@ export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 // Outlets validation schemas
 // ============================================================================
 export const outletsQuerySchema = z.object({
-  merchantId: z.coerce.number().int().positive().optional(), // Changed from string to number
+  merchantId: z.coerce.number().int().positive().optional(),
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;
     if (v === undefined) return undefined;
     if (v === 'all') return 'all';
     return v === 'true';
   }).optional(),
-  search: z.string().optional(),
+  q: z.string().optional(), // Search by outlet name (primary)
+  search: z.string().optional(), // Alias for q (backward compatibility)
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
 export const outletCreateSchema = z.object({

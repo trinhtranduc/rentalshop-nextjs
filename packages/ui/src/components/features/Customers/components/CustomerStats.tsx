@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import { Badge } from '../../../ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
+import { Badge } from '@rentalshop/ui';
 import { CustomerStats as CustomerStatsType, TopCustomer } from '@rentalshop/types';
 
 interface CustomerStatsProps {

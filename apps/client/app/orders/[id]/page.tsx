@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, OrderDetail, useToast } from '@rentalshop/ui';
+import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
+import { orderBreadcrumbs } from '@rentalshop/utils';
 
 import { ArrowLeft } from 'lucide-react';
 import { ordersApi } from '@rentalshop/utils';
@@ -288,22 +290,18 @@ export default function OrderDetailPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button 
-            variant="outline" 
-            onClick={() => router.back()}
-            className="mb-4 hover:bg-gray-50 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Orders
-          </Button>
-        </div>
+  // Breadcrumb items - temporary fix
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Orders', href: '/orders' },
+    { label: order.orderNumber }
+  ];
 
-        {/* Order Detail Component */}
+  return (
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
+
+      {/* Order Detail Component */}
         <OrderDetail
           order={order}
           onEdit={handleEditOrder}
@@ -315,7 +313,6 @@ export default function OrderDetailPage() {
           loading={actionLoading}
           showActions={true}
         />
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

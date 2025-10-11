@@ -17,6 +17,7 @@ import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { CreateOrderForm, 
+  Breadcrumb,
   FormSkeleton, 
   PageWrapper, 
   PageHeader,
@@ -24,6 +25,7 @@ import { CreateOrderForm,
   PageContent, 
   useToast,
   Button } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { customersApi, productsApi, outletsApi, ordersApi, categoriesApi } from '@rentalshop/utils';
 import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category } from '@rentalshop/types';
@@ -342,19 +344,22 @@ export default function MerchantOrderEditPage() {
     );
   }
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Merchants', href: '/merchants' },
+    { label: `Merchant ${merchantId}`, href: `/merchants/${merchantId}` },
+    { label: 'Orders', href: `/merchants/${merchantId}/orders` },
+    { label: order.orderNumber, href: `/merchants/${merchantId}/orders/${orderId}` },
+    { label: 'Edit' }
+  ];
+
   return (
     <PageWrapper>
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={handleBackToOrders}
-              variant="outline"
-              size="sm"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Orders
-            </Button>
+          <div>
             <PageTitle>Edit Order - {order.orderNumber}</PageTitle>
           </div>
         </div>

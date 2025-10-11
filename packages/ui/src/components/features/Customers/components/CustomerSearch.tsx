@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
-import { Input } from '../../../ui/input';
+import { Input } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { CustomerFilters } from '@rentalshop/types';
 
 interface CustomerSearchProps {
@@ -29,12 +29,7 @@ export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onCle
 
   return (
     <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-          Customer Search & Filters
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="pt-6 space-y-4">
         {/* Basic Search and Filters */}
         <div className="flex justify-between items-end gap-4">
           <div className="space-y-2 flex-1">

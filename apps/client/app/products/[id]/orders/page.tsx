@@ -7,8 +7,10 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  Breadcrumb
 } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ProductOrdersView } from '@rentalshop/ui';
 import { 
   Skeleton,
@@ -101,22 +103,24 @@ export default function ProductOrdersPage() {
   const totalRenting = product.outletStock.reduce((sum, os) => sum + os.renting, 0);
   const totalStock = product.outletStock.reduce((sum, os) => sum + os.stock, 0);
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Products', href: '/products' },
+    { label: product.name, href: `/products/${productId}` },
+    { label: 'Orders' }
+  ];
+
   return (
     <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
+      
       <PageHeader>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={handleBack}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5 text-gray-600" />
-          </button>
-          <div>
-            <PageTitle>Orders for {product.name}</PageTitle>
-            <p className="text-sm text-gray-600 mt-1">
-              View and manage all orders for this product
-            </p>
-          </div>
+        <div>
+          <PageTitle>Orders for {product.name}</PageTitle>
+          <p className="text-sm text-gray-600 mt-1">
+            View and manage all orders for this product
+          </p>
         </div>
       </PageHeader>
       <PageContent>

@@ -11029,7 +11029,6 @@ var init_validation = __esm({
     });
     exports.outletsQuerySchema = zod.z.object({
       merchantId: zod.z.coerce.number().int().positive().optional(),
-      // Changed from string to number
       isActive: zod.z.union([zod.z.string(), zod.z.boolean()]).transform((v) => {
         if (typeof v === "boolean")
           return v;
@@ -11039,9 +11038,15 @@ var init_validation = __esm({
           return "all";
         return v === "true";
       }).optional(),
+      q: zod.z.string().optional(),
+      // Search by outlet name (primary)
       search: zod.z.string().optional(),
+      // Alias for q (backward compatibility)
+      sortBy: zod.z.string().optional(),
+      sortOrder: zod.z.enum(["asc", "desc"]).optional(),
       page: zod.z.coerce.number().int().min(1).default(1),
-      limit: zod.z.coerce.number().int().min(1).max(100).default(50)
+      limit: zod.z.coerce.number().int().min(1).max(100).default(50),
+      offset: zod.z.coerce.number().int().min(0).optional()
     });
     exports.outletCreateSchema = zod.z.object({
       name: zod.z.string().min(1, "Outlet name is required"),
@@ -12779,6 +12784,31 @@ var init_outlets = __esm({
         return await exports.parseApiResponse(response);
       },
       /**
+       * Search outlets by name with filters
+       */
+      async searchOutlets(filters) {
+        const params = new URLSearchParams();
+        const searchQuery = filters.q || filters.search;
+        if (searchQuery)
+          params.append("q", searchQuery);
+        if (filters.merchantId)
+          params.append("merchantId", filters.merchantId.toString());
+        if (filters.isActive !== void 0)
+          params.append("isActive", filters.isActive.toString());
+        if (filters.limit)
+          params.append("limit", filters.limit.toString());
+        if (filters.offset)
+          params.append("offset", filters.offset.toString());
+        if (filters.page)
+          params.append("page", filters.page.toString());
+        if (filters.sortBy)
+          params.append("sortBy", filters.sortBy);
+        if (filters.sortOrder)
+          params.append("sortOrder", filters.sortOrder);
+        const response = await exports.authenticatedFetch(`${exports.apiUrls.outlets.list}?${params.toString()}`);
+        return await exports.parseApiResponse(response);
+      },
+      /**
        * Get outlet by ID
        */
       async getOutlet(outletId) {
@@ -13469,6 +13499,31 @@ var init_categories = __esm({
           page: page.toString(),
           limit: limit.toString()
         });
+        const response = await exports.authenticatedFetch(`${exports.apiUrls.categories.list}?${params.toString()}`);
+        return await exports.parseApiResponse(response);
+      },
+      /**
+       * Search categories by name with filters
+       */
+      async searchCategories(filters) {
+        const params = new URLSearchParams();
+        const searchQuery = filters.q || filters.search;
+        if (searchQuery)
+          params.append("q", searchQuery);
+        if (filters.merchantId)
+          params.append("merchantId", filters.merchantId.toString());
+        if (filters.isActive !== void 0)
+          params.append("isActive", filters.isActive.toString());
+        if (filters.limit)
+          params.append("limit", filters.limit.toString());
+        if (filters.offset)
+          params.append("offset", filters.offset.toString());
+        if (filters.page)
+          params.append("page", filters.page.toString());
+        if (filters.sortBy)
+          params.append("sortBy", filters.sortBy);
+        if (filters.sortOrder)
+          params.append("sortOrder", filters.sortOrder);
         const response = await exports.authenticatedFetch(`${exports.apiUrls.categories.list}?${params.toString()}`);
         return await exports.parseApiResponse(response);
       },
@@ -15170,6 +15225,197 @@ var init_config = __esm({
   }
 });
 
+// src/breadcrumbs.ts
+exports.productBreadcrumbs = void 0; exports.orderBreadcrumbs = void 0; exports.customerBreadcrumbs = void 0; exports.userBreadcrumbs = void 0; exports.outletBreadcrumbs = void 0; exports.subscriptionBreadcrumbs = void 0; exports.merchantBreadcrumbs = void 0; exports.categoryBreadcrumbs = void 0; exports.reportBreadcrumbs = void 0; exports.settingsBreadcrumbs = void 0;
+var init_breadcrumbs = __esm({
+  "src/breadcrumbs.ts"() {
+    exports.productBreadcrumbs = {
+      // Home > Products
+      list: () => [
+        { label: "Products" }
+      ],
+      // Home > Products > Product Name
+      detail: (productName, productId) => [
+        { label: "Products", href: "/products" },
+        { label: productName }
+      ],
+      // Home > Products > Product Name > Edit
+      edit: (productName, productId) => [
+        { label: "Products", href: "/products" },
+        { label: productName, href: `/products/${productId}` },
+        { label: "Edit" }
+      ],
+      // Home > Products > Product Name > Orders
+      orders: (productName, productId) => [
+        { label: "Products", href: "/products" },
+        { label: productName, href: `/products/${productId}` },
+        { label: "Orders" }
+      ]
+    };
+    exports.orderBreadcrumbs = {
+      // Home > Orders
+      list: () => [
+        { label: "Orders" }
+      ],
+      // Home > Orders > ORD-XXX-XXXX
+      detail: (orderNumber) => [
+        { label: "Orders", href: "/orders" },
+        { label: orderNumber }
+      ],
+      // Home > Orders > ORD-XXX-XXXX > Edit
+      edit: (orderNumber, orderId) => [
+        { label: "Orders", href: "/orders" },
+        { label: orderNumber, href: `/orders/${orderId}` },
+        { label: "Edit" }
+      ],
+      // Home > Orders > Create
+      create: () => [
+        { label: "Orders", href: "/orders" },
+        { label: "Create" }
+      ]
+    };
+    exports.customerBreadcrumbs = {
+      // Home > Customers
+      list: () => [
+        { label: "Customers" }
+      ],
+      // Home > Customers > Customer Name
+      detail: (customerName, customerId) => [
+        { label: "Customers", href: "/customers" },
+        { label: customerName }
+      ],
+      // Home > Customers > Customer Name > Edit
+      edit: (customerName, customerId) => [
+        { label: "Customers", href: "/customers" },
+        { label: customerName, href: `/customers/${customerId}` },
+        { label: "Edit" }
+      ],
+      // Home > Customers > Customer Name > Orders
+      orders: (customerName, customerId) => [
+        { label: "Customers", href: "/customers" },
+        { label: customerName, href: `/customers/${customerId}` },
+        { label: "Orders" }
+      ]
+    };
+    exports.userBreadcrumbs = {
+      // Home > Dashboard > Users
+      list: () => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Users" }
+      ],
+      // Home > Dashboard > Users > User Name
+      detail: (userName, userId) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Users", href: "/users" },
+        { label: userName }
+      ],
+      // Home > Dashboard > Users > User Name > Edit
+      edit: (userName, userId) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Users", href: "/users" },
+        { label: userName, href: `/users/${userId}` },
+        { label: "Edit" }
+      ]
+    };
+    exports.outletBreadcrumbs = {
+      // Home > Dashboard > Outlets
+      list: () => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Outlets" }
+      ],
+      // Home > Dashboard > Outlets > Outlet Name
+      detail: (outletName, outletId) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Outlets", href: "/outlets" },
+        { label: outletName }
+      ]
+    };
+    exports.subscriptionBreadcrumbs = {
+      // Home > Dashboard > Subscriptions
+      list: () => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Subscriptions" }
+      ],
+      // Home > Dashboard > Subscriptions > #ID - Merchant Name
+      detail: (subscriptionId, merchantName) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Subscriptions", href: "/subscriptions" },
+        { label: `#${subscriptionId}${merchantName ? ` - ${merchantName}` : ""}` }
+      ]
+    };
+    exports.merchantBreadcrumbs = {
+      // Home > Dashboard > Merchants
+      list: () => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Merchants" }
+      ],
+      // Home > Dashboard > Merchants > Merchant Name
+      detail: (merchantName, merchantId) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Merchants", href: "/merchants" },
+        { label: merchantName }
+      ],
+      // Home > Dashboard > Merchants > Merchant Name > Orders
+      orders: (merchantName, merchantId) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Merchants", href: "/merchants" },
+        { label: merchantName, href: `/merchants/${merchantId}` },
+        { label: "Orders" }
+      ],
+      // Home > Dashboard > Merchants > Merchant Name > Orders > ORD-XXX
+      orderDetail: (merchantName, merchantId, orderNumber, orderId) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Merchants", href: "/merchants" },
+        { label: merchantName, href: `/merchants/${merchantId}` },
+        { label: "Orders", href: `/merchants/${merchantId}/orders` },
+        { label: orderNumber }
+      ],
+      // Home > Dashboard > Merchants > Merchant Name > Orders > ORD-XXX > Edit
+      orderEdit: (merchantName, merchantId, orderNumber, orderId) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Merchants", href: "/merchants" },
+        { label: merchantName, href: `/merchants/${merchantId}` },
+        { label: "Orders", href: `/merchants/${merchantId}/orders` },
+        { label: orderNumber, href: `/merchants/${merchantId}/orders/${orderId}` },
+        { label: "Edit" }
+      ]
+    };
+    exports.categoryBreadcrumbs = {
+      // Home > Dashboard > Categories
+      list: () => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Categories" }
+      ]
+    };
+    exports.reportBreadcrumbs = {
+      // Home > Dashboard > Reports
+      list: () => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Reports" }
+      ],
+      // Home > Dashboard > Reports > Report Type
+      detail: (reportType) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Reports", href: "/reports" },
+        { label: reportType }
+      ]
+    };
+    exports.settingsBreadcrumbs = {
+      // Home > Dashboard > Settings
+      main: () => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Settings" }
+      ],
+      // Home > Dashboard > Settings > Section Name
+      section: (sectionName) => [
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Settings", href: "/settings" },
+        { label: sectionName }
+      ]
+    };
+  }
+});
+
 // src/performance.ts
 exports.PerformanceMonitor = void 0; exports.DatabaseMonitor = void 0; exports.MemoryMonitor = void 0; exports.APIMonitor = void 0;
 var init_performance = __esm({
@@ -15369,6 +15615,7 @@ var init_src2 = __esm({
     init_config();
     init_core();
     init_errors();
+    init_breadcrumbs();
     init_performance();
   }
 });

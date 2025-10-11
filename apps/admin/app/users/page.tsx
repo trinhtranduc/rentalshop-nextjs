@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Users } from '@rentalshop/ui';
+import { Users, PageWrapper, Breadcrumb } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
 import type { User } from '@rentalshop/types';
@@ -18,17 +19,19 @@ export default function UsersPage() {
   }, [currentUser?.id, currentUser?.email]);
 
   return (
-    <Users
-      title="User Management"
-      subtitle="Manage all users across the platform"
-      showExportButton={true}
-      showAddButton={true}
-      addButtonText="Add User"
-      exportButtonText="Export Users"
-      showStats={true}
-      useSearchUsers={true}
-      initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
-      currentUser={memoizedCurrentUser}
-    />
+    <PageWrapper>
+      <Users
+        title="User Management"
+        subtitle="Manage all users across the platform"
+        showExportButton={true}
+        showAddButton={true}
+        addButtonText="Add User"
+        exportButtonText="Export Users"
+        showStats={true}
+        useSearchUsers={true}
+        initialLimit={PAGINATION.DEFAULT_PAGE_SIZE}
+        currentUser={memoizedCurrentUser}
+      />
+    </PageWrapper>
   );
 }

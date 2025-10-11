@@ -12,7 +12,10 @@ import { Card,
   PaymentHistoryTable,
   ManualRenewalModal,
   UpgradeTrialModal,
+  PageWrapper,
+  Breadcrumb,
   useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { subscriptionsApi, plansApi } from '@rentalshop/utils';
 import { 
   ArrowLeft,
@@ -252,8 +255,19 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
     );
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Subscriptions', href: '/subscriptions' },
+    { label: `#${subscription.id} - ${subscription.merchant?.name || 'Subscription'}`, href: `/subscriptions/${subscriptionId}` },
+    { label: 'Preview' }
+  ];
+
   return (
-    <div className="p-6 space-y-6">
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-6" />
+      
+      <div className="p-6 space-y-6">
       {/* Preview Banner */}
       <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between">
@@ -528,7 +542,8 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
       )}
 
       {/* Toast Container */}
-    </div>
+      </div>
+    </PageWrapper>
   );
 }
 

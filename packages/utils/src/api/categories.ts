@@ -1,6 +1,6 @@
 import { authenticatedFetch, parseApiResponse, ApiResponse } from '../core';
 import { apiUrls } from '../config/api';
-import type { Category } from '@rentalshop/types';
+import type { Category, CategoryFilters } from '@rentalshop/types';
 
 export interface CategoriesResponse {
   categories: Category[];
@@ -28,6 +28,32 @@ export const categoriesApi = {
       page: page.toString(),
       limit: limit.toString()
     });
+    
+    const response = await authenticatedFetch(`${apiUrls.categories.list}?${params.toString()}`);
+    return await parseApiResponse<CategoriesResponse>(response);
+  },
+
+  /**
+   * Search categories by name with filters
+   */
+  async searchCategories(filters: CategoryFilters): Promise<ApiResponse<CategoriesResponse>> {
+    const params = new URLSearchParams();
+    
+    // Search by category name (primary)
+    const searchQuery = filters.q || filters.search;
+    if (searchQuery) params.append('q', searchQuery);
+    
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+    
+    // Add pagination parameters
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.page) params.append('page', filters.page.toString());
+    
+    // Add sorting parameters
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
     
     const response = await authenticatedFetch(`${apiUrls.categories.list}?${params.toString()}`);
     return await parseApiResponse<CategoriesResponse>(response);

@@ -10,3 +10,4 @@ export { CategoryCard } from './CategoryCard';
 export { CategoryForm } from './CategoryForm';
 export { CategoryView } from './CategoryView';
 export { CategoryFilters } from './CategoryFilters';
+export { CategorySearch } from './CategorySearch';

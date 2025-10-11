@@ -5,7 +5,8 @@
 'use client';
 
 import React from 'react';
-import { SubscriptionPreviewPage } from '@rentalshop/ui';
+import { SubscriptionPreviewPage, PageWrapper, Breadcrumb } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 
 export default function PlansPreviewPage() {
   const handlePlanSelect = (plan: any, duration: number) => {
@@ -15,9 +16,11 @@ export default function PlansPreviewPage() {
   };
 
   return (
-    <SubscriptionPreviewPage
-      onSelectPlan={handlePlanSelect}
-      showSelectButton={true}
-    />
+    <PageWrapper>
+      <SubscriptionPreviewPage
+        onSelectPlan={handlePlanSelect}
+        showSelectButton={true}
+      />
+    </PageWrapper>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button, 
+  Breadcrumb,
   EditCustomerForm,
   CustomerPageHeader, 
   CustomerInfoCard, 
@@ -10,6 +11,8 @@ import { Button,
   PageWrapper,
   PageHeader,
   PageContent, useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
+import { customerBreadcrumbs } from '@rentalshop/utils';
 import { 
   ArrowLeft,
   Edit,
@@ -272,14 +275,19 @@ export default function CustomerPage() {
     );
   }
 
+  // Breadcrumb items - inline
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Customers', href: '/customers' },
+    { label: `${customer.firstName} ${customer.lastName}` }
+  ];
+
   return (
     <PageWrapper>
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-4" />
       <PageHeader>
         <CustomerPageHeader
           title={`${customer.firstName} ${customer.lastName}`}
           subtitle={showEditSection ? "Edit Customer Information" : "Customer Information & Management"}
-          onBack={() => router.push('/customers')}
-          backText="Back to Customers"
         >
           {/* Header buttons - show different buttons based on edit mode */}
           {showEditSection ? (

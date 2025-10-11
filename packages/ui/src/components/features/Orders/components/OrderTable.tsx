@@ -28,7 +28,7 @@ interface OrderTableProps {
   onSort?: (column: string) => void;
 }
 
-export function OrderTable({ 
+export const OrderTable = React.memo(function OrderTable({ 
   orders, 
   onOrderAction,
   sortBy = 'createdAt',
@@ -120,126 +120,176 @@ export function OrderTable({
     );
   };
 
+  const handleSort = (column: string) => {
+    if (onSort) {
+      onSort(column);
+    }
+  };
+
   return (
-    <div className="space-y-0">
-      {/* Card-style rows without top/bottom padding - matching Product list UI */}
-      <div className="grid gap-0">
-        {orders.map((order) => (
-          <Card 
-            key={order.id} 
-            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700 rounded-none border-t-0 border-l-0 border-r-0 border-b"
-          >
-            <CardContent className="px-6 py-0">
-              <div className="flex items-center justify-between py-4">
-                {/* Left side - Main info */}
-                <div className="flex items-center gap-3 flex-1">
-                  {/* Order Icon */}
-                  <div className="relative">
-                    {getOrderIcon()}
-                  </div>
-                  
-                  {/* Order Details */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                        {order.orderNumber}
-                      </h3>
-                      {getOrderTypeBadge(order.orderType)}
-                      {getStatusBadge(order.status)}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
-                      {/* Customer Info */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Customer</p>
-                        <p className="text-gray-900 dark:text-white font-medium">{order.customerName}</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs">{order.customerPhone}</p>
-                      </div>
-                      
-                      {/* Amount Info */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Total Amount</p>
-                        <p className="text-gray-900 dark:text-white font-medium">{formatCurrency(order.totalAmount)}</p>
-                        {order.depositAmount > 0 && (
-                          <p className="text-gray-500 dark:text-gray-400 text-xs">
-                            Deposit: {formatCurrency(order.depositAmount)}
-                          </p>
-                        )}
-                      </div>
-                      
-                      {/* Schedule Info */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Pickup Date</p>
-                        <p className="text-gray-900 dark:text-white">{formatDate(order.pickupPlanAt)}</p>
-                        {order.returnPlanAt && (
-                          <p className="text-gray-500 dark:text-gray-400 text-xs">
-                            Return: {formatDate(order.returnPlanAt)}
-                          </p>
-                        )}
-                      </div>
-                      
-                      {/* Outlet Info */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Outlet</p>
-                        <p className="text-gray-900 dark:text-white">{order.outletName}</p>
-                      </div>
-                      
-                      {/* Created Date */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Created</p>
-                        <p className="text-gray-900 dark:text-white">
-                          {formatDate(order.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Right side - Actions */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onOrderAction('view', order.orderNumber)}
-                    className="h-8 px-3"
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    View
-                  </Button>
-                  {/* 
-                    Edit Button Logic:
-                    - RENT orders: Only editable when RESERVED (not PICKUPED/RETURNED/CANCELLED)
-                    - SALE orders: Only editable when RESERVED (normally SALE starts as COMPLETED, so rarely editable)
-                    - All other statuses: Disabled
-                  */}
-                  {order.status === 'RESERVED' ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onOrderAction('edit', order.orderNumber)}
-                      className="h-8 px-3"
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Edit
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled
-                      className="h-8 px-3 opacity-50 cursor-not-allowed"
-                      title={`Cannot edit ${order.status.toLowerCase()} orders`}
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Edit
-                    </Button>
+    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full">
+      <div className="flex-1 overflow-auto">
+        <table className="w-full">
+          {/* Table Header with Sorting - Sticky */}
+          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+            <tr>
+              <th 
+                onClick={() => handleSort('orderNumber')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  Order Number
+                  {sortBy === 'orderNumber' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Type
+              </th>
+              <th 
+                onClick={() => handleSort('status')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  Status
+                  {sortBy === 'status' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Customer
+              </th>
+              <th 
+                onClick={() => handleSort('totalAmount')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  Amount
+                  {sortBy === 'totalAmount' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('pickupPlanAt')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  Pickup Date
+                  {sortBy === 'pickupPlanAt' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('createdAt')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  Created
+                  {sortBy === 'createdAt' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          
+          {/* Table Body */}
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            {orders.map((order) => (
+              <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                {/* Order Number */}
+                <td className="px-6 py-3 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    {order.orderNumber}
+                  </div>
+                </td>
+                
+                {/* Order Type */}
+                <td className="px-6 py-3 whitespace-nowrap">
+                  {getOrderTypeBadge(order.orderType)}
+                </td>
+                
+                {/* Status */}
+                <td className="px-6 py-3 whitespace-nowrap">
+                  {getStatusBadge(order.status)}
+                </td>
+                
+                {/* Customer */}
+                <td className="px-6 py-3">
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900 dark:text-white">{order.customerName}</div>
+                    <div className="text-gray-500 dark:text-gray-400 text-xs">{order.customerPhone}</div>
+                  </div>
+                </td>
+                
+                {/* Amount */}
+                <td className="px-6 py-3 whitespace-nowrap">
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
+                    {order.depositAmount > 0 && (
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">
+                        Deposit: {formatCurrency(order.depositAmount)}
+                      </div>
+                    )}
+                  </div>
+                </td>
+                
+                {/* Pickup Date */}
+                <td className="px-6 py-3 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {formatDate(order.pickupPlanAt)}
+                  </div>
+                  {order.returnPlanAt && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Return: {formatDate(order.returnPlanAt)}
+                    </div>
+                  )}
+                </td>
+                
+                {/* Created Date */}
+                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(order.createdAt)}
+                </td>
+                
+                {/* Actions */}
+                <td className="px-6 py-3 whitespace-nowrap text-right text-sm">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onOrderAction('view', order.orderNumber)}
+                      className="h-8 px-3"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                    
+                    {/* Only show Edit button for RESERVED status */}
+                    {order.status === 'RESERVED' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onOrderAction('edit', order.orderNumber)}
+                        className="h-8 px-3"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </Card>
   );
-}
+});

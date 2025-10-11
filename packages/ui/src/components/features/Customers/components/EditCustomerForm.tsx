@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Save, X } from 'lucide-react';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
-import { Label } from '../../../ui/label';
+import { Button } from '@rentalshop/ui';
+import { Input } from '@rentalshop/ui';
+import { Label } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import { Card, CardContent } from '../../../ui/card';
+import { Card, CardContent } from '@rentalshop/ui';
 import type { Customer, CustomerUpdateInput } from '@rentalshop/types';
 
 interface EditCustomerFormProps {

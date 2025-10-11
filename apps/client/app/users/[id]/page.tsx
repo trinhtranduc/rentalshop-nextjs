@@ -9,8 +9,10 @@ import { Button,
   UserDisplayInfo, 
   AccountManagementCard,
   ConfirmationDialog,
-  
+  PageWrapper,
+  Breadcrumb,
   ChangePasswordDialog, useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   ArrowLeft,
   Edit, 
@@ -281,10 +283,18 @@ export default function UserPage() {
     );
   }
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Users', href: '/users' },
+    { label: userData.name }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-6" />
+      
+      {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{userData.name}</h1>
@@ -346,7 +356,6 @@ export default function UserPage() {
             onDelete={() => setShowDeleteConfirm(true)}
           />
         )}
-      </div>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
@@ -380,6 +389,6 @@ export default function UserPage() {
         onSuccess={handlePasswordChangeSuccess}
         onError={handlePasswordChangeError}
       />
-    </div>
+    </PageWrapper>
   );
 }

@@ -107,10 +107,8 @@ export default function AdminLayout({
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-bg-primary">
-          <div className="p-6">
-            {children}
-          </div>
+        <main className="flex-1 overflow-hidden bg-bg-primary">
+          {children}
         </main>
       </div>
     </div>
