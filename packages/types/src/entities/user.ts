@@ -272,6 +272,7 @@ export interface UserSearchFilter {
   isActive?: boolean;
   limit?: number;
   offset?: number;
+  page?: number;        // Add page parameter for pagination
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }

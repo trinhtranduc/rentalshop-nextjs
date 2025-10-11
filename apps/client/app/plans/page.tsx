@@ -30,8 +30,11 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  PageWrapper,
+  Breadcrumb
 } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   CreditCard,
   CheckCircle,
@@ -194,7 +197,8 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <PageWrapper>
+      <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900">Choose Your Plan</h1>
@@ -444,6 +448,7 @@ export default function PlansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PageWrapper>
   );
 }

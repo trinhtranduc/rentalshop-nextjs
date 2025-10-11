@@ -1,176 +1,227 @@
 import React from 'react';
+import { Button } from '../../../ui/button';
+import { Badge } from '../../../ui/badge';
+import { Card, CardContent } from '../../../ui/card';
 import { 
-  Card, 
-  CardContent,
-  Button,
-  StatusBadge
-} from '@rentalshop/ui';
-import { 
-  Building2, 
-  Edit, 
-  Eye,
-  Power,
-  PowerOff
-} from 'lucide-react';
-import type { Outlet } from '@rentalshop/types';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '../../../ui/dropdown-menu';
+import { Outlet } from '@rentalshop/types';
+import { Eye, Edit, XCircle, CheckCircle, MoreVertical, Building2 } from 'lucide-react';
 
 interface OutletTableProps {
   outlets: Outlet[];
   onOutletAction: (action: string, outletId: number) => void;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
 }
 
-export function OutletTable({
-  outlets,
-  onOutletAction,
-  onSort
+export function OutletTable({ 
+  outlets, 
+  onOutletAction, 
+  sortBy = 'createdAt', 
+  sortOrder = 'desc',
+  onSort 
 }: OutletTableProps) {
+  const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+  
   if (outlets.length === 0) {
     return (
-      <Card>
-        <CardContent className="text-center py-8 text-gray-500 dark:text-gray-400">
-          <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-lg font-medium mb-2">No Outlets Found</h3>
-          <p className="text-sm">No outlets match your current filters.</p>
+      <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+        <CardContent className="text-center py-12">
+          <div className="text-gray-500 dark:text-gray-400">
+            <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-medium mb-2">No outlets found</h3>
+            <p className="text-sm">
+              Try adjusting your search or add outlets to get started.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header with sorting options */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Building2 className="w-5 h-5" />
-          Outlets ({outlets.length})
-        </h2>
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span>Sort by:</span>
-          <div className="flex items-center gap-1">
-            {[
-              { key: 'name', label: 'Name' }
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => onSort?.(key)}
-                className={`px-2 py-1 rounded text-xs transition-colors ${
-                  'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+  const formatDate = (dateString: string | Date | undefined) => {
+    if (!dateString) return 'N/A';
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
-      {/* Card-style rows */}
-      <div className="grid gap-4">
-        {outlets.map((outlet) => (
-          <Card 
-            key={outlet.id} 
-            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700"
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                {/* Left side - Main info */}
-                <div className="flex items-center gap-3 flex-1">
-                  {/* Outlet Details */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                        {outlet.name}
-                        {!outlet.isActive && (
-                          <span className="ml-2 text-sm text-red-600 font-normal">(Disabled)</span>
-                        )}
-                      </h3>
-                      {outlet.isDefault && (
-                        <StatusBadge 
-                          status="main branch"
-                          variant="outline"
-                          className="flex items-center gap-1"
-                        />
-                      )}
-                      <StatusBadge 
-                        status={outlet.isActive ? 'active' : 'inactive'}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-                      {/* Address */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Address</p>
-                        <p className="text-gray-900 dark:text-white">{outlet.address}</p>
-                      </div>
-                      
-                      {/* Phone */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Phone</p>
-                        <p className="text-gray-900 dark:text-white">{outlet.phone}</p>
-                      </div>
-                      
-                      {/* Created Date */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Created</p>
-                        <p className="text-gray-900 dark:text-white">
-                          {new Date(outlet.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </p>
-                      </div>
+  const getStatusBadge = (isActive: boolean) => {
+    return isActive ? (
+      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+        Active
+      </Badge>
+    ) : (
+      <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+        Inactive
+      </Badge>
+    );
+  };
+
+  const handleSort = (column: string) => {
+    if (onSort) {
+      onSort(column);
+    }
+  };
+
+  return (
+    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full">
+      <div className="flex-1 overflow-auto">
+        <table className="w-full">
+          {/* Table Header - Sticky */}
+          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+            <tr>
+              <th 
+                onClick={() => handleSort('id')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  ID
+                  {sortBy === 'id' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('name')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  Name
+                  {sortBy === 'name' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Address
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Contact
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th 
+                onClick={() => handleSort('createdAt')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  Created
+                  {sortBy === 'createdAt' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          
+          {/* Table Body */}
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            {outlets.map((outlet) => (
+              <tr key={outlet.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                {/* ID */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    #{outlet.id}
+                  </div>
+                </td>
+                
+                {/* Name */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {outlet.name}
                     </div>
                   </div>
-                </div>
+                </td>
                 
-                {/* Right side - Actions */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onOutletAction('view', outlet.id)}
-                    className="h-8 px-3"
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onOutletAction('edit', outlet.id)}
-                    className="h-8 px-3"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant={outlet.isActive ? "destructive" : "default"}
-                    size="sm"
-                    onClick={() => onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id)}
-                    className="h-8 px-3"
-                    disabled={outlet.isDefault}
-                    title={outlet.isDefault ? "Default outlet cannot be disabled" : ""}
-                  >
-                    {outlet.isActive ? (
-                      <>
-                        <PowerOff className="h-3 w-3 mr-1" />
-                        Disable
-                      </>
-                    ) : (
-                      <>
-                        <Power className="h-3 w-3 mr-1" />
-                        Enable
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {/* Address */}
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {outlet.address || 'N/A'}
+                  </div>
+                </td>
+                
+                {/* Contact */}
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {outlet.phone || 'N/A'}
+                  </div>
+                </td>
+                
+                {/* Status */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {getStatusBadge(outlet.isActive)}
+                </td>
+                
+                {/* Created Date */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {formatDate(outlet.createdAt)}
+                  </div>
+                </td>
+                
+                {/* Actions - Dropdown Menu */}
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setOpenDropdownId(outlet.id)}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end"
+                      open={openDropdownId === outlet.id}
+                      onOpenChange={(open: boolean) => setOpenDropdownId(open ? outlet.id : null)}
+                    >
+                      <DropdownMenuItem onClick={() => {
+                        onOutletAction('view', outlet.id);
+                        setOpenDropdownId(null);
+                      }}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        onOutletAction('edit', outlet.id);
+                        setOpenDropdownId(null);
+                      }}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Outlet
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => {
+                        onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id);
+                        setOpenDropdownId(null);
+                      }}>
+                        {outlet.isActive ? <XCircle className="h-4 w-4 mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                        {outlet.isActive ? 'Disable Outlet' : 'Enable Outlet'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </Card>
   );
 }

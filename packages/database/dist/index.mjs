@@ -1,8 +1,7 @@
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
-  if (typeof require !== "undefined")
-    return require.apply(this, arguments);
+  if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
 
@@ -236,14 +235,10 @@ var simplifiedUsers = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId)
-      where.outletId = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0)
-      where.isActive = whereFilters.isActive;
-    if (whereFilters.role)
-      where.role = whereFilters.role;
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.outletId = whereFilters.outletId;
+    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.role) where.role = whereFilters.role;
     if (whereFilters.search) {
       where.OR = [
         { firstName: { contains: whereFilters.search } },
@@ -331,12 +326,9 @@ var simplifiedCustomers = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId)
-      where.outletId = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0)
-      where.isActive = whereFilters.isActive;
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.outletId = whereFilters.outletId;
+    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
     if (whereFilters.search) {
       where.OR = [
         { firstName: { contains: whereFilters.search } },
@@ -345,20 +337,13 @@ var simplifiedCustomers = {
         { phone: { contains: whereFilters.search } }
       ];
     }
-    if (whereFilters.firstName)
-      where.firstName = { contains: whereFilters.firstName };
-    if (whereFilters.lastName)
-      where.lastName = { contains: whereFilters.lastName };
-    if (whereFilters.email)
-      where.email = { contains: whereFilters.email };
-    if (whereFilters.phone)
-      where.phone = { contains: whereFilters.phone };
-    if (whereFilters.city)
-      where.city = { contains: whereFilters.city };
-    if (whereFilters.state)
-      where.state = { contains: whereFilters.state };
-    if (whereFilters.country)
-      where.country = { contains: whereFilters.country };
+    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName };
+    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName };
+    if (whereFilters.email) where.email = { contains: whereFilters.email };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone };
+    if (whereFilters.city) where.city = { contains: whereFilters.city };
+    if (whereFilters.state) where.state = { contains: whereFilters.state };
+    if (whereFilters.country) where.country = { contains: whereFilters.country };
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
         where,
@@ -529,12 +514,9 @@ var simplifiedProducts = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.categoryId)
-      where.categoryId = whereFilters.categoryId;
-    if (whereFilters.isActive !== void 0)
-      where.isActive = whereFilters.isActive;
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
+    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
     if (whereFilters.search) {
       where.OR = [
         { name: { contains: whereFilters.search } },
@@ -544,10 +526,8 @@ var simplifiedProducts = {
     }
     if (whereFilters.minPrice !== void 0 || whereFilters.maxPrice !== void 0) {
       where.rentPrice = {};
-      if (whereFilters.minPrice !== void 0)
-        where.rentPrice.gte = whereFilters.minPrice;
-      if (whereFilters.maxPrice !== void 0)
-        where.rentPrice.lte = whereFilters.maxPrice;
+      if (whereFilters.minPrice !== void 0) where.rentPrice.gte = whereFilters.minPrice;
+      if (whereFilters.maxPrice !== void 0) where.rentPrice.lte = whereFilters.maxPrice;
     }
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -998,12 +978,9 @@ var simplifiedOrders = {
     if (whereFilters.outletId) {
       where.outletId = whereFilters.outletId;
     }
-    if (whereFilters.customerId)
-      where.customerId = whereFilters.customerId;
-    if (whereFilters.status)
-      where.status = whereFilters.status;
-    if (whereFilters.orderType)
-      where.orderType = whereFilters.orderType;
+    if (whereFilters.customerId) where.customerId = whereFilters.customerId;
+    if (whereFilters.status) where.status = whereFilters.status;
+    if (whereFilters.orderType) where.orderType = whereFilters.orderType;
     if (whereFilters.productId) {
       where.orderItems = {
         some: {
@@ -1013,10 +990,8 @@ var simplifiedOrders = {
     }
     if (whereFilters.startDate || whereFilters.endDate) {
       where.createdAt = {};
-      if (whereFilters.startDate)
-        where.createdAt.gte = whereFilters.startDate;
-      if (whereFilters.endDate)
-        where.createdAt.lte = whereFilters.endDate;
+      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
+      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
     }
     if (whereFilters.search) {
       where.OR = [
@@ -1302,33 +1277,36 @@ var simplifiedOutlets = {
    * Search outlets with pagination (simplified API)
    */
   search: async (filters) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { page = 1, limit = 20, sortBy = "createdAt", sortOrder = "desc", ...whereFilters } = filters;
     const skip = (page - 1) * limit;
+    console.log("\u{1F50D} DB outlet.search - Received filters:", filters);
+    console.log("\u{1F50D} DB outlet.search - whereFilters:", whereFilters);
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId)
-      where.id = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0)
-      where.isActive = whereFilters.isActive;
-    if (whereFilters.status)
-      where.status = whereFilters.status;
-    if (whereFilters.search) {
-      where.OR = [
-        { name: { contains: whereFilters.search } },
-        { address: { contains: whereFilters.search } },
-        { phone: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } }
-      ];
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.id = whereFilters.outletId;
+    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.status) where.status = whereFilters.status;
+    const searchTerm = whereFilters.search?.trim();
+    console.log("\u{1F50D} DB outlet.search - searchTerm:", searchTerm, "length:", searchTerm?.length);
+    if (searchTerm && searchTerm.length > 0) {
+      where.name = {
+        contains: searchTerm,
+        mode: "insensitive"
+      };
+      console.log("\u2705 DB outlet.search - Added name filter:", where.name);
+    } else {
+      console.log("\u26A0\uFE0F DB outlet.search - No search term, will return all outlets for this merchant");
     }
-    if (whereFilters.name)
-      where.name = { contains: whereFilters.name };
-    if (whereFilters.address)
-      where.address = { contains: whereFilters.address };
-    if (whereFilters.phone)
-      where.phone = { contains: whereFilters.phone };
-    if (whereFilters.email)
-      where.email = { contains: whereFilters.email };
+    console.log("\u{1F50D} DB outlet.search - Final where clause:", JSON.stringify(where, null, 2));
+    if (whereFilters.name) where.name = { contains: whereFilters.name, mode: "insensitive" };
+    if (whereFilters.address) where.address = { contains: whereFilters.address, mode: "insensitive" };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: "insensitive" };
+    const orderBy = {};
+    if (sortBy === "name" || sortBy === "createdAt" || sortBy === "updatedAt") {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = "desc";
+    }
     const [outlets, total] = await Promise.all([
       prisma.outlet.findMany({
         where,
@@ -1341,7 +1319,7 @@ var simplifiedOutlets = {
             }
           }
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip,
         take: limit
       }),
@@ -1403,10 +1381,8 @@ var simplifiedPlans = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.isActive !== void 0)
-      where.isActive = whereFilters.isActive;
-    if (whereFilters.isPopular !== void 0)
-      where.isPopular = whereFilters.isPopular;
+    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.isPopular !== void 0) where.isPopular = whereFilters.isPopular;
     if (whereFilters.search) {
       where.OR = [
         { name: { contains: whereFilters.search } },
@@ -1415,10 +1391,8 @@ var simplifiedPlans = {
     }
     if (whereFilters.minPrice !== void 0 || whereFilters.maxPrice !== void 0) {
       where.basePrice = {};
-      if (whereFilters.minPrice !== void 0)
-        where.basePrice.gte = whereFilters.minPrice;
-      if (whereFilters.maxPrice !== void 0)
-        where.basePrice.lte = whereFilters.maxPrice;
+      if (whereFilters.minPrice !== void 0) where.basePrice.gte = whereFilters.minPrice;
+      if (whereFilters.maxPrice !== void 0) where.basePrice.lte = whereFilters.maxPrice;
     }
     const [plans, total] = await Promise.all([
       prisma.plan.findMany({
@@ -1521,8 +1495,7 @@ async function getSubscriptionByMerchantId(merchantId) {
       plan: true
     }
   });
-  if (!subscription)
-    return null;
+  if (!subscription) return null;
   return {
     id: subscription.id,
     merchantId: subscription.merchantId,
@@ -1592,8 +1565,7 @@ async function getSubscriptionById(id) {
       plan: true
     }
   });
-  if (!subscription)
-    return null;
+  if (!subscription) return null;
   return {
     id: subscription.id,
     merchantId: subscription.merchantId,
@@ -1758,10 +1730,8 @@ var simplifiedSubscriptions = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.planId)
-      where.planId = whereFilters.planId;
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.planId) where.planId = whereFilters.planId;
     if (whereFilters.isActive !== void 0) {
       if (whereFilters.isActive) {
         where.status = { not: "CANCELLED" };
@@ -1769,14 +1739,11 @@ var simplifiedSubscriptions = {
         where.status = "CANCELLED";
       }
     }
-    if (whereFilters.status)
-      where.status = whereFilters.status;
+    if (whereFilters.status) where.status = whereFilters.status;
     if (whereFilters.startDate || whereFilters.endDate) {
       where.createdAt = {};
-      if (whereFilters.startDate)
-        where.createdAt.gte = whereFilters.startDate;
-      if (whereFilters.endDate)
-        where.createdAt.lte = whereFilters.endDate;
+      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
+      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
     }
     const [subscriptions, total] = await Promise.all([
       prisma.subscription.findMany({
@@ -2715,8 +2682,7 @@ var AuditLogger = class {
   }
   // Validate foreign key IDs to prevent constraint violations
   async validateUserId(userId) {
-    if (!userId)
-      return null;
+    if (!userId) return null;
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -2729,8 +2695,7 @@ var AuditLogger = class {
     }
   }
   async validateMerchantId(merchantId) {
-    if (!merchantId)
-      return null;
+    if (!merchantId) return null;
     try {
       const merchant = await this.prisma.merchant.findUnique({
         where: { id: merchantId },
@@ -2743,8 +2708,7 @@ var AuditLogger = class {
     }
   }
   async validateOutletId(outletId) {
-    if (!outletId)
-      return null;
+    if (!outletId) return null;
     try {
       const outlet = await this.prisma.outlet.findUnique({
         where: { id: outletId },
@@ -2844,28 +2808,18 @@ var AuditLogger = class {
   // Query audit logs
   async getAuditLogs(filter = {}) {
     const where = {};
-    if (filter.action)
-      where.action = filter.action;
-    if (filter.entityType)
-      where.entityType = filter.entityType;
-    if (filter.entityId)
-      where.entityId = filter.entityId;
-    if (filter.userId)
-      where.userId = filter.userId;
-    if (filter.merchantId)
-      where.merchantId = filter.merchantId;
-    if (filter.outletId)
-      where.outletId = filter.outletId;
-    if (filter.severity)
-      where.severity = filter.severity;
-    if (filter.category)
-      where.category = filter.category;
+    if (filter.action) where.action = filter.action;
+    if (filter.entityType) where.entityType = filter.entityType;
+    if (filter.entityId) where.entityId = filter.entityId;
+    if (filter.userId) where.userId = filter.userId;
+    if (filter.merchantId) where.merchantId = filter.merchantId;
+    if (filter.outletId) where.outletId = filter.outletId;
+    if (filter.severity) where.severity = filter.severity;
+    if (filter.category) where.category = filter.category;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
-      if (filter.startDate)
-        where.createdAt.gte = filter.startDate;
-      if (filter.endDate)
-        where.createdAt.lte = filter.endDate;
+      if (filter.startDate) where.createdAt.gte = filter.startDate;
+      if (filter.endDate) where.createdAt.lte = filter.endDate;
     }
     const limit = filter.limit || 50;
     const offset = filter.offset || 0;
@@ -2913,16 +2867,12 @@ var AuditLogger = class {
   // Get audit statistics
   async getAuditStats(filter = {}) {
     const where = {};
-    if (filter.merchantId)
-      where.merchantId = filter.merchantId;
-    if (filter.outletId)
-      where.outletId = filter.outletId;
+    if (filter.merchantId) where.merchantId = filter.merchantId;
+    if (filter.outletId) where.outletId = filter.outletId;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
-      if (filter.startDate)
-        where.createdAt.gte = filter.startDate;
-      if (filter.endDate)
-        where.createdAt.lte = filter.endDate;
+      if (filter.startDate) where.createdAt.gte = filter.startDate;
+      if (filter.endDate) where.createdAt.lte = filter.endDate;
     }
     const totalLogs = 0;
     const actionStats = [];

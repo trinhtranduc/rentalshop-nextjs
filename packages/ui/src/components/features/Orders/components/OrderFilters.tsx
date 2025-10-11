@@ -1,10 +1,8 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
-import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
+import { Card, CardContent } from '@rentalshop/ui';
 import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
-import { useThrottledSearch } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 
@@ -20,107 +18,101 @@ interface Outlet {
   name: string;
 }
 
-export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: OrderFiltersProps) {
-  // State for dynamic filter options
+/**
+ * ✅ CLEAN CONTROLLED COMPONENT
+ * - No internal state for filters (fully controlled)
+ * - Local state only for search input (immediate feedback)
+ * - Parent handles all filter logic
+ * - Simple and predictable
+ */
+export const OrderFilters = React.memo(function OrderFilters({ 
+  filters, 
+  onFiltersChange, 
+  onSearchChange, 
+  onClearFilters 
+}: OrderFiltersProps) {
+  // ============================================================================
+  // LOCAL STATE - Only for UI optimization
+  // ============================================================================
+  
+  // Local search state for immediate input feedback (debounced by parent)
+  const [localSearch, setLocalSearch] = useState(filters.search || '');
+  
+  // Outlets for dropdown
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loadingOutlets, setLoadingOutlets] = useState(false);
   const [outletError, setOutletError] = useState<string | null>(null);
 
-  // Fetch outlets on component mount
+  // ============================================================================
+  // SYNC LOCAL SEARCH WITH FILTERS (for clear button, etc)
+  // ============================================================================
+  
+  useEffect(() => {
+    // Only sync if external change (not from user typing)
+    const externalSearch = filters.search || '';
+    if (externalSearch !== localSearch) {
+      console.log('🔄 OrderFilters: Syncing search from external:', externalSearch);
+      setLocalSearch(externalSearch);
+    }
+  }, [filters.search]); // Only watch filters.search, not localSearch
+
+  // ============================================================================
+  // FETCH OUTLETS (one-time)
+  // ============================================================================
+  
   useEffect(() => {
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
         setOutletError(null);
-        console.log('📍 OrderFilters: Fetching outlets...');
         const result = await outletsApi.getOutlets();
-        console.log('📍 OrderFilters: Outlets API response:', result);
         if (result.success && result.data?.outlets) {
-          console.log('📍 OrderFilters: Setting outlets:', result.data.outlets);
           setOutlets(result.data.outlets);
         } else {
-          console.log('📍 OrderFilters: Failed to load outlets');
           setOutletError('Failed to load outlets');
           setOutlets([]);
         }
       } catch (error) {
-        console.error('📍 OrderFilters: Error fetching outlets:', error);
+        console.error('Error fetching outlets:', error);
         setOutletError('Failed to load outlets');
         setOutlets([]);
       } finally {
         setLoadingOutlets(false);
-        console.log('📍 OrderFilters: Outlets loading complete. Total:', outlets.length);
       }
     };
 
     fetchOutlets();
-  }, []);
+  }, []); // Only run once
 
-  // Stabilize the onSearch callback to prevent hook recreation
-  const stableOnSearch = useCallback((searchQuery: string) => {
-    console.log('🔍 OrderFilters: stableOnSearch called with:', searchQuery);
-    onSearchChange(searchQuery);
-  }, [onSearchChange]);
-
-  // Memoize the options to prevent hook recreation
-  const searchOptions = useMemo(() => ({
-    delay: 500, // Wait 500ms after user stops typing
-    minLength: 0, // Allow searching from the first character
-    onSearch: stableOnSearch
-  }), [stableOnSearch]);
-
-  // Use throttled search to prevent excessive API calls
-  const { query, handleSearchChange: throttledSearchChange, clearSearch, setQuery } = useThrottledSearch(searchOptions);
-
-  // Sync the query with the filters.search value when filters change externally
-  // Only update when filters.search changes from external sources (not from user typing)
-  useEffect(() => {
-    const searchValue = filters.search || '';
-    if (searchValue !== query) {
-      // Only sync if the external search value is different
-      if (searchValue === '') {
-        clearSearch();
-      } else {
-        setQuery(searchValue);
-      }
-    }
-  }, [filters.search]); // Only depend on filters.search, not query
-
-  const handleFilterChange = (key: keyof OrderFiltersType, value: any) => {
-    // For non-search filters, update immediately
-    if (key !== 'search') {
-      onFiltersChange({
-        ...filters,
-        [key]: value
-      });
-    }
+  // ============================================================================
+  // HANDLERS - Simple passthrough to parent
+  // ============================================================================
+  
+  const handleSearchInput = (value: string) => {
+    console.log('⌨️ OrderFilters: Search input changed:', value);
+    // Update local state for immediate UI feedback
+    setLocalSearch(value);
+    // Notify parent (parent handles debouncing via URL update)
+    onSearchChange(value);
   };
 
-  // Memoize order type options
-  const orderTypeOptions = useMemo(() => [
-    { value: 'all', label: 'All Types' },
-    { value: ORDER_TYPE.RENT, label: 'Rental' },
-    { value: ORDER_TYPE.SALE, label: 'Sale' }
-  ], []);
+  const handleFilterChange = (key: keyof OrderFiltersType, value: any) => {
+    onFiltersChange({
+      ...filters,
+      [key]: value
+    });
+  };
 
-  // Memoize status options - using correct statuses from constants
-  const statusOptions = useMemo(() => [
-    { value: 'all', label: 'All Status' },
-    { value: ORDER_STATUS.RESERVED, label: 'Reserved' },
-    { value: ORDER_STATUS.PICKUPED, label: 'Picked Up' },
-    { value: ORDER_STATUS.RETURNED, label: 'Returned' },
-    { value: ORDER_STATUS.COMPLETED, label: 'Completed' },
-    { value: ORDER_STATUS.CANCELLED, label: 'Cancelled' }
-  ], []);
-
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+  
   return (
-    <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 backdrop-blur-sm">
-    
-      
+    <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
       <CardContent className="pt-6 space-y-6">
-        {/* Primary Filters */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
             {/* Search Field */}
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -129,12 +121,22 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
               <div className="relative">
                 <Input
                   placeholder="Order #, customer name..."
-                  value={query} // Use the throttled query state
-                  onChange={(e) => throttledSearchChange(e.target.value)} // Use throttled handler directly
+                  value={localSearch}
+                  onChange={(e) => handleSearchInput(e.target.value)}
                   className="pl-10 pr-4 py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200"
                 />
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                  />
                 </svg>
               </div>
             </div>
@@ -145,18 +147,19 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
                 Status
               </label>
               <Select 
-                value={Array.isArray(filters.status) ? filters.status[0] || 'all' : (filters.status || 'all')} 
-                onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}
+                value={(filters.status as string) || 'all'} 
+                onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
               >
                 <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className={option.value === 'all' ? 'font-medium' : ''}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all" className="font-medium">All Status</SelectItem>
+                  <SelectItem value={ORDER_STATUS.RESERVED}>Reserved</SelectItem>
+                  <SelectItem value={ORDER_STATUS.PICKUPED}>Picked Up</SelectItem>
+                  <SelectItem value={ORDER_STATUS.RETURNED}>Returned</SelectItem>
+                  <SelectItem value={ORDER_STATUS.COMPLETED}>Completed</SelectItem>
+                  <SelectItem value={ORDER_STATUS.CANCELLED}>Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -166,21 +169,22 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Order Type
               </label>
-              <Select value={filters.orderType || 'all'} onValueChange={(value) => handleFilterChange('orderType', value === 'all' ? '' : value)}>
+              <Select 
+                value={filters.orderType || 'all'} 
+                onValueChange={(value) => handleFilterChange('orderType', value === 'all' ? undefined : value)}
+              >
                 <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  {orderTypeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className={option.value === 'all' ? 'font-medium' : ''}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all" className="font-medium">All Types</SelectItem>
+                  <SelectItem value={ORDER_TYPE.RENT}>Rental</SelectItem>
+                  <SelectItem value={ORDER_TYPE.SALE}>Sale</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            {/* Outlet Filter - Using Radix UI Select with workaround for re-selection */}
+            {/* Outlet Filter */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -188,10 +192,7 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
                 </label>
                 {filters.outletId && (
                   <button
-                    onClick={() => {
-                      console.log('🔧 Clear outlet filter clicked');
-                      handleFilterChange('outletId', undefined);
-                    }}
+                    onClick={() => handleFilterChange('outletId', undefined)}
                     className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline"
                   >
                     × Clear
@@ -201,9 +202,7 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
               <Select 
                 value={filters.outletId ? filters.outletId.toString() : 'all'} 
                 onValueChange={(value) => {
-                  console.log('🔧 Outlet Select - onValueChange:', value);
                   const newValue = value === 'all' ? undefined : parseInt(value);
-                  console.log('🔧 Outlet Select - calling handleFilterChange with:', newValue);
                   handleFilterChange('outletId', newValue);
                 }}
               >
@@ -243,4 +242,4 @@ export function OrderFilters({ filters, onFiltersChange, onSearchChange, onClear
       </CardContent>
     </Card>
   );
-}
+});

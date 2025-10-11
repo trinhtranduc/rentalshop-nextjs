@@ -10660,7 +10660,6 @@ var userUpdateSchema = z.object({
 });
 var outletsQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
-  // Changed from string to number
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === "boolean")
       return v;
@@ -10670,9 +10669,15 @@ var outletsQuerySchema = z.object({
       return "all";
     return v === "true";
   }).optional(),
+  q: z.string().optional(),
+  // Search by outlet name (primary)
   search: z.string().optional(),
+  // Alias for q (backward compatibility)
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(50)
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).optional()
 });
 var outletCreateSchema = z.object({
   name: z.string().min(1, "Outlet name is required"),
@@ -12459,6 +12464,31 @@ var outletsApi = {
     return await parseApiResponse(response);
   },
   /**
+   * Search outlets by name with filters
+   */
+  async searchOutlets(filters) {
+    const params = new URLSearchParams();
+    const searchQuery = filters.q || filters.search;
+    if (searchQuery)
+      params.append("q", searchQuery);
+    if (filters.merchantId)
+      params.append("merchantId", filters.merchantId.toString());
+    if (filters.isActive !== void 0)
+      params.append("isActive", filters.isActive.toString());
+    if (filters.limit)
+      params.append("limit", filters.limit.toString());
+    if (filters.offset)
+      params.append("offset", filters.offset.toString());
+    if (filters.page)
+      params.append("page", filters.page.toString());
+    if (filters.sortBy)
+      params.append("sortBy", filters.sortBy);
+    if (filters.sortOrder)
+      params.append("sortOrder", filters.sortOrder);
+    const response = await authenticatedFetch(`${apiUrls.outlets.list}?${params.toString()}`);
+    return await parseApiResponse(response);
+  },
+  /**
    * Get outlet by ID
    */
   async getOutlet(outletId) {
@@ -13131,6 +13161,31 @@ var categoriesApi = {
       page: page.toString(),
       limit: limit.toString()
     });
+    const response = await authenticatedFetch(`${apiUrls.categories.list}?${params.toString()}`);
+    return await parseApiResponse(response);
+  },
+  /**
+   * Search categories by name with filters
+   */
+  async searchCategories(filters) {
+    const params = new URLSearchParams();
+    const searchQuery = filters.q || filters.search;
+    if (searchQuery)
+      params.append("q", searchQuery);
+    if (filters.merchantId)
+      params.append("merchantId", filters.merchantId.toString());
+    if (filters.isActive !== void 0)
+      params.append("isActive", filters.isActive.toString());
+    if (filters.limit)
+      params.append("limit", filters.limit.toString());
+    if (filters.offset)
+      params.append("offset", filters.offset.toString());
+    if (filters.page)
+      params.append("page", filters.page.toString());
+    if (filters.sortBy)
+      params.append("sortBy", filters.sortBy);
+    if (filters.sortOrder)
+      params.append("sortOrder", filters.sortOrder);
     const response = await authenticatedFetch(`${apiUrls.categories.list}?${params.toString()}`);
     return await parseApiResponse(response);
   },
@@ -14715,6 +14770,192 @@ var isTest = () => {
   return process.env.NODE_ENV === "test";
 };
 
+// src/breadcrumbs.ts
+var productBreadcrumbs = {
+  // Home > Products
+  list: () => [
+    { label: "Products" }
+  ],
+  // Home > Products > Product Name
+  detail: (productName, productId) => [
+    { label: "Products", href: "/products" },
+    { label: productName }
+  ],
+  // Home > Products > Product Name > Edit
+  edit: (productName, productId) => [
+    { label: "Products", href: "/products" },
+    { label: productName, href: `/products/${productId}` },
+    { label: "Edit" }
+  ],
+  // Home > Products > Product Name > Orders
+  orders: (productName, productId) => [
+    { label: "Products", href: "/products" },
+    { label: productName, href: `/products/${productId}` },
+    { label: "Orders" }
+  ]
+};
+var orderBreadcrumbs = {
+  // Home > Orders
+  list: () => [
+    { label: "Orders" }
+  ],
+  // Home > Orders > ORD-XXX-XXXX
+  detail: (orderNumber) => [
+    { label: "Orders", href: "/orders" },
+    { label: orderNumber }
+  ],
+  // Home > Orders > ORD-XXX-XXXX > Edit
+  edit: (orderNumber, orderId) => [
+    { label: "Orders", href: "/orders" },
+    { label: orderNumber, href: `/orders/${orderId}` },
+    { label: "Edit" }
+  ],
+  // Home > Orders > Create
+  create: () => [
+    { label: "Orders", href: "/orders" },
+    { label: "Create" }
+  ]
+};
+var customerBreadcrumbs = {
+  // Home > Customers
+  list: () => [
+    { label: "Customers" }
+  ],
+  // Home > Customers > Customer Name
+  detail: (customerName, customerId) => [
+    { label: "Customers", href: "/customers" },
+    { label: customerName }
+  ],
+  // Home > Customers > Customer Name > Edit
+  edit: (customerName, customerId) => [
+    { label: "Customers", href: "/customers" },
+    { label: customerName, href: `/customers/${customerId}` },
+    { label: "Edit" }
+  ],
+  // Home > Customers > Customer Name > Orders
+  orders: (customerName, customerId) => [
+    { label: "Customers", href: "/customers" },
+    { label: customerName, href: `/customers/${customerId}` },
+    { label: "Orders" }
+  ]
+};
+var userBreadcrumbs = {
+  // Home > Dashboard > Users
+  list: () => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Users" }
+  ],
+  // Home > Dashboard > Users > User Name
+  detail: (userName, userId) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Users", href: "/users" },
+    { label: userName }
+  ],
+  // Home > Dashboard > Users > User Name > Edit
+  edit: (userName, userId) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Users", href: "/users" },
+    { label: userName, href: `/users/${userId}` },
+    { label: "Edit" }
+  ]
+};
+var outletBreadcrumbs = {
+  // Home > Dashboard > Outlets
+  list: () => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Outlets" }
+  ],
+  // Home > Dashboard > Outlets > Outlet Name
+  detail: (outletName, outletId) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Outlets", href: "/outlets" },
+    { label: outletName }
+  ]
+};
+var subscriptionBreadcrumbs = {
+  // Home > Dashboard > Subscriptions
+  list: () => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Subscriptions" }
+  ],
+  // Home > Dashboard > Subscriptions > #ID - Merchant Name
+  detail: (subscriptionId, merchantName) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Subscriptions", href: "/subscriptions" },
+    { label: `#${subscriptionId}${merchantName ? ` - ${merchantName}` : ""}` }
+  ]
+};
+var merchantBreadcrumbs = {
+  // Home > Dashboard > Merchants
+  list: () => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Merchants" }
+  ],
+  // Home > Dashboard > Merchants > Merchant Name
+  detail: (merchantName, merchantId) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Merchants", href: "/merchants" },
+    { label: merchantName }
+  ],
+  // Home > Dashboard > Merchants > Merchant Name > Orders
+  orders: (merchantName, merchantId) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Merchants", href: "/merchants" },
+    { label: merchantName, href: `/merchants/${merchantId}` },
+    { label: "Orders" }
+  ],
+  // Home > Dashboard > Merchants > Merchant Name > Orders > ORD-XXX
+  orderDetail: (merchantName, merchantId, orderNumber, orderId) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Merchants", href: "/merchants" },
+    { label: merchantName, href: `/merchants/${merchantId}` },
+    { label: "Orders", href: `/merchants/${merchantId}/orders` },
+    { label: orderNumber }
+  ],
+  // Home > Dashboard > Merchants > Merchant Name > Orders > ORD-XXX > Edit
+  orderEdit: (merchantName, merchantId, orderNumber, orderId) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Merchants", href: "/merchants" },
+    { label: merchantName, href: `/merchants/${merchantId}` },
+    { label: "Orders", href: `/merchants/${merchantId}/orders` },
+    { label: orderNumber, href: `/merchants/${merchantId}/orders/${orderId}` },
+    { label: "Edit" }
+  ]
+};
+var categoryBreadcrumbs = {
+  // Home > Dashboard > Categories
+  list: () => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Categories" }
+  ]
+};
+var reportBreadcrumbs = {
+  // Home > Dashboard > Reports
+  list: () => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Reports" }
+  ],
+  // Home > Dashboard > Reports > Report Type
+  detail: (reportType) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Reports", href: "/reports" },
+    { label: reportType }
+  ]
+};
+var settingsBreadcrumbs = {
+  // Home > Dashboard > Settings
+  main: () => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Settings" }
+  ],
+  // Home > Dashboard > Settings > Section Name
+  section: (sectionName) => [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Settings", href: "/settings" },
+    { label: sectionName }
+  ]
+};
+
 // src/performance.ts
 var PerformanceMonitor = class {
   // Keep last 1000 metrics
@@ -14916,6 +15157,6 @@ var APIMonitor = class {
   *)
 */
 
-export { APIMonitor, API_BASE_URL, ApiError, AuditHelper, AuditPerformanceMonitor, DEFAULT_CURRENCIES, DEFAULT_CURRENCY_SETTINGS, DatabaseMonitor, DuplicateError, ERROR_MESSAGES, ERROR_STATUS_CODES, ErrorCode, ForbiddenError, MemoryMonitor, NotFoundError, PerformanceMonitor, PlanLimitError, PricingResolver, PricingValidator, SubscriptionManager, UnauthorizedError, ValidationError, addDaysToDate, analyticsApi, analyzeError, apiConfig, apiEnvironment, apiUrls, assertPlanLimit, auditPerformanceMonitor, authApi, authenticatedFetch, billingCyclesApi, buildApiUrl, calculateCustomerStats, calculateDiscountedPrice, calculateNewBillingDate, calculateProductStats, calculateProratedAmount, calculateProration, calculateRenewalPrice, calculateSavings, calculateStockPercentage, calculateSubscriptionPeriod, calculateSubscriptionPrice, calculateUserStats, calendarApi, canCreateUsers, canPerformOperation, canRentProduct, canSellProduct, capitalizeWords, categoriesApi, checkSubscriptionStatus, clearAuthData, compareOrderNumberFormats, convertCurrency, createApiUrl, createAuditHelper, createErrorResponse, createPaymentGatewayManager, createSuccessResponse, createUploadController, customerCreateSchema, customerUpdateSchema, customersApi, customersQuerySchema, databaseConfig, debounce, defaultAuditConfig, delay, exportAuditLogs, fileToBase64, filterCustomers, filterProducts, filterUsers, formatBillingCycle, formatCurrency, formatCurrencyAdvanced, formatCustomerForDisplay, formatDate, formatDateLong, formatDateShort, formatDateTime, formatDateTimeLong, formatDateTimeShort, formatPhoneNumber, formatProductPrice, formatProration, formatSubscriptionPeriod, generateRandomString, generateSlug, getAdminUrl, getAllPricingOptions, getAllowedOperations, getApiBaseUrl, getApiCorsOrigins, getApiDatabaseUrl, getApiJwtSecret, getApiUrl, getAuditConfig, getAuditEntityConfig, getAuditLogStats, getAuditLogs, getAuthToken, getAvailabilityBadge, getAvailabilityBadgeConfig, getBillingCycleDiscount, getClientUrl, getCurrency, getCurrencyDisplay, getCurrentCurrency, getCurrentDate, getCurrentEntityCounts, getCurrentEnvironment, getCurrentUser, getCustomerAddress, getCustomerAge, getCustomerContactInfo, getCustomerFullName, getCustomerIdTypeBadge, getCustomerLocationBadge, getCustomerStatusBadge, getDatabaseConfig, getDaysDifference, getDiscountPercentage, getEnvironmentUrls, getExchangeRate, getFormatRecommendations, getImageDimensions, getInitials, getLocationBadge, getLocationBadgeConfig, getMobileUrl, getOutletStats, getPlanLimitError, getPlanLimitErrorMessage, getPlanLimitsInfo, getPriceTrendBadge, getPriceTrendBadgeConfig, getPricingBreakdown, getPricingComparison, getProductAvailabilityBadge, getProductCategoryName, getProductDisplayName, getProductImageUrl, getProductOutletName, getProductStatusBadge, getProductStockStatus, getProductTypeBadge, getRoleBadge, getRoleBadgeConfig, getStatusBadge, getStatusBadgeConfig, getStoredUser, getSubscriptionError, getSubscriptionStatusBadge, getSubscriptionStatusPriority, getToastType, getTomorrow, getUserFullName, getUserRoleBadge, getUserStatusBadge, handleApiError, handleApiErrorForUI, handleApiResponse, handleBusinessError, handlePrismaError, handleValidationError, isAuthError, isAuthenticated, isBrowser, isDateAfter, isDateBefore, isDev, isDevelopment, isDevelopmentEnvironment, isEmpty, isErrorResponse, isGracePeriodExceeded, isLocal, isLocalEnvironment, isNetworkError, isPermissionError, isProd, isProduction, isProductionEnvironment, isServer, isSubscriptionExpired, isSuccessResponse, isTest, isValidCurrencyCode, isValidEmail, isValidPhone, isValidationError, loginSchema, memoize, merchantsApi, migrateOrderNumbers, normalizeWhitespace, notificationsApi, once, orderCreateSchema, orderUpdateSchema, ordersApi, ordersQuerySchema, outletCreateSchema, outletUpdateSchema, outletsApi, outletsQuerySchema, parseApiResponse, parseCurrency, paymentsApi, planCreateSchema, planUpdateSchema, planVariantCreateSchema, planVariantUpdateSchema, planVariantsQuerySchema, plansApi, plansQuerySchema, pricingCalculator, productCreateSchema, productUpdateSchema, productsApi, productsQuerySchema, profileApi, publicFetch, publicPlansApi, quickAuditLog, registerSchema, rentalSchema, resizeImage, retry, sanitizeFieldValue, settingsApi, shouldApplyProration, shouldLogEntity, shouldLogField, shouldSample, shouldThrowPlanLimitError, sortProducts, sortSubscriptionsByStatus, storeAuthData, subscriptionCreateSchema, subscriptionNeedsAttention, subscriptionUpdateSchema, subscriptionsApi, subscriptionsQuerySchema, systemApi, throttle, timeout, truncateText, uploadImage, uploadImages, userCreateSchema, userUpdateSchema, usersApi, usersQuerySchema, validateCustomer, validateForRenewal, validateImage, validateOrderNumberFormat, validatePlanLimits, validatePlatformAccess, validateProductPublicCheckAccess, validateSubscriptionAccess, withErrorHandlingForUI };
+export { APIMonitor, API_BASE_URL, ApiError, AuditHelper, AuditPerformanceMonitor, DEFAULT_CURRENCIES, DEFAULT_CURRENCY_SETTINGS, DatabaseMonitor, DuplicateError, ERROR_MESSAGES, ERROR_STATUS_CODES, ErrorCode, ForbiddenError, MemoryMonitor, NotFoundError, PerformanceMonitor, PlanLimitError, PricingResolver, PricingValidator, SubscriptionManager, UnauthorizedError, ValidationError, addDaysToDate, analyticsApi, analyzeError, apiConfig, apiEnvironment, apiUrls, assertPlanLimit, auditPerformanceMonitor, authApi, authenticatedFetch, billingCyclesApi, buildApiUrl, calculateCustomerStats, calculateDiscountedPrice, calculateNewBillingDate, calculateProductStats, calculateProratedAmount, calculateProration, calculateRenewalPrice, calculateSavings, calculateStockPercentage, calculateSubscriptionPeriod, calculateSubscriptionPrice, calculateUserStats, calendarApi, canCreateUsers, canPerformOperation, canRentProduct, canSellProduct, capitalizeWords, categoriesApi, categoryBreadcrumbs, checkSubscriptionStatus, clearAuthData, compareOrderNumberFormats, convertCurrency, createApiUrl, createAuditHelper, createErrorResponse, createPaymentGatewayManager, createSuccessResponse, createUploadController, customerBreadcrumbs, customerCreateSchema, customerUpdateSchema, customersApi, customersQuerySchema, databaseConfig, debounce, defaultAuditConfig, delay, exportAuditLogs, fileToBase64, filterCustomers, filterProducts, filterUsers, formatBillingCycle, formatCurrency, formatCurrencyAdvanced, formatCustomerForDisplay, formatDate, formatDateLong, formatDateShort, formatDateTime, formatDateTimeLong, formatDateTimeShort, formatPhoneNumber, formatProductPrice, formatProration, formatSubscriptionPeriod, generateRandomString, generateSlug, getAdminUrl, getAllPricingOptions, getAllowedOperations, getApiBaseUrl, getApiCorsOrigins, getApiDatabaseUrl, getApiJwtSecret, getApiUrl, getAuditConfig, getAuditEntityConfig, getAuditLogStats, getAuditLogs, getAuthToken, getAvailabilityBadge, getAvailabilityBadgeConfig, getBillingCycleDiscount, getClientUrl, getCurrency, getCurrencyDisplay, getCurrentCurrency, getCurrentDate, getCurrentEntityCounts, getCurrentEnvironment, getCurrentUser, getCustomerAddress, getCustomerAge, getCustomerContactInfo, getCustomerFullName, getCustomerIdTypeBadge, getCustomerLocationBadge, getCustomerStatusBadge, getDatabaseConfig, getDaysDifference, getDiscountPercentage, getEnvironmentUrls, getExchangeRate, getFormatRecommendations, getImageDimensions, getInitials, getLocationBadge, getLocationBadgeConfig, getMobileUrl, getOutletStats, getPlanLimitError, getPlanLimitErrorMessage, getPlanLimitsInfo, getPriceTrendBadge, getPriceTrendBadgeConfig, getPricingBreakdown, getPricingComparison, getProductAvailabilityBadge, getProductCategoryName, getProductDisplayName, getProductImageUrl, getProductOutletName, getProductStatusBadge, getProductStockStatus, getProductTypeBadge, getRoleBadge, getRoleBadgeConfig, getStatusBadge, getStatusBadgeConfig, getStoredUser, getSubscriptionError, getSubscriptionStatusBadge, getSubscriptionStatusPriority, getToastType, getTomorrow, getUserFullName, getUserRoleBadge, getUserStatusBadge, handleApiError, handleApiErrorForUI, handleApiResponse, handleBusinessError, handlePrismaError, handleValidationError, isAuthError, isAuthenticated, isBrowser, isDateAfter, isDateBefore, isDev, isDevelopment, isDevelopmentEnvironment, isEmpty, isErrorResponse, isGracePeriodExceeded, isLocal, isLocalEnvironment, isNetworkError, isPermissionError, isProd, isProduction, isProductionEnvironment, isServer, isSubscriptionExpired, isSuccessResponse, isTest, isValidCurrencyCode, isValidEmail, isValidPhone, isValidationError, loginSchema, memoize, merchantBreadcrumbs, merchantsApi, migrateOrderNumbers, normalizeWhitespace, notificationsApi, once, orderBreadcrumbs, orderCreateSchema, orderUpdateSchema, ordersApi, ordersQuerySchema, outletBreadcrumbs, outletCreateSchema, outletUpdateSchema, outletsApi, outletsQuerySchema, parseApiResponse, parseCurrency, paymentsApi, planCreateSchema, planUpdateSchema, planVariantCreateSchema, planVariantUpdateSchema, planVariantsQuerySchema, plansApi, plansQuerySchema, pricingCalculator, productBreadcrumbs, productCreateSchema, productUpdateSchema, productsApi, productsQuerySchema, profileApi, publicFetch, publicPlansApi, quickAuditLog, registerSchema, rentalSchema, reportBreadcrumbs, resizeImage, retry, sanitizeFieldValue, settingsApi, settingsBreadcrumbs, shouldApplyProration, shouldLogEntity, shouldLogField, shouldSample, shouldThrowPlanLimitError, sortProducts, sortSubscriptionsByStatus, storeAuthData, subscriptionBreadcrumbs, subscriptionCreateSchema, subscriptionNeedsAttention, subscriptionUpdateSchema, subscriptionsApi, subscriptionsQuerySchema, systemApi, throttle, timeout, truncateText, uploadImage, uploadImages, userBreadcrumbs, userCreateSchema, userUpdateSchema, usersApi, usersQuerySchema, validateCustomer, validateForRenewal, validateImage, validateOrderNumberFormat, validatePlanLimits, validatePlatformAccess, validateProductPublicCheckAccess, validateSubscriptionAccess, withErrorHandlingForUI };
 //# sourceMappingURL=out.js.map
 //# sourceMappingURL=index.mjs.map

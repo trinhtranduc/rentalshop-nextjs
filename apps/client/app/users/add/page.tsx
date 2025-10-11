@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { usersApi } from "@rentalshop/utils";
-import type { UserCreateInput } from '@rentalshop/ui';
-import { useToast } from '@rentalshop/ui';
+import type { UserCreateInput, BreadcrumbItem } from '@rentalshop/ui';
+import { useToast, PageWrapper, Breadcrumb } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 
 export default function AddUserPage() {
@@ -93,10 +93,18 @@ export default function AddUserPage() {
     router.push('/users');
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Users', href: '/users' },
+    { label: 'Add User' }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-6" />
+      
+      {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-2">
             <button
@@ -117,8 +125,6 @@ export default function AddUserPage() {
           isSubmitting={isSubmitting}
           mode="create"
         />
-      </div>
-      
-    </div>
+    </PageWrapper>
   );
 }

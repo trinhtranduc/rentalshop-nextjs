@@ -23,7 +23,10 @@ import { Card,
   SelectValue,
   Badge,
   Pagination,
+  PageWrapper,
+  Breadcrumb,
   useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   Search,
   Filter,
@@ -455,7 +458,7 @@ export default function AuditLogsPage() {
   }, []);
 
   return (
-    <div className="container mx-auto p-6">
+    <PageWrapper>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text-primary mb-2">Audit Logs</h1>
         <p className="text-text-secondary">
@@ -628,6 +631,6 @@ export default function AuditLogsPage() {
           </Card>
         </div>
       )}
-    </div>
+    </PageWrapper>
   );
 }

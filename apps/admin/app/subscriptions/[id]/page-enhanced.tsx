@@ -9,10 +9,12 @@ import { Card,
   Button,
   Badge,
   StatusBadge,
+  Breadcrumb,
   PaymentHistoryTable,
   ManualRenewalModal,
   UpgradeTrialModal,
   useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { subscriptionsApi, plansApi } from '@rentalshop/utils';
 import { 
   ArrowLeft,
@@ -251,21 +253,25 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
     );
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Subscriptions', href: '/subscriptions' },
+    { label: `#${subscription.id} - ${subscription.merchant?.name || 'Subscription'}` }
+  ];
+
   return (
     <div className="p-6 space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={true} homeHref="/dashboard" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => router.push('/subscriptions')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">
-              {subscription.merchant?.name} - Subscription
-            </h1>
-            <p className="text-gray-600 text-sm">Subscription ID: #{subscription.id}</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">
+            {subscription.merchant?.name} - Subscription
+          </h1>
+          <p className="text-gray-600 text-sm">Subscription ID: #{subscription.id}</p>
         </div>
 
         <div className="flex gap-2">

@@ -15,7 +15,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CreateOrderForm, FormSkeleton, PageWrapper, PageContent, useToast } from '@rentalshop/ui';
+import { CreateOrderForm, Breadcrumb, FormSkeleton, PageWrapper, useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
+import { orderBreadcrumbs } from '@rentalshop/utils';
 import { 
   ordersApi, 
   customersApi, 
@@ -307,13 +309,11 @@ export default function EditOrderPage() {
   if (loading) {
     return (
       <PageWrapper>
-        <PageContent>
-          <div className="mb-6">
+        <div className="mb-6">
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
             <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
           <FormSkeleton />
-        </PageContent>
       </PageWrapper>
     );
   }
@@ -322,8 +322,7 @@ export default function EditOrderPage() {
   if (!merchantId) {
     return (
       <PageWrapper>
-        <PageContent>
-          <div className="mb-6">
+        <div className="mb-6">
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
             <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
@@ -333,7 +332,6 @@ export default function EditOrderPage() {
             <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
           </div>
           <FormSkeleton />
-        </PageContent>
       </PageWrapper>
     );
   }
@@ -345,8 +343,7 @@ export default function EditOrderPage() {
   if (!hasMinimalData) {
     return (
       <PageWrapper>
-        <PageContent>
-          <div className="mb-6">
+        <div className="mb-6">
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
             <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
@@ -370,7 +367,6 @@ export default function EditOrderPage() {
               Retry Loading
             </button>
           </div>
-        </PageContent>
       </PageWrapper>
     );
   }
@@ -439,23 +435,32 @@ export default function EditOrderPage() {
     );
   }
 
+  // Breadcrumb items - inline
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Orders', href: '/orders' },
+    { label: order.orderNumber, href: `/orders/${numericOrderNumber}` },
+    { label: 'Edit' }
+  ];
+
   return (
-    <div className="min-h-screen bg-bg-primary">
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-6" />
       
       <CreateOrderForm
-        isEditMode={true}
-        initialOrder={order}
-        orderNumber={order.orderNumber}
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-        loading={actionLoading}
-        customers={customers}
-        products={products}
-        outlets={outlets}
-        categories={categories}
-        merchantId={Number(merchantId)}
-        onFormReady={handleFormReady}
-      />
-    </div>
+          isEditMode={true}
+          initialOrder={order}
+          orderNumber={order.orderNumber}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          loading={actionLoading}
+          customers={customers}
+          products={products}
+          outlets={outlets}
+          categories={categories}
+          merchantId={Number(merchantId)}
+          onFormReady={handleFormReady          }
+        />
+    </PageWrapper>
   );
 }

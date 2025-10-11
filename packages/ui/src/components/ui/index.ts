@@ -4,6 +4,8 @@
 export { Alert, AlertTitle, AlertDescription } from './alert';
 export { Badge, badgeVariants } from './badge';
 export { StatusBadge } from './status-badge';
+export { Breadcrumb } from './breadcrumb';
+export type { BreadcrumbItem, BreadcrumbProps } from './breadcrumb';
 export { Button, buttonVariants } from './button';
 export { ButtonClean } from './button-clean';
 export { ButtonColorful } from './button-colorful';

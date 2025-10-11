@@ -8,8 +8,10 @@ import { PageWrapper,
   PageTitle,
   PageContent,
   Button,
+  Breadcrumb,
   OrderDetail,
   useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { ordersApi } from '@rentalshop/utils';
 import type { OrderDetailData } from '@rentalshop/types';
@@ -293,19 +295,21 @@ export default function MerchantOrderDetailPage() {
     );
   }
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Merchants', href: '/merchants' },
+    { label: `Merchant ${merchantId}`, href: `/merchants/${merchantId}` },
+    { label: 'Orders', href: `/merchants/${merchantId}/orders` },
+    { label: order.orderNumber }
+  ];
+
   return (
     <PageWrapper>
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={handleBackToOrders}
-              variant="outline"
-              size="sm"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Orders
-            </Button>
+          <div>
             <PageTitle>Order Details - {order.orderNumber}</PageTitle>
           </div>
         </div>

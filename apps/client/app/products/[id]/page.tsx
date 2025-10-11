@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Card, 
   Button,
+  Breadcrumb,
   ProductsLoading,
   PageWrapper,
   PageHeader,
@@ -11,6 +12,8 @@ import { Card,
   PageContent,
   ConfirmationDialog,
   useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
+import { productBreadcrumbs } from '@rentalshop/utils';
 import { ProductDetail } from '@rentalshop/ui';
 
 import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
@@ -149,15 +152,18 @@ export default function ProductViewPage() {
     );
   }
 
+  // Breadcrumb items - inline
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Products', href: '/products' },
+    { label: product.name }
+  ];
+
   return (
     <PageWrapper>
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-4" />
       <PageHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" onClick={handleBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Products
-            </Button>
+          <div>
             <PageTitle>{product.name}</PageTitle>
           </div>
           <div className="flex items-center space-x-2">

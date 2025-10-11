@@ -123,6 +123,77 @@ export const deleteCategory = async (id: number) => {
 };
 
 /**
+ * Search categories with pagination (simplified API)
+ */
+export const search = async (filters: any) => {
+  const { page = 1, limit = 20, sortBy = 'name', sortOrder = 'asc', ...whereFilters } = filters;
+  const skip = (page - 1) * limit;
+
+  console.log('🔍 DB category.search - Received filters:', filters);
+
+  // Build where clause
+  const where: any = {};
+  
+  if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+  if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+  
+  // Text search by category name
+  const searchTerm = whereFilters.search?.trim();
+  console.log('🔍 DB category.search - searchTerm:', searchTerm, 'length:', searchTerm?.length);
+  
+  if (searchTerm && searchTerm.length > 0) {
+    where.name = { 
+      contains: searchTerm, 
+      mode: 'insensitive' 
+    };
+    console.log('✅ DB category.search - Added name filter:', where.name);
+  } else {
+    console.log('⚠️ DB category.search - No search term, will return all categories');
+  }
+  
+  console.log('🔍 DB category.search - Final where clause:', JSON.stringify(where, null, 2));
+
+  // Build orderBy based on sortBy and sortOrder
+  const orderBy: any = {};
+  if (sortBy === 'name' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
+    orderBy[sortBy] = sortOrder;
+  } else {
+    orderBy.name = 'asc'; // Default
+  }
+
+  const [categories, total] = await Promise.all([
+    prisma.category.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            products: true
+          }
+        }
+      },
+      orderBy,
+      skip,
+      take: limit
+    }),
+    prisma.category.count({ where })
+  ]);
+
+  return {
+    data: categories,
+    total,
+    page,
+    limit,
+    hasMore: skip + limit < total
+  };
+};
+
+/**
  * Get category statistics (simplified API)
  */
 export const getStats = async (where: any = {}) => {

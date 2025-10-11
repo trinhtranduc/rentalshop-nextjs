@@ -4,7 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { customersApi } from "@rentalshop/utils";
 import type { Customer, CustomerUpdateInput } from '@rentalshop/types';
-import { useToast } from '@rentalshop/ui';
+import { 
+  useToast,
+  PageWrapper,
+  PageContent,
+  PageHeader,
+  PageTitle,
+  CustomerPageHeader,
+  EditCustomerForm
+} from '@rentalshop/ui';
 
 export default function EditCustomerPage() {
   const router = useRouter();

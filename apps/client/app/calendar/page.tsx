@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendars } from '@rentalshop/ui';
+import { Calendars, PageWrapper, Breadcrumb } from '@rentalshop/ui';
 import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
@@ -179,7 +179,8 @@ export default function CalendarPage() {
   }, [calendarData]);
 
   return (
-    <div className="space-y-8">
+    <PageWrapper>
+      <div className="space-y-8">
       {/* Monthly Statistics */}
       {calendarMeta && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
@@ -374,6 +375,7 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PageWrapper>
   );
 }

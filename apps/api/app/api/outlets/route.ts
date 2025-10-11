@@ -29,13 +29,20 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const { 
       merchantId: queryMerchantId,
       isActive,
+      q,
       search,
+      sortBy,
+      sortOrder,
       page,
-      limit
+      limit,
+      offset
     } = parsed.data;
 
+    // Use q or search (q takes priority)
+    const searchQuery = q || search;
+
     console.log('Parsed filters:', { 
-      queryMerchantId, isActive, search, page, limit 
+      queryMerchantId, isActive, searchQuery, sortBy, sortOrder, page, limit, offset
     });
     
     // Use simplified database API with userScope and role-based filtering
@@ -51,9 +58,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         : undefined,
         
       isActive: isActive === 'all' ? undefined : (isActive !== undefined ? Boolean(isActive) : true),
-      search: search || undefined,
+      search: searchQuery || undefined, // Search by outlet name
+      sortBy: sortBy || 'name',
+      sortOrder: sortOrder || 'asc',
       page: page || 1,
-      limit: limit || 20
+      limit: limit || 20,
+      offset: offset
     };
 
     console.log('🔍 Using simplified db.outlets.search with filters:', searchFilters);

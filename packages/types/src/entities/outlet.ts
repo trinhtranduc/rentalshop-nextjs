@@ -149,6 +149,7 @@ export interface OutletData {
  * Used for filtering outlets in management views
  */
 export interface OutletFilters {
+  q?: string;           // Search query parameter
   search?: string;
   status?: string;
   merchantId?: number;
@@ -161,6 +162,8 @@ export interface OutletFilters {
   page?: number;
   limit?: number;
   offset?: number;  // Added missing offset property
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 // Alias for backward compatibility

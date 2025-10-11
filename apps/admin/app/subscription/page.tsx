@@ -5,7 +5,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SubscriptionList } from '@rentalshop/ui';
+import { SubscriptionList, PageWrapper, Breadcrumb } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { subscriptionsApi, merchantsApi, plansApi } from '@rentalshop/utils';
 import type { Subscription, Plan, Merchant, SubscriptionUpdateInput } from '@rentalshop/types';
 
@@ -97,30 +98,28 @@ export default function AdminSubscriptionPage() {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Subscription Management</h1>
-          <p className="mt-2 text-gray-600">
+    <PageWrapper>
+      <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Subscription Management</h1>
+            <p className="mt-2 text-gray-600">
             Manage all subscriptions, view details, and make changes
           </p>
-        </div>
+      </div>
 
-        <SubscriptionList
-          subscriptions={subscriptions}
-          plans={plans}
-          merchants={merchants}
-          onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onExtend={handleExtend}
-          onCancel={handleCancel}
-          onSuspend={handleSuspend}
-          onReactivate={handleReactivate}
-          onChangePlan={handleChangePlan}
+      <SubscriptionList
+            subscriptions={subscriptions}
+            plans={plans}
+            merchants={merchants}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onExtend={handleExtend}
+            onCancel={handleCancel}
+            onSuspend={handleSuspend}
+            onReactivate={handleReactivate}
+            onChangePlan={handleChangePlan}
           loading={loading}
         />
-      </div>
-    </div>
+    </PageWrapper>
   );
 }
