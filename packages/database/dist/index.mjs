@@ -241,9 +241,9 @@ var simplifiedUsers = {
     if (whereFilters.role) where.role = whereFilters.role;
     if (whereFilters.search) {
       where.OR = [
-        { firstName: { contains: whereFilters.search } },
-        { lastName: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } }
+        { firstName: { contains: whereFilters.search, mode: "insensitive" } },
+        { lastName: { contains: whereFilters.search, mode: "insensitive" } },
+        { email: { contains: whereFilters.search, mode: "insensitive" } }
       ];
     }
     const [users, total] = await Promise.all([

@@ -174,14 +174,14 @@ export async function searchProducts(filters: ProductSearchFilter) {
     }
   }
 
-  // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
+  // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility (case-insensitive)
   const searchQuery = q || search;
   if (searchQuery) {
-    const searchTerm = searchQuery.toLowerCase().trim();
+    const searchTerm = searchQuery.trim();
     where.OR = [
-      { name: { contains: searchTerm } },
-      { description: { contains: searchTerm } },
-      { barcode: { equals: searchTerm } }
+      { name: { contains: searchTerm, mode: 'insensitive' } },
+      { description: { contains: searchTerm, mode: 'insensitive' } },
+      { barcode: { equals: searchTerm } } // Barcode is usually exact match
     ];
   }
 
