@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '../../../ui/input';
 import { Card, CardContent } from '../../../ui/card';
+import { Button } from '../../../ui/button';
 import { Search, X } from 'lucide-react';
 
 interface CategorySearchProps {
@@ -30,12 +31,14 @@ export function CategorySearch({ value, onChange, onClear }: CategorySearchProps
                 className="pl-10 pr-10"
               />
               {value && (
-                <button
+                <Button
                   onClick={onClear}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute inset-y-0 right-0 h-full w-10"
                 >
                   <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

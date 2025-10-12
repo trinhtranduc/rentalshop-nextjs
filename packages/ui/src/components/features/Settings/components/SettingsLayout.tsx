@@ -97,10 +97,11 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                     const isActive = activeSection === item.id;
                     
                     return (
-                      <button
+                      <Button
+                        variant="ghost"
                         key={item.id}
                         onClick={() => onSectionChange(item.id)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors ${
+                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${
                           isActive
                             ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                             : 'text-gray-700 hover:bg-gray-50'
@@ -112,7 +113,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                           <p className="text-xs text-gray-500 truncate">{item.description}</p>
                         </div>
                         <ChevronRight className="h-4 w-4" />
-                      </button>
+                      </Button>
                     );
                   })}
               </nav>

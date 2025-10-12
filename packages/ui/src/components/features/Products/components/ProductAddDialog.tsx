@@ -31,6 +31,8 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
   onError
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  console.log('🟢 ProductAddDialog: Rendered with open =', open);
 
   const handleSave = async (productData: any) => {
     try {

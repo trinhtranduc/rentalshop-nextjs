@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { cn } from '../../lib/cn';
 import { ChevronDown } from 'lucide-react';
+import { Button } from './button';
 
 export interface SearchableOption {
   value: string;
@@ -204,21 +205,25 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             )}
           />
           <span className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" />
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             aria-label="Toggle options"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
             onMouseDown={(e) => {
               e.preventDefault();
               setOpen((o) => !o);
             }}
           >
             <ChevronDown className="h-5 w-5" />
-          </button>
+          </Button>
           
           {/* Clear button when there's a query */}
           {query && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               onClick={() => {
                 setQuery('');
@@ -230,14 +235,15 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 }
                 setOpen(false);
               }}
-              className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+              className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
             >
               ✕
-            </button>
+            </Button>
           )}
         </>
       ) : (
-        <button
+        <Button
+          variant="outline"
           type="button"
           onClick={() => setOpen((v) => !v)}
           className={cn(
@@ -247,7 +253,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         >
           <span className={cn(!selected && 'text-gray-400')}>{selected ? selected.label : placeholder}</span>
           <ChevronDown className="h-5 w-5 text-gray-500" />
-        </button>
+        </Button>
       )}
 
       {open && (
@@ -266,13 +272,14 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               <>
                 {/* Add New Customer Option */}
                 {showAddNew && onAddNew && (
-                  <button
+                  <Button
+                    variant="ghost"
                     type="button"
                     onClick={() => {
                       onAddNew();
                       setOpen(false);
                     }}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-green-50 hover:text-green-700 transition-all duration-150 ease-in-out border-b border-gray-100"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-green-50 hover:text-green-700 transition-all duration-150 ease-in-out border-b border-gray-100 h-auto justify-start rounded-none"
                   >
                     {/* Plus icon for add new */}
                     <div className="flex-shrink-0 w-5 h-5 text-green-500">
@@ -285,20 +292,21 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-green-700">{addNewText}</div>
                     </div>
-                  </button>
+                  </Button>
                 )}
                 
                 {/* Options with custom rendering based on type */}
                 {filtered.map((opt) => {
                   return (
-                    <button
+                    <Button
+                      variant="ghost"
                       type="button"
                       key={opt.value}
                       onClick={() => {
                         handleSelect(opt);
                       }}
                       className={cn(
-                        'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out',
+                        'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none',
                         value === parseInt(opt.value) && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                       )}
                     >
@@ -379,7 +387,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         </svg>
                       </div>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
               </>

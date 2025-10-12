@@ -30,13 +30,13 @@ export function UserPageHeader({
 
       <div className="flex gap-3">
         {showExportButton && (
-          <button 
+          <Button
             onClick={onExport}
-            className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm transition-colors"
+            className="h-9 px-4 text-sm"
           >
             <Download className="w-4 h-4 mr-2" />
             {exportButtonText}
-          </button>
+          </Button>
         )}
         
         {showAddButton && (

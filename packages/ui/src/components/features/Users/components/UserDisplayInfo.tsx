@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Card, CardContent } from '@rentalshop/ui';
+import { Card, CardContent, Button } from '@rentalshop/ui';
 import type { User } from '@rentalshop/types';
 
 interface UserDisplayInfoProps {
@@ -159,13 +159,14 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
               {onChangePassword && (
                 <div className="space-y-3">
                   <h4 className="font-medium text-gray-900">Password Management</h4>
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={onChangePassword}
-                    className="w-full flex items-center justify-start px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                    className="w-full flex items-center justify-start px-3 py-2 text-sm h-auto"
                     disabled={isLoading}
                   >
                     🔑 Change Password
-                  </button>
+                  </Button>
                   <p className="text-xs text-gray-500">
                     Allow users to change their password securely
                   </p>
@@ -176,23 +177,25 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
                 <h4 className="font-medium text-gray-900">Account Status</h4>
                 {user.isActive ? (
                   onDeactivate && (
-                    <button
+                    <Button
+                      variant="outline"
                       onClick={onDeactivate}
-                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-orange-600 border border-orange-200 rounded-md hover:bg-orange-50 disabled:opacity-50"
+                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-orange-600 border-orange-200 hover:bg-orange-50 h-auto"
                       disabled={isLoading || user.role === 'ADMIN'}
                     >
                       {isLoading ? '⏳ Deactivating...' : '❌ Deactivate Account'}
-                    </button>
+                    </Button>
                   )
                 ) : (
                   onActivate && (
-                    <button
+                    <Button
+                      variant="outline"
                       onClick={onActivate}
-                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-green-600 border border-green-200 rounded-md hover:bg-green-50 disabled:opacity-50"
+                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-green-600 border-green-200 hover:bg-green-50 h-auto"
                       disabled={isLoading}
                     >
                       {isLoading ? '⏳ Activating...' : '✅ Activate Account'}
-                    </button>
+                    </Button>
                   )
                 )}
                 <p className="text-xs text-gray-500">
@@ -211,13 +214,14 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
               {onDelete && (
                 <div className="space-y-3">
                   <h4 className="font-medium text-gray-900">Danger Zone</h4>
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={onDelete}
-                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-red-600 border border-red-200 rounded-md hover:bg-red-50 disabled:opacity-50"
+                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-red-600 border-red-200 hover:bg-red-50 h-auto"
                     disabled={isLoading || user.role === 'ADMIN'}
                   >
                     {isLoading ? '⏳ Deleting...' : '🗑️ Delete Account'}
-                  </button>
+                  </Button>
                   <p className="text-xs text-gray-500">
                     Permanently delete this user account
                   </p>

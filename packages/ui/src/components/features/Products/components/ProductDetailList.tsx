@@ -231,10 +231,11 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                   const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
                   if (Array.isArray(imageArray) && imageArray.length > 0) {
                     return imageArray.map((image: string, index: number) => (
-                      <button
+                      <Button
+                        variant="outline"
                         key={index}
                         onClick={() => setSelectedImage(image)}
-                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
+                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors p-0 h-auto ${
                           selectedImage === image
                             ? 'border-blue-500'
                             : 'border-gray-200 hover:border-gray-300'
@@ -246,7 +247,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                           className="w-full h-full object-cover"
                           onError={handleImageError}
                         />
-                      </button>
+                      </Button>
                     ));
                   }
                   return null;

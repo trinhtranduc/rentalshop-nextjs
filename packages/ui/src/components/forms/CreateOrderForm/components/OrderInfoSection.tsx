@@ -17,7 +17,8 @@ import {
   DateRangePicker,
   RentalPeriodSelector,
   Textarea,
-  Skeleton
+  Skeleton,
+  Button
 } from '@rentalshop/ui';
 import { 
   User, 
@@ -121,24 +122,22 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             )}
           </label>
           <div className="grid grid-cols-2 gap-2">
-            <button
+            <Button
               type="button"
+              variant={formData.orderType === 'RENT' ? 'default' : 'outline'}
               disabled={isEditMode}
               onClick={() => {
                 if (!isEditMode) {
                   onFormDataChange('orderType', 'RENT');
                 }
               }}
-              className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
-                formData.orderType === 'RENT' 
-                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Rent
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant={formData.orderType === 'SALE' ? 'default' : 'outline'}
               disabled={isEditMode}
               onClick={() => {
                 if (!isEditMode) {
@@ -148,14 +147,10 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   onFormDataChange('depositAmount', 0);
                 }
               }}
-              className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
-                formData.orderType === 'SALE' 
-                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Sale
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -265,36 +260,41 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 }`}
               />
               {selectedCustomer ? (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   onClick={onCustomerClear}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150 h-6 w-6 p-0"
                   title="Clear selected customer"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   onClick={() => {
                     if (searchQuery.trim()) {
                       onCustomerSearch(searchQuery);
                     }
                   }}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
                 >
                   <Search className="w-4 h-4" />
-                </button>
+                </Button>
               )}
               
               {/* Search Results Dropdown */}
               {!selectedCustomer && (customerSearchResults.length > 0 || searchQuery.trim()) && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                   {/* Add New Customer Button - Always at Top */}
-                  <button
+                  <Button
+                    variant="ghost"
                     type="button"
                     onClick={onShowAddCustomerDialog}
-                    className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 bg-blue-50/50 text-blue-700 font-medium"
+                    className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 bg-blue-50/50 text-blue-700 font-medium h-auto justify-start rounded-none"
                   >
                     <div className="flex items-center gap-2">
                       <Plus className="w-4 h-4" />
@@ -305,26 +305,27 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                         Create customer: "{searchQuery}"
                       </div>
                     )}
-                  </button>
+                  </Button>
 
                   {/* Customer Results */}
                   {customerSearchResults.length > 0 ? (
                     <>
                       {customerSearchResults.map((customer) => (
-                        <button
+                        <Button
+                          variant="ghost"
                           key={customer.id}
                           type="button"
                           onClick={() => {
                             onCustomerSelect(customer);
                             onSearchQueryChange(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
                           }}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 h-auto justify-start rounded-none"
                         >
                           <div className="font-medium text-gray-900">
                             {customer.firstName} {customer.lastName}
                           </div>
                           <div className="text-sm text-gray-600">{customer.phone}</div>
-                        </button>
+                        </Button>
                       ))}
                     </>
                   ) : (

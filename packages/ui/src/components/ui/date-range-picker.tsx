@@ -320,24 +320,25 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                        const isInRange = isDateInRange(date);
                        const isHovered = hoveredDate && date.getTime() === hoveredDate.getTime();
 
-                       return (
-                         <button
-                           key={i}
-                           onClick={() => handleDateClick(date)}
-                           onMouseEnter={() => handleDateHover(date)}
-                           disabled={isDisabled}
-                           className={cn(
-                             "h-8 w-8 text-sm rounded-lg transition-colors relative",
-                             isDisabled && "text-gray-300 cursor-not-allowed",
-                             !isDisabled && "hover:bg-gray-100",
-                             isSelected && "bg-blue-600 text-white hover:bg-blue-700",
-                             isInRange && !isSelected && "bg-blue-100 text-blue-900",
-                             isHovered && !isSelected && "bg-blue-50"
-                           )}
-                         >
-                           {date.getDate()}
-                         </button>
-                       );
+                      return (
+                        <Button
+                          variant="ghost"
+                          key={i}
+                          onClick={() => handleDateClick(date)}
+                          onMouseEnter={() => handleDateHover(date)}
+                          disabled={isDisabled}
+                          className={cn(
+                            "h-8 w-8 text-sm rounded-lg transition-colors relative p-0",
+                            isDisabled && "text-gray-300 cursor-not-allowed",
+                            !isDisabled && "hover:bg-gray-100",
+                            isSelected && "bg-blue-600 text-white hover:bg-blue-700",
+                            isInRange && !isSelected && "bg-blue-100 text-blue-900",
+                            isHovered && !isSelected && "bg-blue-50"
+                          )}
+                        >
+                          {date.getDate()}
+                        </Button>
+                      );
                      })}
                    </div>
                  </div>

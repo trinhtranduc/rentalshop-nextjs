@@ -218,7 +218,8 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
     return (
       <div key={item.href} className="relative">
         {hasSubItems ? (
-          <button
+          <Button
+            variant="ghost"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -255,9 +256,10 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             {isHovered && !active && (
               <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200"></div>
             )}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            variant="ghost"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -293,7 +295,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             {isHovered && !active && (
               <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200"></div>
             )}
-          </button>
+          </Button>
         )}
 
         {/* Sub Items */}
@@ -304,7 +306,8 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
               const subActive = isActive(subItem.href);
               
               return (
-                <button
+                <Button
+                  variant="ghost"
                   key={subItem.href}
                   onClick={(e) => {
                     e.preventDefault();
@@ -316,13 +319,13 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
                     }, 100);
                   }}
                   className={cn(
-                    'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg',
+                    'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg justify-start h-auto',
                     subActive ? 'text-blue-600 font-medium' : 'text-text-primary hover:text-blue-600'
                   )}
                 >
                   <SubIcon className="w-4 h-4" />
                   {subItem.label}
-                </button>
+                </Button>
               );
             })}
           </div>

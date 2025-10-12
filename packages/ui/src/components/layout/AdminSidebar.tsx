@@ -138,10 +138,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <div key={item.href}>
         <div className="flex items-center">
           {hasSubItems ? (
-            <button
+            <Button
+              variant="ghost"
               onClick={() => toggleExpanded(item.href)}
               className={cn(
-                'flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group',
+                'flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group h-auto',
                 active
                   ? 'bg-action-primary text-text-inverted'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
@@ -162,7 +163,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   isExpanded ? 'rotate-90' : ''
                 )} />
               )}
-            </button>
+            </Button>
           ) : (
             <Link
               href={item.href}

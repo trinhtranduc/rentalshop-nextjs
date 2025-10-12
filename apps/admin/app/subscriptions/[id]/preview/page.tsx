@@ -409,8 +409,9 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
       <Card>
         <CardHeader>
           <div className="flex gap-4 border-b">
-            <button
-              className={`px-4 py-2 font-medium transition-colors ${
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'payments' 
                   ? 'border-b-2 border-blue-500 text-blue-600' 
                   : 'text-gray-600 hover:text-gray-900'
@@ -418,9 +419,10 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
               onClick={() => setActiveTab('payments')}
             >
               💳 Payment History
-            </button>
-            <button
-              className={`px-4 py-2 font-medium transition-colors ${
+            </Button>
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'activity' 
                   ? 'border-b-2 border-blue-500 text-blue-600' 
                   : 'text-gray-600 hover:text-gray-900'
@@ -428,9 +430,10 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
               onClick={() => setActiveTab('activity')}
             >
               📊 Activity Log
-            </button>
-            <button
-              className={`px-4 py-2 font-medium transition-colors ${
+            </Button>
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'details' 
                   ? 'border-b-2 border-blue-500 text-blue-600' 
                   : 'text-gray-600 hover:text-gray-900'
@@ -438,7 +441,7 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
               onClick={() => setActiveTab('details')}
             >
               📋 Plan Details
-            </button>
+            </Button>
           </div>
         </CardHeader>
 

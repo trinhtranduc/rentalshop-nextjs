@@ -155,9 +155,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       value={validation.values.password || ""}
                       name="password"
                     />
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       type="button"
-                      className="absolute right-1 top-1 p-1 text-gray-400 hover:text-gray-600"
+                      className="absolute right-1 top-1 p-1 text-gray-400 hover:text-gray-600 h-auto w-auto"
                       onClick={togglePasswordVisibility}
                     >
                       {viewPass ? (
@@ -165,7 +167,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       ) : (
                         <Eye className="h-4 w-4" />
                       )}
-                    </button>
+                    </Button>
                   </div>
                   {validation.touched.password && validation.errors.password && (
                     <p className="mt-1 text-sm text-red-600">
@@ -211,22 +213,24 @@ const LoginForm: React.FC<LoginFormProps> = ({
           {!isAdmin && (
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <button
+              <Button
+                variant="link"
                 onClick={() => onNavigate?.("/register")}
-                className="font-medium text-blue-600 hover:text-blue-800 hover:underline bg-transparent border-0 p-0 font-inherit cursor-pointer"
+                className="font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto"
               >
                 Sign up now
-              </button>
+              </Button>
             </p>
           )}
           
           <p className="text-sm text-gray-600">
-            <button
+            <Button
+              variant="link"
               onClick={() => onNavigate?.("/forget-password")}
-              className="font-medium text-blue-600 hover:text-blue-800 hover:underline bg-transparent border-0 p-0 font-inherit cursor-pointer"
+              className="font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto"
             >
               Forgot your password?
-            </button>
+            </Button>
           </p>
         </div>
 

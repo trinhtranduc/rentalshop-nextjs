@@ -71,10 +71,11 @@ export function MerchantTable({
               { key: 'trialEndsAt', label: 'Trial Expires' },
               { key: 'lastActiveAt', label: 'Expired At' }
             ].map(({ key, label }) => (
-              <button
+              <Button
+                variant="ghost"
                 key={key}
                 onClick={() => onSort?.(key)}
-                className={`px-2 py-1 rounded text-xs transition-colors ${
+                className={`px-2 py-1 rounded text-xs transition-colors h-auto ${
                   sortBy === key
                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
                     : 'hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -86,7 +87,7 @@ export function MerchantTable({
                     {sortOrder === 'asc' ? '↑' : '↓'}
                   </span>
                 )}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

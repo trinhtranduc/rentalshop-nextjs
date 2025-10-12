@@ -7,6 +7,7 @@ export { CustomerPageHeader } from './CustomerPageHeader';
 
 // Customer forms
 export { AddCustomerForm } from './AddCustomerForm';
+export { AddCustomerDialog } from './AddCustomerDialog';
 export { EditCustomerForm, type EditCustomerFormRef } from './EditCustomerForm';
 export { CustomerForm } from './CustomerForm';
 

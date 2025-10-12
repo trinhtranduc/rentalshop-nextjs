@@ -150,7 +150,8 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
               
               return (
                 <div key={item.href} className="relative">
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -180,7 +181,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                     {isHovered && !active && (
                       <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
                     )}
-                  </button>
+                  </Button>
                   
                   {/* Submenu Dropdown */}
                   {hasSubmenu && isSubmenuOpen && (
@@ -194,7 +195,8 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                           const isSubActive = currentPage === subItem.href;
                           
                           return (
-                            <button
+                            <Button
+                              variant="ghost"
                               key={subItem.href}
                               onClick={(e) => {
                                 e.preventDefault();
@@ -206,13 +208,13 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                                   setOpenSubmenu(null);
                                 }, 100);
                               }}
-                              className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors ${
+                              className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors justify-start h-auto rounded-none ${
                                 isSubActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
                               }`}
                             >
                               <SubIcon className="w-4 h-4" />
                               {subItem.label}
-                            </button>
+                            </Button>
                           );
                         })}
                       </div>
@@ -225,7 +227,8 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
 
           {/* Right side - Settings only */}
           <div className="flex items-center space-x-4">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => handleTabClick('/settings')}
               onMouseEnter={() => prefetchRoute('/settings')}
               className={`nav-item text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-50 transition-all duration-150 ${
@@ -234,7 +237,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
             >
               <Settings className="w-4 h-4" />
               Settings
-            </button>
+            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -258,10 +261,11 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
               const Icon = item.icon;
               const active = isActive(item.href);
               return (
-                <button
+                <Button
+                  variant="ghost"
                   key={item.href}
                   onClick={() => handleTabClick(item.href)}
-                  className={`nav-item block w-full text-left px-3 py-2 text-base font-medium flex items-center gap-3 transition-all duration-150 ${
+                  className={`nav-item block w-full text-left px-3 py-2 text-base font-medium flex items-center gap-3 transition-all duration-150 justify-start h-auto ${
                     active 
                       ? 'text-blue-600 bg-blue-50 shadow-sm' 
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
@@ -269,18 +273,19 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                 >
                   <Icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
                   {item.label}
-                </button>
+                </Button>
               );
             })}
-            <button
+            <Button
+              variant="ghost"
               onClick={() => handleTabClick('/settings')}
-              className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-150 ${
+              className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-150 justify-start h-auto ${
                 currentPage === '/settings' ? 'text-blue-600 bg-blue-50 shadow-sm' : ''
               } ${clickedTab === '/settings' ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
             >
               <Settings className="w-5 h-5" />
               Settings
-            </button>
+            </Button>
           </div>
         </div>
       </div>

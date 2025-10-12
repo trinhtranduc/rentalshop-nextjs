@@ -227,7 +227,8 @@ export const SubscriptionPreviewPage: React.FC<SubscriptionPreviewPageProps> = (
               const discount = getDiscountForDuration(duration);
               const isSelected = selectedDuration === duration;
               return (
-                <button
+                <Button
+                  variant={isSelected ? "default" : "ghost"}
                   key={duration}
                   onClick={() => setSelectedDuration(duration)}
                   className={cn(
@@ -262,7 +263,7 @@ export const SubscriptionPreviewPage: React.FC<SubscriptionPreviewPageProps> = (
                       </div>
                     </div>
                   )}
-                </button>
+                </Button>
               );
             })}
           </div>

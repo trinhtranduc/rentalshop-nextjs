@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from '@rentalshop/ui';
+import { Input, Button } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
 import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
@@ -191,12 +191,13 @@ export const OrderFilters = React.memo(function OrderFilters({
                   Outlet
                 </label>
                 {filters.outletId && (
-                  <button
+                  <Button
+                    variant="link"
                     onClick={() => handleFilterChange('outletId', undefined)}
-                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline"
+                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline p-0 h-auto"
                   >
                     × Clear
-                  </button>
+                  </Button>
                 )}
               </div>
               <Select 

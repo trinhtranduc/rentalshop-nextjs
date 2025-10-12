@@ -33,8 +33,10 @@ export function ProductActions({
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
 
   const handleAddProduct = () => {
+    console.log('🔵 ProductActions: handleAddProduct called');
     setEditingProduct(null);
     setIsAddDialogOpen(true);
+    console.log('🔵 ProductActions: Dialog state set to true');
   };
 
   const handleEditProduct = (product: ProductWithDetails) => {
