@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useTransition, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useTransition, useRef, useState, useEffect } from 'react';
 import { 
   PageWrapper,
   PageHeader,
@@ -20,7 +20,7 @@ import { categoriesApi } from '@rentalshop/utils';
 import type { CategoryFilters, Category } from '@rentalshop/types';
 
 /**
- * ✅ MODERN NEXT.JS 13+ CATEGORIES PAGE - URL STATE PATTERN
+ * ✅ MODERN NEXT.JS 13+ CATEGORIES PAGE - URL STATE PATTERN WITH DEBOUNCED SEARCH
  */
 export default function CategoriesPage() {
   const router = useRouter();
@@ -29,6 +29,12 @@ export default function CategoriesPage() {
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const [isPending, startTransition] = useTransition();
+  
+  // Local search state for smooth typing (throttled to prevent lag)
+  const [localSearch, setLocalSearch] = useState('');
+  const throttleRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSearchRef = useRef<string>('');
+  const isThrottlingRef = useRef(false);
   
   // Dialog states
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -41,6 +47,11 @@ export default function CategoriesPage() {
   // ============================================================================
   
   const search = searchParams.get('q') || '';
+  
+  // Sync URL search to local state on mount/URL change
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
   const status = searchParams.get('status') || '';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
@@ -56,7 +67,7 @@ export default function CategoriesPage() {
   const filtersRef = useRef<CategoryFilters | null>(null);
   const filters: CategoryFilters = useMemo(() => {
     const newFilters: CategoryFilters = {
-      q: search || undefined,
+      q: search || undefined, // Use URL search for API call (throttled updates)
       merchantId: merchantId ? Number(merchantId) : undefined,
       isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
       page,
@@ -75,11 +86,20 @@ export default function CategoriesPage() {
     filtersRef.current = newFilters;
     return newFilters;
   }, [search, merchantId, status, page, limit, sortBy, sortOrder]);
+  
+  // Cleanup throttle timer on unmount
+  useEffect(() => {
+    return () => {
+      if (throttleRef.current) {
+        clearTimeout(throttleRef.current);
+      }
+    };
+  }, []);
 
   const { data, loading, error } = useCategoriesData({ 
     filters,
-    debounceSearch: true,
-    debounceMs: 500
+    debounceSearch: false, // Already throttled at input level
+    debounceMs: 0
   });
 
   // ============================================================================
@@ -108,7 +128,29 @@ export default function CategoriesPage() {
   // ============================================================================
   
   const handleSearchChange = useCallback((searchValue: string) => {
-    updateURL({ q: searchValue, page: 1 });
+    // Update local state immediately for smooth typing
+    setLocalSearch(searchValue);
+    
+    // Throttle URL updates to prevent lag
+    if (!isThrottlingRef.current) {
+      // First call - execute immediately
+      isThrottlingRef.current = true;
+      lastSearchRef.current = searchValue;
+      updateURL({ q: searchValue, page: 1 });
+      
+      // Set throttle timer
+      throttleRef.current = setTimeout(() => {
+        isThrottlingRef.current = false;
+        
+        // If search changed during throttle period, update again
+        if (lastSearchRef.current !== searchValue) {
+          updateURL({ q: searchValue, page: 1 });
+        }
+      }, 300); // 300ms throttle - executes max once per 300ms
+    } else {
+      // During throttle period - just save for later
+      lastSearchRef.current = searchValue;
+    }
   }, [updateURL]);
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -233,7 +275,7 @@ export default function CategoriesPage() {
       <div className="flex-1 min-h-0">
         <Categories
           data={categoryData}
-          filters={filters}
+          filters={{ ...filters, q: localSearch }} // Use localSearch for input display
           onSearchChange={handleSearchChange}
           onCategoryAction={handleCategoryAction}
           onPageChange={handlePageChange}

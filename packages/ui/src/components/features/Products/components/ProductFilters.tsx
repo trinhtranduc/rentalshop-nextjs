@@ -3,7 +3,6 @@ import { Input } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType } from '@rentalshop/types';
-import { useThrottledSearch } from '@rentalshop/hooks';
 import { outletsApi, categoriesApi } from '@rentalshop/utils';
 
 interface ProductFiltersProps {
@@ -65,7 +64,11 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
         setCategoryError(null);
         const result = await categoriesApi.getCategories();
         if (result.success && result.data) {
-          setCategories(result.data);
+          // Handle both old (array) and new (object with categories) response structures
+          const categoriesData = Array.isArray(result.data) 
+            ? result.data 
+            : (result.data as any).categories || [];
+          setCategories(categoriesData);
         } else {
           setCategoryError('Failed to load categories');
           setCategories([]);

@@ -15644,7 +15644,8 @@ function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilte
         setCategoryError(null);
         const result = await categoriesApi.getCategories();
         if (result.success && result.data) {
-          setCategories(result.data);
+          const categoriesData = Array.isArray(result.data) ? result.data : result.data.categories || [];
+          setCategories(categoriesData);
         } else {
           setCategoryError("Failed to load categories");
           setCategories([]);
@@ -40592,16 +40593,16 @@ var ClientSidebar = ({
           onMouseEnter: () => handleTabHover(item.href),
           onMouseLeave: () => setHoveredTab(null),
           className: cn8(
-            "nav-item flex items-center justify-between w-full px-3 py-2 text-base font-medium rounded-md transition-all duration-150 ease-out relative",
-            active ? "text-blue-600 bg-blue-50 shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
-            isHovered ? "scale-105" : "",
-            clickedTab === item.href ? "scale-95 bg-blue-100 shadow-md" : ""
+            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
+            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
+            isHovered ? "scale-[1.02]" : "",
+            clickedTab === item.href ? "scale-[0.98]" : ""
           ),
           children: [
             /* @__PURE__ */ jsxs232("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx255(Icon2, { className: cn8(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-gray-500"
+                active ? "text-blue-600" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ jsx255("span", { children: item.label })
             ] }),
@@ -40609,7 +40610,7 @@ var ClientSidebar = ({
               "w-4 h-4 transition-transform duration-200",
               isExpanded ? "rotate-180" : ""
             ) }),
-            isHovered && !active && /* @__PURE__ */ jsx255("div", { className: "absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200" })
+            isHovered && !active && /* @__PURE__ */ jsx255("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
           ]
         }
       ) : /* @__PURE__ */ jsxs232(
@@ -40623,21 +40624,21 @@ var ClientSidebar = ({
           onMouseEnter: () => handleTabHover(item.href),
           onMouseLeave: () => setHoveredTab(null),
           className: cn8(
-            "nav-item flex items-center justify-between w-full px-3 py-2 text-base font-medium rounded-md transition-all duration-150 ease-out relative",
-            active ? "text-blue-600 bg-blue-50 shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
-            isHovered ? "scale-105" : "",
-            clickedTab === item.href ? "scale-95 bg-blue-100 shadow-md" : ""
+            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
+            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
+            isHovered ? "scale-[1.02]" : "",
+            clickedTab === item.href ? "scale-[0.98]" : ""
           ),
           children: [
             /* @__PURE__ */ jsxs232("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx255(Icon2, { className: cn8(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-gray-500"
+                active ? "text-blue-600" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ jsx255("span", { children: item.label })
             ] }),
             !isCollapsed && item.badge && /* @__PURE__ */ jsx255("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge }),
-            isHovered && !active && /* @__PURE__ */ jsx255("div", { className: "absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200" })
+            isHovered && !active && /* @__PURE__ */ jsx255("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
           ]
         }
       ),
@@ -40656,8 +40657,8 @@ var ClientSidebar = ({
               }, 100);
             },
             className: cn8(
-              "w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors rounded-md",
-              subActive ? "text-blue-600 bg-blue-50" : "text-gray-700"
+              "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg",
+              subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600"
             ),
             children: [
               /* @__PURE__ */ jsx255(SubIcon, { className: "w-4 h-4" }),
@@ -40670,49 +40671,49 @@ var ClientSidebar = ({
     ] }, item.href);
   };
   return /* @__PURE__ */ jsxs232("div", { className: cn8(
-    "flex flex-col h-full bg-white border-r border-gray-200 shadow-sm transition-all duration-300",
+    "flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300",
     isCollapsed ? "w-16" : "w-64"
   ), children: [
-    /* @__PURE__ */ jsxs232("div", { className: "flex items-center justify-between p-4 border-b border-gray-200", children: [
+    /* @__PURE__ */ jsxs232("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
       !isCollapsed && /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx255("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx255(Building219, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ jsx255("div", { children: /* @__PURE__ */ jsx255("h1", { className: "text-xl font-bold text-gray-900", children: "RentalShop" }) })
+        /* @__PURE__ */ jsx255("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx255(Building219, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ jsx255("div", { children: /* @__PURE__ */ jsx255("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }) })
       ] }),
-      isCollapsed && /* @__PURE__ */ jsx255("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ jsx255(Building219, { className: "w-5 h-5 text-white" }) }),
+      isCollapsed && /* @__PURE__ */ jsx255("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ jsx255(Building219, { className: "w-5 h-5 text-white" }) }),
       /* @__PURE__ */ jsx255(
         Button65,
         {
           variant: "ghost",
           size: "icon",
           onClick: onCollapseToggle,
-          className: "h-8 w-8 text-gray-500 hover:text-gray-900",
+          className: "h-8 w-8 text-text-tertiary hover:text-text-primary",
           children: isCollapsed ? /* @__PURE__ */ jsx255(ChevronRight8, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx255(ChevronLeft6, { className: "h-4 w-4" })
         }
       )
     ] }),
     /* @__PURE__ */ jsx255("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: menuItems2.map((item) => renderMenuItem(item)) }),
-    /* @__PURE__ */ jsxs232("div", { className: "p-4 border-t border-gray-200", children: [
+    /* @__PURE__ */ jsxs232("div", { className: "p-4 border-t border-border", children: [
       user && !isCollapsed && /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-3 mb-4", children: [
         /* @__PURE__ */ jsx255("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx255(User30, { className: "w-4 h-4 text-white" }) }),
         /* @__PURE__ */ jsxs232("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ jsx255("p", { className: "text-base font-medium text-gray-900 truncate", children: user.name || user.email }),
-          /* @__PURE__ */ jsx255("p", { className: "text-xs text-gray-500 truncate", children: user.role })
+          /* @__PURE__ */ jsx255("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
+          /* @__PURE__ */ jsx255("p", { className: "text-xs text-text-tertiary truncate", children: user.role })
         ] }),
         /* @__PURE__ */ jsx255("div", { className: "flex items-center space-x-2", children: cartItemsCount > 0 && /* @__PURE__ */ jsxs232("div", { className: "relative", children: [
-          /* @__PURE__ */ jsx255(ShoppingCart13, { className: "w-4 h-4 text-gray-500" }),
-          /* @__PURE__ */ jsx255("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
+          /* @__PURE__ */ jsx255(ShoppingCart13, { className: "w-4 h-4 text-text-tertiary" }),
+          /* @__PURE__ */ jsx255("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
         ] }) })
       ] }),
       user && isCollapsed && /* @__PURE__ */ jsxs232("div", { className: "flex flex-col items-center space-y-2", children: [
         /* @__PURE__ */ jsx255("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx255(User30, { className: "w-4 h-4 text-white" }) }),
         /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-1", children: [
           notificationsCount > 0 && /* @__PURE__ */ jsxs232("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx255(Bell7, { className: "w-4 h-4 text-gray-500" }),
-            /* @__PURE__ */ jsx255("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center", children: notificationsCount })
+            /* @__PURE__ */ jsx255(Bell7, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx255("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-danger rounded-full text-xs text-white flex items-center justify-center", children: notificationsCount })
           ] }),
           cartItemsCount > 0 && /* @__PURE__ */ jsxs232("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx255(ShoppingCart13, { className: "w-4 h-4 text-gray-500" }),
-            /* @__PURE__ */ jsx255("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
+            /* @__PURE__ */ jsx255(ShoppingCart13, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx255("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
           ] })
         ] })
       ] }),
@@ -40722,7 +40723,7 @@ var ClientSidebar = ({
           variant: "ghost",
           onClick: onLogout,
           className: cn8(
-            "w-full justify-start text-gray-500 hover:text-gray-900 hover:bg-gray-50",
+            "w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary text-sm font-normal",
             isCollapsed && "justify-center px-2"
           ),
           children: [

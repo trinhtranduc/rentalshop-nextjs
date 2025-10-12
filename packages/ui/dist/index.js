@@ -15837,7 +15837,8 @@ function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilte
         setCategoryError(null);
         const result = await import_utils18.categoriesApi.getCategories();
         if (result.success && result.data) {
-          setCategories(result.data);
+          const categoriesData = Array.isArray(result.data) ? result.data : result.data.categories || [];
+          setCategories(categoriesData);
         } else {
           setCategoryError("Failed to load categories");
           setCategories([]);
@@ -39974,16 +39975,16 @@ var ClientSidebar = ({
           onMouseEnter: () => handleTabHover(item.href),
           onMouseLeave: () => setHoveredTab(null),
           className: (0, import_ui149.cn)(
-            "nav-item flex items-center justify-between w-full px-3 py-2 text-base font-medium rounded-md transition-all duration-150 ease-out relative",
-            active ? "text-blue-600 bg-blue-50 shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
-            isHovered ? "scale-105" : "",
-            clickedTab === item.href ? "scale-95 bg-blue-100 shadow-md" : ""
+            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
+            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
+            isHovered ? "scale-[1.02]" : "",
+            clickedTab === item.href ? "scale-[0.98]" : ""
           ),
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(Icon2, { className: (0, import_ui149.cn)(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-gray-500"
+                active ? "text-blue-600" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { children: item.label })
             ] }),
@@ -39991,7 +39992,7 @@ var ClientSidebar = ({
               "w-4 h-4 transition-transform duration-200",
               isExpanded ? "rotate-180" : ""
             ) }),
-            isHovered && !active && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200" })
+            isHovered && !active && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
           ]
         }
       ) : /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
@@ -40005,21 +40006,21 @@ var ClientSidebar = ({
           onMouseEnter: () => handleTabHover(item.href),
           onMouseLeave: () => setHoveredTab(null),
           className: (0, import_ui149.cn)(
-            "nav-item flex items-center justify-between w-full px-3 py-2 text-base font-medium rounded-md transition-all duration-150 ease-out relative",
-            active ? "text-blue-600 bg-blue-50 shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
-            isHovered ? "scale-105" : "",
-            clickedTab === item.href ? "scale-95 bg-blue-100 shadow-md" : ""
+            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
+            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
+            isHovered ? "scale-[1.02]" : "",
+            clickedTab === item.href ? "scale-[0.98]" : ""
           ),
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(Icon2, { className: (0, import_ui149.cn)(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-gray-500"
+                active ? "text-blue-600" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { children: item.label })
             ] }),
             !isCollapsed && item.badge && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge }),
-            isHovered && !active && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200" })
+            isHovered && !active && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
           ]
         }
       ),
@@ -40038,8 +40039,8 @@ var ClientSidebar = ({
               }, 100);
             },
             className: (0, import_ui149.cn)(
-              "w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors rounded-md",
-              subActive ? "text-blue-600 bg-blue-50" : "text-gray-700"
+              "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg",
+              subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600"
             ),
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(SubIcon, { className: "w-4 h-4" }),
@@ -40052,49 +40053,49 @@ var ClientSidebar = ({
     ] }, item.href);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: (0, import_ui149.cn)(
-    "flex flex-col h-full bg-white border-r border-gray-200 shadow-sm transition-all duration-300",
+    "flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300",
     isCollapsed ? "w-16" : "w-64"
   ), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center justify-between p-4 border-b border-gray-200", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
       !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.Building2, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "RentalShop" }) })
+        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.Building2, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }) })
       ] }),
-      isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.Building2, { className: "w-5 h-5 text-white" }) }),
+      isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.Building2, { className: "w-5 h-5 text-white" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
         import_ui150.Button,
         {
           variant: "ghost",
           size: "icon",
           onClick: onCollapseToggle,
-          className: "h-8 w-8 text-gray-500 hover:text-gray-900",
+          className: "h-8 w-8 text-text-tertiary hover:text-text-primary",
           children: isCollapsed ? /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.ChevronRight, { className: "h-4 w-4" }) : /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.ChevronLeft, { className: "h-4 w-4" })
         }
       )
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: menuItems2.map((item) => renderMenuItem(item)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "p-4 border-t border-gray-200", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "p-4 border-t border-border", children: [
       user && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center space-x-3 mb-4", children: [
         /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.User, { className: "w-4 h-4 text-white" }) }),
         /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "text-base font-medium text-gray-900 truncate", children: user.name || user.email }),
-          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "text-xs text-gray-500 truncate", children: user.role })
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "text-xs text-text-tertiary truncate", children: user.role })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "flex items-center space-x-2", children: cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "relative", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.ShoppingCart, { className: "w-4 h-4 text-gray-500" }),
-          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.ShoppingCart, { className: "w-4 h-4 text-text-tertiary" }),
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
         ] }) })
       ] }),
       user && isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex flex-col items-center space-y-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.User, { className: "w-4 h-4 text-white" }) }),
         /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center space-x-1", children: [
           notificationsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "relative", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.Bell, { className: "w-4 h-4 text-gray-500" }),
-            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center", children: notificationsCount })
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.Bell, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-danger rounded-full text-xs text-white flex items-center justify-center", children: notificationsCount })
           ] }),
           cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "relative", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.ShoppingCart, { className: "w-4 h-4 text-gray-500" }),
-            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react134.ShoppingCart, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
           ] })
         ] })
       ] }),
@@ -40104,7 +40105,7 @@ var ClientSidebar = ({
           variant: "ghost",
           onClick: onLogout,
           className: (0, import_ui149.cn)(
-            "w-full justify-start text-gray-500 hover:text-gray-900 hover:bg-gray-50",
+            "w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary text-sm font-normal",
             isCollapsed && "justify-center px-2"
           ),
           children: [
