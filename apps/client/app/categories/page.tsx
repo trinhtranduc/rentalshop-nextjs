@@ -156,7 +156,7 @@ export default function CategoriesPage() {
                 `Category "${category.name}" has been ${action === 'activate' ? 'activated' : 'deactivated'}`
               );
               router.refresh();
-            } else {
+      } else {
               toastError(`Failed to ${action} category`, response.error || 'Unknown error occurred');
             }
           } catch (err) {
@@ -209,7 +209,7 @@ export default function CategoriesPage() {
   // ============================================================================
   // RENDER
   // ============================================================================
-  
+
   if (error) {
     return (
       <PageWrapper>
@@ -223,14 +223,14 @@ export default function CategoriesPage() {
   }
 
   return (
-    <PageWrapper>
-      <PageHeader>
+    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageHeader className="flex-shrink-0">
         <PageTitle subtitle="Manage your product categories">
           Categories
         </PageTitle>
       </PageHeader>
 
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0">
         <Categories
           data={categoryData}
           filters={filters}

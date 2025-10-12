@@ -1,71 +1,99 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { categoriesQuerySchema, handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/categories
- * Get all categories
+ * Get categories with filtering and pagination
+ * REFACTORED: Now uses validation schema and db.categories.search()
  */
 export const GET = withAuthRoles()(async (request: NextRequest, { user, userScope }) => {
+  console.log(`🔍 GET /api/categories - User: ${user.email} (${user.role})`);
+  
   try {
-
-    // Apply role-based filtering (consistent with other APIs)
-    const where: any = { isActive: true };
+    const { searchParams } = new URL(request.url);
+    console.log('Search params:', Object.fromEntries(searchParams.entries()));
     
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
-      where.merchantId = userScope.merchantId;
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      // Find outlet by id to get merchant
-      const outlet = await db.outlets.findById(userScope.outletId);
-      if (outlet) {
-        where.merchantId = outlet.merchantId;
-      }
-    } else if (user.role === 'ADMIN') {
-      // ADMIN users see all data (system-wide access)
-      // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-    } else {
-      // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-      return NextResponse.json({
-        success: true,
-        data: [],
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+    // Validate query parameters
+    const parsed = categoriesQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+    if (!parsed.success) {
+      console.log('Validation error:', parsed.error.flatten());
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid query', 
+        error: parsed.error.flatten() 
+      }, { status: 400 });
     }
 
-    const categories = await db.categories.findMany({
-      where,
-      orderBy: { name: 'asc' }
+    const { 
+      q, 
+      search, 
+      merchantId: queryMerchantId,
+      isActive,
+      sortBy,
+      sortOrder,
+      page,
+      limit
+    } = parsed.data;
+
+    console.log('Parsed filters:', { 
+      q, search, queryMerchantId, isActive, sortBy, sortOrder, page, limit
     });
 
-    // Transform response: internal id → public id as "id"
-    const transformedCategories = categories.map((category: any) => ({
-      id: category.id,                    // Return id as "id" to frontend
-      name: category.name,
-      description: category.description,
-      isActive: category.isActive,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt
-      // DO NOT include category.id (internal CUID)
-    }));
+    // Determine merchantId based on role
+    let filterMerchantId: number | undefined;
+    
+    if (user.role === 'ADMIN') {
+      // Admin can see any merchant's categories or all categories
+      filterMerchantId = queryMerchantId || undefined;
+    } else if (user.role === 'MERCHANT' || user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      // Non-admin users restricted to their merchant
+      filterMerchantId = userScope.merchantId;
+      
+      // For outlet users, get merchant from outlet
+      if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId && !filterMerchantId) {
+        const outlet = await db.outlets.findById(userScope.outletId);
+        if (outlet) {
+          filterMerchantId = outlet.merchantId;
+        }
+      }
+    }
+
+    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);
+
+    // Build search filters with role-based access control
+    const searchFilters = {
+      merchantId: filterMerchantId,
+      isActive: isActive === 'all' ? undefined : (isActive !== undefined ? Boolean(isActive) : true),
+      q: q || search, // Pass q parameter to database search
+      sortBy: sortBy || 'name',
+      sortOrder: sortOrder || 'asc',
+      page: page || 1,
+      limit: limit || 25
+    };
+
+    console.log('🔍 Using db.categories.search with filters:', searchFilters);
+    
+    const result = await db.categories.search(searchFilters);
+    console.log('✅ Search completed, found:', result.total || 0, 'categories');
 
     return NextResponse.json({
       success: true,
-      data: transformedCategories
+      data: {
+        categories: result.data || [],
+        total: result.total || 0,
+        page: result.page || 1,
+        limit: result.limit || 25,
+        hasMore: result.hasMore || false,
+        totalPages: Math.ceil((result.total || 0) / (result.limit || 25))
+      },
+      message: `Found ${result.total || 0} categories`
     });
+
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('Error in GET /api/categories:', error);
     
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);

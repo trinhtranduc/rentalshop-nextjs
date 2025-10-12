@@ -1891,7 +1891,7 @@ async function search(filters) {
   const {
     page = 1,
     limit = 20,
-    search: search2,
+    search: search3,
     businessType,
     subscriptionStatus,
     planId,
@@ -1899,11 +1899,11 @@ async function search(filters) {
   } = filters;
   const skip = (page - 1) * limit;
   const where = {};
-  if (search2) {
+  if (search3) {
     where.OR = [
-      { name: { contains: search2, mode: "insensitive" } },
-      { email: { contains: search2, mode: "insensitive" } },
-      { businessType: { contains: search2, mode: "insensitive" } }
+      { name: { contains: search3, mode: "insensitive" } },
+      { email: { contains: search3, mode: "insensitive" } },
+      { businessType: { contains: search3, mode: "insensitive" } }
     ];
   }
   if (businessType) {
@@ -2489,6 +2489,61 @@ var deleteCategory = async (id) => {
     }
   });
 };
+var search2 = async (filters) => {
+  const { page = 1, limit = 20, sortBy = "name", sortOrder = "asc", ...whereFilters } = filters;
+  const skip = (page - 1) * limit;
+  console.log("\u{1F50D} DB category.search - Received filters:", filters);
+  const where = {};
+  if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+  if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+  const searchTerm = (whereFilters.q || whereFilters.search)?.trim();
+  console.log("\u{1F50D} DB category.search - searchTerm:", searchTerm, "length:", searchTerm?.length);
+  if (searchTerm && searchTerm.length > 0) {
+    where.name = {
+      contains: searchTerm,
+      mode: "insensitive"
+    };
+    console.log("\u2705 DB category.search - Added name filter:", where.name);
+  } else {
+    console.log("\u26A0\uFE0F DB category.search - No search term, will return all categories");
+  }
+  console.log("\u{1F50D} DB category.search - Final where clause:", JSON.stringify(where, null, 2));
+  const orderBy = {};
+  if (sortBy === "name" || sortBy === "createdAt" || sortBy === "updatedAt") {
+    orderBy[sortBy] = sortOrder;
+  } else {
+    orderBy.name = "asc";
+  }
+  const [categories, total] = await Promise.all([
+    prisma.category.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            products: true
+          }
+        }
+      },
+      orderBy,
+      skip,
+      take: limit
+    }),
+    prisma.category.count({ where })
+  ]);
+  return {
+    data: categories,
+    total,
+    page,
+    limit,
+    hasMore: skip + limit < total
+  };
+};
 var getStats2 = async (where = {}) => {
   return await prisma.category.count({ where });
 };
@@ -2499,6 +2554,7 @@ var simplifiedCategories = {
   create: create2,
   update: update2,
   delete: deleteCategory,
+  search: search2,
   getStats: getStats2
 };
 

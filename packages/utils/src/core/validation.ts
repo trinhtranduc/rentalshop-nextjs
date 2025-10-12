@@ -316,6 +316,27 @@ export const outletsQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).optional(),
 });
 
+// ============================================================================
+// Categories validation schemas
+// ============================================================================
+
+export const categoriesQuerySchema = z.object({
+  q: z.string().optional(), // Search by category name
+  search: z.string().optional(), // Alias for backward compatibility
+  merchantId: z.coerce.number().int().positive().optional(),
+  isActive: z.union([z.string(), z.boolean()]).transform((v) => {
+    if (typeof v === 'boolean') return v;
+    if (v === undefined) return undefined;
+    if (v === 'all') return 'all';
+    return v === 'true';
+  }).optional(),
+  sortBy: z.enum(['name', 'createdAt', 'updatedAt']).default('name').optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('asc').optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+
 export const outletCreateSchema = z.object({
   name: z.string().min(1, 'Outlet name is required'),
   address: z.string().optional(),
