@@ -1,7 +1,13 @@
 'use client'
 
 import React, { useState } from 'react';
-import { CategoryForm } from './CategoryForm';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle
+} from '../../../ui';
+import { CategoryFormContent } from './CategoryFormContent';
 import type { Category } from '@rentalshop/types';
 
 interface AddCategoryDialogProps {
@@ -47,15 +53,21 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     onOpenChange(false);
   };
 
-  // CategoryForm already has Dialog wrapper, so just render it when open
-  if (!open) return null;
-
   return (
-    <CategoryForm
-      category={null}
-      onSave={handleSave}
-      onCancel={handleCancel}
-      mode="create"
-    />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Add New Category</DialogTitle>
+        </DialogHeader>
+        
+        <CategoryFormContent
+          category={null}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          mode="create"
+          isSubmitting={isSubmitting}
+        />
+      </DialogContent>
+    </Dialog>
   );
 };

@@ -6,8 +6,10 @@ import {
   PageHeader,
   PageTitle,
   Customers,
+  CustomersLoading,
   useToast,
   CustomerDetailDialog,
+  AddCustomerDialog,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -46,6 +48,7 @@ export default function CustomersPage() {
   // Dialog states
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
@@ -278,13 +281,13 @@ export default function CustomersPage() {
 
   if (loading && !data) {
     return (
-      <PageWrapper>
-        <PageHeader>
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
           <PageTitle>Customers</PageTitle>
           <p className="text-sm text-gray-600">Manage customers in the system</p>
         </PageHeader>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading customers...</div>
+        <div className="flex-1 min-h-0 overflow-auto">
+          <CustomersLoading />
         </div>
       </PageWrapper>
     );
@@ -312,7 +315,7 @@ export default function CustomersPage() {
               </Button>
             )}
             <Button 
-              onClick={() => router.push('/customers/create')}
+              onClick={() => setShowAddDialog(true)}
               variant="success"
               size="sm"
             >
@@ -344,6 +347,35 @@ export default function CustomersPage() {
           onOpenChange={setShowDetailDialog}
         />
       )}
+
+      {/* Add Customer Dialog */}
+      <AddCustomerDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onCustomerCreated={async (customerData) => {
+          try {
+            const response = await customersApi.createCustomer({
+              ...customerData,
+              phone: customerData.phone || '', // Ensure phone is not undefined
+              merchantId: user?.merchant?.id || user?.merchantId || 0
+            });
+            
+            if (response.success) {
+              toastSuccess('Customer Created', `Customer "${customerData.firstName} ${customerData.lastName}" has been created successfully`);
+              router.refresh();
+            } else {
+              throw new Error(response.error || 'Failed to create customer');
+            }
+          } catch (error) {
+            console.error('Error creating customer:', error);
+            toastError('Error', error instanceof Error ? error.message : 'Failed to create customer');
+            throw error; // Re-throw to let dialog handle it
+          }
+        }}
+        onError={(error) => {
+          toastError('Error', error);
+        }}
+      />
 
       {/* Edit Customer Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

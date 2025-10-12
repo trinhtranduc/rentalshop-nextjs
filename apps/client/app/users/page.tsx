@@ -6,8 +6,10 @@ import {
   PageHeader,
   PageTitle,
   Users,
+  UsersLoading,
   useToast,
   UserDetailDialog,
+  AddUserDialog,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -46,6 +48,7 @@ export default function UsersPage() {
   // Dialog states
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -310,13 +313,13 @@ export default function UsersPage() {
 
   if (loading && !data) {
     return (
-      <PageWrapper>
-        <PageHeader>
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
           <PageTitle>Users</PageTitle>
           <p className="text-sm text-gray-600">Manage users in the system</p>
         </PageHeader>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading users...</div>
+        <div className="flex-1 min-h-0 overflow-auto">
+          <UsersLoading />
         </div>
       </PageWrapper>
     );
@@ -344,7 +347,7 @@ export default function UsersPage() {
               </Button>
             )}
             <Button 
-              onClick={() => router.push('/users/create')}
+              onClick={() => setShowAddDialog(true)}
               variant="success"
               size="sm"
             >
@@ -376,6 +379,32 @@ export default function UsersPage() {
           onOpenChange={setShowDetailDialog}
         />
       )}
+
+      {/* Add User Dialog */}
+      <AddUserDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        currentUser={user}
+        onUserCreated={async (userData) => {
+          try {
+            const response = await usersApi.createUser(userData);
+            
+            if (response.success) {
+              toastSuccess('User Created', `User "${userData.firstName} ${userData.lastName}" has been created successfully`);
+              router.refresh();
+            } else {
+              throw new Error(response.error || 'Failed to create user');
+            }
+          } catch (error) {
+            console.error('Error creating user:', error);
+            toastError('Error', error instanceof Error ? error.message : 'Failed to create user');
+            throw error; // Re-throw to let dialog handle it
+          }
+        }}
+        onError={(error) => {
+          toastError('Error', error);
+        }}
+      />
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

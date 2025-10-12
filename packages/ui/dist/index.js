@@ -700,6 +700,7 @@ __export(src_exports, {
   AddCategoryDialog: () => AddCategoryDialog,
   AddCustomerDialog: () => AddCustomerDialog,
   AddCustomerForm: () => AddCustomerForm,
+  AddUserDialog: () => AddUserDialog,
   AdminPageHeader: () => AdminPageHeader,
   AdminSidebar: () => AdminSidebar,
   AdminStatusBadge: () => AdminStatusBadge,
@@ -748,10 +749,13 @@ __export(src_exports, {
   CardTitleClean: () => CardTitleClean,
   CardTitleColorful: () => CardTitleColorful,
   Categories: () => Categories,
+  CategoriesLoading: () => CategoriesLoading,
   CategoryActions: () => CategoryActions,
   CategoryCard: () => CategoryCard,
+  CategoryDetailLoading: () => CategoryDetailLoading,
   CategoryFilters: () => CategoryFilters,
   CategoryForm: () => CategoryForm,
+  CategoryFormContent: () => CategoryFormContent,
   CategoryGrid: () => CategoryGrid,
   CategoryHeader: () => CategoryHeader,
   CategorySearch: () => CategorySearch,
@@ -865,6 +869,7 @@ __export(src_exports, {
   Orders: () => Orders_default,
   OrdersList: () => OrdersList,
   OrdersLoading: () => OrdersLoading,
+  OutletDetailLoading: () => OutletDetailLoading,
   OutletFilters: () => OutletFilters,
   OutletGrid: () => OutletGrid,
   OutletHeader: () => OutletHeader,
@@ -874,6 +879,7 @@ __export(src_exports, {
   OutletSelect: () => OutletSelect,
   OutletTable: () => OutletTable,
   Outlets: () => Outlets,
+  OutletsLoading: () => OutletsLoading,
   PageContent: () => PageContent4,
   PageHeader: () => PageHeader,
   PageSection: () => PageSection,
@@ -26414,8 +26420,8 @@ function OrdersList({
 }
 
 // src/components/features/Users/Users.tsx
-var import_react77 = __toESM(require("react"));
-var import_ui105 = require("@rentalshop/ui");
+var import_react78 = __toESM(require("react"));
+var import_ui106 = require("@rentalshop/ui");
 
 // src/components/features/Users/components/UserHeader.tsx
 var import_lucide_react69 = require("lucide-react");
@@ -27535,6 +27541,9 @@ function UserActions({
   ] });
 }
 
+// src/components/features/Users/components/AddUserDialog.tsx
+var import_react77 = require("react");
+
 // src/components/features/Users/components/UserForm.tsx
 var import_react76 = require("react");
 var import_lucide_react74 = require("lucide-react");
@@ -28366,10 +28375,57 @@ var UserForm = ({
   ] });
 };
 
-// src/components/features/Users/components/UserRow.tsx
-var import_ui103 = require("@rentalshop/ui");
-var import_lucide_react75 = require("lucide-react");
+// src/components/features/Users/components/AddUserDialog.tsx
 var import_jsx_runtime155 = require("react/jsx-runtime");
+var AddUserDialog = ({
+  open,
+  onOpenChange,
+  onUserCreated,
+  onError,
+  currentUser
+}) => {
+  const [isSubmitting, setIsSubmitting] = (0, import_react77.useState)(false);
+  const handleSave = async (userData) => {
+    try {
+      setIsSubmitting(true);
+      if (onUserCreated) {
+        await onUserCreated(userData);
+      }
+      onOpenChange(false);
+    } catch (error2) {
+      console.error("\u274C AddUserDialog: Error occurred:", error2);
+      if (onError) {
+        onError(error2 instanceof Error ? error2.message : "Failed to create user");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  const handleCancel = () => {
+    if (isSubmitting)
+      return;
+    onOpenChange(false);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)(DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto p-0", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(DialogHeader, { className: "px-6 py-4 border-b border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(DialogTitle, { className: "text-xl font-semibold text-gray-900", children: "Add New User" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("div", { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(
+      UserForm,
+      {
+        mode: "create",
+        user: void 0,
+        onSave: handleSave,
+        onCancel: handleCancel,
+        isSubmitting,
+        currentUser
+      }
+    ) })
+  ] }) });
+};
+
+// src/components/features/Users/components/UserRow.tsx
+var import_ui104 = require("@rentalshop/ui");
+var import_lucide_react75 = require("lucide-react");
+var import_jsx_runtime156 = require("react/jsx-runtime");
 function UserRow({
   user,
   onUserAction,
@@ -28429,34 +28485,34 @@ function UserRow({
   const renderActionButton = (action) => {
     switch (action) {
       case "view":
-        return /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)(
-          import_ui103.Button,
+        return /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)(
+          import_ui104.Button,
           {
             variant: "outline",
             size: "sm",
             onClick: () => handleUserAction("view", user.id),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(import_lucide_react75.Eye, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_lucide_react75.Eye, { className: "w-4 h-4 mr-2" }),
               "View"
             ]
           }
         );
       case "edit":
-        return /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)(
-          import_ui103.Button,
+        return /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)(
+          import_ui104.Button,
           {
             variant: "outline",
             size: "sm",
             onClick: () => handleUserAction("edit", user.id),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(import_lucide_react75.Edit, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_lucide_react75.Edit, { className: "w-4 h-4 mr-2" }),
               "Edit"
             ]
           }
         );
       case "activate":
-        return /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(
-          import_ui103.Button,
+        return /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(
+          import_ui104.Button,
           {
             variant: "outline",
             size: "sm",
@@ -28465,8 +28521,8 @@ function UserRow({
           }
         );
       case "deactivate":
-        return /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(
-          import_ui103.Button,
+        return /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(
+          import_ui104.Button,
           {
             variant: "outline",
             size: "sm",
@@ -28478,63 +28534,63 @@ function UserRow({
         return null;
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(import_ui103.Card, { className: "hover:shadow-md transition-shadow duration-200", children: /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(import_ui103.CardContent, { className, children: /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex items-center justify-between", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("div", { className: "flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("div", { className: "flex items-center gap-4", children: /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex-1", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex items-center gap-3 mb-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("h3", { className: "text-lg font-semibold text-text-primary", children: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.name || "Unknown User" }),
-        /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("div", { className: `inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeStyle(user.role)}`, children: getRoleDisplayName(user.role) }),
-        /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("div", { className: `inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(user.isActive)}`, children: getStatusDisplayName(user.isActive) })
+  return /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_ui104.Card, { className: "hover:shadow-md transition-shadow duration-200", children: /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_ui104.CardContent, { className, children: /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex items-center justify-between", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("div", { className: "flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("div", { className: "flex items-center gap-4", children: /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex-1", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex items-center gap-3 mb-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("h3", { className: "text-lg font-semibold text-text-primary", children: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.name || "Unknown User" }),
+        /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("div", { className: `inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeStyle(user.role)}`, children: getRoleDisplayName(user.role) }),
+        /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("div", { className: `inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(user.isActive)}`, children: getStatusDisplayName(user.isActive) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex items-center gap-6 text-sm text-text-secondary", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(import_lucide_react75.Mail, { className: "w-4 h-4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("span", { children: user.email })
+      /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex items-center gap-6 text-sm text-text-secondary", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_lucide_react75.Mail, { className: "w-4 h-4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("span", { children: user.email })
         ] }),
-        user.phone && /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(import_lucide_react75.Phone, { className: "w-4 h-4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("span", { children: user.phone })
+        user.phone && /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_lucide_react75.Phone, { className: "w-4 h-4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("span", { children: user.phone })
         ] }),
-        user.outlet && /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(import_lucide_react75.Store, { className: "w-4 h-4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("span", { children: user.outlet.name }),
-          user.outlet.merchant && /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("span", { className: "text-text-tertiary", children: [
+        user.outlet && /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_lucide_react75.Store, { className: "w-4 h-4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("span", { children: user.outlet.name }),
+          user.outlet.merchant && /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("span", { className: "text-text-tertiary", children: [
             "\u2022 ",
             user.outlet.merchant.name
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime155.jsx)(import_lucide_react75.Calendar, { className: "w-4 h-4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_lucide_react75.Calendar, { className: "w-4 h-4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("span", { children: [
             "Joined ",
             formatDate11(typeof user.createdAt === "string" ? user.createdAt : user.createdAt.toISOString())
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("div", { className: "flex items-center gap-6 text-sm text-text-tertiary mt-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex items-center gap-6 text-sm text-text-tertiary mt-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("span", { children: [
           "Last login: ",
           user.lastLoginAt ? formatDate11(typeof user.lastLoginAt === "string" ? user.lastLoginAt : user.lastLoginAt.toISOString()) : "Never"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime155.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("span", { children: [
           "Email verified: ",
           user.emailVerified ? "Yes" : "No"
         ] })
       ] })
     ] }) }) }),
-    showActions && /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("div", { className: "flex items-center gap-2", children: actions.map((action) => {
+    showActions && /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("div", { className: "flex items-center gap-2", children: actions.map((action) => {
       if (action === "activate" && user.isActive)
         return null;
       if (action === "deactivate" && !user.isActive)
         return null;
-      return /* @__PURE__ */ (0, import_jsx_runtime155.jsx)("div", { children: renderActionButton(action) }, action);
+      return /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("div", { children: renderActionButton(action) }, action);
     }) })
   ] }) }) });
 }
 
 // src/components/features/Users/components/UserPageHeader.tsx
-var import_ui104 = require("@rentalshop/ui");
+var import_ui105 = require("@rentalshop/ui");
 var import_lucide_react76 = require("lucide-react");
-var import_jsx_runtime156 = require("react/jsx-runtime");
+var import_jsx_runtime157 = require("react/jsx-runtime");
 function UserPageHeader({
   title = "Users",
   subtitle = "Manage users in the system",
@@ -28546,25 +28602,25 @@ function UserPageHeader({
   exportButtonText = "Export",
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime156.jsx)("div", { className: `flex justify-between items-start ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)("div", { className: "flex gap-3", children: [
-    showExportButton && /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)(
-      import_ui104.Button,
+  return /* @__PURE__ */ (0, import_jsx_runtime157.jsx)("div", { className: `flex justify-between items-start ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)("div", { className: "flex gap-3", children: [
+    showExportButton && /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)(
+      import_ui105.Button,
       {
         onClick: onExport,
         className: "h-9 px-4 text-sm",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_lucide_react76.Download, { className: "w-4 h-4 mr-2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime157.jsx)(import_lucide_react76.Download, { className: "w-4 h-4 mr-2" }),
           exportButtonText
         ]
       }
     ),
-    showAddButton && /* @__PURE__ */ (0, import_jsx_runtime156.jsxs)(
-      import_ui104.Button,
+    showAddButton && /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)(
+      import_ui105.Button,
       {
         onClick: onAdd,
         className: "bg-green-600 hover:bg-green-700 text-white h-9 px-4",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime156.jsx)(import_lucide_react76.Plus, { className: "w-4 h-4 mr-2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime157.jsx)(import_lucide_react76.Plus, { className: "w-4 h-4 mr-2" }),
           addButtonText
         ]
       }
@@ -28574,7 +28630,7 @@ function UserPageHeader({
 
 // src/components/features/Users/components/AccountManagementCard.tsx
 var import_lucide_react77 = require("lucide-react");
-var import_jsx_runtime157 = require("react/jsx-runtime");
+var import_jsx_runtime158 = require("react/jsx-runtime");
 var AccountManagementCard = ({
   user,
   isUpdating,
@@ -28582,15 +28638,15 @@ var AccountManagementCard = ({
   onDeactivate,
   onDelete
 }) => {
-  return /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)("div", { className: "bg-white shadow rounded-lg", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime157.jsx)("div", { className: "px-6 py-4 border-b border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime157.jsx)("h2", { className: "text-lg font-medium text-gray-900", children: "Account Management" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)("div", { className: "px-6 py-4 space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime157.jsx)("h3", { className: "text-sm font-medium text-gray-900", children: "Account Status" }),
-          /* @__PURE__ */ (0, import_jsx_runtime157.jsx)("p", { className: "text-sm text-gray-600", children: user.isActive ? "User can currently log in and access the system" : "User is currently disabled and cannot access the system" })
+  return /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { className: "bg-white shadow rounded-lg", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("div", { className: "px-6 py-4 border-b border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("h2", { className: "text-lg font-medium text-gray-900", children: "Account Management" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { className: "px-6 py-4 space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("h3", { className: "text-sm font-medium text-gray-900", children: "Account Status" }),
+          /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-gray-600", children: user.isActive ? "User can currently log in and access the system" : "User is currently disabled and cannot access the system" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime157.jsx)("div", { className: "flex gap-2", children: user.isActive ? /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("div", { className: "flex gap-2", children: user.isActive ? /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)(
           Button,
           {
             onClick: onDeactivate,
@@ -28598,11 +28654,11 @@ var AccountManagementCard = ({
             disabled: isUpdating,
             className: "text-orange-600 border-orange-600 hover:bg-orange-50",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime157.jsx)(import_lucide_react77.UserX, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(import_lucide_react77.UserX, { className: "w-4 h-4 mr-2" }),
               "Deactivate"
             ]
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)(
+        ) : /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)(
           Button,
           {
             onClick: onActivate,
@@ -28610,25 +28666,25 @@ var AccountManagementCard = ({
             disabled: isUpdating,
             className: "text-green-600 border-green-600 hover:bg-green-50",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime157.jsx)(import_lucide_react77.UserCheck, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(import_lucide_react77.UserCheck, { className: "w-4 h-4 mr-2" }),
               "Activate"
             ]
           }
         ) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)("div", { className: "flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime157.jsx)("h3", { className: "text-sm font-medium text-red-900", children: "Delete Account" }),
-          /* @__PURE__ */ (0, import_jsx_runtime157.jsx)("p", { className: "text-sm text-red-700", children: "This action cannot be undone. This will permanently delete the user account and remove all associated data." })
+      /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { className: "flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("h3", { className: "text-sm font-medium text-red-900", children: "Delete Account" }),
+          /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-700", children: "This action cannot be undone. This will permanently delete the user account and remove all associated data." })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime157.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)(
           Button,
           {
             onClick: onDelete,
             variant: "destructive",
             className: "bg-red-600 hover:bg-red-700",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime157.jsx)(import_lucide_react77.Trash2, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(import_lucide_react77.Trash2, { className: "w-4 h-4 mr-2" }),
               "Delete Account"
             ]
           }
@@ -28641,7 +28697,7 @@ var AccountManagementCard = ({
 // src/components/features/Users/Users.tsx
 var import_lucide_react78 = require("lucide-react");
 var import_hooks9 = require("@rentalshop/hooks");
-var import_jsx_runtime158 = require("react/jsx-runtime");
+var import_jsx_runtime159 = require("react/jsx-runtime");
 var Users10 = ({
   // Data props
   data,
@@ -28686,15 +28742,15 @@ var Users10 = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = import_react77.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react77.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react77.default.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnUserAction = import_react77.default.useCallback(onUserAction, [onUserAction]);
-  const memoizedOnPageChange = import_react77.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react77.default.useCallback(onSort, [onSort]);
-  return /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
+  const memoizedOnFiltersChange = import_react78.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react78.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react78.default.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnUserAction = import_react78.default.useCallback(onUserAction, [onUserAction]);
+  const memoizedOnPageChange = import_react78.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react78.default.useCallback(onSort, [onSort]);
+  return /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
         UserPageHeader,
         {
           title,
@@ -28707,7 +28763,7 @@ var Users10 = ({
           exportButtonText
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
         UserFilters,
         {
           filters,
@@ -28717,7 +28773,7 @@ var Users10 = ({
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("div", { className: "flex-1 min-h-0 mt-4", children: users.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("div", { className: "flex-1 min-h-0 mt-4", children: users.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
       UserTable,
       {
         users,
@@ -28726,8 +28782,8 @@ var Users10 = ({
         sortOrder: filters.sortOrder || "desc",
         onSort: memoizedOnSort
       }
-    ) : /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
-      import_ui105.EmptyState,
+    ) : /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
+      import_ui106.EmptyState,
       {
         icon: import_lucide_react78.User,
         title: "No users found",
@@ -28736,8 +28792,8 @@ var Users10 = ({
         onAction: canManageUsers ? handleAddUser : void 0
       }
     ) }),
-    users.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
-      import_ui105.Pagination,
+    users.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
+      import_ui106.Pagination,
       {
         currentPage,
         totalPages,
@@ -28752,13 +28808,13 @@ var Users10 = ({
 var Users_default = Users10;
 
 // src/components/features/Outlets/Outlets.tsx
-var import_react79 = __toESM(require("react"));
-var import_ui110 = require("@rentalshop/ui");
+var import_react80 = __toESM(require("react"));
+var import_ui111 = require("@rentalshop/ui");
 
 // src/components/features/Outlets/components/OutletHeader.tsx
-var import_ui106 = require("@rentalshop/ui");
+var import_ui107 = require("@rentalshop/ui");
 var import_lucide_react79 = require("lucide-react");
-var import_jsx_runtime159 = require("react/jsx-runtime");
+var import_jsx_runtime160 = require("react/jsx-runtime");
 function OutletHeader({
   viewMode,
   onViewModeChange,
@@ -28766,38 +28822,38 @@ function OutletHeader({
   totalOutlets,
   merchantId
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(import_ui106.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)(import_ui106.CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("div", { className: "flex items-center space-x-4", children: /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)(import_ui106.CardTitle, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(import_lucide_react79.Building2, { className: "w-5 h-5" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_ui107.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)(import_ui107.CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime160.jsx)("div", { className: "flex items-center space-x-4", children: /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)(import_ui107.CardTitle, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_lucide_react79.Building2, { className: "w-5 h-5" }),
       "Outlets (",
       totalOutlets,
       ")"
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: "flex items-center space-x-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: "flex items-center space-x-1 border rounded-lg p-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
-          import_ui106.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)("div", { className: "flex items-center space-x-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)("div", { className: "flex items-center space-x-1 border rounded-lg p-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(
+          import_ui107.Button,
           {
             variant: viewMode === "grid" ? "default" : "ghost",
             size: "sm",
             onClick: () => onViewModeChange("grid"),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(import_lucide_react79.Grid, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_lucide_react79.Grid, { className: "w-4 h-4" })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
-          import_ui106.Button,
+        /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(
+          import_ui107.Button,
           {
             variant: viewMode === "table" ? "default" : "ghost",
             size: "sm",
             onClick: () => onViewModeChange("table"),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(import_lucide_react79.List, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_lucide_react79.List, { className: "w-4 h-4" })
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)(import_ui106.Button, { onClick: onAddOutlet, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(import_lucide_react79.Plus, { className: "w-4 h-4 mr-2" }),
+      /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)(import_ui107.Button, { onClick: onAddOutlet, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_lucide_react79.Plus, { className: "w-4 h-4 mr-2" }),
         "Add Outlet"
       ] })
     ] })
@@ -28805,9 +28861,9 @@ function OutletHeader({
 }
 
 // src/components/features/Outlets/components/OutletFilters.tsx
-var import_ui107 = require("@rentalshop/ui");
+var import_ui108 = require("@rentalshop/ui");
 var import_lucide_react80 = require("lucide-react");
-var import_jsx_runtime160 = require("react/jsx-runtime");
+var import_jsx_runtime161 = require("react/jsx-runtime");
 function OutletFilters({
   filters,
   onFiltersChange,
@@ -28829,18 +28885,18 @@ function OutletFilters({
     }
   };
   const hasActiveFilters = filters.search || filters.status;
-  return /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)(import_ui107.Card, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_ui107.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)(import_ui107.CardTitle, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_lucide_react80.Filter, { className: "w-5 h-5" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(import_ui108.Card, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(import_ui108.CardTitle, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_lucide_react80.Filter, { className: "w-5 h-5" }),
       "Filters"
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_ui107.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime160.jsx)("label", { className: "text-sm font-medium", children: "Search" }),
-        /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)("div", { className: "relative", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_lucide_react80.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(
-            import_ui107.Input,
+    /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime161.jsx)("label", { className: "text-sm font-medium", children: "Search" }),
+        /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "relative", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_lucide_react80.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(
+            import_ui108.Input,
             {
               placeholder: "Search outlets...",
               value: filters.search || "",
@@ -28850,19 +28906,19 @@ function OutletFilters({
           )
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime160.jsx)("label", { className: "text-sm font-medium", children: "Status" }),
-        /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)(
-          import_ui107.Select,
+      /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime161.jsx)("label", { className: "text-sm font-medium", children: "Status" }),
+        /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(
+          import_ui108.Select,
           {
             value: filters.status || "all",
             onValueChange: handleStatusFilter,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_ui107.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_ui107.SelectValue, { placeholder: "All statuses" }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime160.jsxs)(import_ui107.SelectContent, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_ui107.SelectItem, { value: "all", children: "All statuses" }),
-                /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_ui107.SelectItem, { value: "active", children: "Active" }),
-                /* @__PURE__ */ (0, import_jsx_runtime160.jsx)(import_ui107.SelectItem, { value: "inactive", children: "Inactive" })
+              /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.SelectValue, { placeholder: "All statuses" }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(import_ui108.SelectContent, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.SelectItem, { value: "all", children: "All statuses" }),
+                /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.SelectItem, { value: "active", children: "Active" }),
+                /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.SelectItem, { value: "inactive", children: "Inactive" })
               ] })
             ]
           }
@@ -28873,27 +28929,27 @@ function OutletFilters({
 }
 
 // src/components/features/Outlets/components/OutletGrid.tsx
-var import_ui108 = require("@rentalshop/ui");
+var import_ui109 = require("@rentalshop/ui");
 var import_lucide_react81 = require("lucide-react");
-var import_jsx_runtime161 = require("react/jsx-runtime");
+var import_jsx_runtime162 = require("react/jsx-runtime");
 function OutletGrid({
   outlets,
   onOutletAction
 }) {
   if (outlets.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(import_ui108.CardContent, { className: "text-center py-8 text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_lucide_react81.Building2, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
-      /* @__PURE__ */ (0, import_jsx_runtime161.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No Outlets Found" }),
-      /* @__PURE__ */ (0, import_jsx_runtime161.jsx)("p", { className: "text-sm", children: "No outlets match your current filters." })
+    return /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_ui109.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(import_ui109.CardContent, { className: "text-center py-8 text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react81.Building2, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
+      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No Outlets Found" }),
+      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("p", { className: "text-sm", children: "No outlets match your current filters." })
     ] }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime161.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: outlets.map((outlet) => /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(import_ui108.Card, { className: "hover:shadow-lg transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_ui108.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(import_ui108.CardTitle, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_lucide_react81.Building2, { className: "w-5 h-5" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: outlets.map((outlet) => /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(import_ui109.Card, { className: "hover:shadow-lg transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_ui109.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(import_ui109.CardTitle, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react81.Building2, { className: "w-5 h-5" }),
         outlet.name,
-        outlet.isDefault && /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(
-          import_ui108.StatusBadge,
+        outlet.isDefault && /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(
+          import_ui109.StatusBadge,
           {
             status: "main branch",
             variant: "outline",
@@ -28901,51 +28957,51 @@ function OutletGrid({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(
-        import_ui108.StatusBadge,
+      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(
+        import_ui109.StatusBadge,
         {
           status: outlet.isActive ? "active" : "inactive",
           variant: "default"
         }
       )
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(import_ui108.CardContent, { className: "space-y-4", children: [
-      outlet.address && /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "flex items-start gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_lucide_react81.MapPin, { className: "w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" }),
-        /* @__PURE__ */ (0, import_jsx_runtime161.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: outlet.address })
+    /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(import_ui109.CardContent, { className: "space-y-4", children: [
+      outlet.address && /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "flex items-start gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react81.MapPin, { className: "w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" }),
+        /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: outlet.address })
       ] }),
-      outlet.phone && /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_lucide_react81.Phone, { className: "w-4 h-4 text-gray-500" }),
-        /* @__PURE__ */ (0, import_jsx_runtime161.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: outlet.phone })
+      outlet.phone && /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react81.Phone, { className: "w-4 h-4 text-gray-500" }),
+        /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: outlet.phone })
       ] }),
-      outlet.description && /* @__PURE__ */ (0, import_jsx_runtime161.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: outlet.description }),
-      /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "text-xs text-gray-500", children: [
+      outlet.description && /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: outlet.description }),
+      /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "text-xs text-gray-500", children: [
         "Created: ",
         new Date(outlet.createdAt).toLocaleDateString()
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)("div", { className: "flex space-x-2 pt-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(
-          import_ui108.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "flex space-x-2 pt-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(
+          import_ui109.Button,
           {
             variant: "outline",
             size: "sm",
             onClick: () => onOutletAction("view", outlet.id),
             className: "flex-1",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_lucide_react81.Eye, { className: "w-4 h-4 mr-1" }),
+              /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react81.Eye, { className: "w-4 h-4 mr-1" }),
               "View"
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime161.jsxs)(
-          import_ui108.Button,
+        /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(
+          import_ui109.Button,
           {
             variant: "outline",
             size: "sm",
             onClick: () => onOutletAction("edit", outlet.id),
             className: "flex-1",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime161.jsx)(import_lucide_react81.Edit, { className: "w-4 h-4 mr-1" }),
+              /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react81.Edit, { className: "w-4 h-4 mr-1" }),
               "Edit"
             ]
           }
@@ -28956,9 +29012,9 @@ function OutletGrid({
 }
 
 // src/components/features/Outlets/components/OutletTable.tsx
-var import_react78 = __toESM(require("react"));
+var import_react79 = __toESM(require("react"));
 var import_lucide_react82 = require("lucide-react");
-var import_jsx_runtime162 = require("react/jsx-runtime");
+var import_jsx_runtime163 = require("react/jsx-runtime");
 function OutletTable({
   outlets,
   onOutletAction,
@@ -28966,12 +29022,12 @@ function OutletTable({
   sortOrder = "desc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react78.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react79.default.useState(null);
   if (outlets.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react82.Building2, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No outlets found" }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("p", { className: "text-sm", children: "Try adjusting your search or add outlets to get started." })
+    return /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react82.Building2, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No outlets found" }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("p", { className: "text-sm", children: "Try adjusting your search or add outlets to get started." })
     ] }) }) });
   }
   const formatDate11 = (dateString) => {
@@ -28985,101 +29041,101 @@ function OutletTable({
     });
   };
   const getStatusBadge = (isActive) => {
-    return isActive ? /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(Badge, { className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", children: "Active" }) : /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(Badge, { className: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200", children: "Inactive" });
+    return isActive ? /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(Badge, { className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", children: "Active" }) : /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(Badge, { className: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200", children: "Inactive" });
   };
   const handleSort = (column) => {
     if (onSort) {
       onSort(column);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(Card2, { className: "shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "flex-1 overflow-auto", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("table", { className: "w-full", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("thead", { className: "bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("tr", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(Card2, { className: "shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "flex-1 overflow-auto", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("table", { className: "w-full", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("thead", { className: "bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("tr", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(
         "th",
         {
           onClick: () => handleSort("id"),
           className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
-          children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "flex items-center gap-1", children: [
+          children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("div", { className: "flex items-center gap-1", children: [
             "ID",
-            sortBy === "id" && /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
+            sortBy === "id" && /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
           ] })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(
         "th",
         {
           onClick: () => handleSort("name"),
           className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
-          children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "flex items-center gap-1", children: [
+          children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("div", { className: "flex items-center gap-1", children: [
             "Name",
-            sortBy === "name" && /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
+            sortBy === "name" && /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
           ] })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Address" }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Contact" }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Status" }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Address" }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Contact" }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Status" }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(
         "th",
         {
           onClick: () => handleSort("createdAt"),
           className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
-          children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "flex items-center gap-1", children: [
+          children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("div", { className: "flex items-center gap-1", children: [
             "Created",
-            sortBy === "createdAt" && /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
+            sortBy === "createdAt" && /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
           ] })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("th", { className: "px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Actions" })
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("th", { className: "px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Actions" })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("tbody", { className: "bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700", children: outlets.map((outlet) => /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("tr", { className: "hover:bg-gray-50 dark:hover:bg-gray-800", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("tbody", { className: "bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700", children: outlets.map((outlet) => /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("tr", { className: "hover:bg-gray-50 dark:hover:bg-gray-800", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: [
         "#",
         outlet.id
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "text-sm", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: outlet.name }) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: outlet.address || "N/A" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: outlet.phone || "N/A" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: getStatusBadge(outlet.isActive) }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: formatDate11(outlet.createdAt) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime162.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(DropdownMenu, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(DropdownMenuTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "text-sm", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: outlet.name }) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: outlet.address || "N/A" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: outlet.phone || "N/A" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: getStatusBadge(outlet.isActive) }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: formatDate11(outlet.createdAt) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)(DropdownMenu, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(DropdownMenuTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(
           Button,
           {
             variant: "ghost",
             size: "sm",
             className: "h-8 w-8 p-0",
             onClick: () => setOpenDropdownId(outlet.id),
-            children: /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react82.MoreVertical, { className: "h-4 w-4" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react82.MoreVertical, { className: "h-4 w-4" })
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)(
           DropdownMenuContent,
           {
             align: "end",
             open: openDropdownId === outlet.id,
             onOpenChange: (open) => setOpenDropdownId(open ? outlet.id : null),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(DropdownMenuItem, { onClick: () => {
+              /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)(DropdownMenuItem, { onClick: () => {
                 onOutletAction("view", outlet.id);
                 setOpenDropdownId(null);
               }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react82.Eye, { className: "h-4 w-4 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react82.Eye, { className: "h-4 w-4 mr-2" }),
                 "View Details"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(DropdownMenuItem, { onClick: () => {
+              /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)(DropdownMenuItem, { onClick: () => {
                 onOutletAction("edit", outlet.id);
                 setOpenDropdownId(null);
               }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react82.Edit, { className: "h-4 w-4 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react82.Edit, { className: "h-4 w-4 mr-2" }),
                 "Edit Outlet"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(DropdownMenuSeparator, {}),
-              /* @__PURE__ */ (0, import_jsx_runtime162.jsxs)(DropdownMenuItem, { onClick: () => {
+              /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(DropdownMenuSeparator, {}),
+              /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)(DropdownMenuItem, { onClick: () => {
                 onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id);
                 setOpenDropdownId(null);
               }, children: [
-                outlet.isActive ? /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react82.XCircle, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ (0, import_jsx_runtime162.jsx)(import_lucide_react82.CheckCircle, { className: "h-4 w-4 mr-2" }),
+                outlet.isActive ? /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react82.XCircle, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react82.CheckCircle, { className: "h-4 w-4 mr-2" }),
                 outlet.isActive ? "Disable Outlet" : "Enable Outlet"
               ] })
             ]
@@ -29092,13 +29148,13 @@ function OutletTable({
 
 // src/components/features/Outlets/components/OutletSearch.tsx
 var import_lucide_react83 = require("lucide-react");
-var import_jsx_runtime163 = require("react/jsx-runtime");
+var import_jsx_runtime164 = require("react/jsx-runtime");
 function OutletSearch({ value, onChange, onClear }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(CardContent2, { className: "pt-6 space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "flex justify-between items-end gap-4", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("div", { className: "space-y-2 flex-1", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("label", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: "Search Outlets" }),
-    /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("div", { className: "relative", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react83.Search, { className: "h-4 w-4 text-gray-400" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime164.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime164.jsx)(CardContent2, { className: "pt-6 space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime164.jsx)("div", { className: "flex justify-between items-end gap-4", children: /* @__PURE__ */ (0, import_jsx_runtime164.jsxs)("div", { className: "space-y-2 flex-1", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime164.jsx)("label", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: "Search Outlets" }),
+    /* @__PURE__ */ (0, import_jsx_runtime164.jsxs)("div", { className: "relative", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime164.jsx)("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none", children: /* @__PURE__ */ (0, import_jsx_runtime164.jsx)(import_lucide_react83.Search, { className: "h-4 w-4 text-gray-400" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime164.jsx)(
         Input2,
         {
           type: "text",
@@ -29108,14 +29164,14 @@ function OutletSearch({ value, onChange, onClear }) {
           className: "pl-10 pr-10"
         }
       ),
-      value && /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(
+      value && /* @__PURE__ */ (0, import_jsx_runtime164.jsx)(
         Button,
         {
           variant: "ghost",
           size: "icon",
           onClick: onClear,
           className: "absolute inset-y-0 right-0 pr-3 flex items-center h-full w-auto",
-          children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react83.X, { className: "h-4 w-4 text-gray-400 hover:text-gray-600" })
+          children: /* @__PURE__ */ (0, import_jsx_runtime164.jsx)(import_lucide_react83.X, { className: "h-4 w-4 text-gray-400 hover:text-gray-600" })
         }
       )
     ] })
@@ -29123,8 +29179,8 @@ function OutletSearch({ value, onChange, onClear }) {
 }
 
 // src/components/features/Outlets/components/OutletPagination.tsx
-var import_ui109 = require("@rentalshop/ui");
-var import_jsx_runtime164 = require("react/jsx-runtime");
+var import_ui110 = require("@rentalshop/ui");
+var import_jsx_runtime165 = require("react/jsx-runtime");
 function OutletPagination({
   currentPage,
   totalPages,
@@ -29132,8 +29188,8 @@ function OutletPagination({
   limit,
   onPageChange
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime164.jsx)(
-    import_ui109.Pagination,
+  return /* @__PURE__ */ (0, import_jsx_runtime165.jsx)(
+    import_ui110.Pagination,
     {
       currentPage,
       totalPages,
@@ -29146,7 +29202,7 @@ function OutletPagination({
 
 // src/components/features/Outlets/Outlets.tsx
 var import_lucide_react84 = require("lucide-react");
-var import_jsx_runtime165 = require("react/jsx-runtime");
+var import_jsx_runtime166 = require("react/jsx-runtime");
 var Outlets = ({
   data,
   filters = {},
@@ -29166,12 +29222,12 @@ var Outlets = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = import_react79.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnOutletAction = import_react79.default.useCallback(onOutletAction, [onOutletAction]);
-  const memoizedOnPageChange = import_react79.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react79.default.useCallback(onSort, [onSort]);
-  return /* @__PURE__ */ (0, import_jsx_runtime165.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime165.jsx)("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime165.jsx)(
+  const memoizedOnSearchChange = import_react80.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnOutletAction = import_react80.default.useCallback(onOutletAction, [onOutletAction]);
+  const memoizedOnPageChange = import_react80.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react80.default.useCallback(onSort, [onSort]);
+  return /* @__PURE__ */ (0, import_jsx_runtime166.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime166.jsx)("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime166.jsx)(
       OutletSearch,
       {
         value: filters.q || "",
@@ -29179,7 +29235,7 @@ var Outlets = ({
         onClear: () => memoizedOnSearchChange("")
       }
     ) }),
-    /* @__PURE__ */ (0, import_jsx_runtime165.jsx)("div", { className: "flex-1 min-h-0", children: outlets.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime165.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime166.jsx)("div", { className: "flex-1 min-h-0", children: outlets.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime166.jsx)(
       OutletTable,
       {
         outlets,
@@ -29188,16 +29244,16 @@ var Outlets = ({
         sortOrder: filters.sortOrder || "desc",
         onSort: memoizedOnSort
       }
-    ) : /* @__PURE__ */ (0, import_jsx_runtime165.jsx)(
-      import_ui110.EmptyState,
+    ) : /* @__PURE__ */ (0, import_jsx_runtime166.jsx)(
+      import_ui111.EmptyState,
       {
         icon: import_lucide_react84.Building2,
         title: "No outlets found",
         description: filters.q ? "Try adjusting your search" : "Get started by adding your first outlet"
       }
     ) }),
-    outlets.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime165.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime165.jsx)(
-      import_ui110.Pagination,
+    outlets.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime166.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime166.jsx)(
+      import_ui111.Pagination,
       {
         currentPage,
         totalPages,
@@ -29211,54 +29267,56 @@ var Outlets = ({
 };
 
 // src/components/features/Categories/Categories.tsx
-var import_react85 = __toESM(require("react"));
-var import_ui117 = require("@rentalshop/ui");
+var import_react86 = __toESM(require("react"));
+var import_ui120 = require("@rentalshop/ui");
 
 // src/components/features/Categories/components/CategoryHeader.tsx
-var import_ui111 = require("@rentalshop/ui");
+var import_ui112 = require("@rentalshop/ui");
 var import_lucide_react85 = require("lucide-react");
 var import_hooks10 = require("@rentalshop/hooks");
-var import_jsx_runtime166 = require("react/jsx-runtime");
+var import_jsx_runtime167 = require("react/jsx-runtime");
 var CategoryHeader = ({
   onAddCategory
 }) => {
   const { canManageCategories } = (0, import_hooks10.useUserRole)();
-  return /* @__PURE__ */ (0, import_jsx_runtime166.jsxs)("div", { className: "flex items-center justify-between", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime166.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime166.jsx)("h1", { className: "text-3xl font-bold tracking-tight", children: "Product Categories" }),
-      /* @__PURE__ */ (0, import_jsx_runtime166.jsx)("p", { className: "text-muted-foreground", children: "Manage your product categories for better organization" })
+  return /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("div", { className: "flex items-center justify-between", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime167.jsx)("h1", { className: "text-3xl font-bold tracking-tight", children: "Product Categories" }),
+      /* @__PURE__ */ (0, import_jsx_runtime167.jsx)("p", { className: "text-muted-foreground", children: "Manage your product categories for better organization" })
     ] }),
-    canManageCategories && /* @__PURE__ */ (0, import_jsx_runtime166.jsxs)(import_ui111.Button, { onClick: onAddCategory, className: "flex items-center space-x-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime166.jsx)(import_lucide_react85.Plus, { className: "h-4 w-4" }),
-      /* @__PURE__ */ (0, import_jsx_runtime166.jsx)("span", { children: "Add Category" })
+    canManageCategories && /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)(import_ui112.Button, { onClick: onAddCategory, className: "flex items-center space-x-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(import_lucide_react85.Plus, { className: "h-4 w-4" }),
+      /* @__PURE__ */ (0, import_jsx_runtime167.jsx)("span", { children: "Add Category" })
     ] })
   ] });
 };
 
 // src/components/features/Categories/components/CategoryActions.tsx
-var import_react82 = require("react");
+var import_react83 = require("react");
 var import_hooks11 = require("@rentalshop/hooks");
 
 // src/components/features/Categories/components/AddCategoryDialog.tsx
-var import_react81 = require("react");
+var import_react82 = require("react");
 
-// src/components/features/Categories/components/CategoryForm.tsx
-var import_react80 = require("react");
+// src/components/features/Categories/components/CategoryFormContent.tsx
+var import_react81 = require("react");
 var import_lucide_react86 = require("lucide-react");
-var import_jsx_runtime167 = require("react/jsx-runtime");
-var CategoryForm = ({
+var import_jsx_runtime168 = require("react/jsx-runtime");
+var CategoryFormContent = ({
   category,
   onSave,
   onCancel,
-  mode
+  mode,
+  isSubmitting: externalIsSubmitting
 }) => {
-  const [formData, setFormData] = (0, import_react80.useState)({
+  const [formData, setFormData] = (0, import_react81.useState)({
     name: "",
     description: ""
   });
-  const [errors, setErrors] = (0, import_react80.useState)({});
-  const [isSubmitting, setIsSubmitting] = (0, import_react80.useState)(false);
-  (0, import_react80.useEffect)(() => {
+  const [errors, setErrors] = (0, import_react81.useState)({});
+  const [isSubmitting, setIsSubmitting] = (0, import_react81.useState)(false);
+  const submitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : isSubmitting;
+  (0, import_react81.useEffect)(() => {
     if (category && mode === "edit") {
       setFormData({
         name: category.name || "",
@@ -29292,7 +29350,9 @@ var CategoryForm = ({
     if (!validateForm()) {
       return;
     }
-    setIsSubmitting(true);
+    if (externalIsSubmitting === void 0) {
+      setIsSubmitting(true);
+    }
     try {
       const categoryData = {
         name: formData.name.trim(),
@@ -29302,92 +29362,91 @@ var CategoryForm = ({
     } catch (error2) {
       console.error("Error saving category:", error2);
     } finally {
-      setIsSubmitting(false);
+      if (externalIsSubmitting === void 0) {
+        setIsSubmitting(false);
+      }
     }
   };
   const handleCancel = () => {
-    if (isSubmitting)
+    if (submitting)
       return;
     onCancel();
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(Dialog, { open: true, onOpenChange: onCancel, children: /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)(DialogContent, { className: "sm:max-w-[600px]", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(DialogTitle, { children: mode === "create" ? "Add New Category" : "Edit Category" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("form", { onSubmit: handleSubmit, className: "space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(Label2, { htmlFor: "name", children: "Category Name *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(
-          Input2,
-          {
-            id: "name",
-            value: formData.name,
-            onChange: (e) => handleInputChange("name", e.target.value),
-            placeholder: "Enter category name",
-            className: errors.name ? "border-red-500" : "",
-            disabled: isSubmitting,
-            required: true
-          }
-        ),
-        errors.name && /* @__PURE__ */ (0, import_jsx_runtime167.jsx)("p", { className: "text-sm text-red-500 mt-1", children: errors.name })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(Label2, { htmlFor: "description", children: "Description" }),
-        /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(
-          Textarea,
-          {
-            id: "description",
-            value: formData.description,
-            onChange: (e) => handleInputChange("description", e.target.value),
-            placeholder: "Enter category description (optional)",
-            rows: 3,
-            className: errors.description ? "border-red-500" : "",
-            disabled: isSubmitting
-          }
-        ),
-        errors.description && /* @__PURE__ */ (0, import_jsx_runtime167.jsx)("p", { className: "text-sm text-red-500 mt-1", children: errors.description }),
-        /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("p", { className: "text-xs text-gray-500 mt-1", children: [
-          formData.description.length,
-          "/200 characters"
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(
-          Button,
-          {
-            type: "button",
-            variant: "outline",
-            onClick: handleCancel,
-            disabled: isSubmitting,
-            children: "Cancel"
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(
-          Button,
-          {
-            type: "submit",
-            disabled: isSubmitting,
-            children: isSubmitting ? /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)(import_jsx_runtime167.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(import_lucide_react86.Loader2, { className: "h-4 w-4 mr-2 animate-spin" }),
-              "Saving..."
-            ] }) : /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)(import_jsx_runtime167.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(import_lucide_react86.Save, { className: "h-4 w-4 mr-2" }),
-              mode === "create" ? "Create Category" : "Update Category"
-            ] })
-          }
-        )
+  return /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)("form", { onSubmit: handleSubmit, className: "space-y-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(Label2, { htmlFor: "name", children: "Category Name *" }),
+      /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(
+        Input2,
+        {
+          id: "name",
+          value: formData.name,
+          onChange: (e) => handleInputChange("name", e.target.value),
+          placeholder: "Enter category name",
+          className: errors.name ? "border-red-500" : "",
+          disabled: submitting,
+          required: true
+        }
+      ),
+      errors.name && /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("p", { className: "text-sm text-red-500 mt-1", children: errors.name })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(Label2, { htmlFor: "description", children: "Description" }),
+      /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(
+        Textarea,
+        {
+          id: "description",
+          value: formData.description,
+          onChange: (e) => handleInputChange("description", e.target.value),
+          placeholder: "Enter category description (optional)",
+          rows: 3,
+          className: errors.description ? "border-red-500" : "",
+          disabled: submitting
+        }
+      ),
+      errors.description && /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("p", { className: "text-sm text-red-500 mt-1", children: errors.description }),
+      /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)("p", { className: "text-xs text-gray-500 mt-1", children: [
+        formData.description.length,
+        "/200 characters"
       ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(
+        Button,
+        {
+          type: "button",
+          variant: "outline",
+          onClick: handleCancel,
+          disabled: submitting,
+          children: "Cancel"
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(
+        Button,
+        {
+          type: "submit",
+          disabled: submitting,
+          children: submitting ? /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(import_jsx_runtime168.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react86.Loader2, { className: "h-4 w-4 mr-2 animate-spin" }),
+            "Saving..."
+          ] }) : /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(import_jsx_runtime168.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react86.Save, { className: "h-4 w-4 mr-2" }),
+            mode === "create" ? "Create Category" : "Update Category"
+          ] })
+        }
+      )
     ] })
-  ] }) });
+  ] });
 };
 
 // src/components/features/Categories/components/AddCategoryDialog.tsx
-var import_jsx_runtime168 = require("react/jsx-runtime");
+var import_jsx_runtime169 = require("react/jsx-runtime");
 var AddCategoryDialog = ({
   open,
   onOpenChange,
   onCategoryCreated,
   onError
 }) => {
-  const [isSubmitting, setIsSubmitting] = (0, import_react81.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react82.useState)(false);
   const handleSave = async (categoryData) => {
     try {
       setIsSubmitting(true);
@@ -29409,21 +29468,23 @@ var AddCategoryDialog = ({
       return;
     onOpenChange(false);
   };
-  if (!open)
-    return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(
-    CategoryForm,
-    {
-      category: null,
-      onSave: handleSave,
-      onCancel: handleCancel,
-      mode: "create"
-    }
-  );
+  return /* @__PURE__ */ (0, import_jsx_runtime169.jsx)(Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime169.jsxs)(DialogContent, { className: "sm:max-w-[600px]", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime169.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime169.jsx)(DialogTitle, { children: "Add New Category" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime169.jsx)(
+      CategoryFormContent,
+      {
+        category: null,
+        onSave: handleSave,
+        onCancel: handleCancel,
+        mode: "create",
+        isSubmitting
+      }
+    )
+  ] }) });
 };
 
 // src/components/features/Categories/components/CategoryActions.tsx
-var import_jsx_runtime169 = require("react/jsx-runtime");
+var import_jsx_runtime170 = require("react/jsx-runtime");
 var CategoryActions = ({
   onAddCategory,
   onImportCategories,
@@ -29432,7 +29493,7 @@ var CategoryActions = ({
   onCategoryCreated,
   onError
 }) => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react82.useState)(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react83.useState)(false);
   const { canManageCategories } = (0, import_hooks11.useUserRole)();
   const allActions = [
     {
@@ -29479,24 +29540,24 @@ var CategoryActions = ({
   const actions = allActions.filter(
     (action) => !action.roles || action.roles.length > 0
   ).map(({ roles, ...action }) => action);
-  return /* @__PURE__ */ (0, import_jsx_runtime169.jsxs)(import_jsx_runtime169.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime169.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime169.jsx)(CardContent2, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime169.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime169.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)(import_jsx_runtime170.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(CardContent2, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime170.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(
       Button,
       {
         variant: action.variant,
         className: "h-auto p-3 flex flex-col items-start space-y-2 text-left",
         onClick: action.onClick,
-        children: /* @__PURE__ */ (0, import_jsx_runtime169.jsxs)("div", { className: "flex items-center space-x-2 w-full", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime169.jsx)("span", { className: "text-lg", children: action.icon }),
-          /* @__PURE__ */ (0, import_jsx_runtime169.jsxs)("div", { className: "flex-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime169.jsx)("div", { className: "font-medium text-sm", children: action.label }),
-            /* @__PURE__ */ (0, import_jsx_runtime169.jsx)("div", { className: "text-xs opacity-80", children: action.description })
+        children: /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("div", { className: "flex items-center space-x-2 w-full", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime170.jsx)("span", { className: "text-lg", children: action.icon }),
+          /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("div", { className: "flex-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime170.jsx)("div", { className: "font-medium text-sm", children: action.label }),
+            /* @__PURE__ */ (0, import_jsx_runtime170.jsx)("div", { className: "text-xs opacity-80", children: action.description })
           ] })
         ] })
       },
       action.id
     )) }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime169.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(
       AddCategoryDialog,
       {
         open: isAddDialogOpen,
@@ -29510,7 +29571,7 @@ var CategoryActions = ({
 
 // src/components/features/Categories/components/CategoryCard.tsx
 var import_lucide_react87 = require("lucide-react");
-var import_jsx_runtime170 = require("react/jsx-runtime");
+var import_jsx_runtime171 = require("react/jsx-runtime");
 var CategoryCard = ({
   category,
   onView,
@@ -29522,13 +29583,13 @@ var CategoryCard = ({
   const handleEdit = () => {
     onEdit(category);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)(Card2, { className: "h-full hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(CardHeader2, { className: "pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("div", { className: "flex items-start justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime170.jsx)("div", { className: "p-2 bg-primary/10 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(import_lucide_react87.Tag, { className: "h-4 w-4 text-primary" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(CardTitle2, { className: "text-lg font-semibold truncate", children: category.name }),
-          /* @__PURE__ */ (0, import_jsx_runtime170.jsx)("div", { className: "flex items-center space-x-2 mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)(Card2, { className: "h-full hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(CardHeader2, { className: "pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("div", { className: "flex items-start justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("div", { className: "p-2 bg-primary/10 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(import_lucide_react87.Tag, { className: "h-4 w-4 text-primary" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("div", { className: "flex-1 min-w-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(CardTitle2, { className: "text-lg font-semibold truncate", children: category.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("div", { className: "flex items-center space-x-2 mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(
             Badge,
             {
               variant: category.isActive ? "default" : "secondary",
@@ -29538,8 +29599,8 @@ var CategoryCard = ({
           ) })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("div", { className: "flex items-center space-x-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("div", { className: "flex items-center space-x-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)(
           Button,
           {
             variant: "outline",
@@ -29547,12 +29608,12 @@ var CategoryCard = ({
             onClick: handleView,
             className: "h-8 px-3",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(import_lucide_react87.Eye, { className: "h-4 w-4 mr-1" }),
+              /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(import_lucide_react87.Eye, { className: "h-4 w-4 mr-1" }),
               "View"
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)(
           Button,
           {
             variant: "outline",
@@ -29560,24 +29621,24 @@ var CategoryCard = ({
             onClick: handleEdit,
             className: "h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(import_lucide_react87.Edit, { className: "h-4 w-4 mr-1" }),
+              /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(import_lucide_react87.Edit, { className: "h-4 w-4 mr-1" }),
               "Edit"
             ]
           }
         )
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)(CardContent2, { className: "pt-0", children: [
-      category.description ? /* @__PURE__ */ (0, import_jsx_runtime170.jsx)("p", { className: "text-sm text-muted-foreground line-clamp-2 mb-3", children: category.description }) : /* @__PURE__ */ (0, import_jsx_runtime170.jsx)("p", { className: "text-sm text-muted-foreground mb-3 italic", children: "No description provided" }),
-      /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("div", { className: "flex items-center justify-between text-xs text-muted-foreground", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime170.jsx)(import_lucide_react87.Calendar, { className: "h-3 w-3" }),
-          /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("span", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)(CardContent2, { className: "pt-0", children: [
+      category.description ? /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("p", { className: "text-sm text-muted-foreground line-clamp-2 mb-3", children: category.description }) : /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("p", { className: "text-sm text-muted-foreground mb-3 italic", children: "No description provided" }),
+      /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("div", { className: "flex items-center justify-between text-xs text-muted-foreground", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("div", { className: "flex items-center space-x-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(import_lucide_react87.Calendar, { className: "h-3 w-3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("span", { children: [
             "Created ",
             new Date(category.createdAt).toLocaleDateString()
           ] })
         ] }),
-        category.updatedAt && category.updatedAt !== category.createdAt && /* @__PURE__ */ (0, import_jsx_runtime170.jsxs)("span", { className: "text-xs", children: [
+        category.updatedAt && category.updatedAt !== category.createdAt && /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("span", { className: "text-xs", children: [
           "Updated ",
           new Date(category.updatedAt).toLocaleDateString()
         ] })
@@ -29587,7 +29648,7 @@ var CategoryCard = ({
 };
 
 // src/components/features/Categories/components/CategoryGrid.tsx
-var import_jsx_runtime171 = require("react/jsx-runtime");
+var import_jsx_runtime172 = require("react/jsx-runtime");
 var CategoryGrid = ({
   categories,
   onViewCategory,
@@ -29597,8 +29658,8 @@ var CategoryGrid = ({
   onSortChange
 }) => {
   if (categories.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("div", { className: "bg-white rounded-lg border p-6", children: /* @__PURE__ */ (0, import_jsx_runtime171.jsxs)("div", { className: "text-center py-12", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("div", { className: "mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("div", { className: "bg-white rounded-lg border p-6", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)("div", { className: "text-center py-12", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("div", { className: "mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(
         "svg",
         {
           className: "w-12 h-12 text-muted-foreground",
@@ -29606,7 +29667,7 @@ var CategoryGrid = ({
           stroke: "currentColor",
           viewBox: "0 0 24 24",
           xmlns: "http://www.w3.org/2000/svg",
-          children: /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(
             "path",
             {
               strokeLinecap: "round",
@@ -29617,11 +29678,11 @@ var CategoryGrid = ({
           )
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("h3", { className: "text-lg font-medium text-muted-foreground mb-2", children: "No categories found" }),
-      /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("p", { className: "text-muted-foreground mb-4", children: "Get started by creating your first product category" })
+      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("h3", { className: "text-lg font-medium text-muted-foreground mb-2", children: "No categories found" }),
+      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("p", { className: "text-muted-foreground mb-4", children: "Get started by creating your first product category" })
     ] }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("div", { className: "bg-white rounded-lg border p-6", children: /* @__PURE__ */ (0, import_jsx_runtime171.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6", children: categories.map((category) => /* @__PURE__ */ (0, import_jsx_runtime171.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("div", { className: "bg-white rounded-lg border p-6", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6", children: categories.map((category) => /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(
     CategoryCard,
     {
       category,
@@ -29633,9 +29694,9 @@ var CategoryGrid = ({
 };
 
 // src/components/features/Categories/components/CategoryTable.tsx
-var import_react83 = __toESM(require("react"));
+var import_react84 = __toESM(require("react"));
 var import_lucide_react88 = require("lucide-react");
-var import_jsx_runtime172 = require("react/jsx-runtime");
+var import_jsx_runtime173 = require("react/jsx-runtime");
 function CategoryTable({
   categories,
   onCategoryAction,
@@ -29643,12 +29704,12 @@ function CategoryTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react83.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react84.default.useState(null);
   if (categories.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(import_lucide_react88.FolderOpen, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No categories found" }),
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("p", { className: "text-sm", children: "Try adjusting your search or add categories to get started." })
+    return /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_lucide_react88.FolderOpen, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No categories found" }),
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("p", { className: "text-sm", children: "Try adjusting your search or add categories to get started." })
     ] }) }) });
   }
   const formatDate11 = (dateString) => {
@@ -29662,84 +29723,84 @@ function CategoryTable({
     });
   };
   const getStatusBadge = (isActive) => {
-    return isActive ? /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(Badge, { className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", children: "Active" }) : /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(Badge, { className: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200", children: "Inactive" });
+    return isActive ? /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Badge, { className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", children: "Active" }) : /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Badge, { className: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200", children: "Inactive" });
   };
   const handleSort = (column) => {
     if (onSort) {
       onSort(column);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(Card2, { className: "shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("div", { className: "flex-1 overflow-auto", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)("table", { className: "w-full", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("thead", { className: "bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)("tr", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Card2, { className: "shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "flex-1 overflow-auto", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("table", { className: "w-full", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("thead", { className: "bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("tr", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
         "th",
         {
           onClick: () => handleSort("id"),
           className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
-          children: /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)("div", { className: "flex items-center gap-1", children: [
+          children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "flex items-center gap-1", children: [
             "ID",
-            sortBy === "id" && /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
+            sortBy === "id" && /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
           ] })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
         "th",
         {
           onClick: () => handleSort("name"),
           className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
-          children: /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)("div", { className: "flex items-center gap-1", children: [
+          children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "flex items-center gap-1", children: [
             "Name",
-            sortBy === "name" && /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
+            sortBy === "name" && /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
           ] })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Description" }),
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Status" }),
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Description" }),
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Status" }),
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
         "th",
         {
           onClick: () => handleSort("createdAt"),
           className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
-          children: /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)("div", { className: "flex items-center gap-1", children: [
+          children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "flex items-center gap-1", children: [
             "Created",
-            sortBy === "createdAt" && /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
+            sortBy === "createdAt" && /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("span", { className: "text-xs", children: sortOrder === "desc" ? "\u2193" : "\u2191" })
           ] })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("th", { className: "px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Actions" })
+      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("th", { className: "px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Actions" })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("tbody", { className: "bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700", children: categories.map((category) => /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("tbody", { className: "bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700", children: categories.map((category) => /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(
       "tr",
       {
         className: "hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100", children: [
             "#",
             category.id
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("div", { className: "text-sm font-medium text-gray-900 dark:text-gray-100", children: category.name }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("td", { className: "px-6 py-4 text-sm text-gray-500 dark:text-gray-400", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("div", { className: "max-w-xs truncate", children: category.description || "N/A" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: getStatusBadge(category.isActive) }),
-          /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400", children: formatDate11(category.createdAt) }),
-          /* @__PURE__ */ (0, import_jsx_runtime172.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)(DropdownMenu, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "text-sm font-medium text-gray-900 dark:text-gray-100", children: category.name }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("td", { className: "px-6 py-4 text-sm text-gray-500 dark:text-gray-400", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "max-w-xs truncate", children: category.description || "N/A" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: getStatusBadge(category.isActive) }),
+          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400", children: formatDate11(category.createdAt) }),
+          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(DropdownMenu, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
               Button,
               {
                 variant: "ghost",
                 size: "sm",
                 className: "h-8 w-8 p-0",
                 onClick: () => setOpenDropdownId(category.id),
-                children: /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(import_lucide_react88.MoreVertical, { className: "h-4 w-4" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_lucide_react88.MoreVertical, { className: "h-4 w-4" })
               }
             ) }),
-            /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(
               DropdownMenuContent,
               {
                 align: "end",
                 open: openDropdownId === category.id,
                 onOpenChange: (open) => setOpenDropdownId(open ? category.id : null),
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)(
+                  /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(
                     DropdownMenuItem,
                     {
                       onClick: () => {
@@ -29748,12 +29809,12 @@ function CategoryTable({
                       },
                       className: "cursor-pointer",
                       children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(import_lucide_react88.Eye, { className: "mr-2 h-4 w-4" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_lucide_react88.Eye, { className: "mr-2 h-4 w-4" }),
                         "View Details"
                       ]
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)(
+                  /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(
                     DropdownMenuItem,
                     {
                       onClick: () => {
@@ -29762,13 +29823,13 @@ function CategoryTable({
                       },
                       className: "cursor-pointer",
                       children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(import_lucide_react88.Edit, { className: "mr-2 h-4 w-4" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_lucide_react88.Edit, { className: "mr-2 h-4 w-4" }),
                         "Edit Category"
                       ]
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(DropdownMenuSeparator, {}),
-                  /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(DropdownMenuSeparator, {}),
+                  /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
                     DropdownMenuItem,
                     {
                       onClick: () => {
@@ -29776,17 +29837,17 @@ function CategoryTable({
                         setOpenDropdownId(null);
                       },
                       className: "cursor-pointer",
-                      children: category.isActive ? /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)(import_jsx_runtime172.Fragment, { children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(import_lucide_react88.XCircle, { className: "mr-2 h-4 w-4" }),
+                      children: category.isActive ? /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(import_jsx_runtime173.Fragment, { children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_lucide_react88.XCircle, { className: "mr-2 h-4 w-4" }),
                         "Deactivate"
-                      ] }) : /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)(import_jsx_runtime172.Fragment, { children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(import_lucide_react88.CheckCircle, { className: "mr-2 h-4 w-4" }),
+                      ] }) : /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(import_jsx_runtime173.Fragment, { children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_lucide_react88.CheckCircle, { className: "mr-2 h-4 w-4" }),
                         "Activate"
                       ] })
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(DropdownMenuSeparator, {}),
-                  /* @__PURE__ */ (0, import_jsx_runtime172.jsxs)(
+                  /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(DropdownMenuSeparator, {}),
+                  /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(
                     DropdownMenuItem,
                     {
                       onClick: () => {
@@ -29795,7 +29856,7 @@ function CategoryTable({
                       },
                       className: "cursor-pointer text-red-600 dark:text-red-400",
                       children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime172.jsx)(import_lucide_react88.Trash2, { className: "mr-2 h-4 w-4" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_lucide_react88.Trash2, { className: "mr-2 h-4 w-4" }),
                         "Delete"
                       ]
                     }
@@ -29811,16 +29872,38 @@ function CategoryTable({
   ] }) }) });
 }
 
+// src/components/features/Categories/components/CategoryForm.tsx
+var import_jsx_runtime174 = require("react/jsx-runtime");
+var CategoryForm = ({
+  category,
+  onSave,
+  onCancel,
+  mode
+}) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(Dialog, { open: true, onOpenChange: onCancel, children: /* @__PURE__ */ (0, import_jsx_runtime174.jsxs)(DialogContent, { className: "sm:max-w-[600px]", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(DialogTitle, { children: mode === "create" ? "Add New Category" : "Edit Category" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(
+      CategoryFormContent,
+      {
+        category,
+        onSave,
+        onCancel,
+        mode
+      }
+    )
+  ] }) });
+};
+
 // src/components/features/Categories/components/CategoryView.tsx
-var import_react84 = require("react");
-var import_jsx_runtime173 = require("react/jsx-runtime");
+var import_react85 = require("react");
+var import_jsx_runtime175 = require("react/jsx-runtime");
 var CategoryView = ({
   category,
   onClose,
   onEdit,
   onDelete
 }) => {
-  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react84.useState)(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react85.useState)(false);
   if (!category)
     return null;
   const handleEdit = () => {
@@ -29838,41 +29921,41 @@ var CategoryView = ({
   const handleCancelDelete = () => {
     setShowDeleteConfirm(false);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(import_jsx_runtime173.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Dialog, { open: !!category, onOpenChange: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(DialogContent, { className: "sm:max-w-[600px]", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(DialogTitle, { className: "text-xl font-semibold", children: "Category Details" }),
-        /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(DialogDescription, { className: "text-sm text-gray-600 mt-1", children: "View category information and details" })
+  return /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)(import_jsx_runtime175.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(Dialog, { open: !!category, onOpenChange: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)(DialogContent, { className: "sm:max-w-[600px]", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(DialogTitle, { className: "text-xl font-semibold", children: "Category Details" }),
+        /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(DialogDescription, { className: "text-sm text-gray-600 mt-1", children: "View category information and details" })
       ] }) }),
-      category && /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "mt-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: "Category Name" }),
-            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("p", { className: "text-gray-900 font-medium", children: category.name }) })
+      category && /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "mt-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: "Category Name" }),
+            /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("p", { className: "text-gray-900 font-medium", children: category.name }) })
           ] }),
-          category.description && /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "md:col-span-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: "Description" }),
-            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("p", { className: "text-gray-900 whitespace-pre-wrap", children: category.description }) })
+          category.description && /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "md:col-span-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: "Description" }),
+            /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("p", { className: "text-gray-900 whitespace-pre-wrap", children: category.description }) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: "Created" }),
-            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("p", { className: "text-gray-900", children: category.createdAt ? new Date(category.createdAt).toLocaleDateString("en-US", {
+          /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: "Created" }),
+            /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("p", { className: "text-gray-900", children: category.createdAt ? new Date(category.createdAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
               day: "numeric"
             }) : "Unknown" }) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: "Last Updated" }),
-            /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("p", { className: "text-gray-900", children: category.updatedAt && category.updatedAt !== category.createdAt ? new Date(category.updatedAt).toLocaleDateString("en-US", {
+          /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: "Last Updated" }),
+            /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("p", { className: "text-gray-900", children: category.updatedAt && category.updatedAt !== category.createdAt ? new Date(category.updatedAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
               day: "numeric"
             }) : "Never updated" }) })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(
             Button,
             {
               type: "button",
@@ -29881,7 +29964,7 @@ var CategoryView = ({
               children: "Close"
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(
             Button,
             {
               type: "button",
@@ -29892,21 +29975,21 @@ var CategoryView = ({
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Dialog, { open: showDeleteConfirm, onOpenChange: setShowDeleteConfirm, children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)(DialogContent, { className: "sm:max-w-[600px]", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(DialogTitle, { children: "Delete Category" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("p", { className: "text-gray-600", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(Dialog, { open: showDeleteConfirm, onOpenChange: setShowDeleteConfirm, children: /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)(DialogContent, { className: "sm:max-w-[600px]", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(DialogTitle, { children: "Delete Category" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "space-y-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("p", { className: "text-gray-600", children: [
           "Are you sure you want to delete the category ",
-          /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("strong", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("strong", { children: [
             '"',
             category?.name,
             '"'
           ] }),
           "?"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("p", { className: "text-sm text-gray-500", children: "This action cannot be undone. All products in this category will be affected." }),
-        /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("p", { className: "text-sm text-gray-500", children: "This action cannot be undone. All products in this category will be affected." }),
+        /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(
             Button,
             {
               type: "button",
@@ -29915,7 +29998,7 @@ var CategoryView = ({
               children: "Cancel"
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(
             Button,
             {
               type: "button",
@@ -29931,9 +30014,9 @@ var CategoryView = ({
 };
 
 // src/components/features/Categories/components/CategoryFilters.tsx
-var import_ui116 = require("@rentalshop/ui");
+var import_ui119 = require("@rentalshop/ui");
 var import_lucide_react89 = require("lucide-react");
-var import_jsx_runtime174 = require("react/jsx-runtime");
+var import_jsx_runtime176 = require("react/jsx-runtime");
 var CategoryFilters = ({
   filters,
   onFiltersChange,
@@ -29948,11 +30031,11 @@ var CategoryFilters = ({
     const newOrder = currentSort?.field === field && currentSort?.order === "asc" ? "desc" : "asc";
     onSortChange(field, newOrder);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(import_ui116.Card, { className: "bg-white", children: /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(import_ui116.CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime174.jsxs)("div", { className: "flex items-center space-x-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime174.jsxs)("div", { className: "flex-1 relative", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(import_lucide_react89.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" }),
-      /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(
-        import_ui116.Input,
+  return /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(import_ui119.Card, { className: "bg-white", children: /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(import_ui119.CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime176.jsxs)("div", { className: "flex items-center space-x-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime176.jsxs)("div", { className: "flex-1 relative", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(import_lucide_react89.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" }),
+      /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(
+        import_ui119.Input,
         {
           type: "text",
           placeholder: "Search categories...",
@@ -29962,8 +30045,8 @@ var CategoryFilters = ({
         }
       )
     ] }),
-    filters.search && /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(
-      import_ui116.Button,
+    filters.search && /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(
+      import_ui119.Button,
       {
         onClick: onClearFilters,
         variant: "ghost",
@@ -29976,13 +30059,13 @@ var CategoryFilters = ({
 
 // src/components/features/Categories/components/CategorySearch.tsx
 var import_lucide_react90 = require("lucide-react");
-var import_jsx_runtime175 = require("react/jsx-runtime");
+var import_jsx_runtime177 = require("react/jsx-runtime");
 function CategorySearch({ value, onChange, onClear }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(CardContent2, { className: "pt-6 space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("div", { className: "flex justify-between items-end gap-4", children: /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "space-y-2 flex-1", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("label", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: "Search Categories" }),
-    /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "relative", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime175.jsx)("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none", children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(import_lucide_react90.Search, { className: "h-4 w-4 text-gray-400" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(CardContent2, { className: "pt-6 space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime177.jsx)("div", { className: "flex justify-between items-end gap-4", children: /* @__PURE__ */ (0, import_jsx_runtime177.jsxs)("div", { className: "space-y-2 flex-1", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime177.jsx)("label", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: "Search Categories" }),
+    /* @__PURE__ */ (0, import_jsx_runtime177.jsxs)("div", { className: "relative", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime177.jsx)("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none", children: /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(import_lucide_react90.Search, { className: "h-4 w-4 text-gray-400" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(
         Input2,
         {
           type: "text",
@@ -29992,23 +30075,42 @@ function CategorySearch({ value, onChange, onClear }) {
           className: "pl-10 pr-10"
         }
       ),
-      value && /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(
+      value && /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(
         Button,
         {
           onClick: onClear,
           variant: "ghost",
           size: "icon",
           className: "absolute inset-y-0 right-0 h-full w-10",
-          children: /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(import_lucide_react90.X, { className: "h-4 w-4 text-gray-400 hover:text-gray-600" })
+          children: /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(import_lucide_react90.X, { className: "h-4 w-4 text-gray-400 hover:text-gray-600" })
         }
       )
     ] })
   ] }) }) }) });
 }
 
+// src/components/features/Categories/components/CategoriesLoading.tsx
+var import_jsx_runtime178 = require("react/jsx-runtime");
+function CategoriesLoading() {
+  return /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(StatsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(SearchSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(TableSkeleton, { rows: 8, columns: 4 }),
+    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(PaginationSkeleton, {})
+  ] });
+}
+function CategoryDetailLoading() {
+  return /* @__PURE__ */ (0, import_jsx_runtime178.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)("div", { className: "animate-pulse", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)("div", { className: "h-8 bg-gray-200 rounded w-1/4 mb-4" }),
+    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)("div", { className: "h-4 bg-gray-200 rounded w-1/2 mb-2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)("div", { className: "h-4 bg-gray-200 rounded w-3/4 mb-2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)("div", { className: "h-4 bg-gray-200 rounded w-2/3" })
+  ] }) });
+}
+
 // src/components/features/Categories/Categories.tsx
 var import_lucide_react91 = require("lucide-react");
-var import_jsx_runtime176 = require("react/jsx-runtime");
+var import_jsx_runtime179 = require("react/jsx-runtime");
 var Categories = ({
   data,
   filters = {},
@@ -30028,12 +30130,12 @@ var Categories = ({
   const currentPage = data?.currentPage || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = import_react85.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnCategoryAction = import_react85.default.useCallback(onCategoryAction, [onCategoryAction]);
-  const memoizedOnPageChange = import_react85.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react85.default.useCallback(onSort, [onSort]);
-  return /* @__PURE__ */ (0, import_jsx_runtime176.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime176.jsx)("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(
+  const memoizedOnSearchChange = import_react86.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnCategoryAction = import_react86.default.useCallback(onCategoryAction, [onCategoryAction]);
+  const memoizedOnPageChange = import_react86.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react86.default.useCallback(onSort, [onSort]);
+  return /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
       CategorySearch,
       {
         value: filters.q || "",
@@ -30041,7 +30143,7 @@ var Categories = ({
         onClear: () => memoizedOnSearchChange("")
       }
     ) }),
-    /* @__PURE__ */ (0, import_jsx_runtime176.jsx)("div", { className: "flex-1 min-h-0", children: categories.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "flex-1 min-h-0", children: categories.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
       CategoryTable,
       {
         categories,
@@ -30050,16 +30152,16 @@ var Categories = ({
         sortOrder: filters.sortOrder || "asc",
         onSort: memoizedOnSort
       }
-    ) : /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(
-      import_ui117.EmptyState,
+    ) : /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
+      import_ui120.EmptyState,
       {
         icon: import_lucide_react91.FolderOpen,
         title: "No categories found",
         description: filters.q ? "Try adjusting your search" : "Get started by adding your first category"
       }
     ) }),
-    categories.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime176.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime176.jsx)(
-      import_ui117.Pagination,
+    categories.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
+      import_ui120.Pagination,
       {
         currentPage,
         totalPages,
@@ -30073,8 +30175,8 @@ var Categories = ({
 };
 
 // src/components/features/Plans/components/PlanDialog.tsx
-var import_ui118 = require("@rentalshop/ui");
-var import_jsx_runtime177 = require("react/jsx-runtime");
+var import_ui121 = require("@rentalshop/ui");
+var import_jsx_runtime180 = require("react/jsx-runtime");
 var PlanDialog = ({
   open,
   onOpenChange,
@@ -30118,12 +30220,12 @@ var PlanDialog = ({
   const handleCancel = () => {
     onOpenChange(false);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(import_ui118.Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime177.jsxs)(import_ui118.DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime177.jsxs)(import_ui118.DialogHeader, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(import_ui118.DialogTitle, { children: getDialogTitle() }),
-      /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(import_ui118.DialogDescription, { children: getDialogDescription() })
+  return /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_ui121.Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.DialogHeader, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_ui121.DialogTitle, { children: getDialogTitle() }),
+      /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_ui121.DialogDescription, { children: getDialogDescription() })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(
       PlanForm,
       {
         initialData: plan,
@@ -30140,9 +30242,9 @@ var PlanDialog = ({
 };
 
 // src/components/features/Plans/components/PlanActions.tsx
-var import_ui119 = require("@rentalshop/ui");
+var import_ui122 = require("@rentalshop/ui");
 var import_lucide_react92 = require("lucide-react");
-var import_jsx_runtime178 = require("react/jsx-runtime");
+var import_jsx_runtime181 = require("react/jsx-runtime");
 var PlanActions = ({
   plan,
   onView,
@@ -30153,65 +30255,65 @@ var PlanActions = ({
   onDuplicate,
   onArchive
 }) => {
-  return /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(
-      import_ui119.Button,
+  return /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
+      import_ui122.Button,
       {
         variant: "ghost",
         size: "sm",
         onClick: () => onView(plan),
         className: "h-8 w-8 p-0",
         title: "View plan details",
-        children: /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_lucide_react92.Eye, { className: "w-4 h-4" })
+        children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react92.Eye, { className: "w-4 h-4" })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(
-      import_ui119.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
+      import_ui122.Button,
       {
         variant: "ghost",
         size: "sm",
         onClick: () => onEdit(plan),
         className: "h-8 w-8 p-0",
         title: "Edit plan",
-        children: /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_lucide_react92.Edit, { className: "w-4 h-4" })
+        children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react92.Edit, { className: "w-4 h-4" })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(import_ui119.DropdownMenu, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_ui119.DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(
-        import_ui119.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.DropdownMenu, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_ui122.DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
+        import_ui122.Button,
         {
           variant: "ghost",
           size: "sm",
           className: "h-8 w-8 p-0",
           title: "More actions",
-          children: /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_lucide_react92.MoreHorizontal, { className: "w-4 h-4" })
+          children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react92.MoreHorizontal, { className: "w-4 h-4" })
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(import_ui119.DropdownMenuContent, { align: "end", className: "w-48", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(import_ui119.DropdownMenuItem, { onClick: () => onToggleStatus(plan), children: [
-          /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_lucide_react92.Settings, { className: "w-4 h-4 mr-2" }),
+      /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.DropdownMenuContent, { align: "end", className: "w-48", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.DropdownMenuItem, { onClick: () => onToggleStatus(plan), children: [
+          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react92.Settings, { className: "w-4 h-4 mr-2" }),
           plan.isActive ? "Deactivate" : "Activate"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(import_ui119.DropdownMenuItem, { onClick: () => onTogglePopular(plan), children: [
-          /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_lucide_react92.Star, { className: "w-4 h-4 mr-2" }),
+        /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.DropdownMenuItem, { onClick: () => onTogglePopular(plan), children: [
+          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react92.Star, { className: "w-4 h-4 mr-2" }),
           plan.isPopular ? "Remove Popular" : "Mark Popular"
         ] }),
-        onDuplicate && /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(import_ui119.DropdownMenuItem, { onClick: () => onDuplicate(plan), children: [
-          /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_lucide_react92.Copy, { className: "w-4 h-4 mr-2" }),
+        onDuplicate && /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.DropdownMenuItem, { onClick: () => onDuplicate(plan), children: [
+          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react92.Copy, { className: "w-4 h-4 mr-2" }),
           "Duplicate Plan"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_ui119.DropdownMenuSeparator, {}),
-        onArchive && /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(import_ui119.DropdownMenuItem, { onClick: () => onArchive(plan), children: [
-          /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_lucide_react92.Archive, { className: "w-4 h-4 mr-2" }),
+        /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_ui122.DropdownMenuSeparator, {}),
+        onArchive && /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.DropdownMenuItem, { onClick: () => onArchive(plan), children: [
+          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react92.Archive, { className: "w-4 h-4 mr-2" }),
           "Archive Plan"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(
-          import_ui119.DropdownMenuItem,
+        /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(
+          import_ui122.DropdownMenuItem,
           {
             onClick: () => onDelete(plan),
             className: "text-red-600 focus:text-red-600",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime178.jsx)(import_lucide_react92.Trash2, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react92.Trash2, { className: "w-4 h-4 mr-2" }),
               "Delete Plan"
             ]
           }
@@ -30222,12 +30324,12 @@ var PlanActions = ({
 };
 
 // src/components/features/Plans/components/PlanSelection.tsx
-var import_react86 = require("react");
-var import_ui120 = require("@rentalshop/ui");
+var import_react87 = require("react");
+var import_ui123 = require("@rentalshop/ui");
 var import_lucide_react93 = require("lucide-react");
 var import_constants13 = require("@rentalshop/constants");
 var import_utils38 = require("@rentalshop/utils");
-var import_jsx_runtime179 = require("react/jsx-runtime");
+var import_jsx_runtime182 = require("react/jsx-runtime");
 var PlanSelection = ({
   plans,
   selectedPlanId,
@@ -30236,14 +30338,14 @@ var PlanSelection = ({
   loading = false,
   disabled = false
 }) => {
-  const [selectedPlan, setSelectedPlan] = (0, import_react86.useState)(selectedPlanId);
-  const [selectedCycle, setSelectedCycle] = (0, import_react86.useState)(selectedBillingCycle);
-  (0, import_react86.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react87.useState)(selectedPlanId);
+  const [selectedCycle, setSelectedCycle] = (0, import_react87.useState)(selectedBillingCycle);
+  (0, import_react87.useEffect)(() => {
     if (selectedPlanId) {
       setSelectedPlan(selectedPlanId);
     }
   }, [selectedPlanId]);
-  (0, import_react86.useEffect)(() => {
+  (0, import_react87.useEffect)(() => {
     if (selectedBillingCycle) {
       setSelectedCycle(selectedBillingCycle);
     }
@@ -30289,26 +30391,26 @@ var PlanSelection = ({
     return cycleOption ? totalPrice / cycleOption.months : plan.price;
   };
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "animate-pulse", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "h-8 bg-bg-tertiary rounded w-1/4 mb-4" }),
-      /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-6", children: [...Array(3)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "h-96 bg-bg-tertiary rounded" }, i)) })
+    return /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "animate-pulse", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "h-8 bg-bg-tertiary rounded w-1/4 mb-4" }),
+      /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-6", children: [...Array(3)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "h-96 bg-bg-tertiary rounded" }, i)) })
     ] }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "Select Billing Cycle" }),
-        /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("p", { className: "text-text-secondary", children: "Choose how often you'd like to be billed" })
+  return /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "Select Billing Cycle" }),
+        /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("p", { className: "text-text-secondary", children: "Choose how often you'd like to be billed" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
-        import_ui120.RadioGroup,
+      /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
+        import_ui123.RadioGroup,
         {
           value: selectedCycle,
           onValueChange: handleBillingCycleSelect,
           className: "grid grid-cols-1 md:grid-cols-4 gap-4",
-          children: import_constants13.BILLING_CYCLES.map((cycle) => /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
-              import_ui120.RadioGroupItem,
+          children: import_constants13.BILLING_CYCLES.map((cycle) => /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
+              import_ui123.RadioGroupItem,
               {
                 value: cycle.value,
                 id: cycle.value,
@@ -30316,15 +30418,15 @@ var PlanSelection = ({
                 disabled
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
-              import_ui120.Label,
+            /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
+              import_ui123.Label,
               {
                 htmlFor: cycle.value,
                 className: "flex flex-col items-center justify-between rounded-md border-2 border-border bg-bg-card p-4 hover:bg-bg-secondary cursor-pointer peer-data-[state=checked]:border-action-primary peer-data-[state=checked]:bg-action-primary/5 [&:has([data-state=checked])]:border-action-primary",
-                children: /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "text-center", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "font-medium text-text-primary", children: cycle.label }),
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "text-sm text-text-secondary", children: cycle.description }),
-                  (0, import_utils38.getBillingCycleDiscount)(cycle.value) > 0 && /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)(import_ui120.Badge, { variant: "default", className: "mt-2", children: [
+                children: /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "text-center", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "font-medium text-text-primary", children: cycle.label }),
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "text-sm text-text-secondary", children: cycle.description }),
+                  (0, import_utils38.getBillingCycleDiscount)(cycle.value) > 0 && /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)(import_ui123.Badge, { variant: "default", className: "mt-2", children: [
                     (0, import_utils38.getBillingCycleDiscount)(cycle.value),
                     "% OFF"
                   ] })
@@ -30335,91 +30437,91 @@ var PlanSelection = ({
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "Select Your Plan" }),
-        /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("p", { className: "text-text-secondary", children: "Choose the plan that best fits your business needs" })
+    /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "Select Your Plan" }),
+        /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("p", { className: "text-text-secondary", children: "Choose the plan that best fits your business needs" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", children: plans.map((plan) => /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)(
-        import_ui120.Card,
+      /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", children: plans.map((plan) => /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)(
+        import_ui123.Card,
         {
           className: `cursor-pointer transition-all duration-200 hover:shadow-lg ${selectedPlan === plan.id ? "ring-2 ring-action-primary" : ""} ${plan.isPopular ? "ring-2 ring-action-primary" : ""}`,
           onClick: () => !disabled && handlePlanSelect(plan.id),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_ui120.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "text-center", children: [
-              plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-action-primary text-white mb-3", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_lucide_react93.Star, { className: "w-3 h-3 mr-1" }),
+            /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "text-center", children: [
+              plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-action-primary text-white mb-3", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react93.Star, { className: "w-3 h-3 mr-1" }),
                 "Most Popular"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_ui120.CardTitle, { children: plan.name }),
-              /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("p", { className: "text-text-secondary text-sm mt-2", children: plan.description })
+              /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.CardTitle, { children: plan.name }),
+              /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("p", { className: "text-text-secondary text-sm mt-2", children: plan.description })
             ] }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)(import_ui120.CardContent, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "text-center mb-6", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "text-4xl font-bold text-text-primary", children: formatCurrency20(getBillingCyclePrice(plan, selectedCycle), plan.currency) }),
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "text-lg text-text-secondary", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)(import_ui123.CardContent, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "text-center mb-6", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "text-4xl font-bold text-text-primary", children: formatCurrency20(getBillingCyclePrice(plan, selectedCycle), plan.currency) }),
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "text-lg text-text-secondary", children: [
                   "per ",
                   (0, import_utils38.formatBillingCycle)(selectedCycle).toLowerCase()
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "text-sm text-text-tertiary mt-1", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "text-sm text-text-tertiary mt-1", children: [
                   formatCurrency20(getBillingCycleMonthlyPrice(plan, selectedCycle), plan.currency),
                   "/month"
                 ] }),
-                (0, import_utils38.getBillingCycleDiscount)(selectedCycle) > 0 && /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "text-sm text-action-success mt-1", children: [
+                (0, import_utils38.getBillingCycleDiscount)(selectedCycle) > 0 && /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "text-sm text-action-success mt-1", children: [
                   (0, import_utils38.getBillingCycleDiscount)(selectedCycle),
                   "% discount applied"
                 ] }),
-                plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "text-sm text-action-primary mt-1", children: [
+                plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "text-sm text-action-primary mt-1", children: [
                   plan.trialDays,
                   "-day free trial"
                 ] })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "space-y-3 mb-6", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("span", { className: "text-text-secondary flex items-center gap-2", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_lucide_react93.Package, { className: "w-4 h-4" }),
+              /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "space-y-3 mb-6", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("span", { className: "text-text-secondary flex items-center gap-2", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react93.Package, { className: "w-4 h-4" }),
                     "Outlets"
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.outlets) })
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.outlets) })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("span", { className: "text-text-secondary flex items-center gap-2", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_lucide_react93.Users, { className: "w-4 h-4" }),
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("span", { className: "text-text-secondary flex items-center gap-2", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react93.Users, { className: "w-4 h-4" }),
                     "Users"
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.users) })
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.users) })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("span", { className: "text-text-secondary flex items-center gap-2", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_lucide_react93.CreditCard, { className: "w-4 h-4" }),
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("span", { className: "text-text-secondary flex items-center gap-2", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react93.CreditCard, { className: "w-4 h-4" }),
                     "Products"
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.products) })
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.products) })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("span", { className: "text-text-secondary flex items-center gap-2", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_lucide_react93.Users, { className: "w-4 h-4" }),
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("span", { className: "text-text-secondary flex items-center gap-2", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react93.Users, { className: "w-4 h-4" }),
                     "Customers"
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.customers) })
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.customers) })
                 ] })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "space-y-2 mb-6", children: [
-                plan.features.slice(0, 4).map((feature, index) => /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "flex items-center gap-2 text-sm", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_lucide_react93.CheckCircle, { className: "w-4 h-4 text-action-success flex-shrink-0" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("span", { className: "text-text-secondary", children: feature })
+              /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "space-y-2 mb-6", children: [
+                plan.features.slice(0, 4).map((feature, index) => /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex items-center gap-2 text-sm", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react93.CheckCircle, { className: "w-4 h-4 text-action-success flex-shrink-0" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("span", { className: "text-text-secondary", children: feature })
                 ] }, index)),
-                plan.features.length > 4 && /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "text-sm text-text-tertiary", children: [
+                plan.features.length > 4 && /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "text-sm text-text-tertiary", children: [
                   "+",
                   plan.features.length - 4,
                   " more features"
                 ] })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "text-center", children: selectedPlan === plan.id ? /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-action-success text-white", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_lucide_react93.CheckCircle, { className: "w-3 h-3 mr-1" }),
+              /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "text-center", children: selectedPlan === plan.id ? /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-action-success text-white", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react93.CheckCircle, { className: "w-3 h-3 mr-1" }),
                 "Selected"
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
-                import_ui120.Button,
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
+                import_ui123.Button,
                 {
                   variant: "outline",
                   className: "w-full",
@@ -30437,9 +30539,9 @@ var PlanSelection = ({
 };
 
 // src/components/features/Plans/components/PlanCard.tsx
-var import_ui121 = require("@rentalshop/ui");
+var import_ui124 = require("@rentalshop/ui");
 var import_lucide_react94 = require("lucide-react");
-var import_jsx_runtime180 = require("react/jsx-runtime");
+var import_jsx_runtime183 = require("react/jsx-runtime");
 var PlanCard = ({
   plan,
   onView,
@@ -30469,187 +30571,187 @@ var PlanCard = ({
     });
   };
   if (variant === "compact") {
-    return /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_ui121.Card, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_ui121.CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Package, { className: "w-4 h-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "font-medium text-text-primary", children: plan.name }),
-        plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.Badge, { variant: "default", className: "text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Star, { className: "w-3 h-3 mr-1" }),
+    return /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.Card, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Package, { className: "w-4 h-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "font-medium text-text-primary", children: plan.name }),
+        plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.Badge, { variant: "default", className: "text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Star, { className: "w-3 h-3 mr-1" }),
           "Popular"
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("div", { className: "text-right", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "font-medium text-text-primary", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-right", children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "font-medium text-text-primary", children: [
         formatCurrency20(plan.price, plan.currency),
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-sm text-text-secondary font-normal", children: getBillingCycleText(plan.billingCycle) })
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-sm text-text-secondary font-normal", children: getBillingCycleText(plan.billingCycle) })
       ] }) })
     ] }) }) });
   }
   if (variant === "detailed") {
-    return /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.Card, { className: "hover:shadow-md transition-shadow", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_ui121.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.CardTitle, { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Package, { className: "w-5 h-5" }),
+    return /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.Card, { className: "hover:shadow-md transition-shadow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.CardTitle, { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Package, { className: "w-5 h-5" }),
           plan.name,
-          plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.Badge, { variant: "default", className: "text-xs", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Star, { className: "w-3 h-3 mr-1" }),
+          plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.Badge, { variant: "default", className: "text-xs", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Star, { className: "w-3 h-3 mr-1" }),
             "Popular"
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "text-right", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "text-2xl font-bold text-action-primary", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-right", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-2xl font-bold text-action-primary", children: [
             formatCurrency20(plan.price, plan.currency),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-sm text-text-secondary font-normal", children: getBillingCycleText(plan.billingCycle) })
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-sm text-text-secondary font-normal", children: getBillingCycleText(plan.billingCycle) })
           ] }),
-          plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "text-xs text-action-primary", children: [
+          plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-xs text-action-primary", children: [
             plan.trialDays,
             "-day trial"
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.CardContent, { className: "space-y-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("p", { className: "text-text-secondary", children: plan.description }),
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "grid grid-cols-2 gap-4 text-sm", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Package, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-text-secondary", children: "Outlets:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.outlets) })
+      /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.CardContent, { className: "space-y-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("p", { className: "text-text-secondary", children: plan.description }),
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "grid grid-cols-2 gap-4 text-sm", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Package, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-text-secondary", children: "Outlets:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.outlets) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Users, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-text-secondary", children: "Users:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.users) })
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Users, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-text-secondary", children: "Users:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.users) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.CreditCard, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-text-secondary", children: "Products:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.products) })
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.CreditCard, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-text-secondary", children: "Products:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.products) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Users, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-text-secondary", children: "Customers:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.customers) })
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Users, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-text-secondary", children: "Customers:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.customers) })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "text-sm text-text-secondary", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "font-medium mb-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-sm text-text-secondary", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "font-medium mb-1", children: [
             "Features (",
             plan.features.length,
             "):"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "text-xs text-text-tertiary", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-xs text-text-tertiary", children: [
             plan.features.slice(0, 3).join(", "),
             plan.features.length > 3 && "..."
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center justify-between text-xs text-text-tertiary", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center justify-between text-xs text-text-tertiary", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("span", { children: [
             "Created: ",
             formatDate11(plan.createdAt)
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("span", { children: [
             "Sort Order: ",
             plan.sortOrder
           ] })
         ] }),
-        showActions && /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center justify-end gap-2 pt-2 border-t border-border", children: [
-          onView && /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(
-            import_ui121.Button,
+        showActions && /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center justify-end gap-2 pt-2 border-t border-border", children: [
+          onView && /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(
+            import_ui124.Button,
             {
               variant: "ghost",
               size: "sm",
               onClick: () => onView(plan),
               className: "h-8 w-8 p-0",
-              children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Eye, { className: "w-4 h-4" })
+              children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Eye, { className: "w-4 h-4" })
             }
           ),
-          onEdit && /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(
-            import_ui121.Button,
+          onEdit && /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(
+            import_ui124.Button,
             {
               variant: "ghost",
               size: "sm",
               onClick: () => onEdit(plan),
               className: "h-8 w-8 p-0",
-              children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Edit, { className: "w-4 h-4" })
+              children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Edit, { className: "w-4 h-4" })
             }
           ),
-          onToggleStatus && /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(
-            import_ui121.Button,
+          onToggleStatus && /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(
+            import_ui124.Button,
             {
               variant: "ghost",
               size: "sm",
               onClick: () => onToggleStatus(plan),
               className: "h-8 w-8 p-0",
-              children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Settings, { className: "w-4 h-4" })
+              children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Settings, { className: "w-4 h-4" })
             }
           )
         ] })
       ] })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.Card, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_ui121.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.CardTitle, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Package, { className: "w-5 h-5" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.Card, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.CardTitle, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Package, { className: "w-5 h-5" }),
         plan.name,
-        plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.Badge, { variant: "default", className: "text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Star, { className: "w-3 h-3 mr-1" }),
+        plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.Badge, { variant: "default", className: "text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Star, { className: "w-3 h-3 mr-1" }),
           "Popular"
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "text-right", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "text-xl font-bold text-action-primary", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-right", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-xl font-bold text-action-primary", children: [
           formatCurrency20(plan.price, plan.currency),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-sm text-text-secondary font-normal", children: getBillingCycleText(plan.billingCycle) })
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-sm text-text-secondary font-normal", children: getBillingCycleText(plan.billingCycle) })
         ] }),
-        plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "text-xs text-action-primary", children: [
+        plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-xs text-action-primary", children: [
           plan.trialDays,
           "-day trial"
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_ui121.CardContent, { className: "space-y-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("p", { className: "text-sm text-text-secondary line-clamp-2", children: plan.description }),
-      /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "grid grid-cols-2 gap-2 text-xs", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center gap-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Package, { className: "w-3 h-3 text-text-tertiary" }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-text-secondary", children: "Outlets:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "font-medium", children: getLimitText(plan.maxOutlets) })
+    /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)(import_ui124.CardContent, { className: "space-y-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("p", { className: "text-sm text-text-secondary line-clamp-2", children: plan.description }),
+      /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "grid grid-cols-2 gap-2 text-xs", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center gap-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Package, { className: "w-3 h-3 text-text-tertiary" }),
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-text-secondary", children: "Outlets:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "font-medium", children: getLimitText(plan.maxOutlets) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center gap-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Users, { className: "w-3 h-3 text-text-tertiary" }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "text-text-secondary", children: "Users:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("span", { className: "font-medium", children: getLimitText(plan.maxUsers) })
+        /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center gap-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Users, { className: "w-3 h-3 text-text-tertiary" }),
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "text-text-secondary", children: "Users:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("span", { className: "font-medium", children: getLimitText(plan.maxUsers) })
         ] })
       ] }),
-      showActions && /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center justify-end gap-2 pt-2 border-t border-border", children: [
-        onView && /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(
-          import_ui121.Button,
+      showActions && /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "flex items-center justify-end gap-2 pt-2 border-t border-border", children: [
+        onView && /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(
+          import_ui124.Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: () => onView(plan),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Eye, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Eye, { className: "w-4 h-4" })
           }
         ),
-        onEdit && /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(
-          import_ui121.Button,
+        onEdit && /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(
+          import_ui124.Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: () => onEdit(plan),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Edit, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Edit, { className: "w-4 h-4" })
           }
         ),
-        onToggleStatus && /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(
-          import_ui121.Button,
+        onToggleStatus && /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(
+          import_ui124.Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: () => onToggleStatus(plan),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react94.Settings, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_lucide_react94.Settings, { className: "w-4 h-4" })
           }
         )
       ] })
@@ -30658,9 +30760,9 @@ var PlanCard = ({
 };
 
 // src/components/features/Plans/components/PlanTable.tsx
-var import_ui122 = require("@rentalshop/ui");
+var import_ui125 = require("@rentalshop/ui");
 var import_lucide_react95 = require("lucide-react");
-var import_jsx_runtime181 = require("react/jsx-runtime");
+var import_jsx_runtime184 = require("react/jsx-runtime");
 var PlanTable = ({
   plans,
   onView,
@@ -30728,186 +30830,186 @@ var PlanTable = ({
   const getSortIcon = (field) => {
     if (sortBy !== field)
       return null;
-    return sortOrder === "asc" ? /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.ChevronUp, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.ChevronDown, { className: "w-4 h-4" });
+    return sortOrder === "asc" ? /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.ChevronUp, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.ChevronDown, { className: "w-4 h-4" });
   };
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.Card, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_ui122.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_ui122.CardTitle, { children: "Subscription Plans" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_ui122.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)(import_ui125.Card, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.CardTitle, { children: "Subscription Plans" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.Card, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_ui122.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_ui122.CardTitle, { children: "Subscription Plans" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_ui122.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "overflow-x-auto", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("table", { className: "w-full", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("tr", { className: "border-b border-border", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)(import_ui125.Card, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.CardTitle, { children: "Subscription Plans" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "overflow-x-auto", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("table", { className: "w-full", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("tr", { className: "border-b border-border", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
             "th",
             {
               className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
               onClick: () => handleSort("name"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center gap-2", children: [
+              children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-2", children: [
                 "Plan Name",
                 getSortIcon("name")
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
             "th",
             {
               className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
               onClick: () => handleSort("price"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center gap-2", children: [
+              children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-2", children: [
                 "Price",
                 getSortIcon("price")
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Limits" }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Features" }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Status" }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Limits" }),
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Features" }),
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Status" }),
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
             "th",
             {
               className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
               onClick: () => handleSort("createdAt"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center gap-2", children: [
+              children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-2", children: [
                 "Created",
                 getSortIcon("createdAt")
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("th", { className: "text-right py-3 px-4 font-medium text-text-primary", children: "Actions" })
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("th", { className: "text-right py-3 px-4 font-medium text-text-primary", children: "Actions" })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("tbody", { children: plans.map((plan) => /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "font-medium text-text-primary flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("tbody", { children: plans.map((plan) => /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "font-medium text-text-primary flex items-center gap-2", children: [
               plan.name,
-              plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(import_ui122.Badge, { variant: "default", className: "text-xs", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Star, { className: "w-3 h-3 mr-1" }),
+              plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)(import_ui125.Badge, { variant: "default", className: "text-xs", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Star, { className: "w-3 h-3 mr-1" }),
                 "Popular"
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("div", { className: "text-sm text-text-secondary mt-1 max-w-xs truncate", children: plan.description })
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("div", { className: "text-sm text-text-secondary mt-1 max-w-xs truncate", children: plan.description })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "font-medium text-text-primary", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "font-medium text-text-primary", children: [
               formatCurrency20(plan.price, plan.currency),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "text-sm text-text-secondary font-normal", children: getBillingCycleText(plan.billingCycle) })
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "text-sm text-text-secondary font-normal", children: getBillingCycleText(plan.billingCycle) })
             ] }),
-            getBillingCycleDiscount4(plan.billingCycle) > 0 && /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "text-xs text-green-600 mt-1", children: [
+            getBillingCycleDiscount4(plan.billingCycle) > 0 && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-xs text-green-600 mt-1", children: [
               getBillingCycleDiscount4(plan.billingCycle),
               "% discount"
             ] }),
-            plan.billingCycleMonths > 1 && /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "text-xs text-text-tertiary mt-1", children: [
+            plan.billingCycleMonths > 1 && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-xs text-text-tertiary mt-1", children: [
               "Total: ",
               formatCurrency20(calculateDiscountedPrice5(plan.price, plan.billingCycle), plan.currency)
             ] }),
-            plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "text-xs text-action-primary mt-1", children: [
+            plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-xs text-action-primary mt-1", children: [
               plan.trialDays,
               "-day trial"
             ] })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "space-y-1 text-sm", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Package, { className: "w-3 h-3 text-text-tertiary" }),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "text-text-secondary", children: "Outlets:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.outlets) })
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "space-y-1 text-sm", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Package, { className: "w-3 h-3 text-text-tertiary" }),
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "text-text-secondary", children: "Outlets:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.outlets) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Users, { className: "w-3 h-3 text-text-tertiary" }),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "text-text-secondary", children: "Users:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.users) })
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Users, { className: "w-3 h-3 text-text-tertiary" }),
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "text-text-secondary", children: "Users:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.users) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.CreditCard, { className: "w-3 h-3 text-text-tertiary" }),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "text-text-secondary", children: "Products:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.products) })
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.CreditCard, { className: "w-3 h-3 text-text-tertiary" }),
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "text-text-secondary", children: "Products:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.products) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Users, { className: "w-3 h-3 text-text-tertiary" }),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "text-text-secondary", children: "Customers:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.customers) })
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Users, { className: "w-3 h-3 text-text-tertiary" }),
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "text-text-secondary", children: "Customers:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("span", { className: "font-medium", children: getLimitText(plan.limits.customers) })
             ] })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("td", { className: "py-4 px-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "text-sm text-text-secondary", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("td", { className: "py-4 px-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-sm text-text-secondary", children: [
               plan.features.length,
               " features"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "text-xs text-text-tertiary mt-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-xs text-text-tertiary mt-1", children: [
               plan.features.slice(0, 2).join(", "),
               plan.features.length > 2 && "..."
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
-            import_ui122.StatusBadge,
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
+            import_ui125.StatusBadge,
             {
               status: plan.isActive ? "active" : "inactive"
             }
           ) }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("td", { className: "py-4 px-4 text-sm text-text-secondary", children: formatDate11(plan.createdAt) }),
-          /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
-            onView && /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)(
-              import_ui122.Button,
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("td", { className: "py-4 px-4 text-sm text-text-secondary", children: formatDate11(plan.createdAt) }),
+          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
+            onView && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)(
+              import_ui125.Button,
               {
                 variant: "outline",
                 size: "sm",
                 onClick: () => onView(plan),
                 className: "h-8 px-3 text-sm",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Eye, { className: "w-4 h-4 mr-1" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Eye, { className: "w-4 h-4 mr-1" }),
                   "View Options"
                 ]
               }
             ),
-            onEdit && /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
-              import_ui122.Button,
+            onEdit && /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
+              import_ui125.Button,
               {
                 variant: "ghost",
                 size: "sm",
                 onClick: () => onEdit(plan),
                 className: "h-8 w-8 p-0",
-                children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Edit, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Edit, { className: "w-4 h-4" })
               }
             ),
-            onToggleStatus && /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
-              import_ui122.Button,
+            onToggleStatus && /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
+              import_ui125.Button,
               {
                 variant: "ghost",
                 size: "sm",
                 onClick: () => onToggleStatus(plan),
                 className: "h-8 w-8 p-0",
-                children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Settings, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Settings, { className: "w-4 h-4" })
               }
             ),
-            onDelete && /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(
-              import_ui122.Button,
+            onDelete && /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
+              import_ui125.Button,
               {
                 variant: "ghost",
                 size: "sm",
                 onClick: () => onDelete(plan),
                 className: "h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50",
                 title: "Delete plan",
-                children: /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Trash2, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Trash2, { className: "w-4 h-4" })
               }
             )
           ] }) })
         ] }, plan.id)) })
       ] }),
-      plans.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime181.jsxs)("div", { className: "text-center py-12", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime181.jsx)(import_lucide_react95.Package, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No plans found" }),
-        /* @__PURE__ */ (0, import_jsx_runtime181.jsx)("p", { className: "text-text-secondary", children: "Get started by creating your first subscription plan" })
+      plans.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-center py-12", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react95.Package, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
+        /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No plans found" }),
+        /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("p", { className: "text-text-secondary", children: "Get started by creating your first subscription plan" })
       ] })
     ] }) })
   ] });
 };
 
 // src/components/features/Plans/components/PlanFilters.tsx
-var import_ui123 = require("@rentalshop/ui");
+var import_ui126 = require("@rentalshop/ui");
 var import_lucide_react96 = require("lucide-react");
-var import_jsx_runtime182 = require("react/jsx-runtime");
+var import_jsx_runtime185 = require("react/jsx-runtime");
 var PlanFilters = ({
   searchTerm,
   statusFilter,
@@ -30917,11 +31019,11 @@ var PlanFilters = ({
   showClearButton = true
 }) => {
   const hasActiveFilters = searchTerm || statusFilter !== "all";
-  return /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.Card, { className: "mb-6", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex flex-col sm:flex-row gap-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "relative", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react96.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" }),
-      /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
-        import_ui123.Input,
+  return /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui126.Card, { className: "mb-6", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui126.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "flex flex-col sm:flex-row gap-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("div", { className: "flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "relative", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_lucide_react96.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" }),
+      /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
+        import_ui126.Input,
         {
           placeholder: "Search plans...",
           value: searchTerm,
@@ -30930,22 +31032,22 @@ var PlanFilters = ({
         }
       )
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)(import_ui123.Select, { value: statusFilter, onValueChange: onStatusFilterChange, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.SelectTrigger, { className: "w-full sm:w-48", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.SelectValue, { placeholder: "Filter by status" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)(import_ui123.SelectContent, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.SelectItem, { value: "all", children: "All Plans" }),
-        /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.SelectItem, { value: "active", children: "Active Only" }),
-        /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_ui123.SelectItem, { value: "inactive", children: "Inactive Only" })
+    /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)(import_ui126.Select, { value: statusFilter, onValueChange: onStatusFilterChange, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui126.SelectTrigger, { className: "w-full sm:w-48", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui126.SelectValue, { placeholder: "Filter by status" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)(import_ui126.SelectContent, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui126.SelectItem, { value: "all", children: "All Plans" }),
+        /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui126.SelectItem, { value: "active", children: "Active Only" }),
+        /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui126.SelectItem, { value: "inactive", children: "Inactive Only" })
       ] })
     ] }),
-    showClearButton && hasActiveFilters && onClearFilters && /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)(
-      import_ui123.Button,
+    showClearButton && hasActiveFilters && onClearFilters && /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)(
+      import_ui126.Button,
       {
         variant: "outline",
         onClick: onClearFilters,
         className: "w-full sm:w-auto",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(import_lucide_react96.X, { className: "w-4 h-4 mr-2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_lucide_react96.X, { className: "w-4 h-4 mr-2" }),
           "Clear Filters"
         ]
       }
@@ -30954,8 +31056,8 @@ var PlanFilters = ({
 };
 
 // src/components/features/Plans/components/PlanStats.tsx
-var import_ui124 = require("@rentalshop/ui");
-var import_jsx_runtime183 = require("react/jsx-runtime");
+var import_ui127 = require("@rentalshop/ui");
+var import_jsx_runtime186 = require("react/jsx-runtime");
 var PlanStats = ({
   totalPlans,
   activePlans,
@@ -30963,22 +31065,22 @@ var PlanStats = ({
   plansWithTrial,
   className = ""
 }) => {
-  return /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: `grid grid-cols-1 md:grid-cols-4 gap-6 ${className}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-2xl font-bold text-action-primary", children: totalPlans }),
-      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-sm text-text-secondary", children: "Total Plans" })
+  return /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: `grid grid-cols-1 md:grid-cols-4 gap-6 ${className}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui127.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui127.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "text-2xl font-bold text-action-primary", children: totalPlans }),
+      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "text-sm text-text-secondary", children: "Total Plans" })
     ] }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-2xl font-bold text-action-success", children: activePlans }),
-      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-sm text-text-secondary", children: "Active Plans" })
+    /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui127.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui127.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "text-2xl font-bold text-action-success", children: activePlans }),
+      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "text-sm text-text-secondary", children: "Active Plans" })
     ] }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-2xl font-bold text-brand-secondary", children: featuredPlans }),
-      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-sm text-text-secondary", children: "Featured Plans" })
+    /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui127.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui127.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "text-2xl font-bold text-brand-secondary", children: featuredPlans }),
+      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "text-sm text-text-secondary", children: "Featured Plans" })
     ] }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime183.jsx)(import_ui124.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime183.jsxs)("div", { className: "text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-2xl font-bold text-action-primary", children: plansWithTrial }),
-      /* @__PURE__ */ (0, import_jsx_runtime183.jsx)("div", { className: "text-sm text-text-secondary", children: "Plans with Trial" })
+    /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui127.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui127.CardContent, { className: "pt-6", children: /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "text-2xl font-bold text-action-primary", children: plansWithTrial }),
+      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "text-sm text-text-secondary", children: "Plans with Trial" })
     ] }) }) })
   ] });
 };
@@ -30986,7 +31088,7 @@ var PlanStats = ({
 // src/components/features/Plans/components/PlanDetailModal.tsx
 var import_lucide_react97 = require("lucide-react");
 var import_utils39 = require("@rentalshop/utils");
-var import_jsx_runtime184 = require("react/jsx-runtime");
+var import_jsx_runtime187 = require("react/jsx-runtime");
 var BILLING_CYCLES4 = [
   { value: "monthly", label: "Monthly", months: 1, discount: 0 },
   { value: "quarterly", label: "Quarterly", months: 3, discount: 5 },
@@ -31023,73 +31125,73 @@ var PlanDetailModal = ({
   const handleSubscribe = (billingCycle) => {
     onSubscribe(plan.id, billingCycle);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: `fixed inset-0 z-50 flex items-center justify-center ${open ? "block" : "hidden"}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: `fixed inset-0 z-50 flex items-center justify-center ${open ? "block" : "hidden"}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(
       "div",
       {
         className: "absolute inset-0 bg-black/50 backdrop-blur-sm",
         onClick: () => onOpenChange(false)
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "relative w-full max-w-4xl mx-4 bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center justify-between p-6 border-b", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("h2", { className: "text-2xl font-bold text-gray-900", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "relative w-full max-w-4xl mx-4 bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center justify-between p-6 border-b", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center gap-3", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("h2", { className: "text-2xl font-bold text-gray-900", children: [
             plan.name,
             " Plan"
           ] }),
-          plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)(Badge, { variant: "default", className: "bg-yellow-100 text-yellow-800 border-yellow-200", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react97.Star, { className: "w-3 h-3 mr-1" }),
+          plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(Badge, { variant: "default", className: "bg-yellow-100 text-yellow-800 border-yellow-200", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react97.Star, { className: "w-3 h-3 mr-1" }),
             "Popular"
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(
           Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: () => onOpenChange(false),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react97.X, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react97.X, { className: "w-4 h-4" })
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("p", { className: "text-gray-600 mb-6", children: plan.description }),
-        /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "mb-8", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("h3", { className: "text-lg font-semibold text-gray-900 mb-4", children: "Choose Your Billing Cycle" }),
-          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: BILLING_CYCLES4.map((cycle) => {
+      /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("p", { className: "text-gray-600 mb-6", children: plan.description }),
+        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "mb-8", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("h3", { className: "text-lg font-semibold text-gray-900 mb-4", children: "Choose Your Billing Cycle" }),
+          /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: BILLING_CYCLES4.map((cycle) => {
             const discountedPrice = calculateDiscountedPrice4(plan.price, cycle.value);
             const savings = calculateSavings2(plan.price, cycle.value);
             const isSelected = plan.billingCycle === cycle.value;
-            return /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)(
+            return /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(
               Card2,
               {
                 className: `cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "hover:bg-gray-50"}`,
                 onClick: () => handleSubscribe(cycle.value),
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(CardHeader2, { className: "pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center justify-between", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(CardTitle2, { className: "text-base font-semibold", children: cycle.label }),
-                    isSelected && /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react97.Check, { className: "w-5 h-5 text-blue-500" })
+                  /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(CardHeader2, { className: "pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center justify-between", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(CardTitle2, { className: "text-base font-semibold", children: cycle.label }),
+                    isSelected && /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react97.Check, { className: "w-5 h-5 text-blue-500" })
                   ] }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(CardContent2, { className: "pt-0", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "space-y-2", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-2xl font-bold text-gray-900", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(CardContent2, { className: "pt-0", children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "space-y-2", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "text-2xl font-bold text-gray-900", children: [
                       (0, import_utils39.formatCurrency)(plan.price, plan.currency),
                       "/month"
                     ] }),
-                    cycle.discount > 0 && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-sm text-green-600 font-medium", children: [
+                    cycle.discount > 0 && /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "text-sm text-green-600 font-medium", children: [
                       cycle.discount,
                       "% discount"
                     ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-sm text-gray-600", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "text-sm text-gray-600", children: [
                       "Total: ",
                       (0, import_utils39.formatCurrency)(discountedPrice, plan.currency)
                     ] }),
-                    savings > 0 && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "text-xs text-green-600", children: [
+                    savings > 0 && /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "text-xs text-green-600", children: [
                       "Save: ",
                       (0, import_utils39.formatCurrency)(savings, plan.currency)
                     ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(
                       Button,
                       {
                         variant: isSelected ? "default" : "outline",
@@ -31109,55 +31211,55 @@ var PlanDetailModal = ({
             );
           }) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "mb-8", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("h3", { className: "text-lg font-semibold text-gray-900 mb-4", children: "Plan Features" }),
-          /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("h4", { className: "font-medium text-gray-900 mb-3", children: "Limits" }),
-              /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("ul", { className: "space-y-2 text-sm text-gray-600", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("li", { className: "flex items-center gap-2", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react97.Check, { className: "w-4 h-4 text-green-500" }),
+        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "mb-8", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("h3", { className: "text-lg font-semibold text-gray-900 mb-4", children: "Plan Features" }),
+          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("h4", { className: "font-medium text-gray-900 mb-3", children: "Limits" }),
+              /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("ul", { className: "space-y-2 text-sm text-gray-600", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("li", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react97.Check, { className: "w-4 h-4 text-green-500" }),
                   plan.limits.outlets === -1 ? "Unlimited" : plan.limits.outlets,
                   " outlets"
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("li", { className: "flex items-center gap-2", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react97.Check, { className: "w-4 h-4 text-green-500" }),
+                /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("li", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react97.Check, { className: "w-4 h-4 text-green-500" }),
                   plan.limits.users === -1 ? "Unlimited" : plan.limits.users,
                   " users"
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("li", { className: "flex items-center gap-2", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react97.Check, { className: "w-4 h-4 text-green-500" }),
+                /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("li", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react97.Check, { className: "w-4 h-4 text-green-500" }),
                   plan.limits.products === -1 ? "Unlimited" : plan.limits.products,
                   " products"
                 ] })
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("h4", { className: "font-medium text-gray-900 mb-3", children: "Features" }),
-              /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("ul", { className: "space-y-2 text-sm text-gray-600", children: plan.features.map((feature, index) => /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("li", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react97.Check, { className: "w-4 h-4 text-green-500" }),
+            /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("h4", { className: "font-medium text-gray-900 mb-3", children: "Features" }),
+              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("ul", { className: "space-y-2 text-sm text-gray-600", children: plan.features.map((feature, index) => /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("li", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react97.Check, { className: "w-4 h-4 text-green-500" }),
                 feature
               ] }, index)) })
             ] })
           ] })
         ] }),
-        plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_lucide_react97.Check, { className: "w-5 h-5 text-blue-500" }),
-            /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("span", { className: "font-medium text-blue-900", children: [
+        plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react97.Check, { className: "w-5 h-5 text-blue-500" }),
+            /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("span", { className: "font-medium text-blue-900", children: [
               plan.trialDays,
               "-day free trial included"
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("p", { className: "text-sm text-blue-700 mt-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("p", { className: "text-sm text-blue-700 mt-1", children: [
             "Start your ",
             plan.trialDays,
             "-day free trial today. No credit card required."
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: "flex items-center justify-end gap-3 p-6 border-t bg-gray-50", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center justify-end gap-3 p-6 border-t bg-gray-50", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(
           Button,
           {
             variant: "outline",
@@ -31165,7 +31267,7 @@ var PlanDetailModal = ({
             children: "Cancel"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(
           Button,
           {
             onClick: () => handleSubscribe(plan.billingCycle),
@@ -31183,9 +31285,9 @@ var PlanDetailModal = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleTable.tsx
-var import_ui125 = require("@rentalshop/ui");
+var import_ui128 = require("@rentalshop/ui");
 var import_lucide_react98 = require("lucide-react");
-var import_jsx_runtime185 = require("react/jsx-runtime");
+var import_jsx_runtime188 = require("react/jsx-runtime");
 var BillingCycleTable = ({
   billingCycles,
   onView,
@@ -31211,144 +31313,144 @@ var BillingCycleTable = ({
   const getSortIcon = (field) => {
     if (sortBy !== field)
       return null;
-    return sortOrder === "asc" ? /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_lucide_react98.ChevronUp, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_lucide_react98.ChevronDown, { className: "w-4 h-4" });
+    return sortOrder === "asc" ? /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react98.ChevronUp, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react98.ChevronDown, { className: "w-4 h-4" });
   };
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)(import_ui125.Card, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui125.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui125.CardTitle, { children: "Billing Cycles" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui125.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.Card, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardTitle, { children: "Billing Cycles" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)(import_ui125.Card, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui125.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui125.CardTitle, { children: "Billing Cycles" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui125.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "overflow-x-auto", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("table", { className: "w-full", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("tr", { className: "border-b border-border", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.Card, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardTitle, { children: "Billing Cycles" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "overflow-x-auto", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("table", { className: "w-full", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("tr", { className: "border-b border-border", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
             "th",
             {
               className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
               onClick: () => handleSort("name"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "flex items-center gap-2", children: [
+              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
                 "Name",
                 getSortIcon("name")
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
             "th",
             {
               className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
               onClick: () => handleSort("value"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "flex items-center gap-2", children: [
+              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
                 "Value",
                 getSortIcon("value")
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
             "th",
             {
               className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
               onClick: () => handleSort("months"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "flex items-center gap-2", children: [
+              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
                 "Months",
                 getSortIcon("months")
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
             "th",
             {
               className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
               onClick: () => handleSort("discount"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "flex items-center gap-2", children: [
+              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
                 "Discount",
                 getSortIcon("discount")
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Description" }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Status" }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Description" }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Status" }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
             "th",
             {
               className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
               onClick: () => handleSort("createdAt"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "flex items-center gap-2", children: [
+              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
                 "Created",
                 getSortIcon("createdAt")
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("th", { className: "text-right py-3 px-4 font-medium text-text-primary", children: "Actions" })
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-right py-3 px-4 font-medium text-text-primary", children: "Actions" })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("tbody", { children: billingCycles.map((cycle) => /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("div", { className: "font-medium text-text-primary", children: cycle.name }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_ui125.Badge, { variant: "outline", className: "font-mono", children: cycle.value }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_lucide_react98.Calendar, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("span", { className: "font-medium", children: cycle.months }),
-            /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("span", { className: "text-sm text-text-secondary", children: cycle.months === 1 ? "month" : "months" })
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("tbody", { children: billingCycles.map((cycle) => /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "font-medium text-text-primary", children: cycle.name }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Badge, { variant: "outline", className: "font-mono", children: cycle.value }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react98.Calendar, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "font-medium", children: cycle.months }),
+            /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "text-sm text-text-secondary", children: cycle.months === 1 ? "month" : "months" })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("div", { className: "flex items-center gap-2", children: cycle.discount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)(import_ui125.Badge, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "flex items-center gap-2", children: cycle.discount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.Badge, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
             cycle.discount,
             "%"
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("span", { className: "text-text-tertiary", children: "No discount" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("div", { className: "text-sm text-text-secondary max-w-xs truncate", children: cycle.description || "No description" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
-            import_ui125.StatusBadge,
+          ] }) : /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "text-text-tertiary", children: "No discount" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "text-sm text-text-secondary max-w-xs truncate", children: cycle.description || "No description" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+            import_ui128.StatusBadge,
             {
               status: cycle.isActive ? "active" : "inactive"
             }
           ) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("td", { className: "py-4 px-4 text-sm text-text-secondary", children: formatDate11(cycle.createdAt) }),
-          /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
-            onView && /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
-              import_ui125.Button,
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4 text-sm text-text-secondary", children: formatDate11(cycle.createdAt) }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
+            onView && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+              import_ui128.Button,
               {
                 variant: "ghost",
                 size: "sm",
                 onClick: () => onView(cycle),
                 className: "h-8 w-8 p-0",
                 title: "View billing cycle",
-                children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_lucide_react98.Eye, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react98.Eye, { className: "w-4 h-4" })
               }
             ),
-            onEdit && /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(
-              import_ui125.Button,
+            onEdit && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+              import_ui128.Button,
               {
                 variant: "ghost",
                 size: "sm",
                 onClick: () => onEdit(cycle),
                 className: "h-8 w-8 p-0",
                 title: "Edit billing cycle",
-                children: /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_lucide_react98.Edit, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react98.Edit, { className: "w-4 h-4" })
               }
             )
           ] }) })
         ] }, cycle.id)) })
       ] }),
-      billingCycles.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime185.jsxs)("div", { className: "text-center py-12", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime185.jsx)(import_lucide_react98.Calendar, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No billing cycles found" }),
-        /* @__PURE__ */ (0, import_jsx_runtime185.jsx)("p", { className: "text-text-secondary", children: "Get started by creating your first billing cycle" })
+      billingCycles.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "text-center py-12", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react98.Calendar, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No billing cycles found" }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-text-secondary", children: "Get started by creating your first billing cycle" })
       ] })
     ] }) })
   ] });
 };
 
 // src/components/features/BillingCycles/components/BillingCycleForm.tsx
-var import_react87 = require("react");
-var import_ui126 = require("@rentalshop/ui");
-var import_jsx_runtime186 = require("react/jsx-runtime");
+var import_react88 = require("react");
+var import_ui129 = require("@rentalshop/ui");
+var import_jsx_runtime189 = require("react/jsx-runtime");
 var BillingCycleForm = ({
   initialData = {},
   onSubmit,
   onCancel,
   loading = false
 }) => {
-  const [formData, setFormData] = (0, import_react87.useState)({
+  const [formData, setFormData] = (0, import_react88.useState)({
     name: initialData.name || "",
     value: initialData.value || "",
     months: initialData.months || 1,
@@ -31357,8 +31459,8 @@ var BillingCycleForm = ({
     isActive: initialData.isActive !== void 0 ? initialData.isActive : true,
     sortOrder: initialData.sortOrder || 0
   });
-  const [errors, setErrors] = (0, import_react87.useState)({});
-  (0, import_react87.useEffect)(() => {
+  const [errors, setErrors] = (0, import_react88.useState)({});
+  (0, import_react88.useEffect)(() => {
     if (initialData) {
       setFormData({
         name: initialData.name || "",
@@ -31417,12 +31519,12 @@ var BillingCycleForm = ({
       handleInputChange(field, numValue);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui126.Label, { htmlFor: "name", children: "Name *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-          import_ui126.Input,
+  return /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_ui129.Label, { htmlFor: "name", children: "Name *" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+          import_ui129.Input,
           {
             id: "name",
             type: "text",
@@ -31432,12 +31534,12 @@ var BillingCycleForm = ({
             className: errors.name ? "border-red-500" : ""
           }
         ),
-        errors.name && /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-sm text-red-500", children: errors.name })
+        errors.name && /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-sm text-red-500", children: errors.name })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui126.Label, { htmlFor: "value", children: "Value *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-          import_ui126.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_ui129.Label, { htmlFor: "value", children: "Value *" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+          import_ui129.Input,
           {
             id: "value",
             type: "text",
@@ -31447,13 +31549,13 @@ var BillingCycleForm = ({
             className: errors.value ? "border-red-500" : ""
           }
         ),
-        errors.value && /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-sm text-red-500", children: errors.value }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-xs text-text-tertiary", children: "Use lowercase letters and underscores only" })
+        errors.value && /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-sm text-red-500", children: errors.value }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-xs text-text-tertiary", children: "Use lowercase letters and underscores only" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui126.Label, { htmlFor: "months", children: "Months *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-          import_ui126.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_ui129.Label, { htmlFor: "months", children: "Months *" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+          import_ui129.Input,
           {
             id: "months",
             type: "number",
@@ -31464,12 +31566,12 @@ var BillingCycleForm = ({
             className: errors.months ? "border-red-500" : ""
           }
         ),
-        errors.months && /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-sm text-red-500", children: errors.months })
+        errors.months && /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-sm text-red-500", children: errors.months })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui126.Label, { htmlFor: "discount", children: "Discount (%)" }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-          import_ui126.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_ui129.Label, { htmlFor: "discount", children: "Discount (%)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+          import_ui129.Input,
           {
             id: "discount",
             type: "number",
@@ -31482,13 +31584,13 @@ var BillingCycleForm = ({
             className: errors.discount ? "border-red-500" : ""
           }
         ),
-        errors.discount && /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-sm text-red-500", children: errors.discount }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-xs text-text-tertiary", children: "Percentage discount for this billing cycle (0-100)" })
+        errors.discount && /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-sm text-red-500", children: errors.discount }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-xs text-text-tertiary", children: "Percentage discount for this billing cycle (0-100)" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui126.Label, { htmlFor: "sortOrder", children: "Sort Order" }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-          import_ui126.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_ui129.Label, { htmlFor: "sortOrder", children: "Sort Order" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+          import_ui129.Input,
           {
             id: "sortOrder",
             type: "number",
@@ -31499,29 +31601,29 @@ var BillingCycleForm = ({
             className: errors.sortOrder ? "border-red-500" : ""
           }
         ),
-        errors.sortOrder && /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-sm text-red-500", children: errors.sortOrder }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-xs text-text-tertiary", children: "Lower numbers appear first in lists" })
+        errors.sortOrder && /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-sm text-red-500", children: errors.sortOrder }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-xs text-text-tertiary", children: "Lower numbers appear first in lists" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui126.Label, { htmlFor: "isActive", children: "Active" }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-            import_ui126.Switch,
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_ui129.Label, { htmlFor: "isActive", children: "Active" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+            import_ui129.Switch,
             {
               id: "isActive",
               checked: formData.isActive,
               onCheckedChange: (checked) => handleInputChange("isActive", checked)
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { className: "text-sm text-text-secondary", children: formData.isActive ? "Active" : "Inactive" })
+          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-text-secondary", children: formData.isActive ? "Active" : "Inactive" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-xs text-text-tertiary", children: "Inactive billing cycles won't be available for selection" })
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-xs text-text-tertiary", children: "Inactive billing cycles won't be available for selection" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "space-y-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui126.Label, { htmlFor: "description", children: "Description" }),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-        import_ui126.Textarea,
+    /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_ui129.Label, { htmlFor: "description", children: "Description" }),
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+        import_ui129.Textarea,
         {
           id: "description",
           value: formData.description,
@@ -31530,49 +31632,49 @@ var BillingCycleForm = ({
           rows: 3
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("p", { className: "text-xs text-text-tertiary", children: "Optional description for this billing cycle" })
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("p", { className: "text-xs text-text-tertiary", children: "Optional description for this billing cycle" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "bg-bg-secondary p-4 rounded-lg", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("h4", { className: "font-medium text-text-primary mb-2", children: "Preview" }),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "space-y-2 text-sm", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { className: "text-text-secondary", children: "Name:" }),
+    /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "bg-bg-secondary p-4 rounded-lg", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("h4", { className: "font-medium text-text-primary mb-2", children: "Preview" }),
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-2 text-sm", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-text-secondary", children: "Name:" }),
           " ",
           formData.name || "Not set"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { className: "text-text-secondary", children: "Value:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-text-secondary", children: "Value:" }),
           " ",
           formData.value || "Not set"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { className: "text-text-secondary", children: "Duration:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-text-secondary", children: "Duration:" }),
           " ",
           formData.months,
           " ",
           formData.months === 1 ? "month" : "months"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { className: "text-text-secondary", children: "Discount:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-text-secondary", children: "Discount:" }),
           " ",
           formData.discount,
           "%"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { className: "text-text-secondary", children: "Status:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-text-secondary", children: "Status:" }),
           " ",
           formData.isActive ? "Active" : "Inactive"
         ] }),
-        formData.description && /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { className: "text-text-secondary", children: "Description:" }),
+        formData.description && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-text-secondary", children: "Description:" }),
           " ",
           formData.description
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-6 border-t", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-        import_ui126.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-6 border-t", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+        import_ui129.Button,
         {
           type: "button",
           variant: "outline",
@@ -31581,8 +31683,8 @@ var BillingCycleForm = ({
           children: "Cancel"
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
-        import_ui126.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+        import_ui129.Button,
         {
           type: "submit",
           disabled: loading,
@@ -31594,10 +31696,10 @@ var BillingCycleForm = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleDetailDialog.tsx
-var import_react88 = __toESM(require("react"));
-var import_ui127 = require("@rentalshop/ui");
+var import_react89 = __toESM(require("react"));
+var import_ui130 = require("@rentalshop/ui");
 var import_lucide_react99 = require("lucide-react");
-var import_jsx_runtime187 = require("react/jsx-runtime");
+var import_jsx_runtime190 = require("react/jsx-runtime");
 var BillingCycleDetailDialog = ({
   open,
   onOpenChange,
@@ -31607,9 +31709,9 @@ var BillingCycleDetailDialog = ({
   onDelete,
   loading = false
 }) => {
-  const [isEditing, setIsEditing] = (0, import_react88.useState)(false);
-  const [tempStatus, setTempStatus] = (0, import_react88.useState)(billingCycle?.isActive ?? false);
-  import_react88.default.useEffect(() => {
+  const [isEditing, setIsEditing] = (0, import_react89.useState)(false);
+  const [tempStatus, setTempStatus] = (0, import_react89.useState)(billingCycle?.isActive ?? false);
+  import_react89.default.useEffect(() => {
     setTempStatus(billingCycle?.isActive ?? false);
   }, [billingCycle]);
   const handleToggleStatus = () => {
@@ -31649,141 +31751,141 @@ var BillingCycleDetailDialog = ({
   };
   if (!billingCycle)
     return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(import_ui127.DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.DialogTitle, { className: "text-xl font-semibold", children: "Billing Cycle Details" }),
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.DialogDescription, { className: "text-sm text-text-secondary mt-1", children: "View and manage billing cycle information" })
+  return /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(import_ui130.DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.DialogTitle, { className: "text-xl font-semibold", children: "Billing Cycle Details" }),
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.DialogDescription, { className: "text-sm text-text-secondary mt-1", children: "View and manage billing cycle information" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center gap-2", children: [
-        onEdit && /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(
-          import_ui127.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "flex items-center gap-2", children: [
+        onEdit && /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(
+          import_ui130.Button,
           {
             variant: "outline",
             size: "sm",
             onClick: handleEdit,
             className: "flex items-center gap-2",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.Edit, { className: "w-4 h-4" }),
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.Edit, { className: "w-4 h-4" }),
               "Edit"
             ]
           }
         ),
-        onDelete && /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(
-          import_ui127.Button,
+        onDelete && /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(
+          import_ui130.Button,
           {
             variant: "outline",
             size: "sm",
             onClick: handleDelete,
             className: "flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.Trash2, { className: "w-4 h-4" }),
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.Trash2, { className: "w-4 h-4" }),
               "Delete"
             ]
           }
         )
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "mt-6 space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(import_ui127.CardContent, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.Info, { className: "w-5 h-5 text-text-tertiary" }),
+    /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "mt-6 space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(import_ui130.CardContent, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.Info, { className: "w-5 h-5 text-text-tertiary" }),
           "Basic Information"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Name" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("p", { className: "text-lg font-semibold text-text-primary mt-1", children: billingCycle.name })
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Name" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("p", { className: "text-lg font-semibold text-text-primary mt-1", children: billingCycle.name })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Value" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("div", { className: "mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Badge, { variant: "outline", className: "font-mono text-sm", children: billingCycle.value }) })
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Value" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("div", { className: "mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Badge, { variant: "outline", className: "font-mono text-sm", children: billingCycle.value }) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Description" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("p", { className: "text-text-primary mt-1", children: billingCycle.description || "No description provided" })
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Description" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("p", { className: "text-text-primary mt-1", children: billingCycle.description || "No description provided" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Sort Order" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("p", { className: "text-text-primary mt-1", children: billingCycle.sortOrder })
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Sort Order" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("p", { className: "text-text-primary mt-1", children: billingCycle.sortOrder })
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(import_ui127.CardContent, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.DollarSign, { className: "w-5 h-5 text-text-tertiary" }),
+      /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(import_ui130.CardContent, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.DollarSign, { className: "w-5 h-5 text-text-tertiary" }),
           "Billing Details"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Billing Period" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center gap-2 mt-1", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.Calendar, { className: "w-4 h-4 text-text-tertiary" }),
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("span", { className: "text-lg font-semibold text-text-primary", children: billingCycle.months }),
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("span", { className: "text-text-secondary", children: billingCycle.months === 1 ? "month" : "months" })
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Billing Period" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "flex items-center gap-2 mt-1", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.Calendar, { className: "w-4 h-4 text-text-tertiary" }),
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("span", { className: "text-lg font-semibold text-text-primary", children: billingCycle.months }),
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("span", { className: "text-text-secondary", children: billingCycle.months === 1 ? "month" : "months" })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Discount" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center gap-2 mt-1", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.Percent, { className: "w-4 h-4 text-text-tertiary" }),
-              billingCycle.discount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(import_ui127.Badge, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Discount" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "flex items-center gap-2 mt-1", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.Percent, { className: "w-4 h-4 text-text-tertiary" }),
+              billingCycle.discount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(import_ui130.Badge, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
                 billingCycle.discount,
                 "% off"
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("span", { className: "text-text-tertiary", children: "No discount" })
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("span", { className: "text-text-tertiary", children: "No discount" })
             ] })
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(import_ui127.CardContent, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.Clock, { className: "w-5 h-5 text-text-tertiary" }),
+      /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(import_ui130.CardContent, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.Clock, { className: "w-5 h-5 text-text-tertiary" }),
           "Status Management"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Current Status" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("div", { className: "mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.StatusBadge, { status: billingCycle.isActive ? "active" : "inactive" }) })
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Current Status" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("div", { className: "mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.StatusBadge, { status: billingCycle.isActive ? "active" : "inactive" }) })
           ] }),
-          onToggleStatus && /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("div", { className: "flex items-center gap-4", children: isEditing ? /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(import_jsx_runtime187.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(
-                import_ui127.Switch,
+          onToggleStatus && /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("div", { className: "flex items-center gap-4", children: isEditing ? /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(import_jsx_runtime190.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(
+                import_ui130.Switch,
                 {
                   checked: tempStatus,
                   onCheckedChange: setTempStatus,
                   disabled: loading
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm", children: tempStatus ? "Active" : "Inactive" })
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm", children: tempStatus ? "Active" : "Inactive" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(
-                import_ui127.Button,
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(
+                import_ui130.Button,
                 {
                   size: "sm",
                   onClick: handleSaveStatus,
                   disabled: loading,
                   className: "flex items-center gap-2",
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.Save, { className: "w-4 h-4" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.Save, { className: "w-4 h-4" }),
                     "Save"
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(
-                import_ui127.Button,
+              /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(
+                import_ui130.Button,
                 {
                   variant: "outline",
                   size: "sm",
                   onClick: handleCancelEdit,
                   disabled: loading,
-                  children: /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.X, { className: "w-4 h-4" })
+                  children: /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.X, { className: "w-4 h-4" })
                 }
               )
             ] })
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(
-            import_ui127.Button,
+          ] }) : /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(
+            import_ui130.Button,
             {
               variant: "outline",
               size: "sm",
@@ -31794,19 +31896,19 @@ var BillingCycleDetailDialog = ({
           ) })
         ] }) })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)(import_ui127.CardContent, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_lucide_react99.Clock, { className: "w-5 h-5 text-text-tertiary" }),
+      /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)(import_ui130.CardContent, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_lucide_react99.Clock, { className: "w-5 h-5 text-text-tertiary" }),
           "Timestamps"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Created" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("p", { className: "text-text-primary mt-1", children: formatDate11(billingCycle.createdAt) })
+        /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Created" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("p", { className: "text-text-primary mt-1", children: formatDate11(billingCycle.createdAt) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime187.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)(import_ui127.Label, { className: "text-sm font-medium text-text-secondary", children: "Last Updated" }),
-            /* @__PURE__ */ (0, import_jsx_runtime187.jsx)("p", { className: "text-text-primary mt-1", children: formatDate11(billingCycle.updatedAt) })
+          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(import_ui130.Label, { className: "text-sm font-medium text-text-secondary", children: "Last Updated" }),
+            /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("p", { className: "text-text-primary mt-1", children: formatDate11(billingCycle.updatedAt) })
           ] })
         ] })
       ] }) })
@@ -31815,11 +31917,11 @@ var BillingCycleDetailDialog = ({
 };
 
 // src/components/features/Payments/components/PaymentForm.tsx
-var import_react89 = __toESM(require("react"));
-var import_ui128 = require("@rentalshop/ui");
+var import_react90 = __toESM(require("react"));
+var import_ui131 = require("@rentalshop/ui");
 var import_utils40 = require("@rentalshop/utils");
 var import_lucide_react100 = require("lucide-react");
-var import_jsx_runtime188 = require("react/jsx-runtime");
+var import_jsx_runtime191 = require("react/jsx-runtime");
 var PAYMENT_METHODS2 = [
   { value: "STRIPE", label: "Stripe" },
   { value: "PAYPAL", label: "PayPal" },
@@ -31840,7 +31942,7 @@ var PaymentForm = ({
   existingPayment
   // ✅ NEW: Existing payment data for edit mode
 }) => {
-  const [formData, setFormData] = (0, import_react89.useState)(() => {
+  const [formData, setFormData] = (0, import_react90.useState)(() => {
     if (mode === "edit" && existingPayment) {
       return {
         merchantId: existingPayment.merchantId,
@@ -31875,10 +31977,10 @@ var PaymentForm = ({
       endDate: nextMonthStr
     };
   });
-  const [selectedPlan, setSelectedPlan] = (0, import_react89.useState)(null);
-  const [selectedPlanVariant, setSelectedPlanVariant] = (0, import_react89.useState)(null);
-  const [isSearchingMerchants, setIsSearchingMerchants] = (0, import_react89.useState)(false);
-  const searchMerchants = import_react89.default.useCallback(async (query) => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react90.useState)(null);
+  const [selectedPlanVariant, setSelectedPlanVariant] = (0, import_react90.useState)(null);
+  const [isSearchingMerchants, setIsSearchingMerchants] = (0, import_react90.useState)(false);
+  const searchMerchants = import_react90.default.useCallback(async (query) => {
     console.log("\u{1F50D} PaymentForm: searchMerchants called with query:", query);
     if (!query.trim()) {
       console.log("\u{1F50D} PaymentForm: Empty query, returning empty array");
@@ -31939,7 +32041,7 @@ var PaymentForm = ({
       console.log("\u{1F50D} PaymentForm: Search completed for query:", query);
     }
   }, []);
-  (0, import_react89.useEffect)(() => {
+  (0, import_react90.useEffect)(() => {
     if (mode === "edit" && existingPayment && plans.length > 0 && planVariants.length > 0) {
       const plan = plans.find((p) => p.id === existingPayment.planId);
       const planVariant = planVariants.find((v) => v.id === existingPayment.planVariantId);
@@ -31949,7 +32051,7 @@ var PaymentForm = ({
         setSelectedPlanVariant(planVariant);
     }
   }, [mode, existingPayment, plans, planVariants]);
-  (0, import_react89.useEffect)(() => {
+  (0, import_react90.useEffect)(() => {
     if (selectedPlan && selectedPlanVariant) {
       const totalAmount = selectedPlanVariant.price;
       const currency = selectedPlan.currency;
@@ -32007,16 +32109,16 @@ var PaymentForm = ({
     onSubmit(formData);
   };
   const isFormValid = formData.merchantId && formData.planId && formData.planVariantId > 0 && formData.amount > 0 && formData.startDate && formData.endDate;
-  return /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.Card, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.CardTitle, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react100.DollarSign, { className: "w-5 h-5" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)(import_ui131.Card, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)(import_ui131.CardTitle, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_lucide_react100.DollarSign, { className: "w-5 h-5" }),
       mode === "edit" ? "Edit Payment" : "Create Manual Payment"
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "merchant", children: "Merchant *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-          import_ui128.SearchableSelect,
+    /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "merchant", children: "Merchant *" }),
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+          import_ui131.SearchableSelect,
           {
             value: formData.merchantId,
             onChange: (merchantId) => handleInputChange("merchantId", merchantId),
@@ -32027,13 +32129,13 @@ var PaymentForm = ({
             displayMode: "input"
           }
         ),
-        isSearchingMerchants && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-sm text-blue-500", children: "Searching merchants..." }),
-        process.env.NODE_ENV === "development" && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-xs text-gray-400", children: "Debug: Using API search for merchants" })
+        isSearchingMerchants && /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("p", { className: "text-sm text-blue-500", children: "Searching merchants..." }),
+        process.env.NODE_ENV === "development" && /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("p", { className: "text-xs text-gray-400", children: "Debug: Using API search for merchants" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "plan", children: "Plan *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-          import_ui128.SearchableSelect,
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "plan", children: "Plan *" }),
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+          import_ui131.SearchableSelect,
           {
             value: formData.planId,
             onChange: (planId) => handlePlanChange(planId),
@@ -32049,17 +32151,17 @@ var PaymentForm = ({
             displayMode: "input"
           }
         ),
-        plans.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-sm text-red-500", children: "No plans available. Please add plans first." }),
-        process.env.NODE_ENV === "development" && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("p", { className: "text-xs text-gray-400", children: [
+        plans.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("p", { className: "text-sm text-red-500", children: "No plans available. Please add plans first." }),
+        process.env.NODE_ENV === "development" && /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("p", { className: "text-xs text-gray-400", children: [
           "Debug: ",
           plans.length,
           " plans loaded"
         ] })
       ] }),
-      selectedPlan && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "planVariant", children: "Plan Variant *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-          import_ui128.SearchableSelect,
+      selectedPlan && /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "planVariant", children: "Plan Variant *" }),
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+          import_ui131.SearchableSelect,
           {
             value: formData.planVariantId,
             onChange: (planVariantId) => handlePlanVariantChange(planVariantId),
@@ -32075,8 +32177,8 @@ var PaymentForm = ({
             displayMode: "input"
           }
         ),
-        planVariants.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-sm text-red-500", children: "No plan variants available for this plan. Please add plan variants first." }) : /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-sm text-gray-500", children: "Select a specific plan variant for precise pricing and duration." }),
-        process.env.NODE_ENV === "development" && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("p", { className: "text-xs text-gray-400", children: [
+        planVariants.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("p", { className: "text-sm text-red-500", children: "No plan variants available for this plan. Please add plan variants first." }) : /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("p", { className: "text-sm text-gray-500", children: "Select a specific plan variant for precise pricing and duration." }),
+        process.env.NODE_ENV === "development" && /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("p", { className: "text-xs text-gray-400", children: [
           "Debug: ",
           planVariants.length,
           " plan variants loaded, ",
@@ -32084,24 +32186,24 @@ var PaymentForm = ({
           " for selected plan"
         ] })
       ] }),
-      formData.amount > 0 && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "p-4 bg-blue-50 rounded-lg", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "font-medium", children: "Total Amount:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("span", { className: "text-xl font-bold text-blue-600", children: [
+      formData.amount > 0 && /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "p-4 bg-blue-50 rounded-lg", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("span", { className: "font-medium", children: "Total Amount:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("span", { className: "text-xl font-bold text-blue-600", children: [
             "$",
             formData.amount,
             " ",
             formData.currency
           ] })
         ] }),
-        selectedPlan && selectedPlanVariant && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "text-sm text-gray-600 mt-1", children: [
+        selectedPlan && selectedPlanVariant && /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "text-sm text-gray-600 mt-1", children: [
           selectedPlan.name,
           " - ",
           selectedPlanVariant.name,
           " (",
           selectedPlanVariant.duration,
           " months)",
-          selectedPlanVariant.discount > 0 && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("span", { className: "text-green-600 ml-2", children: [
+          selectedPlanVariant.discount > 0 && /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("span", { className: "text-green-600 ml-2", children: [
             "(Save $",
             selectedPlanVariant.savings,
             " with ",
@@ -32110,40 +32212,40 @@ var PaymentForm = ({
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "method", children: "Payment Method *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(
-          import_ui128.Select,
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "method", children: "Payment Method *" }),
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)(
+          import_ui131.Select,
           {
             value: formData.method,
             onValueChange: (value) => handleInputChange("method", value),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.SelectValue, { placeholder: "Select payment method" }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.SelectContent, { children: PAYMENT_METHODS2.map((method) => /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.SelectItem, { value: method.value, children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react100.CreditCard, { className: "w-4 h-4" }),
+              /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.SelectValue, { placeholder: "Select payment method" }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.SelectContent, { children: PAYMENT_METHODS2.map((method) => /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.SelectItem, { value: method.value, children: /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_lucide_react100.CreditCard, { className: "w-4 h-4" }),
                 method.label
               ] }) }, method.value)) })
             ]
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "extendSubscription", children: "Extend Existing Subscription" }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-sm text-gray-600", children: "Check this to extend the merchant's current subscription instead of creating a new one" })
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "extendSubscription", children: "Extend Existing Subscription" }),
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("p", { className: "text-sm text-gray-600", children: "Check this to extend the merchant's current subscription instead of creating a new one" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-          import_ui128.Switch,
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+          import_ui131.Switch,
           {
             checked: formData.extendSubscription,
             onCheckedChange: (checked) => handleInputChange("extendSubscription", checked)
           }
         )
       ] }),
-      formData.extendSubscription && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "monthsToExtend", children: "Months to Extend *" }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-          import_ui128.Input,
+      formData.extendSubscription && /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "monthsToExtend", children: "Months to Extend *" }),
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+          import_ui131.Input,
           {
             type: "number",
             min: "1",
@@ -32154,11 +32256,11 @@ var PaymentForm = ({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "invoiceNumber", children: "Invoice Number (Optional)" }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            import_ui128.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "invoiceNumber", children: "Invoice Number (Optional)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+            import_ui131.Input,
             {
               value: formData.invoiceNumber || "",
               onChange: (e) => handleInputChange("invoiceNumber", e.target.value),
@@ -32166,10 +32268,10 @@ var PaymentForm = ({
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "transactionId", children: "Transaction ID (Optional)" }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            import_ui128.Input,
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "transactionId", children: "Transaction ID (Optional)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+            import_ui131.Input,
             {
               value: formData.transactionId || "",
               onChange: (e) => handleInputChange("transactionId", e.target.value),
@@ -32178,11 +32280,11 @@ var PaymentForm = ({
           )
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "startDate", children: "Start Date *" }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            import_ui128.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "startDate", children: "Start Date *" }),
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+            import_ui131.Input,
             {
               type: "date",
               value: formData.startDate || "",
@@ -32191,10 +32293,10 @@ var PaymentForm = ({
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "endDate", children: "End Date *" }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            import_ui128.Input,
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "endDate", children: "End Date *" }),
+          /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+            import_ui131.Input,
             {
               type: "date",
               value: formData.endDate || "",
@@ -32204,10 +32306,10 @@ var PaymentForm = ({
           )
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Label, { htmlFor: "description", children: "Description" }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-          import_ui128.Textarea,
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_ui131.Label, { htmlFor: "description", children: "Description" }),
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+          import_ui131.Textarea,
           {
             value: formData.description,
             onChange: (e) => handleInputChange("description", e.target.value),
@@ -32216,9 +32318,9 @@ var PaymentForm = ({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-          import_ui128.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+          import_ui131.Button,
           {
             type: "button",
             variant: "outline",
@@ -32227,8 +32329,8 @@ var PaymentForm = ({
             children: "Cancel"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-          import_ui128.Button,
+        /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+          import_ui131.Button,
           {
             type: "submit",
             disabled: !isFormValid || loading,
@@ -32243,7 +32345,7 @@ var PaymentForm = ({
 
 // src/components/features/Payments/components/PaymentDetailDialog.tsx
 var import_lucide_react101 = require("lucide-react");
-var import_jsx_runtime189 = require("react/jsx-runtime");
+var import_jsx_runtime192 = require("react/jsx-runtime");
 var PaymentDetailDialog = ({
   open,
   onOpenChange,
@@ -32263,8 +32365,8 @@ var PaymentDetailDialog = ({
     };
     const config = statusConfig[status];
     const Icon2 = config.icon;
-    return /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("span", { className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(Icon2, { className: "w-3 h-3 mr-1" }),
+    return /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("span", { className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(Icon2, { className: "w-3 h-3 mr-1" }),
       config.text
     ] });
   };
@@ -32276,7 +32378,7 @@ var PaymentDetailDialog = ({
       "stripe": import_lucide_react101.CreditCard
     };
     const Icon2 = methodConfig[method] || import_lucide_react101.CreditCard;
-    return /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(Icon2, { className: "w-4 h-4" });
+    return /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(Icon2, { className: "w-4 h-4" });
   };
   const getPaymentMethodText = (method) => {
     const methodConfig = {
@@ -32302,13 +32404,13 @@ var PaymentDetailDialog = ({
       currency
     }).format(amount);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(DialogTitle, { className: "text-xl font-semibold", children: "Payment Details" }),
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(DialogDescription, { className: "text-sm text-text-secondary mt-1", children: "View payment information and transaction details" })
+  return /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)(DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(DialogTitle, { className: "text-xl font-semibold", children: "Payment Details" }),
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(DialogDescription, { className: "text-sm text-text-secondary mt-1", children: "View payment information and transaction details" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("div", { className: "flex items-center gap-2", children: onDownloadReceipt && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("div", { className: "flex items-center gap-2", children: onDownloadReceipt && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)(
         Button,
         {
           variant: "outline",
@@ -32316,161 +32418,161 @@ var PaymentDetailDialog = ({
           onClick: () => onDownloadReceipt(payment.id),
           className: "flex items-center gap-2",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_lucide_react101.Download, { className: "w-4 h-4" }),
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_lucide_react101.Download, { className: "w-4 h-4" }),
             "Receipt"
           ]
         }
       ) })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "mt-6 space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(CardContent2, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "w-2 h-2 bg-blue-500 rounded-full" }),
+    /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "mt-6 space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)(CardContent2, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "w-2 h-2 bg-blue-500 rounded-full" }),
           "Payment Overview"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Payment ID:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("span", { className: "text-sm text-gray-900", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "space-y-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Payment ID:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("span", { className: "text-sm text-gray-900", children: [
                 "#",
                 payment.id
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Status:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Status:" }),
               getStatusBadge(payment.status)
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Amount:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-lg font-bold text-gray-900", children: formatCurrency20(payment.amount, payment.currency) })
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Amount:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-lg font-bold text-gray-900", children: formatCurrency20(payment.amount, payment.currency) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Method:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Method:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center gap-2", children: [
                 getPaymentMethodIcon(payment.method),
-                /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: getPaymentMethodText(payment.method) })
+                /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: getPaymentMethodText(payment.method) })
               ] })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Created:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: formatDate11(payment.createdAt) })
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "space-y-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Created:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: formatDate11(payment.createdAt) })
             ] }),
-            payment.processedAt && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Processed:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: formatDate11(payment.processedAt) })
+            payment.processedAt && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Processed:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: formatDate11(payment.processedAt) })
             ] }),
-            payment.updatedAt && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Updated:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: formatDate11(payment.updatedAt) })
+            payment.updatedAt && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Updated:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: formatDate11(payment.updatedAt) })
             ] }),
-            payment.transactionId && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Transaction ID:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900 font-mono", children: payment.transactionId })
+            payment.transactionId && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Transaction ID:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900 font-mono", children: payment.transactionId })
             ] })
           ] })
         ] })
       ] }) }),
-      payment.subscription?.merchant && /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(CardContent2, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_lucide_react101.Building, { className: "w-5 h-5" }),
+      payment.subscription?.merchant && /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)(CardContent2, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_lucide_react101.Building, { className: "w-5 h-5" }),
           "Merchant Information"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Merchant Name:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: payment.subscription.merchant.name })
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "space-y-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Merchant Name:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: payment.subscription.merchant.name })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Email:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: payment.subscription.merchant.email })
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Email:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: payment.subscription.merchant.email })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Merchant ID:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("span", { className: "text-sm text-gray-900", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Merchant ID:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("span", { className: "text-sm text-gray-900", children: [
               "#",
               payment.subscription.merchant.id
             ] })
           ] }) })
         ] })
       ] }) }),
-      payment.subscription?.plan && /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(CardContent2, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_lucide_react101.Package, { className: "w-5 h-5" }),
+      payment.subscription?.plan && /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)(CardContent2, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_lucide_react101.Package, { className: "w-5 h-5" }),
           "Subscription Details"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Plan:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: payment.subscription.plan.name })
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "space-y-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Plan:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: payment.subscription.plan.name })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Plan Price:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: formatCurrency20(payment.subscription.plan.price, payment.subscription.plan.currency) })
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Plan Price:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: formatCurrency20(payment.subscription.plan.price, payment.subscription.plan.currency) })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Plan Variant:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900", children: payment.subscription.planVariant?.name || "N/A" })
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "space-y-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Plan Variant:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900", children: payment.subscription.planVariant?.name || "N/A" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Subscription Status:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(Badge, { variant: "outline", className: "text-xs", children: payment.subscription.status })
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Subscription Status:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(Badge, { variant: "outline", className: "text-xs", children: payment.subscription.status })
             ] })
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(CardContent2, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_lucide_react101.FileText, { className: "w-5 h-5" }),
+      /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)(CardContent2, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_lucide_react101.FileText, { className: "w-5 h-5" }),
           "Additional Information"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "space-y-4", children: [
-          payment.invoiceNumber && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-between", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Invoice Number:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900 font-mono", children: payment.invoiceNumber })
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "space-y-4", children: [
+          payment.invoiceNumber && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-between", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Invoice Number:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900 font-mono", children: payment.invoiceNumber })
           ] }),
-          payment.description && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-start justify-between", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Description:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-gray-900 max-w-xs text-right", children: payment.description })
+          payment.description && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-start justify-between", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-gray-600", children: "Description:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-gray-900 max-w-xs text-right", children: payment.description })
           ] }),
-          payment.failureReason && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-start justify-between", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm font-medium text-red-600", children: "Failure Reason:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("span", { className: "text-sm text-red-600 max-w-xs text-right", children: payment.failureReason })
+          payment.failureReason && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-start justify-between", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm font-medium text-red-600", children: "Failure Reason:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: "text-sm text-red-600 max-w-xs text-right", children: payment.failureReason })
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4 border-t", children: [
-        payment.status === "pending" && onProcessPayment && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4 border-t", children: [
+        payment.status === "pending" && onProcessPayment && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)(
           Button,
           {
             onClick: () => onProcessPayment(payment.id),
             className: "flex items-center gap-2",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_lucide_react101.CheckCircle, { className: "w-4 h-4" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_lucide_react101.CheckCircle, { className: "w-4 h-4" }),
               "Process Payment"
             ]
           }
         ),
-        payment.status === "completed" && onRefundPayment && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(
+        payment.status === "completed" && onRefundPayment && /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)(
           Button,
           {
             variant: "outline",
             onClick: () => onRefundPayment(payment.id),
             className: "flex items-center gap-2 text-red-600 hover:text-red-700",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(import_lucide_react101.RotateCcw, { className: "w-4 h-4" }),
+              /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_lucide_react101.RotateCcw, { className: "w-4 h-4" }),
               "Refund Payment"
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime189.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(
           Button,
           {
             variant: "outline",
@@ -32484,30 +32586,30 @@ var PaymentDetailDialog = ({
 };
 
 // src/components/features/Admin/components/StatsOverview.tsx
-var import_jsx_runtime190 = require("react/jsx-runtime");
+var import_jsx_runtime193 = require("react/jsx-runtime");
 function StatsOverview({ stats, className = "" }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("div", { className: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${className}`, children: stats.map((stat, index) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${className}`, children: stats.map((stat, index) => {
     const Icon2 = stat.icon;
-    return /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(CardContent2, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("p", { className: "text-sm font-medium text-text-secondary mb-2", children: stat.label }),
-        /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("p", { className: `text-2xl font-bold ${stat.color} mb-1`, children: stat.value }),
-        stat.trend && /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("div", { className: `flex items-center gap-1 text-sm ${stat.trend.isPositive ? "text-green-600" : "text-red-600"}`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("span", { children: stat.trend.isPositive ? "\u2197" : "\u2198" }),
-          /* @__PURE__ */ (0, import_jsx_runtime190.jsxs)("span", { children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(CardContent2, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("p", { className: "text-sm font-medium text-text-secondary mb-2", children: stat.label }),
+        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("p", { className: `text-2xl font-bold ${stat.color} mb-1`, children: stat.value }),
+        stat.trend && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { className: `flex items-center gap-1 text-sm ${stat.trend.isPositive ? "text-green-600" : "text-red-600"}`, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("span", { children: stat.trend.isPositive ? "\u2197" : "\u2198" }),
+          /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("span", { children: [
             Math.abs(stat.trend.value),
             "%"
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime190.jsx)("div", { className: `p-3 rounded-full ${stat.bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime190.jsx)(Icon2, { className: `h-6 w-6 ${stat.color}` }) })
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: `p-3 rounded-full ${stat.bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(Icon2, { className: `h-6 w-6 ${stat.color}` }) })
     ] }) }) }, index);
   }) });
 }
 
 // src/components/features/Admin/components/SearchAndFilters.tsx
 var import_lucide_react102 = require("lucide-react");
-var import_jsx_runtime191 = require("react/jsx-runtime");
+var import_jsx_runtime194 = require("react/jsx-runtime");
 function SearchAndFilters({
   searchTerm,
   onSearchChange,
@@ -32515,10 +32617,10 @@ function SearchAndFilters({
   filters = [],
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "flex flex-col sm:flex-row gap-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("div", { className: "flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)("div", { className: "relative", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(import_lucide_react102.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" }),
-      /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "flex flex-col sm:flex-row gap-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime194.jsx)("div", { className: "flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "relative", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(import_lucide_react102.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" }),
+      /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(
         Input2,
         {
           type: "text",
@@ -32529,13 +32631,13 @@ function SearchAndFilters({
         }
       )
     ] }) }),
-    filters.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("div", { className: "flex gap-2", children: filters.map((filter, index) => /* @__PURE__ */ (0, import_jsx_runtime191.jsx)(
+    filters.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime194.jsx)("div", { className: "flex gap-2", children: filters.map((filter, index) => /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(
       "select",
       {
         value: filter.value,
         onChange: (e) => filter.onChange(e.target.value),
         className: "px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-action-primary focus:border-transparent",
-        children: filter.options.map((option) => /* @__PURE__ */ (0, import_jsx_runtime191.jsx)("option", { value: option.value, children: option.label }, option.value))
+        children: filter.options.map((option) => /* @__PURE__ */ (0, import_jsx_runtime194.jsx)("option", { value: option.value, children: option.label }, option.value))
       },
       index
     )) })
@@ -32543,7 +32645,7 @@ function SearchAndFilters({
 }
 
 // src/components/features/Admin/components/StatusBadge.tsx
-var import_jsx_runtime192 = require("react/jsx-runtime");
+var import_jsx_runtime195 = require("react/jsx-runtime");
 function AdminStatusBadge({ status, type = "default", className = "" }) {
   const getStatusConfig = () => {
     switch (type) {
@@ -32589,13 +32691,13 @@ function AdminStatusBadge({ status, type = "default", className = "" }) {
   };
   const config = getStatusConfig()[status];
   if (!config) {
-    return /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 ${className}`, children: status });
+    return /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("span", { className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 ${className}`, children: status });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("span", { className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color} ${className}`, children: config.text });
+  return /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("span", { className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color} ${className}`, children: config.text });
 }
 
 // src/components/features/Admin/components/ActionButton.tsx
-var import_jsx_runtime193 = require("react/jsx-runtime");
+var import_jsx_runtime196 = require("react/jsx-runtime");
 function ActionButton({
   icon: Icon2,
   label,
@@ -32605,7 +32707,7 @@ function ActionButton({
   disabled = false,
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime196.jsxs)(
     Button,
     {
       variant,
@@ -32614,7 +32716,7 @@ function ActionButton({
       disabled,
       className,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(Icon2, { className: "w-4 h-4 mr-2" }),
+        /* @__PURE__ */ (0, import_jsx_runtime196.jsx)(Icon2, { className: "w-4 h-4 mr-2" }),
         label
       ]
     }
@@ -32622,7 +32724,7 @@ function ActionButton({
 }
 
 // src/components/features/Admin/components/EmptyState.tsx
-var import_jsx_runtime194 = require("react/jsx-runtime");
+var import_jsx_runtime197 = require("react/jsx-runtime");
 function EmptyState7({
   icon: Icon2,
   title,
@@ -32631,16 +32733,16 @@ function EmptyState7({
   onAction,
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "text-center py-12", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(Icon2, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
-    /* @__PURE__ */ (0, import_jsx_runtime194.jsx)("h3", { className: "text-lg font-medium text-text-secondary mb-2", children: title }),
-    /* @__PURE__ */ (0, import_jsx_runtime194.jsx)("p", { className: "text-text-tertiary mb-4", children: description }),
-    actionLabel && onAction && /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(Button, { onClick: onAction, children: actionLabel })
+  return /* @__PURE__ */ (0, import_jsx_runtime197.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime197.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime197.jsxs)("div", { className: "text-center py-12", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime197.jsx)(Icon2, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
+    /* @__PURE__ */ (0, import_jsx_runtime197.jsx)("h3", { className: "text-lg font-medium text-text-secondary mb-2", children: title }),
+    /* @__PURE__ */ (0, import_jsx_runtime197.jsx)("p", { className: "text-text-tertiary mb-4", children: description }),
+    actionLabel && onAction && /* @__PURE__ */ (0, import_jsx_runtime197.jsx)(Button, { onClick: onAction, children: actionLabel })
   ] }) }) });
 }
 
 // src/components/features/Admin/components/DataTable.tsx
-var import_jsx_runtime195 = require("react/jsx-runtime");
+var import_jsx_runtime198 = require("react/jsx-runtime");
 function DataTable({
   data,
   columns,
@@ -32649,13 +32751,13 @@ function DataTable({
   className = ""
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime195.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime195.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime195.jsxs)("div", { className: "animate-pulse", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("div", { className: "h-12 bg-bg-tertiary rounded mb-4" }),
-      [...Array(5)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("div", { className: "h-16 bg-bg-tertiary rounded mb-2" }, i))
+    return /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime198.jsxs)("div", { className: "animate-pulse", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("div", { className: "h-12 bg-bg-tertiary rounded mb-4" }),
+      [...Array(5)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("div", { className: "h-16 bg-bg-tertiary rounded mb-2" }, i))
     ] }) }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime195.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime195.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("div", { className: "overflow-x-auto", children: /* @__PURE__ */ (0, import_jsx_runtime195.jsxs)("table", { className: "w-full", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("tr", { className: "border-b border-border", children: columns.map((column) => /* @__PURE__ */ (0, import_jsx_runtime195.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("div", { className: "overflow-x-auto", children: /* @__PURE__ */ (0, import_jsx_runtime198.jsxs)("table", { className: "w-full", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("tr", { className: "border-b border-border", children: columns.map((column) => /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(
       "th",
       {
         className: `text-left py-3 px-4 font-medium text-text-secondary ${column.className || ""}`,
@@ -32663,12 +32765,12 @@ function DataTable({
       },
       column.key
     )) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("tbody", { children: data.map((row, index) => /* @__PURE__ */ (0, import_jsx_runtime195.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("tbody", { children: data.map((row, index) => /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(
       "tr",
       {
         className: `border-b border-border hover:bg-bg-secondary transition-colors ${onRowClick ? "cursor-pointer" : ""}`,
         onClick: () => onRowClick?.(row),
-        children: columns.map((column) => /* @__PURE__ */ (0, import_jsx_runtime195.jsx)("td", { className: "py-3 px-4", children: column.render ? column.render(row[column.key], row) : row[column.key] }, column.key))
+        children: columns.map((column) => /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("td", { className: "py-3 px-4", children: column.render ? column.render(row[column.key], row) : row[column.key] }, column.key))
       },
       index
     )) })
@@ -32676,7 +32778,7 @@ function DataTable({
 }
 
 // src/components/layout/PageWrapper.tsx
-var import_jsx_runtime196 = require("react/jsx-runtime");
+var import_jsx_runtime199 = require("react/jsx-runtime");
 var maxWidthClasses = {
   sm: "max-w-sm",
   md: "max-w-md",
@@ -32708,7 +32810,7 @@ function PageWrapper4({
   padding = "sm",
   spacing = "sm"
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("div", { className: cn2(
+  return /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("div", { className: cn2(
     // Base container
     container && "mx-auto",
     // Max width
@@ -32725,37 +32827,37 @@ function PageHeader({
   children,
   className
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("div", { className: cn2("mb-4", className), children });
+  return /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("div", { className: cn2("mb-4", className), children });
 }
 function PageTitle({
   children,
   className,
   subtitle
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime196.jsxs)("div", { className: cn2("mb-2", className), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children }),
-    subtitle && /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("p", { className: "text-gray-600 mt-1", children: subtitle })
+  return /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { className: cn2("mb-2", className), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("h1", { className: "text-3xl font-bold text-gray-900", children }),
+    subtitle && /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("p", { className: "text-gray-600 mt-1", children: subtitle })
   ] });
 }
 function PageContent4({
   children,
   className
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("div", { className: cn2("space-y-4", className), children });
+  return /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("div", { className: cn2("space-y-4", className), children });
 }
 function PageSection({
   children,
   className,
   title
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime196.jsxs)("section", { className: cn2("space-y-4", className), children: [
-    title && /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("h2", { className: "text-xl font-semibold text-gray-900", children: title }),
+  return /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("section", { className: cn2("space-y-4", className), children: [
+    title && /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("h2", { className: "text-xl font-semibold text-gray-900", children: title }),
     children
   ] });
 }
 
 // src/components/features/Admin/components/AdminPageHeader.tsx
-var import_jsx_runtime197 = require("react/jsx-runtime");
+var import_jsx_runtime200 = require("react/jsx-runtime");
 function AdminPageHeader({
   title,
   subtitle,
@@ -32764,35 +32866,35 @@ function AdminPageHeader({
   onAction,
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime197.jsx)(PageHeader, { className, children: /* @__PURE__ */ (0, import_jsx_runtime197.jsxs)("div", { className: "flex justify-between items-start", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime197.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime197.jsx)(PageTitle, { subtitle, children: title }) }),
-    actionLabel && onAction && ActionIcon && /* @__PURE__ */ (0, import_jsx_runtime197.jsxs)(Button, { onClick: onAction, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime197.jsx)(ActionIcon, { className: "w-4 h-4 mr-2" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime200.jsx)(PageHeader, { className, children: /* @__PURE__ */ (0, import_jsx_runtime200.jsxs)("div", { className: "flex justify-between items-start", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime200.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime200.jsx)(PageTitle, { subtitle, children: title }) }),
+    actionLabel && onAction && ActionIcon && /* @__PURE__ */ (0, import_jsx_runtime200.jsxs)(Button, { onClick: onAction, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime200.jsx)(ActionIcon, { className: "w-4 h-4 mr-2" }),
       actionLabel
     ] })
   ] }) });
 }
 
 // src/components/features/Admin/components/SettingsNavigation.tsx
-var import_jsx_runtime198 = require("react/jsx-runtime");
+var import_jsx_runtime201 = require("react/jsx-runtime");
 function SettingsNavigation({
   tabs,
   activeTab,
   onTabChange,
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime198.jsxs)(Card2, { className, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(CardTitle2, { children: "Settings Categories" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("nav", { className: "space-y-2", children: tabs.map((tab) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime201.jsxs)(Card2, { className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime201.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime201.jsx)(CardTitle2, { children: "Settings Categories" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime201.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime201.jsx)("nav", { className: "space-y-2", children: tabs.map((tab) => {
       const Icon2 = tab.icon;
-      return /* @__PURE__ */ (0, import_jsx_runtime198.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime201.jsxs)(
         Button,
         {
           variant: "ghost",
           onClick: () => onTabChange(tab.id),
           className: `w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors justify-start h-auto ${activeTab === tab.id ? "bg-action-primary text-text-inverted" : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary"}`,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime198.jsx)(Icon2, { className: "w-4 h-4" }),
+            /* @__PURE__ */ (0, import_jsx_runtime201.jsx)(Icon2, { className: "w-4 h-4" }),
             tab.label
           ]
         },
@@ -32803,7 +32905,7 @@ function SettingsNavigation({
 }
 
 // src/components/features/Admin/components/SettingsForm.tsx
-var import_jsx_runtime199 = require("react/jsx-runtime");
+var import_jsx_runtime202 = require("react/jsx-runtime");
 function SettingsForm({
   title,
   fields,
@@ -32825,7 +32927,7 @@ function SettingsForm({
     };
     switch (field.type) {
       case "textarea":
-        return /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(
           Textarea,
           {
             ...commonProps,
@@ -32834,21 +32936,21 @@ function SettingsForm({
           }
         );
       case "select":
-        return /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(
           Select2,
           {
             value: values[field.name] || "",
             onValueChange: (value) => onChange(field.name, value),
-            children: field.options?.map((option) => /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("option", { value: option.value, children: option.label }, option.value))
+            children: field.options?.map((option) => /* @__PURE__ */ (0, import_jsx_runtime202.jsx)("option", { value: option.value, children: option.label }, option.value))
           }
         );
       case "switch":
-        return /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("label", { className: "text-sm font-medium text-text-secondary", children: field.label }),
-            field.description && /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("p", { className: "text-xs text-text-tertiary", children: field.description })
+        return /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime202.jsx)("label", { className: "text-sm font-medium text-text-secondary", children: field.label }),
+            field.description && /* @__PURE__ */ (0, import_jsx_runtime202.jsx)("p", { className: "text-xs text-text-tertiary", children: field.description })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(
             Switch,
             {
               checked: values[field.name] || false,
@@ -32857,30 +32959,30 @@ function SettingsForm({
           )
         ] });
       default:
-        return /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(Input2, { ...commonProps, type: field.type });
+        return /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(Input2, { ...commonProps, type: field.type });
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)(Card2, { className, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(CardTitle2, { children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(Button, { variant: "outline", onClick: onReset, children: "Reset" }),
-        /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(Button, { onClick: onSave, disabled: saving, children: saving ? "Saving..." : "Save" })
+  return /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)(Card2, { className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(CardTitle2, { children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(Button, { variant: "outline", onClick: onReset, children: "Reset" }),
+        /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(Button, { onClick: onSave, disabled: saving, children: saving ? "Saving..." : "Save" })
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("div", { className: "space-y-6", children: fields.map((field) => /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { children: [
-      field.type !== "switch" && /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("label", { className: "block text-sm font-medium text-text-secondary mb-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime202.jsx)("div", { className: "space-y-6", children: fields.map((field) => /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)("div", { children: [
+      field.type !== "switch" && /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)("label", { className: "block text-sm font-medium text-text-secondary mb-2", children: [
         field.label,
-        field.required && /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("span", { className: "text-red-500 ml-1", children: "*" })
+        field.required && /* @__PURE__ */ (0, import_jsx_runtime202.jsx)("span", { className: "text-red-500 ml-1", children: "*" })
       ] }),
       renderField(field),
-      field.description && field.type !== "switch" && /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("p", { className: "text-xs text-text-tertiary mt-1", children: field.description })
+      field.description && field.type !== "switch" && /* @__PURE__ */ (0, import_jsx_runtime202.jsx)("p", { className: "text-xs text-text-tertiary mt-1", children: field.description })
     ] }, field.name)) }) })
   ] });
 }
 
 // src/components/features/Admin/components/SystemStatus.tsx
-var import_jsx_runtime200 = require("react/jsx-runtime");
+var import_jsx_runtime203 = require("react/jsx-runtime");
 function SystemStatus({ statusItems, className = "" }) {
   const getStatusColor11 = (status) => {
     switch (status) {
@@ -32906,22 +33008,22 @@ function SystemStatus({ statusItems, className = "" }) {
         return "bg-blue-100";
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime200.jsx)("div", { className: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${className}`, children: statusItems.map((item, index) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime203.jsx)("div", { className: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${className}`, children: statusItems.map((item, index) => {
     const Icon2 = item.icon;
     const statusColor = item.status ? getStatusColor11(item.status) : item.color;
     const statusBgColor = item.status ? getStatusBgColor(item.status) : item.bgColor;
-    return /* @__PURE__ */ (0, import_jsx_runtime200.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime200.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime200.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime200.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime200.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: item.label }),
-        /* @__PURE__ */ (0, import_jsx_runtime200.jsx)("p", { className: `text-2xl font-bold ${statusColor}`, children: item.value })
+    return /* @__PURE__ */ (0, import_jsx_runtime203.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime203.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime203.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime203.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime203.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: item.label }),
+        /* @__PURE__ */ (0, import_jsx_runtime203.jsx)("p", { className: `text-2xl font-bold ${statusColor}`, children: item.value })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime200.jsx)("div", { className: `p-3 rounded-full ${statusBgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime200.jsx)(Icon2, { className: `h-6 w-6 ${statusColor}` }) })
+      /* @__PURE__ */ (0, import_jsx_runtime203.jsx)("div", { className: `p-3 rounded-full ${statusBgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime203.jsx)(Icon2, { className: `h-6 w-6 ${statusColor}` }) })
     ] }) }) }, index);
   }) });
 }
 
 // src/components/features/Admin/components/SettingsLayout.tsx
-var import_jsx_runtime201 = require("react/jsx-runtime");
+var import_jsx_runtime204 = require("react/jsx-runtime");
 function SettingsLayout({
   title,
   subtitle,
@@ -32935,8 +33037,8 @@ function SettingsLayout({
   saving = false,
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime201.jsxs)(PageWrapper4, { className, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime201.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime204.jsxs)(PageWrapper4, { className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime204.jsx)(
       AdminPageHeader,
       {
         title,
@@ -32945,16 +33047,16 @@ function SettingsLayout({
         onAction: onSave
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime201.jsxs)(PageContent4, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime201.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime204.jsxs)(PageContent4, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime204.jsx)(
         SystemStatus,
         {
           statusItems,
           className: "mb-8"
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime201.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-4 gap-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime201.jsx)("div", { className: "lg:col-span-1", children: /* @__PURE__ */ (0, import_jsx_runtime201.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime204.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-4 gap-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime204.jsx)("div", { className: "lg:col-span-1", children: /* @__PURE__ */ (0, import_jsx_runtime204.jsx)(
           SettingsNavigation,
           {
             tabs,
@@ -32962,7 +33064,7 @@ function SettingsLayout({
             onTabChange
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime201.jsx)("div", { className: "lg:col-span-3", children })
+        /* @__PURE__ */ (0, import_jsx_runtime204.jsx)("div", { className: "lg:col-span-3", children })
       ] })
     ] })
   ] });
@@ -33173,7 +33275,7 @@ var systemSettingsFields = [
 ];
 
 // src/components/features/Admin/components/SecurityCard.tsx
-var import_jsx_runtime202 = require("react/jsx-runtime");
+var import_jsx_runtime205 = require("react/jsx-runtime");
 function SecurityCard({
   title,
   description,
@@ -33206,20 +33308,20 @@ function SecurityCard({
     }
   };
   const config = getStatusConfig();
-  return /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)(Card2, { className: `${className} ${config.borderColor} border-2`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime202.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime202.jsx)("div", { className: `p-2 rounded-full ${config.bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(Icon2, { className: `w-5 h-5 ${config.color}` }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(CardTitle2, { className: "text-lg", children: title })
+  return /* @__PURE__ */ (0, import_jsx_runtime205.jsxs)(Card2, { className: `${className} ${config.borderColor} border-2`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime205.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime205.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime205.jsx)("div", { className: `p-2 rounded-full ${config.bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(Icon2, { className: `w-5 h-5 ${config.color}` }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(CardTitle2, { className: "text-lg", children: title })
       ] }),
-      actionLabel && onAction && /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(Button, { variant: "outline", size: "sm", onClick: onAction, children: actionLabel })
+      actionLabel && onAction && /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(Button, { variant: "outline", size: "sm", onClick: onAction, children: actionLabel })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime202.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime202.jsx)("p", { className: "text-sm text-text-secondary", children: description }) })
+    /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime205.jsx)("p", { className: "text-sm text-text-secondary", children: description }) })
   ] });
 }
 
 // src/components/features/Admin/components/MetricCard.tsx
-var import_jsx_runtime203 = require("react/jsx-runtime");
+var import_jsx_runtime206 = require("react/jsx-runtime");
 function MetricCard({
   title,
   value,
@@ -33229,29 +33331,29 @@ function MetricCard({
   bgColor,
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime203.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime203.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime203.jsxs)("div", { className: "flex items-center justify-between", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime203.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime203.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime203.jsx)("p", { className: `text-2xl font-bold ${color}`, children: value }),
-      change && /* @__PURE__ */ (0, import_jsx_runtime203.jsxs)("div", { className: `flex items-center gap-1 text-sm mt-1 ${change.isPositive ? "text-green-600" : "text-red-600"}`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime203.jsx)("span", { children: change.isPositive ? "\u2197" : "\u2198" }),
-        /* @__PURE__ */ (0, import_jsx_runtime203.jsxs)("span", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime206.jsx)(Card2, { className, children: /* @__PURE__ */ (0, import_jsx_runtime206.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("div", { className: "flex items-center justify-between", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime206.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime206.jsx)("p", { className: `text-2xl font-bold ${color}`, children: value }),
+      change && /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("div", { className: `flex items-center gap-1 text-sm mt-1 ${change.isPositive ? "text-green-600" : "text-red-600"}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime206.jsx)("span", { children: change.isPositive ? "\u2197" : "\u2198" }),
+        /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("span", { children: [
           Math.abs(change.value),
           "%"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime203.jsxs)("span", { className: "text-text-tertiary", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("span", { className: "text-text-tertiary", children: [
           "vs ",
           change.period
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime203.jsx)("div", { className: `p-3 rounded-full ${bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime203.jsx)(Icon2, { className: `h-6 w-6 ${color}` }) })
+    /* @__PURE__ */ (0, import_jsx_runtime206.jsx)("div", { className: `p-3 rounded-full ${bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime206.jsx)(Icon2, { className: `h-6 w-6 ${color}` }) })
   ] }) }) });
 }
 
 // src/components/features/Admin/components/ActivityFeed.tsx
 var import_lucide_react104 = require("lucide-react");
-var import_jsx_runtime204 = require("react/jsx-runtime");
+var import_jsx_runtime207 = require("react/jsx-runtime");
 function ActivityFeed({
   title,
   activities,
@@ -33306,19 +33408,19 @@ function ActivityFeed({
     }
   };
   const displayActivities = activities.slice(0, maxItems);
-  return /* @__PURE__ */ (0, import_jsx_runtime204.jsxs)(Card2, { className, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime204.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime204.jsx)(CardTitle2, { children: title }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime204.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime204.jsx)("div", { className: "space-y-4", children: displayActivities.map((activity) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)(Card2, { className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime207.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime207.jsx)(CardTitle2, { children: title }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime207.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime207.jsx)("div", { className: "space-y-4", children: displayActivities.map((activity) => {
       const Icon2 = activity.icon || getDefaultIcon(activity.action, activity.type);
-      return /* @__PURE__ */ (0, import_jsx_runtime204.jsxs)("div", { className: "flex items-start gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime204.jsx)("div", { className: `p-2 rounded-full ${getTypeColor6(activity.type)}`, children: /* @__PURE__ */ (0, import_jsx_runtime204.jsx)(Icon2, { className: "w-4 h-4" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime204.jsxs)("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime204.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime204.jsx)("span", { className: "text-sm font-medium text-text-primary", children: activity.user }),
-            /* @__PURE__ */ (0, import_jsx_runtime204.jsx)("span", { className: "text-sm text-text-secondary", children: activity.action })
+      return /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { className: "flex items-start gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime207.jsx)("div", { className: `p-2 rounded-full ${getTypeColor6(activity.type)}`, children: /* @__PURE__ */ (0, import_jsx_runtime207.jsx)(Icon2, { className: "w-4 h-4" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { className: "flex-1 min-w-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime207.jsx)("span", { className: "text-sm font-medium text-text-primary", children: activity.user }),
+            /* @__PURE__ */ (0, import_jsx_runtime207.jsx)("span", { className: "text-sm text-text-secondary", children: activity.action })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime204.jsx)("p", { className: "text-sm text-text-secondary mt-1", children: activity.description }),
-          /* @__PURE__ */ (0, import_jsx_runtime204.jsx)("p", { className: "text-xs text-text-tertiary mt-1", children: activity.timestamp })
+          /* @__PURE__ */ (0, import_jsx_runtime207.jsx)("p", { className: "text-sm text-text-secondary mt-1", children: activity.description }),
+          /* @__PURE__ */ (0, import_jsx_runtime207.jsx)("p", { className: "text-xs text-text-tertiary mt-1", children: activity.timestamp })
         ] })
       ] }, activity.id);
     }) }) })
@@ -33326,28 +33428,28 @@ function ActivityFeed({
 }
 
 // src/components/features/Admin/components/QuickActions.tsx
-var import_jsx_runtime205 = require("react/jsx-runtime");
+var import_jsx_runtime208 = require("react/jsx-runtime");
 function QuickActions({
   title,
   actions,
   className = ""
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime205.jsxs)(Card2, { className, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(CardTitle2, { children: title }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime205.jsx)("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-3", children: actions.map((action) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)(Card2, { className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(CardTitle2, { children: title }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-3", children: actions.map((action) => {
       const Icon2 = action.icon;
-      return /* @__PURE__ */ (0, import_jsx_runtime205.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)(
         Button,
         {
           variant: action.variant || "outline",
           onClick: action.onClick,
           className: "h-auto p-4 flex flex-col items-start gap-2",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime205.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(Icon2, { className: "w-4 h-4" }),
-              /* @__PURE__ */ (0, import_jsx_runtime205.jsx)("span", { className: "font-medium", children: action.label })
+            /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(Icon2, { className: "w-4 h-4" }),
+              /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("span", { className: "font-medium", children: action.label })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime205.jsx)("span", { className: "text-xs text-text-tertiary text-left", children: action.description })
+            /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("span", { className: "text-xs text-text-tertiary text-left", children: action.description })
           ]
         },
         action.id
@@ -33357,7 +33459,7 @@ function QuickActions({
 }
 
 // src/components/features/Admin/components/SystemHealth.tsx
-var import_jsx_runtime206 = require("react/jsx-runtime");
+var import_jsx_runtime209 = require("react/jsx-runtime");
 function SystemHealth({
   title,
   metrics,
@@ -33387,29 +33489,29 @@ function SystemHealth({
         return "Unknown";
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)(Card2, { className, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime206.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime206.jsx)(CardTitle2, { children: title }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime206.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime206.jsx)("div", { className: "space-y-4", children: metrics.map((metric, index) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime209.jsxs)(Card2, { className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime209.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime209.jsx)(CardTitle2, { children: title }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime209.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("div", { className: "space-y-4", children: metrics.map((metric, index) => {
       const Icon2 = metric.icon;
       const percentage = metric.value / metric.max * 100;
-      return /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime206.jsx)(Icon2, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime206.jsx)("span", { className: "text-sm font-medium text-text-primary", children: metric.name })
+      return /* @__PURE__ */ (0, import_jsx_runtime209.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime209.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime209.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime209.jsx)(Icon2, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("span", { className: "text-sm font-medium text-text-primary", children: metric.name })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime206.jsxs)("span", { className: "text-sm text-text-secondary", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime209.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime209.jsxs)("span", { className: "text-sm text-text-secondary", children: [
               metric.value,
               " / ",
               metric.max,
               " ",
               metric.unit
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime206.jsx)("span", { className: `text-xs px-2 py-1 rounded-full text-white ${getStatusColor11(metric.status)}`, children: getStatusText(metric.status) })
+            /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("span", { className: `text-xs px-2 py-1 rounded-full text-white ${getStatusColor11(metric.status)}`, children: getStatusText(metric.status) })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime206.jsx)("div", { className: "w-full bg-bg-tertiary rounded-full h-2", children: /* @__PURE__ */ (0, import_jsx_runtime206.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("div", { className: "w-full bg-bg-tertiary rounded-full h-2", children: /* @__PURE__ */ (0, import_jsx_runtime209.jsx)(
           "div",
           {
             className: `h-2 rounded-full ${getStatusColor11(metric.status)}`,
@@ -33423,7 +33525,7 @@ function SystemHealth({
 
 // src/components/features/Performance/components/PerformanceMetricCard.tsx
 var import_lucide_react105 = require("lucide-react");
-var import_jsx_runtime207 = require("react/jsx-runtime");
+var import_jsx_runtime210 = require("react/jsx-runtime");
 var getCategoryIcon = (category) => {
   switch (category) {
     case "CPU":
@@ -33477,42 +33579,42 @@ function PerformanceMetricCard({ metric, onClick }) {
   const Icon2 = getCategoryIcon(metric.category);
   const TrendIcon = getTrendIcon(metric.trend);
   const trendColor = getTrendColor(metric.trend, metric.change);
-  return /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)(
     Card2,
     {
       className: `cursor-pointer transition-all hover:shadow-md ${onClick ? "hover:border-primary" : ""}`,
       onClick: () => onClick?.(metric),
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime207.jsx)(CardTitle2, { className: "text-sm font-medium text-text-secondary", children: metric.name }),
-          /* @__PURE__ */ (0, import_jsx_runtime207.jsx)(Icon2, { className: "h-4 w-4 text-text-tertiary" })
+        /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(CardTitle2, { className: "text-sm font-medium text-text-secondary", children: metric.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(Icon2, { className: "h-4 w-4 text-text-tertiary" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)(CardContent2, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { className: "flex items-center justify-between", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { className: "flex items-center space-x-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("span", { className: "text-2xl font-bold text-text-primary", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)(CardContent2, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { className: "flex items-center justify-between", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { className: "flex items-center space-x-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("span", { className: "text-2xl font-bold text-text-primary", children: [
                 metric.value,
                 metric.unit
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { className: "flex items-center space-x-1", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime207.jsx)(TrendIcon, { className: `h-3 w-3 ${trendColor}` }),
-                /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("span", { className: `text-xs ${trendColor}`, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { className: "flex items-center space-x-1", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(TrendIcon, { className: `h-3 w-3 ${trendColor}` }),
+                /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("span", { className: `text-xs ${trendColor}`, children: [
                   metric.change > 0 ? "+" : "",
                   metric.change,
                   metric.unit
                 ] })
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime207.jsx)(Badge, { className: getStatusColor4(metric.status), children: metric.status })
+            /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(Badge, { className: getStatusColor4(metric.status), children: metric.status })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime207.jsx)("p", { className: "text-xs text-text-tertiary mt-1", children: metric.description }),
-          /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { className: "mt-2 text-xs text-text-tertiary", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime210.jsx)("p", { className: "text-xs text-text-tertiary mt-1", children: metric.description }),
+          /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { className: "mt-2 text-xs text-text-tertiary", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { children: [
               "Warn: ",
               metric.threshold.warning,
               metric.unit
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime207.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { children: [
               "Critical: ",
               metric.threshold.critical,
               metric.unit
@@ -33527,7 +33629,7 @@ var PerformanceMetricCard_default = PerformanceMetricCard;
 
 // src/components/features/Performance/components/PerformanceAlertCard.tsx
 var import_lucide_react106 = require("lucide-react");
-var import_jsx_runtime208 = require("react/jsx-runtime");
+var import_jsx_runtime211 = require("react/jsx-runtime");
 var getSeverityColor = (severity) => {
   switch (severity) {
     case "LOW":
@@ -33562,39 +33664,39 @@ function PerformanceAlertCard({
   onViewDetails
 }) {
   const SeverityIcon = getSeverityIcon(alert2.severity);
-  return /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)(Card2, { className: "border-l-4 border-l-orange-500", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(SeverityIcon, { className: "h-4 w-4 text-orange-500" }),
-        /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: alert2.metric })
+  return /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(Card2, { className: "border-l-4 border-l-orange-500", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(SeverityIcon, { className: "h-4 w-4 text-orange-500" }),
+        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: alert2.metric })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(Badge, { className: getSeverityColor(alert2.severity), children: alert2.severity })
+      /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(Badge, { className: getSeverityColor(alert2.severity), children: alert2.severity })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: alert2.message }),
-      /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(import_lucide_react106.Clock, { className: "h-3 w-3" }),
-          /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("span", { children: new Date(alert2.timestamp).toLocaleString() })
+    /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: alert2.message }),
+      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react106.Clock, { className: "h-3 w-3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { children: new Date(alert2.timestamp).toLocaleString() })
         ] }),
-        alert2.resolved && alert2.resolvedBy && /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(import_lucide_react106.User, { className: "h-3 w-3" }),
-          /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("span", { children: [
+        alert2.resolved && alert2.resolvedBy && /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react106.User, { className: "h-3 w-3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("span", { children: [
             "Resolved by ",
             alert2.resolvedBy
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("div", { className: "flex items-center space-x-2", children: alert2.resolved ? /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex items-center space-x-1 text-green-600", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(import_lucide_react106.CheckCircle, { className: "h-4 w-4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("span", { className: "text-sm", children: "Resolved" })
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex items-center space-x-1 text-orange-600", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(import_lucide_react106.AlertTriangle, { className: "h-4 w-4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("span", { className: "text-sm", children: "Active" })
+      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("div", { className: "flex items-center space-x-2", children: alert2.resolved ? /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-1 text-green-600", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react106.CheckCircle, { className: "h-4 w-4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { className: "text-sm", children: "Resolved" })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-1 text-orange-600", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react106.AlertTriangle, { className: "h-4 w-4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { className: "text-sm", children: "Active" })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex space-x-2", children: [
-          onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex space-x-2", children: [
+          onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(
             Button,
             {
               variant: "outline",
@@ -33603,7 +33705,7 @@ function PerformanceAlertCard({
               children: "View Details"
             }
           ),
-          !alert2.resolved && onResolve && /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(
+          !alert2.resolved && onResolve && /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(
             Button,
             {
               size: "sm",
@@ -33619,19 +33721,19 @@ function PerformanceAlertCard({
 var PerformanceAlertCard_default = PerformanceAlertCard;
 
 // src/components/features/Performance/components/PerformanceMetricsGrid.tsx
-var import_jsx_runtime209 = require("react/jsx-runtime");
+var import_jsx_runtime212 = require("react/jsx-runtime");
 function PerformanceMetricsGrid({
   metrics,
   onMetricClick,
   loading = false
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4", children: Array.from({ length: 8 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("div", { className: "h-32 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4", children: Array.from({ length: 8 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("div", { className: "h-32 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   if (metrics.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("p", { className: "text-text-tertiary", children: "No performance metrics available" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("p", { className: "text-text-tertiary", children: "No performance metrics available" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4", children: metrics.map((metric) => /* @__PURE__ */ (0, import_jsx_runtime209.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4", children: metrics.map((metric) => /* @__PURE__ */ (0, import_jsx_runtime212.jsx)(
     PerformanceMetricCard,
     {
       metric,
@@ -33642,7 +33744,7 @@ function PerformanceMetricsGrid({
 }
 
 // src/components/features/Performance/components/PerformanceAlertsList.tsx
-var import_jsx_runtime210 = require("react/jsx-runtime");
+var import_jsx_runtime213 = require("react/jsx-runtime");
 function PerformanceAlertsList({
   alerts,
   onResolveAlert,
@@ -33651,22 +33753,22 @@ function PerformanceAlertsList({
   maxItems = 10
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime210.jsx)("div", { className: "space-y-4", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime210.jsx)("div", { className: "h-24 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "space-y-4", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "h-24 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   const displayAlerts = alerts.slice(0, maxItems);
   const activeAlerts = displayAlerts.filter((alert2) => !alert2.resolved);
   const resolvedAlerts = displayAlerts.filter((alert2) => alert2.resolved);
   if (alerts.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime210.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime210.jsx)("p", { className: "text-text-tertiary", children: "No performance alerts" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("p", { className: "text-text-tertiary", children: "No performance alerts" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { className: "space-y-4", children: [
-    activeAlerts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("h3", { className: "text-sm font-medium text-text-primary mb-3", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime213.jsxs)("div", { className: "space-y-4", children: [
+    activeAlerts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime213.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime213.jsxs)("h3", { className: "text-sm font-medium text-text-primary mb-3", children: [
         "Active Alerts (",
         activeAlerts.length,
         ")"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime210.jsx)("div", { className: "space-y-3", children: activeAlerts.map((alert2) => /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "space-y-3", children: activeAlerts.map((alert2) => /* @__PURE__ */ (0, import_jsx_runtime213.jsx)(
         PerformanceAlertCard,
         {
           alert: alert2,
@@ -33676,13 +33778,13 @@ function PerformanceAlertsList({
         alert2.id
       )) })
     ] }),
-    resolvedAlerts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("h3", { className: "text-sm font-medium text-text-primary mb-3", children: [
+    resolvedAlerts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime213.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime213.jsxs)("h3", { className: "text-sm font-medium text-text-primary mb-3", children: [
         "Recently Resolved (",
         resolvedAlerts.length,
         ")"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime210.jsx)("div", { className: "space-y-3", children: resolvedAlerts.map((alert2) => /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "space-y-3", children: resolvedAlerts.map((alert2) => /* @__PURE__ */ (0, import_jsx_runtime213.jsx)(
         PerformanceAlertCard,
         {
           alert: alert2,
@@ -33696,7 +33798,7 @@ function PerformanceAlertsList({
 
 // src/components/features/Maintenance/components/MaintenanceTaskCard.tsx
 var import_lucide_react107 = require("lucide-react");
-var import_jsx_runtime211 = require("react/jsx-runtime");
+var import_jsx_runtime214 = require("react/jsx-runtime");
 var getTypeColor = (type) => {
   switch (type) {
     case "SCHEDULED":
@@ -33765,49 +33867,49 @@ function MaintenanceTaskCard({
   onViewDetails
 }) {
   const StatusIcon = getStatusIcon(task.status);
-  return /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react107.Wrench, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: task.name })
+  return /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react107.Wrench, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: task.name })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(Badge, { className: getPriorityColor(task.priority), children: task.priority }),
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(Badge, { className: getTypeColor(task.type), children: task.type })
+      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(Badge, { className: getPriorityColor(task.priority), children: task.priority }),
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(Badge, { className: getTypeColor(task.type), children: task.type })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: task.description }),
-      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react107.Calendar, { className: "h-3 w-3" }),
-          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { children: new Date(task.scheduledAt).toLocaleDateString() })
+    /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: task.description }),
+      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react107.Calendar, { className: "h-3 w-3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { children: new Date(task.scheduledAt).toLocaleDateString() })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react107.Clock, { className: "h-3 w-3" }),
-          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { children: task.estimatedDuration })
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react107.Clock, { className: "h-3 w-3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { children: task.estimatedDuration })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react107.User, { className: "h-3 w-3" }),
-          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { children: task.createdBy })
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react107.User, { className: "h-3 w-3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { children: task.createdBy })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center justify-between mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(StatusIcon, { className: "h-4 w-4 text-text-tertiary" }),
-          /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(Badge, { className: getStatusColor5(task.status), children: task.status.replace("_", " ") })
+      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center justify-between mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(StatusIcon, { className: "h-4 w-4 text-text-tertiary" }),
+          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(Badge, { className: getStatusColor5(task.status), children: task.status.replace("_", " ") })
         ] }),
-        task.actualDuration && /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("span", { className: "text-xs text-text-tertiary", children: [
+        task.actualDuration && /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("span", { className: "text-xs text-text-tertiary", children: [
           "Actual: ",
           task.actualDuration
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Affected Services:" }),
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("div", { className: "flex flex-wrap gap-1", children: task.affectedServices.map((service, index) => /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { className: "text-xs bg-bg-secondary px-2 py-1 rounded", children: service }, index)) })
+      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Affected Services:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("div", { className: "flex flex-wrap gap-1", children: task.affectedServices.map((service, index) => /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-xs bg-bg-secondary px-2 py-1 rounded", children: service }, index)) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(
           Button,
           {
             variant: "outline",
@@ -33816,32 +33918,32 @@ function MaintenanceTaskCard({
             children: "View Details"
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)("div", { className: "flex space-x-2", children: [
-          task.status === "PENDING" && onStart && /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex space-x-2", children: [
+          task.status === "PENDING" && onStart && /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(
             Button,
             {
               size: "sm",
               onClick: () => onStart(task.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react107.Play, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { children: "Start" })
+                /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react107.Play, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { children: "Start" })
               ]
             }
           ),
-          task.status === "IN_PROGRESS" && onComplete && /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(
+          task.status === "IN_PROGRESS" && onComplete && /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(
             Button,
             {
               size: "sm",
               onClick: () => onComplete(task.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react107.CheckCircle, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { children: "Complete" })
+                /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react107.CheckCircle, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { children: "Complete" })
               ]
             }
           ),
-          (task.status === "PENDING" || task.status === "IN_PROGRESS") && onCancel && /* @__PURE__ */ (0, import_jsx_runtime211.jsxs)(
+          (task.status === "PENDING" || task.status === "IN_PROGRESS") && onCancel && /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(
             Button,
             {
               variant: "outline",
@@ -33849,8 +33951,8 @@ function MaintenanceTaskCard({
               onClick: () => onCancel(task.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime211.jsx)(import_lucide_react107.XCircle, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { children: "Cancel" })
+                /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react107.XCircle, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { children: "Cancel" })
               ]
             }
           )
@@ -33863,24 +33965,24 @@ var MaintenanceTaskCard_default = MaintenanceTaskCard;
 
 // src/components/features/Maintenance/components/MaintenanceModeToggle.tsx
 var import_lucide_react108 = require("lucide-react");
-var import_jsx_runtime212 = require("react/jsx-runtime");
+var import_jsx_runtime215 = require("react/jsx-runtime");
 function MaintenanceModeToggle({
   isActive,
   onToggle,
   loading = false
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime212.jsxs)(Card2, { className: "border-l-4 border-l-orange-500", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime212.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime212.jsxs)(CardTitle2, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime212.jsx)(import_lucide_react108.Shield, { className: "w-5 h-5" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(Card2, { className: "border-l-4 border-l-orange-500", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(CardTitle2, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(import_lucide_react108.Shield, { className: "w-5 h-5" }),
       "Maintenance Mode Status"
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime212.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime212.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime212.jsxs)("div", { className: "flex items-center gap-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("div", { className: `w-3 h-3 rounded-full ${isActive ? "bg-red-500" : "bg-green-500"}` }),
-          /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("span", { className: "text-sm font-medium", children: isActive ? "Maintenance Mode Active" : "System Normal" })
+    /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center gap-3", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("div", { className: `w-3 h-3 rounded-full ${isActive ? "bg-red-500" : "bg-green-500"}` }),
+          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-sm font-medium", children: isActive ? "Maintenance Mode Active" : "System Normal" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime212.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(
           Button,
           {
             variant: isActive ? "default" : "outline",
@@ -33888,15 +33990,15 @@ function MaintenanceModeToggle({
             disabled: loading,
             className: "flex items-center gap-2",
             children: [
-              isActive ? /* @__PURE__ */ (0, import_jsx_runtime212.jsx)(import_lucide_react108.Eye, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime212.jsx)(import_lucide_react108.EyeOff, { className: "w-4 h-4" }),
+              isActive ? /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(import_lucide_react108.Eye, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(import_lucide_react108.EyeOff, { className: "w-4 h-4" }),
               isActive ? "Disable" : "Enable",
               " Maintenance Mode"
             ]
           }
         )
       ] }),
-      isActive && /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("div", { className: "mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime212.jsxs)("p", { className: "text-sm text-orange-800", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime212.jsx)("strong", { children: "Warning:" }),
+      isActive && /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("div", { className: "mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("p", { className: "text-sm text-orange-800", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("strong", { children: "Warning:" }),
         " Maintenance mode is currently active. Users may experience limited access to the system."
       ] }) })
     ] })
@@ -33904,7 +34006,7 @@ function MaintenanceModeToggle({
 }
 
 // src/components/features/Maintenance/components/MaintenanceTasksGrid.tsx
-var import_jsx_runtime213 = require("react/jsx-runtime");
+var import_jsx_runtime216 = require("react/jsx-runtime");
 function MaintenanceTasksGrid({
   tasks,
   onStartTask,
@@ -33914,12 +34016,12 @@ function MaintenanceTasksGrid({
   loading = false
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 6 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "h-64 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 6 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { className: "h-64 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   if (tasks.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("p", { className: "text-text-tertiary", children: "No maintenance tasks found" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("p", { className: "text-text-tertiary", children: "No maintenance tasks found" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: tasks.map((task) => /* @__PURE__ */ (0, import_jsx_runtime213.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: tasks.map((task) => /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(
     MaintenanceTaskCard,
     {
       task,
@@ -33934,7 +34036,7 @@ function MaintenanceTasksGrid({
 
 // src/components/features/Maintenance/components/MaintenanceWindowCard.tsx
 var import_lucide_react109 = require("lucide-react");
-var import_jsx_runtime214 = require("react/jsx-runtime");
+var import_jsx_runtime217 = require("react/jsx-runtime");
 var getStatusColor6 = (status) => {
   switch (status) {
     case "ACTIVE":
@@ -33973,56 +34075,56 @@ function MaintenanceWindowCard({
   const startDate = new Date(window2.startTime);
   const endDate = new Date(window2.endTime);
   const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1e3 * 60 * 60));
-  return /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(StatusIcon, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: window2.name })
+  return /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(StatusIcon, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: window2.name })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(Badge, { className: getStatusColor6(window2.status), children: window2.status })
+      /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(Badge, { className: getStatusColor6(window2.status), children: window2.status })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: window2.description }),
-      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "space-y-2 mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-text-tertiary", children: "Start Time:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-text-primary", children: startDate.toLocaleString() })
+    /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: window2.description }),
+      /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "space-y-2 mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-text-tertiary", children: "Start Time:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-text-primary", children: startDate.toLocaleString() })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-text-tertiary", children: "End Time:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-text-primary", children: endDate.toLocaleString() })
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-text-tertiary", children: "End Time:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-text-primary", children: endDate.toLocaleString() })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-text-tertiary", children: "Duration:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("span", { className: "text-text-primary", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-text-tertiary", children: "Duration:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("span", { className: "text-text-primary", children: [
             duration,
             " hours"
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Affected Services:" }),
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("div", { className: "flex flex-wrap gap-1", children: window2.affectedServices.map((service, index) => /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-xs bg-bg-secondary px-2 py-1 rounded", children: service }, index)) })
+      /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Affected Services:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "flex flex-wrap gap-1", children: window2.affectedServices.map((service, index) => /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-xs bg-bg-secondary px-2 py-1 rounded", children: service }, index)) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Notifications:" }),
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-1", children: [
-            window2.notifications.users ? /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react109.Bell, { className: "h-3 w-3 text-green-500" }) : /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react109.BellOff, { className: "h-3 w-3 text-gray-400" }),
-            /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-xs", children: "Users" })
+      /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Notifications:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center space-x-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center space-x-1", children: [
+            window2.notifications.users ? /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(import_lucide_react109.Bell, { className: "h-3 w-3 text-green-500" }) : /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(import_lucide_react109.BellOff, { className: "h-3 w-3 text-gray-400" }),
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-xs", children: "Users" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-1", children: [
-            window2.notifications.admins ? /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react109.Bell, { className: "h-3 w-3 text-green-500" }) : /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react109.BellOff, { className: "h-3 w-3 text-gray-400" }),
-            /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-xs", children: "Admins" })
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center space-x-1", children: [
+            window2.notifications.admins ? /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(import_lucide_react109.Bell, { className: "h-3 w-3 text-green-500" }) : /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(import_lucide_react109.BellOff, { className: "h-3 w-3 text-gray-400" }),
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-xs", children: "Admins" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center space-x-1", children: [
-            window2.notifications.customers ? /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react109.Bell, { className: "h-3 w-3 text-green-500" }) : /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(import_lucide_react109.BellOff, { className: "h-3 w-3 text-gray-400" }),
-            /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("span", { className: "text-xs", children: "Customers" })
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center space-x-1", children: [
+            window2.notifications.customers ? /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(import_lucide_react109.Bell, { className: "h-3 w-3 text-green-500" }) : /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(import_lucide_react109.BellOff, { className: "h-3 w-3 text-gray-400" }),
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { className: "text-xs", children: "Customers" })
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(
           Button,
           {
             variant: "outline",
@@ -34031,8 +34133,8 @@ function MaintenanceWindowCard({
             children: "View Details"
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime214.jsxs)("div", { className: "flex space-x-2", children: [
-          window2.status === "SCHEDULED" && onEdit && /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { className: "flex space-x-2", children: [
+          window2.status === "SCHEDULED" && onEdit && /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(
             Button,
             {
               size: "sm",
@@ -34040,7 +34142,7 @@ function MaintenanceWindowCard({
               children: "Edit"
             }
           ),
-          (window2.status === "SCHEDULED" || window2.status === "ACTIVE") && onCancel && /* @__PURE__ */ (0, import_jsx_runtime214.jsx)(
+          (window2.status === "SCHEDULED" || window2.status === "ACTIVE") && onCancel && /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(
             Button,
             {
               variant: "outline",
@@ -34057,7 +34159,7 @@ function MaintenanceWindowCard({
 
 // src/components/features/Backup/components/BackupCard.tsx
 var import_lucide_react110 = require("lucide-react");
-var import_jsx_runtime215 = require("react/jsx-runtime");
+var import_jsx_runtime218 = require("react/jsx-runtime");
 var getTypeColor2 = (type) => {
   switch (type) {
     case "FULL":
@@ -34119,53 +34221,53 @@ function BackupCard({
 }) {
   const StatusIcon = getStatusIcon3(backup.status);
   const LocationIcon = getLocationIcon(backup.location);
-  return /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(import_lucide_react110.Database, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: backup.name })
+  return /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(import_lucide_react110.Database, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: backup.name })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(Badge, { className: getTypeColor2(backup.type), children: backup.type }),
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(Badge, { className: getStatusColor7(backup.status), children: backup.status })
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(Badge, { className: getTypeColor2(backup.type), children: backup.type }),
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(Badge, { className: getStatusColor7(backup.status), children: backup.status })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: backup.description }),
-      /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "space-y-2 mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-text-tertiary", children: "Size:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-text-primary", children: backup.size })
+    /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: backup.description }),
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "space-y-2 mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-text-tertiary", children: "Size:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-text-primary", children: backup.size })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-text-tertiary", children: "Created:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-text-primary", children: new Date(backup.createdAt).toLocaleDateString() })
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-text-tertiary", children: "Created:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-text-primary", children: new Date(backup.createdAt).toLocaleDateString() })
         ] }),
-        backup.completedAt && /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-text-tertiary", children: "Completed:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-text-primary", children: new Date(backup.completedAt).toLocaleDateString() })
+        backup.completedAt && /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-text-tertiary", children: "Completed:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-text-primary", children: new Date(backup.completedAt).toLocaleDateString() })
         ] }),
-        backup.duration && /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-text-tertiary", children: "Duration:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-text-primary", children: backup.duration })
+        backup.duration && /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-text-tertiary", children: "Duration:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-text-primary", children: backup.duration })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center justify-between mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(StatusIcon, { className: "h-4 w-4 text-text-tertiary" }),
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-xs text-text-tertiary", children: backup.status.replace("_", " ") })
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center justify-between mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(StatusIcon, { className: "h-4 w-4 text-text-tertiary" }),
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-xs text-text-tertiary", children: backup.status.replace("_", " ") })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(LocationIcon, { className: "h-3 w-3 text-text-tertiary" }),
-          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { className: "text-xs text-text-tertiary", children: backup.location })
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center space-x-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(LocationIcon, { className: "h-3 w-3 text-text-tertiary" }),
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { className: "text-xs text-text-tertiary", children: backup.location })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("div", { className: "flex items-center justify-between text-xs text-text-tertiary mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center space-x-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(import_lucide_react110.User, { className: "h-3 w-3" }),
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { children: backup.createdBy })
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "flex items-center justify-between text-xs text-text-tertiary mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center space-x-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(import_lucide_react110.User, { className: "h-3 w-3" }),
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { children: backup.createdBy })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(
           Button,
           {
             variant: "outline",
@@ -34174,8 +34276,8 @@ function BackupCard({
             children: "View Details"
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { className: "flex space-x-2", children: [
-          backup.status === "COMPLETED" && onDownload && /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { className: "flex space-x-2", children: [
+          backup.status === "COMPLETED" && onDownload && /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(
             Button,
             {
               variant: "outline",
@@ -34183,24 +34285,24 @@ function BackupCard({
               onClick: () => onDownload(backup.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(import_lucide_react110.Download, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { children: "Download" })
+                /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(import_lucide_react110.Download, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { children: "Download" })
               ]
             }
           ),
-          backup.status === "COMPLETED" && onRestore && /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(
+          backup.status === "COMPLETED" && onRestore && /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(
             Button,
             {
               size: "sm",
               onClick: () => onRestore(backup.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(import_lucide_react110.Play, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { children: "Restore" })
+                /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(import_lucide_react110.Play, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { children: "Restore" })
               ]
             }
           ),
-          onDelete && /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(
+          onDelete && /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(
             Button,
             {
               variant: "outline",
@@ -34208,8 +34310,8 @@ function BackupCard({
               onClick: () => onDelete(backup.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(import_lucide_react110.Trash2, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("span", { children: "Delete" })
+                /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(import_lucide_react110.Trash2, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { children: "Delete" })
               ]
             }
           )
@@ -34222,7 +34324,7 @@ var BackupCard_default = BackupCard;
 
 // src/components/features/Backup/components/BackupScheduleCard.tsx
 var import_lucide_react111 = require("lucide-react");
-var import_jsx_runtime216 = require("react/jsx-runtime");
+var import_jsx_runtime219 = require("react/jsx-runtime");
 var getFrequencyColor = (frequency) => {
   switch (frequency) {
     case "HOURLY":
@@ -34284,41 +34386,41 @@ function BackupScheduleCard({
   const StatusIcon = getStatusIcon4(schedule.status);
   const nextRunDate = new Date(schedule.nextRun);
   const lastRunDate = schedule.lastRun ? new Date(schedule.lastRun) : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(import_lucide_react111.Clock, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: schedule.name })
+  return /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react111.Clock, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: schedule.name })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(Badge, { className: getFrequencyColor(schedule.frequency), children: schedule.frequency }),
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(Badge, { className: getTypeColor3(schedule.type), children: schedule.type })
+      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(Badge, { className: getFrequencyColor(schedule.frequency), children: schedule.frequency }),
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(Badge, { className: getTypeColor3(schedule.type), children: schedule.type })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "space-y-2 mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { className: "text-text-tertiary", children: "Next Run:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { className: "text-text-primary", children: nextRunDate.toLocaleString() })
+    /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "space-y-2 mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-tertiary", children: "Next Run:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-primary", children: nextRunDate.toLocaleString() })
         ] }),
-        lastRunDate && /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { className: "text-text-tertiary", children: "Last Run:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { className: "text-text-primary", children: lastRunDate.toLocaleString() })
+        lastRunDate && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-tertiary", children: "Last Run:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-primary", children: lastRunDate.toLocaleString() })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { className: "text-text-tertiary", children: "Retention:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("span", { className: "text-text-primary", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-tertiary", children: "Retention:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("span", { className: "text-text-primary", children: [
             schedule.retention,
             " days"
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { className: "flex items-center justify-between mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(StatusIcon, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(Badge, { className: getStatusColor8(schedule.status), children: schedule.status })
+      /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { className: "flex items-center justify-between mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(StatusIcon, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(Badge, { className: getStatusColor8(schedule.status), children: schedule.status })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
           Button,
           {
             variant: "outline",
@@ -34327,8 +34429,8 @@ function BackupScheduleCard({
             children: "View Details"
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { className: "flex space-x-2", children: [
-          schedule.status === "ACTIVE" && onPause && /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex space-x-2", children: [
+          schedule.status === "ACTIVE" && onPause && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
             Button,
             {
               variant: "outline",
@@ -34336,24 +34438,24 @@ function BackupScheduleCard({
               onClick: () => onPause(schedule.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(import_lucide_react111.Pause, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "Pause" })
+                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react111.Pause, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { children: "Pause" })
               ]
             }
           ),
-          schedule.status === "PAUSED" && onResume && /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+          schedule.status === "PAUSED" && onResume && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
             Button,
             {
               size: "sm",
               onClick: () => onResume(schedule.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(import_lucide_react111.Play, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "Resume" })
+                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react111.Play, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { children: "Resume" })
               ]
             }
           ),
-          onEdit && /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+          onEdit && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
             Button,
             {
               variant: "outline",
@@ -34361,12 +34463,12 @@ function BackupScheduleCard({
               onClick: () => onEdit(schedule),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(import_lucide_react111.Settings, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "Edit" })
+                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react111.Settings, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { children: "Edit" })
               ]
             }
           ),
-          onDelete && /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(
+          onDelete && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
             Button,
             {
               variant: "outline",
@@ -34383,7 +34485,7 @@ function BackupScheduleCard({
 var BackupScheduleCard_default = BackupScheduleCard;
 
 // src/components/features/Backup/components/BackupGrid.tsx
-var import_jsx_runtime217 = require("react/jsx-runtime");
+var import_jsx_runtime220 = require("react/jsx-runtime");
 function BackupGrid({
   backups,
   onDownloadBackup,
@@ -34393,12 +34495,12 @@ function BackupGrid({
   loading = false
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 6 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "h-80 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 6 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { className: "h-80 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   if (backups.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("p", { className: "text-text-tertiary", children: "No backups found" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("p", { className: "text-text-tertiary", children: "No backups found" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: backups.map((backup) => /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: backups.map((backup) => /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
     BackupCard,
     {
       backup,
@@ -34412,7 +34514,7 @@ function BackupGrid({
 }
 
 // src/components/features/Backup/components/BackupSchedulesGrid.tsx
-var import_jsx_runtime218 = require("react/jsx-runtime");
+var import_jsx_runtime221 = require("react/jsx-runtime");
 function BackupSchedulesGrid({
   schedules,
   onPauseSchedule,
@@ -34423,12 +34525,12 @@ function BackupSchedulesGrid({
   loading = false
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "h-64 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { className: "h-64 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   if (schedules.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("p", { className: "text-text-tertiary", children: "No backup schedules found" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("p", { className: "text-text-tertiary", children: "No backup schedules found" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: schedules.map((schedule) => /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: schedules.map((schedule) => /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
     BackupScheduleCard,
     {
       schedule,
@@ -34443,9 +34545,9 @@ function BackupSchedulesGrid({
 }
 
 // src/components/features/ApiManagement/components/ApiKeyCard.tsx
-var import_react90 = require("react");
+var import_react91 = require("react");
 var import_lucide_react112 = require("lucide-react");
-var import_jsx_runtime219 = require("react/jsx-runtime");
+var import_jsx_runtime222 = require("react/jsx-runtime");
 var getTypeColor4 = (type) => {
   switch (type) {
     case "READ":
@@ -34481,7 +34583,7 @@ function ApiKeyCard({
   onDelete,
   onViewDetails
 }) {
-  const [showKey, setShowKey] = (0, import_react90.useState)(false);
+  const [showKey, setShowKey] = (0, import_react91.useState)(false);
   const toggleKeyVisibility = () => {
     setShowKey(!showKey);
   };
@@ -34493,81 +34595,81 @@ function ApiKeyCard({
     }
   };
   const usagePercentage = apiKey.usage.requests / apiKey.usage.limit * 100;
-  return /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react112.Key, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: apiKey.name })
+  return /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(import_lucide_react112.Key, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: apiKey.name })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(Badge, { className: getTypeColor4(apiKey.type), children: apiKey.type }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(Badge, { className: getStatusColor9(apiKey.status), children: apiKey.status })
+      /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(Badge, { className: getTypeColor4(apiKey.type), children: apiKey.type }),
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(Badge, { className: getStatusColor9(apiKey.status), children: apiKey.status })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: apiKey.description }),
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { className: "mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("code", { className: "text-xs bg-bg-secondary px-2 py-1 rounded font-mono flex-1", children: showKey ? apiKey.key : "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: apiKey.description }),
+      /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("code", { className: "text-xs bg-bg-secondary px-2 py-1 rounded font-mono flex-1", children: showKey ? apiKey.key : "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" }),
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
           Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: toggleKeyVisibility,
             className: "h-6 w-6 p-0",
-            children: showKey ? /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react112.EyeOff, { className: "w-3 h-3" }) : /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react112.Eye, { className: "w-3 h-3" })
+            children: showKey ? /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(import_lucide_react112.EyeOff, { className: "w-3 h-3" }) : /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(import_lucide_react112.Eye, { className: "w-3 h-3" })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
           Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: handleCopy,
             className: "h-6 w-6 p-0",
-            children: /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react112.Copy, { className: "w-3 h-3" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(import_lucide_react112.Copy, { className: "w-3 h-3" })
           }
         )
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "space-y-2 mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-tertiary", children: "Usage:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("span", { className: "text-text-primary", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "space-y-2 mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { className: "text-text-tertiary", children: "Usage:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("span", { className: "text-text-primary", children: [
             apiKey.usage.requests.toLocaleString(),
             " / ",
             apiKey.usage.limit.toLocaleString()
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { className: "w-full bg-gray-200 rounded-full h-2", children: /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "w-full bg-gray-200 rounded-full h-2", children: /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
           "div",
           {
             className: `h-2 rounded-full ${usagePercentage > 90 ? "bg-red-500" : usagePercentage > 75 ? "bg-yellow-500" : "bg-green-500"}`,
             style: { width: `${Math.min(usagePercentage, 100)}%` }
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-tertiary", children: "Created:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-primary", children: new Date(apiKey.createdAt).toLocaleDateString() })
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { className: "text-text-tertiary", children: "Created:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { className: "text-text-primary", children: new Date(apiKey.createdAt).toLocaleDateString() })
         ] }),
-        apiKey.lastUsed && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-tertiary", children: "Last Used:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-primary", children: new Date(apiKey.lastUsed).toLocaleDateString() })
+        apiKey.lastUsed && /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { className: "text-text-tertiary", children: "Last Used:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { className: "text-text-primary", children: new Date(apiKey.lastUsed).toLocaleDateString() })
         ] }),
-        apiKey.expiresAt && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-tertiary", children: "Expires:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-text-primary", children: new Date(apiKey.expiresAt).toLocaleDateString() })
+        apiKey.expiresAt && /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { className: "text-text-tertiary", children: "Expires:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { className: "text-text-primary", children: new Date(apiKey.expiresAt).toLocaleDateString() })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Permissions:" }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { className: "flex flex-wrap gap-1", children: apiKey.permissions.map((permission, index) => /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { className: "text-xs bg-bg-secondary px-2 py-1 rounded", children: permission }, index)) })
+      /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Permissions:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "flex flex-wrap gap-1", children: apiKey.permissions.map((permission, index) => /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { className: "text-xs bg-bg-secondary px-2 py-1 rounded", children: permission }, index)) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { className: "flex items-center justify-between text-xs text-text-tertiary mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center space-x-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react112.User, { className: "h-3 w-3" }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { children: apiKey.createdBy })
+      /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "flex items-center justify-between text-xs text-text-tertiary mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center space-x-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(import_lucide_react112.User, { className: "h-3 w-3" }),
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { children: apiKey.createdBy })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
           Button,
           {
             variant: "outline",
@@ -34576,8 +34678,8 @@ function ApiKeyCard({
             children: "View Details"
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex space-x-2", children: [
-          apiKey.status === "ACTIVE" && onRevoke && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex space-x-2", children: [
+          apiKey.status === "ACTIVE" && onRevoke && /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
             Button,
             {
               variant: "outline",
@@ -34585,12 +34687,12 @@ function ApiKeyCard({
               onClick: () => onRevoke(apiKey.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react112.XCircle, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { children: "Revoke" })
+                /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(import_lucide_react112.XCircle, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { children: "Revoke" })
               ]
             }
           ),
-          onDelete && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
+          onDelete && /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
             Button,
             {
               variant: "outline",
@@ -34598,8 +34700,8 @@ function ApiKeyCard({
               onClick: () => onDelete(apiKey.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(import_lucide_react112.Trash2, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { children: "Delete" })
+                /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(import_lucide_react112.Trash2, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { children: "Delete" })
               ]
             }
           )
@@ -34612,7 +34714,7 @@ var ApiKeyCard_default = ApiKeyCard;
 
 // src/components/features/ApiManagement/components/ApiEndpointCard.tsx
 var import_lucide_react113 = require("lucide-react");
-var import_jsx_runtime220 = require("react/jsx-runtime");
+var import_jsx_runtime223 = require("react/jsx-runtime");
 var getMethodColor = (method) => {
   switch (method) {
     case "GET":
@@ -34646,46 +34748,46 @@ function ApiEndpointCard({
   onEdit,
   onViewDetails
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(import_lucide_react113.Globe, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary font-mono", children: endpoint.path })
+  return /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(import_lucide_react113.Globe, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary font-mono", children: endpoint.path })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(Badge, { className: getMethodColor(endpoint.method), children: endpoint.method }),
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(Badge, { className: getStatusColor10(endpoint.status), children: endpoint.status })
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(Badge, { className: getMethodColor(endpoint.method), children: endpoint.method }),
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(Badge, { className: getStatusColor10(endpoint.status), children: endpoint.status })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: endpoint.description }),
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { className: "space-y-2 mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { className: "text-text-tertiary", children: "Version:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { className: "text-text-primary", children: endpoint.version })
+    /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: endpoint.description }),
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "space-y-2 mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-tertiary", children: "Version:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-primary", children: endpoint.version })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { className: "text-text-tertiary", children: "Rate Limit:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("span", { className: "text-text-primary", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-tertiary", children: "Rate Limit:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("span", { className: "text-text-primary", children: [
             endpoint.rateLimit.requests,
             " requests per ",
             endpoint.rateLimit.window
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { className: "text-text-tertiary", children: "Last Modified:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { className: "text-text-primary", children: new Date(endpoint.lastModified).toLocaleDateString() })
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-tertiary", children: "Last Modified:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-primary", children: new Date(endpoint.lastModified).toLocaleDateString() })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { className: "flex items-center justify-between text-xs text-text-tertiary mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { className: "flex items-center space-x-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(import_lucide_react113.User, { className: "h-3 w-3" }),
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { className: "flex items-center justify-between text-xs text-text-tertiary mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center space-x-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(import_lucide_react113.User, { className: "h-3 w-3" }),
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("span", { children: [
           "Modified by ",
           endpoint.modifiedBy
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
           Button,
           {
             variant: "outline",
@@ -34694,15 +34796,15 @@ function ApiEndpointCard({
             children: "View Details"
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { className: "flex space-x-2", children: onEdit && /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { className: "flex space-x-2", children: onEdit && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(
           Button,
           {
             size: "sm",
             onClick: () => onEdit(endpoint),
             className: "flex items-center space-x-1",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(import_lucide_react113.Settings, { className: "h-3 w-3" }),
-              /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { children: "Edit" })
+              /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(import_lucide_react113.Settings, { className: "h-3 w-3" }),
+              /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { children: "Edit" })
             ]
           }
         ) })
@@ -34713,7 +34815,7 @@ function ApiEndpointCard({
 var ApiEndpointCard_default = ApiEndpointCard;
 
 // src/components/features/ApiManagement/components/ApiKeysGrid.tsx
-var import_jsx_runtime221 = require("react/jsx-runtime");
+var import_jsx_runtime224 = require("react/jsx-runtime");
 function ApiKeysGrid({
   apiKeys,
   onCopyKey,
@@ -34723,12 +34825,12 @@ function ApiKeysGrid({
   loading = false
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 6 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { className: "h-80 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 6 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { className: "h-80 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   if (apiKeys.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("p", { className: "text-text-tertiary", children: "No API keys found" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("p", { className: "text-text-tertiary", children: "No API keys found" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: apiKeys.map((apiKey) => /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: apiKeys.map((apiKey) => /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
     ApiKeyCard,
     {
       apiKey,
@@ -34742,7 +34844,7 @@ function ApiKeysGrid({
 }
 
 // src/components/features/ApiManagement/components/ApiEndpointsGrid.tsx
-var import_jsx_runtime222 = require("react/jsx-runtime");
+var import_jsx_runtime225 = require("react/jsx-runtime");
 function ApiEndpointsGrid({
   endpoints,
   onEditEndpoint,
@@ -34750,12 +34852,12 @@ function ApiEndpointsGrid({
   loading = false
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 6 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "h-64 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: Array.from({ length: 6 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("div", { className: "h-64 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   if (endpoints.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("p", { className: "text-text-tertiary", children: "No API endpoints found" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("p", { className: "text-text-tertiary", children: "No API endpoints found" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: endpoints.map((endpoint) => /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: endpoints.map((endpoint) => /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
     ApiEndpointCard,
     {
       endpoint,
@@ -34768,7 +34870,7 @@ function ApiEndpointsGrid({
 
 // src/components/features/SystemLogs/components/LogEntryCard.tsx
 var import_lucide_react114 = require("lucide-react");
-var import_jsx_runtime223 = require("react/jsx-runtime");
+var import_jsx_runtime226 = require("react/jsx-runtime");
 var getLevelColor = (level) => {
   switch (level) {
     case "DEBUG":
@@ -34826,57 +34928,57 @@ function LogEntryCard({
 }) {
   const LevelIcon = getLevelIcon(log.level);
   const logDate = new Date(log.timestamp);
-  return /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(LevelIcon, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: log.message })
+  return /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(LevelIcon, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: log.message })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(Badge, { className: getLevelColor(log.level), children: log.level }),
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(Badge, { className: getSourceColor(log.source), children: log.source })
+      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(Badge, { className: getLevelColor(log.level), children: log.level }),
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(Badge, { className: getSourceColor(log.source), children: log.source })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(CardContent2, { children: [
-      log.details && /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: log.details }),
-      /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "space-y-2 mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-tertiary", children: "Timestamp:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-primary font-mono", children: logDate.toLocaleString() })
+    /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(CardContent2, { children: [
+      log.details && /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: log.details }),
+      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "space-y-2 mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-tertiary", children: "Timestamp:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-primary font-mono", children: logDate.toLocaleString() })
         ] }),
-        log.userId && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-tertiary", children: "User ID:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-primary", children: log.userId })
+        log.userId && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-tertiary", children: "User ID:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-primary", children: log.userId })
         ] }),
-        log.requestId && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-tertiary", children: "Request ID:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-primary font-mono", children: log.requestId })
+        log.requestId && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-tertiary", children: "Request ID:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-primary font-mono", children: log.requestId })
         ] }),
-        log.ipAddress && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-tertiary", children: "IP Address:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-text-primary font-mono", children: log.ipAddress })
+        log.ipAddress && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-tertiary", children: "IP Address:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-primary font-mono", children: log.ipAddress })
         ] })
       ] }),
-      showFullDetails && log.stackTrace && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Stack Trace:" }),
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("pre", { className: "text-xs text-text-primary bg-bg-secondary p-2 rounded overflow-auto max-h-32", children: log.stackTrace })
+      showFullDetails && log.stackTrace && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Stack Trace:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("pre", { className: "text-xs text-text-primary bg-bg-secondary p-2 rounded overflow-auto max-h-32", children: log.stackTrace })
       ] }),
-      showFullDetails && log.metadata && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Metadata:" }),
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("pre", { className: "text-xs text-text-primary bg-bg-secondary p-2 rounded overflow-auto max-h-32", children: JSON.stringify(log.metadata, null, 2) })
+      showFullDetails && log.metadata && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "Metadata:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("pre", { className: "text-xs text-text-primary bg-bg-secondary p-2 rounded overflow-auto max-h-32", children: JSON.stringify(log.metadata, null, 2) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary", children: [
-          log.userId && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center space-x-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(import_lucide_react114.User, { className: "h-3 w-3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { children: log.userId })
+      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary", children: [
+          log.userId && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react114.User, { className: "h-3 w-3" }),
+            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { children: log.userId })
           ] }),
-          log.ipAddress && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { className: "flex items-center space-x-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(import_lucide_react114.Globe, { className: "h-3 w-3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { children: log.ipAddress })
+          log.ipAddress && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react114.Globe, { className: "h-3 w-3" }),
+            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { children: log.ipAddress })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
           Button,
           {
             variant: "outline",
@@ -34884,8 +34986,8 @@ function LogEntryCard({
             onClick: () => onViewDetails(log),
             className: "flex items-center space-x-1",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(import_lucide_react114.Eye, { className: "h-3 w-3" }),
-              /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { children: "View Details" })
+              /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react114.Eye, { className: "h-3 w-3" }),
+              /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { children: "View Details" })
             ]
           }
         ) })
@@ -34896,7 +34998,7 @@ function LogEntryCard({
 var LogEntryCard_default = LogEntryCard;
 
 // src/components/features/SystemLogs/components/LogsList.tsx
-var import_jsx_runtime224 = require("react/jsx-runtime");
+var import_jsx_runtime227 = require("react/jsx-runtime");
 function LogsList({
   logs,
   onViewLogDetails,
@@ -34905,14 +35007,14 @@ function LogsList({
   showFullDetails = false
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { className: "space-y-4", children: Array.from({ length: 5 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { className: "h-32 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "space-y-4", children: Array.from({ length: 5 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "h-32 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   const displayLogs = logs.slice(0, maxItems);
   if (logs.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("p", { className: "text-text-tertiary", children: "No logs found" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("p", { className: "text-text-tertiary", children: "No logs found" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { className: "space-y-4", children: [
-    displayLogs.map((log) => /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { className: "space-y-4", children: [
+    displayLogs.map((log) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
       LogEntryCard,
       {
         log,
@@ -34921,7 +35023,7 @@ function LogsList({
       },
       log.id
     )),
-    logs.length > maxItems && /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { className: "text-center py-4", children: /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("p", { className: "text-sm text-text-tertiary", children: [
+    logs.length > maxItems && /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "text-center py-4", children: /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("p", { className: "text-sm text-text-tertiary", children: [
       "Showing ",
       maxItems,
       " of ",
@@ -34933,7 +35035,7 @@ function LogsList({
 
 // src/components/features/SystemLogs/components/LogFilters.tsx
 var import_lucide_react115 = require("lucide-react");
-var import_jsx_runtime225 = require("react/jsx-runtime");
+var import_jsx_runtime228 = require("react/jsx-runtime");
 var levelOptions = [
   { value: "all", label: "All Levels" },
   { value: "DEBUG", label: "Debug" },
@@ -34971,18 +35073,18 @@ function LogFilters({
   onExport,
   loading = false
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(Card2, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(CardTitle2, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(import_lucide_react115.Filter, { className: "w-4 h-4" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(Card2, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(CardTitle2, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(import_lucide_react115.Filter, { className: "w-4 h-4" }),
       "Log Filters"
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Search" }),
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { className: "relative", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(import_lucide_react115.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Search" }),
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "relative", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(import_lucide_react115.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
               Input2,
               {
                 placeholder: "Search logs...",
@@ -34993,21 +35095,21 @@ function LogFilters({
             )
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Level" }),
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(Select2, { value: levelFilter, onValueChange: onLevelFilterChange, children: levelOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("option", { value: option.value, children: option.label }, option.value)) })
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Level" }),
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(Select2, { value: levelFilter, onValueChange: onLevelFilterChange, children: levelOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("option", { value: option.value, children: option.label }, option.value)) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Source" }),
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(Select2, { value: sourceFilter, onValueChange: onSourceFilterChange, children: sourceOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("option", { value: option.value, children: option.label }, option.value)) })
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Source" }),
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(Select2, { value: sourceFilter, onValueChange: onSourceFilterChange, children: sourceOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("option", { value: option.value, children: option.label }, option.value)) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Date Range" }),
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(Select2, { value: dateFilter, onValueChange: onDateFilterChange, children: dateOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("option", { value: option.value, children: option.label }, option.value)) })
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Date Range" }),
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(Select2, { value: dateFilter, onValueChange: onDateFilterChange, children: dateOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("option", { value: option.value, children: option.label }, option.value)) })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("div", { className: "flex items-center space-x-2", children: onRefresh && /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "flex items-center space-x-2", children: onRefresh && /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
           Button,
           {
             variant: "outline",
@@ -35016,12 +35118,12 @@ function LogFilters({
             disabled: loading,
             className: "flex items-center space-x-1",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(import_lucide_react115.RefreshCw, { className: `h-3 w-3 ${loading ? "animate-spin" : ""}` }),
-              /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("span", { children: "Refresh" })
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(import_lucide_react115.RefreshCw, { className: `h-3 w-3 ${loading ? "animate-spin" : ""}` }),
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("span", { children: "Refresh" })
             ]
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("div", { className: "flex items-center space-x-2", children: onExport && /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "flex items-center space-x-2", children: onExport && /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
           Button,
           {
             variant: "outline",
@@ -35029,8 +35131,8 @@ function LogFilters({
             onClick: onExport,
             className: "flex items-center space-x-1",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(import_lucide_react115.Download, { className: "h-3 w-3" }),
-              /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("span", { children: "Export" })
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(import_lucide_react115.Download, { className: "h-3 w-3" }),
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("span", { children: "Export" })
             ]
           }
         ) })
@@ -35041,7 +35143,7 @@ function LogFilters({
 
 // src/components/features/Security/components/SecurityEventCard.tsx
 var import_lucide_react116 = require("lucide-react");
-var import_jsx_runtime226 = require("react/jsx-runtime");
+var import_jsx_runtime229 = require("react/jsx-runtime");
 var getTypeColor5 = (type) => {
   switch (type) {
     case "LOGIN_ATTEMPT":
@@ -35111,70 +35213,70 @@ function SecurityEventCard({
   const SeverityIcon = getSeverityIcon2(event.severity);
   const TypeIcon = getTypeIcon(event.type);
   const eventDate = new Date(event.timestamp);
-  return /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(Card2, { className: `hover:shadow-md transition-shadow ${event.severity === "CRITICAL" ? "border-l-4 border-l-red-500" : ""}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(TypeIcon, { className: "h-4 w-4 text-text-tertiary" }),
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: event.description })
+  return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(Card2, { className: `hover:shadow-md transition-shadow ${event.severity === "CRITICAL" ? "border-l-4 border-l-red-500" : ""}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(TypeIcon, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(CardTitle2, { className: "text-sm font-medium text-text-primary", children: event.description })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(Badge, { className: getTypeColor5(event.type), children: event.type.replace("_", " ") }),
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(Badge, { className: getSeverityColor2(event.severity), children: event.severity })
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(Badge, { className: getTypeColor5(event.type), children: event.type.replace("_", " ") }),
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(Badge, { className: getSeverityColor2(event.severity), children: event.severity })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(CardContent2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: event.details }),
-      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "space-y-2 mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-tertiary", children: "Timestamp:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-primary font-mono", children: eventDate.toLocaleString() })
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(CardContent2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-sm text-text-secondary mb-3", children: event.details }),
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "space-y-2 mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-text-tertiary", children: "Timestamp:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-text-primary font-mono", children: eventDate.toLocaleString() })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-tertiary", children: "Source:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-primary", children: event.source })
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-text-tertiary", children: "Source:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-text-primary", children: event.source })
         ] }),
-        event.userId && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-tertiary", children: "User ID:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-primary", children: event.userId })
+        event.userId && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-text-tertiary", children: "User ID:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-text-primary", children: event.userId })
         ] }),
-        event.ipAddress && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-tertiary", children: "IP Address:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-text-primary font-mono", children: event.ipAddress })
+        event.ipAddress && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-text-tertiary", children: "IP Address:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-text-primary font-mono", children: event.ipAddress })
         ] })
       ] }),
-      showFullDetails && event.userAgent && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "User Agent:" }),
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("p", { className: "text-xs text-text-primary break-all", children: event.userAgent })
+      showFullDetails && event.userAgent && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-xs text-text-tertiary mb-1", children: "User Agent:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-xs text-text-primary break-all", children: event.userAgent })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between mb-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(SeverityIcon, { className: "h-4 w-4 text-text-tertiary" }),
-          event.resolved ? /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-1 text-green-600", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react116.CheckCircle, { className: "h-3 w-3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-xs", children: "Resolved" })
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-1 text-orange-600", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react116.AlertTriangle, { className: "h-3 w-3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { className: "text-xs", children: "Active" })
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between mb-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(SeverityIcon, { className: "h-4 w-4 text-text-tertiary" }),
+          event.resolved ? /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center space-x-1 text-green-600", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react116.CheckCircle, { className: "h-3 w-3" }),
+            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-xs", children: "Resolved" })
+          ] }) : /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center space-x-1 text-orange-600", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react116.AlertTriangle, { className: "h-3 w-3" }),
+            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-xs", children: "Active" })
           ] })
         ] }),
-        event.resolved && event.resolvedAt && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("span", { className: "text-xs text-text-tertiary", children: [
+        event.resolved && event.resolvedAt && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("span", { className: "text-xs text-text-tertiary", children: [
           "Resolved: ",
           new Date(event.resolvedAt).toLocaleDateString()
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary", children: [
-          event.userId && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react116.User, { className: "h-3 w-3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { children: event.userId })
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary", children: [
+          event.userId && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center space-x-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react116.User, { className: "h-3 w-3" }),
+            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { children: event.userId })
           ] }),
-          event.ipAddress && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center space-x-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react116.Globe, { className: "h-3 w-3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { children: event.ipAddress })
+          event.ipAddress && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center space-x-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react116.Globe, { className: "h-3 w-3" }),
+            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { children: event.ipAddress })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex space-x-2", children: [
-          onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex space-x-2", children: [
+          onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(
             Button,
             {
               variant: "outline",
@@ -35182,20 +35284,20 @@ function SecurityEventCard({
               onClick: () => onViewDetails(event),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react116.Eye, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { children: "View Details" })
+                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react116.Eye, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { children: "View Details" })
               ]
             }
           ),
-          !event.resolved && onResolve && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
+          !event.resolved && onResolve && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(
             Button,
             {
               size: "sm",
               onClick: () => onResolve(event.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(import_lucide_react116.CheckCircle, { className: "h-3 w-3" }),
-                /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { children: "Resolve" })
+                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react116.CheckCircle, { className: "h-3 w-3" }),
+                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { children: "Resolve" })
               ]
             }
           )
@@ -35207,7 +35309,7 @@ function SecurityEventCard({
 var SecurityEventCard_default = SecurityEventCard;
 
 // src/components/features/Security/components/SecurityEventsList.tsx
-var import_jsx_runtime227 = require("react/jsx-runtime");
+var import_jsx_runtime230 = require("react/jsx-runtime");
 function SecurityEventsList({
   events,
   onViewEventDetails,
@@ -35217,22 +35319,22 @@ function SecurityEventsList({
   showFullDetails = false
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "space-y-4", children: Array.from({ length: 5 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "h-40 bg-gray-200 animate-pulse rounded-lg" }, index)) });
+    return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "space-y-4", children: Array.from({ length: 5 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "h-40 bg-gray-200 animate-pulse rounded-lg" }, index)) });
   }
   const displayEvents = events.slice(0, maxItems);
   const activeEvents = displayEvents.filter((event) => !event.resolved);
   const resolvedEvents = displayEvents.filter((event) => event.resolved);
   if (events.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("p", { className: "text-text-tertiary", children: "No security events found" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-text-tertiary", children: "No security events found" }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { className: "space-y-6", children: [
-    activeEvents.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("h3", { className: "text-sm font-medium text-text-primary mb-3", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-6", children: [
+    activeEvents.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("h3", { className: "text-sm font-medium text-text-primary mb-3", children: [
         "Active Security Events (",
         activeEvents.length,
         ")"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "space-y-4", children: activeEvents.map((event) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "space-y-4", children: activeEvents.map((event) => /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
         SecurityEventCard,
         {
           event,
@@ -35243,13 +35345,13 @@ function SecurityEventsList({
         event.id
       )) })
     ] }),
-    resolvedEvents.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("h3", { className: "text-sm font-medium text-text-primary mb-3", children: [
+    resolvedEvents.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("h3", { className: "text-sm font-medium text-text-primary mb-3", children: [
         "Recently Resolved (",
         resolvedEvents.length,
         ")"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "space-y-4", children: resolvedEvents.map((event) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "space-y-4", children: resolvedEvents.map((event) => /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
         SecurityEventCard,
         {
           event,
@@ -35259,7 +35361,7 @@ function SecurityEventsList({
         event.id
       )) })
     ] }),
-    events.length > maxItems && /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "text-center py-4", children: /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("p", { className: "text-sm text-text-tertiary", children: [
+    events.length > maxItems && /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "text-center py-4", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("p", { className: "text-sm text-text-tertiary", children: [
       "Showing ",
       maxItems,
       " of ",
@@ -35271,43 +35373,43 @@ function SecurityEventsList({
 
 // src/components/features/Security/components/SecurityMetricsCard.tsx
 var import_lucide_react117 = require("lucide-react");
-var import_jsx_runtime228 = require("react/jsx-runtime");
+var import_jsx_runtime231 = require("react/jsx-runtime");
 function SecurityMetricsCard({ metrics }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: metrics.map((metric, index) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: metrics.map((metric, index) => {
     const Icon2 = metric.icon;
     const ChangeIcon = metric.change?.isPositive ? import_lucide_react117.TrendingUp : import_lucide_react117.TrendingDown;
-    return /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(CardTitle2, { className: "text-sm font-medium text-text-secondary", children: metric.title }),
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: `p-2 rounded-lg ${metric.bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(Icon2, { className: `h-4 w-4 ${metric.color}` }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)(Card2, { className: "hover:shadow-md transition-shadow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(CardTitle2, { className: "text-sm font-medium text-text-secondary", children: metric.title }),
+        /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { className: `p-2 rounded-lg ${metric.bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(Icon2, { className: `h-4 w-4 ${metric.color}` }) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(CardContent2, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "text-2xl font-bold text-text-primary", children: metric.value }),
-          metric.change && /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex items-center space-x-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(ChangeIcon, { className: `h-3 w-3 ${metric.change.isPositive ? "text-green-500" : "text-red-500"}` }),
-            /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("span", { className: `text-xs ${metric.change.isPositive ? "text-green-500" : "text-red-500"}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)(CardContent2, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { className: "text-2xl font-bold text-text-primary", children: metric.value }),
+          metric.change && /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "flex items-center space-x-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(ChangeIcon, { className: `h-3 w-3 ${metric.change.isPositive ? "text-green-500" : "text-red-500"}` }),
+            /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("span", { className: `text-xs ${metric.change.isPositive ? "text-green-500" : "text-red-500"}`, children: [
               metric.change.isPositive ? "+" : "",
               metric.change.value,
               "%"
             ] })
           ] })
         ] }),
-        metric.change && /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("p", { className: "text-xs text-text-tertiary mt-1", children: metric.change.period })
+        metric.change && /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("p", { className: "text-xs text-text-tertiary mt-1", children: metric.change.period })
       ] })
     ] }, index);
   }) });
 }
 
 // src/components/features/AuditLogs/AuditLogViewer.tsx
-var import_react92 = require("react");
-var import_ui130 = require("@rentalshop/ui");
+var import_react93 = require("react");
+var import_ui133 = require("@rentalshop/ui");
 
 // src/components/features/AuditLogs/AuditLogDetail.tsx
-var import_react91 = __toESM(require("react"));
-var import_ui129 = require("@rentalshop/ui");
+var import_react92 = __toESM(require("react"));
+var import_ui132 = require("@rentalshop/ui");
 var import_lucide_react118 = require("lucide-react");
-var import_jsx_runtime229 = require("react/jsx-runtime");
+var import_jsx_runtime232 = require("react/jsx-runtime");
 function SeverityBadge({ severity }) {
   const getSeverityStyle = (severity2) => {
     switch (severity2) {
@@ -35326,18 +35428,18 @@ function SeverityBadge({ severity }) {
   const getSeverityIcon3 = (severity2) => {
     switch (severity2) {
       case "CRITICAL":
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.XCircle, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.XCircle, { className: "w-3 h-3" });
       case "ERROR":
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.XCircle, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.XCircle, { className: "w-3 h-3" });
       case "WARNING":
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.AlertTriangle, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.AlertTriangle, { className: "w-3 h-3" });
       case "INFO":
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.Info, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.Info, { className: "w-3 h-3" });
       default:
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.Info, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.Info, { className: "w-3 h-3" });
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Badge, { className: `inline-flex items-center gap-1 ${getSeverityStyle(severity)}`, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Badge, { className: `inline-flex items-center gap-1 ${getSeverityStyle(severity)}`, children: [
     getSeverityIcon3(severity),
     severity
   ] });
@@ -35361,65 +35463,65 @@ function ActionBadge({ action }) {
         return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800";
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.Badge, { className: getActionStyle(action), children: action });
+  return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.Badge, { className: getActionStyle(action), children: action });
 }
 function JsonViewer({ data, title }) {
-  const [isExpanded, setIsExpanded] = import_react91.default.useState(false);
+  const [isExpanded, setIsExpanded] = import_react92.default.useState(false);
   if (!data) {
-    return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardTitle, { className: "text-sm", children: title }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-text-secondary text-sm", children: "No data available" }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardTitle, { className: "text-sm", children: title }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("p", { className: "text-text-secondary text-sm", children: "No data available" }) })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardTitle, { className: "text-sm flex items-center justify-between", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardTitle, { className: "text-sm flex items-center justify-between", children: [
       title,
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(
-        import_ui129.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(
+        import_ui132.Button,
         {
           variant: "ghost",
           size: "sm",
           onClick: () => setIsExpanded(!isExpanded),
           children: [
-            isExpanded ? /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.EyeOff, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.Eye, { className: "w-4 h-4" }),
+            isExpanded ? /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.EyeOff, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.Eye, { className: "w-4 h-4" }),
             isExpanded ? "Collapse" : "Expand"
           ]
         }
       )
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("pre", { className: `text-xs font-mono bg-bg-secondary p-3 rounded-lg overflow-auto ${isExpanded ? "max-h-96" : "max-h-32"}`, children: JSON.stringify(data, null, 2) }) })
+    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("pre", { className: `text-xs font-mono bg-bg-secondary p-3 rounded-lg overflow-auto ${isExpanded ? "max-h-96" : "max-h-32"}`, children: JSON.stringify(data, null, 2) }) })
   ] });
 }
 function ChangesViewer({ changes }) {
   if (!changes || Object.keys(changes).length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardTitle, { className: "text-sm", children: "Changes" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-text-secondary text-sm", children: "No changes detected" }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardTitle, { className: "text-sm", children: "Changes" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("p", { className: "text-text-secondary text-sm", children: "No changes detected" }) })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardTitle, { className: "text-sm", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardTitle, { className: "text-sm", children: [
       "Changes (",
       Object.keys(changes).length,
       " fields)"
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "space-y-3", children: Object.entries(changes).map(([field, change]) => /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "border rounded-lg p-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "font-medium text-sm mb-2", children: field }),
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary mb-1", children: "Old Value" }),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs font-mono bg-red-50 dark:bg-red-900/20 p-2 rounded", children: change.old === null ? "null" : JSON.stringify(change.old) })
+    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "space-y-3", children: Object.entries(changes).map(([field, change]) => /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "border rounded-lg p-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "font-medium text-sm mb-2", children: field }),
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary mb-1", children: "Old Value" }),
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs font-mono bg-red-50 dark:bg-red-900/20 p-2 rounded", children: change.old === null ? "null" : JSON.stringify(change.old) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary mb-1", children: "New Value" }),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs font-mono bg-green-50 dark:bg-green-900/20 p-2 rounded", children: change.new === null ? "null" : JSON.stringify(change.new) })
+        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary mb-1", children: "New Value" }),
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs font-mono bg-green-50 dark:bg-green-900/20 p-2 rounded", children: change.new === null ? "null" : JSON.stringify(change.new) })
         ] })
       ] })
     ] }, field)) }) })
   ] });
 }
 function AuditLogDetail({ log, isOpen, onClose }) {
-  const [activeTab, setActiveTab] = (0, import_react91.useState)("overview");
+  const [activeTab, setActiveTab] = (0, import_react92.useState)("overview");
   if (!log)
     return null;
   const formatDate11 = (dateString) => {
@@ -35436,42 +35538,42 @@ function AuditLogDetail({ log, isOpen, onClose }) {
   const getCategoryIcon2 = (category) => {
     switch (category) {
       case "SECURITY":
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.AlertTriangle, { className: "w-4 h-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.AlertTriangle, { className: "w-4 h-4" });
       case "BUSINESS":
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.Activity, { className: "w-4 h-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.Activity, { className: "w-4 h-4" });
       case "SYSTEM":
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.Monitor, { className: "w-4 h-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.Monitor, { className: "w-4 h-4" });
       case "COMPLIANCE":
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.CheckCircle, { className: "w-4 h-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.CheckCircle, { className: "w-4 h-4" });
       default:
-        return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.Info, { className: "w-4 h-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.Info, { className: "w-4 h-4" });
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.Dialog, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.DialogTitle, { children: "Audit Log Details" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardContent, { className: "p-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center gap-3 mb-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(ActionBadge, { action: log.action }),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(SeverityBadge, { severity: log.severity }),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Badge, { variant: "outline", className: "flex items-center gap-1", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.Dialog, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.DialogTitle, { children: "Audit Log Details" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardContent, { className: "p-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-3 mb-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(ActionBadge, { action: log.action }),
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(SeverityBadge, { severity: log.severity }),
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Badge, { variant: "outline", className: "flex items-center gap-1", children: [
             getCategoryIcon2(log.category),
             log.category
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("h3", { className: "text-lg font-semibold", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("h3", { className: "text-lg font-semibold", children: [
             log.entityType,
             ": ",
             log.entityName || log.entityId
           ] }),
-          log.description && /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-text-secondary", children: log.description })
+          log.description && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("p", { className: "text-text-secondary", children: log.description })
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex space-x-2 border-b", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(
-            import_ui129.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex space-x-2 border-b", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
+            import_ui132.Button,
             {
               variant: activeTab === "overview" ? "default" : "ghost",
               onClick: () => setActiveTab("overview"),
@@ -35479,8 +35581,8 @@ function AuditLogDetail({ log, isOpen, onClose }) {
               children: "Overview"
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(
-            import_ui129.Button,
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
+            import_ui132.Button,
             {
               variant: activeTab === "changes" ? "default" : "ghost",
               onClick: () => setActiveTab("changes"),
@@ -35488,8 +35590,8 @@ function AuditLogDetail({ log, isOpen, onClose }) {
               children: "Changes"
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(
-            import_ui129.Button,
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
+            import_ui132.Button,
             {
               variant: activeTab === "context" ? "default" : "ghost",
               onClick: () => setActiveTab("context"),
@@ -35497,8 +35599,8 @@ function AuditLogDetail({ log, isOpen, onClose }) {
               children: "Context"
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(
-            import_ui129.Button,
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
+            import_ui132.Button,
             {
               variant: activeTab === "raw" ? "default" : "ghost",
               onClick: () => setActiveTab("raw"),
@@ -35507,114 +35609,114 @@ function AuditLogDetail({ log, isOpen, onClose }) {
             }
           )
         ] }),
-        activeTab === "overview" && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardTitle, { className: "text-sm flex items-center gap-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.User, { className: "w-4 h-4" }),
+        activeTab === "overview" && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardTitle, { className: "text-sm flex items-center gap-2", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.User, { className: "w-4 h-4" }),
                 "User Information"
               ] }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardContent, { className: "space-y-2", children: log.user ? /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_jsx_runtime229.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Name" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-medium", children: log.user.name })
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardContent, { className: "space-y-2", children: log.user ? /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_jsx_runtime232.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Name" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-medium", children: log.user.name })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Email" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm", children: log.user.email })
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Email" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm", children: log.user.email })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Role" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm", children: log.user.role })
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Role" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm", children: log.user.role })
                 ] })
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-text-secondary text-sm", children: "No user information available" }) })
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("p", { className: "text-text-secondary text-sm", children: "No user information available" }) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardTitle, { className: "text-sm flex items-center gap-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.Calendar, { className: "w-4 h-4" }),
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardTitle, { className: "text-sm flex items-center gap-2", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.Calendar, { className: "w-4 h-4" }),
                 "Event Information"
               ] }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardContent, { className: "space-y-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Timestamp" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm", children: formatDate11(log.createdAt) })
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardContent, { className: "space-y-2", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Timestamp" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm", children: formatDate11(log.createdAt) })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Action" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm", children: log.action })
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Action" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm", children: log.action })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Entity Type" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm", children: log.entityType })
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Entity Type" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm", children: log.entityType })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Entity ID" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-mono", children: log.entityId })
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Entity ID" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-mono", children: log.entityId })
                 ] })
               ] })
             ] })
           ] }),
-          log.merchant && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardTitle, { className: "text-sm", children: "Merchant Context" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Merchant Name" }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-medium", children: log.merchant.name })
+          log.merchant && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardTitle, { className: "text-sm", children: "Merchant Context" }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Merchant Name" }),
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-medium", children: log.merchant.name })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Merchant ID" }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-mono", children: log.merchant.id })
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Merchant ID" }),
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-mono", children: log.merchant.id })
               ] })
             ] }) })
           ] }),
-          log.outlet && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardTitle, { className: "text-sm", children: "Outlet Context" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Outlet Name" }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-medium", children: log.outlet.name })
+          log.outlet && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardTitle, { className: "text-sm", children: "Outlet Context" }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Outlet Name" }),
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-medium", children: log.outlet.name })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Outlet ID" }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-mono", children: log.outlet.id })
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Outlet ID" }),
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-mono", children: log.outlet.id })
               ] })
             ] }) })
           ] })
         ] }),
-        activeTab === "changes" && /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(ChangesViewer, { changes: log.changes }) }),
-        activeTab === "context" && /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardTitle, { className: "text-sm flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.MapPin, { className: "w-4 h-4" }),
+        activeTab === "changes" && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(ChangesViewer, { changes: log.changes }) }),
+        activeTab === "context" && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardTitle, { className: "text-sm flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.MapPin, { className: "w-4 h-4" }),
               "Network Information"
             ] }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardContent, { className: "space-y-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "IP Address" }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-mono", children: log.ipAddress || "Unknown" })
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardContent, { className: "space-y-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "IP Address" }),
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-mono", children: log.ipAddress || "Unknown" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Session ID" }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-mono", children: log.sessionId || "Unknown" })
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Session ID" }),
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-mono", children: log.sessionId || "Unknown" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-text-secondary", children: "Request ID" }),
-                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-sm font-mono", children: log.requestId || "Unknown" })
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-text-secondary", children: "Request ID" }),
+                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-sm font-mono", children: log.requestId || "Unknown" })
               ] })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.Card, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(import_ui129.CardTitle, { className: "text-sm flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_lucide_react118.Monitor, { className: "w-4 h-4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.CardTitle, { className: "text-sm flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react118.Monitor, { className: "w-4 h-4" }),
               "User Agent"
             ] }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_ui129.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs font-mono bg-bg-secondary p-2 rounded break-all", children: log.userAgent || "Unknown" }) })
+            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs font-mono bg-bg-secondary p-2 rounded break-all", children: log.userAgent || "Unknown" }) })
           ] })
         ] }) }),
-        activeTab === "raw" && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(JsonViewer, { data: log.oldValues, title: "Old Values" }),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(JsonViewer, { data: log.newValues, title: "New Values" }),
-          /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(JsonViewer, { data: log.metadata, title: "Metadata" })
+        activeTab === "raw" && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(JsonViewer, { data: log.oldValues, title: "Old Values" }),
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(JsonViewer, { data: log.newValues, title: "New Values" }),
+          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(JsonViewer, { data: log.metadata, title: "Metadata" })
         ] })
       ] })
     ] })
@@ -35623,7 +35725,7 @@ function AuditLogDetail({ log, isOpen, onClose }) {
 
 // src/components/features/AuditLogs/AuditLogViewer.tsx
 var import_lucide_react119 = require("lucide-react");
-var import_jsx_runtime230 = require("react/jsx-runtime");
+var import_jsx_runtime233 = require("react/jsx-runtime");
 function SeverityBadge2({ severity }) {
   const getSeverityStyle = (severity2) => {
     switch (severity2) {
@@ -35642,18 +35744,18 @@ function SeverityBadge2({ severity }) {
   const getSeverityIcon3 = (severity2) => {
     switch (severity2) {
       case "CRITICAL":
-        return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.XCircle, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.XCircle, { className: "w-3 h-3" });
       case "ERROR":
-        return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.XCircle, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.XCircle, { className: "w-3 h-3" });
       case "WARNING":
-        return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.AlertTriangle, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.AlertTriangle, { className: "w-3 h-3" });
       case "INFO":
-        return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.Info, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.Info, { className: "w-3 h-3" });
       default:
-        return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.Info, { className: "w-3 h-3" });
+        return /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.Info, { className: "w-3 h-3" });
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.Badge, { className: `inline-flex items-center gap-1 ${getSeverityStyle(severity)}`, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.Badge, { className: `inline-flex items-center gap-1 ${getSeverityStyle(severity)}`, children: [
     getSeverityIcon3(severity),
     severity
   ] });
@@ -35677,7 +35779,7 @@ function ActionBadge2({ action }) {
         return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800";
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.Badge, { className: getActionStyle(action), children: action });
+  return /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.Badge, { className: getActionStyle(action), children: action });
 }
 function AuditLogRow({ log, onViewDetails }) {
   const formatDate11 = (dateString) => {
@@ -35688,35 +35790,35 @@ function AuditLogRow({ log, onViewDetails }) {
       minute: "2-digit"
     });
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.Card, { className: "mb-2 hover:shadow-sm transition-shadow", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.CardContent, { className: "p-3", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center justify-between", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center gap-3 flex-1 min-w-0", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(ActionBadge2, { action: log.action }),
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(SeverityBadge2, { severity: log.severity }),
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex-1 min-w-0", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center gap-2 text-sm", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("span", { className: "font-medium text-text-primary truncate", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.Card, { className: "mb-2 hover:shadow-sm transition-shadow", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.CardContent, { className: "p-3", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center justify-between", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center gap-3 flex-1 min-w-0", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(ActionBadge2, { action: log.action }),
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(SeverityBadge2, { severity: log.severity }),
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex-1 min-w-0", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center gap-2 text-sm", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("span", { className: "font-medium text-text-primary truncate", children: [
             log.entityType,
             ": ",
             log.entityName || log.entityId
           ] }),
-          log.user && /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("span", { className: "text-text-tertiary text-xs", children: [
+          log.user && /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("span", { className: "text-text-tertiary text-xs", children: [
             "by ",
             log.user.name
           ] })
         ] }),
-        log.description && /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-text-secondary text-xs truncate mt-1", children: log.description })
+        log.description && /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-text-secondary text-xs truncate mt-1", children: log.description })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "text-xs text-text-tertiary whitespace-nowrap", children: formatDate11(log.createdAt) })
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("div", { className: "text-xs text-text-tertiary whitespace-nowrap", children: formatDate11(log.createdAt) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(
-      import_ui130.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(
+      import_ui133.Button,
       {
         variant: "outline",
         size: "sm",
         onClick: () => onViewDetails(log),
         className: "ml-3 flex-shrink-0",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.Eye, { className: "w-4 h-4 mr-2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.Eye, { className: "w-4 h-4 mr-2" }),
           "View Details"
         ]
       }
@@ -35730,103 +35832,103 @@ function AuditLogFilter({ filter, onFilterChange, onReset }) {
       [field]: value === "all" || value === "" ? void 0 : value
     });
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.Card, { className: "mb-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.CardTitle, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.Filter, { className: "w-5 h-5" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.Card, { className: "mb-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.CardTitle, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.Filter, { className: "w-5 h-5" }),
       "Filter Audit Logs"
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.CardContent, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("label", { className: "text-sm font-medium", children: "Action" }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(
-            import_ui130.Select,
+    /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.CardContent, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("label", { className: "text-sm font-medium", children: "Action" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(
+            import_ui133.Select,
             {
               value: filter.action || "all",
               onValueChange: (value) => handleInputChange("action", value),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectValue, { placeholder: "All actions" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.SelectContent, { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "all", children: "All actions" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "CREATE", children: "CREATE" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "UPDATE", children: "UPDATE" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "DELETE", children: "DELETE" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "LOGIN", children: "LOGIN" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "LOGOUT", children: "LOGOUT" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "VIEW", children: "VIEW" })
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectValue, { placeholder: "All actions" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.SelectContent, { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "all", children: "All actions" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "CREATE", children: "CREATE" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "UPDATE", children: "UPDATE" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "DELETE", children: "DELETE" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "LOGIN", children: "LOGIN" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "LOGOUT", children: "LOGOUT" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "VIEW", children: "VIEW" })
                 ] })
               ]
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("label", { className: "text-sm font-medium", children: "Entity Type" }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(
-            import_ui130.Select,
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("label", { className: "text-sm font-medium", children: "Entity Type" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(
+            import_ui133.Select,
             {
               value: filter.entityType || "all",
               onValueChange: (value) => handleInputChange("entityType", value),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectValue, { placeholder: "All entities" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.SelectContent, { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "all", children: "All entities" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "User", children: "User" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "Product", children: "Product" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "Order", children: "Order" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "Customer", children: "Customer" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "Setting", children: "Setting" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "Merchant", children: "Merchant" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "Outlet", children: "Outlet" })
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectValue, { placeholder: "All entities" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.SelectContent, { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "all", children: "All entities" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "User", children: "User" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "Product", children: "Product" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "Order", children: "Order" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "Customer", children: "Customer" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "Setting", children: "Setting" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "Merchant", children: "Merchant" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "Outlet", children: "Outlet" })
                 ] })
               ]
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("label", { className: "text-sm font-medium", children: "Severity" }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(
-            import_ui130.Select,
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("label", { className: "text-sm font-medium", children: "Severity" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(
+            import_ui133.Select,
             {
               value: filter.severity || "all",
               onValueChange: (value) => handleInputChange("severity", value),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectValue, { placeholder: "All severities" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.SelectContent, { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "all", children: "All severities" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "INFO", children: "INFO" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "WARNING", children: "WARNING" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "ERROR", children: "ERROR" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "CRITICAL", children: "CRITICAL" })
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectValue, { placeholder: "All severities" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.SelectContent, { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "all", children: "All severities" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "INFO", children: "INFO" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "WARNING", children: "WARNING" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "ERROR", children: "ERROR" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "CRITICAL", children: "CRITICAL" })
                 ] })
               ]
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("label", { className: "text-sm font-medium", children: "Category" }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(
-            import_ui130.Select,
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("label", { className: "text-sm font-medium", children: "Category" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(
+            import_ui133.Select,
             {
               value: filter.category || "all",
               onValueChange: (value) => handleInputChange("category", value),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectValue, { placeholder: "All categories" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.SelectContent, { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "all", children: "All categories" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "GENERAL", children: "GENERAL" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "SECURITY", children: "SECURITY" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "BUSINESS", children: "BUSINESS" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "SYSTEM", children: "SYSTEM" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.SelectItem, { value: "COMPLIANCE", children: "COMPLIANCE" })
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectValue, { placeholder: "All categories" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.SelectContent, { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "all", children: "All categories" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "GENERAL", children: "GENERAL" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "SECURITY", children: "SECURITY" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "BUSINESS", children: "BUSINESS" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "SYSTEM", children: "SYSTEM" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.SelectItem, { value: "COMPLIANCE", children: "COMPLIANCE" })
                 ] })
               ]
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("label", { className: "text-sm font-medium", children: "Start Date" }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-            import_ui130.Input,
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("label", { className: "text-sm font-medium", children: "Start Date" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
+            import_ui133.Input,
             {
               type: "datetime-local",
               value: filter.startDate || "",
@@ -35834,10 +35936,10 @@ function AuditLogFilter({ filter, onFilterChange, onReset }) {
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("label", { className: "text-sm font-medium", children: "End Date" }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-            import_ui130.Input,
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("label", { className: "text-sm font-medium", children: "End Date" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
+            import_ui133.Input,
             {
               type: "datetime-local",
               value: filter.endDate || "",
@@ -35845,10 +35947,10 @@ function AuditLogFilter({ filter, onFilterChange, onReset }) {
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("label", { className: "text-sm font-medium", children: "Entity ID" }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-            import_ui130.Input,
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("label", { className: "text-sm font-medium", children: "Entity ID" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
+            import_ui133.Input,
             {
               placeholder: "Enter entity ID",
               value: filter.entityId || "",
@@ -35856,10 +35958,10 @@ function AuditLogFilter({ filter, onFilterChange, onReset }) {
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("label", { className: "text-sm font-medium", children: "User ID" }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-            import_ui130.Input,
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("label", { className: "text-sm font-medium", children: "User ID" }),
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
+            import_ui133.Input,
             {
               placeholder: "Enter user ID",
               value: filter.userId || "",
@@ -35868,9 +35970,9 @@ function AuditLogFilter({ filter, onFilterChange, onReset }) {
           )
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center justify-between mt-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.Button, { variant: "outline", onClick: onReset, children: "Reset Filters" }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "text-sm text-text-secondary", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center justify-between mt-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.Button, { variant: "outline", onClick: onReset, children: "Reset Filters" }),
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "text-sm text-text-secondary", children: [
           "Showing ",
           filter?.limit || 50,
           " results per page"
@@ -35897,9 +35999,9 @@ function AuditLogViewer({
   onViewDetails = () => {
   }
 }) {
-  const [selectedLog, setSelectedLog] = (0, import_react92.useState)(null);
-  const [isDetailOpen, setIsDetailOpen] = (0, import_react92.useState)(false);
-  const [activeTab, setActiveTab] = (0, import_react92.useState)("logs");
+  const [selectedLog, setSelectedLog] = (0, import_react93.useState)(null);
+  const [isDetailOpen, setIsDetailOpen] = (0, import_react93.useState)(false);
+  const [activeTab, setActiveTab] = (0, import_react93.useState)("logs");
   const handleViewDetails = (log) => {
     setSelectedLog(log);
     setIsDetailOpen(true);
@@ -35909,23 +36011,23 @@ function AuditLogViewer({
     setSelectedLog(null);
     setIsDetailOpen(false);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "mb-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("h1", { className: "text-2xl font-bold text-text-primary mb-2", children: "Audit Logs" }),
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-text-secondary", children: "Track all system changes, user actions, and security events." })
+  return /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "mb-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("h1", { className: "text-2xl font-bold text-text-primary mb-2", children: "Audit Logs" }),
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-text-secondary", children: "Track all system changes, user actions, and security events." })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex space-x-2 border-b", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-          import_ui130.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex space-x-2 border-b", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
+          import_ui133.Button,
           {
             variant: activeTab === "logs" ? "default" : "ghost",
             onClick: () => setActiveTab("logs"),
             children: "Audit Logs"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-          import_ui130.Button,
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
+          import_ui133.Button,
           {
             variant: activeTab === "stats" ? "default" : "ghost",
             onClick: () => setActiveTab("stats"),
@@ -35933,8 +36035,8 @@ function AuditLogViewer({
           }
         )
       ] }),
-      activeTab === "logs" && /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "space-y-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
+      activeTab === "logs" && /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
           AuditLogFilter,
           {
             filter,
@@ -35942,37 +36044,37 @@ function AuditLogViewer({
             onReset: onFilterReset
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.CardTitle, { className: "flex items-center justify-between", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.Card, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.CardTitle, { className: "flex items-center justify-between", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("span", { children: [
               "Audit Logs (",
               pagination?.total || 0,
               " total)"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(
-                import_ui130.Button,
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(
+                import_ui133.Button,
                 {
                   variant: "outline",
                   size: "sm",
                   onClick: onRefresh,
                   disabled: loading,
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.RefreshCw, { className: `w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}` }),
+                    /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.RefreshCw, { className: `w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}` }),
                     "Refresh"
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(import_ui130.Button, { variant: "outline", size: "sm", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.Download, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)(import_ui133.Button, { variant: "outline", size: "sm", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.Download, { className: "w-4 h-4 mr-2" }),
                 "Export"
               ] })
             ] })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.CardContent, { children: loading ? /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "text-center py-8", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.RefreshCw, { className: "w-6 h-6 animate-spin mx-auto mb-2" }),
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-text-secondary", children: "Loading audit logs..." })
-          ] }) : !logs || logs.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-text-secondary", children: "No audit logs found." }) }) : /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "space-y-3", children: logs.map((log) => /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.CardContent, { children: loading ? /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "text-center py-8", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.RefreshCw, { className: "w-6 h-6 animate-spin mx-auto mb-2" }),
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-text-secondary", children: "Loading audit logs..." })
+          ] }) : !logs || logs.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-text-secondary", children: "No audit logs found." }) }) : /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("div", { className: "space-y-3", children: logs.map((log) => /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
             AuditLogRow,
             {
               log,
@@ -35982,39 +36084,39 @@ function AuditLogViewer({
           )) }) })
         ] })
       ] }),
-      activeTab === "stats" && /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "space-y-6", children: stats ? /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: "Total Logs" }),
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-2xl font-bold text-text-primary", children: stats.totalLogs })
+      activeTab === "stats" && /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("div", { className: "space-y-6", children: stats ? /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: "Total Logs" }),
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-2xl font-bold text-text-primary", children: stats.totalLogs })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.Activity, { className: "w-8 h-8 text-blue-500" })
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.Activity, { className: "w-8 h-8 text-blue-500" })
         ] }) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: "Recent Activity" }),
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-2xl font-bold text-text-primary", children: stats.recentActivity }),
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-xs text-text-tertiary", children: "Last 24 hours" })
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: "Recent Activity" }),
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-2xl font-bold text-text-primary", children: stats.recentActivity }),
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-xs text-text-tertiary", children: "Last 24 hours" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.Clock, { className: "w-8 h-8 text-green-500" })
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.Clock, { className: "w-8 h-8 text-green-500" })
         ] }) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: "Security Events" }),
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-2xl font-bold text-text-primary", children: stats.logsByCategory.SECURITY || 0 })
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: "Security Events" }),
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-2xl font-bold text-text-primary", children: stats.logsByCategory.SECURITY || 0 })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.AlertTriangle, { className: "w-8 h-8 text-red-500" })
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.AlertTriangle, { className: "w-8 h-8 text-red-500" })
         ] }) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_ui130.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: "Business Events" }),
-            /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-2xl font-bold text-text-primary", children: stats.logsByCategory.BUSINESS || 0 })
+        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_ui133.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-sm font-medium text-text-secondary", children: "Business Events" }),
+            /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-2xl font-bold text-text-primary", children: stats.logsByCategory.BUSINESS || 0 })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(import_lucide_react119.Activity, { className: "w-8 h-8 text-purple-500" })
+          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react119.Activity, { className: "w-8 h-8 text-purple-500" })
         ] }) }) })
-      ] }) : /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("p", { className: "text-text-secondary", children: "No statistics available." }) }) })
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("p", { className: "text-text-secondary", children: "No statistics available." }) }) })
     ] }),
-    selectedLog && /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
+    selectedLog && /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
       AuditLogDetail,
       {
         log: selectedLog,
@@ -36025,7 +36127,7 @@ function AuditLogViewer({
   ] });
 }
 function AuditLogViewerSimple({ className = "" }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(
     AuditLogViewer,
     {
       className,
@@ -36049,17 +36151,17 @@ function AuditLogViewerSimple({ className = "" }) {
 }
 
 // src/components/features/OrderDetail/OrderDetail.tsx
-var import_react93 = require("react");
-var import_ui133 = require("@rentalshop/ui");
+var import_react94 = require("react");
+var import_ui136 = require("@rentalshop/ui");
 var import_lucide_react121 = require("lucide-react");
-var import_ui134 = require("@rentalshop/ui");
+var import_ui137 = require("@rentalshop/ui");
 var import_constants14 = require("@rentalshop/constants");
-var import_ui135 = require("@rentalshop/ui");
+var import_ui138 = require("@rentalshop/ui");
 
 // src/components/features/OrderDetail/components/CollectionReturnModal.tsx
-var import_ui131 = require("@rentalshop/ui");
+var import_ui134 = require("@rentalshop/ui");
 var import_lucide_react120 = require("lucide-react");
-var import_ui132 = require("@rentalshop/ui");
+var import_ui135 = require("@rentalshop/ui");
 
 // src/components/features/OrderDetail/utils.ts
 var CONSTANTS = __toESM(require("@rentalshop/constants"));
@@ -36212,7 +36314,7 @@ var getReturnDetails = (order, settingsForm) => {
 };
 
 // src/components/features/OrderDetail/components/CollectionReturnModal.tsx
-var import_jsx_runtime231 = require("react/jsx-runtime");
+var import_jsx_runtime234 = require("react/jsx-runtime");
 var CollectionReturnModal = ({
   isOpen,
   onClose,
@@ -36233,9 +36335,9 @@ var CollectionReturnModal = ({
   };
   const getModalIcon = () => {
     if (isCollectionMode) {
-      return /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(import_lucide_react120.Package, { className: "w-5 h-5 text-green-600" });
+      return /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(import_lucide_react120.Package, { className: "w-5 h-5 text-green-600" });
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(import_lucide_react120.RotateCcw, { className: "w-5 h-5 text-blue-600" });
+    return /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(import_lucide_react120.RotateCcw, { className: "w-5 h-5 text-blue-600" });
   };
   const getActionButtonText = () => {
     if (isCollectionMode) {
@@ -36255,144 +36357,144 @@ var CollectionReturnModal = ({
       console.error("Error in modal confirmation:", error2);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(import_ui131.Dialog, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)(import_ui131.DialogContent, { className: "max-w-2xl", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(import_ui131.DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)(import_ui131.DialogTitle, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(import_ui134.Dialog, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)(import_ui134.DialogContent, { className: "max-w-2xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(import_ui134.DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)(import_ui134.DialogTitle, { className: "flex items-center gap-2", children: [
       getModalIcon(),
-      /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("span", { className: "font-semibold", children: getModalTitle() })
+      /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("span", { className: "font-semibold", children: getModalTitle() })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "bg-gray-50 rounded-lg p-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("span", { className: "text-sm font-medium text-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "bg-gray-50 rounded-lg p-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("span", { className: "text-sm font-medium text-gray-700", children: [
             "Order #",
             order.orderNumber
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(import_ui131.Badge, { variant: order.orderType === "RENT" ? "default" : "secondary", children: order.orderType })
+          /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(import_ui134.Badge, { variant: order.orderType === "RENT" ? "default" : "secondary", children: order.orderType })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "text-sm text-gray-600", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "text-sm text-gray-600", children: [
           "Customer: ",
           order.customer?.firstName,
           " ",
           order.customer?.lastName
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "text-sm text-gray-600", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "text-sm text-gray-600", children: [
           "Status: ",
           order.status
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "text-center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("h3", { className: "text-lg font-semibold text-gray-900 mb-2", children: isCollectionMode ? "Collect from Customer" : "Return to Customer" }),
-        details.calculation && details.calculation.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "text-xl font-bold text-green-700 bg-green-50 rounded-lg p-4 border border-green-200", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("span", { children: details.calculation.find((item) => item.isTotal)?.value !== void 0 ? (0, import_ui132.formatCurrency)(details.calculation.find((item) => item.isTotal)?.value || 0) : "0.00" }),
-          settingsForm.collateralType && settingsForm.collateralType !== "Other" && settingsForm.collateralType.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("span", { className: "ml-2 text-lg font-normal text-blue-600", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "text-center", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("h3", { className: "text-lg font-semibold text-gray-900 mb-2", children: isCollectionMode ? "Collect from Customer" : "Return to Customer" }),
+        details.calculation && details.calculation.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "text-xl font-bold text-green-700 bg-green-50 rounded-lg p-4 border border-green-200", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("span", { children: details.calculation.find((item) => item.isTotal)?.value !== void 0 ? (0, import_ui135.formatCurrency)(details.calculation.find((item) => item.isTotal)?.value || 0) : "0.00" }),
+          settingsForm.collateralType && settingsForm.collateralType !== "Other" && settingsForm.collateralType.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("span", { className: "ml-2 text-lg font-normal text-blue-600", children: [
             "+ ",
             settingsForm.collateralType
           ] }),
-          settingsForm.collateralType === "Other" && settingsForm.collateralDetails && settingsForm.collateralDetails.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("span", { className: "ml-2 text-lg font-normal text-blue-600", children: [
+          settingsForm.collateralType === "Other" && settingsForm.collateralDetails && settingsForm.collateralDetails.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("span", { className: "ml-2 text-lg font-normal text-blue-600", children: [
             "+ ",
             settingsForm.collateralDetails
           ] })
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)(import_ui131.DialogFooter, { className: "flex gap-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(import_ui131.Button, { variant: "outline", onClick: onClose, children: "Close" }),
-      details.calculation && details.calculation.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(import_ui131.Button, { onClick: handleConfirm, children: getActionButtonText() })
+    /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)(import_ui134.DialogFooter, { className: "flex gap-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(import_ui134.Button, { variant: "outline", onClick: onClose, children: "Close" }),
+      details.calculation && details.calculation.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(import_ui134.Button, { onClick: handleConfirm, children: getActionButtonText() })
     ] })
   ] }) });
 };
 
 // src/components/features/OrderDetail/OrderDetail.tsx
 var import_utils43 = require("@rentalshop/utils");
-var import_jsx_runtime232 = require("react/jsx-runtime");
+var import_jsx_runtime235 = require("react/jsx-runtime");
 var OrderDetailSkeleton = () => {
-  return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-4", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-8 w-64" }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-48" })
+  return /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-4", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-8 w-64" }),
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-48" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-20" }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-6 w-16" })
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-20" }),
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-6 w-16" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-6 w-24" })
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-6 w-24" })
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "lg:col-span-2 space-y-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Card, { className: "flex flex-col", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-5 w-5" }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-6 w-32" })
+    /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "lg:col-span-2 space-y-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Card, { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-5 w-5" }),
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-6 w-32" })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardContent, { className: "space-y-4 flex-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-24" }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-32" })
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardContent, { className: "space-y-4 flex-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-24" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-32" })
               ] }, index)) }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-24" }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-32" })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-24" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-32" })
               ] }, index)) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "flex-1" })
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "flex-1" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-5 w-5" }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-6 w-20" })
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Card, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-5 w-5" }),
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-6 w-20" })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "w-12 h-12 rounded-lg" }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex-1 space-y-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-32" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-3 w-20" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-3 w-24" })
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-start gap-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "w-12 h-12 rounded-lg" }),
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex-1 space-y-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-32" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-3 w-20" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-3 w-24" })
             ] })
           ] }) }, index)) }) })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-5 w-5" }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-6 w-28" })
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Card, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-5 w-5" }),
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-6 w-28" })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardContent, { className: "space-y-3", children: [
-            Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between text-sm", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-20" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-16" })
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardContent, { className: "space-y-3", children: [
+            Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between text-sm", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-20" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-16" })
             ] }, index)),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "pt-2 border-t border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-5 w-24" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-5 w-20" })
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "pt-2 border-t border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-5 w-24" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-5 w-20" })
             ] }) })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-5 w-5" }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-6 w-28" })
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Card, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-5 w-5" }),
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-6 w-28" })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardContent, { className: "space-y-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-24" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-4 w-32" })
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardContent, { className: "space-y-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-24" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-4 w-32" })
             ] }, index)) }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-10 w-full" })
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-10 w-full" })
           ] })
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-6 w-32" }),
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between items-center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-10 w-32" }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "flex gap-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Skeleton, { className: "h-10 w-24" }, index)) })
+    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-6 w-32" }),
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between items-center", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-10 w-32" }),
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "flex gap-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Skeleton, { className: "h-10 w-24" }, index)) })
       ] })
     ] }) })
   ] });
@@ -36408,30 +36510,30 @@ var OrderDetail = ({
   loading = false,
   showActions = true
 }) => {
-  const { toastSuccess, toastError, toastInfo, removeToast } = (0, import_ui135.useToast)();
+  const { toastSuccess, toastError, toastInfo, removeToast } = (0, import_ui138.useToast)();
   const COLLATERAL_TYPES = [
     "ID Card",
     "Driver License",
     "Passport",
     "Other"
   ];
-  const [settingsForm, setSettingsForm] = (0, import_react93.useState)({
+  const [settingsForm, setSettingsForm] = (0, import_react94.useState)({
     damageFee: order.damageFee || 0,
     securityDeposit: order.securityDeposit || 0,
     collateralType: order.collateralType || "Other",
     collateralDetails: order.collateralDetails || "",
     notes: order.notes || ""
   });
-  const [isEditingSettings, setIsEditingSettings] = (0, import_react93.useState)(false);
-  const [tempSettings, setTempSettings] = (0, import_react93.useState)(settingsForm);
-  const [isSavingSettings, setIsSavingSettings] = (0, import_react93.useState)(false);
-  const [isCollectionModalOpen, setIsCollectionModalOpen] = (0, import_react93.useState)(false);
-  const [isReturnModalOpen, setIsReturnModalOpen] = (0, import_react93.useState)(false);
-  const [isPickupLoading, setIsPickupLoading] = (0, import_react93.useState)(false);
-  const [isReturnLoading, setIsReturnLoading] = (0, import_react93.useState)(false);
-  const [isCancelLoading, setIsCancelLoading] = (0, import_react93.useState)(false);
-  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = (0, import_react93.useState)(false);
-  (0, import_react93.useEffect)(() => {
+  const [isEditingSettings, setIsEditingSettings] = (0, import_react94.useState)(false);
+  const [tempSettings, setTempSettings] = (0, import_react94.useState)(settingsForm);
+  const [isSavingSettings, setIsSavingSettings] = (0, import_react94.useState)(false);
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = (0, import_react94.useState)(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = (0, import_react94.useState)(false);
+  const [isPickupLoading, setIsPickupLoading] = (0, import_react94.useState)(false);
+  const [isReturnLoading, setIsReturnLoading] = (0, import_react94.useState)(false);
+  const [isCancelLoading, setIsCancelLoading] = (0, import_react94.useState)(false);
+  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = (0, import_react94.useState)(false);
+  (0, import_react94.useEffect)(() => {
     if (order) {
       const newSettings = {
         damageFee: order.damageFee || 0,
@@ -36445,7 +36547,7 @@ var OrderDetail = ({
     }
   }, [order]);
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(OrderDetailSkeleton, {});
+    return /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(OrderDetailSkeleton, {});
   }
   const isRentOrder = order.orderType === "RENT";
   const isSaleOrder = order.orderType === "SALE";
@@ -36634,30 +36736,30 @@ var OrderDetail = ({
       }
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-4", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("h1", { className: "text-2xl font-bold text-gray-900", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-4", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("h1", { className: "text-2xl font-bold text-gray-900", children: [
           "Order Details #",
           order.orderNumber
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("p", { className: "text-sm text-gray-600", children: "View and manage order information" })
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("p", { className: "text-sm text-gray-600", children: "View and manage order information" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Order Type:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
-            import_ui133.Badge,
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Order Type:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
+            import_ui136.Badge,
             {
               className: order.orderType === "RENT" ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
               children: order.orderType
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Status:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
-            import_ui133.Badge,
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Status:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
+            import_ui136.Badge,
             {
               className: import_constants14.ORDER_STATUS_COLORS[order.status] || "bg-gray-100 text-gray-800",
               children: order.status
@@ -36666,80 +36768,80 @@ var OrderDetail = ({
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "lg:col-span-2 space-y-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Card, { className: "flex flex-col", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardTitle, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Info, { className: "w-5 h-5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "lg:col-span-2 space-y-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Card, { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardTitle, { className: "text-lg flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Info, { className: "w-5 h-5" }),
             "Order Information"
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardContent, { className: "space-y-4 flex-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-3", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Order ID:" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: order.orderNumber })
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardContent, { className: "space-y-4 flex-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-3", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Order ID:" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: order.orderNumber })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Customer Name:" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("span", { className: "text-sm font-medium", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Customer Name:" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("span", { className: "text-sm font-medium", children: [
                     order.customer?.firstName,
                     " ",
                     order.customer?.lastName
                   ] })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Phone:" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: order.customer?.phone || "N/A" })
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Phone:" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: order.customer?.phone || "N/A" })
                 ] }),
-                order.createdBy && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Created By:" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: order.createdBy?.firstName && order.createdBy?.lastName ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : order.createdBy?.email || "Unknown" })
+                order.createdBy && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Created By:" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: order.createdBy?.firstName && order.createdBy?.lastName ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : order.createdBy?.email || "Unknown" })
                 ] })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-3", children: [
-                order.orderType === "RENT" && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_jsx_runtime232.Fragment, { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Pickup Date:" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: order.pickupPlanAt ? new Date(order.pickupPlanAt).toLocaleDateString() : "N/A" })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-3", children: [
+                order.orderType === "RENT" && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_jsx_runtime235.Fragment, { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Pickup Date:" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: order.pickupPlanAt ? new Date(order.pickupPlanAt).toLocaleDateString() : "N/A" })
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Return Date:" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: order.returnPlanAt ? new Date(order.returnPlanAt).toLocaleDateString() : "N/A" })
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Return Date:" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: order.returnPlanAt ? new Date(order.returnPlanAt).toLocaleDateString() : "N/A" })
                   ] })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Seller:" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: order.outlet?.name || "N/A" })
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Seller:" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: order.outlet?.name || "N/A" })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Order Date:" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A" })
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Order Date:" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A" })
                 ] })
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "flex-1" })
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "flex-1" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardTitle, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Package, { className: "w-5 h-5" }),
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Card, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardTitle, { className: "text-lg flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Package, { className: "w-5 h-5" }),
             "Products"
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardContent, { children: order.orderItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "text-center py-4 text-gray-500", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Package, { className: "w-8 h-8 mx-auto mb-2 text-gray-300" }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("p", { className: "text-sm", children: "No products in this order" })
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "space-y-3", children: order.orderItems.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Package, { className: "w-6 h-6 text-gray-400" }) }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex-1 min-w-0", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "font-medium text-gray-900 text-sm", children: item.product?.name || "Unknown Product" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "text-xs text-gray-500", children: item.product?.name ? `Product: ${item.product.name}` : "Unknown Product" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "text-xs text-gray-600", children: [
-                (0, import_ui134.formatCurrency)(item.unitPrice),
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardContent, { children: order.orderItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "text-center py-4 text-gray-500", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Package, { className: "w-8 h-8 mx-auto mb-2 text-gray-300" }),
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("p", { className: "text-sm", children: "No products in this order" })
+          ] }) : /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "space-y-3", children: order.orderItems.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-start gap-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Package, { className: "w-6 h-6 text-gray-400" }) }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex-1 min-w-0", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "font-medium text-gray-900 text-sm", children: item.product?.name || "Unknown Product" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "text-xs text-gray-500", children: item.product?.name ? `Product: ${item.product.name}` : "Unknown Product" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "text-xs text-gray-600", children: [
+                (0, import_ui137.formatCurrency)(item.unitPrice),
                 " x ",
                 item.quantity
               ] }),
-              item.notes && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "text-xs text-gray-500 mt-1", children: [
+              item.notes && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "text-xs text-gray-500 mt-1", children: [
                 "Notes: ",
                 item.notes || "No notes"
               ] })
@@ -36747,66 +36849,66 @@ var OrderDetail = ({
           ] }) }, index)) }) })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardTitle, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.DollarSign, { className: "w-5 h-5" }),
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Card, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardTitle, { className: "text-lg flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.DollarSign, { className: "w-5 h-5" }),
             "Order Summary"
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardContent, { className: "space-y-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between text-sm", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-gray-600", children: "Subtotal:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "font-medium", children: (0, import_ui134.formatCurrency)(order.totalAmount || 0) })
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardContent, { className: "space-y-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between text-sm", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-gray-600", children: "Subtotal:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "font-medium", children: (0, import_ui137.formatCurrency)(order.totalAmount || 0) })
             ] }),
-            order.discountAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between text-sm text-green-600", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("span", { children: [
+            order.discountAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between text-sm text-green-600", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("span", { children: [
                 "Discount ",
                 order.discountType === "percentage" && order.discountValue ? `(${order.discountValue}%)` : "(amount)",
                 ":"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("span", { className: "font-medium", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("span", { className: "font-medium", children: [
                 "-",
-                (0, import_ui134.formatCurrency)(order.discountAmount)
+                (0, import_ui137.formatCurrency)(order.discountAmount)
               ] })
             ] }),
-            order.orderType === "RENT" && order.depositAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between text-sm", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-gray-600", children: "Deposit:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "font-medium", children: (0, import_ui134.formatCurrency)(order.depositAmount) })
+            order.orderType === "RENT" && order.depositAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between text-sm", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-gray-600", children: "Deposit:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "font-medium", children: (0, import_ui137.formatCurrency)(order.depositAmount) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between text-lg font-bold text-green-700 pt-2 border-t border-gray-200", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { children: "Grand Total:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { children: (0, import_ui134.formatCurrency)(order.totalAmount || 0) })
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between text-lg font-bold text-green-700 pt-2 border-t border-gray-200", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { children: "Grand Total:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { children: (0, import_ui137.formatCurrency)(order.totalAmount || 0) })
             ] }),
-            order.orderType === "RENT" && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between text-sm pt-2 border-t border-gray-200", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-gray-600", children: "Collection Amount:" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: `font-medium ${order.status === "RESERVED" ? "text-yellow-700" : order.status === "PICKUPED" ? "text-blue-700" : "text-gray-500"}`, children: order.status === "RESERVED" ? /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("span", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { children: (0, import_ui134.formatCurrency)(calculateCollectionTotal(order, tempSettings)) }),
-                tempSettings.collateralType && tempSettings.collateralType !== "Other" && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
+            order.orderType === "RENT" && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between text-sm pt-2 border-t border-gray-200", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-gray-600", children: "Collection Amount:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: `font-medium ${order.status === "RESERVED" ? "text-yellow-700" : order.status === "PICKUPED" ? "text-blue-700" : "text-gray-500"}`, children: order.status === "RESERVED" ? /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("span", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { children: (0, import_ui137.formatCurrency)(calculateCollectionTotal(order, tempSettings)) }),
+                tempSettings.collateralType && tempSettings.collateralType !== "Other" && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
                   "+ ",
                   tempSettings.collateralType
                 ] }),
-                tempSettings.collateralType === "Other" && tempSettings.collateralDetails && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
+                tempSettings.collateralType === "Other" && tempSettings.collateralDetails && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
                   "+ ",
                   tempSettings.collateralDetails
                 ] }),
-                tempSettings.collateralType === "Other" && !tempSettings.collateralDetails && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: "+ Collateral" })
+                tempSettings.collateralType === "Other" && !tempSettings.collateralDetails && /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: "+ Collateral" })
               ] }) : order.status === "PICKUPED" ? "Already collected" : "No collection needed" })
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.CardTitle, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Settings, { className: "w-5 h-5" }),
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Card, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.CardTitle, { className: "text-lg flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Settings, { className: "w-5 h-5" }),
             "Order Settings"
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.CardContent, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_jsx_runtime232.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Label, { htmlFor: "damageFee", className: "text-sm font-medium text-gray-700", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.CardContent, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_jsx_runtime235.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Label, { htmlFor: "damageFee", className: "text-sm font-medium text-gray-700", children: [
                 "Damage Fee",
-                !isDamageFeeEnabled() && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
+                !isDamageFeeEnabled() && /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
-                import_ui133.Input,
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
+                import_ui136.Input,
                 {
                   id: "damageFee",
                   type: "number",
@@ -36820,13 +36922,13 @@ var OrderDetail = ({
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Label, { htmlFor: "securityDeposit", className: "text-sm font-medium text-gray-700", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Label, { htmlFor: "securityDeposit", className: "text-sm font-medium text-gray-700", children: [
                 "Security Deposit",
-                !isSecurityDepositEnabled() && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
+                !isSecurityDepositEnabled() && /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
-                import_ui133.Input,
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
+                import_ui136.Input,
                 {
                   id: "securityDeposit",
                   type: "number",
@@ -36840,23 +36942,23 @@ var OrderDetail = ({
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Label, { htmlFor: "collateralType", className: "text-sm font-medium text-gray-700", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Label, { htmlFor: "collateralType", className: "text-sm font-medium text-gray-700", children: [
                 "Collateral Type",
-                !isCollateralTypeEnabled() && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
+                !isCollateralTypeEnabled() && /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Select, { onValueChange: (value) => handleSettingsChange({ collateralType: value }), value: tempSettings.collateralType || "", onOpenChange: () => setIsEditingSettings(true), children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.SelectTrigger, { className: "mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.SelectValue, { placeholder: "Select collateral type" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.SelectContent, { children: COLLATERAL_TYPES.map((type) => /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.SelectItem, { value: type, children: type }, type)) })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Select, { onValueChange: (value) => handleSettingsChange({ collateralType: value }), value: tempSettings.collateralType || "", onOpenChange: () => setIsEditingSettings(true), children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.SelectTrigger, { className: "mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.SelectValue, { placeholder: "Select collateral type" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.SelectContent, { children: COLLATERAL_TYPES.map((type) => /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.SelectItem, { value: type, children: type }, type)) })
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui133.Label, { htmlFor: "collateralDetails", className: "text-sm font-medium text-gray-700", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui136.Label, { htmlFor: "collateralDetails", className: "text-sm font-medium text-gray-700", children: [
                 "Collateral Details",
-                !isCollateralDetailsEnabled() && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
+                !isCollateralDetailsEnabled() && /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
-                import_ui133.Input,
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
+                import_ui136.Input,
                 {
                   id: "collateralDetails",
                   type: "text",
@@ -36868,10 +36970,10 @@ var OrderDetail = ({
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui133.Label, { htmlFor: "notes", className: "text-sm font-medium text-gray-700", children: "Order Notes" }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
-                import_ui133.Textarea,
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui136.Label, { htmlFor: "notes", className: "text-sm font-medium text-gray-700", children: "Order Notes" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
+                import_ui136.Textarea,
                 {
                   id: "notes",
                   value: tempSettings.notes || "",
@@ -36882,21 +36984,21 @@ var OrderDetail = ({
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex gap-2 pt-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(
-                import_ui133.Button,
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex gap-2 pt-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
+                import_ui136.Button,
                 {
                   onClick: handleSaveSettings,
                   disabled: loading || isSavingSettings,
                   className: "flex-1 flex items-center gap-2",
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Save, { className: "w-4 h-4" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Save, { className: "w-4 h-4" }),
                     isSavingSettings ? "Saving..." : "Save Changes"
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
-                import_ui133.Button,
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
+                import_ui136.Button,
                 {
                   variant: "outline",
                   onClick: handleCancelEdit,
@@ -36905,31 +37007,31 @@ var OrderDetail = ({
                 }
               )
             ] })
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_jsx_runtime232.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-3", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Damage Fee:" }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: isDamageFeeEnabled() ? (0, import_ui134.formatCurrency)(settingsForm.damageFee || 0) : /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-gray-400 italic", children: "Disabled" }) })
+          ] }) : /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_jsx_runtime235.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-3", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Damage Fee:" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: isDamageFeeEnabled() ? (0, import_ui137.formatCurrency)(settingsForm.damageFee || 0) : /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-gray-400 italic", children: "Disabled" }) })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Security Deposit:" }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: isSecurityDepositEnabled() ? (0, import_ui134.formatCurrency)(settingsForm.securityDeposit || 0) : /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-gray-400 italic", children: "Disabled" }) })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Security Deposit:" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: isSecurityDepositEnabled() ? (0, import_ui137.formatCurrency)(settingsForm.securityDeposit || 0) : /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-gray-400 italic", children: "Disabled" }) })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Collateral Type:" }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: isCollateralTypeEnabled() ? settingsForm.collateralType || "Not specified" : /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-gray-400 italic", children: "Disabled" }) })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Collateral Type:" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: isCollateralTypeEnabled() ? settingsForm.collateralType || "Not specified" : /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-gray-400 italic", children: "Disabled" }) })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Collateral Details:" }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: isCollateralDetailsEnabled() ? settingsForm.collateralDetails || "No details" : /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-gray-400 italic", children: "Disabled" }) })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Collateral Details:" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: isCollateralDetailsEnabled() ? settingsForm.collateralDetails || "No details" : /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-gray-400 italic", children: "Disabled" }) })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm text-gray-600", children: "Notes:" }),
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "text-sm font-medium", children: settingsForm.notes || "No notes" })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm text-gray-600", children: "Notes:" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "text-sm font-medium", children: settingsForm.notes || "No notes" })
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(
-              import_ui133.Button,
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
+              import_ui136.Button,
               {
                 variant: "outline",
                 onClick: () => {
@@ -36937,7 +37039,7 @@ var OrderDetail = ({
                 },
                 className: "w-full flex items-center gap-2 mt-4",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Edit, { className: "w-4 h-4" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Edit, { className: "w-4 h-4" }),
                   "Edit Settings"
                 ]
               }
@@ -36946,25 +37048,25 @@ var OrderDetail = ({
         ] })
       ] })
     ] }),
-    showActions && /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: "Order Actions" }),
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex justify-between items-center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { children: canCancel && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(
-          import_ui133.Button,
+    showActions && /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: "Order Actions" }),
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex justify-between items-center", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { children: canCancel && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
+          import_ui136.Button,
           {
             variant: "destructive",
             onClick: handleCancelOrderClick,
             className: "px-6",
             disabled: isCancelLoading,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.X, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.X, { className: "w-4 h-4 mr-2" }),
               isCancelLoading ? "Cancelling..." : "Cancel Order"
             ]
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex gap-3", children: [
-          onEdit && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(
-            import_ui133.Button,
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex gap-3", children: [
+          onEdit && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
+            import_ui136.Button,
             {
               variant: "outline",
               onClick: handleEditOrderWithSettings,
@@ -36972,73 +37074,73 @@ var OrderDetail = ({
               disabled: !canEdit,
               title: !canEdit ? isRentOrder ? "RENT orders can only be edited when status is RESERVED" : "SALE orders can only be edited when status is COMPLETED" : "Edit Order",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Edit, { className: "w-4 h-4 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Edit, { className: "w-4 h-4 mr-2" }),
                 "Edit Order"
               ]
             }
           ),
-          canPickup && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(
-            import_ui133.Button,
+          canPickup && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
+            import_ui136.Button,
             {
               variant: "default",
               onClick: handlePickupClick,
               className: "px-6",
               disabled: isPickupLoading,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Package, { className: "w-4 h-4 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Package, { className: "w-4 h-4 mr-2" }),
                 isPickupLoading ? "Picking up..." : "Pickup Order"
               ]
             }
           ),
-          canReturn && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(
-            import_ui133.Button,
+          canReturn && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
+            import_ui136.Button,
             {
               variant: "default",
               onClick: handleReturnClick,
               className: "px-4",
               disabled: isReturnLoading,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.RotateCcw, { className: "w-4 h-4 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.RotateCcw, { className: "w-4 h-4 mr-2" }),
                 isReturnLoading ? "Returning..." : "Return Order"
               ]
             }
           ),
-          canPrint && /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(
-            import_ui133.Button,
+          canPrint && /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
+            import_ui136.Button,
             {
               variant: "outline",
               onClick: handlePrintOrder,
               className: "px-4",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Printer, { className: "w-4 h-4 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Printer, { className: "w-4 h-4 mr-2" }),
                 "Print Order"
               ]
             }
           )
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("div", { className: "mt-3 text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { className: "flex items-start gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_lucide_react121.Info, { className: "w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" }),
-        /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("p", { className: "font-medium text-gray-700 mb-1", children: "Editing Rules:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("ul", { className: "space-y-1 text-gray-600", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("li", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "mt-3 text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex items-start gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react121.Info, { className: "w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" }),
+        /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("p", { className: "font-medium text-gray-700 mb-1", children: "Editing Rules:" }),
+          /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("ul", { className: "space-y-1 text-gray-600", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("li", { children: [
               "\u2022 ",
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("strong", { children: "RENT orders" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("strong", { children: "RENT orders" }),
               ": Can only be edited when status is ",
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "font-mono bg-blue-100 px-1 rounded", children: "RESERVED" })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "font-mono bg-blue-100 px-1 rounded", children: "RESERVED" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("li", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("li", { children: [
               "\u2022 ",
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("strong", { children: "SALE orders" }),
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("strong", { children: "SALE orders" }),
               ": Can only be edited when status is ",
-              /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { className: "font-mono bg-green-100 px-1 rounded", children: "COMPLETED" })
+              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("span", { className: "font-mono bg-green-100 px-1 rounded", children: "COMPLETED" })
             ] })
           ] })
         ] })
       ] }) })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
       CollectionReturnModal,
       {
         isOpen: isCollectionModalOpen,
@@ -37049,7 +37151,7 @@ var OrderDetail = ({
         onConfirmPickup: handlePickupOrder
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
       CollectionReturnModal,
       {
         isOpen: isReturnModalOpen,
@@ -37060,8 +37162,8 @@ var OrderDetail = ({
         onConfirmReturn: handleReturnOrder
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(
-      import_ui133.ConfirmationDialog,
+    /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(
+      import_ui136.ConfirmationDialog,
       {
         open: showCancelConfirmDialog,
         onOpenChange: setShowCancelConfirmDialog,
@@ -37080,70 +37182,70 @@ var OrderDetail = ({
 
 // src/components/features/OrderDetail/components/OrderSummary.tsx
 var import_lucide_react122 = require("lucide-react");
-var import_ui136 = require("@rentalshop/ui");
-var import_jsx_runtime233 = require("react/jsx-runtime");
+var import_ui139 = require("@rentalshop/ui");
+var import_jsx_runtime236 = require("react/jsx-runtime");
 var OrderSummary = ({ order, settingsForm }) => {
   const collectionAmount = calculateCollectionAmount(order, settingsForm);
   const collectionTitle = getCollectionTitle(order);
-  return /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "p-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center gap-2 mb-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime233.jsx)(import_lucide_react122.DollarSign, { className: "w-5 h-5 text-gray-600" }),
-      /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: "Order Summary" })
+  return /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "p-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex items-center gap-2 mb-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_lucide_react122.DollarSign, { className: "w-5 h-5 text-gray-600" }),
+      /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: "Order Summary" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-gray-600", children: "Subtotal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "font-semibold text-gray-900", children: (0, import_ui136.formatCurrency)(order.subtotal) })
+    /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-gray-600", children: "Subtotal" }),
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "font-semibold text-gray-900", children: (0, import_ui139.formatCurrency)(order.subtotal) })
       ] }),
-      order.discountAmount && order.discountAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-gray-600", children: "Discount" }),
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("span", { className: "font-medium text-green-600", children: [
+      order.discountAmount && order.discountAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-gray-600", children: "Discount" }),
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("span", { className: "font-medium text-green-600", children: [
           "-",
-          (0, import_ui136.formatCurrency)(order.discountAmount)
+          (0, import_ui139.formatCurrency)(order.discountAmount)
         ] })
       ] }),
-      order.taxAmount && order.taxAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-gray-600", children: "Tax" }),
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "font-medium text-gray-900", children: (0, import_ui136.formatCurrency)(order.taxAmount) })
+      order.taxAmount && order.taxAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-gray-600", children: "Tax" }),
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "font-medium text-gray-900", children: (0, import_ui139.formatCurrency)(order.taxAmount) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex justify-between items-center py-3 border-t border-gray-200", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-lg font-semibold text-gray-900", children: "Total Amount" }),
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-xl font-bold text-green-700", children: (0, import_ui136.formatCurrency)(order.totalAmount) })
+      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex justify-between items-center py-3 border-t border-gray-200", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-lg font-semibold text-gray-900", children: "Total Amount" }),
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-xl font-bold text-green-700", children: (0, import_ui139.formatCurrency)(order.totalAmount) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-gray-600", children: "Deposit" }),
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "font-medium text-gray-900", children: (0, import_ui136.formatCurrency)(order.depositAmount) })
+      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-gray-600", children: "Deposit" }),
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "font-medium text-gray-900", children: (0, import_ui139.formatCurrency)(order.depositAmount) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-gray-600", children: "Remaining" }),
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "font-medium text-gray-900", children: (0, import_ui136.formatCurrency)(order.totalAmount - order.depositAmount) })
+      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-gray-600", children: "Remaining" }),
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "font-medium text-gray-900", children: (0, import_ui139.formatCurrency)(order.totalAmount - order.depositAmount) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "py-3 border-t border-gray-200", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex justify-between items-center", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-lg font-semibold text-gray-900", children: collectionTitle }),
-          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: `text-xl font-bold ${collectionAmount < 0 ? "text-blue-700" : collectionAmount === 0 ? "text-gray-500" : "text-yellow-700"}`, children: collectionAmount === 0 ? /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { className: "text-gray-500", children: "0" }) : `${(0, import_ui136.formatCurrency)(Math.abs(collectionAmount))}` })
+      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "py-3 border-t border-gray-200", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex justify-between items-center", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-lg font-semibold text-gray-900", children: collectionTitle }),
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: `text-xl font-bold ${collectionAmount < 0 ? "text-blue-700" : collectionAmount === 0 ? "text-gray-500" : "text-yellow-700"}`, children: collectionAmount === 0 ? /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { className: "text-gray-500", children: "0" }) : `${(0, import_ui139.formatCurrency)(Math.abs(collectionAmount))}` })
         ] }),
-        order.orderType === "RENT" && order.status === "RESERVED" && settingsForm.material && settingsForm.material.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "text-sm font-medium text-gray-600 mt-1", children: [
+        order.orderType === "RENT" && order.status === "RESERVED" && settingsForm.material && settingsForm.material.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "text-sm font-medium text-gray-600 mt-1", children: [
           "v\xE0 ",
           settingsForm.material
         ] }),
-        order.orderType === "RENT" && order.status === "RESERVED" && /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("div", { className: "mt-2 text-xs text-gray-500", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center gap-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { children: "\u{1F4A1}" }),
-          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("span", { children: [
-            (0, import_ui136.formatCurrency)(order.totalAmount),
+        order.orderType === "RENT" && order.status === "RESERVED" && /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { className: "mt-2 text-xs text-gray-500", children: /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex items-center gap-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { children: "\u{1F4A1}" }),
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("span", { children: [
+            (0, import_ui139.formatCurrency)(order.totalAmount),
             " Total after discount - ",
-            (0, import_ui136.formatCurrency)(order.depositAmount),
+            (0, import_ui139.formatCurrency)(order.depositAmount),
             " Deposit + ",
-            (0, import_ui136.formatCurrency)(settingsForm.bailAmount),
+            (0, import_ui139.formatCurrency)(settingsForm.bailAmount),
             " Bail amount"
           ] })
         ] }) }),
-        order.orderType === "RENT" && order.status === "PICKUP" && /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("div", { className: "mt-2 text-xs text-gray-500", children: /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("div", { className: "flex items-center gap-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime233.jsx)("span", { children: "\u{1F4A1}" }),
-          /* @__PURE__ */ (0, import_jsx_runtime233.jsxs)("span", { children: [
-            (0, import_ui136.formatCurrency)(settingsForm.bailAmount),
+        order.orderType === "RENT" && order.status === "PICKUP" && /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { className: "mt-2 text-xs text-gray-500", children: /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex items-center gap-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { children: "\u{1F4A1}" }),
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("span", { children: [
+            (0, import_ui139.formatCurrency)(settingsForm.bailAmount),
             " Bail amount - ",
-            (0, import_ui136.formatCurrency)(settingsForm.damageFee),
+            (0, import_ui139.formatCurrency)(settingsForm.damageFee),
             " Damage Fee"
           ] })
         ] }) })
@@ -37153,59 +37255,78 @@ var OrderSummary = ({ order, settingsForm }) => {
 };
 
 // src/components/features/Shops/components/ShopsLoading.tsx
-var import_jsx_runtime234 = require("react/jsx-runtime");
+var import_jsx_runtime237 = require("react/jsx-runtime");
 function ShopsLoading() {
-  return /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(StatsSkeleton, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(SearchSkeleton, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(GridSkeleton, { items: 6 }),
-    /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(PaginationSkeleton, {})
+  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(StatsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(SearchSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(GridSkeleton, { items: 6 }),
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(PaginationSkeleton, {})
   ] });
 }
 function ShopDetailLoading() {
-  return /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-8 w-48 bg-gray-200 rounded animate-pulse" }),
-        /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-4 w-32 bg-gray-200 rounded animate-pulse" })
+  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-8 w-48 bg-gray-200 rounded animate-pulse" }),
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-4 w-32 bg-gray-200 rounded animate-pulse" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-10 w-24 bg-gray-200 rounded animate-pulse" }),
-        /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-10 w-24 bg-gray-200 rounded animate-pulse" })
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-10 w-24 bg-gray-200 rounded animate-pulse" }),
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-10 w-24 bg-gray-200 rounded animate-pulse" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "lg:col-span-1", children: /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "aspect-video w-full bg-gray-200 rounded-lg animate-pulse" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "lg:col-span-2 space-y-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-6 w-24 bg-gray-200 rounded animate-pulse" }),
-          /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "space-y-2", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-4 w-full bg-gray-200 rounded animate-pulse" }, i)) })
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "lg:col-span-1", children: /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "aspect-video w-full bg-gray-200 rounded-lg animate-pulse" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "lg:col-span-2 space-y-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "space-y-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-6 w-24 bg-gray-200 rounded animate-pulse" }),
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "space-y-2", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-4 w-full bg-gray-200 rounded animate-pulse" }, i)) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-6 w-24 bg-gray-200 rounded animate-pulse" }),
-          /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "grid grid-cols-2 gap-4", children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-4 w-full bg-gray-200 rounded animate-pulse" }, i)) })
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "space-y-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-6 w-24 bg-gray-200 rounded animate-pulse" }),
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "grid grid-cols-2 gap-4", children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-4 w-full bg-gray-200 rounded animate-pulse" }, i)) })
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "h-6 w-32 bg-gray-200 rounded animate-pulse" }),
-      /* @__PURE__ */ (0, import_jsx_runtime234.jsx)(GridSkeleton, { items: 4 })
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "h-6 w-32 bg-gray-200 rounded animate-pulse" }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(GridSkeleton, { items: 4 })
     ] })
   ] });
 }
 
+// src/components/features/Shops/components/OutletsLoading.tsx
+var import_jsx_runtime238 = require("react/jsx-runtime");
+function OutletsLoading() {
+  return /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(StatsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(SearchSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(GridSkeleton, { items: 6 }),
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(PaginationSkeleton, {})
+  ] });
+}
+function OutletDetailLoading() {
+  return /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { className: "animate-pulse", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { className: "h-8 bg-gray-200 rounded w-1/4 mb-4" }),
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { className: "h-4 bg-gray-200 rounded w-1/2 mb-2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { className: "h-4 bg-gray-200 rounded w-3/4 mb-2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { className: "h-4 bg-gray-200 rounded w-2/3" })
+  ] }) });
+}
+
 // src/components/features/Settings/Settings.tsx
-var import_react96 = require("react");
+var import_react97 = require("react");
 var import_lucide_react126 = require("lucide-react");
 var import_hooks12 = require("@rentalshop/hooks");
 var import_utils46 = require("@rentalshop/utils");
-var import_ui145 = require("@rentalshop/ui");
+var import_ui148 = require("@rentalshop/ui");
 
 // src/components/features/Settings/components/SettingsLayout.tsx
-var import_react94 = require("react");
-var import_ui137 = require("@rentalshop/ui");
+var import_react95 = require("react");
+var import_ui140 = require("@rentalshop/ui");
 var import_lucide_react123 = require("lucide-react");
-var import_jsx_runtime235 = require("react/jsx-runtime");
+var import_jsx_runtime239 = require("react/jsx-runtime");
 var SettingsLayout2 = ({
   user,
   loading,
@@ -37214,26 +37335,26 @@ var SettingsLayout2 = ({
   activeSection,
   onSectionChange
 }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react94.useState)(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react95.useState)(false);
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui137.PageWrapper, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui137.PageHeader, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui137.PageTitle, { children: "Settings" }),
-        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("p", { children: "Manage your account settings and preferences" })
+    return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(import_ui140.PageWrapper, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(import_ui140.PageHeader, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui140.PageTitle, { children: "Settings" }),
+        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { children: "Manage your account settings and preferences" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "flex justify-center items-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "text-center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("p", { className: "text-gray-600", children: "Loading settings..." })
+      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "flex justify-center items-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "text-center", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" }),
+        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-gray-600", children: "Loading settings..." })
       ] }) })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui137.PageWrapper, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(import_ui137.PageHeader, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui137.PageTitle, { children: "Settings" }),
-      /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("p", { children: "Manage your account settings and preferences" })
+  return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(import_ui140.PageWrapper, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(import_ui140.PageHeader, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui140.PageTitle, { children: "Settings" }),
+      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { children: "Manage your account settings and preferences" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex flex-col lg:flex-row gap-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui137.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui137.CardContent, { className: "p-0", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
+    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex flex-col lg:flex-row gap-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui140.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui140.CardContent, { className: "p-0", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
         if (!item.roles)
           return true;
         const userRole = (user?.role || "").trim().toUpperCase();
@@ -37242,32 +37363,32 @@ var SettingsLayout2 = ({
       }).map((item) => {
         const Icon2 = item.icon;
         const isActive = activeSection === item.id;
-        return /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
-          import_ui137.Button,
+        return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
+          import_ui140.Button,
           {
             variant: "ghost",
             onClick: () => onSectionChange(item.id),
             className: `w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${isActive ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600" : "text-gray-700 hover:bg-gray-50"}`,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(Icon2, { className: "h-5 w-5" }),
-              /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)("div", { className: "flex-1 min-w-0", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("p", { className: "font-medium", children: item.label }),
-                /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("p", { className: "text-xs text-gray-500 truncate", children: item.description })
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(Icon2, { className: "h-5 w-5" }),
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex-1 min-w-0", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "font-medium", children: item.label }),
+                /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-xs text-gray-500 truncate", children: item.description })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_lucide_react123.ChevronRight, { className: "h-4 w-4" })
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_lucide_react123.ChevronRight, { className: "h-4 w-4" })
             ]
           },
           item.id
         );
       }) }) }) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime235.jsx)("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ (0, import_jsx_runtime235.jsx)(import_ui137.PageContent, { children }) })
+      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui140.PageContent, { children }) })
     ] })
   ] });
 };
 
 // src/components/features/Settings/components/ProfileSection.tsx
-var import_ui138 = require("@rentalshop/ui");
-var import_jsx_runtime236 = require("react/jsx-runtime");
+var import_ui141 = require("@rentalshop/ui");
+var import_jsx_runtime240 = require("react/jsx-runtime");
 var ProfileSection = ({
   user,
   isEditing,
@@ -37287,22 +37408,22 @@ var ProfileSection = ({
     "user.phone": user?.phone,
     "user.role": user?.role
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Personal Information" }),
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("p", { className: "text-gray-600", children: "Manage your personal information and account details" })
+  return /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Personal Information" }),
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-gray-600", children: "Manage your personal information and account details" })
       ] }),
-      !isEditing ? /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Button, { onClick: onEdit, children: "Edit Profile" }) : /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Button, { onClick: onSave, variant: "default", disabled: isUpdating, children: isUpdating ? "Saving..." : "Save Changes" }),
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Button, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
+      !isEditing ? /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Button, { onClick: onEdit, children: "Edit Profile" }) : /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Button, { onClick: onSave, variant: "default", disabled: isUpdating, children: isUpdating ? "Saving..." : "Save Changes" }),
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Button, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { className: "space-y-8", children: /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Label, { htmlFor: "firstName", className: "block text-sm font-medium text-gray-700 mb-2", children: "First Name" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(
-          import_ui138.Input,
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "space-y-8", children: /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Label, { htmlFor: "firstName", className: "block text-sm font-medium text-gray-700 mb-2", children: "First Name" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+          import_ui141.Input,
           {
             id: "firstName",
             name: "firstName",
@@ -37311,12 +37432,12 @@ var ProfileSection = ({
             onChange: onInputChange,
             placeholder: "Enter your first name"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.firstName || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.firstName || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Label, { htmlFor: "lastName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Last Name" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(
-          import_ui138.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Label, { htmlFor: "lastName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Last Name" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+          import_ui141.Input,
           {
             id: "lastName",
             name: "lastName",
@@ -37325,12 +37446,12 @@ var ProfileSection = ({
             onChange: onInputChange,
             placeholder: "Enter your last name"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.lastName || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.lastName || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Label, { htmlFor: "email", className: "block text-sm font-medium text-gray-700 mb-2", children: "Email Address" }),
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { className: "relative", children: /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(
-          import_ui138.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Label, { htmlFor: "email", className: "block text-sm font-medium text-gray-700 mb-2", children: "Email Address" }),
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "relative", children: /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+          import_ui141.Input,
           {
             id: "email",
             name: "email",
@@ -37342,10 +37463,10 @@ var ProfileSection = ({
           }
         ) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Label, { htmlFor: "phone", className: "block text-sm font-medium text-gray-700 mb-2", children: "Phone Number" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(
-          import_ui138.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Label, { htmlFor: "phone", className: "block text-sm font-medium text-gray-700 mb-2", children: "Phone Number" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+          import_ui141.Input,
           {
             id: "phone",
             name: "phone",
@@ -37354,22 +37475,22 @@ var ProfileSection = ({
             onChange: onInputChange,
             placeholder: "Enter your phone number"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.phone || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.phone || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui138.Label, { className: "block text-sm font-medium text-gray-700 mb-2", children: "Role" }),
-        /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User" })
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "md:col-span-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui141.Label, { className: "block text-sm font-medium text-gray-700 mb-2", children: "Role" }),
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User" })
       ] })
     ] }) }) }) })
   ] });
 };
 
 // src/components/features/Settings/components/MerchantSection.tsx
-var import_react95 = require("react");
-var import_ui139 = require("@rentalshop/ui");
+var import_react96 = require("react");
+var import_ui142 = require("@rentalshop/ui");
 var import_utils45 = require("@rentalshop/utils");
 var import_constants15 = require("@rentalshop/constants");
-var import_jsx_runtime237 = require("react/jsx-runtime");
+var import_jsx_runtime241 = require("react/jsx-runtime");
 var MerchantSection = ({
   user,
   isEditing,
@@ -37380,16 +37501,16 @@ var MerchantSection = ({
   onCancel,
   onInputChange
 }) => {
-  const [merchantData, setMerchantData] = (0, import_react95.useState)(null);
-  const [loadingMerchant, setLoadingMerchant] = (0, import_react95.useState)(false);
-  const fetchingRef = (0, import_react95.useRef)(false);
+  const [merchantData, setMerchantData] = (0, import_react96.useState)(null);
+  const [loadingMerchant, setLoadingMerchant] = (0, import_react96.useState)(false);
+  const fetchingRef = (0, import_react96.useRef)(false);
   console.log("\u{1F50D} MerchantSection render - user:", user);
   console.log("\u{1F50D} MerchantSection render - user.merchant:", user?.merchant);
   console.log("\u{1F50D} MerchantSection render - user.merchantId:", user?.merchantId);
   console.log("\u{1F50D} MerchantSection render - user role:", user?.role);
   console.log("\u{1F50D} MerchantSection render - loadingMerchant:", loadingMerchant);
   console.log("\u{1F50D} MerchantSection render - fetchingRef.current:", fetchingRef.current);
-  (0, import_react95.useEffect)(() => {
+  (0, import_react96.useEffect)(() => {
     const fetchMerchantData = async () => {
       if (user?.merchantId && !user?.merchant && !fetchingRef.current) {
         console.log("\u{1F504} Fetching merchant data for merchantId:", user.merchantId);
@@ -37428,20 +37549,20 @@ var MerchantSection = ({
     "merchant.phone": merchant?.phone,
     "merchant.businessType": merchant?.businessType
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Business Information" }),
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-600", children: "Manage your business details and settings" })
+  return /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Business Information" }),
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-600", children: "Manage your business details and settings" })
       ] }),
-      !isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "flex gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Button, { onClick: onEdit, children: "Edit Business Info" }) }) : /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Button, { onClick: onSave, variant: "default", disabled: isUpdating, children: isUpdating ? "Saving..." : "Save Changes" }),
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Button, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
+      !isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { className: "flex gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Button, { onClick: onEdit, children: "Edit Business Info" }) }) : /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Button, { onClick: onSave, variant: "default", disabled: isUpdating, children: isUpdating ? "Saving..." : "Save Changes" }),
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Button, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.CardContent, { className: "p-6", children: loadingMerchant ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-500", children: "Loading business information..." }) }) : !merchant && !user?.merchantId ? /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "text-center py-8", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-500", children: "No business information available" }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("p", { className: "text-gray-400 text-sm mt-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.CardContent, { className: "p-6", children: loadingMerchant ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-500", children: "Loading business information..." }) }) : !merchant && !user?.merchantId ? /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "text-center py-8", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-500", children: "No business information available" }),
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("p", { className: "text-gray-400 text-sm mt-2", children: [
         "User role: ",
         user?.role || "Unknown",
         " | Has merchantId: ",
@@ -37451,11 +37572,11 @@ var MerchantSection = ({
         " | Fetched merchant: ",
         merchantData ? "Yes" : "No"
       ] })
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "merchantName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Name" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "merchantName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Name" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "merchantName",
             name: "name",
@@ -37464,12 +37585,12 @@ var MerchantSection = ({
             onChange: onInputChange,
             placeholder: "Enter business name"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.name || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.name || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "merchantEmail", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Email" }),
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "relative", children: /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "merchantEmail", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Email" }),
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { className: "relative", children: /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "merchantEmail",
             name: "email",
@@ -37481,10 +37602,10 @@ var MerchantSection = ({
           }
         ) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "taxId", className: "block text-sm font-medium text-gray-700 mb-2", children: "Tax ID" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "taxId", className: "block text-sm font-medium text-gray-700 mb-2", children: "Tax ID" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "taxId",
             name: "taxId",
@@ -37493,12 +37614,12 @@ var MerchantSection = ({
             onChange: onInputChange,
             placeholder: "Enter tax ID"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.taxId || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.taxId || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "merchantPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Phone" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "merchantPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Phone" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "merchantPhone",
             name: "phone",
@@ -37507,13 +37628,13 @@ var MerchantSection = ({
             onChange: onInputChange,
             placeholder: "Enter business phone"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.phone || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.phone || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "md:col-span-2", children: /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "businessType", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Type" }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "relative", children: /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-            import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { className: "md:col-span-2", children: /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "businessType", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Type" }),
+          /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { className: "relative", children: /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+            import_ui142.Input,
             {
               id: "businessType",
               name: "businessType",
@@ -37524,12 +37645,12 @@ var MerchantSection = ({
               className: "bg-gray-100 text-gray-600 cursor-not-allowed"
             }
           ) }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-xs text-gray-500 mt-1", children: merchant?.businessType ? (0, import_constants15.getBusinessTypeDescription)(merchant.businessType) : "Business type description" })
+          /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-xs text-gray-500 mt-1", children: merchant?.businessType ? (0, import_constants15.getBusinessTypeDescription)(merchant.businessType) : "Business type description" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "pricingType", className: "block text-sm font-medium text-gray-700 mb-2", children: "Pricing Type" }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { className: "relative", children: /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-            import_ui139.Input,
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "pricingType", className: "block text-sm font-medium text-gray-700 mb-2", children: "Pricing Type" }),
+          /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { className: "relative", children: /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+            import_ui142.Input,
             {
               id: "pricingType",
               name: "pricingType",
@@ -37540,13 +37661,13 @@ var MerchantSection = ({
               className: "bg-gray-100 text-gray-600 cursor-not-allowed"
             }
           ) }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-xs text-gray-500 mt-1", children: merchant?.pricingType ? (0, import_constants15.getPricingTypeDescription)(merchant.pricingType) : "Pricing type description" })
+          /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-xs text-gray-500 mt-1", children: merchant?.pricingType ? (0, import_constants15.getPricingTypeDescription)(merchant.pricingType) : "Pricing type description" })
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "merchantAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Address" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "md:col-span-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "merchantAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: "Business Address" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "merchantAddress",
             name: "address",
@@ -37555,12 +37676,12 @@ var MerchantSection = ({
             onChange: onInputChange,
             placeholder: "Enter business address"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.address || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.address || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "merchantCity", className: "block text-sm font-medium text-gray-700 mb-2", children: "City" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "merchantCity", className: "block text-sm font-medium text-gray-700 mb-2", children: "City" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "merchantCity",
             name: "city",
@@ -37569,12 +37690,12 @@ var MerchantSection = ({
             onChange: onInputChange,
             placeholder: "Enter city"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.city || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.city || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "merchantState", className: "block text-sm font-medium text-gray-700 mb-2", children: "State" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "merchantState", className: "block text-sm font-medium text-gray-700 mb-2", children: "State" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "merchantState",
             name: "state",
@@ -37583,12 +37704,12 @@ var MerchantSection = ({
             onChange: onInputChange,
             placeholder: "Enter state"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.state || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.state || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "merchantZipCode", className: "block text-sm font-medium text-gray-700 mb-2", children: "ZIP Code" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "merchantZipCode", className: "block text-sm font-medium text-gray-700 mb-2", children: "ZIP Code" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "merchantZipCode",
             name: "zipCode",
@@ -37597,12 +37718,12 @@ var MerchantSection = ({
             onChange: onInputChange,
             placeholder: "Enter ZIP code"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.zipCode || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.zipCode || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(import_ui139.Label, { htmlFor: "merchantCountry", className: "block text-sm font-medium text-gray-700 mb-2", children: "Country" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
-          import_ui139.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui142.Label, { htmlFor: "merchantCountry", className: "block text-sm font-medium text-gray-700 mb-2", children: "Country" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          import_ui142.Input,
           {
             id: "merchantCountry",
             name: "country",
@@ -37611,15 +37732,15 @@ var MerchantSection = ({
             onChange: onInputChange,
             placeholder: "Enter country"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.country || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.country || "Not provided" })
       ] })
     ] }) }) })
   ] });
 };
 
 // src/components/features/Settings/components/OutletSection.tsx
-var import_ui140 = require("@rentalshop/ui");
-var import_jsx_runtime238 = require("react/jsx-runtime");
+var import_ui143 = require("@rentalshop/ui");
+var import_jsx_runtime242 = require("react/jsx-runtime");
 var OutletSection = ({
   user,
   isEditing,
@@ -37630,22 +37751,22 @@ var OutletSection = ({
   onCancel,
   onInputChange
 }) => {
-  return /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Outlet Information" }),
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("p", { className: "text-gray-600", children: "Manage your outlet details and settings" })
+  return /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Outlet Information" }),
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("p", { className: "text-gray-600", children: "Manage your outlet details and settings" })
       ] }),
-      !isEditing ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.Button, { onClick: onEdit, children: "Edit Outlet Info" }) : /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.Button, { onClick: onSave, variant: "default", disabled: isUpdating, children: isUpdating ? "Saving..." : "Save Changes" }),
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.Button, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
+      !isEditing ? /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.Button, { onClick: onEdit, children: "Edit Outlet Info" }) : /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.Button, { onClick: onSave, variant: "default", disabled: isUpdating, children: isUpdating ? "Saving..." : "Save Changes" }),
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.Button, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.CardContent, { className: "p-6", children: !user?.outlet ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("p", { className: "text-gray-500", children: "No outlet information available" }) }) : /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.Label, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Name" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
-          import_ui140.Input,
+    /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.CardContent, { className: "p-6", children: !user?.outlet ? /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("p", { className: "text-gray-500", children: "No outlet information available" }) }) : /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.Label, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Name" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+          import_ui143.Input,
           {
             id: "outletName",
             name: "name",
@@ -37654,12 +37775,12 @@ var OutletSection = ({
             onChange: onInputChange,
             placeholder: "Enter outlet name"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.name || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.name || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.Label, { htmlFor: "outletPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Phone" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
-          import_ui140.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.Label, { htmlFor: "outletPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Phone" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+          import_ui143.Input,
           {
             id: "outletPhone",
             name: "phone",
@@ -37668,12 +37789,12 @@ var OutletSection = ({
             onChange: onInputChange,
             placeholder: "Enter outlet phone"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.phone || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.phone || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.Label, { htmlFor: "outletAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Address" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
-          import_ui140.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "md:col-span-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.Label, { htmlFor: "outletAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Address" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+          import_ui143.Input,
           {
             id: "outletAddress",
             name: "address",
@@ -37682,12 +37803,12 @@ var OutletSection = ({
             onChange: onInputChange,
             placeholder: "Enter outlet address"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.address || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.address || "Not provided" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(import_ui140.Label, { htmlFor: "outletDescription", className: "block text-sm font-medium text-gray-700 mb-2", children: "Description" }),
-        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
-          import_ui140.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "md:col-span-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui143.Label, { htmlFor: "outletDescription", className: "block text-sm font-medium text-gray-700 mb-2", children: "Description" }),
+        isEditing ? /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+          import_ui143.Input,
           {
             id: "outletDescription",
             name: "description",
@@ -37696,50 +37817,50 @@ var OutletSection = ({
             onChange: onInputChange,
             placeholder: "Enter outlet description"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.description || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.description || "Not provided" })
       ] })
     ] }) }) })
   ] });
 };
 
 // src/components/features/Settings/components/SubscriptionSection.tsx
-var import_ui141 = require("@rentalshop/ui");
+var import_ui144 = require("@rentalshop/ui");
 var import_lucide_react124 = require("lucide-react");
-var import_jsx_runtime239 = require("react/jsx-runtime");
+var import_jsx_runtime243 = require("react/jsx-runtime");
 var SubscriptionSection = ({
   subscriptionData,
   subscriptionLoading,
   currentUserRole
 }) => {
   if (subscriptionLoading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
+    return /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui141.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui141.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center justify-center py-8", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { className: "ml-2 text-gray-600", children: "Loading subscription data..." })
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_ui144.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_ui144.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex items-center justify-center py-8", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "ml-2 text-gray-600", children: "Loading subscription data..." })
       ] }) }) })
     ] });
   }
   if (subscriptionData?.hasSubscription) {
-    return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
+    return /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui141.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(import_ui141.CardContent, { className: "p-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center justify-between mb-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_lucide_react124.CreditCard, { className: "h-6 w-6 text-blue-600" }),
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: "Current Plan" }),
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-sm text-gray-600", children: subscriptionData.subscription.plan?.name || "Professional Plan" })
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_ui144.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)(import_ui144.CardContent, { className: "p-6", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex items-center justify-between mb-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react124.CreditCard, { className: "h-6 w-6 text-blue-600" }),
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: "Current Plan" }),
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-sm text-gray-600", children: subscriptionData.subscription.plan?.name || "Professional Plan" })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
-            import_ui141.Badge,
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+            import_ui144.Badge,
             {
               variant: subscriptionData.isExpired ? "destructive" : "default",
               className: subscriptionData.isExpired ? "bg-red-100 text-red-800" : subscriptionData.isExpiringSoon ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800",
@@ -37747,95 +37868,95 @@ var SubscriptionSection = ({
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "bg-gray-50 rounded-lg p-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_lucide_react124.DollarSign, { className: "h-4 w-4 text-gray-600" }),
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "Amount" })
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "bg-gray-50 rounded-lg p-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react124.DollarSign, { className: "h-4 w-4 text-gray-600" }),
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "Amount" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("p", { className: "text-xl font-bold text-gray-900", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("p", { className: "text-xl font-bold text-gray-900", children: [
               "$",
               subscriptionData.subscription.amount || "0.00"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-xs text-gray-600", children: subscriptionData.subscription.interval || "monthly" })
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-xs text-gray-600", children: subscriptionData.subscription.interval || "monthly" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "bg-gray-50 rounded-lg p-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_lucide_react124.Calendar, { className: "h-4 w-4 text-gray-600" }),
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "Next Billing" })
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "bg-gray-50 rounded-lg p-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react124.Calendar, { className: "h-4 w-4 text-gray-600" }),
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "Next Billing" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-lg font-bold text-gray-900", children: subscriptionData.subscription.currentPeriodEnd ? new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString("en-US", {
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-lg font-bold text-gray-900", children: subscriptionData.subscription.currentPeriodEnd ? new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
               year: "numeric"
             }) : "N/A" }),
-            subscriptionData.daysUntilExpiry && /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("p", { className: "text-xs text-gray-600", children: [
+            subscriptionData.daysUntilExpiry && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("p", { className: "text-xs text-gray-600", children: [
               subscriptionData.daysUntilExpiry,
               " days remaining"
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "bg-gray-50 rounded-lg p-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_lucide_react124.CheckCircle, { className: "h-4 w-4 text-gray-600" }),
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "Status" })
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "bg-gray-50 rounded-lg p-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react124.CheckCircle, { className: "h-4 w-4 text-gray-600" }),
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "Status" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-lg font-bold text-gray-900 capitalize", children: subscriptionData.subscription.status || "Active" }),
-            /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-xs text-gray-600", children: subscriptionData.subscription.cancelAtPeriodEnd ? "Cancels at period end" : "Auto-renewal enabled" })
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-lg font-bold text-gray-900 capitalize", children: subscriptionData.subscription.status || "Active" }),
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-xs text-gray-600", children: subscriptionData.subscription.cancelAtPeriodEnd ? "Cancels at period end" : "Auto-renewal enabled" })
           ] })
         ] }),
-        subscriptionData.isExpiringSoon && /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_lucide_react124.AlertTriangle, { className: "h-5 w-5 text-yellow-600" }),
-          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("p", { className: "text-sm text-yellow-800", children: [
+        subscriptionData.isExpiringSoon && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("div", { className: "mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react124.AlertTriangle, { className: "h-5 w-5 text-yellow-600" }),
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("p", { className: "text-sm text-yellow-800", children: [
             "Your subscription expires in ",
             subscriptionData.daysUntilExpiry,
             " days. Consider renewing to avoid service interruption."
           ] })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "mt-6 pt-4 border-t border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-sm text-gray-600 text-center", children: currentUserRole === "OUTLET_ADMIN" ? "Contact your merchant administrator to manage subscription settings." : "Subscription management features coming soon." }) })
+        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("div", { className: "mt-6 pt-4 border-t border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-sm text-gray-600 text-center", children: currentUserRole === "OUTLET_ADMIN" ? "Contact your merchant administrator to manage subscription settings." : "Subscription management features coming soon." }) })
       ] }) }) })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
+  return /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui141.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui141.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "text-center py-8", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_lucide_react124.CreditCard, { className: "mx-auto h-12 w-12 text-gray-400 mb-4" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("h3", { className: "text-lg font-medium text-gray-900 mb-2", children: "No Active Subscription" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-gray-600 mb-6", children: "You don't have an active subscription. Choose a plan to get started." }),
-      (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_ui141.Button, { children: "View Available Plans" }),
-      currentUserRole === "OUTLET_ADMIN" && /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-sm text-gray-600", children: "Contact your merchant administrator to set up a subscription." })
+    /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_ui144.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_ui144.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "text-center py-8", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react124.CreditCard, { className: "mx-auto h-12 w-12 text-gray-400 mb-4" }),
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("h3", { className: "text-lg font-medium text-gray-900 mb-2", children: "No Active Subscription" }),
+      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-gray-600 mb-6", children: "You don't have an active subscription. Choose a plan to get started." }),
+      (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_ui144.Button, { children: "View Available Plans" }),
+      currentUserRole === "OUTLET_ADMIN" && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("p", { className: "text-sm text-gray-600", children: "Contact your merchant administrator to set up a subscription." })
     ] }) }) })
   ] });
 };
 
 // src/components/features/Settings/components/AccountSection.tsx
-var import_ui142 = require("@rentalshop/ui");
+var import_ui145 = require("@rentalshop/ui");
 var import_lucide_react125 = require("lucide-react");
-var import_jsx_runtime240 = require("react/jsx-runtime");
+var import_jsx_runtime244 = require("react/jsx-runtime");
 var AccountSection = ({
   onSignOut,
   onDeleteAccount,
   onChangePassword,
   isDeleting
 }) => {
-  return /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Account" }),
-      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-gray-600", children: "Manage your account settings and preferences" })
+  return /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Account" }),
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("p", { className: "text-gray-600", children: "Manage your account settings and preferences" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui142.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui142.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_lucide_react125.Key, { className: "h-5 w-5 text-gray-600" }),
-          /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("h3", { className: "font-medium text-gray-900", children: "Change Password" }),
-            /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-sm text-gray-600", children: "Update your account password" })
+    /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_ui145.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_ui145.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "space-y-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "flex items-center space-x-3", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_lucide_react125.Key, { className: "h-5 w-5 text-gray-600" }),
+          /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("h3", { className: "font-medium text-gray-900", children: "Change Password" }),
+            /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("p", { className: "text-sm text-gray-600", children: "Update your account password" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
-          import_ui142.Button,
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
+          import_ui145.Button,
           {
             variant: "outline",
             onClick: onChangePassword,
@@ -37843,17 +37964,17 @@ var AccountSection = ({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui142.Separator, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_lucide_react125.LogOut, { className: "h-5 w-5 text-gray-600" }),
-          /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("h3", { className: "font-medium text-gray-900", children: "Session Management" }),
-            /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-sm text-gray-600", children: "Sign out of your current session" })
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_ui145.Separator, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "flex items-center space-x-3", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_lucide_react125.LogOut, { className: "h-5 w-5 text-gray-600" }),
+          /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("h3", { className: "font-medium text-gray-900", children: "Session Management" }),
+            /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("p", { className: "text-sm text-gray-600", children: "Sign out of your current session" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
-          import_ui142.Button,
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
+          import_ui145.Button,
           {
             variant: "outline",
             onClick: onSignOut,
@@ -37862,17 +37983,17 @@ var AccountSection = ({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui142.Separator, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center justify-between p-4 bg-red-50 rounded-lg", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_lucide_react125.Trash2, { className: "h-5 w-5 text-red-600" }),
-          /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("h3", { className: "font-medium text-red-900", children: "Delete Account" }),
-            /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-sm text-red-700", children: "Permanently delete your account and all data" })
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_ui145.Separator, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "flex items-center justify-between p-4 bg-red-50 rounded-lg", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "flex items-center space-x-3", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_lucide_react125.Trash2, { className: "h-5 w-5 text-red-600" }),
+          /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("h3", { className: "font-medium text-red-900", children: "Delete Account" }),
+            /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("p", { className: "text-sm text-red-700", children: "Permanently delete your account and all data" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
-          import_ui142.Button,
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
+          import_ui145.Button,
           {
             variant: "destructive",
             onClick: onDeleteAccount,
@@ -37886,8 +38007,8 @@ var AccountSection = ({
 };
 
 // src/components/features/Settings/components/ChangePasswordDialog.tsx
-var import_ui143 = require("@rentalshop/ui");
-var import_jsx_runtime241 = require("react/jsx-runtime");
+var import_ui146 = require("@rentalshop/ui");
+var import_jsx_runtime245 = require("react/jsx-runtime");
 var ChangePasswordDialog2 = ({
   isOpen,
   isChanging,
@@ -37898,25 +38019,25 @@ var ChangePasswordDialog2 = ({
 }) => {
   if (!isOpen)
     return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "flex items-center justify-between mb-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: "Change Password" }),
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
-        import_ui143.Button,
+  return /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "flex items-center justify-between mb-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: "Change Password" }),
+      /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+        import_ui146.Button,
         {
           variant: "ghost",
           size: "icon",
           onClick: onClose,
           className: "text-gray-400 hover:text-gray-600 h-8 w-8 p-0",
-          children: /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }) })
+          children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }) })
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui143.Label, { htmlFor: "currentPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: "Current Password" }),
-        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
-          import_ui143.Input,
+    /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_ui146.Label, { htmlFor: "currentPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: "Current Password" }),
+        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+          import_ui146.Input,
           {
             id: "currentPassword",
             name: "currentPassword",
@@ -37927,10 +38048,10 @@ var ChangePasswordDialog2 = ({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui143.Label, { htmlFor: "newPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: "New Password" }),
-        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
-          import_ui143.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_ui146.Label, { htmlFor: "newPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: "New Password" }),
+        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+          import_ui146.Input,
           {
             id: "newPassword",
             name: "newPassword",
@@ -37941,10 +38062,10 @@ var ChangePasswordDialog2 = ({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(import_ui143.Label, { htmlFor: "confirmPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: "Confirm New Password" }),
-        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
-          import_ui143.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_ui146.Label, { htmlFor: "confirmPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: "Confirm New Password" }),
+        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+          import_ui146.Input,
           {
             id: "confirmPassword",
             name: "confirmPassword",
@@ -37956,9 +38077,9 @@ var ChangePasswordDialog2 = ({
         )
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { className: "flex justify-end space-x-3 mt-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
-        import_ui143.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "flex justify-end space-x-3 mt-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+        import_ui146.Button,
         {
           variant: "outline",
           onClick: onClose,
@@ -37966,8 +38087,8 @@ var ChangePasswordDialog2 = ({
           children: "Cancel"
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
-        import_ui143.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+        import_ui146.Button,
         {
           onClick: onSubmit,
           disabled: isChanging,
@@ -37979,8 +38100,8 @@ var ChangePasswordDialog2 = ({
 };
 
 // src/components/features/Settings/components/DeleteAccountDialog.tsx
-var import_ui144 = require("@rentalshop/ui");
-var import_jsx_runtime242 = require("react/jsx-runtime");
+var import_ui147 = require("@rentalshop/ui");
+var import_jsx_runtime246 = require("react/jsx-runtime");
 var DeleteAccountDialog = ({
   isOpen,
   isDeleting,
@@ -37989,24 +38110,24 @@ var DeleteAccountDialog = ({
 }) => {
   if (!isOpen)
     return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "flex items-center mb-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("svg", { className: "h-6 w-6 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" }) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { className: "ml-3", children: /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: "Delete Account" }) })
+  return /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "flex items-center mb-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("svg", { className: "h-6 w-6 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" }) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "ml-3", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: "Delete Account" }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "mb-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("p", { className: "text-sm text-gray-600", children: "Are you sure you want to delete your account? This action cannot be undone and will permanently remove:" }),
-      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("ul", { className: "mt-3 text-sm text-gray-600 list-disc list-inside space-y-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("li", { children: "Your profile and personal information" }),
-        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("li", { children: "All your orders and transaction history" }),
-        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("li", { children: "Your product listings and inventory" }),
-        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("li", { children: "Any saved preferences and settings" })
+    /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "mb-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("p", { className: "text-sm text-gray-600", children: "Are you sure you want to delete your account? This action cannot be undone and will permanently remove:" }),
+      /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("ul", { className: "mt-3 text-sm text-gray-600 list-disc list-inside space-y-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("li", { children: "Your profile and personal information" }),
+        /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("li", { children: "All your orders and transaction history" }),
+        /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("li", { children: "Your product listings and inventory" }),
+        /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("li", { children: "Any saved preferences and settings" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("p", { className: "mt-3 text-sm text-gray-600", children: /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("strong", { children: "This action is irreversible." }) })
+      /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("p", { className: "mt-3 text-sm text-gray-600", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("strong", { children: "This action is irreversible." }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { className: "flex justify-end space-x-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
-        import_ui144.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "flex justify-end space-x-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
+        import_ui147.Button,
         {
           variant: "outline",
           onClick: onClose,
@@ -38014,8 +38135,8 @@ var DeleteAccountDialog = ({
           children: "Cancel"
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
-        import_ui144.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
+        import_ui147.Button,
         {
           variant: "destructive",
           onClick: onConfirm,
@@ -38028,7 +38149,7 @@ var DeleteAccountDialog = ({
 };
 
 // src/components/features/Settings/Settings.tsx
-var import_jsx_runtime243 = require("react/jsx-runtime");
+var import_jsx_runtime247 = require("react/jsx-runtime");
 var settingsMenuItems = [
   {
     id: "profile",
@@ -38067,18 +38188,18 @@ var settingsMenuItems = [
 ];
 var SettingsComponent = () => {
   const { user, logout, loading } = (0, import_hooks12.useAuth)();
-  const { toastSuccess, toastError } = (0, import_ui145.useToast)();
-  const [activeSection, setActiveSection] = (0, import_react96.useState)("profile");
-  const [isEditingPersonal, setIsEditingPersonal] = (0, import_react96.useState)(false);
-  const [isEditingMerchant, setIsEditingMerchant] = (0, import_react96.useState)(false);
-  const [isEditingOutlet, setIsEditingOutlet] = (0, import_react96.useState)(false);
-  const [isUpdating, setIsUpdating] = (0, import_react96.useState)(false);
-  const [personalFormData, setPersonalFormData] = (0, import_react96.useState)({
+  const { toastSuccess, toastError } = (0, import_ui148.useToast)();
+  const [activeSection, setActiveSection] = (0, import_react97.useState)("profile");
+  const [isEditingPersonal, setIsEditingPersonal] = (0, import_react97.useState)(false);
+  const [isEditingMerchant, setIsEditingMerchant] = (0, import_react97.useState)(false);
+  const [isEditingOutlet, setIsEditingOutlet] = (0, import_react97.useState)(false);
+  const [isUpdating, setIsUpdating] = (0, import_react97.useState)(false);
+  const [personalFormData, setPersonalFormData] = (0, import_react97.useState)({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     phone: user?.phone || ""
   });
-  const [merchantFormData, setMerchantFormData] = (0, import_react96.useState)({
+  const [merchantFormData, setMerchantFormData] = (0, import_react97.useState)({
     name: "",
     phone: "",
     address: "",
@@ -38090,24 +38211,24 @@ var SettingsComponent = () => {
     pricingType: "",
     taxId: ""
   });
-  const [outletFormData, setOutletFormData] = (0, import_react96.useState)({
+  const [outletFormData, setOutletFormData] = (0, import_react97.useState)({
     name: "",
     phone: "",
     address: "",
     description: ""
   });
-  const [showChangePassword, setShowChangePassword] = (0, import_react96.useState)(false);
-  const [isChangingPassword, setIsChangingPassword] = (0, import_react96.useState)(false);
-  const [passwordData, setPasswordData] = (0, import_react96.useState)({
+  const [showChangePassword, setShowChangePassword] = (0, import_react97.useState)(false);
+  const [isChangingPassword, setIsChangingPassword] = (0, import_react97.useState)(false);
+  const [passwordData, setPasswordData] = (0, import_react97.useState)({
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
-  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react96.useState)(false);
-  const [isDeleting, setIsDeleting] = (0, import_react96.useState)(false);
-  const [subscriptionData, setSubscriptionData] = (0, import_react96.useState)(null);
-  const [subscriptionLoading, setSubscriptionLoading] = (0, import_react96.useState)(true);
-  (0, import_react96.useEffect)(() => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react97.useState)(false);
+  const [isDeleting, setIsDeleting] = (0, import_react97.useState)(false);
+  const [subscriptionData, setSubscriptionData] = (0, import_react97.useState)(null);
+  const [subscriptionLoading, setSubscriptionLoading] = (0, import_react97.useState)(true);
+  (0, import_react97.useEffect)(() => {
     const fetchSubscriptionData = async () => {
       try {
         setSubscriptionLoading(true);
@@ -38181,7 +38302,7 @@ var SettingsComponent = () => {
     };
     fetchSubscriptionData();
   }, []);
-  (0, import_react96.useEffect)(() => {
+  (0, import_react97.useEffect)(() => {
     if (user?.merchant && user?.role === "MERCHANT") {
       setMerchantFormData({
         name: user.merchant.name || "",
@@ -38334,7 +38455,7 @@ var SettingsComponent = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case "profile":
-        return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
           ProfileSection,
           {
             user,
@@ -38348,7 +38469,7 @@ var SettingsComponent = () => {
           }
         );
       case "merchant":
-        return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
           MerchantSection,
           {
             user,
@@ -38362,7 +38483,7 @@ var SettingsComponent = () => {
           }
         );
       case "outlet":
-        return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
           OutletSection,
           {
             user,
@@ -38376,7 +38497,7 @@ var SettingsComponent = () => {
           }
         );
       case "subscription":
-        return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
           SubscriptionSection,
           {
             subscriptionData,
@@ -38385,7 +38506,7 @@ var SettingsComponent = () => {
           }
         );
       case "account":
-        return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
           AccountSection,
           {
             onSignOut: handleSignOut,
@@ -38395,7 +38516,7 @@ var SettingsComponent = () => {
           }
         );
       default:
-        return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
           ProfileSection,
           {
             user,
@@ -38410,8 +38531,8 @@ var SettingsComponent = () => {
         );
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)(import_jsx_runtime243.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(import_jsx_runtime247.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
       SettingsLayout2,
       {
         user,
@@ -38422,7 +38543,7 @@ var SettingsComponent = () => {
         children: renderActiveSection()
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
       ChangePasswordDialog2,
       {
         isOpen: showChangePassword,
@@ -38433,7 +38554,7 @@ var SettingsComponent = () => {
         onSubmit: handleChangePassword
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
       DeleteAccountDialog,
       {
         isOpen: showDeleteConfirm,
@@ -38447,27 +38568,27 @@ var SettingsComponent = () => {
 var Settings_default = SettingsComponent;
 
 // src/components/features/Settings/components/SecuritySection.tsx
-var import_ui146 = require("@rentalshop/ui");
+var import_ui149 = require("@rentalshop/ui");
 var import_lucide_react127 = require("lucide-react");
-var import_jsx_runtime244 = require("react/jsx-runtime");
+var import_jsx_runtime248 = require("react/jsx-runtime");
 var SecuritySection = ({
   onChangePassword
 }) => {
-  return /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Security" }),
-      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("p", { className: "text-gray-600", children: "Manage your password and account security settings" })
+  return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("h2", { className: "text-2xl font-bold text-gray-900", children: "Security" }),
+      /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("p", { className: "text-gray-600", children: "Manage your password and account security settings" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_ui146.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_ui146.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_lucide_react127.Shield, { className: "h-5 w-5 text-gray-600" }),
-        /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("h3", { className: "font-medium text-gray-900", children: "Password" }),
-          /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("p", { className: "text-sm text-gray-600", children: "Change your password to keep your account secure" })
+    /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(import_ui149.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(import_ui149.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(import_lucide_react127.Shield, { className: "h-5 w-5 text-gray-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("h3", { className: "font-medium text-gray-900", children: "Password" }),
+          /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("p", { className: "text-sm text-gray-600", children: "Change your password to keep your account secure" })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
-        import_ui146.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+        import_ui149.Button,
         {
           variant: "outline",
           onClick: onChangePassword,
@@ -38479,9 +38600,9 @@ var SecuritySection = ({
 };
 
 // src/components/layout/TopNavigation.tsx
-var import_react97 = require("react");
+var import_react98 = require("react");
 var import_lucide_react128 = require("lucide-react");
-var import_jsx_runtime245 = require("react/jsx-runtime");
+var import_jsx_runtime249 = require("react/jsx-runtime");
 function TopNavigation({
   variant = "client",
   currentPage,
@@ -38491,7 +38612,7 @@ function TopNavigation({
   onProfileClick,
   userRole
 }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react97.useState)(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react98.useState)(false);
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: import_lucide_react128.Home },
     { href: "/products", label: "Products", icon: import_lucide_react128.Package },
@@ -38536,43 +38657,43 @@ function TopNavigation({
     return items;
   };
   const navItems = variant === "admin" ? filterNavItemsByRole(adminNavItems, userRole) : clientNavItems;
-  return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "flex items-center justify-between h-16", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "flex items-center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_lucide_react128.Store, { className: "w-6 h-6 text-white" }) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "ml-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
-          /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("p", { className: "text-xs text-gray-500 capitalize", children: variant })
+  return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center justify-between h-16", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(import_lucide_react128.Store, { className: "w-6 h-6 text-white" }) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "ml-3", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
+          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "text-xs text-gray-500 capitalize", children: variant })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("nav", { className: "hidden lg:flex items-center space-x-1", children: navItems.map((item) => {
+      /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("nav", { className: "hidden lg:flex items-center space-x-1", children: navItems.map((item) => {
         const Icon2 = item.icon;
         const isActive = currentPage === item.href || item.subItems && item.subItems.some((subItem) => currentPage === subItem.href);
         const hasSubItems = item.subItems && item.subItems.length > 0;
         if (hasSubItems) {
-          return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "relative group", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "relative group", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
               "a",
               {
                 href: item.href,
                 className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+                  /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
                   item.label,
-                  /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_lucide_react128.ChevronDown, { className: "w-3 h-3" })
+                  /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(import_lucide_react128.ChevronDown, { className: "w-3 h-3" })
                 ]
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "py-1", children: item.subItems?.map((subItem) => {
+            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50", children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "py-1", children: item.subItems?.map((subItem) => {
               const SubIcon = subItem.icon;
               const isSubActive = currentPage === subItem.href;
-              return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+              return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
                 "a",
                 {
                   href: subItem.href,
                   className: `flex items-center gap-2 px-4 py-2 text-sm transition-colors ${isSubActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
+                    /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
                     subItem.label
                   ]
                 },
@@ -38581,45 +38702,45 @@ function TopNavigation({
             }) }) })
           ] }, item.href);
         }
-        return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
           "a",
           {
             href: item.href,
             className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
               item.label
             ]
           },
           item.href
         );
       }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "flex items-center space-x-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center space-x-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
             Button,
             {
               variant: "ghost",
               size: "sm",
               className: "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-              children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_lucide_react128.Bell, { className: "w-5 h-5" })
+              children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(import_lucide_react128.Bell, { className: "w-5 h-5" })
             }
           ),
-          variant === "client" && /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+          variant === "client" && /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
             Button,
             {
               variant: "ghost",
               size: "sm",
               className: "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_lucide_react128.ShoppingCart, { className: "w-5 h-5" }),
-                cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(Badge, { className: "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs", children: cartItemsCount > 9 ? "9+" : cartItemsCount })
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(import_lucide_react128.ShoppingCart, { className: "w-5 h-5" }),
+                cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(Badge, { className: "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs", children: cartItemsCount > 9 ? "9+" : cartItemsCount })
               ]
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
             Button,
             {
               variant: "ghost",
@@ -38627,12 +38748,12 @@ function TopNavigation({
               onClick: onProfileClick,
               className: "flex items-center gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_lucide_react128.User, { className: "w-4 h-4 text-white" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("span", { className: "hidden sm:block text-sm font-medium", children: "Profile" })
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(import_lucide_react128.User, { className: "w-4 h-4 text-white" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("span", { className: "hidden sm:block text-sm font-medium", children: "Profile" })
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
             Button,
             {
               variant: "ghost",
@@ -38640,50 +38761,50 @@ function TopNavigation({
               onClick: onLogout,
               className: "p-2 text-gray-600 hover:text-red-600 hover:bg-red-50",
               title: "Logout",
-              children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_lucide_react128.LogOut, { className: "w-4 h-4" })
+              children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(import_lucide_react128.LogOut, { className: "w-4 h-4" })
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "lg:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "lg:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
           Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: () => setIsMobileMenuOpen(!isMobileMenuOpen),
             className: "p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-            children: isMobileMenuOpen ? /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_lucide_react128.X, { className: "w-6 h-6" }) : /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(import_lucide_react128.Menu, { className: "w-6 h-6" })
+            children: isMobileMenuOpen ? /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(import_lucide_react128.X, { className: "w-6 h-6" }) : /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(import_lucide_react128.Menu, { className: "w-6 h-6" })
           }
         ) })
       ] })
     ] }) }),
-    isMobileMenuOpen && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "lg:hidden border-t border-gray-200 bg-white", children: /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "px-2 pt-2 pb-3 space-y-1", children: navItems.map((item) => {
+    isMobileMenuOpen && /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "lg:hidden border-t border-gray-200 bg-white", children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "px-2 pt-2 pb-3 space-y-1", children: navItems.map((item) => {
       const Icon2 = item.icon;
       const isActive = currentPage === item.href || item.subItems && item.subItems.some((subItem) => currentPage === subItem.href);
       const hasSubItems = item.subItems && item.subItems.length > 0;
-      return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
           "a",
           {
             href: item.href,
             className: `flex px-3 py-2 rounded-lg text-base font-medium items-center gap-3 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
             onClick: () => setIsMobileMenuOpen(false),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
               item.label
             ]
           }
         ),
-        hasSubItems && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("div", { className: "ml-6 space-y-1", children: item.subItems?.map((subItem) => {
+        hasSubItems && /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "ml-6 space-y-1", children: item.subItems?.map((subItem) => {
           const SubIcon = subItem.icon;
           const isSubActive = currentPage === subItem.href;
-          return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
             "a",
             {
               href: subItem.href,
               className: `flex px-3 py-2 rounded-lg text-sm font-medium items-center gap-3 ${isSubActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
               onClick: () => setIsMobileMenuOpen(false),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
                 subItem.label
               ]
             },
@@ -38697,7 +38818,7 @@ function TopNavigation({
 
 // src/components/layout/ServerTopNavigation.tsx
 var import_lucide_react129 = require("lucide-react");
-var import_jsx_runtime246 = require("react/jsx-runtime");
+var import_jsx_runtime250 = require("react/jsx-runtime");
 function ServerTopNavigation({
   variant = "client",
   currentPage,
@@ -38725,36 +38846,36 @@ function ServerTopNavigation({
     { href: "/security", label: "Security", icon: import_lucide_react129.Shield }
   ];
   const navItems = variant === "admin" ? adminNavItems : clientNavItems;
-  return /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "flex items-center justify-between h-16", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "flex items-center", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(import_lucide_react129.Store, { className: "w-6 h-6 text-white" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "ml-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
-            /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("p", { className: "text-xs text-gray-500 capitalize", children: variant })
+  return /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "flex items-center justify-between h-16", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "flex items-center", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(import_lucide_react129.Store, { className: "w-6 h-6 text-white" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "ml-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
+            /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("p", { className: "text-xs text-gray-500 capitalize", children: variant })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("nav", { className: "hidden lg:flex items-center space-x-1", children: navItems.map((item) => {
+        /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("nav", { className: "hidden lg:flex items-center space-x-1", children: navItems.map((item) => {
           const Icon2 = item.icon;
           const isActive = currentPage === item.href;
-          return /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)(
             "a",
             {
               href: item.href,
               className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+                /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
                 item.label
               ]
             },
             item.href
           );
         }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "flex items-center space-x-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("form", { action: searchAction, method: "GET", className: "hidden md:block", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "relative", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(import_lucide_react129.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
-            /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "flex items-center space-x-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("form", { action: searchAction, method: "GET", className: "hidden md:block", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "relative", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(import_lucide_react129.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
+            /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(
               Input2,
               {
                 type: "text",
@@ -38764,31 +38885,31 @@ function ServerTopNavigation({
               }
             )
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "flex items-center space-x-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(
               Button,
               {
                 variant: "ghost",
                 size: "sm",
                 className: "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-                children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(import_lucide_react129.Bell, { className: "w-5 h-5" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(import_lucide_react129.Bell, { className: "w-5 h-5" })
               }
             ),
-            variant === "client" && /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
+            variant === "client" && /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)(
               Button,
               {
                 variant: "ghost",
                 size: "sm",
                 className: "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(import_lucide_react129.ShoppingCart, { className: "w-5 h-5" }),
-                  cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(Badge, { className: "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs", children: cartItemsCount > 9 ? "9+" : cartItemsCount })
+                  /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(import_lucide_react129.ShoppingCart, { className: "w-5 h-5" }),
+                  cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(Badge, { className: "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs", children: cartItemsCount > 9 ? "9+" : cartItemsCount })
                 ]
               }
             )
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("form", { action: profileAction, method: "GET", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "flex items-center space-x-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("form", { action: profileAction, method: "GET", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)(
               Button,
               {
                 type: "submit",
@@ -38796,12 +38917,12 @@ function ServerTopNavigation({
                 size: "sm",
                 className: "flex items-center gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(import_lucide_react129.User, { className: "w-4 h-4 text-white" }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("span", { className: "hidden sm:block text-sm font-medium", children: "Profile" })
+                  /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(import_lucide_react129.User, { className: "w-4 h-4 text-white" }) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("span", { className: "hidden sm:block text-sm font-medium", children: "Profile" })
                 ]
               }
             ) }),
-            /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("form", { action: logoutAction, method: "POST", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("form", { action: logoutAction, method: "POST", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(
               Button,
               {
                 type: "submit",
@@ -38809,11 +38930,11 @@ function ServerTopNavigation({
                 size: "sm",
                 className: "p-2 text-gray-600 hover:text-red-600 hover:bg-red-50",
                 title: "Logout",
-                children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(import_lucide_react129.LogOut, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(import_lucide_react129.LogOut, { className: "w-4 h-4" })
               }
             ) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "lg:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "lg:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(
             Button,
             {
               variant: "ghost",
@@ -38821,14 +38942,14 @@ function ServerTopNavigation({
               className: "p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
               type: "button",
               "data-mobile-menu-toggle": true,
-              children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(import_lucide_react129.Menu, { className: "w-6 h-6" })
+              children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(import_lucide_react129.Menu, { className: "w-6 h-6" })
             }
           ) })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "md:hidden pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("form", { action: searchAction, method: "GET", children: /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { className: "relative", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(import_lucide_react129.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "md:hidden pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("form", { action: searchAction, method: "GET", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "relative", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(import_lucide_react129.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
+        /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(
           Input2,
           {
             type: "text",
@@ -38839,16 +38960,16 @@ function ServerTopNavigation({
         )
       ] }) }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "lg:hidden border-t border-gray-200 bg-white hidden", "data-mobile-menu": true, children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { className: "px-2 pt-2 pb-3 space-y-1", children: navItems.map((item) => {
+    /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "lg:hidden border-t border-gray-200 bg-white hidden", "data-mobile-menu": true, children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "px-2 pt-2 pb-3 space-y-1", children: navItems.map((item) => {
       const Icon2 = item.icon;
       const isActive = currentPage === item.href;
-      return /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)(
         "a",
         {
           href: item.href,
           className: `block px-3 py-2 rounded-lg text-base font-medium flex items-center gap-3 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+            /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
             item.label
           ]
         },
@@ -38859,40 +38980,9 @@ function ServerTopNavigation({
 }
 
 // src/components/layout/DashboardWrapperClean.tsx
-var import_react98 = require("react");
-var import_jsx_runtime247 = require("react/jsx-runtime");
-function DashboardWrapperClean({
-  children,
-  user,
-  onLogout = () => {
-  },
-  currentPath = "",
-  hideSidebar = false,
-  allowCollapse = true
-}) {
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react98.useState)(false);
-  const handleCollapseToggle = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { className: "flex h-screen bg-bg-secondary", children: [
-    !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
-      Sidebar,
-      {
-        user,
-        onLogout,
-        currentPath,
-        isCollapsed: sidebarCollapsed,
-        onCollapseToggle: allowCollapse ? handleCollapseToggle : void 0
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("main", { className: `flex-1 overflow-y-auto ${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { className: "p-6 space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { className: "space-y-6", children }) }) })
-  ] });
-}
-
-// src/components/layout/DashboardWrapperColorful.tsx
 var import_react99 = require("react");
-var import_jsx_runtime248 = require("react/jsx-runtime");
-function DashboardWrapperColorful({
+var import_jsx_runtime251 = require("react/jsx-runtime");
+function DashboardWrapperClean({
   children,
   user,
   onLogout = () => {
@@ -38905,8 +38995,8 @@ function DashboardWrapperColorful({
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "flex h-screen bg-gradient-to-br from-brand-50 via-bg-primary to-brand-100", children: [
-    !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "flex h-screen bg-bg-secondary", children: [
+    !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(
       Sidebar,
       {
         user,
@@ -38916,94 +39006,125 @@ function DashboardWrapperColorful({
         onCollapseToggle: allowCollapse ? handleCollapseToggle : void 0
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("main", { className: `flex-1 overflow-y-auto ${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "p-8 space-y-8", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "bg-gradient-to-r from-brand-500 to-action-primary rounded-2xl p-8 shadow-glow animate-fade-in", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("h1", { className: "text-4xl font-display font-bold text-white mb-2", children: "Welcome to RentalShop" }),
-        /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("p", { className: "text-xl text-brand-100 font-medium", children: "Your comprehensive rental management dashboard" })
+    /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("main", { className: `flex-1 overflow-y-auto ${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "p-6 space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "space-y-6", children }) }) })
+  ] });
+}
+
+// src/components/layout/DashboardWrapperColorful.tsx
+var import_react100 = require("react");
+var import_jsx_runtime252 = require("react/jsx-runtime");
+function DashboardWrapperColorful({
+  children,
+  user,
+  onLogout = () => {
+  },
+  currentPath = "",
+  hideSidebar = false,
+  allowCollapse = true
+}) {
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react100.useState)(false);
+  const handleCollapseToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { className: "flex h-screen bg-gradient-to-br from-brand-50 via-bg-primary to-brand-100", children: [
+    !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(
+      Sidebar,
+      {
+        user,
+        onLogout,
+        currentPath,
+        isCollapsed: sidebarCollapsed,
+        onCollapseToggle: allowCollapse ? handleCollapseToggle : void 0
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("main", { className: `flex-1 overflow-y-auto ${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { className: "p-8 space-y-8", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { className: "bg-gradient-to-r from-brand-500 to-action-primary rounded-2xl p-8 shadow-glow animate-fade-in", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("h1", { className: "text-4xl font-display font-bold text-white mb-2", children: "Welcome to RentalShop" }),
+        /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("p", { className: "text-xl text-brand-100 font-medium", children: "Your comprehensive rental management dashboard" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { className: "space-y-6", children })
+      /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { className: "space-y-6", children })
     ] }) })
   ] });
 }
 
 // src/components/layout/TodaysFocus.tsx
-var import_jsx_runtime249 = require("react/jsx-runtime");
+var import_jsx_runtime253 = require("react/jsx-runtime");
 var TodaysFocus = ({ data }) => {
-  return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(Card2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(CardTitle2, { children: "Today's Operations" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "text-gray-400 text-sm", children: "\u{1F4E6}" }),
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: "Pickups Today" }),
-              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "text-xs text-gray-400", children: "Items to be picked up" })
+  return /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(Card2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(CardTitle2, { children: "Today's Operations" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "space-y-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "text-gray-400 text-sm", children: "\u{1F4E6}" }),
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: "Pickups Today" }),
+              /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "text-xs text-gray-400", children: "Items to be picked up" })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(Badge, { variant: "outline", className: "text-xs", children: data.todayPickups })
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(Badge, { variant: "outline", className: "text-xs", children: data.todayPickups })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "text-gray-400 text-sm", children: "\u{1F504}" }),
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: "Returns Today" }),
-              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "text-xs text-gray-400", children: "Items to be returned" })
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "text-gray-400 text-sm", children: "\u{1F504}" }),
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: "Returns Today" }),
+              /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "text-xs text-gray-400", children: "Items to be returned" })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(Badge, { variant: "outline", className: "text-xs", children: data.todayReturns })
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(Badge, { variant: "outline", className: "text-xs", children: data.todayReturns })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "text-gray-400 text-sm", children: "\u26A0\uFE0F" }),
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: "Overdue Items" }),
-              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "text-xs text-gray-400", children: "Past due date" })
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "text-gray-400 text-sm", children: "\u26A0\uFE0F" }),
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: "Overdue Items" }),
+              /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "text-xs text-gray-400", children: "Past due date" })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(Badge, { variant: "destructive", className: "text-xs", children: data.overdueCount })
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(Badge, { variant: "destructive", className: "text-xs", children: data.overdueCount })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "text-gray-400 text-sm", children: "\u{1F4CA}" }),
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: "Active Rentals" }),
-              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("p", { className: "text-xs text-gray-400", children: "Currently rented out" })
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "text-gray-400 text-sm", children: "\u{1F4CA}" }),
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: "Active Rentals" }),
+              /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "text-xs text-gray-400", children: "Currently rented out" })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(Badge, { variant: "outline", className: "text-xs", children: data.activeRentals })
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(Badge, { variant: "outline", className: "text-xs", children: data.activeRentals })
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(Card2, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(CardTitle2, { children: "Quick Actions" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "space-y-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("span", { className: "mr-3", children: "\u{1F4E6}" }),
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex-1 text-left", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "font-medium", children: "Process Pickup" }),
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "text-sm text-gray-500", children: "Mark items as picked up" })
+    /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(Card2, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(CardTitle2, { children: "Quick Actions" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "space-y-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("span", { className: "mr-3", children: "\u{1F4E6}" }),
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "font-medium", children: "Process Pickup" }),
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "text-sm text-gray-500", children: "Mark items as picked up" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("span", { className: "mr-3", children: "\u{1F504}" }),
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex-1 text-left", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "font-medium", children: "Process Return" }),
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "text-sm text-gray-500", children: "Mark items as returned" })
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("span", { className: "mr-3", children: "\u{1F504}" }),
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "font-medium", children: "Process Return" }),
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "text-sm text-gray-500", children: "Mark items as returned" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("span", { className: "mr-3", children: "\u26A0\uFE0F" }),
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex-1 text-left", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "font-medium", children: "Handle Overdue" }),
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "text-sm text-gray-500", children: "Contact overdue customers" })
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("span", { className: "mr-3", children: "\u26A0\uFE0F" }),
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "font-medium", children: "Handle Overdue" }),
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "text-sm text-gray-500", children: "Contact overdue customers" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("span", { className: "mr-3", children: "\u{1F4DE}" }),
-          /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { className: "flex-1 text-left", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "font-medium", children: "Send Reminders" }),
-            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { className: "text-sm text-gray-500", children: "Notify upcoming returns" })
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("span", { className: "mr-3", children: "\u{1F4DE}" }),
+          /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "font-medium", children: "Send Reminders" }),
+            /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "text-sm text-gray-500", children: "Notify upcoming returns" })
           ] })
         ] })
       ] }) })
@@ -39012,22 +39133,22 @@ var TodaysFocus = ({ data }) => {
 };
 
 // src/components/layout/ColorfulQuickActions.tsx
-var import_jsx_runtime250 = require("react/jsx-runtime");
+var import_jsx_runtime254 = require("react/jsx-runtime");
 var QuickActionCard = ({
   title,
   description,
   icon,
   href,
   color
-}) => /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)(Card2, { className: "group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0", children: [
-  /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: `absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${color}` }),
-  /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(CardContent2, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("a", { href, className: "block", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "flex items-center space-x-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: `w-16 h-16 rounded-xl bg-gradient-to-br ${color} text-white text-3xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`, children: icon }),
-    /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { className: "flex-1", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("h3", { className: "font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors", children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("p", { className: "text-gray-600 font-medium", children: description })
+}) => /* @__PURE__ */ (0, import_jsx_runtime254.jsxs)(Card2, { className: "group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0", children: [
+  /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("div", { className: `absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${color}` }),
+  /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(CardContent2, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("a", { href, className: "block", children: /* @__PURE__ */ (0, import_jsx_runtime254.jsxs)("div", { className: "flex items-center space-x-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("div", { className: `w-16 h-16 rounded-xl bg-gradient-to-br ${color} text-white text-3xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`, children: icon }),
+    /* @__PURE__ */ (0, import_jsx_runtime254.jsxs)("div", { className: "flex-1", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("h3", { className: "font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors", children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("p", { className: "text-gray-600 font-medium", children: description })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "text-gray-400 group-hover:text-blue-500 transition-colors", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
+    /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("div", { className: "text-gray-400 group-hover:text-blue-500 transition-colors", children: /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
   ] }) }) })
 ] });
 var ColorfulQuickActions = () => {
@@ -39061,14 +39182,14 @@ var ColorfulQuickActions = () => {
       color: "from-orange-500 to-orange-600"
     }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "mb-8", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)(Card2, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(CardHeader2, { className: "pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(CardTitle2, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime250.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: quickActions.map((action, index) => /* @__PURE__ */ (0, import_jsx_runtime250.jsx)(QuickActionCard, { ...action }, index)) }) })
+  return /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("div", { className: "mb-8", children: /* @__PURE__ */ (0, import_jsx_runtime254.jsxs)(Card2, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(CardHeader2, { className: "pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(CardTitle2, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: quickActions.map((action, index) => /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(QuickActionCard, { ...action }, index)) }) })
   ] }) });
 };
 
 // src/components/layout/ColorfulTodaysFocus.tsx
-var import_jsx_runtime251 = require("react/jsx-runtime");
+var import_jsx_runtime255 = require("react/jsx-runtime");
 var ColorfulTodaysFocus = ({ data }) => {
   const operations = [
     {
@@ -39134,36 +39255,36 @@ var ColorfulTodaysFocus = ({ data }) => {
       color: "from-purple-500 to-purple-600"
     }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)(Card2, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(CardHeader2, { className: "pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(CardTitle2, { className: "text-xl font-bold text-gray-800", children: "Today's Operations" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "space-y-4", children: operations.map((operation, index) => /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-100", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: `absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${operation.color}` }),
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "flex justify-between items-center", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "flex items-center space-x-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: `w-14 h-14 rounded-xl bg-gradient-to-br ${operation.color} text-white text-2xl flex items-center justify-center shadow-lg`, children: operation.icon }),
-            /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "font-bold text-gray-900 text-lg", children: operation.title }),
-              /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-600 font-medium", children: operation.description })
+  return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(Card2, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(CardHeader2, { className: "pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(CardTitle2, { className: "text-xl font-bold text-gray-800", children: "Today's Operations" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "space-y-4", children: operations.map((operation, index) => /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-100", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: `absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${operation.color}` }),
+        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex justify-between items-center", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center space-x-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: `w-14 h-14 rounded-xl bg-gradient-to-br ${operation.color} text-white text-2xl flex items-center justify-center shadow-lg`, children: operation.icon }),
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "font-bold text-gray-900 text-lg", children: operation.title }),
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "text-gray-600 font-medium", children: operation.description })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(Badge, { variant: "outline", className: `text-lg font-bold px-4 py-2 ${operation.textColor} border-2`, children: operation.value })
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(Badge, { variant: "outline", className: `text-lg font-bold px-4 py-2 ${operation.textColor} border-2`, children: operation.value })
         ] }) })
       ] }, index)) }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)(Card2, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(CardHeader2, { className: "pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(CardTitle2, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "space-y-4", children: quickActions.map((action, index) => /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(Card2, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(CardHeader2, { className: "pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(CardTitle2, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "space-y-4", children: quickActions.map((action, index) => /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
         Button,
         {
           className: "w-full justify-start h-16 text-left group relative overflow-hidden bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg",
           variant: "outline",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: `absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${action.color}` }),
-            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { className: "mr-4 text-2xl", children: action.icon }),
-            /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "flex-1 text-left", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "font-bold text-gray-900 text-lg", children: action.title }),
-              /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "text-gray-600 font-medium", children: action.description })
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: `absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${action.color}` }),
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { className: "mr-4 text-2xl", children: action.icon }),
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex-1 text-left", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "font-bold text-gray-900 text-lg", children: action.title }),
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "text-gray-600 font-medium", children: action.description })
             ] })
           ]
         },
@@ -39174,20 +39295,20 @@ var ColorfulTodaysFocus = ({ data }) => {
 };
 
 // src/components/layout/QuickActionsGrid.tsx
-var import_jsx_runtime252 = require("react/jsx-runtime");
+var import_jsx_runtime256 = require("react/jsx-runtime");
 var QuickActionCard2 = ({
   title,
   description,
   icon,
   href,
   color
-}) => /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(Card2, { className: "border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer", children: /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(CardContent2, { className: "p-3", children: /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("a", { href, className: "block", children: /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { className: "flex items-center space-x-3", children: [
-  /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { className: "text-gray-500 text-base", children: icon }),
-  /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { className: "flex-1", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("h3", { className: "font-medium text-gray-900 text-sm", children: title }),
-    /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("p", { className: "text-xs text-gray-400", children: description })
+}) => /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(Card2, { className: "border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(CardContent2, { className: "p-3", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("a", { href, className: "block", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex items-center space-x-3", children: [
+  /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "text-gray-500 text-base", children: icon }),
+  /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex-1", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("h3", { className: "font-medium text-gray-900 text-sm", children: title }),
+    /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { className: "text-xs text-gray-400", children: description })
   ] }),
-  /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { className: "text-gray-300", children: /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("svg", { className: "w-3 h-3", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
+  /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "text-gray-300", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("svg", { className: "w-3 h-3", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
 ] }) }) }) });
 var QuickActionsGrid = () => {
   const quickActions = [
@@ -39220,19 +39341,19 @@ var QuickActionsGrid = () => {
       color: "bg-orange-500"
     }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { className: "mb-8", children: /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)(Card2, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(CardTitle2, { children: "Quick Actions" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: quickActions.map((action, index) => /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(QuickActionCard2, { ...action }, index)) }) })
+  return /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "mb-8", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(Card2, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(CardTitle2, { children: "Quick Actions" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(CardContent2, { children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: quickActions.map((action, index) => /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(QuickActionCard2, { ...action }, index)) }) })
   ] }) });
 };
 
 // src/components/layout/SearchInput.tsx
-var import_react100 = require("react");
+var import_react101 = require("react");
 var import_lucide_react130 = require("lucide-react");
-var import_ui147 = require("@rentalshop/ui");
-var import_ui148 = require("@rentalshop/ui");
+var import_ui150 = require("@rentalshop/ui");
+var import_ui151 = require("@rentalshop/ui");
 var import_hooks13 = require("@rentalshop/hooks");
-var import_jsx_runtime253 = require("react/jsx-runtime");
+var import_jsx_runtime257 = require("react/jsx-runtime");
 var SearchInput = ({
   placeholder = "Search...",
   delay = 500,
@@ -39253,18 +39374,18 @@ var SearchInput = ({
     minLength,
     onSearch
   });
-  (0, import_react100.useEffect)(() => {
+  (0, import_react101.useEffect)(() => {
     if (defaultValue && !query) {
       handleSearchChange(defaultValue);
     }
   }, [defaultValue, query, handleSearchChange]);
-  (0, import_react100.useEffect)(() => {
+  (0, import_react101.useEffect)(() => {
     return cleanup;
   }, [cleanup]);
-  return /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: (0, import_ui147.cn)("relative", className), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "relative", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_lucide_react130.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
-      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: (0, import_ui150.cn)("relative", className), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "relative", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react130.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
+      /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(
         "input",
         {
           type: "text",
@@ -39272,7 +39393,7 @@ var SearchInput = ({
           onChange: (e) => handleSearchChange(e.target.value),
           placeholder,
           disabled,
-          className: (0, import_ui147.cn)(
+          className: (0, import_ui150.cn)(
             "w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg",
             "focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
             "disabled:bg-gray-100 disabled:cursor-not-allowed",
@@ -39280,26 +39401,26 @@ var SearchInput = ({
           )
         }
       ),
-      query && /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(
-        import_ui148.Button,
+      query && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(
+        import_ui151.Button,
         {
           variant: "ghost",
           size: "icon",
           onClick: clearSearch,
           type: "button",
           className: "absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0",
-          children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_lucide_react130.X, { className: "h-4 w-4" })
+          children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react130.X, { className: "h-4 w-4" })
         }
       )
     ] }),
-    isSearching && /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2", children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" }) })
+    isSearching && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" }) })
   ] });
 };
 
 // src/components/layout/LanguageSwitcher.tsx
-var import_ui149 = require("@rentalshop/ui");
+var import_ui152 = require("@rentalshop/ui");
 var import_lucide_react131 = require("lucide-react");
-var import_jsx_runtime254 = require("react/jsx-runtime");
+var import_jsx_runtime258 = require("react/jsx-runtime");
 var LanguageSwitcher = ({
   variant = "default"
 }) => {
@@ -39307,9 +39428,9 @@ var LanguageSwitcher = ({
     window.dispatchEvent(new CustomEvent("languageChanged", { detail: language }));
   };
   if (variant === "compact") {
-    return /* @__PURE__ */ (0, import_jsx_runtime254.jsxs)("div", { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(
-        import_ui149.Button,
+    return /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+        import_ui152.Button,
         {
           variant: "ghost",
           size: "sm",
@@ -39318,8 +39439,8 @@ var LanguageSwitcher = ({
           children: "EN"
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(
-        import_ui149.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+        import_ui152.Button,
         {
           variant: "ghost",
           size: "sm",
@@ -39330,10 +39451,10 @@ var LanguageSwitcher = ({
       )
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime254.jsxs)("div", { className: "flex items-center gap-2", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(import_lucide_react131.Globe, { className: "w-4 h-4 text-text-tertiary" }),
-    /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(
-      import_ui149.Button,
+  return /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(import_lucide_react131.Globe, { className: "w-4 h-4 text-text-tertiary" }),
+    /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+      import_ui152.Button,
       {
         variant: "ghost",
         size: "sm",
@@ -39341,8 +39462,8 @@ var LanguageSwitcher = ({
         children: "EN"
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime254.jsx)(
-      import_ui149.Button,
+    /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+      import_ui152.Button,
       {
         variant: "ghost",
         size: "sm",
@@ -39354,10 +39475,10 @@ var LanguageSwitcher = ({
 };
 
 // src/components/layout/navigation.tsx
-var import_react101 = require("react");
+var import_react102 = require("react");
 var import_lucide_react132 = require("lucide-react");
-var import_ui150 = require("@rentalshop/ui");
-var import_jsx_runtime255 = require("react/jsx-runtime");
+var import_ui153 = require("@rentalshop/ui");
+var import_jsx_runtime259 = require("react/jsx-runtime");
 function Navigation({
   variant = "client",
   currentPage,
@@ -39367,7 +39488,7 @@ function Navigation({
   isCollapsed = false,
   userRole
 }) {
-  const [isOpen, setIsOpen] = (0, import_react101.useState)(false);
+  const [isOpen, setIsOpen] = (0, import_react102.useState)(false);
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: import_lucide_react132.Home },
     { href: "/products", label: "Products", icon: import_lucide_react132.Store },
@@ -39399,19 +39520,19 @@ function Navigation({
     return items;
   };
   const navItems = variant === "admin" ? filterNavItemsByRole(adminNavItems, userRole) : clientNavItems;
-  return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("nav", { className: "bg-nav-background text-nav-tint shadow-sm", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center justify-between h-16", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react132.Store, { className: "w-5 h-5 text-white" }) }) }),
-        !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "hidden md:block ml-10", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "flex items-baseline space-x-4", children: navItems.map((item) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("nav", { className: "bg-nav-background text-nav-tint shadow-sm", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { className: "flex items-center justify-between h-16", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { className: "flex items-center", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react132.Store, { className: "w-5 h-5 text-white" }) }) }),
+        !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "hidden md:block ml-10", children: /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "flex items-baseline space-x-4", children: navItems.map((item) => {
           const Icon2 = item.icon;
-          return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(
             "a",
             {
               href: item.href,
               className: `px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${currentPage === item.href ? "bg-brand-secondary text-white" : "text-nav-tint hover:text-gray-300"}`,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(Icon2, { className: "w-4 h-4 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(Icon2, { className: "w-4 h-4 mr-2" }),
                 !isCollapsed && item.label
               ]
             },
@@ -39419,47 +39540,47 @@ function Navigation({
           );
         }) }) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center space-x-4", children: [
-        !hideSidebar && allowCollapse && onCollapseToggle && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
-          import_ui150.Button,
+      /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { className: "flex items-center space-x-4", children: [
+        !hideSidebar && allowCollapse && onCollapseToggle && /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(
+          import_ui153.Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: onCollapseToggle,
             className: "text-nav-tint hover:text-gray-300",
             title: isCollapsed ? "Expand sidebar" : "Collapse sidebar",
-            children: isCollapsed ? /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react132.ChevronRight, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react132.ChevronLeft, { className: "w-4 h-4" })
+            children: isCollapsed ? /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react132.ChevronRight, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react132.ChevronLeft, { className: "w-4 h-4" })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(import_ui150.Button, { variant: "ghost", size: "sm", className: "text-nav-tint hover:text-gray-300", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react132.User, { className: "w-4 h-4 mr-2" }),
+        /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(import_ui153.Button, { variant: "ghost", size: "sm", className: "text-nav-tint hover:text-gray-300", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react132.User, { className: "w-4 h-4 mr-2" }),
           !isCollapsed && "Profile"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(import_ui150.Button, { variant: "ghost", size: "sm", className: "text-nav-tint hover:text-gray-300", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react132.LogOut, { className: "w-4 h-4 mr-2" }),
+        /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(import_ui153.Button, { variant: "ghost", size: "sm", className: "text-nav-tint hover:text-gray-300", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react132.LogOut, { className: "w-4 h-4 mr-2" }),
           !isCollapsed && "Logout"
         ] }),
-        !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "md:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
-          import_ui150.Button,
+        !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "md:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(
+          import_ui153.Button,
           {
             variant: "ghost",
             size: "sm",
             onClick: () => setIsOpen(!isOpen),
             className: "text-nav-tint hover:text-gray-300",
-            children: isOpen ? /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react132.X, { className: "w-6 h-6" }) : /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react132.Menu, { className: "w-6 h-6" })
+            children: isOpen ? /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react132.X, { className: "w-6 h-6" }) : /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react132.Menu, { className: "w-6 h-6" })
           }
         ) })
       ] })
     ] }) }),
-    !hideSidebar && isOpen && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "md:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { className: "px-2 pt-2 pb-3 space-y-1 sm:px-3", children: navItems.map((item) => {
+    !hideSidebar && isOpen && /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "md:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "px-2 pt-2 pb-3 space-y-1 sm:px-3", children: navItems.map((item) => {
       const Icon2 = item.icon;
-      return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(
         "a",
         {
           href: item.href,
           className: `block px-3 py-2 rounded-md text-base font-medium flex items-center ${currentPage === item.href ? "bg-brand-secondary text-white" : "text-nav-tint hover:text-gray-300"}`,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(Icon2, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(Icon2, { className: "w-4 h-4 mr-2" }),
             item.label
           ]
         },
@@ -39470,13 +39591,13 @@ function Navigation({
 }
 
 // src/components/layout/AdminSidebar.tsx
-var import_react102 = require("react");
+var import_react103 = require("react");
 var import_link3 = __toESM(require("next/link"));
 var import_navigation6 = require("next/navigation");
-var import_ui151 = require("@rentalshop/ui");
-var import_ui152 = require("@rentalshop/ui");
+var import_ui154 = require("@rentalshop/ui");
+var import_ui155 = require("@rentalshop/ui");
 var import_lucide_react133 = require("lucide-react");
-var import_jsx_runtime256 = require("react/jsx-runtime");
+var import_jsx_runtime260 = require("react/jsx-runtime");
 var adminMenuItems = [
   {
     label: "Dashboard",
@@ -39541,7 +39662,7 @@ var AdminSidebar = ({
   onCollapseToggle,
   notificationsCount = 0
 }) => {
-  const [expandedItems, setExpandedItems] = (0, import_react102.useState)([]);
+  const [expandedItems, setExpandedItems] = (0, import_react103.useState)([]);
   const pathname = (0, import_navigation6.usePathname)();
   const toggleExpanded = (href) => {
     setExpandedItems(
@@ -39559,64 +39680,64 @@ var AdminSidebar = ({
     const isExpanded = expandedItems.includes(item.href);
     const active = isActive(item.href);
     const Icon2 = item.icon;
-    return /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "flex items-center", children: hasSubItems ? /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(
-        import_ui152.Button,
+    return /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("div", { className: "flex items-center", children: hasSubItems ? /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)(
+        import_ui155.Button,
         {
           variant: "ghost",
           onClick: () => toggleExpanded(item.href),
-          className: (0, import_ui151.cn)(
+          className: (0, import_ui154.cn)(
             "flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group h-auto",
             active ? "bg-action-primary text-text-inverted" : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary"
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex items-center space-x-3", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(Icon2, { className: (0, import_ui151.cn)(
+            /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { className: "flex items-center space-x-3", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(Icon2, { className: (0, import_ui154.cn)(
                 "w-5 h-5 flex-shrink-0",
                 active ? "text-text-inverted" : "text-text-secondary"
               ) }),
-              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { className: "text-base", children: item.label })
+              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("span", { className: "text-base", children: item.label })
             ] }),
-            !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(import_lucide_react133.ChevronRight, { className: (0, import_ui151.cn)(
+            !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(import_lucide_react133.ChevronRight, { className: (0, import_ui154.cn)(
               "w-4 h-4 transition-transform duration-200",
               isExpanded ? "rotate-90" : ""
             ) })
           ]
         }
-      ) : /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(
+      ) : /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)(
         import_link3.default,
         {
           href: item.href,
-          className: (0, import_ui151.cn)(
+          className: (0, import_ui154.cn)(
             "flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group",
             active ? "bg-action-primary text-text-inverted" : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary"
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex items-center space-x-3", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(Icon2, { className: (0, import_ui151.cn)(
+            /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { className: "flex items-center space-x-3", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(Icon2, { className: (0, import_ui154.cn)(
                 "w-5 h-5 flex-shrink-0",
                 active ? "text-text-inverted" : "text-text-secondary"
               ) }),
-              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { className: "text-base", children: item.label })
+              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("span", { className: "text-base", children: item.label })
             ] }),
-            !isCollapsed && item.badge && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge })
+            !isCollapsed && item.badge && /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge })
           ]
         }
       ) }),
-      hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "ml-6 mt-1 space-y-1", children: item.subItems?.map((subItem) => {
+      hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("div", { className: "ml-6 mt-1 space-y-1", children: item.subItems?.map((subItem) => {
         const SubIcon = subItem.icon;
         const subActive = isActive(subItem.href);
-        return /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)(
           import_link3.default,
           {
             href: subItem.href,
-            className: (0, import_ui151.cn)(
+            className: (0, import_ui154.cn)(
               "flex items-center space-x-3 px-3 py-2 text-sm rounded-lg transition-colors duration-200",
               subActive ? "bg-action-primary/20 text-action-primary" : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary"
             ),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(SubIcon, { className: "w-4 h-4 flex-shrink-0" }),
-              /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { children: subItem.label })
+              /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(SubIcon, { className: "w-4 h-4 flex-shrink-0" }),
+              /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("span", { children: subItem.label })
             ]
           },
           subItem.href
@@ -39624,52 +39745,52 @@ var AdminSidebar = ({
       }) })
     ] }, item.href);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: (0, import_ui151.cn)(
+  return /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { className: (0, import_ui154.cn)(
     "flex flex-col h-full bg-bg-card border-r border-border transition-all duration-300",
     isCollapsed ? "w-16" : "w-64"
   ), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
-      !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(import_lucide_react133.Store, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("h1", { className: "text-lg font-bold text-text-primary", children: "RentalShop" }),
-          /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { className: "text-xs text-text-secondary", children: "Admin" })
+    /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
+      !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(import_lucide_react133.Store, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("h1", { className: "text-lg font-bold text-text-primary", children: "RentalShop" }),
+          /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("p", { className: "text-xs text-text-secondary", children: "Admin" })
         ] })
       ] }),
-      isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mx-auto", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(import_lucide_react133.Store, { className: "w-5 h-5 text-white" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(
-        import_ui152.Button,
+      isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mx-auto", children: /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(import_lucide_react133.Store, { className: "w-5 h-5 text-white" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(
+        import_ui155.Button,
         {
           variant: "ghost",
           size: "icon",
           onClick: onCollapseToggle,
           className: "h-8 w-8",
-          children: isCollapsed ? /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(import_lucide_react133.ChevronRight, { className: "h-4 w-4" }) : /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(import_lucide_react133.ChevronLeft, { className: "h-4 w-4" })
+          children: isCollapsed ? /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(import_lucide_react133.ChevronRight, { className: "h-4 w-4" }) : /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(import_lucide_react133.ChevronLeft, { className: "h-4 w-4" })
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: adminMenuItems.map((item) => renderMenuItem(item)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "p-4 border-t border-border", children: [
-      user && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex items-center space-x-3 mb-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(import_lucide_react133.User, { className: "w-4 h-4 text-white" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
-          /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { className: "text-xs text-text-secondary truncate", children: user.role })
+    /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: adminMenuItems.map((item) => renderMenuItem(item)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { className: "p-4 border-t border-border", children: [
+      user && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { className: "flex items-center space-x-3 mb-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(import_lucide_react133.User, { className: "w-4 h-4 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { className: "flex-1 min-w-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
+          /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("p", { className: "text-xs text-text-secondary truncate", children: user.role })
         ] })
       ] }),
-      user && isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "flex flex-col items-center space-y-2", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(import_lucide_react133.User, { className: "w-4 h-4 text-white" }) }) }),
-      onLogout && /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(
-        import_ui152.Button,
+      user && isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("div", { className: "flex flex-col items-center space-y-2", children: /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(import_lucide_react133.User, { className: "w-4 h-4 text-white" }) }) }),
+      onLogout && /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)(
+        import_ui155.Button,
         {
           variant: "ghost",
           onClick: onLogout,
-          className: (0, import_ui151.cn)(
+          className: (0, import_ui154.cn)(
             "w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary",
             isCollapsed && "justify-center px-2"
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(import_lucide_react133.LogOut, { className: "w-4 h-4" }),
-            !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { className: "ml-2", children: "Logout" })
+            /* @__PURE__ */ (0, import_jsx_runtime260.jsx)(import_lucide_react133.LogOut, { className: "w-4 h-4" }),
+            !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime260.jsx)("span", { className: "ml-2", children: "Logout" })
           ]
         }
       )
@@ -39678,12 +39799,12 @@ var AdminSidebar = ({
 };
 
 // src/components/layout/ClientSidebar.tsx
-var import_react103 = require("react");
+var import_react104 = require("react");
 var import_navigation7 = require("next/navigation");
-var import_ui153 = require("@rentalshop/ui");
-var import_ui154 = require("@rentalshop/ui");
+var import_ui156 = require("@rentalshop/ui");
+var import_ui157 = require("@rentalshop/ui");
 var import_lucide_react134 = require("lucide-react");
-var import_jsx_runtime257 = require("react/jsx-runtime");
+var import_jsx_runtime261 = require("react/jsx-runtime");
 var clientMenuItems = [
   {
     label: "Dashboard",
@@ -39751,10 +39872,10 @@ var ClientSidebar = ({
   onNavigate,
   onPrefetch
 }) => {
-  const [expandedItems, setExpandedItems] = (0, import_react103.useState)([]);
-  const [hoveredTab, setHoveredTab] = (0, import_react103.useState)(null);
-  const [clickedTab, setClickedTab] = (0, import_react103.useState)(null);
-  const [localCurrentPage, setLocalCurrentPage] = (0, import_react103.useState)(currentPath);
+  const [expandedItems, setExpandedItems] = (0, import_react104.useState)([]);
+  const [hoveredTab, setHoveredTab] = (0, import_react104.useState)(null);
+  const [clickedTab, setClickedTab] = (0, import_react104.useState)(null);
+  const [localCurrentPage, setLocalCurrentPage] = (0, import_react104.useState)(currentPath);
   const pathname = (0, import_navigation7.usePathname)();
   const filterMenuItemsByRole = (items, userRole) => {
     if (!userRole)
@@ -39771,10 +39892,10 @@ var ClientSidebar = ({
     return items;
   };
   const menuItems2 = filterMenuItemsByRole(clientMenuItems, user?.role);
-  (0, import_react103.useEffect)(() => {
+  (0, import_react104.useEffect)(() => {
     setLocalCurrentPage(currentPath);
   }, [currentPath]);
-  (0, import_react103.useEffect)(() => {
+  (0, import_react104.useEffect)(() => {
     const handleClickOutside = (event) => {
       const target = event.target;
       const isClickingNavItem = target.closest(".nav-item");
@@ -39817,9 +39938,9 @@ var ClientSidebar = ({
     const active = isActive(item.href);
     const isHovered = hoveredTab === item.href;
     const Icon2 = item.icon;
-    return /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "relative", children: [
-      hasSubItems ? /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)(
-        import_ui154.Button,
+    return /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "relative", children: [
+      hasSubItems ? /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)(
+        import_ui157.Button,
         {
           variant: "ghost",
           onClick: (e) => {
@@ -39829,29 +39950,29 @@ var ClientSidebar = ({
           },
           onMouseEnter: () => handleTabHover(item.href),
           onMouseLeave: () => setHoveredTab(null),
-          className: (0, import_ui153.cn)(
+          className: (0, import_ui156.cn)(
             "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
             active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
             isHovered ? "scale-[1.02]" : "",
             clickedTab === item.href ? "scale-[0.98]" : ""
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(Icon2, { className: (0, import_ui153.cn)(
+            /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(Icon2, { className: (0, import_ui156.cn)(
                 "w-4 h-4",
                 active ? "text-blue-600" : "text-text-secondary"
               ) }),
-              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("span", { children: item.label })
+              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("span", { children: item.label })
             ] }),
-            !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.ChevronDown, { className: (0, import_ui153.cn)(
+            !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.ChevronDown, { className: (0, import_ui156.cn)(
               "w-4 h-4 transition-transform duration-200",
               isExpanded ? "rotate-180" : ""
             ) }),
-            isHovered && !active && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
+            isHovered && !active && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
           ]
         }
-      ) : /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)(
-        import_ui154.Button,
+      ) : /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)(
+        import_ui157.Button,
         {
           variant: "ghost",
           onClick: (e) => {
@@ -39861,30 +39982,30 @@ var ClientSidebar = ({
           },
           onMouseEnter: () => handleTabHover(item.href),
           onMouseLeave: () => setHoveredTab(null),
-          className: (0, import_ui153.cn)(
+          className: (0, import_ui156.cn)(
             "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
             active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
             isHovered ? "scale-[1.02]" : "",
             clickedTab === item.href ? "scale-[0.98]" : ""
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(Icon2, { className: (0, import_ui153.cn)(
+            /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(Icon2, { className: (0, import_ui156.cn)(
                 "w-4 h-4",
                 active ? "text-blue-600" : "text-text-secondary"
               ) }),
-              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("span", { children: item.label })
+              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("span", { children: item.label })
             ] }),
-            !isCollapsed && item.badge && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge }),
-            isHovered && !active && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
+            !isCollapsed && item.badge && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge }),
+            isHovered && !active && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
           ]
         }
       ),
-      hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "ml-6 mt-1 space-y-1", "data-submenu": "true", children: item.subItems?.map((subItem) => {
+      hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "ml-6 mt-1 space-y-1", "data-submenu": "true", children: item.subItems?.map((subItem) => {
         const SubIcon = subItem.icon;
         const subActive = isActive(subItem.href);
-        return /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)(
-          import_ui154.Button,
+        return /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)(
+          import_ui157.Button,
           {
             variant: "ghost",
             onClick: (e) => {
@@ -39895,12 +40016,12 @@ var ClientSidebar = ({
                 setExpandedItems([]);
               }, 100);
             },
-            className: (0, import_ui153.cn)(
+            className: (0, import_ui156.cn)(
               "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg justify-start h-auto",
               subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600"
             ),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(SubIcon, { className: "w-4 h-4" }),
+              /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(SubIcon, { className: "w-4 h-4" }),
               subItem.label
             ]
           },
@@ -39909,65 +40030,65 @@ var ClientSidebar = ({
       }) })
     ] }, item.href);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: (0, import_ui153.cn)(
+  return /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: (0, import_ui156.cn)(
     "flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300",
     isCollapsed ? "w-16" : "w-64"
   ), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
-      !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.Building2, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }) })
+    /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
+      !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.Building2, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }) })
       ] }),
-      isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.Building2, { className: "w-5 h-5 text-white" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(
-        import_ui154.Button,
+      isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.Building2, { className: "w-5 h-5 text-white" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(
+        import_ui157.Button,
         {
           variant: "ghost",
           size: "icon",
           onClick: onCollapseToggle,
           className: "h-8 w-8 text-text-tertiary hover:text-text-primary",
-          children: isCollapsed ? /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.ChevronRight, { className: "h-4 w-4" }) : /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.ChevronLeft, { className: "h-4 w-4" })
+          children: isCollapsed ? /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.ChevronRight, { className: "h-4 w-4" }) : /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.ChevronLeft, { className: "h-4 w-4" })
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: menuItems2.map((item) => renderMenuItem(item)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "p-4 border-t border-border", children: [
-      user && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center space-x-3 mb-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.User, { className: "w-4 h-4 text-white" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
-          /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("p", { className: "text-xs text-text-tertiary truncate", children: user.role })
+    /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: menuItems2.map((item) => renderMenuItem(item)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "p-4 border-t border-border", children: [
+      user && !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "flex items-center space-x-3 mb-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.User, { className: "w-4 h-4 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "flex-1 min-w-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
+          /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("p", { className: "text-xs text-text-tertiary truncate", children: user.role })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "flex items-center space-x-2", children: cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "relative", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.ShoppingCart, { className: "w-4 h-4 text-text-tertiary" }),
-          /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
+        /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "flex items-center space-x-2", children: cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "relative", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.ShoppingCart, { className: "w-4 h-4 text-text-tertiary" }),
+          /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
         ] }) })
       ] }),
-      user && isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex flex-col items-center space-y-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.User, { className: "w-4 h-4 text-white" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center space-x-1", children: [
-          notificationsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "relative", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.Bell, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-danger rounded-full text-xs text-white flex items-center justify-center", children: notificationsCount })
+      user && isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "flex flex-col items-center space-y-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.User, { className: "w-4 h-4 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "flex items-center space-x-1", children: [
+          notificationsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "relative", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.Bell, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-danger rounded-full text-xs text-white flex items-center justify-center", children: notificationsCount })
           ] }),
-          cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "relative", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.ShoppingCart, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
+          cartItemsCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "relative", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.ShoppingCart, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
           ] })
         ] })
       ] }),
-      onLogout && /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)(
-        import_ui154.Button,
+      onLogout && /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)(
+        import_ui157.Button,
         {
           variant: "ghost",
           onClick: onLogout,
-          className: (0, import_ui153.cn)(
+          className: (0, import_ui156.cn)(
             "w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary text-sm font-normal",
             isCollapsed && "justify-center px-2"
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react134.LogOut, { className: "w-4 h-4" }),
-            !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("span", { className: "ml-2", children: "Logout" })
+            /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(import_lucide_react134.LogOut, { className: "w-4 h-4" }),
+            !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("span", { className: "ml-2", children: "Logout" })
           ]
         }
       )
@@ -39976,10 +40097,10 @@ var ClientSidebar = ({
 };
 
 // src/components/layout/layout.tsx
-var import_react104 = require("react");
+var import_react105 = require("react");
 var import_lucide_react135 = require("lucide-react");
-var import_ui155 = require("@rentalshop/ui");
-var import_jsx_runtime258 = require("react/jsx-runtime");
+var import_ui158 = require("@rentalshop/ui");
+var import_jsx_runtime262 = require("react/jsx-runtime");
 function Layout({
   variant = "client",
   currentPage,
@@ -39990,14 +40111,14 @@ function Layout({
   hideSidebar = false,
   allowCollapse = true
 }) {
-  const [sidebarOpen, setSidebarOpen] = (0, import_react104.useState)(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react104.useState)(false);
+  const [sidebarOpen, setSidebarOpen] = (0, import_react105.useState)(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react105.useState)(false);
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "min-h-screen bg-bg-primary", children: [
-    !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
-      import_ui155.Sidebar,
+  return /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)("div", { className: "min-h-screen bg-bg-primary", children: [
+    !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+      import_ui158.Sidebar,
       {
         user,
         isOpen: sidebarOpen,
@@ -40008,29 +40129,29 @@ function Layout({
         onCollapseToggle: allowCollapse ? handleCollapseToggle : void 0
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)(
       "div",
       {
         className: `${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`,
         style: { marginLeft: hideSidebar ? "0" : sidebarCollapsed ? "4rem" : "16rem" },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("div", { className: "bg-bg-card shadow-sm border-b border-border", children: /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "flex items-center justify-between h-16 px-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "flex items-center", children: [
-              !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
-                import_ui155.Button,
+          /* @__PURE__ */ (0, import_jsx_runtime262.jsx)("div", { className: "bg-bg-card shadow-sm border-b border-border", children: /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)("div", { className: "flex items-center justify-between h-16 px-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)("div", { className: "flex items-center", children: [
+              !hideSidebar && /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+                import_ui158.Button,
                 {
                   variant: "ghost",
                   size: "sm",
                   onClick: () => setSidebarOpen(true),
                   className: "md:hidden mr-2",
-                  children: /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(import_lucide_react135.Menu, { className: "w-5 h-5" })
+                  children: /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(import_lucide_react135.Menu, { className: "w-5 h-5" })
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("h2", { className: "text-lg font-semibold text-text-primary", children: variant === "admin" ? "Admin Panel" : "Rental Shop" })
+              /* @__PURE__ */ (0, import_jsx_runtime262.jsx)("h2", { className: "text-lg font-semibold text-text-primary", children: variant === "admin" ? "Admin Panel" : "Rental Shop" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("div", { className: "flex items-center space-x-4" })
+            /* @__PURE__ */ (0, import_jsx_runtime262.jsx)("div", { className: "flex items-center space-x-4" })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("main", { className: "p-6", children })
+          /* @__PURE__ */ (0, import_jsx_runtime262.jsx)("main", { className: "p-6", children })
         ]
       }
     )
@@ -40040,7 +40161,7 @@ function Layout({
 // src/components/layout/SubscriptionStatus.tsx
 var import_lucide_react136 = require("lucide-react");
 var import_hooks14 = require("@rentalshop/hooks");
-var import_jsx_runtime259 = require("react/jsx-runtime");
+var import_jsx_runtime263 = require("react/jsx-runtime");
 function SubscriptionStatus({ showDetails = false, className = "", currentUserRole }) {
   const {
     hasSubscription,
@@ -40058,17 +40179,17 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     // Use statusReason from API
   } = (0, import_hooks14.useSubscriptionStatusInfo)();
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
   }
   if (error2 || !hasSubscription) {
-    return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className, children: (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className, children: (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)(
       Button,
       {
         variant: "outline",
         size: "sm",
         onClick: () => window.location.href = "/plans",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.CreditCard, { className: "h-4 w-4 mr-2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.CreditCard, { className: "h-4 w-4 mr-2" }),
           "Get Started"
         ]
       }
@@ -40077,19 +40198,19 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   const getStatusIcon5 = () => {
     switch (status) {
       case "TRIAL":
-        return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.Zap, { className: "h-4 w-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.Zap, { className: "h-4 w-4" });
       case "ACTIVE":
-        return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.CheckCircle, { className: "h-4 w-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.CheckCircle, { className: "h-4 w-4" });
       case "EXPIRED":
-        return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.AlertTriangle, { className: "h-4 w-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.AlertTriangle, { className: "h-4 w-4" });
       case "CANCELED":
-        return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.AlertTriangle, { className: "h-4 w-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.AlertTriangle, { className: "h-4 w-4" });
       case "PAST_DUE":
-        return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.CreditCard, { className: "h-4 w-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.CreditCard, { className: "h-4 w-4" });
       case "PAUSED":
-        return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.Clock, { className: "h-4 w-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.Clock, { className: "h-4 w-4" });
       default:
-        return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.Clock, { className: "h-4 w-4" });
+        return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.Clock, { className: "h-4 w-4" });
     }
   };
   const getStatusVariant = () => {
@@ -40150,23 +40271,23 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   };
   const shouldShowAction = status === "EXPIRED" || status === "CANCELED" || status === "PAST_DUE" || isExpiringSoon;
   if (showDetails) {
-    return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(Card2, { className: `border-l-4 ${getBorderColor()} ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(CardContent2, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { className: "flex items-center space-x-3", children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(Card2, { className: `border-l-4 ${getBorderColor()} ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(CardContent2, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "flex items-center space-x-3", children: [
         getStatusIcon5(),
-        /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "font-medium text-gray-900", children: planName }),
-          /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "text-sm text-gray-600", children: getStatusText() })
+        /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "font-medium text-gray-900", children: planName }),
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-sm text-gray-600", children: getStatusText() })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(StatusBadge, { status, type: "subscription", variant: "solid" }),
-        (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(StatusBadge, { status, type: "subscription", variant: "solid" }),
+        (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)(
           Button,
           {
             size: "sm",
             onClick: () => window.location.href = "/plans",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.TrendingUp, { className: "h-4 w-4 mr-2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.TrendingUp, { className: "h-4 w-4 mr-2" }),
               status === "EXPIRED" || status === "CANCELED" ? "Renew" : "Upgrade"
             ]
           }
@@ -40174,22 +40295,22 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
       ] })
     ] }) }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { className: `flex items-center space-x-2 ${className}`, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: `flex items-center space-x-2 ${className}`, children: [
     getStatusIcon5(),
-    /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("span", { className: "font-medium", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("span", { className: "font-medium", children: [
       planName,
       " - ",
       getStatusText()
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(StatusBadge, { status, type: "subscription", variant: "solid", size: "sm" }),
-    (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(StatusBadge, { status, type: "subscription", variant: "solid", size: "sm" }),
+    (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)(
       Button,
       {
         variant: "outline",
         size: "sm",
         onClick: () => window.location.href = "/plans",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(import_lucide_react136.TrendingUp, { className: "h-4 w-4 mr-2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_lucide_react136.TrendingUp, { className: "h-4 w-4 mr-2" }),
           status === "EXPIRED" || status === "CANCELED" ? "Renew" : "Upgrade"
         ]
       }
@@ -40205,6 +40326,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   AddCategoryDialog,
   AddCustomerDialog,
   AddCustomerForm,
+  AddUserDialog,
   AdminPageHeader,
   AdminSidebar,
   AdminStatusBadge,
@@ -40253,10 +40375,13 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   CardTitleClean,
   CardTitleColorful,
   Categories,
+  CategoriesLoading,
   CategoryActions,
   CategoryCard,
+  CategoryDetailLoading,
   CategoryFilters,
   CategoryForm,
+  CategoryFormContent,
   CategoryGrid,
   CategoryHeader,
   CategorySearch,
@@ -40370,6 +40495,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   Orders,
   OrdersList,
   OrdersLoading,
+  OutletDetailLoading,
   OutletFilters,
   OutletGrid,
   OutletHeader,
@@ -40379,6 +40505,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   OutletSelect,
   OutletTable,
   Outlets,
+  OutletsLoading,
   PageContent,
   PageHeader,
   PageSection,
