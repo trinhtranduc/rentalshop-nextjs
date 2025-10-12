@@ -7,6 +7,7 @@ import {
   PageTitle,
   PageContent,
   Categories,
+  CategoriesLoading,
   useToast,
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ export default function CategoriesPage() {
   // Dialog states
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
@@ -267,8 +269,19 @@ export default function CategoriesPage() {
     );
   }
 
-  // Add category dialog state
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  if (loading && !data) {
+    return (
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
+          <PageTitle>Categories</PageTitle>
+          <p className="text-sm text-gray-600">Manage your product categories</p>
+        </PageHeader>
+        <div className="flex-1 min-h-0 overflow-auto">
+          <CategoriesLoading />
+        </div>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">

@@ -6,7 +6,9 @@ import {
   PageHeader,
   PageTitle,
   Products,
+  ProductsLoading,
   useToast,
+  ProductAddDialog,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -60,6 +62,7 @@ export default function ProductsPage() {
   // Dialog states
   const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productToDelete, setProductToDelete] = useState<ProductWithDetails | null>(null);
@@ -386,13 +389,13 @@ export default function ProductsPage() {
 
   if (loading && !data) {
     return (
-      <PageWrapper>
-        <PageHeader>
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
           <PageTitle>Products</PageTitle>
           <p className="text-sm text-gray-600">Manage your product catalog</p>
         </PageHeader>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading products...</div>
+        <div className="flex-1 min-h-0 overflow-auto">
+          <ProductsLoading />
         </div>
       </PageWrapper>
     );
@@ -420,7 +423,7 @@ export default function ProductsPage() {
               </Button>
             )}
             <Button 
-              onClick={() => router.push('/products/create')}
+              onClick={() => setShowAddDialog(true)}
               variant="success"
               size="sm"
             >
@@ -463,6 +466,34 @@ export default function ProductsPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Add Product Dialog */}
+      <ProductAddDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        categories={categories}
+        outlets={outlets}
+        merchantId={String(user?.merchantId || user?.merchant?.id || 0)}
+        onProductCreated={async (productData: any) => {
+          try {
+            const response = await productsApi.createProduct(productData);
+            
+            if (response.success) {
+              toastSuccess('Product Created', `Product "${productData.name}" has been created successfully`);
+              router.refresh();
+            } else {
+              throw new Error(response.error || 'Failed to create product');
+            }
+          } catch (error) {
+            console.error('Error creating product:', error);
+            toastError('Error', error instanceof Error ? error.message : 'Failed to create product');
+            throw error; // Re-throw to let dialog handle it
+          }
+        }}
+        onError={(error) => {
+          toastError('Error', error);
+        }}
+      />
 
       {/* Edit Product Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

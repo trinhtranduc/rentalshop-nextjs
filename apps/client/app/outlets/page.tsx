@@ -7,6 +7,7 @@ import {
   PageTitle,
   PageContent,
   Outlets,
+  OutletsLoading,
   useToast,
   Dialog,
   DialogContent,
@@ -309,14 +310,14 @@ export default function OutletsPage() {
   }
 
   if (loading && !data) {
-  return (
-    <PageWrapper>
-      <PageHeader>
+    return (
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
           <PageTitle>Outlets</PageTitle>
           <p className="text-sm text-gray-600">Manage your business outlets</p>
         </PageHeader>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading outlets...</div>
+        <div className="flex-1 min-h-0 overflow-auto">
+          <OutletsLoading />
         </div>
       </PageWrapper>
     );
