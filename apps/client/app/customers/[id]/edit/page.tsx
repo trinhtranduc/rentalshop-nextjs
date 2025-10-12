@@ -11,7 +11,8 @@ import {
   PageHeader,
   PageTitle,
   CustomerPageHeader,
-  EditCustomerForm
+  EditCustomerForm,
+  Button
 } from '@rentalshop/ui';
 
 export default function EditCustomerPage() {
@@ -130,12 +131,13 @@ export default function EditCustomerPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Customer Not Found</h1>
             <p className="text-gray-600 mb-6">The customer you're looking for doesn't exist or has been removed.</p>
-            <button 
+            <Button 
               onClick={() => router.push('/customers')}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              variant="default"
+              size="sm"
             >
               Back to Customers
-            </button>
+            </Button>
           </div>
         </PageContent>
       </PageWrapper>

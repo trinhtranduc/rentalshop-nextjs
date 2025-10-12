@@ -1,5 +1,5 @@
 'use client'
-import { useToast } from '@rentalshop/ui';
+import { useToast, Button } from '@rentalshop/ui';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -90,12 +90,13 @@ export default function AddCustomerPage() {
             <div className="text-red-600 text-lg font-medium">
               Unable to create customer. Please log in again.
             </div>
-            <button
+            <Button
               onClick={handleCancel}
-              className="mt-4 text-blue-600 hover:text-blue-800 underline"
+              variant="link"
+              className="mt-4"
             >
               Back to Customers
-            </button>
+            </Button>
           </div>
         </PageContent>
       </PageWrapper>

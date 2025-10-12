@@ -8,7 +8,8 @@ import {
   PageHeader,
   PageTitle,
   PageContent,
-  Breadcrumb
+  Breadcrumb,
+  Button
 } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ProductOrdersView } from '@rentalshop/ui';
@@ -87,12 +88,13 @@ export default function ProductOrdersPage() {
             <p className="text-muted-foreground mb-4">
               {error || 'The product you are looking for could not be found.'}
             </p>
-            <button 
+            <Button 
               onClick={handleBack}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+              variant="default"
+              size="sm"
             >
               Back to Products
-            </button>
+            </Button>
           </div>
         </PageContent>
       </PageWrapper>
