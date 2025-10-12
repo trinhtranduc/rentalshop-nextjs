@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { useUserRole } from '@rentalshop/hooks';
+import { ProductAddDialog } from './ProductAddDialog';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
@@ -147,6 +148,16 @@ export function ProductActions({
         </CardContent>
       </Card>
 
+      {/* Product Add Dialog */}
+      <ProductAddDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        categories={categories}
+        outlets={outlets}
+        merchantId={String(merchantId)}
+        onProductCreated={onProductCreated}
+        onError={onError}
+      />
 
     </>
   );

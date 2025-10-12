@@ -49,6 +49,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const [internalOptions, setInternalOptions] = React.useState<SearchableOption[]>(options || []);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   const onSearchRef = React.useRef(onSearch);
+  const debounceTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Update ref when onSearch changes
   React.useEffect(() => {
@@ -66,11 +67,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   }, [onSearch, options]);
 
-  // Search effect for dynamic search mode
+  // Search effect for dynamic search mode with debounce mechanism
   React.useEffect(() => {
     let active = true;
-    const run = async () => {
+    const DEBOUNCE_DELAY = 300; // 300ms debounce
+    
+    // Clear any existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    const runSearch = async () => {
       const currentOnSearch = onSearchRef.current;
+      
       if (currentOnSearch && query.trim()) {  // Only search if query has content
         console.log('🔍 SearchableSelect: Making API call for query:', query);
         const res = await currentOnSearch(query);
@@ -84,11 +93,22 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         setInternalOptions([]);
       }
     };
-    // debounce 300ms to reduce API calls
-    const t = setTimeout(run, 300);
+    
+    if (query.trim()) {
+      // Debounce: wait for user to stop typing before searching
+      debounceTimeoutRef.current = setTimeout(() => {
+        runSearch();
+      }, DEBOUNCE_DELAY);
+    } else if (!query.trim() && !value) {
+      // Clear results immediately for empty query
+      setInternalOptions([]);
+    }
+    
     return () => {
       active = false;
-      clearTimeout(t);
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
     };
   }, [query, value]); // Depend on both query and value
 
