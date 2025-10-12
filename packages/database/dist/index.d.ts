@@ -2701,6 +2701,23 @@ declare const db: {
             updatedAt: Date;
             description: string | null;
         }>;
+        search: (filters: any) => Promise<{
+            data: {
+                name: string;
+                id: number;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+                description: string | null;
+                _count: {
+                    products: number;
+                };
+            }[];
+            total: number;
+            page: any;
+            limit: any;
+            hasMore: boolean;
+        }>;
         getStats: (where?: any) => Promise<number>;
     };
     auditLogs: {

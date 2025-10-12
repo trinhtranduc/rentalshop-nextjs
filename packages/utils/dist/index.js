@@ -10752,7 +10752,7 @@ async function assertPlanLimit(merchantId, entityType) {
     );
   }
 }
-exports.loginSchema = void 0; exports.registerSchema = void 0; var outletStockItemSchema; exports.productCreateSchema = void 0; exports.productUpdateSchema = void 0; exports.productsQuerySchema = void 0; exports.rentalSchema = void 0; exports.customerCreateSchema = void 0; exports.customerUpdateSchema = void 0; exports.customersQuerySchema = void 0; var orderTypeEnum, orderStatusEnum; exports.ordersQuerySchema = void 0; var orderItemSchema, baseOrderSchema; exports.orderCreateSchema = void 0; exports.orderUpdateSchema = void 0; var userRoleEnum; exports.usersQuerySchema = void 0; exports.userCreateSchema = void 0; exports.userUpdateSchema = void 0; exports.outletsQuerySchema = void 0; exports.outletCreateSchema = void 0; exports.outletUpdateSchema = void 0; exports.planCreateSchema = void 0; exports.planUpdateSchema = void 0; exports.plansQuerySchema = void 0; exports.planVariantCreateSchema = void 0; exports.planVariantUpdateSchema = void 0; exports.planVariantsQuerySchema = void 0; exports.subscriptionCreateSchema = void 0; exports.subscriptionUpdateSchema = void 0; exports.subscriptionsQuerySchema = void 0;
+exports.loginSchema = void 0; exports.registerSchema = void 0; var outletStockItemSchema; exports.productCreateSchema = void 0; exports.productUpdateSchema = void 0; exports.productsQuerySchema = void 0; exports.rentalSchema = void 0; exports.customerCreateSchema = void 0; exports.customerUpdateSchema = void 0; exports.customersQuerySchema = void 0; var orderTypeEnum, orderStatusEnum; exports.ordersQuerySchema = void 0; var orderItemSchema, baseOrderSchema; exports.orderCreateSchema = void 0; exports.orderUpdateSchema = void 0; var userRoleEnum; exports.usersQuerySchema = void 0; exports.userCreateSchema = void 0; exports.userUpdateSchema = void 0; exports.outletsQuerySchema = void 0; exports.categoriesQuerySchema = void 0; exports.outletCreateSchema = void 0; exports.outletUpdateSchema = void 0; exports.planCreateSchema = void 0; exports.planUpdateSchema = void 0; exports.plansQuerySchema = void 0; exports.planVariantCreateSchema = void 0; exports.planVariantUpdateSchema = void 0; exports.planVariantsQuerySchema = void 0; exports.subscriptionCreateSchema = void 0; exports.subscriptionUpdateSchema = void 0; exports.subscriptionsQuerySchema = void 0;
 var init_validation = __esm({
   "src/core/validation.ts"() {
     init_src();
@@ -11046,6 +11046,27 @@ var init_validation = __esm({
       sortOrder: zod.z.enum(["asc", "desc"]).optional(),
       page: zod.z.coerce.number().int().min(1).default(1),
       limit: zod.z.coerce.number().int().min(1).max(100).default(50),
+      offset: zod.z.coerce.number().int().min(0).optional()
+    });
+    exports.categoriesQuerySchema = zod.z.object({
+      q: zod.z.string().optional(),
+      // Search by category name
+      search: zod.z.string().optional(),
+      // Alias for backward compatibility
+      merchantId: zod.z.coerce.number().int().positive().optional(),
+      isActive: zod.z.union([zod.z.string(), zod.z.boolean()]).transform((v) => {
+        if (typeof v === "boolean")
+          return v;
+        if (v === void 0)
+          return void 0;
+        if (v === "all")
+          return "all";
+        return v === "true";
+      }).optional(),
+      sortBy: zod.z.enum(["name", "createdAt", "updatedAt"]).default("name").optional(),
+      sortOrder: zod.z.enum(["asc", "desc"]).default("asc").optional(),
+      page: zod.z.coerce.number().int().min(1).default(1),
+      limit: zod.z.coerce.number().int().min(1).max(100).default(25),
       offset: zod.z.coerce.number().int().min(0).optional()
     });
     exports.outletCreateSchema = zod.z.object({

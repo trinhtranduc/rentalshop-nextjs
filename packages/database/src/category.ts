@@ -137,8 +137,8 @@ export const search = async (filters: any) => {
   if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
   if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
   
-  // Text search by category name
-  const searchTerm = whereFilters.search?.trim();
+  // Text search by category name - accept both 'q' and 'search' parameters
+  const searchTerm = (whereFilters.q || whereFilters.search)?.trim();
   console.log('🔍 DB category.search - searchTerm:', searchTerm, 'length:', searchTerm?.length);
   
   if (searchTerm && searchTerm.length > 0) {
@@ -211,5 +211,6 @@ export const simplifiedCategories = {
   create,
   update,
   delete: deleteCategory,
+  search,
   getStats
 };
