@@ -189,6 +189,7 @@ export default function DashboardPage() {
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
   const [todayOrders, setTodayOrders] = useState<any[]>([]);
   const [orderStatusCounts, setOrderStatusCounts] = useState<any>({});
+  const [currentDateRange, setCurrentDateRange] = useState<{startDate: string, endDate: string}>({startDate: '', endDate: ''});
 
   // Function to update URL when time period changes
   const updateTimePeriod = (newPeriod: 'today' | 'month' | 'year') => {
@@ -265,6 +266,9 @@ export default function DashboardPage() {
         endDate,
         groupBy
       };
+
+      // Store current date range for chart titles
+      setCurrentDateRange({ startDate, endDate });
 
       console.log(`📊 Fetching dashboard data for ${timePeriod} period:`, {
         startDate: defaultFilters.startDate,
@@ -499,11 +503,34 @@ export default function DashboardPage() {
 
   const getOrderData = () => {
     // Transform order data to match chart component expectations
-    return orderData.map((item: any) => ({
-      period: `${item.month} ${item.year}`,
-      actual: item.orderCount || 0,
-      projected: item.orderCount || 0 // Use same value for both actual and projected
-    }));
+    return orderData.map((item: any) => {
+      // Handle different date formats from API
+      let periodLabel: string;
+      
+      if (item.period) {
+        // Order Analytics API returns format like "2025-10-02" or "2025-10"
+        const date = new Date(item.period);
+        // Determine if it's day or month format based on string length
+        if (item.period.includes('-') && item.period.split('-').length === 3) {
+          // Day format: "2025-10-02"
+          periodLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } else {
+          // Month format: "2025-10"
+          periodLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        }
+      } else if (item.month && item.year) {
+        // Income Analytics API returns format like "Oct 2025"
+        periodLabel = `${item.month} ${item.year}`;
+      } else {
+        periodLabel = 'Unknown';
+      }
+      
+      return {
+        period: periodLabel,
+        actual: item.count || item.orderCount || 0,
+        projected: item.count || item.orderCount || 0
+      };
+    });
   };
 
   const getTopProducts = () => {
@@ -529,23 +556,7 @@ export default function DashboardPage() {
   return (
     <div className="h-full overflow-y-auto">
       <PageWrapper>
-      <PageHeader>
-        <div className="flex items-center justify-between">
-          <PageTitle>Dashboard</PageTitle>
-          <button
-            onClick={() => {
-              console.log('🔄 Manual refresh triggered');
-              fetchDashboardData();
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
-          </button>
-        </div>
-      </PageHeader>
+      
       <PageContent>
         {/* Welcome Header */}
         <div className="mb-8">
@@ -557,7 +568,7 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-gray-600">
                   {timePeriod === 'today' 
-                    ? "Here&apos;s what&apos;s happening with your rental business today"
+                    ? "Here's what's happening with your rental business today"
                     : timePeriod === 'month'
                     ? `Monthly overview of your rental business performance for ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
                     : `Annual performance and strategic insights for ${new Date().getFullYear()}`
@@ -815,8 +826,8 @@ export default function DashboardPage() {
                   <CardHeaderClean>
                     <CardTitleClean size="md">
                       {timePeriod === 'month' 
-                        ? `${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Revenue`
-                        : `${new Date().getFullYear()} Revenue`
+                        ? `${new Date(currentDateRange.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Revenue`
+                        : `${new Date(currentDateRange.startDate).getFullYear()} Revenue`
                       }
                     </CardTitleClean>
                   </CardHeaderClean>
@@ -829,8 +840,8 @@ export default function DashboardPage() {
                 <CardHeaderClean>
                   <CardTitleClean size="md">
                     {timePeriod === 'month' 
-                      ? `${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Rentals`
-                      : `${new Date().getFullYear()} Rentals`
+                      ? `${new Date(currentDateRange.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Rentals`
+                      : `${new Date(currentDateRange.startDate).getFullYear()} Rentals`
                     }
                   </CardTitleClean>
                 </CardHeaderClean>

@@ -14,9 +14,49 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
   
   try {
     const { searchParams } = new URL(request.url);
-    console.log('Search params:', Object.fromEntries(searchParams.entries()));
+    const hasSearchParams = searchParams.toString().length > 0;
+    console.log('Search params:', Object.fromEntries(searchParams.entries()), 'Has params:', hasSearchParams);
     
-    // Validate query parameters
+    // Determine merchantId based on role
+    let filterMerchantId: number | undefined;
+    
+    if (user.role === 'ADMIN') {
+      // Admin can see any merchant's categories or all categories
+      filterMerchantId = undefined;
+    } else if (user.role === 'MERCHANT' || user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      // Non-admin users restricted to their merchant
+      filterMerchantId = userScope.merchantId;
+      
+      // For outlet users, get merchant from outlet
+      if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId && !filterMerchantId) {
+        const outlet = await db.outlets.findById(userScope.outletId);
+        if (outlet) {
+          filterMerchantId = outlet.merchantId;
+        }
+      }
+    }
+    
+    // SIMPLE LIST MODE: No search params → Return simple array for dropdowns
+    if (!hasSearchParams) {
+      console.log('🔍 Simple list mode - returning array for dropdowns');
+      
+      const where: any = { isActive: true };
+      if (filterMerchantId) where.merchantId = filterMerchantId;
+      
+      const categories = await db.categories.findMany({
+        where,
+        orderBy: { name: 'asc' }
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: categories
+      });
+    }
+    
+    // SEARCH MODE: Has search params → Return pagination structure
+    console.log('🔍 Search mode - returning pagination structure');
+    
     const parsed = categoriesQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
@@ -42,23 +82,9 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
       q, search, queryMerchantId, isActive, sortBy, sortOrder, page, limit
     });
 
-    // Determine merchantId based on role
-    let filterMerchantId: number | undefined;
-    
-    if (user.role === 'ADMIN') {
-      // Admin can see any merchant's categories or all categories
-      filterMerchantId = queryMerchantId || undefined;
-    } else if (user.role === 'MERCHANT' || user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-      // Non-admin users restricted to their merchant
-      filterMerchantId = userScope.merchantId;
-      
-      // For outlet users, get merchant from outlet
-      if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId && !filterMerchantId) {
-        const outlet = await db.outlets.findById(userScope.outletId);
-        if (outlet) {
-          filterMerchantId = outlet.merchantId;
-        }
-      }
+    // Override merchantId from query if admin
+    if (user.role === 'ADMIN' && queryMerchantId) {
+      filterMerchantId = queryMerchantId;
     }
 
     console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);

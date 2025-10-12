@@ -227,18 +227,18 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             onMouseEnter={() => handleTabHover(item.href)}
             onMouseLeave={() => setHoveredTab(null)}
             className={cn(
-              'nav-item flex items-center justify-between w-full px-3 py-2 text-base font-medium rounded-md transition-all duration-150 ease-out relative',
+              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative',
               active 
-                ? 'text-blue-600 bg-blue-50 shadow-sm' 
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50',
-              isHovered ? 'scale-105' : '',
-              clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''
+                ? 'text-blue-600 font-medium' 
+                : 'text-text-primary hover:text-blue-600 hover:bg-bg-secondary',
+              isHovered ? 'scale-[1.02]' : '',
+              clickedTab === item.href ? 'scale-[0.98]' : ''
             )}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
                 'w-4 h-4',
-                active ? 'text-blue-600' : 'text-gray-500'
+                active ? 'text-blue-600' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -253,7 +253,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             
             {/* Hover effect */}
             {isHovered && !active && (
-              <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
+              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200"></div>
             )}
           </button>
         ) : (
@@ -266,18 +266,18 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             onMouseEnter={() => handleTabHover(item.href)}
             onMouseLeave={() => setHoveredTab(null)}
             className={cn(
-              'nav-item flex items-center justify-between w-full px-3 py-2 text-base font-medium rounded-md transition-all duration-150 ease-out relative',
+              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative',
               active 
-                ? 'text-blue-600 bg-blue-50 shadow-sm' 
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50',
-              isHovered ? 'scale-105' : '',
-              clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''
+                ? 'text-blue-600 font-medium' 
+                : 'text-text-primary hover:text-blue-600 hover:bg-bg-secondary',
+              isHovered ? 'scale-[1.02]' : '',
+              clickedTab === item.href ? 'scale-[0.98]' : ''
             )}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
                 'w-4 h-4',
-                active ? 'text-blue-600' : 'text-gray-500'
+                active ? 'text-blue-600' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -291,7 +291,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             
             {/* Hover effect */}
             {isHovered && !active && (
-              <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
+              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200"></div>
             )}
           </button>
         )}
@@ -316,8 +316,8 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
                     }, 100);
                   }}
                   className={cn(
-                    'w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors rounded-md',
-                    subActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                    'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg',
+                    subActive ? 'text-blue-600 font-medium' : 'text-text-primary hover:text-blue-600'
                   )}
                 >
                   <SubIcon className="w-4 h-4" />
@@ -333,24 +333,24 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
 
   return (
     <div className={cn(
-      'flex flex-col h-full bg-white border-r border-gray-200 shadow-sm transition-all duration-300',
+      'flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300',
       isCollapsed ? 'w-16' : 'w-64'
     )}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
+            <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">RentalShop</h1>
+              <h1 className="text-lg font-semibold text-text-primary">RentalShop</h1>
             </div>
           </div>
         )}
         
         {isCollapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mx-auto shadow-sm">
+          <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm">
             <Building2 className="w-5 h-5 text-white" />
           </div>
         )}
@@ -359,7 +359,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
           variant="ghost"
           size="icon"
           onClick={onCollapseToggle}
-          className="h-8 w-8 text-gray-500 hover:text-gray-900"
+          className="h-8 w-8 text-text-tertiary hover:text-text-primary"
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -376,25 +376,25 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       </nav>
 
       {/* User Profile & Actions */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-border">
         {user && !isCollapsed && (
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-base font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-text-primary truncate">
                 {user.name || user.email}
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-text-tertiary truncate">
                 {user.role}
               </p>
             </div>
             <div className="flex items-center space-x-2">
               {cartItemsCount > 0 && (
                 <div className="relative">
-                  <ShoppingCart className="w-4 h-4 text-gray-500" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <ShoppingCart className="w-4 h-4 text-text-tertiary" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center">
                     {cartItemsCount}
                   </span>
                 </div>
@@ -411,16 +411,16 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             <div className="flex items-center space-x-1">
               {notificationsCount > 0 && (
                 <div className="relative">
-                  <Bell className="w-4 h-4 text-gray-500" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <Bell className="w-4 h-4 text-text-tertiary" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-action-danger rounded-full text-xs text-white flex items-center justify-center">
                     {notificationsCount}
                   </span>
                 </div>
               )}
               {cartItemsCount > 0 && (
                 <div className="relative">
-                  <ShoppingCart className="w-4 h-4 text-gray-500" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <ShoppingCart className="w-4 h-4 text-text-tertiary" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center">
                     {cartItemsCount}
                   </span>
                 </div>
@@ -434,7 +434,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             variant="ghost"
             onClick={onLogout}
             className={cn(
-              'w-full justify-start text-gray-500 hover:text-gray-900 hover:bg-gray-50',
+              'w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary text-sm font-normal',
               isCollapsed && 'justify-center px-2'
             )}
           >
