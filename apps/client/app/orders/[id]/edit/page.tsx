@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CreateOrderForm, Breadcrumb, FormSkeleton, PageWrapper, useToast } from '@rentalshop/ui';
+import { CreateOrderForm, Breadcrumb, FormSkeleton, PageWrapper, useToast, Button } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 import { 
@@ -360,12 +360,13 @@ export default function EditOrderPage() {
           </div>
           <FormSkeleton />
           <div className="mt-6 text-center">
-            <button 
+            <Button 
               onClick={() => window.location.reload()} 
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              variant="default"
+              size="sm"
             >
               Retry Loading
-            </button>
+            </Button>
           </div>
       </PageWrapper>
     );
@@ -384,18 +385,20 @@ export default function EditOrderPage() {
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Order</h1>
             <p className="text-gray-600 mb-6">{error}</p>
             <div className="space-y-3">
-              <button 
+              <Button 
                 onClick={() => router.back()} 
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                variant="default"
+                className="w-full"
               >
                 Go Back
-              </button>
-              <button 
+              </Button>
+              <Button 
                 onClick={() => router.push('/orders')} 
-                className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                variant="outline"
+                className="w-full"
               >
                 View All Orders
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -416,18 +419,20 @@ export default function EditOrderPage() {
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
             <p className="text-gray-600 mb-6">The order you're looking for could not be found.</p>
             <div className="space-y-3">
-              <button 
+              <Button 
                 onClick={() => router.back()} 
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                variant="default"
+                className="w-full"
               >
                 Go Back
-              </button>
-              <button 
+              </Button>
+              <Button 
                 onClick={() => router.push('/orders')} 
-                className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                variant="outline"
+                className="w-full"
               >
                 View All Orders
-              </button>
+              </Button>
             </div>
           </div>
         </div>

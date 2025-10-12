@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { usersApi } from "@rentalshop/utils";
 import type { UserCreateInput, BreadcrumbItem } from '@rentalshop/ui';
-import { useToast, PageWrapper, Breadcrumb } from '@rentalshop/ui';
+import { useToast, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 
 export default function AddUserPage() {
@@ -107,12 +108,14 @@ export default function AddUserPage() {
       {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-2">
-            <button
+            <Button
               onClick={handleCancel}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              variant="link"
+              size="sm"
             >
-              ← Back to Users
-            </button>
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back to Users
+            </Button>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Add New User</h1>
           <p className="text-gray-600 mt-1">Create a new user account with appropriate role and organization assignment.</p>

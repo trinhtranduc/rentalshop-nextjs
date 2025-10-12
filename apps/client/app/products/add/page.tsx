@@ -7,7 +7,8 @@ import {
   PageHeader,
   PageTitle,
   PageContent,
-  ProductsLoading
+  ProductsLoading,
+  Button
 } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 import { 
@@ -168,12 +169,12 @@ export default function ProductAddPage() {
             <p className="text-muted-foreground mb-4">
               {error}
             </p>
-            <button 
+            <Button 
               onClick={() => window.location.reload()} 
-              className="text-primary hover:underline"
+              variant="link"
             >
               Try again
-            </button>
+            </Button>
           </div>
         </PageContent>
       </PageWrapper>
@@ -201,27 +202,27 @@ export default function ProductAddPage() {
             </p>
             <div className="flex justify-center space-x-4">
               {categories.length === 0 && (
-                <button 
+                <Button 
                   onClick={() => router.push('/categories')} 
-                  className="text-primary hover:underline"
+                  variant="link"
                 >
                   Go to Categories
-                </button>
+                </Button>
               )}
               {outlets.length === 0 && (
-                <button 
+                <Button 
                   onClick={() => router.push('/outlets')} 
-                  className="text-primary hover:underline"
+                  variant="link"
                 >
                   Go to Outlets
-                </button>
+                </Button>
               )}
-              <button 
+              <Button 
                 onClick={() => router.push('/products')} 
-                className="text-primary hover:underline"
+                variant="link"
               >
                 Back to Products
-              </button>
+              </Button>
             </div>
           </div>
         </PageContent>
