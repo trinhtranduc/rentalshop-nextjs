@@ -13,9 +13,6 @@
   },
   "environments": {
     "development": {
-      "build": {
-        "buildCommand": "yarn build"
-      },
       "deploy": {
         "startCommand": "cd apps/api && yarn dev",
         "healthcheckPath": "/api/health",
