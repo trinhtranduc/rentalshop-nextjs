@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   CardClean, 
   CardHeaderClean, 
@@ -155,7 +156,13 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toastError, toastSuccess } = useToast();
-  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>('today');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get timePeriod from URL params or default to 'today'
+  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(
+    (searchParams.get('period') as 'today' | 'month' | 'year') || 'today'
+  );
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   
@@ -183,6 +190,23 @@ export default function DashboardPage() {
   const [todayOrders, setTodayOrders] = useState<any[]>([]);
   const [orderStatusCounts, setOrderStatusCounts] = useState<any>({});
 
+  // Function to update URL when time period changes
+  const updateTimePeriod = (newPeriod: 'today' | 'month' | 'year') => {
+    setTimePeriod(newPeriod);
+    // Update URL without causing page reload
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('period', newPeriod);
+    router.push(`/dashboard?${params.toString()}`, { scroll: false });
+  };
+
+  // Sync URL params on mount
+  useEffect(() => {
+    const urlPeriod = searchParams.get('period');
+    if (urlPeriod && ['today', 'month', 'year'].includes(urlPeriod)) {
+      setTimePeriod(urlPeriod as 'today' | 'month' | 'year');
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     fetchDashboardData();
   }, [timePeriod]); // Fetch when time period changes
@@ -201,50 +225,65 @@ export default function DashboardPage() {
     try {
       setLoadingCharts(true);
 
-      // Fetch all dashboard data in parallel using centralized APIs
-      // Create date range based on selected time period
+      // Dynamic date calculation based on time period
       const today = new Date();
-      let startDate: Date;
-      let endDate: Date;
-      let groupBy: 'day' | 'month' | 'year';
+      let startDate: string;
+      let endDate: string;
+      let groupBy: 'day' | 'month';
 
       switch (timePeriod) {
         case 'today':
-          // For today, we want to include the entire current day
-          // Use UTC to avoid timezone issues
-          const todayUTC = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
-          startDate = new Date(todayUTC.getFullYear(), todayUTC.getMonth(), todayUTC.getDate());
-          endDate = new Date(todayUTC.getFullYear(), todayUTC.getMonth(), todayUTC.getDate() + 1);
+          const todayStr = today.toISOString().split('T')[0];
+          startDate = todayStr;
+          endDate = todayStr;
           groupBy = 'day';
           break;
         case 'month':
-          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+          const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          startDate = monthStart.toISOString().split('T')[0];
+          endDate = monthEnd.toISOString().split('T')[0];
           groupBy = 'day';
           break;
         case 'year':
-          startDate = new Date(today.getFullYear(), 0, 1);
-          endDate = new Date(today.getFullYear(), 11, 31);
+          const yearStart = new Date(today.getFullYear(), 0, 1);
+          const yearEnd = new Date(today.getFullYear(), 11, 31);
+          startDate = yearStart.toISOString().split('T')[0];
+          endDate = yearEnd.toISOString().split('T')[0];
           groupBy = 'month';
           break;
         default:
-          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1);
+          const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          startDate = defaultStart.toISOString().split('T')[0];
+          endDate = defaultEnd.toISOString().split('T')[0];
           groupBy = 'day';
       }
       
       const defaultFilters = {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
-        groupBy: groupBy
+        startDate,
+        endDate,
+        groupBy
       };
 
       console.log(`📊 Fetching dashboard data for ${timePeriod} period:`, {
         startDate: defaultFilters.startDate,
         endDate: defaultFilters.endDate,
-        groupBy: defaultFilters.groupBy
+        groupBy: defaultFilters.groupBy,
+        note: timePeriod === 'year' ? 'Using 2024 data range' : 'Using current date range'
       });
 
+      console.log('🚀 Starting parallel API calls...');
+      console.log('🔗 API URLs being called:');
+      console.log('  📊 Enhanced Dashboard:', `/api/analytics/enhanced-dashboard?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
+      console.log('  📈 Today Metrics:', '/api/analytics/today-metrics');
+      console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
+      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
+      console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      console.log('  📋 Dashboard Summary:', '/api/analytics/dashboard');
+      
       const [
         statsResponse,
         todayMetricsResponse,
@@ -255,14 +294,38 @@ export default function DashboardPage() {
         topCustomersResponse,
         dashboardResponse
       ] = await Promise.all([
-        analyticsApi.getEnhancedDashboardSummary(defaultFilters),
-        analyticsApi.getTodayMetrics(),
-        analyticsApi.getGrowthMetrics(defaultFilters),
-        analyticsApi.getIncomeAnalytics(defaultFilters),
-        analyticsApi.getOrderAnalytics(defaultFilters),
-        analyticsApi.getTopProducts(defaultFilters),
-        analyticsApi.getTopCustomers(defaultFilters),
-        analyticsApi.getDashboardSummary()
+        analyticsApi.getEnhancedDashboardSummary(defaultFilters).then(response => {
+          console.log('📊 Enhanced Dashboard Summary API:', response);
+          return response;
+        }),
+        analyticsApi.getTodayMetrics().then(response => {
+          console.log('📈 Today Metrics API:', response);
+          return response;
+        }),
+        analyticsApi.getGrowthMetrics(defaultFilters).then(response => {
+          console.log('📉 Growth Metrics API:', response);
+          return response;
+        }),
+        analyticsApi.getIncomeAnalytics(defaultFilters).then(response => {
+          console.log('💰 Income Analytics API:', response);
+          return response;
+        }),
+        analyticsApi.getOrderAnalytics(defaultFilters).then(response => {
+          console.log('📦 Order Analytics API:', response);
+          return response;
+        }),
+        analyticsApi.getTopProducts(defaultFilters).then(response => {
+          console.log('🏆 Top Products API:', response);
+          return response;
+        }),
+        analyticsApi.getTopCustomers(defaultFilters).then(response => {
+          console.log('👥 Top Customers API:', response);
+          return response;
+        }),
+        analyticsApi.getDashboardSummary().then(response => {
+          console.log('📋 Dashboard Summary API:', response);
+          return response;
+        })
       ]);
 
       // Process responses
@@ -277,11 +340,32 @@ export default function DashboardPage() {
         dashboardResponse
       });
 
+      // Check which APIs are successful
+      console.log('🔍 API Success Status:');
+      console.log('  📊 Enhanced Dashboard Summary:', statsResponse.success, (statsResponse.success && 'data' in statsResponse && statsResponse.data) ? 'HAS DATA' : 'NO DATA');
+      console.log('  📈 Today Metrics:', todayMetricsResponse.success, (todayMetricsResponse.success && 'data' in todayMetricsResponse && todayMetricsResponse.data) ? 'HAS DATA' : 'NO DATA');
+      console.log('  📉 Growth Metrics:', growthMetricsResponse.success, (growthMetricsResponse.success && 'data' in growthMetricsResponse && growthMetricsResponse.data) ? 'HAS DATA' : 'NO DATA');
+      console.log('  💰 Income Analytics:', incomeResponse.success, (incomeResponse.success && 'data' in incomeResponse && incomeResponse.data) ? 'HAS DATA' : 'NO DATA');
+      console.log('  📦 Order Analytics:', ordersResponse.success, (ordersResponse.success && 'data' in ordersResponse && ordersResponse.data) ? 'HAS DATA' : 'NO DATA');
+      console.log('  🏆 Top Products:', topProductsResponse.success, (topProductsResponse.success && 'data' in topProductsResponse && topProductsResponse.data) ? 'HAS DATA' : 'NO DATA');
+      console.log('  👥 Top Customers:', topCustomersResponse.success, (topCustomersResponse.success && 'data' in topCustomersResponse && topCustomersResponse.data) ? 'HAS DATA' : 'NO DATA');
+      console.log('  📋 Dashboard Summary:', dashboardResponse.success, (dashboardResponse.success && 'data' in dashboardResponse && dashboardResponse.data) ? 'HAS DATA' : 'NO DATA');
+
+      // Debug actual data structures
+      console.log('🔍 Raw API Data Structures:');
+      console.log('  📊 Enhanced Dashboard Summary data:', (statsResponse.success && 'data' in statsResponse) ? statsResponse.data : 'No data');
+      console.log('  💰 Income Analytics data:', (incomeResponse.success && 'data' in incomeResponse) ? incomeResponse.data : 'No data');
+      console.log('  📋 Dashboard Summary data:', (dashboardResponse.success && 'data' in dashboardResponse) ? dashboardResponse.data : 'No data');
+
       if (statsResponse.success && statsResponse.data) {
         // Transform API data to match our DashboardStats interface
         const apiStats = statsResponse.data as any;
         const todayMetrics = todayMetricsResponse.success ? (todayMetricsResponse.data as any) : {};
         const growthMetrics = growthMetricsResponse.success ? (growthMetricsResponse.data as any) : {};
+        
+        console.log('🔍 Enhanced Dashboard Summary structure:', JSON.stringify(apiStats, null, 2));
+        console.log('🔍 Today Metrics structure:', JSON.stringify(todayMetrics, null, 2));
+        console.log('🔍 Growth Metrics structure:', JSON.stringify(growthMetrics, null, 2));
         
         console.log('Setting dashboard stats:', {
           apiStats,
@@ -289,24 +373,32 @@ export default function DashboardPage() {
           growthMetrics
         });
         
-        setStats({
-          todayRevenue: apiStats.todayRevenue || 0,
-          todayRentals: apiStats.todayRentals || 0,
+        const newStats = {
+          // Today metrics - use correct API structure
+          todayRevenue: apiStats.today?.revenue || 0,
+          todayRentals: apiStats.today?.orders || 0,
           activeRentals: apiStats.activeRentals || 0,
           todayPickups: todayMetrics.todayPickups || 0,
           todayReturns: todayMetrics.todayReturns || 0,
           overdueItems: todayMetrics.overdueItems || 0,
           productUtilization: todayMetrics.productUtilization || 0,
-          totalRevenue: apiStats.totalRevenue || 0,
-          totalRentals: apiStats.totalOrders || 0,
-          completedRentals: apiStats.completedOrders || 0,
+          
+          // This month metrics - use correct API structure  
+          totalRevenue: apiStats.thisMonth?.revenue || 0,
+          totalRentals: apiStats.thisMonth?.orders || 0,
+          completedRentals: apiStats.thisMonth?.orders || 0, // Use total orders as completed for now
           customerGrowth: growthMetrics.customerGrowth || 0,
-          futureRevenue: apiStats.futureIncome || 0,
-          revenueGrowth: growthMetrics.revenueGrowth || 0,
+          futureRevenue: 0, // Not available in current API
+          revenueGrowth: apiStats.growth?.revenue || 0,
           customerBase: growthMetrics.customerBase || 0
-        });
+        };
+        
+        console.log('📊 Setting final stats:', newStats);
+        setStats(newStats);
       } else {
-        console.error('Stats API failed:', statsResponse);
+        console.error('❌ Stats API failed:', statsResponse);
+        console.log('ℹ️ No data available for selected period - keeping stats at 0');
+        // Keep stats at 0 if no data - no fallback
       }
 
       if (incomeResponse.success && incomeResponse.data) {
@@ -318,11 +410,26 @@ export default function DashboardPage() {
       }
 
       if (topProductsResponse.success && topProductsResponse.data) {
+        console.log('✅ Top Products data loaded:', topProductsResponse.data);
+        console.log('📅 Date range used:', { startDate: defaultFilters.startDate, endDate: defaultFilters.endDate });
+        console.log('🔍 First product structure:', topProductsResponse.data[0]);
         setTopProducts(topProductsResponse.data);
+        console.log('🎯 Top Products state set to:', topProductsResponse.data);
+      } else {
+        console.log('❌ Top Products failed:', topProductsResponse);
+        console.log('🔍 Top Products response details:', {
+          success: topProductsResponse.success,
+          data: (topProductsResponse.success && 'data' in topProductsResponse) ? topProductsResponse.data : undefined,
+          error: (!topProductsResponse.success && 'error' in topProductsResponse) ? topProductsResponse.error : undefined
+        });
       }
 
       if (topCustomersResponse.success && topCustomersResponse.data) {
+        console.log('✅ Top Customers data loaded:', topCustomersResponse.data);
+        console.log('🔍 First customer structure:', topCustomersResponse.data[0]);
         setTopCustomers(topCustomersResponse.data);
+      } else {
+        console.log('❌ Top Customers failed:', topCustomersResponse);
       }
 
       if (dashboardResponse.success && dashboardResponse.data) {
@@ -414,9 +521,14 @@ export default function DashboardPage() {
   const currentOrderData = getOrderData();
   const currentTopProducts = getTopProducts();
   const currentTopCustomers = getTopCustomers();
+  
+  // Debug popular data
+  console.log('🔍 Current Top Products:', currentTopProducts);
+  console.log('🔍 Current Top Customers:', currentTopCustomers);
 
   return (
-    <PageWrapper>
+    <div className="h-full overflow-y-auto">
+      <PageWrapper>
       <PageHeader>
         <div className="flex items-center justify-between">
           <PageTitle>Dashboard</PageTitle>
@@ -474,7 +586,7 @@ export default function DashboardPage() {
                   ].map(period => (
                     <button
                       key={period.id}
-                      onClick={() => setTimePeriod(period.id as 'today' | 'month' | 'year')}
+                      onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
                       className={`px-4 py-2 rounded-lg font-medium transition-all text-sm border-2 ${
                         timePeriod === period.id
                           ? 'bg-gray-800 text-white border-gray-800 shadow-lg scale-105'
@@ -871,5 +983,6 @@ export default function DashboardPage() {
         </div>
       </PageContent>
     </PageWrapper>
+    </div>
   );
 } 
