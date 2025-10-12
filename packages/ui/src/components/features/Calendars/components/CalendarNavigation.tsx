@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { Button } from '../../../ui/button';
 
 interface CalendarNavigationProps {
   currentDate: Date;
@@ -36,28 +37,31 @@ export function CalendarNavigation({
 
       {/* Navigation Controls */}
       <div className="flex items-center space-x-2">
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={onPreviousMonth}
-          className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
           aria-label="Previous month"
         >
           <ChevronLeft className="w-5 h-5 text-gray-600" />
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="outline"
           onClick={onToday}
-          className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+          className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100"
         >
           Today
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={onNextMonth}
-          className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
           aria-label="Next month"
         >
           <ChevronRight className="w-5 h-5 text-gray-600" />
-        </button>
+        </Button>
       </div>
     </div>
   );

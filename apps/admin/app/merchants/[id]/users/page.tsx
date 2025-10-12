@@ -161,12 +161,12 @@ export default function MerchantUsersPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               {error}
             </p>
-            <button
+            <Button
               onClick={() => router.push(`/merchants/${merchantId}`)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+              className="px-4 py-2"
             >
               Back to Merchant
-            </button>
+            </Button>
           </div>
         </PageContent>
       </PageWrapper>

@@ -184,13 +184,15 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
                   Product information not available
                 </p>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => onRemove(item.productId)}
-                className="text-red-500 hover:text-red-700 p-1"
+                className="text-red-500 hover:text-red-700 p-1 h-auto w-auto"
                 title="Remove product"
               >
                 <Trash2 className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
         </div>

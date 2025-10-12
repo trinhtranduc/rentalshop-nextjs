@@ -8,7 +8,9 @@ import { CardClean,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent, useToast } from '@rentalshop/ui';
+  PageContent, 
+  useToast,
+  Button } from '@rentalshop/ui';
 import { 
   AdminPageHeader,
   MetricCard,
@@ -348,43 +350,35 @@ export default function AdminDashboard() {
         {/* Time Period Selector */}
         <div className="mb-6 flex justify-between items-center">
           <div className="flex space-x-2">
-            <button
+            <Button
+              variant={timePeriod === 'today' ? 'default' : 'outline'}
               onClick={() => setTimePeriod('today')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                timePeriod === 'today'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className="px-4 py-2 text-sm"
             >
               Today
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={timePeriod === 'month' ? 'default' : 'outline'}
               onClick={() => setTimePeriod('month')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                timePeriod === 'month'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className="px-4 py-2 text-sm"
             >
               This Month
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={timePeriod === 'year' ? 'default' : 'outline'}
               onClick={() => setTimePeriod('year')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                timePeriod === 'year'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className="px-4 py-2 text-sm"
             >
               This Year
-            </button>
+            </Button>
           </div>
-          <button
+          <Button
+            variant="success"
             onClick={fetchSystemMetrics}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+            className="px-4 py-2 text-sm"
           >
             Refresh
-          </button>
+          </Button>
         </div>
         {/* Enhanced Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

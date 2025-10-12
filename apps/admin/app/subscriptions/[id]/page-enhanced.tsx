@@ -376,24 +376,27 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
       <Card>
         <CardHeader>
           <div className="flex gap-4 border-b">
-            <button
-              className={`px-4 py-2 font-medium ${activeTab === 'payments' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'payments' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
               onClick={() => setActiveTab('payments')}
             >
               💳 Payment History
-            </button>
-            <button
-              className={`px-4 py-2 font-medium ${activeTab === 'activity' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
+            </Button>
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'activity' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
               onClick={() => setActiveTab('activity')}
             >
               📊 Activity Log
-            </button>
-            <button
-              className={`px-4 py-2 font-medium ${activeTab === 'details' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
+            </Button>
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'details' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
               onClick={() => setActiveTab('details')}
             >
               📋 Plan Details
-            </button>
+            </Button>
           </div>
         </CardHeader>
 

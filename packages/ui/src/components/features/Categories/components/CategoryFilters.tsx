@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Input, Card, CardContent } from '@rentalshop/ui';
+import { Input, Card, CardContent, Button } from '@rentalshop/ui';
 import { Search, ArrowUpDown } from 'lucide-react';
 import type { CategorySearchParams as CategoryFiltersType } from '@rentalshop/types';
 
@@ -45,25 +45,15 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
             />
           </div>
 
-          {/* Sort Button - Hidden */}
-          {/* {onSortChange && (
-            <button
-              onClick={() => handleSortToggle('name')}
-              className="inline-flex items-center space-x-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowUpDown className="h-4 w-4" />
-              <span>Sort</span>
-            </button>
-          )} */}
-
           {/* Clear Filters Button */}
           {(filters.search) && (
-            <button
+            <Button
               onClick={onClearFilters}
-              className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              variant="ghost"
+              size="sm"
             >
               Clear
-            </button>
+            </Button>
           )}
         </div>
 

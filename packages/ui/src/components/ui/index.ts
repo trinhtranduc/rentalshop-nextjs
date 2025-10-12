@@ -72,7 +72,6 @@ export {
 // ============================================================================
 export { ProductAvailabilityAsyncDisplay } from './product-availability-async-display';
 export { ProductAvailabilityBadge } from './product-availability-badge';
-export { ProductAvailabilityTest } from './product-availability-test';
 export { ProductAvailabilityWarning } from './product-availability-warning';
 export { SearchableSelect } from './searchable-select';
 

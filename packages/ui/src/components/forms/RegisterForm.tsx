@@ -12,6 +12,7 @@ import {
   getDefaultCountry,
   formatCountryDisplay
 } from "@rentalshop/constants";
+import { Button } from "../ui/button";
 
 // Types for the registration form
 interface RegisterFormData {
@@ -301,13 +302,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       onBlur={formik.handleBlur}
                       className={`pl-10 pr-10 ${formik.errors.password && formik.touched.password ? 'border-red-500' : ''}`}
                     />
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       type="button"
                       onClick={() => setViewPass(!viewPass)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
                     >
                       {viewPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
+                    </Button>
                   </div>
                   {formik.errors.password && formik.touched.password && (
                     <p className="text-red-500 text-sm">{formik.errors.password}</p>
@@ -331,13 +334,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       onBlur={formik.handleBlur}
                       className={`pl-10 pr-10 ${formik.errors.confirmPassword && formik.touched.confirmPassword ? 'border-red-500' : ''}`}
                     />
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       type="button"
                       onClick={() => setViewConfirmPass(!viewConfirmPass)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
                     >
                       {viewConfirmPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
+                    </Button>
                   </div>
                   {formik.errors.confirmPassword && formik.touched.confirmPassword && (
                     <p className="text-red-500 text-sm">{formik.errors.confirmPassword}</p>
@@ -726,13 +731,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <button
+                <Button
+                  variant="link"
                   type="button"
                   onClick={() => onNavigate?.('/login')}
-                  className="text-blue-600 hover:text-blue-500 font-medium"
+                  className="text-blue-600 hover:text-blue-500 font-medium p-0 h-auto"
                 >
                   Sign in
-                </button>
+                </Button>
               </p>
             </div>
           </form>

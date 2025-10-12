@@ -215,13 +215,14 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
 
         {/* Links */}
         <div className="mt-6 text-center">
-          <button
+          <Button
+            variant="link"
             onClick={() => onNavigate?.("/login")}
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800 bg-transparent border-0 p-0 font-inherit cursor-pointer"
+            className="inline-flex items-center text-sm"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to login
-          </button>
+          </Button>
         </div>
 
         {/* Footer */}

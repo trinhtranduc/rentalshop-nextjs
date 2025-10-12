@@ -1,12 +1,6 @@
 'use client'
 
 import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle
-} from '../../../ui';
 import { CategoryForm } from './CategoryForm';
 import type { Category } from '@rentalshop/types';
 
@@ -53,24 +47,15 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     onOpenChange(false);
   };
 
+  // CategoryForm already has Dialog wrapper, so just render it when open
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto p-0">
-        <DialogHeader className="px-6 py-4 border-b border-gray-200">
-          <DialogTitle className="text-xl font-semibold text-gray-900">
-            Add New Category
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="p-6">
-          <CategoryForm
-            category={null}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            mode="create"
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <CategoryForm
+      category={null}
+      onSave={handleSave}
+      onCancel={handleCancel}
+      mode="create"
+    />
   );
 };
