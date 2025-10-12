@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendars, PageWrapper, Breadcrumb } from '@rentalshop/ui';
+import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
+import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
@@ -276,14 +277,14 @@ export default function CalendarPage() {
                   {dailyOrders.length} order{dailyOrders.length !== 1 ? 's' : ''} found
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => setShowDailyModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                variant="ghost"
+                size="icon"
+                className="text-gray-400 hover:text-gray-600"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                <X className="w-6 h-6" />
+              </Button>
             </div>
 
             {/* Modal Content */}

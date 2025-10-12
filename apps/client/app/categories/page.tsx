@@ -12,8 +12,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  ConfirmationDialog
+  ConfirmationDialog,
+  AddCategoryDialog,
+  Button
 } from '@rentalshop/ui';
+import { Plus } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth, useCategoriesData } from '@rentalshop/hooks';
 import { categoriesApi } from '@rentalshop/utils';
@@ -264,12 +267,27 @@ export default function CategoriesPage() {
     );
   }
 
+  // Add category dialog state
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <PageTitle subtitle="Manage your product categories">
-          Categories
-        </PageTitle>
+        <div className="flex justify-between items-start">
+          <div>
+            <PageTitle subtitle="Manage your product categories">
+              Categories
+            </PageTitle>
+          </div>
+          <Button 
+            onClick={() => setShowAddDialog(true)}
+            variant="success"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Category
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="flex-1 min-h-0">
@@ -317,6 +335,35 @@ export default function CategoriesPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Add Category Dialog */}
+      <AddCategoryDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onCategoryCreated={async (categoryData) => {
+          try {
+            const response = await categoriesApi.createCategory({
+              name: categoryData.name,
+              description: categoryData.description,
+              merchantId: user?.merchant?.id || user?.merchantId || 0
+            });
+            
+            if (response.success) {
+              toastSuccess('Category Created', `Category "${categoryData.name}" has been created successfully`);
+              router.refresh();
+            } else {
+              throw new Error(response.error || 'Failed to create category');
+            }
+          } catch (error) {
+            console.error('Error creating category:', error);
+            toastError('Error', error instanceof Error ? error.message : 'Failed to create category');
+            throw error; // Re-throw to let dialog handle it
+          }
+        }}
+        onError={(error) => {
+          toastError('Error', error);
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog

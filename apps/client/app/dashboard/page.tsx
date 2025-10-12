@@ -14,7 +14,8 @@ import {
   IncomeChart,
   OrderChart,
   SubscriptionStatusBanner,
-  useToast } from '@rentalshop/ui';
+  useToast,
+  Button } from '@rentalshop/ui';
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
@@ -595,18 +596,15 @@ export default function DashboardPage() {
                     { id: 'month', label: 'Month', description: 'Statistics' },
                     { id: 'year', label: 'Year', description: 'Analytics' }
                   ].map(period => (
-                    <button
+                    <Button
                       key={period.id}
                       onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all text-sm border-2 ${
-                        timePeriod === period.id
-                          ? 'bg-gray-800 text-white border-gray-800 shadow-lg scale-105'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-transparent hover:border-gray-300'
-                      }`}
+                      variant={timePeriod === period.id ? 'default' : 'outline'}
+                      size="sm"
                       title={period.description}
                     >
                       {period.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -959,37 +957,53 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
+              onClick={() => router.push('/orders/create')}
+            >
               <Package className="w-6 h-6 text-blue-600" />
               <div className="text-left">
                 <p className="font-medium text-blue-900">Create Order</p>
                 <p className="text-sm text-blue-700">New rental order</p>
               </div>
-            </button>
+            </Button>
             
-            <button className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-3 p-4 h-auto bg-green-50 hover:bg-green-100 text-green-900 rounded-lg transition-colors group justify-start"
+              onClick={() => router.push('/customers/add')}
+            >
               <Users className="w-6 h-6 text-green-600" />
               <div className="text-left">
                 <p className="font-medium text-green-900">Add Customer</p>
                 <p className="text-sm text-green-700">New customer</p>
               </div>
-            </button>
+            </Button>
             
-            <button className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-3 p-4 h-auto bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-lg transition-colors group justify-start"
+              onClick={() => router.push('/products/add')}
+            >
               <PackageCheck className="w-6 h-6 text-purple-600" />
               <div className="text-left">
                 <p className="font-medium text-purple-900">Add Product</p>
                 <p className="text-sm text-purple-700">New product</p>
               </div>
-            </button>
+            </Button>
             
-            <button className="flex items-center gap-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors group">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-3 p-4 h-auto bg-orange-50 hover:bg-orange-100 text-orange-900 rounded-lg transition-colors group justify-start"
+              onClick={() => router.push('/orders')}
+            >
               <TrendingUp className="w-6 h-6 text-orange-600" />
               <div className="text-left">
                 <p className="font-medium text-orange-900">View Reports</p>
                 <p className="text-sm text-orange-700">Analytics</p>
               </div>
-            </button>
+            </Button>
           </div>
         </div>
       </PageContent>

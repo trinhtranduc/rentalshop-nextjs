@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   CardContent,
@@ -8,20 +8,26 @@ import {
 } from '../../../ui';
 import { Plus, Download, Upload, Edit3 } from 'lucide-react';
 import { useUserRole } from '@rentalshop/hooks';
+import { AddCategoryDialog } from './AddCategoryDialog';
 
 interface CategoryActionsProps {
   onAddCategory: () => void;
   onImportCategories: () => void;
   onExportCategories: () => void;
   onBulkEdit: () => void;
+  onCategoryCreated?: (category: any) => void;
+  onError?: (error: string) => void;
 }
 
 export const CategoryActions: React.FC<CategoryActionsProps> = ({
   onAddCategory,
   onImportCategories,
   onExportCategories,
-  onBulkEdit
+  onBulkEdit,
+  onCategoryCreated,
+  onError
 }) => {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   // Use hook instead of prop
   const { canManageCategories } = useUserRole();
   // Filter actions based on user role - Only ADMIN and MERCHANT can manage categories
@@ -32,7 +38,7 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
       description: 'Create a new product category',
       icon: '➕',
       variant: 'default' as const,
-      onClick: onAddCategory,
+      onClick: () => setIsAddDialogOpen(true),
       roles: canManageCategories ? ['ALL'] : [] // Use permission check
     },
     {
@@ -70,6 +76,7 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
   ).map(({ roles, ...action }) => action); // Remove roles property from final actions
 
   return (
+    <>
     <Card>
       <CardContent className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -92,5 +99,14 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
         </div>
       </CardContent>
     </Card>
+
+    {/* Category Add Dialog */}
+    <AddCategoryDialog
+      open={isAddDialogOpen}
+      onOpenChange={setIsAddDialogOpen}
+      onCategoryCreated={onCategoryCreated}
+      onError={onError}
+    />
+    </>
   );
 };
