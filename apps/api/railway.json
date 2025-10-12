@@ -14,7 +14,7 @@
   "environments": {
     "development": {
       "build": {
-        "buildCommand": "yarn workspace @rentalshop/database build && yarn workspace @rentalshop/utils build"
+        "buildCommand": "yarn build"
       },
       "deploy": {
         "startCommand": "cd apps/api && yarn dev",
