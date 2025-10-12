@@ -639,12 +639,12 @@ export const simplifiedUsers = {
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
     if (whereFilters.role) where.role = whereFilters.role;
     
-    // Text search
+    // Text search (case-insensitive)
     if (whereFilters.search) {
       where.OR = [
-        { firstName: { contains: whereFilters.search } },
-        { lastName: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } }
+        { firstName: { contains: whereFilters.search, mode: 'insensitive' } },
+        { lastName: { contains: whereFilters.search, mode: 'insensitive' } },
+        { email: { contains: whereFilters.search, mode: 'insensitive' } }
       ];
     }
 

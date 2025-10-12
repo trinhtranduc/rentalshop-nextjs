@@ -307,14 +307,14 @@ export async function searchCustomers(
     where.idType = idType;
   }
 
-  // Search query for name, email, phone, or idNumber
+  // Search query for name, email, phone, or idNumber (case-insensitive)
   if (q && q.trim()) {
-    const searchQuery = q.toLowerCase().trim();
+    const searchQuery = q.trim();
     where.OR = [
-      { firstName: { contains: searchQuery } },
-      { lastName: { contains: searchQuery } },
-      { email: { contains: searchQuery } },
-      { phone: { contains: searchQuery } }
+      { firstName: { contains: searchQuery, mode: 'insensitive' } },
+      { lastName: { contains: searchQuery, mode: 'insensitive' } },
+      { email: { contains: searchQuery, mode: 'insensitive' } },
+      { phone: { contains: searchQuery } } // Phone numbers are usually exact match
     ];
   }
 
