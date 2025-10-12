@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { Button } from '@rentalshop/ui'
 import { 
   Check, 
   ChevronDown, 
@@ -516,9 +517,10 @@ const FAQ = () => {
         <div className="space-y-4">
           {faqItems.map((item, index) => (
             <div key={index} className="bg-bg-card rounded-lg shadow-sm">
-              <button
+              <Button
                 onClick={() => toggleItem(index)}
-                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-bg-secondary transition-colors"
+                variant="ghost"
+                className="w-full px-6 py-4 h-auto text-left flex items-center justify-between hover:bg-bg-secondary rounded-lg"
               >
                 <span className="font-semibold text-text-primary">{item.question}</span>
                 {openItems.has(index) ? (
@@ -526,7 +528,7 @@ const FAQ = () => {
                 ) : (
                   <ChevronDown className="w-5 h-5 text-text-tertiary" />
                 )}
-              </button>
+              </Button>
               {openItems.has(index) && (
                 <div className="px-6 pb-4">
                   <p className="text-text-secondary">{item.answer}</p>
@@ -641,45 +643,39 @@ const Pricing = () => {
         {/* Duration Toggle */}
         <div className="flex justify-center mb-12">
           <div className="flex items-center bg-bg-secondary rounded-lg p-1">
-            <button
+            <Button
               onClick={() => setSelectedDuration('3')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedDuration === '3'
-                  ? 'bg-bg-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              variant={selectedDuration === '3' ? 'secondary' : 'ghost'}
+              size="sm"
+              className={selectedDuration === '3' ? 'bg-bg-card shadow-sm' : ''}
             >
               <div className="text-center">
                 <div>3 months</div>
                 <div className="text-lg text-text-secondary font-bold">0%</div>
               </div>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setSelectedDuration('6')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedDuration === '6'
-                  ? 'bg-bg-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              variant={selectedDuration === '6' ? 'secondary' : 'ghost'}
+              size="sm"
+              className={selectedDuration === '6' ? 'bg-bg-card shadow-sm' : ''}
             >
               <div className="text-center">
                 <div>6 months</div>
                 <div className="text-lg text-action-success font-bold">-5%</div>
               </div>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setSelectedDuration('12')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedDuration === '12'
-                  ? 'bg-bg-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              variant={selectedDuration === '12' ? 'secondary' : 'ghost'}
+              size="sm"
+              className={selectedDuration === '12' ? 'bg-bg-card shadow-sm' : ''}
             >
               <div className="text-center">
                 <div>12 months</div>
                 <div className="text-lg text-action-danger font-bold">-15%</div>
               </div>
-            </button>
+            </Button>
           </div>
         </div>
         
