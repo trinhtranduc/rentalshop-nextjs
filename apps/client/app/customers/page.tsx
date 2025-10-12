@@ -6,7 +6,6 @@ import {
   PageHeader,
   PageTitle,
   Customers,
-  CustomersLoading,
   useToast,
   CustomerDetailDialog,
   AddCustomerDialog,
@@ -276,22 +275,8 @@ export default function CustomersPage() {
   }, [data]);
 
   // ============================================================================
-  // RENDER
+  // RENDER - Always render immediately, show skeleton conditionally
   // ============================================================================
-
-  if (loading && !data) {
-    return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-        <PageHeader className="flex-shrink-0">
-          <PageTitle>Customers</PageTitle>
-          <p className="text-sm text-gray-600">Manage customers in the system</p>
-        </PageHeader>
-        <div className="flex-1 min-h-0 overflow-auto">
-          <CustomersLoading />
-        </div>
-      </PageWrapper>
-    );
-  }
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
@@ -326,8 +311,8 @@ export default function CustomersPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0">
-      <Customers
+      <div className="flex-1 min-h-0 overflow-auto">
+        <Customers
           data={customerData}
           filters={filters}
           onFiltersChange={handleFiltersChange}

@@ -14946,10 +14946,13 @@ function DashboardFocusLoading() {
 import { useState as useState24 } from "react";
 
 // src/components/layout/sidebar.tsx
+import { useEffect as useEffect13 } from "react";
 import Link2 from "next/link";
+import { useRouter as useRouter2 } from "next/navigation";
 import { cn as cn3 } from "@rentalshop/ui";
 import { Button as Button10, Card as Card10 } from "@rentalshop/ui";
 import { ChevronLeft as ChevronLeft2, ChevronRight as ChevronRight3, Building2 as Building22 } from "lucide-react";
+import { useOptimisticNavigation } from "@rentalshop/hooks";
 import { Fragment as Fragment9, jsx as jsx67, jsxs as jsxs55 } from "react/jsx-runtime";
 var menuItems = [
   {
@@ -15004,6 +15007,13 @@ var Sidebar = ({
   isCollapsed = false,
   onCollapseToggle
 }) => {
+  const router = useRouter2();
+  const { navigate, navigatingTo } = useOptimisticNavigation();
+  useEffect13(() => {
+    menuItems.forEach((item) => {
+      router.prefetch(item.href);
+    });
+  }, [router]);
   return /* @__PURE__ */ jsxs55(Fragment9, { children: [
     isOpen && /* @__PURE__ */ jsx67(
       "div",
@@ -15012,6 +15022,13 @@ var Sidebar = ({
         onClick: onToggle
       }
     ),
+    navigatingTo && /* @__PURE__ */ jsx67("div", { className: "fixed inset-0 bg-white bg-opacity-60 backdrop-blur-sm z-[60] flex items-center justify-center", children: /* @__PURE__ */ jsxs55("div", { className: "bg-white rounded-lg shadow-xl p-6 flex flex-col items-center", children: [
+      /* @__PURE__ */ jsxs55("svg", { className: "animate-spin h-8 w-8 text-green-600 mb-3", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", children: [
+        /* @__PURE__ */ jsx67("circle", { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
+        /* @__PURE__ */ jsx67("path", { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+      ] }),
+      /* @__PURE__ */ jsx67("p", { className: "text-sm font-medium text-gray-700", children: "Loading..." })
+    ] }) }),
     /* @__PURE__ */ jsx67(
       "aside",
       {
@@ -15022,10 +15039,17 @@ var Sidebar = ({
         ),
         children: /* @__PURE__ */ jsxs55("div", { className: "flex flex-col h-full", children: [
           /* @__PURE__ */ jsxs55("div", { className: "flex items-center justify-between h-16 px-6 border-b border-gray-200", children: [
-            /* @__PURE__ */ jsxs55(Link2, { href: "/dashboard", className: "flex items-center space-x-2", children: [
-              /* @__PURE__ */ jsx67("div", { className: "w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0", children: /* @__PURE__ */ jsx67("span", { className: "text-white font-bold text-sm", children: "R" }) }),
-              !isCollapsed && /* @__PURE__ */ jsx67("span", { className: "font-bold text-2xl text-gray-900 leading-none", children: "RentalShop" })
-            ] }),
+            /* @__PURE__ */ jsxs55(
+              "button",
+              {
+                onClick: () => navigate("/dashboard"),
+                className: "flex items-center space-x-2 hover:opacity-80 transition-opacity",
+                children: [
+                  /* @__PURE__ */ jsx67("div", { className: "w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0", children: /* @__PURE__ */ jsx67("span", { className: "text-white font-bold text-sm", children: "R" }) }),
+                  !isCollapsed && /* @__PURE__ */ jsx67("span", { className: "font-bold text-2xl text-gray-900 leading-none", children: "RentalShop" })
+                ]
+              }
+            ),
             /* @__PURE__ */ jsxs55("div", { className: "flex items-center space-x-2", children: [
               onCollapseToggle && /* @__PURE__ */ jsx67(
                 Button10,
@@ -15050,34 +15074,45 @@ var Sidebar = ({
               )
             ] })
           ] }),
-          /* @__PURE__ */ jsx67("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: menuItems.map((item) => {
-            const isActive = currentPath === item.href;
-            return /* @__PURE__ */ jsxs55(
-              Link2,
-              {
-                href: item.href,
-                className: cn3(
-                  "flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group",
-                  isActive ? "bg-green-100 text-green-700 border-r-2 border-green-600" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                ),
-                title: isCollapsed ? item.label : void 0,
-                children: [
-                  /* @__PURE__ */ jsxs55("div", { className: "flex items-center space-x-3", children: [
-                    /* @__PURE__ */ jsx67("span", { className: cn3(
-                      "flex-shrink-0",
-                      isActive ? "text-green-600" : "text-gray-500"
-                    ), children: item.icon }),
-                    !isCollapsed && /* @__PURE__ */ jsx67("span", { className: cn3(
-                      "text-base",
-                      isActive ? "font-medium" : "font-normal"
-                    ), children: item.label })
-                  ] }),
-                  !isCollapsed && item.badge && /* @__PURE__ */ jsx67("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge })
-                ]
-              },
-              item.href
-            );
-          }) }),
+          /* @__PURE__ */ jsxs55("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: [
+            /* @__PURE__ */ jsx67("div", { className: "hidden", children: menuItems.map((item) => /* @__PURE__ */ jsx67(Link2, { href: item.href, prefetch: true, children: item.label }, `prefetch-${item.href}`)) }),
+            menuItems.map((item) => {
+              const isActive = currentPath === item.href;
+              const isNavigating = navigatingTo === item.href;
+              const shouldHighlight = isActive || isNavigating;
+              return /* @__PURE__ */ jsxs55(
+                "button",
+                {
+                  onClick: (e) => {
+                    e.preventDefault();
+                    navigate(item.href);
+                  },
+                  onMouseEnter: () => {
+                    router.prefetch(item.href);
+                  },
+                  className: cn3(
+                    "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group",
+                    shouldHighlight ? "bg-green-100 text-green-700 border-r-2 border-green-600" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  ),
+                  title: isCollapsed ? item.label : void 0,
+                  children: [
+                    /* @__PURE__ */ jsxs55("div", { className: "flex items-center space-x-3", children: [
+                      /* @__PURE__ */ jsx67("span", { className: cn3(
+                        "flex-shrink-0 transition-colors duration-150",
+                        shouldHighlight ? "text-green-600" : "text-gray-500"
+                      ), children: item.icon }),
+                      !isCollapsed && /* @__PURE__ */ jsx67("span", { className: cn3(
+                        "text-base transition-all duration-150",
+                        shouldHighlight ? "font-medium" : "font-normal"
+                      ), children: item.label })
+                    ] }),
+                    !isCollapsed && item.badge && /* @__PURE__ */ jsx67("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge })
+                  ]
+                },
+                item.href
+              );
+            })
+          ] }),
           user && /* @__PURE__ */ jsx67("div", { className: "p-4 border-t border-gray-200", children: /* @__PURE__ */ jsxs55(Card10, { className: "p-3", children: [
             /* @__PURE__ */ jsxs55("div", { className: "flex items-center space-x-3", children: [
               /* @__PURE__ */ jsx67("div", { className: "w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0", children: /* @__PURE__ */ jsx67("span", { className: "text-white font-bold text-sm", children: user.firstName?.[0] || user.email?.[0] || "U" }) }),
@@ -15088,9 +15123,9 @@ var Sidebar = ({
             ] }),
             !isCollapsed && /* @__PURE__ */ jsxs55("div", { className: "mt-4 space-y-2", children: [
               /* @__PURE__ */ jsx67(
-                Link2,
+                "button",
                 {
-                  href: "/profile",
+                  onClick: () => navigate("/profile"),
                   className: "block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200",
                   children: /* @__PURE__ */ jsxs55("div", { className: "flex items-center space-x-2", children: [
                     /* @__PURE__ */ jsx67("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx67("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" }) }),
@@ -15178,7 +15213,7 @@ function Dashboard({ data, onPeriodChange, onActionClick }) {
 var Dashboard_default = Dashboard;
 
 // src/components/features/Products/Products.tsx
-import React50 from "react";
+import React51 from "react";
 
 // src/components/features/Products/components/ProductHeader.tsx
 import { jsx as jsx70, jsxs as jsxs58 } from "react/jsx-runtime";
@@ -15235,7 +15270,7 @@ var ProductPageHeader = ({
 };
 
 // src/components/features/Products/components/ProductFilters.tsx
-import { useState as useState25, useEffect as useEffect13 } from "react";
+import { useState as useState25, useEffect as useEffect14 } from "react";
 import { Input as Input8 } from "@rentalshop/ui";
 import { Select as Select5, SelectContent as SelectContent5, SelectItem as SelectItem5, SelectTrigger as SelectTrigger5, SelectValue as SelectValue5 } from "@rentalshop/ui";
 import { Card as Card11, CardContent as CardContent10 } from "@rentalshop/ui";
@@ -15248,7 +15283,7 @@ function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilte
   const [categories, setCategories] = useState25([]);
   const [loadingCategories, setLoadingCategories] = useState25(false);
   const [categoryError, setCategoryError] = useState25(null);
-  useEffect13(() => {
+  useEffect14(() => {
     const fetchData = async () => {
       try {
         setLoadingOutlets(true);
@@ -15647,7 +15682,7 @@ function ProductGrid({
 }
 
 // src/components/features/Products/components/ProductTable.tsx
-import React39 from "react";
+import React40 from "react";
 import { Eye as Eye3, Edit as Edit2, ShoppingCart as ShoppingCart4, Trash2 as Trash24, MoreVertical, Package as Package7 } from "lucide-react";
 import { jsx as jsx75, jsxs as jsxs63 } from "react/jsx-runtime";
 function ProductTable({
@@ -15657,7 +15692,7 @@ function ProductTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = React39.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React40.useState(null);
   if (products.length === 0) {
     return /* @__PURE__ */ jsx75(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx75(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ jsxs63("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx75("div", { className: "text-4xl mb-4", children: "\u{1F4E6}" }),
@@ -16185,7 +16220,7 @@ function ProductDetailLoading() {
 
 // src/components/features/Products/components/ProductDetailList.tsx
 import { useState as useState31 } from "react";
-import { useRouter as useRouter2 } from "next/navigation";
+import { useRouter as useRouter3 } from "next/navigation";
 
 // src/lib/index.ts
 import { formatCurrency as formatCurrency5 } from "@rentalshop/utils";
@@ -16200,7 +16235,7 @@ var ProductDetailList = ({
   isMerchantAccount = false,
   className = ""
 }) => {
-  const router = useRouter2();
+  const router = useRouter3();
   const [selectedImage, setSelectedImage] = useState31(
     product.images && product.images.length > 0 ? product.images[0] : null
   );
@@ -16363,7 +16398,7 @@ var ProductDetailMultiLayout = ({
 };
 
 // src/components/features/Products/components/ProductEdit.tsx
-import { useState as useState32, useEffect as useEffect14 } from "react";
+import { useState as useState32, useEffect as useEffect15 } from "react";
 import {
   Button as Button12
 } from "@rentalshop/ui";
@@ -16381,7 +16416,7 @@ var ProductEdit = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState32(false);
   const { toastSuccess, toastError } = useToast7();
-  useEffect14(() => {
+  useEffect15(() => {
     console.log("\u{1F50D} ProductEdit - product data:", product);
     console.log("\u{1F50D} ProductEdit - product.category:", product.category);
     console.log("\u{1F50D} ProductEdit - product.outletStock:", product.outletStock);
@@ -16490,7 +16525,7 @@ var ProductEdit = ({
 };
 
 // src/components/features/Products/components/ProductOrdersView.tsx
-import { useState as useState34, useEffect as useEffect16 } from "react";
+import { useState as useState34, useEffect as useEffect17 } from "react";
 import {
   Package as Package8,
   DollarSign as DollarSign4,
@@ -16503,10 +16538,10 @@ import {
 } from "lucide-react";
 
 // src/components/features/Orders/components/OrderHeader.tsx
-import React45 from "react";
+import React46 from "react";
 import { Card as Card15, CardContent as CardContent14, CardHeader as CardHeader14, CardTitle as CardTitle14 } from "@rentalshop/ui";
 import { jsx as jsx83, jsxs as jsxs70 } from "react/jsx-runtime";
-var OrderHeader = React45.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
+var OrderHeader = React46.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
   console.log("OrderHeader received stats:", stats);
   console.log("OrderHeader received totalOrders:", totalOrders);
   const formatCurrency20 = (amount) => {
@@ -16566,14 +16601,14 @@ var OrderHeader = React45.memo(function OrderHeader2({ totalOrders, stats, showS
 });
 
 // src/components/features/Orders/components/OrderFilters.tsx
-import React46, { useState as useState33, useEffect as useEffect15 } from "react";
+import React47, { useState as useState33, useEffect as useEffect16 } from "react";
 import { Input as Input9, Button as Button13 } from "@rentalshop/ui";
 import { Select as Select6, SelectContent as SelectContent6, SelectItem as SelectItem6, SelectTrigger as SelectTrigger6, SelectValue as SelectValue6 } from "@rentalshop/ui";
 import { Card as Card16, CardContent as CardContent15 } from "@rentalshop/ui";
 import { outletsApi as outletsApi2 } from "@rentalshop/utils";
 import { ORDER_STATUS, ORDER_TYPE } from "@rentalshop/constants";
 import { jsx as jsx84, jsxs as jsxs71 } from "react/jsx-runtime";
-var OrderFilters = React46.memo(function OrderFilters2({
+var OrderFilters = React47.memo(function OrderFilters2({
   filters,
   onFiltersChange,
   onSearchChange,
@@ -16583,14 +16618,14 @@ var OrderFilters = React46.memo(function OrderFilters2({
   const [outlets, setOutlets] = useState33([]);
   const [loadingOutlets, setLoadingOutlets] = useState33(false);
   const [outletError, setOutletError] = useState33(null);
-  useEffect15(() => {
+  useEffect16(() => {
     const externalSearch = filters.search || "";
     if (externalSearch !== localSearch) {
       console.log("\u{1F504} OrderFilters: Syncing search from external:", externalSearch);
       setLocalSearch(externalSearch);
     }
   }, [filters.search]);
-  useEffect15(() => {
+  useEffect16(() => {
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
@@ -16732,17 +16767,17 @@ var OrderFilters = React46.memo(function OrderFilters2({
 });
 
 // src/components/features/Orders/components/OrderTable.tsx
-import React47 from "react";
+import React48 from "react";
 import { Eye as Eye4, Edit as Edit3 } from "lucide-react";
 import { jsx as jsx85, jsxs as jsxs72 } from "react/jsx-runtime";
-var OrderTable = React47.memo(function OrderTable2({
+var OrderTable = React48.memo(function OrderTable2({
   orders,
   onOrderAction,
   sortBy = "createdAt",
   sortOrder = "desc",
   onSort
 }) {
-  React47.useEffect(() => {
+  React48.useEffect(() => {
     if (orders.length > 0) {
       console.log("\u{1F4CB} OrderTable - Order statuses:", orders.map((o) => ({
         orderNumber: o.orderNumber,
@@ -17214,7 +17249,7 @@ var ProductOrdersView = ({
     sortBy: "createdAt",
     sortOrder: "desc"
   });
-  useEffect16(() => {
+  useEffect17(() => {
     const fetchProductOrders = async () => {
       try {
         setLoading(true);
@@ -17511,7 +17546,7 @@ var ProductOrdersView = ({
 };
 
 // src/components/features/Products/components/ProductOrdersDialog.tsx
-import { useState as useState35, useEffect as useEffect17 } from "react";
+import { useState as useState35, useEffect as useEffect18 } from "react";
 import {
   Dialog as Dialog4,
   DialogContent as DialogContent4,
@@ -17540,7 +17575,7 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
   const [orders, setOrders] = useState35([]);
   const [loading, setLoading] = useState35(false);
   const [error2, setError] = useState35(null);
-  useEffect17(() => {
+  useEffect18(() => {
     if (open && product) {
       fetchProductOrders();
     }
@@ -17767,12 +17802,12 @@ function Products({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = React50.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React50.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React50.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnProductAction = React50.useCallback(onProductAction, [onProductAction]);
-  const memoizedOnPageChange = React50.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React50.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = React51.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React51.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React51.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnProductAction = React51.useCallback(onProductAction, [onProductAction]);
+  const memoizedOnPageChange = React51.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React51.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs78("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsxs78("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ jsxs78(
@@ -17852,7 +17887,7 @@ function Products({
 var Products_default = Products;
 
 // src/components/features/Customers/Customers.tsx
-import React58 from "react";
+import React59 from "react";
 import {
   Pagination as Pagination5,
   EmptyState as EmptyState3,
@@ -17860,7 +17895,7 @@ import {
 } from "@rentalshop/ui";
 
 // src/components/features/Customers/components/CustomerTable.tsx
-import React51 from "react";
+import React52 from "react";
 import { Button as Button17 } from "@rentalshop/ui";
 import { Card as Card20, CardContent as CardContent19 } from "@rentalshop/ui";
 import {
@@ -17879,7 +17914,7 @@ function CustomerTable({
   sortOrder = "desc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = React51.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React52.useState(null);
   if (customers.length === 0) {
     return /* @__PURE__ */ jsx93(Card20, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx93(CardContent19, { className: "text-center py-12", children: /* @__PURE__ */ jsxs79("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx93("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
@@ -18027,7 +18062,7 @@ function CustomerTable({
 }
 
 // src/components/features/Customers/components/CustomerDetailDialog.tsx
-import { useState as useState36, useEffect as useEffect18 } from "react";
+import { useState as useState36, useEffect as useEffect19 } from "react";
 import { Trash2 as Trash26 } from "lucide-react";
 import { Fragment as Fragment16, jsx as jsx94, jsxs as jsxs80 } from "react/jsx-runtime";
 var CustomerDetailDialog = ({
@@ -18040,7 +18075,7 @@ var CustomerDetailDialog = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState36(false);
   const [merchant, setMerchant] = useState36(null);
   const [isLoadingMerchant, setIsLoadingMerchant] = useState36(false);
-  useEffect18(() => {
+  useEffect19(() => {
     const fetchMerchant = async () => {
       if (!customer?.merchantId) {
         console.log("\u{1F50D} CustomerDetailDialog: No merchantId found for customer:", customer);
@@ -18528,7 +18563,7 @@ var AddCustomerDialog = ({
 };
 
 // src/components/features/Customers/components/EditCustomerForm.tsx
-import { useState as useState38, useEffect as useEffect19, forwardRef as forwardRef13, useImperativeHandle as useImperativeHandle2 } from "react";
+import { useState as useState38, useEffect as useEffect20, forwardRef as forwardRef13, useImperativeHandle as useImperativeHandle2 } from "react";
 import { Save as Save3, X as X8 } from "lucide-react";
 import { Button as Button20 } from "@rentalshop/ui";
 import { Input as Input11 } from "@rentalshop/ui";
@@ -18560,7 +18595,7 @@ var EditCustomerForm = forwardRef13(({
   const [internalIsSubmitting, setInternalIsSubmitting] = useState38(false);
   const [errorMessage, setErrorMessage] = useState38(null);
   const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
-  useEffect19(() => {
+  useEffect20(() => {
     setFormData({
       firstName: customer.firstName,
       lastName: customer.lastName,
@@ -18844,7 +18879,7 @@ var EditCustomerForm = forwardRef13(({
 EditCustomerForm.displayName = "EditCustomerForm";
 
 // src/components/features/Customers/components/CustomerForm.tsx
-import { useState as useState39, useEffect as useEffect20 } from "react";
+import { useState as useState39, useEffect as useEffect21 } from "react";
 import { Save as Save4, X as X9 } from "lucide-react";
 import { Button as Button21 } from "@rentalshop/ui";
 import { Input as Input12 } from "@rentalshop/ui";
@@ -18878,7 +18913,7 @@ var CustomerForm = ({
   });
   const [isSubmitting, setIsSubmitting] = useState39(false);
   const [errors, setErrors] = useState39({});
-  useEffect20(() => {
+  useEffect21(() => {
     if (mode === "edit" && customer) {
       setFormData({
         firstName: customer.firstName || "",
@@ -19200,8 +19235,8 @@ var CustomerForm = ({
 };
 
 // src/components/features/Customers/components/CustomerActions.tsx
-import { useState as useState40, useEffect as useEffect21 } from "react";
-import { useRouter as useRouter3 } from "next/navigation";
+import { useState as useState40, useEffect as useEffect22 } from "react";
+import { useRouter as useRouter4 } from "next/navigation";
 import { Plus as Plus5, Filter as Filter2 } from "lucide-react";
 import { jsx as jsx101, jsxs as jsxs87 } from "react/jsx-runtime";
 function CustomerActions({
@@ -19213,8 +19248,8 @@ function CustomerActions({
   onViewOrders
 }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState40(false);
-  const router = useRouter3();
-  useEffect21(() => {
+  const router = useRouter4();
+  useEffect22(() => {
     const handleCustomerAction = (event) => {
       const { action, customer } = event.detail;
       if (!customer)
@@ -19501,7 +19536,7 @@ function CustomerStats({ stats }) {
 }
 
 // src/components/features/Customers/components/CustomerOrdersDialog.tsx
-import { useState as useState41, useEffect as useEffect22 } from "react";
+import { useState as useState41, useEffect as useEffect23 } from "react";
 import { Dialog as Dialog5, DialogContent as DialogContent5, DialogHeader as DialogHeader5, DialogTitle as DialogTitle5, DialogDescription as DialogDescription3 } from "@rentalshop/ui";
 import { Card as Card28, CardContent as CardContent27, CardHeader as CardHeader23, CardTitle as CardTitle23 } from "@rentalshop/ui";
 import { Badge as Badge10 } from "@rentalshop/ui";
@@ -19516,7 +19551,7 @@ var CustomerOrdersDialog = ({
   const [orders, setOrders] = useState41([]);
   const [loading, setLoading] = useState41(false);
   const [error2, setError] = useState41(null);
-  useEffect22(() => {
+  useEffect23(() => {
     if (open && customer) {
       fetchCustomerOrders(customer.id);
     }
@@ -19818,12 +19853,12 @@ var Customers = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = React58.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React58.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React58.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnCustomerAction = React58.useCallback(onCustomerAction, [onCustomerAction]);
-  const memoizedOnPageChange = React58.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React58.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = React59.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React59.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React59.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnCustomerAction = React59.useCallback(onCustomerAction, [onCustomerAction]);
+  const memoizedOnPageChange = React59.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React59.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs93("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsxs93("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ jsxs93(
@@ -19903,10 +19938,10 @@ var Customers = ({
 var Customers_default = Customers;
 
 // src/components/features/Orders/Orders.tsx
-import React59 from "react";
+import React60 from "react";
 import { Pagination as Pagination6 } from "@rentalshop/ui";
 import { jsx as jsx108, jsxs as jsxs94 } from "react/jsx-runtime";
-var Orders = React59.memo(function Orders2({
+var Orders = React60.memo(function Orders2({
   data,
   filters,
   onFiltersChange,
@@ -19917,7 +19952,7 @@ var Orders = React59.memo(function Orders2({
   onSort,
   showStats = true
 }) {
-  React59.useEffect(() => {
+  React60.useEffect(() => {
     console.log("\u{1F4CA} Orders Component: received new data", {
       ordersCount: data.orders.length,
       searchTerm: filters.search,
@@ -19925,13 +19960,13 @@ var Orders = React59.memo(function Orders2({
       firstOrder: data.orders[0]?.orderNumber
     });
   }, [data.orders, filters.search, filters.status]);
-  const memoizedOnFiltersChange = React59.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React59.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React59.useCallback(onClearFilters || (() => {
+  const memoizedOnFiltersChange = React60.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React60.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React60.useCallback(onClearFilters || (() => {
   }), [onClearFilters]);
-  const memoizedOnOrderAction = React59.useCallback(onOrderAction, [onOrderAction]);
-  const memoizedOnPageChange = React59.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React59.useCallback(onSort || (() => {
+  const memoizedOnOrderAction = React60.useCallback(onOrderAction, [onOrderAction]);
+  const memoizedOnPageChange = React60.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React60.useCallback(onSort || (() => {
   }), [onSort]);
   return /* @__PURE__ */ jsxs94("div", { className: "flex flex-col h-full", children: [
     /* @__PURE__ */ jsxs94("div", { className: "flex-shrink-0 space-y-4", children: [
@@ -19979,7 +20014,7 @@ var Orders = React59.memo(function Orders2({
 var Orders_default = Orders;
 
 // src/components/features/Orders/RentalPeriodSelector.tsx
-import { useState as useState42, useEffect as useEffect23 } from "react";
+import { useState as useState42, useEffect as useEffect24 } from "react";
 import { Button as Button23, Label as Label5, DateRangePicker as DateRangePicker3 } from "@rentalshop/ui";
 import { PricingResolver, PricingValidator } from "@rentalshop/utils";
 import { jsx as jsx109, jsxs as jsxs95 } from "react/jsx-runtime";
@@ -20017,7 +20052,7 @@ var RentalPeriodSelector2 = ({
     productName: product.name,
     merchantBusinessType: merchant.businessType
   });
-  useEffect23(() => {
+  useEffect24(() => {
     if (rentalStartAt && rentalEndAt) {
       const currentDatesKey = `${rentalStartAt.toISOString()}_${rentalEndAt.toISOString()}`;
       if (currentDatesKey !== lastNotifiedDates) {
@@ -20613,10 +20648,10 @@ function MerchantPagination({
 var MerchantPagination_default = MerchantPagination;
 
 // src/components/features/Merchants/components/MerchantPlanManagement.tsx
-import { useState as useState55, useEffect as useEffect32 } from "react";
+import { useState as useState55, useEffect as useEffect33 } from "react";
 
 // src/components/features/Subscriptions/components/SubscriptionList.tsx
-import { useState as useState47, useEffect as useEffect26 } from "react";
+import { useState as useState47, useEffect as useEffect27 } from "react";
 import {
   Search as Search5,
   Eye as Eye8,
@@ -21352,7 +21387,7 @@ function SubscriptionChangePlanDialog({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionEditDialog.tsx
-import { useState as useState46, useEffect as useEffect25 } from "react";
+import { useState as useState46, useEffect as useEffect26 } from "react";
 import {
   Dialog as Dialog9,
   DialogContent as DialogContent9,
@@ -21370,7 +21405,7 @@ import {
 } from "@rentalshop/ui";
 
 // src/components/features/Subscriptions/components/SubscriptionFormSimple.tsx
-import { useState as useState45, useEffect as useEffect24 } from "react";
+import { useState as useState45, useEffect as useEffect25 } from "react";
 import {
   DollarSign as DollarSign9,
   Users as Users5,
@@ -21417,7 +21452,7 @@ function SubscriptionFormSimple({
   const [selectedPlan, setSelectedPlan] = useState45(null);
   const [errors, setErrors] = useState45({});
   const [merchantOptions, setMerchantOptions] = useState45([]);
-  useEffect24(() => {
+  useEffect25(() => {
     const options = merchants.map((merchant) => ({
       value: merchant.id.toString(),
       label: merchant.name,
@@ -21436,7 +21471,7 @@ function SubscriptionFormSimple({
     );
     return filtered;
   };
-  useEffect24(() => {
+  useEffect25(() => {
     const plan = plans.find((p) => p.id === formData.planId);
     setSelectedPlan(plan || null);
   }, [formData.planId, plans]);
@@ -21778,7 +21813,7 @@ function SubscriptionEditDialog({
   loading = false
 }) {
   const [formData, setFormData] = useState46({});
-  useEffect25(() => {
+  useEffect26(() => {
     if (subscription) {
       setFormData({
         planId: parseInt(subscription.planId),
@@ -21985,7 +22020,7 @@ function SubscriptionList({
   const [showExtendDialog, setShowExtendDialog] = useState47(false);
   const [showChangePlanDialog, setShowChangePlanDialog] = useState47(false);
   const [selectedSubscription, setSelectedSubscription] = useState47(null);
-  useEffect26(() => {
+  useEffect27(() => {
     let filtered = subscriptions;
     if (searchTerm) {
       filtered = filtered.filter(
@@ -22311,7 +22346,7 @@ function SubscriptionList({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionForm.tsx
-import { useState as useState48, useEffect as useEffect27 } from "react";
+import { useState as useState48, useEffect as useEffect28 } from "react";
 import {
   Calendar as Calendar12,
   DollarSign as DollarSign12,
@@ -22366,7 +22401,7 @@ function SubscriptionForm({
   const [selectedMerchant, setSelectedMerchant] = useState48(null);
   console.log("SubscriptionForm - merchants:", merchants);
   console.log("SubscriptionForm - plans:", plans);
-  useEffect27(() => {
+  useEffect28(() => {
     const options = merchants.map((merchant) => ({
       value: merchant.id.toString(),
       label: merchant.name,
@@ -22397,7 +22432,7 @@ function SubscriptionForm({
     );
     return filtered;
   };
-  useEffect27(() => {
+  useEffect28(() => {
     const plan = plans.find((p) => p.id === formData.planId);
     setSelectedPlan(plan || null);
     if (plan) {
@@ -22409,7 +22444,7 @@ function SubscriptionForm({
       }));
     }
   }, [formData.planId, plans]);
-  useEffect27(() => {
+  useEffect28(() => {
     if (selectedPlan && formData.status === "trial" && selectedPlan.trialDays > 0) {
       const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setDate(endDate.getDate() + selectedPlan.trialDays);
@@ -22422,7 +22457,7 @@ function SubscriptionForm({
       }));
     }
   }, [selectedPlan, formData.startDate, formData.status]);
-  useEffect27(() => {
+  useEffect28(() => {
     if (formData.status === "ACTIVE" && selectedPlan) {
       const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setMonth(endDate.getMonth() + 1);
@@ -22819,7 +22854,7 @@ function SubscriptionForm({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionPreviewPage.tsx
-import { useState as useState49, useEffect as useEffect28 } from "react";
+import { useState as useState49, useEffect as useEffect29 } from "react";
 import {
   Card as Card34,
   CardHeader as CardHeader29,
@@ -22851,7 +22886,7 @@ var SubscriptionPreviewPage = ({
   const [error2, setError] = useState49(null);
   const [selectedPlan, setSelectedPlan] = useState49(null);
   const [selectedDuration, setSelectedDuration] = useState49(1);
-  useEffect28(() => {
+  useEffect29(() => {
     fetchPlans();
   }, []);
   const fetchPlans = async () => {
@@ -23254,7 +23289,7 @@ var SubscriptionPreviewPage = ({
 };
 
 // src/components/features/Subscriptions/components/PlanSelectionModal.tsx
-import { useState as useState50, useEffect as useEffect29 } from "react";
+import { useState as useState50, useEffect as useEffect30 } from "react";
 import {
   Dialog as Dialog11,
   DialogContent as DialogContent11,
@@ -23330,7 +23365,7 @@ var PlanSelectionModal = ({
   const [selectedBillingCycle, setSelectedBillingCycle] = useState50("monthly");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState50("STRIPE");
   const [calculatedPrice, setCalculatedPrice] = useState50(0);
-  useEffect29(() => {
+  useEffect30(() => {
     if (selectedPlan) {
       const billingCycle = BILLING_CYCLES2.find((bc) => bc.value === selectedBillingCycle);
       if (billingCycle) {
@@ -24274,7 +24309,7 @@ function ManualRenewalModal({
 }
 
 // src/components/features/Subscriptions/components/UpgradeTrialModal.tsx
-import { useState as useState53, useEffect as useEffect30 } from "react";
+import { useState as useState53, useEffect as useEffect31 } from "react";
 import {
   Dialog as Dialog13,
   DialogContent as DialogContent13,
@@ -24300,7 +24335,7 @@ function UpgradeTrialModal({
   const [selectedPlan, setSelectedPlan] = useState53(null);
   const [billingCycle, setBillingCycle] = useState53("month");
   const [paymentMethod, setPaymentMethod] = useState53("STRIPE");
-  useEffect30(() => {
+  useEffect31(() => {
     if (plans.length > 0 && !selectedPlan) {
       const firstPaidPlan = plans.find((p) => p.name !== "Trial" && p.basePrice > 0);
       if (firstPaidPlan) {
@@ -24576,7 +24611,7 @@ function UpgradeTrialModal({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionActivityTimeline.tsx
-import React72 from "react";
+import React73 from "react";
 import { formatDate as formatDate10, formatCurrency as formatCurrency15 } from "@rentalshop/utils";
 import {
   Clock as Clock13,
@@ -24603,7 +24638,7 @@ function SubscriptionActivityTimeline({
   loading = false,
   onExport
 }) {
-  const timeline = React72.useMemo(() => {
+  const timeline = React73.useMemo(() => {
     const items = [];
     activities.forEach((activity) => {
       items.push({
@@ -24887,7 +24922,7 @@ function SubscriptionActivityTimeline({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionHistoryDialog.tsx
-import { useState as useState54, useEffect as useEffect31 } from "react";
+import { useState as useState54, useEffect as useEffect32 } from "react";
 import { subscriptionsApi } from "@rentalshop/utils";
 import { jsx as jsx131 } from "react/jsx-runtime";
 function SubscriptionHistoryDialog({
@@ -24918,7 +24953,7 @@ function SubscriptionHistoryDialog({
       setLoading(false);
     }
   };
-  useEffect31(() => {
+  useEffect32(() => {
     if (subscriptionId) {
       fetchHistory();
     }
@@ -25055,7 +25090,7 @@ function MerchantPlanManagement({
     setChangeBillingInterval("month");
     setNotifyMerchant(true);
   };
-  useEffect32(() => {
+  useEffect33(() => {
     if (showChangeDialog && !changeBillingInterval) {
       setChangeBillingInterval("month");
     }
@@ -25775,10 +25810,10 @@ function Merchants({
 var Merchants_default = Merchants;
 
 // src/components/features/Merchants/components/MerchantDetail.tsx
-import { useRouter as useRouter4 } from "next/navigation";
+import { useRouter as useRouter5 } from "next/navigation";
 
 // src/components/features/Merchants/components/MerchantSubscriptionSection.tsx
-import { useState as useState56, useEffect as useEffect33 } from "react";
+import { useState as useState56, useEffect as useEffect34 } from "react";
 import {
   Pause as Pause5,
   XCircle as XCircle11,
@@ -25797,7 +25832,7 @@ function MerchantSubscriptionSection({
   const [payments, setPayments] = useState56([]);
   const [loadingHistory, setLoadingHistory] = useState56(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState56(false);
-  useEffect33(() => {
+  useEffect34(() => {
     if (subscription && showHistoryDialog) {
       fetchHistory();
     }
@@ -25913,7 +25948,7 @@ function MerchantDetail({
   onSuspend,
   onReactivate
 }) {
-  const router = useRouter4();
+  const router = useRouter5();
   const navigateToPage = (page, id) => {
     const url = id ? `/${page}/${id}` : `/${page}`;
     router.push(url);
@@ -26193,7 +26228,7 @@ function CalendarStats({
 }
 
 // src/components/features/Calendars/components/CalendarGrid.tsx
-import React76 from "react";
+import React77 from "react";
 import { jsx as jsx139, jsxs as jsxs124 } from "react/jsx-runtime";
 function CalendarGrid({
   currentDate,
@@ -26202,7 +26237,7 @@ function CalendarGrid({
   onDateClick,
   className = ""
 }) {
-  const calendarDays = React76.useMemo(() => {
+  const calendarDays = React77.useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -26513,7 +26548,7 @@ function OrdersList({
 }
 
 // src/components/features/Users/Users.tsx
-import React85 from "react";
+import React86 from "react";
 import {
   Pagination as Pagination8,
   EmptyState as EmptyState4
@@ -26734,7 +26769,7 @@ function UserGrid({ users, onUserAction }) {
 }
 
 // src/components/features/Users/components/UserTable.tsx
-import React78 from "react";
+import React79 from "react";
 import { Eye as Eye10, Edit as Edit9, Trash2 as Trash29, MoreVertical as MoreVertical4, UserCheck as UserCheck2, UserX as UserX2 } from "lucide-react";
 import { jsx as jsx147, jsxs as jsxs132 } from "react/jsx-runtime";
 function UserTable({
@@ -26744,7 +26779,7 @@ function UserTable({
   sortOrder = "desc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = React78.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React79.useState(null);
   if (users.length === 0) {
     return /* @__PURE__ */ jsx147(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx147(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ jsxs132("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx147("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
@@ -26922,8 +26957,8 @@ function UsersLoading() {
 }
 
 // src/components/features/Users/components/UserActions.tsx
-import { useState as useState60, useEffect as useEffect35 } from "react";
-import { useRouter as useRouter5 } from "next/navigation";
+import { useState as useState60, useEffect as useEffect36 } from "react";
+import { useRouter as useRouter6 } from "next/navigation";
 import { ConfirmationDialog as ConfirmationDialog3 } from "@rentalshop/ui";
 
 // src/components/features/Users/components/UserDetailDialog.tsx
@@ -27551,12 +27586,12 @@ function UserActions({
   onError,
   onSuccess
 }) {
-  const router = useRouter5();
+  const router = useRouter6();
   const [isViewDialogOpen, setIsViewDialogOpen] = useState60(false);
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState60(false);
   const [selectedUser, setSelectedUser] = useState60(null);
   const [userToDeactivate, setUserToDeactivate] = useState60(null);
-  useEffect35(() => {
+  useEffect36(() => {
     const handleUserAction = (event) => {
       const { action, userId, user } = event.detail;
       console.log("\u{1F50D} UserActions: Event received:", { action, userId, user });
@@ -27657,7 +27692,7 @@ function UserActions({
 import { useState as useState63 } from "react";
 
 // src/components/features/Users/components/UserForm.tsx
-import { useState as useState62, useEffect as useEffect36 } from "react";
+import { useState as useState62, useEffect as useEffect37 } from "react";
 import { Save as Save5, X as X15 } from "lucide-react";
 
 // src/components/features/Users/components/UserFormFields.tsx
@@ -28032,7 +28067,7 @@ var UserForm = ({
   const canSelectOutlet = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT";
   const showMerchantField = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT" || currentUser?.role === "OUTLET_ADMIN" || currentUser?.role === "OUTLET_STAFF";
   const showOutletField = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT" || currentUser?.role === "OUTLET_ADMIN" || currentUser?.role === "OUTLET_STAFF";
-  useEffect36(() => {
+  useEffect37(() => {
     if (isEditMode && user) {
       console.log("\u{1F50D} UserForm: User object for edit:", user);
       console.log("\u{1F50D} UserForm: User role:", user.role, "Type:", typeof user.role);
@@ -28058,7 +28093,7 @@ var UserForm = ({
       console.log("\u{1F50D} UserForm: Final role set:", formData2.role);
     }
   }, [user, isEditMode]);
-  useEffect36(() => {
+  useEffect37(() => {
     if (!isEditMode && currentUser) {
       const updates = {};
       const userMerchantId = currentUser.merchantId || currentUser.merchant?.id;
@@ -28074,7 +28109,7 @@ var UserForm = ({
       }
     }
   }, [currentUser, canSelectMerchant, canSelectOutlet, isEditMode]);
-  useEffect36(() => {
+  useEffect37(() => {
     if (!isEditMode && canSelectMerchant) {
       setLoadingMerchants(true);
       merchantsApi.getMerchants().then((response) => {
@@ -28095,7 +28130,7 @@ var UserForm = ({
       setFormData((prev) => ({ ...prev, merchantId: userMerchantId?.toString() || "" }));
     }
   }, [canSelectMerchant, currentUser, isEditMode]);
-  useEffect36(() => {
+  useEffect37(() => {
     if (!isEditMode && canSelectOutlet) {
       setLoadingOutlets(true);
       const merchantId = canSelectMerchant ? formData.merchantId : currentUser?.merchantId || currentUser?.merchant?.id;
@@ -28131,7 +28166,7 @@ var UserForm = ({
       setFormData((prev) => ({ ...prev, outletId: currentUser.outletId?.toString() || "" }));
     }
   }, [canSelectOutlet, canSelectMerchant, formData.merchantId, currentUser?.merchantId, currentUser?.outletId, isEditMode]);
-  useEffect36(() => {
+  useEffect37(() => {
     if (!isEditMode && canSelectMerchant && formData.merchantId) {
       console.log("\u{1F50D} UserForm: Merchant changed, resetting outlet and reloading outlets");
       setFormData((prev) => ({ ...prev, outletId: "" }));
@@ -28867,12 +28902,12 @@ var Users10 = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = React85.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React85.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React85.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnUserAction = React85.useCallback(onUserAction, [onUserAction]);
-  const memoizedOnPageChange = React85.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React85.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = React86.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React86.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React86.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnUserAction = React86.useCallback(onUserAction, [onUserAction]);
+  const memoizedOnPageChange = React86.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React86.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs144("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsxs144("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ jsx159(
@@ -28933,7 +28968,7 @@ var Users10 = ({
 var Users_default = Users10;
 
 // src/components/features/Outlets/Outlets.tsx
-import React87 from "react";
+import React88 from "react";
 import {
   Pagination as Pagination10,
   EmptyState as EmptyState5
@@ -29177,7 +29212,7 @@ function OutletGrid({
 }
 
 // src/components/features/Outlets/components/OutletTable.tsx
-import React86 from "react";
+import React87 from "react";
 import { Eye as Eye16, Edit as Edit12, XCircle as XCircle13, CheckCircle as CheckCircle19, MoreVertical as MoreVertical5, Building2 as Building212 } from "lucide-react";
 import { jsx as jsx163, jsxs as jsxs148 } from "react/jsx-runtime";
 function OutletTable({
@@ -29187,7 +29222,7 @@ function OutletTable({
   sortOrder = "desc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = React86.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React87.useState(null);
   if (outlets.length === 0) {
     return /* @__PURE__ */ jsx163(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx163(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ jsxs148("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx163(Building212, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
@@ -29387,10 +29422,10 @@ var Outlets = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = React87.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnOutletAction = React87.useCallback(onOutletAction, [onOutletAction]);
-  const memoizedOnPageChange = React87.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React87.useCallback(onSort, [onSort]);
+  const memoizedOnSearchChange = React88.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnOutletAction = React88.useCallback(onOutletAction, [onOutletAction]);
+  const memoizedOnPageChange = React88.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React88.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs150("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsx166("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ jsx166(
       OutletSearch,
@@ -29432,7 +29467,7 @@ var Outlets = ({
 };
 
 // src/components/features/Categories/Categories.tsx
-import React93 from "react";
+import React94 from "react";
 import {
   Pagination as Pagination11,
   EmptyState as EmptyState6
@@ -29467,7 +29502,7 @@ import { useUserRole as useUserRole6 } from "@rentalshop/hooks";
 import { useState as useState65 } from "react";
 
 // src/components/features/Categories/components/CategoryFormContent.tsx
-import { useState as useState64, useEffect as useEffect37 } from "react";
+import { useState as useState64, useEffect as useEffect38 } from "react";
 import { Save as Save6, Loader2 as Loader27 } from "lucide-react";
 import { Fragment as Fragment27, jsx as jsx168, jsxs as jsxs152 } from "react/jsx-runtime";
 var CategoryFormContent = ({
@@ -29484,7 +29519,7 @@ var CategoryFormContent = ({
   const [errors, setErrors] = useState64({});
   const [isSubmitting, setIsSubmitting] = useState64(false);
   const submitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : isSubmitting;
-  useEffect37(() => {
+  useEffect38(() => {
     if (category && mode === "edit") {
       setFormData({
         name: category.name || "",
@@ -29862,7 +29897,7 @@ var CategoryGrid = ({
 };
 
 // src/components/features/Categories/components/CategoryTable.tsx
-import React91 from "react";
+import React92 from "react";
 import { Eye as Eye18, Edit as Edit14, Trash2 as Trash211, CheckCircle as CheckCircle20, XCircle as XCircle14, MoreVertical as MoreVertical6, FolderOpen } from "lucide-react";
 import { Fragment as Fragment29, jsx as jsx173, jsxs as jsxs157 } from "react/jsx-runtime";
 function CategoryTable({
@@ -29872,7 +29907,7 @@ function CategoryTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = React91.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React92.useState(null);
   if (categories.length === 0) {
     return /* @__PURE__ */ jsx173(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx173(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ jsxs157("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx173(FolderOpen, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
@@ -30298,10 +30333,10 @@ var Categories = ({
   const currentPage = data?.currentPage || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = React93.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnCategoryAction = React93.useCallback(onCategoryAction, [onCategoryAction]);
-  const memoizedOnPageChange = React93.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React93.useCallback(onSort, [onSort]);
+  const memoizedOnSearchChange = React94.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnCategoryAction = React94.useCallback(onCategoryAction, [onCategoryAction]);
+  const memoizedOnPageChange = React94.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React94.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs163("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsx179("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ jsx179(
       CategorySearch,
@@ -30514,7 +30549,7 @@ var PlanActions = ({
 };
 
 // src/components/features/Plans/components/PlanSelection.tsx
-import { useState as useState68, useEffect as useEffect38 } from "react";
+import { useState as useState68, useEffect as useEffect39 } from "react";
 import {
   Card as Card48,
   CardHeader as CardHeader38,
@@ -30549,12 +30584,12 @@ var PlanSelection = ({
 }) => {
   const [selectedPlan, setSelectedPlan] = useState68(selectedPlanId);
   const [selectedCycle, setSelectedCycle] = useState68(selectedBillingCycle);
-  useEffect38(() => {
+  useEffect39(() => {
     if (selectedPlanId) {
       setSelectedPlan(selectedPlanId);
     }
   }, [selectedPlanId]);
-  useEffect38(() => {
+  useEffect39(() => {
     if (selectedBillingCycle) {
       setSelectedCycle(selectedBillingCycle);
     }
@@ -31714,7 +31749,7 @@ var BillingCycleTable = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleForm.tsx
-import { useState as useState69, useEffect as useEffect39 } from "react";
+import { useState as useState69, useEffect as useEffect40 } from "react";
 import {
   Button as Button50,
   Input as Input23,
@@ -31739,7 +31774,7 @@ var BillingCycleForm = ({
     sortOrder: initialData.sortOrder || 0
   });
   const [errors, setErrors] = useState69({});
-  useEffect39(() => {
+  useEffect40(() => {
     if (initialData) {
       setFormData({
         name: initialData.name || "",
@@ -31975,7 +32010,7 @@ var BillingCycleForm = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleDetailDialog.tsx
-import React96, { useState as useState70 } from "react";
+import React97, { useState as useState70 } from "react";
 import {
   Dialog as Dialog16,
   DialogContent as DialogContent16,
@@ -32013,7 +32048,7 @@ var BillingCycleDetailDialog = ({
 }) => {
   const [isEditing, setIsEditing] = useState70(false);
   const [tempStatus, setTempStatus] = useState70(billingCycle?.isActive ?? false);
-  React96.useEffect(() => {
+  React97.useEffect(() => {
     setTempStatus(billingCycle?.isActive ?? false);
   }, [billingCycle]);
   const handleToggleStatus = () => {
@@ -32219,7 +32254,7 @@ var BillingCycleDetailDialog = ({
 };
 
 // src/components/features/Payments/components/PaymentForm.tsx
-import React97, { useState as useState71, useEffect as useEffect40 } from "react";
+import React98, { useState as useState71, useEffect as useEffect41 } from "react";
 import {
   Button as Button52,
   Input as Input24,
@@ -32298,7 +32333,7 @@ var PaymentForm = ({
   const [selectedPlan, setSelectedPlan] = useState71(null);
   const [selectedPlanVariant, setSelectedPlanVariant] = useState71(null);
   const [isSearchingMerchants, setIsSearchingMerchants] = useState71(false);
-  const searchMerchants = React97.useCallback(async (query) => {
+  const searchMerchants = React98.useCallback(async (query) => {
     console.log("\u{1F50D} PaymentForm: searchMerchants called with query:", query);
     if (!query.trim()) {
       console.log("\u{1F50D} PaymentForm: Empty query, returning empty array");
@@ -32359,7 +32394,7 @@ var PaymentForm = ({
       console.log("\u{1F50D} PaymentForm: Search completed for query:", query);
     }
   }, []);
-  useEffect40(() => {
+  useEffect41(() => {
     if (mode === "edit" && existingPayment && plans.length > 0 && planVariants.length > 0) {
       const plan = plans.find((p) => p.id === existingPayment.planId);
       const planVariant = planVariants.find((v) => v.id === existingPayment.planVariantId);
@@ -32369,7 +32404,7 @@ var PaymentForm = ({
         setSelectedPlanVariant(planVariant);
     }
   }, [mode, existingPayment, plans, planVariants]);
-  useEffect40(() => {
+  useEffect41(() => {
     if (selectedPlan && selectedPlanVariant) {
       const totalAmount = selectedPlanVariant.price;
       const currency = selectedPlan.currency;
@@ -35811,7 +35846,7 @@ import {
 } from "@rentalshop/ui";
 
 // src/components/features/AuditLogs/AuditLogDetail.tsx
-import React99, { useState as useState73 } from "react";
+import React100, { useState as useState73 } from "react";
 import {
   Dialog as Dialog17,
   DialogContent as DialogContent17,
@@ -35894,7 +35929,7 @@ function ActionBadge({ action }) {
   return /* @__PURE__ */ jsx232(Badge28, { className: getActionStyle(action), children: action });
 }
 function JsonViewer({ data, title }) {
-  const [isExpanded, setIsExpanded] = React99.useState(false);
+  const [isExpanded, setIsExpanded] = React100.useState(false);
   if (!data) {
     return /* @__PURE__ */ jsxs209(Card56, { children: [
       /* @__PURE__ */ jsx232(CardHeader43, { children: /* @__PURE__ */ jsx232(CardTitle43, { className: "text-sm", children: title }) }),
@@ -36589,7 +36624,7 @@ function AuditLogViewerSimple({ className = "" }) {
 }
 
 // src/components/features/OrderDetail/OrderDetail.tsx
-import { useState as useState75, useEffect as useEffect42 } from "react";
+import { useState as useState75, useEffect as useEffect43 } from "react";
 import {
   Card as Card58,
   CardHeader as CardHeader45,
@@ -37006,7 +37041,7 @@ var OrderDetail = ({
   const [isReturnLoading, setIsReturnLoading] = useState75(false);
   const [isCancelLoading, setIsCancelLoading] = useState75(false);
   const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState75(false);
-  useEffect42(() => {
+  useEffect43(() => {
     if (order) {
       const newSettings = {
         damageFee: order.damageFee || 0,
@@ -37789,7 +37824,7 @@ function OutletDetailLoading() {
 }
 
 // src/components/features/Settings/Settings.tsx
-import { useState as useState78, useEffect as useEffect44 } from "react";
+import { useState as useState78, useEffect as useEffect45 } from "react";
 import {
   User as User25,
   CreditCard as CreditCard22,
@@ -37979,7 +38014,7 @@ var ProfileSection = ({
 };
 
 // src/components/features/Settings/components/MerchantSection.tsx
-import { useState as useState77, useEffect as useEffect43, useRef as useRef7 } from "react";
+import { useState as useState77, useEffect as useEffect44, useRef as useRef7 } from "react";
 import {
   Card as Card61,
   CardContent as CardContent59,
@@ -38012,7 +38047,7 @@ var MerchantSection = ({
   console.log("\u{1F50D} MerchantSection render - user role:", user?.role);
   console.log("\u{1F50D} MerchantSection render - loadingMerchant:", loadingMerchant);
   console.log("\u{1F50D} MerchantSection render - fetchingRef.current:", fetchingRef.current);
-  useEffect43(() => {
+  useEffect44(() => {
     const fetchMerchantData = async () => {
       if (user?.merchantId && !user?.merchant && !fetchingRef.current) {
         console.log("\u{1F504} Fetching merchant data for merchantId:", user.merchantId);
@@ -38756,7 +38791,7 @@ var SettingsComponent = () => {
   const [isDeleting, setIsDeleting] = useState78(false);
   const [subscriptionData, setSubscriptionData] = useState78(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState78(true);
-  useEffect44(() => {
+  useEffect45(() => {
     const fetchSubscriptionData = async () => {
       try {
         setSubscriptionLoading(true);
@@ -38830,7 +38865,7 @@ var SettingsComponent = () => {
     };
     fetchSubscriptionData();
   }, []);
-  useEffect44(() => {
+  useEffect45(() => {
     if (user?.merchant && user?.role === "MERCHANT") {
       setMerchantFormData({
         name: user.merchant.name || "",
@@ -39915,7 +39950,7 @@ var QuickActionsGrid = () => {
 };
 
 // src/components/layout/SearchInput.tsx
-import { useEffect as useEffect45 } from "react";
+import { useEffect as useEffect46 } from "react";
 import { Search as Search15, X as X25 } from "lucide-react";
 import { cn as cn6 } from "@rentalshop/ui";
 import { Button as Button66 } from "@rentalshop/ui";
@@ -39941,12 +39976,12 @@ var SearchInput = ({
     minLength,
     onSearch
   });
-  useEffect45(() => {
+  useEffect46(() => {
     if (defaultValue && !query) {
       handleSearchChange(defaultValue);
     }
   }, [defaultValue, query, handleSearchChange]);
-  useEffect45(() => {
+  useEffect46(() => {
     return cleanup;
   }, [cleanup]);
   return /* @__PURE__ */ jsxs234("div", { className: cn6("relative", className), children: [
@@ -40396,7 +40431,7 @@ var AdminSidebar = ({
 };
 
 // src/components/layout/ClientSidebar.tsx
-import { useState as useState84, useEffect as useEffect46 } from "react";
+import { useState as useState84, useEffect as useEffect47 } from "react";
 import { usePathname as usePathname2 } from "next/navigation";
 import { cn as cn8 } from "@rentalshop/ui";
 import { Button as Button70 } from "@rentalshop/ui";
@@ -40504,10 +40539,10 @@ var ClientSidebar = ({
     return items;
   };
   const menuItems2 = filterMenuItemsByRole(clientMenuItems, user?.role);
-  useEffect46(() => {
+  useEffect47(() => {
     setLocalCurrentPage(currentPath);
   }, [currentPath]);
-  useEffect46(() => {
+  useEffect47(() => {
     const handleClickOutside = (event) => {
       const target = event.target;
       const isClickingNavItem = target.closest(".nav-item");

@@ -14,6 +14,7 @@ import {
   IncomeChart,
   OrderChart,
   SubscriptionStatusBanner,
+  DashboardLoading,
   useToast,
   Button } from '@rentalshop/ui';
 import { TopProduct, TopCustomer } from '@rentalshop/types';
@@ -164,6 +165,7 @@ export default function DashboardPage() {
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(
     (searchParams.get('period') as 'today' | 'month' | 'year') || 'today'
   );
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   
@@ -485,6 +487,7 @@ export default function DashboardPage() {
       setTopCustomers([]);
     } finally {
       setLoadingCharts(false);
+      setInitialLoading(false);
     }
   };
 
@@ -553,6 +556,19 @@ export default function DashboardPage() {
   // Debug popular data
   console.log('🔍 Current Top Products:', currentTopProducts);
   console.log('🔍 Current Top Customers:', currentTopCustomers);
+
+  // Show loading skeleton on initial load
+  if (initialLoading) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <PageWrapper>
+          <PageContent>
+            <DashboardLoading />
+          </PageContent>
+        </PageWrapper>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto">

@@ -15143,13 +15143,16 @@ function DashboardFocusLoading() {
 }
 
 // src/components/layout/DashboardWrapper.tsx
-var import_react28 = require("react");
+var import_react29 = require("react");
 
 // src/components/layout/sidebar.tsx
+var import_react28 = require("react");
 var import_link2 = __toESM(require("next/link"));
+var import_navigation2 = require("next/navigation");
 var import_ui17 = require("@rentalshop/ui");
 var import_ui18 = require("@rentalshop/ui");
 var import_lucide_react27 = require("lucide-react");
+var import_hooks4 = require("@rentalshop/hooks");
 var import_jsx_runtime67 = require("react/jsx-runtime");
 var menuItems = [
   {
@@ -15204,6 +15207,13 @@ var Sidebar = ({
   isCollapsed = false,
   onCollapseToggle
 }) => {
+  const router = (0, import_navigation2.useRouter)();
+  const { navigate, navigatingTo } = (0, import_hooks4.useOptimisticNavigation)();
+  (0, import_react28.useEffect)(() => {
+    menuItems.forEach((item) => {
+      router.prefetch(item.href);
+    });
+  }, [router]);
   return /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(import_jsx_runtime67.Fragment, { children: [
     isOpen && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
       "div",
@@ -15212,6 +15222,13 @@ var Sidebar = ({
         onClick: onToggle
       }
     ),
+    navigatingTo && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("div", { className: "fixed inset-0 bg-white bg-opacity-60 backdrop-blur-sm z-[60] flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "bg-white rounded-lg shadow-xl p-6 flex flex-col items-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("svg", { className: "animate-spin h-8 w-8 text-green-600 mb-3", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("circle", { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
+        /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("path", { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("p", { className: "text-sm font-medium text-gray-700", children: "Loading..." })
+    ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
       "aside",
       {
@@ -15222,10 +15239,17 @@ var Sidebar = ({
         ),
         children: /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "flex flex-col h-full", children: [
           /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "flex items-center justify-between h-16 px-6 border-b border-gray-200", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(import_link2.default, { href: "/dashboard", className: "flex items-center space-x-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("div", { className: "w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: "text-white font-bold text-sm", children: "R" }) }),
-              !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: "font-bold text-2xl text-gray-900 leading-none", children: "RentalShop" })
-            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
+              "button",
+              {
+                onClick: () => navigate("/dashboard"),
+                className: "flex items-center space-x-2 hover:opacity-80 transition-opacity",
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("div", { className: "w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: "text-white font-bold text-sm", children: "R" }) }),
+                  !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: "font-bold text-2xl text-gray-900 leading-none", children: "RentalShop" })
+                ]
+              }
+            ),
             /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "flex items-center space-x-2", children: [
               onCollapseToggle && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
                 import_ui18.Button,
@@ -15250,34 +15274,45 @@ var Sidebar = ({
               )
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: menuItems.map((item) => {
-            const isActive = currentPath === item.href;
-            return /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
-              import_link2.default,
-              {
-                href: item.href,
-                className: (0, import_ui17.cn)(
-                  "flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group",
-                  isActive ? "bg-green-100 text-green-700 border-r-2 border-green-600" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                ),
-                title: isCollapsed ? item.label : void 0,
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "flex items-center space-x-3", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: (0, import_ui17.cn)(
-                      "flex-shrink-0",
-                      isActive ? "text-green-600" : "text-gray-500"
-                    ), children: item.icon }),
-                    !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: (0, import_ui17.cn)(
-                      "text-base",
-                      isActive ? "font-medium" : "font-normal"
-                    ), children: item.label })
-                  ] }),
-                  !isCollapsed && item.badge && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge })
-                ]
-              },
-              item.href
-            );
-          }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("div", { className: "hidden", children: menuItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(import_link2.default, { href: item.href, prefetch: true, children: item.label }, `prefetch-${item.href}`)) }),
+            menuItems.map((item) => {
+              const isActive = currentPath === item.href;
+              const isNavigating = navigatingTo === item.href;
+              const shouldHighlight = isActive || isNavigating;
+              return /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
+                "button",
+                {
+                  onClick: (e) => {
+                    e.preventDefault();
+                    navigate(item.href);
+                  },
+                  onMouseEnter: () => {
+                    router.prefetch(item.href);
+                  },
+                  className: (0, import_ui17.cn)(
+                    "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group",
+                    shouldHighlight ? "bg-green-100 text-green-700 border-r-2 border-green-600" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  ),
+                  title: isCollapsed ? item.label : void 0,
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "flex items-center space-x-3", children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: (0, import_ui17.cn)(
+                        "flex-shrink-0 transition-colors duration-150",
+                        shouldHighlight ? "text-green-600" : "text-gray-500"
+                      ), children: item.icon }),
+                      !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: (0, import_ui17.cn)(
+                        "text-base transition-all duration-150",
+                        shouldHighlight ? "font-medium" : "font-normal"
+                      ), children: item.label })
+                    ] }),
+                    !isCollapsed && item.badge && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge })
+                  ]
+                },
+                item.href
+              );
+            })
+          ] }),
           user && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("div", { className: "p-4 border-t border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(import_ui18.Card, { className: "p-3", children: [
             /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "flex items-center space-x-3", children: [
               /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("div", { className: "w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { className: "text-white font-bold text-sm", children: user.firstName?.[0] || user.email?.[0] || "U" }) }),
@@ -15288,9 +15323,9 @@ var Sidebar = ({
             ] }),
             !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "mt-4 space-y-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
-                import_link2.default,
+                "button",
                 {
-                  href: "/profile",
+                  onClick: () => navigate("/profile"),
                   className: "block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200",
                   children: /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { className: "flex items-center space-x-2", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" }) }),
@@ -15330,7 +15365,7 @@ function DashboardWrapper({
   hideSidebar = false,
   allowCollapse = true
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react28.useState)(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react29.useState)(false);
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -15378,7 +15413,7 @@ function Dashboard({ data, onPeriodChange, onActionClick }) {
 var Dashboard_default = Dashboard;
 
 // src/components/features/Products/Products.tsx
-var import_react43 = __toESM(require("react"));
+var import_react44 = __toESM(require("react"));
 
 // src/components/features/Products/components/ProductHeader.tsx
 var import_jsx_runtime70 = require("react/jsx-runtime");
@@ -15435,20 +15470,20 @@ var ProductPageHeader = ({
 };
 
 // src/components/features/Products/components/ProductFilters.tsx
-var import_react29 = require("react");
+var import_react30 = require("react");
 var import_ui19 = require("@rentalshop/ui");
 var import_ui20 = require("@rentalshop/ui");
 var import_ui21 = require("@rentalshop/ui");
 var import_utils18 = require("@rentalshop/utils");
 var import_jsx_runtime72 = require("react/jsx-runtime");
 function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }) {
-  const [outlets, setOutlets] = (0, import_react29.useState)([]);
-  const [loadingOutlets, setLoadingOutlets] = (0, import_react29.useState)(false);
-  const [outletError, setOutletError] = (0, import_react29.useState)(null);
-  const [categories, setCategories] = (0, import_react29.useState)([]);
-  const [loadingCategories, setLoadingCategories] = (0, import_react29.useState)(false);
-  const [categoryError, setCategoryError] = (0, import_react29.useState)(null);
-  (0, import_react29.useEffect)(() => {
+  const [outlets, setOutlets] = (0, import_react30.useState)([]);
+  const [loadingOutlets, setLoadingOutlets] = (0, import_react30.useState)(false);
+  const [outletError, setOutletError] = (0, import_react30.useState)(null);
+  const [categories, setCategories] = (0, import_react30.useState)([]);
+  const [loadingCategories, setLoadingCategories] = (0, import_react30.useState)(false);
+  const [categoryError, setCategoryError] = (0, import_react30.useState)(null);
+  (0, import_react30.useEffect)(() => {
     const fetchData = async () => {
       try {
         setLoadingOutlets(true);
@@ -15546,10 +15581,10 @@ function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilte
 }
 
 // src/components/features/Products/components/ProductGrid.tsx
-var import_react31 = require("react");
+var import_react32 = require("react");
 
 // src/components/features/Products/components/ProductCard.tsx
-var import_react30 = require("react");
+var import_react31 = require("react");
 var import_jsx_runtime73 = require("react/jsx-runtime");
 var ProductCard = ({
   id,
@@ -15577,7 +15612,7 @@ var ProductCard = ({
   onProductUpdated,
   onError
 }) => {
-  const [isEditDialogOpen, setIsEditDialogOpen] = (0, import_react30.useState)(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = (0, import_react31.useState)(false);
   const mainImage = images?.[0] || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBDMTE2LjU2OSA3MCAxMzAgODMuNDMxIDMwIDEwMEMxMzAgMTE2LjU2OSAxMTYuNTY5IDEzMCAxMDAgMTMwQzgzLjQzMSAxMzAgNzAgMTE2LjU2OSA3MCAxMEM3MCA4My40MzEgODMuNDMxIDcwIDEwMCA3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHBhdGggZD0iTTEwMCAxMTVDMTA4LjI4NCAxMTUgMTE1IDEwOC4yODQgMTE1IDEwMEMxMTUgOTEuNzE2IDEwOC4yODQgODUgMTAwIDg1QzkxLjcxNiA4NSA4NSA5MS43MTYgODUgMTAwQzg1IDEwOC4yODQgOTEuNzE2IDExNSAxMDAgMTE1WiIgZmlsbD0iI0E5Q0JCRiIvPgo8L3N2Zz4K";
   const isAvailable = available > 0;
   const handleEdit = () => {
@@ -15785,7 +15820,7 @@ function ProductGrid({
   onError,
   showAddButton = false
 }) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react31.useState)(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react32.useState)(false);
   const handleAddProduct = () => {
     setIsAddDialogOpen(true);
   };
@@ -15847,7 +15882,7 @@ function ProductGrid({
 }
 
 // src/components/features/Products/components/ProductTable.tsx
-var import_react32 = __toESM(require("react"));
+var import_react33 = __toESM(require("react"));
 var import_lucide_react28 = require("lucide-react");
 var import_jsx_runtime75 = require("react/jsx-runtime");
 function ProductTable({
@@ -15857,7 +15892,7 @@ function ProductTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react32.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react33.default.useState(null);
   if (products.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ (0, import_jsx_runtime75.jsx)("div", { className: "text-4xl mb-4", children: "\u{1F4E6}" }),
@@ -16056,14 +16091,14 @@ function ProductTable({
 }
 
 // src/components/features/Products/components/ProductActions.tsx
-var import_react35 = require("react");
-var import_hooks4 = require("@rentalshop/hooks");
+var import_react36 = require("react");
+var import_hooks5 = require("@rentalshop/hooks");
 
 // src/components/features/Products/components/ProductAddDialog.tsx
-var import_react34 = require("react");
+var import_react35 = require("react");
 
 // src/components/features/Products/components/ProductAddForm.tsx
-var import_react33 = require("react");
+var import_react34 = require("react");
 var import_lucide_react29 = require("lucide-react");
 var import_ui23 = require("@rentalshop/ui");
 var import_jsx_runtime76 = require("react/jsx-runtime");
@@ -16075,7 +16110,7 @@ var ProductAddForm = ({
   onCancel,
   onBack
 }) => {
-  const [isSubmitting, setIsSubmitting] = (0, import_react33.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react34.useState)(false);
   const { toastSuccess, toastError } = (0, import_ui23.useToast)();
   const handleSubmit = async (data) => {
     setIsSubmitting(true);
@@ -16171,7 +16206,7 @@ var ProductAddDialog = ({
   onProductCreated,
   onError
 }) => {
-  const [isSubmitting, setIsSubmitting] = (0, import_react34.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react35.useState)(false);
   console.log("\u{1F7E2} ProductAddDialog: Rendered with open =", open);
   const handleSave = async (productData) => {
     try {
@@ -16220,9 +16255,9 @@ function ProductActions({
   onProductUpdated,
   onError
 }) {
-  const { role: currentUserRole, canManageProducts, canManageCategories } = (0, import_hooks4.useUserRole)();
-  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react35.useState)(false);
-  const [editingProduct, setEditingProduct] = (0, import_react35.useState)(null);
+  const { role: currentUserRole, canManageProducts, canManageCategories } = (0, import_hooks5.useUserRole)();
+  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react36.useState)(false);
+  const [editingProduct, setEditingProduct] = (0, import_react36.useState)(null);
   const handleAddProduct = () => {
     console.log("\u{1F535} ProductActions: handleAddProduct called");
     setEditingProduct(null);
@@ -16384,8 +16419,8 @@ function ProductDetailLoading() {
 }
 
 // src/components/features/Products/components/ProductDetailList.tsx
-var import_react36 = require("react");
-var import_navigation2 = require("next/navigation");
+var import_react37 = require("react");
+var import_navigation3 = require("next/navigation");
 
 // src/lib/index.ts
 var import_utils20 = require("@rentalshop/utils");
@@ -16400,8 +16435,8 @@ var ProductDetailList = ({
   isMerchantAccount = false,
   className = ""
 }) => {
-  const router = (0, import_navigation2.useRouter)();
-  const [selectedImage, setSelectedImage] = (0, import_react36.useState)(
+  const router = (0, import_navigation3.useRouter)();
+  const [selectedImage, setSelectedImage] = (0, import_react37.useState)(
     product.images && product.images.length > 0 ? product.images[0] : null
   );
   const handleImageError = (e) => {
@@ -16563,7 +16598,7 @@ var ProductDetailMultiLayout = ({
 };
 
 // src/components/features/Products/components/ProductEdit.tsx
-var import_react37 = require("react");
+var import_react38 = require("react");
 var import_ui26 = require("@rentalshop/ui");
 var import_ui27 = require("@rentalshop/ui");
 var import_lucide_react30 = require("lucide-react");
@@ -16577,9 +16612,9 @@ var ProductEdit = ({
   onCancel,
   onBack
 }) => {
-  const [isSubmitting, setIsSubmitting] = (0, import_react37.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react38.useState)(false);
   const { toastSuccess, toastError } = (0, import_ui27.useToast)();
-  (0, import_react37.useEffect)(() => {
+  (0, import_react38.useEffect)(() => {
     console.log("\u{1F50D} ProductEdit - product data:", product);
     console.log("\u{1F50D} ProductEdit - product.category:", product.category);
     console.log("\u{1F50D} ProductEdit - product.outletStock:", product.outletStock);
@@ -16688,14 +16723,14 @@ var ProductEdit = ({
 };
 
 // src/components/features/Products/components/ProductOrdersView.tsx
-var import_react41 = require("react");
+var import_react42 = require("react");
 var import_lucide_react32 = require("lucide-react");
 
 // src/components/features/Orders/components/OrderHeader.tsx
-var import_react38 = __toESM(require("react"));
+var import_react39 = __toESM(require("react"));
 var import_ui28 = require("@rentalshop/ui");
 var import_jsx_runtime83 = require("react/jsx-runtime");
-var OrderHeader = import_react38.default.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
+var OrderHeader = import_react39.default.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
   console.log("OrderHeader received stats:", stats);
   console.log("OrderHeader received totalOrders:", totalOrders);
   const formatCurrency20 = (amount) => {
@@ -16755,31 +16790,31 @@ var OrderHeader = import_react38.default.memo(function OrderHeader2({ totalOrder
 });
 
 // src/components/features/Orders/components/OrderFilters.tsx
-var import_react39 = __toESM(require("react"));
+var import_react40 = __toESM(require("react"));
 var import_ui29 = require("@rentalshop/ui");
 var import_ui30 = require("@rentalshop/ui");
 var import_ui31 = require("@rentalshop/ui");
 var import_utils21 = require("@rentalshop/utils");
 var import_constants10 = require("@rentalshop/constants");
 var import_jsx_runtime84 = require("react/jsx-runtime");
-var OrderFilters = import_react39.default.memo(function OrderFilters2({
+var OrderFilters = import_react40.default.memo(function OrderFilters2({
   filters,
   onFiltersChange,
   onSearchChange,
   onClearFilters
 }) {
-  const [localSearch, setLocalSearch] = (0, import_react39.useState)(filters.search || "");
-  const [outlets, setOutlets] = (0, import_react39.useState)([]);
-  const [loadingOutlets, setLoadingOutlets] = (0, import_react39.useState)(false);
-  const [outletError, setOutletError] = (0, import_react39.useState)(null);
-  (0, import_react39.useEffect)(() => {
+  const [localSearch, setLocalSearch] = (0, import_react40.useState)(filters.search || "");
+  const [outlets, setOutlets] = (0, import_react40.useState)([]);
+  const [loadingOutlets, setLoadingOutlets] = (0, import_react40.useState)(false);
+  const [outletError, setOutletError] = (0, import_react40.useState)(null);
+  (0, import_react40.useEffect)(() => {
     const externalSearch = filters.search || "";
     if (externalSearch !== localSearch) {
       console.log("\u{1F504} OrderFilters: Syncing search from external:", externalSearch);
       setLocalSearch(externalSearch);
     }
   }, [filters.search]);
-  (0, import_react39.useEffect)(() => {
+  (0, import_react40.useEffect)(() => {
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
@@ -16921,17 +16956,17 @@ var OrderFilters = import_react39.default.memo(function OrderFilters2({
 });
 
 // src/components/features/Orders/components/OrderTable.tsx
-var import_react40 = __toESM(require("react"));
+var import_react41 = __toESM(require("react"));
 var import_lucide_react31 = require("lucide-react");
 var import_jsx_runtime85 = require("react/jsx-runtime");
-var OrderTable = import_react40.default.memo(function OrderTable2({
+var OrderTable = import_react41.default.memo(function OrderTable2({
   orders,
   onOrderAction,
   sortBy = "createdAt",
   sortOrder = "desc",
   onSort
 }) {
-  import_react40.default.useEffect(() => {
+  import_react41.default.useEffect(() => {
     if (orders.length > 0) {
       console.log("\u{1F4CB} OrderTable - Order statuses:", orders.map((o) => ({
         orderNumber: o.orderNumber,
@@ -17380,12 +17415,12 @@ var ProductOrdersView = ({
   showHeader = true,
   inventoryData
 }) => {
-  const [orders, setOrders] = (0, import_react41.useState)([]);
-  const [loading, setLoading] = (0, import_react41.useState)(false);
-  const [error2, setError] = (0, import_react41.useState)(null);
-  const [currentPage, setCurrentPage] = (0, import_react41.useState)(1);
-  const [totalPages, setTotalPages] = (0, import_react41.useState)(1);
-  const [filters, setFilters] = (0, import_react41.useState)({
+  const [orders, setOrders] = (0, import_react42.useState)([]);
+  const [loading, setLoading] = (0, import_react42.useState)(false);
+  const [error2, setError] = (0, import_react42.useState)(null);
+  const [currentPage, setCurrentPage] = (0, import_react42.useState)(1);
+  const [totalPages, setTotalPages] = (0, import_react42.useState)(1);
+  const [filters, setFilters] = (0, import_react42.useState)({
     search: "",
     status: void 0,
     orderType: void 0,
@@ -17398,7 +17433,7 @@ var ProductOrdersView = ({
     sortBy: "createdAt",
     sortOrder: "desc"
   });
-  (0, import_react41.useEffect)(() => {
+  (0, import_react42.useEffect)(() => {
     const fetchProductOrders = async () => {
       try {
         setLoading(true);
@@ -17695,16 +17730,16 @@ var ProductOrdersView = ({
 };
 
 // src/components/features/Products/components/ProductOrdersDialog.tsx
-var import_react42 = require("react");
+var import_react43 = require("react");
 var import_ui40 = require("@rentalshop/ui");
 var import_lucide_react33 = require("lucide-react");
 var import_utils23 = require("@rentalshop/utils");
 var import_jsx_runtime91 = require("react/jsx-runtime");
 function ProductOrdersDialog({ open, onOpenChange, product }) {
-  const [orders, setOrders] = (0, import_react42.useState)([]);
-  const [loading, setLoading] = (0, import_react42.useState)(false);
-  const [error2, setError] = (0, import_react42.useState)(null);
-  (0, import_react42.useEffect)(() => {
+  const [orders, setOrders] = (0, import_react43.useState)([]);
+  const [loading, setLoading] = (0, import_react43.useState)(false);
+  const [error2, setError] = (0, import_react43.useState)(null);
+  (0, import_react43.useEffect)(() => {
     if (open && product) {
       fetchProductOrders();
     }
@@ -17877,7 +17912,7 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
 
 // src/components/features/Products/Products.tsx
 var import_ui41 = require("@rentalshop/ui");
-var import_hooks5 = require("@rentalshop/hooks");
+var import_hooks6 = require("@rentalshop/hooks");
 var import_lucide_react34 = require("lucide-react");
 var import_jsx_runtime92 = require("react/jsx-runtime");
 function Products({
@@ -17908,7 +17943,7 @@ function Products({
   onExport,
   className = ""
 }) {
-  const { canManageProducts } = (0, import_hooks5.useUserRole)(currentUser);
+  const { canManageProducts } = (0, import_hooks6.useUserRole)(currentUser);
   const handleExport = () => {
     if (onExport) {
       onExport();
@@ -17924,12 +17959,12 @@ function Products({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = import_react43.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react43.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react43.default.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnProductAction = import_react43.default.useCallback(onProductAction, [onProductAction]);
-  const memoizedOnPageChange = import_react43.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react43.default.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = import_react44.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react44.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react44.default.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnProductAction = import_react44.default.useCallback(onProductAction, [onProductAction]);
+  const memoizedOnPageChange = import_react44.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react44.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
@@ -18009,11 +18044,11 @@ function Products({
 var Products_default = Products;
 
 // src/components/features/Customers/Customers.tsx
-var import_react51 = __toESM(require("react"));
+var import_react52 = __toESM(require("react"));
 var import_ui68 = require("@rentalshop/ui");
 
 // src/components/features/Customers/components/CustomerTable.tsx
-var import_react44 = __toESM(require("react"));
+var import_react45 = __toESM(require("react"));
 var import_ui42 = require("@rentalshop/ui");
 var import_ui43 = require("@rentalshop/ui");
 var import_ui44 = require("@rentalshop/ui");
@@ -18026,7 +18061,7 @@ function CustomerTable({
   sortOrder = "desc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react44.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react45.default.useState(null);
   if (customers.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(import_ui43.Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(import_ui43.CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
@@ -18174,7 +18209,7 @@ function CustomerTable({
 }
 
 // src/components/features/Customers/components/CustomerDetailDialog.tsx
-var import_react45 = require("react");
+var import_react46 = require("react");
 var import_lucide_react36 = require("lucide-react");
 var import_jsx_runtime94 = require("react/jsx-runtime");
 var CustomerDetailDialog = ({
@@ -18183,11 +18218,11 @@ var CustomerDetailDialog = ({
   customer,
   onDelete
 }) => {
-  const [isDeleting, setIsDeleting] = (0, import_react45.useState)(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react45.useState)(false);
-  const [merchant, setMerchant] = (0, import_react45.useState)(null);
-  const [isLoadingMerchant, setIsLoadingMerchant] = (0, import_react45.useState)(false);
-  (0, import_react45.useEffect)(() => {
+  const [isDeleting, setIsDeleting] = (0, import_react46.useState)(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react46.useState)(false);
+  const [merchant, setMerchant] = (0, import_react46.useState)(null);
+  const [isLoadingMerchant, setIsLoadingMerchant] = (0, import_react46.useState)(false);
+  (0, import_react46.useEffect)(() => {
     const fetchMerchant = async () => {
       if (!customer?.merchantId) {
         console.log("\u{1F50D} CustomerDetailDialog: No merchantId found for customer:", customer);
@@ -18627,7 +18662,7 @@ var CustomerPageHeader = ({
 };
 
 // src/components/features/Customers/components/AddCustomerDialog.tsx
-var import_react46 = require("react");
+var import_react47 = require("react");
 var import_jsx_runtime98 = require("react/jsx-runtime");
 var AddCustomerDialog = ({
   open,
@@ -18635,7 +18670,7 @@ var AddCustomerDialog = ({
   onCustomerCreated,
   onError
 }) => {
-  const [isSubmitting, setIsSubmitting] = (0, import_react46.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react47.useState)(false);
   const handleSave = async (customerData) => {
     try {
       setIsSubmitting(true);
@@ -18671,21 +18706,21 @@ var AddCustomerDialog = ({
 };
 
 // src/components/features/Customers/components/EditCustomerForm.tsx
-var import_react47 = require("react");
+var import_react48 = require("react");
 var import_lucide_react38 = require("lucide-react");
 var import_ui50 = require("@rentalshop/ui");
 var import_ui51 = require("@rentalshop/ui");
 var import_ui52 = require("@rentalshop/ui");
 var import_ui53 = require("@rentalshop/ui");
 var import_jsx_runtime99 = require("react/jsx-runtime");
-var EditCustomerForm = (0, import_react47.forwardRef)(({
+var EditCustomerForm = (0, import_react48.forwardRef)(({
   customer,
   onSave,
   onCancel,
   isSubmitting: externalIsSubmitting,
   showActions = true
 }, ref) => {
-  const [formData, setFormData] = (0, import_react47.useState)({
+  const [formData, setFormData] = (0, import_react48.useState)({
     firstName: customer.firstName,
     lastName: customer.lastName,
     email: customer.email,
@@ -18699,11 +18734,11 @@ var EditCustomerForm = (0, import_react47.forwardRef)(({
     status: customer.status,
     membershipLevel: customer.membershipLevel
   });
-  const [errors, setErrors] = (0, import_react47.useState)({});
-  const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react47.useState)(false);
-  const [errorMessage, setErrorMessage] = (0, import_react47.useState)(null);
+  const [errors, setErrors] = (0, import_react48.useState)({});
+  const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react48.useState)(false);
+  const [errorMessage, setErrorMessage] = (0, import_react48.useState)(null);
   const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
-  (0, import_react47.useEffect)(() => {
+  (0, import_react48.useEffect)(() => {
     setFormData({
       firstName: customer.firstName,
       lastName: customer.lastName,
@@ -18792,7 +18827,7 @@ var EditCustomerForm = (0, import_react47.forwardRef)(({
       onCancel();
     }
   };
-  (0, import_react47.useImperativeHandle)(ref, () => ({
+  (0, import_react48.useImperativeHandle)(ref, () => ({
     submitForm: () => {
       const syntheticEvent = {
         preventDefault: () => {
@@ -18987,7 +19022,7 @@ var EditCustomerForm = (0, import_react47.forwardRef)(({
 EditCustomerForm.displayName = "EditCustomerForm";
 
 // src/components/features/Customers/components/CustomerForm.tsx
-var import_react48 = require("react");
+var import_react49 = require("react");
 var import_lucide_react39 = require("lucide-react");
 var import_ui54 = require("@rentalshop/ui");
 var import_ui55 = require("@rentalshop/ui");
@@ -19003,7 +19038,7 @@ var CustomerForm = ({
   isSubmitting: externalIsSubmitting,
   currentUser
 }) => {
-  const [formData, setFormData] = (0, import_react48.useState)({
+  const [formData, setFormData] = (0, import_react49.useState)({
     firstName: "",
     lastName: "",
     email: "",
@@ -19019,9 +19054,9 @@ var CustomerForm = ({
     idType: "other",
     notes: ""
   });
-  const [isSubmitting, setIsSubmitting] = (0, import_react48.useState)(false);
-  const [errors, setErrors] = (0, import_react48.useState)({});
-  (0, import_react48.useEffect)(() => {
+  const [isSubmitting, setIsSubmitting] = (0, import_react49.useState)(false);
+  const [errors, setErrors] = (0, import_react49.useState)({});
+  (0, import_react49.useEffect)(() => {
     if (mode === "edit" && customer) {
       setFormData({
         firstName: customer.firstName || "",
@@ -19343,8 +19378,8 @@ var CustomerForm = ({
 };
 
 // src/components/features/Customers/components/CustomerActions.tsx
-var import_react49 = require("react");
-var import_navigation3 = require("next/navigation");
+var import_react50 = require("react");
+var import_navigation4 = require("next/navigation");
 var import_lucide_react40 = require("lucide-react");
 var import_jsx_runtime101 = require("react/jsx-runtime");
 function CustomerActions({
@@ -19355,9 +19390,9 @@ function CustomerActions({
   onError,
   onViewOrders
 }) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react49.useState)(false);
-  const router = (0, import_navigation3.useRouter)();
-  (0, import_react49.useEffect)(() => {
+  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react50.useState)(false);
+  const router = (0, import_navigation4.useRouter)();
+  (0, import_react50.useEffect)(() => {
     const handleCustomerAction = (event) => {
       const { action, customer } = event.detail;
       if (!customer)
@@ -19644,7 +19679,7 @@ function CustomerStats({ stats }) {
 }
 
 // src/components/features/Customers/components/CustomerOrdersDialog.tsx
-var import_react50 = require("react");
+var import_react51 = require("react");
 var import_ui64 = require("@rentalshop/ui");
 var import_ui65 = require("@rentalshop/ui");
 var import_ui66 = require("@rentalshop/ui");
@@ -19656,10 +19691,10 @@ var CustomerOrdersDialog = ({
   onOpenChange,
   customer
 }) => {
-  const [orders, setOrders] = (0, import_react50.useState)([]);
-  const [loading, setLoading] = (0, import_react50.useState)(false);
-  const [error2, setError] = (0, import_react50.useState)(null);
-  (0, import_react50.useEffect)(() => {
+  const [orders, setOrders] = (0, import_react51.useState)([]);
+  const [loading, setLoading] = (0, import_react51.useState)(false);
+  const [error2, setError] = (0, import_react51.useState)(null);
+  (0, import_react51.useEffect)(() => {
     if (open && customer) {
       fetchCustomerOrders(customer.id);
     }
@@ -19907,7 +19942,7 @@ function CustomerDetailLoading() {
 
 // src/components/features/Customers/Customers.tsx
 var import_lucide_react42 = require("lucide-react");
-var import_hooks6 = require("@rentalshop/hooks");
+var import_hooks7 = require("@rentalshop/hooks");
 var import_jsx_runtime107 = require("react/jsx-runtime");
 var Customers = ({
   // Data props
@@ -19937,7 +19972,7 @@ var Customers = ({
   onExport,
   className = ""
 }) => {
-  const { canManageUsers } = (0, import_hooks6.useUserRole)(currentUser);
+  const { canManageUsers } = (0, import_hooks7.useUserRole)(currentUser);
   const handleExport = () => {
     if (onExport) {
       onExport();
@@ -19953,12 +19988,12 @@ var Customers = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = import_react51.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react51.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react51.default.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnCustomerAction = import_react51.default.useCallback(onCustomerAction, [onCustomerAction]);
-  const memoizedOnPageChange = import_react51.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react51.default.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = import_react52.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react52.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react52.default.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnCustomerAction = import_react52.default.useCallback(onCustomerAction, [onCustomerAction]);
+  const memoizedOnPageChange = import_react52.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react52.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime107.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime107.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime107.jsxs)(
@@ -20038,10 +20073,10 @@ var Customers = ({
 var Customers_default = Customers;
 
 // src/components/features/Orders/Orders.tsx
-var import_react52 = __toESM(require("react"));
+var import_react53 = __toESM(require("react"));
 var import_ui69 = require("@rentalshop/ui");
 var import_jsx_runtime108 = require("react/jsx-runtime");
-var Orders = import_react52.default.memo(function Orders2({
+var Orders = import_react53.default.memo(function Orders2({
   data,
   filters,
   onFiltersChange,
@@ -20052,7 +20087,7 @@ var Orders = import_react52.default.memo(function Orders2({
   onSort,
   showStats = true
 }) {
-  import_react52.default.useEffect(() => {
+  import_react53.default.useEffect(() => {
     console.log("\u{1F4CA} Orders Component: received new data", {
       ordersCount: data.orders.length,
       searchTerm: filters.search,
@@ -20060,13 +20095,13 @@ var Orders = import_react52.default.memo(function Orders2({
       firstOrder: data.orders[0]?.orderNumber
     });
   }, [data.orders, filters.search, filters.status]);
-  const memoizedOnFiltersChange = import_react52.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react52.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react52.default.useCallback(onClearFilters || (() => {
+  const memoizedOnFiltersChange = import_react53.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react53.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react53.default.useCallback(onClearFilters || (() => {
   }), [onClearFilters]);
-  const memoizedOnOrderAction = import_react52.default.useCallback(onOrderAction, [onOrderAction]);
-  const memoizedOnPageChange = import_react52.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react52.default.useCallback(onSort || (() => {
+  const memoizedOnOrderAction = import_react53.default.useCallback(onOrderAction, [onOrderAction]);
+  const memoizedOnPageChange = import_react53.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react53.default.useCallback(onSort || (() => {
   }), [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime108.jsxs)("div", { className: "flex flex-col h-full", children: [
     /* @__PURE__ */ (0, import_jsx_runtime108.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
@@ -20114,7 +20149,7 @@ var Orders = import_react52.default.memo(function Orders2({
 var Orders_default = Orders;
 
 // src/components/features/Orders/RentalPeriodSelector.tsx
-var import_react53 = require("react");
+var import_react54 = require("react");
 var import_ui70 = require("@rentalshop/ui");
 var import_utils24 = require("@rentalshop/utils");
 var import_jsx_runtime109 = require("react/jsx-runtime");
@@ -20126,22 +20161,22 @@ var RentalPeriodSelector2 = ({
   initialStartDate,
   initialEndDate
 }) => {
-  const [rentalStartAt, setRentalStartAt] = (0, import_react53.useState)(
+  const [rentalStartAt, setRentalStartAt] = (0, import_react54.useState)(
     () => initialStartDate ? new Date(initialStartDate) : null
   );
-  const [rentalEndAt, setRentalEndAt] = (0, import_react53.useState)(
+  const [rentalEndAt, setRentalEndAt] = (0, import_react54.useState)(
     () => initialEndDate ? new Date(initialEndDate) : null
   );
-  const [validationResult, setValidationResult] = (0, import_react53.useState)(null);
-  const [lastNotifiedDates, setLastNotifiedDates] = (0, import_react53.useState)("");
+  const [validationResult, setValidationResult] = (0, import_react54.useState)(null);
+  const [lastNotifiedDates, setLastNotifiedDates] = (0, import_react54.useState)("");
   const config = import_utils24.PricingResolver.getEffectivePricingConfig(product, merchant);
-  const [pickupHour, setPickupHour] = (0, import_react53.useState)(() => {
+  const [pickupHour, setPickupHour] = (0, import_react54.useState)(() => {
     if (initialStartDate) {
       return new Date(initialStartDate).getHours();
     }
     return 9;
   });
-  const [returnHour, setReturnHour] = (0, import_react53.useState)(() => {
+  const [returnHour, setReturnHour] = (0, import_react54.useState)(() => {
     if (initialEndDate) {
       return new Date(initialEndDate).getHours();
     }
@@ -20152,7 +20187,7 @@ var RentalPeriodSelector2 = ({
     productName: product.name,
     merchantBusinessType: merchant.businessType
   });
-  (0, import_react53.useEffect)(() => {
+  (0, import_react54.useEffect)(() => {
     if (rentalStartAt && rentalEndAt) {
       const currentDatesKey = `${rentalStartAt.toISOString()}_${rentalEndAt.toISOString()}`;
       if (currentDatesKey !== lastNotifiedDates) {
@@ -20745,10 +20780,10 @@ function MerchantPagination({
 var MerchantPagination_default = MerchantPagination;
 
 // src/components/features/Merchants/components/MerchantPlanManagement.tsx
-var import_react67 = require("react");
+var import_react68 = require("react");
 
 // src/components/features/Subscriptions/components/SubscriptionList.tsx
-var import_react58 = require("react");
+var import_react59 = require("react");
 var import_lucide_react51 = require("lucide-react");
 
 // src/components/features/Subscriptions/components/SubscriptionViewDialog.tsx
@@ -21032,7 +21067,7 @@ function SubscriptionViewDialog({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionExtendDialog.tsx
-var import_react54 = require("react");
+var import_react55 = require("react");
 var import_ui78 = require("@rentalshop/ui");
 var import_ui79 = require("@rentalshop/ui");
 var import_lucide_react47 = require("lucide-react");
@@ -21051,10 +21086,10 @@ function SubscriptionExtendDialog({
   onConfirm,
   loading = false
 }) {
-  const [newEndDate, setNewEndDate] = (0, import_react54.useState)("");
-  const [amount, setAmount] = (0, import_react54.useState)("");
-  const [method, setMethod] = (0, import_react54.useState)("MANUAL_EXTENSION");
-  const [description, setDescription] = (0, import_react54.useState)("");
+  const [newEndDate, setNewEndDate] = (0, import_react55.useState)("");
+  const [amount, setAmount] = (0, import_react55.useState)("");
+  const [method, setMethod] = (0, import_react55.useState)("MANUAL_EXTENSION");
+  const [description, setDescription] = (0, import_react55.useState)("");
   const handleSubmit = () => {
     if (!subscription || !newEndDate || !amount)
       return;
@@ -21229,7 +21264,7 @@ function SubscriptionExtendDialog({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionChangePlanDialog.tsx
-var import_react55 = require("react");
+var import_react56 = require("react");
 var import_ui80 = require("@rentalshop/ui");
 var import_ui81 = require("@rentalshop/ui");
 var import_lucide_react48 = require("lucide-react");
@@ -21242,8 +21277,8 @@ function SubscriptionChangePlanDialog({
   onConfirm,
   loading = false
 }) {
-  const [selectedPlanId, setSelectedPlanId] = (0, import_react55.useState)(null);
-  const [selectedPeriod, setSelectedPeriod] = (0, import_react55.useState)(1);
+  const [selectedPlanId, setSelectedPlanId] = (0, import_react56.useState)(null);
+  const [selectedPeriod, setSelectedPeriod] = (0, import_react56.useState)(1);
   const handleSubmit = () => {
     if (!subscription || !selectedPlanId)
       return;
@@ -21418,11 +21453,11 @@ function SubscriptionChangePlanDialog({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionEditDialog.tsx
-var import_react57 = require("react");
+var import_react58 = require("react");
 var import_ui83 = require("@rentalshop/ui");
 
 // src/components/features/Subscriptions/components/SubscriptionFormSimple.tsx
-var import_react56 = require("react");
+var import_react57 = require("react");
 var import_lucide_react49 = require("lucide-react");
 var import_jsx_runtime118 = require("react/jsx-runtime");
 function SubscriptionFormSimple({
@@ -21438,7 +21473,7 @@ function SubscriptionFormSimple({
   showCard = true,
   showActions = true
 }) {
-  const [formData, setFormData] = (0, import_react56.useState)({
+  const [formData, setFormData] = (0, import_react57.useState)({
     merchantId: initialData?.merchantId || 0,
     planId: initialData?.planId || 0,
     status: initialData?.status || "trial",
@@ -21460,10 +21495,10 @@ function SubscriptionFormSimple({
     autoRenew: initialData?.autoRenew ?? true,
     changeReason: initialData?.changeReason || ""
   });
-  const [selectedPlan, setSelectedPlan] = (0, import_react56.useState)(null);
-  const [errors, setErrors] = (0, import_react56.useState)({});
-  const [merchantOptions, setMerchantOptions] = (0, import_react56.useState)([]);
-  (0, import_react56.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react57.useState)(null);
+  const [errors, setErrors] = (0, import_react57.useState)({});
+  const [merchantOptions, setMerchantOptions] = (0, import_react57.useState)([]);
+  (0, import_react57.useEffect)(() => {
     const options = merchants.map((merchant) => ({
       value: merchant.id.toString(),
       label: merchant.name,
@@ -21482,7 +21517,7 @@ function SubscriptionFormSimple({
     );
     return filtered;
   };
-  (0, import_react56.useEffect)(() => {
+  (0, import_react57.useEffect)(() => {
     const plan = plans.find((p) => p.id === formData.planId);
     setSelectedPlan(plan || null);
   }, [formData.planId, plans]);
@@ -21823,8 +21858,8 @@ function SubscriptionEditDialog({
   onSave,
   loading = false
 }) {
-  const [formData, setFormData] = (0, import_react57.useState)({});
-  (0, import_react57.useEffect)(() => {
+  const [formData, setFormData] = (0, import_react58.useState)({});
+  (0, import_react58.useEffect)(() => {
     if (subscription) {
       setFormData({
         planId: parseInt(subscription.planId),
@@ -22021,17 +22056,17 @@ function SubscriptionList({
   loading = false,
   pagination
 }) {
-  const [searchTerm, setSearchTerm] = (0, import_react58.useState)("");
-  const [statusFilter, setStatusFilter] = (0, import_react58.useState)("all");
-  const [planFilter, setPlanFilter] = (0, import_react58.useState)("all");
-  const [merchantFilter, setMerchantFilter] = (0, import_react58.useState)("all");
-  const [filteredSubscriptions, setFilteredSubscriptions] = (0, import_react58.useState)(subscriptions);
-  const [showViewDialog, setShowViewDialog] = (0, import_react58.useState)(false);
-  const [showEditDialog, setShowEditDialog] = (0, import_react58.useState)(false);
-  const [showExtendDialog, setShowExtendDialog] = (0, import_react58.useState)(false);
-  const [showChangePlanDialog, setShowChangePlanDialog] = (0, import_react58.useState)(false);
-  const [selectedSubscription, setSelectedSubscription] = (0, import_react58.useState)(null);
-  (0, import_react58.useEffect)(() => {
+  const [searchTerm, setSearchTerm] = (0, import_react59.useState)("");
+  const [statusFilter, setStatusFilter] = (0, import_react59.useState)("all");
+  const [planFilter, setPlanFilter] = (0, import_react59.useState)("all");
+  const [merchantFilter, setMerchantFilter] = (0, import_react59.useState)("all");
+  const [filteredSubscriptions, setFilteredSubscriptions] = (0, import_react59.useState)(subscriptions);
+  const [showViewDialog, setShowViewDialog] = (0, import_react59.useState)(false);
+  const [showEditDialog, setShowEditDialog] = (0, import_react59.useState)(false);
+  const [showExtendDialog, setShowExtendDialog] = (0, import_react59.useState)(false);
+  const [showChangePlanDialog, setShowChangePlanDialog] = (0, import_react59.useState)(false);
+  const [selectedSubscription, setSelectedSubscription] = (0, import_react59.useState)(null);
+  (0, import_react59.useEffect)(() => {
     let filtered = subscriptions;
     if (searchTerm) {
       filtered = filtered.filter(
@@ -22357,7 +22392,7 @@ function SubscriptionList({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionForm.tsx
-var import_react59 = require("react");
+var import_react60 = require("react");
 var import_lucide_react52 = require("lucide-react");
 var import_jsx_runtime121 = require("react/jsx-runtime");
 function SubscriptionForm({
@@ -22371,7 +22406,7 @@ function SubscriptionForm({
   title,
   submitText
 }) {
-  const [formData, setFormData] = (0, import_react59.useState)({
+  const [formData, setFormData] = (0, import_react60.useState)({
     merchantId: initialData?.merchantId || 0,
     planId: initialData?.planId || 0,
     status: initialData?.status || "trial",
@@ -22397,14 +22432,14 @@ function SubscriptionForm({
     endDate: initialData?.currentPeriodEnd || /* @__PURE__ */ new Date(),
     nextBillingDate: initialData?.currentPeriodEnd || /* @__PURE__ */ new Date()
   });
-  const [selectedPlan, setSelectedPlan] = (0, import_react59.useState)(null);
-  const [planVariants, setPlanVariants] = (0, import_react59.useState)([]);
-  const [errors, setErrors] = (0, import_react59.useState)({});
-  const [merchantOptions, setMerchantOptions] = (0, import_react59.useState)([]);
-  const [selectedMerchant, setSelectedMerchant] = (0, import_react59.useState)(null);
+  const [selectedPlan, setSelectedPlan] = (0, import_react60.useState)(null);
+  const [planVariants, setPlanVariants] = (0, import_react60.useState)([]);
+  const [errors, setErrors] = (0, import_react60.useState)({});
+  const [merchantOptions, setMerchantOptions] = (0, import_react60.useState)([]);
+  const [selectedMerchant, setSelectedMerchant] = (0, import_react60.useState)(null);
   console.log("SubscriptionForm - merchants:", merchants);
   console.log("SubscriptionForm - plans:", plans);
-  (0, import_react59.useEffect)(() => {
+  (0, import_react60.useEffect)(() => {
     const options = merchants.map((merchant) => ({
       value: merchant.id.toString(),
       label: merchant.name,
@@ -22435,7 +22470,7 @@ function SubscriptionForm({
     );
     return filtered;
   };
-  (0, import_react59.useEffect)(() => {
+  (0, import_react60.useEffect)(() => {
     const plan = plans.find((p) => p.id === formData.planId);
     setSelectedPlan(plan || null);
     if (plan) {
@@ -22447,7 +22482,7 @@ function SubscriptionForm({
       }));
     }
   }, [formData.planId, plans]);
-  (0, import_react59.useEffect)(() => {
+  (0, import_react60.useEffect)(() => {
     if (selectedPlan && formData.status === "trial" && selectedPlan.trialDays > 0) {
       const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setDate(endDate.getDate() + selectedPlan.trialDays);
@@ -22460,7 +22495,7 @@ function SubscriptionForm({
       }));
     }
   }, [selectedPlan, formData.startDate, formData.status]);
-  (0, import_react59.useEffect)(() => {
+  (0, import_react60.useEffect)(() => {
     if (formData.status === "ACTIVE" && selectedPlan) {
       const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setMonth(endDate.getMonth() + 1);
@@ -22857,7 +22892,7 @@ function SubscriptionForm({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionPreviewPage.tsx
-var import_react60 = require("react");
+var import_react61 = require("react");
 var import_ui86 = require("@rentalshop/ui");
 var import_utils26 = require("@rentalshop/utils");
 var import_lucide_react53 = require("lucide-react");
@@ -22867,12 +22902,12 @@ var SubscriptionPreviewPage = ({
   showSelectButton = true,
   className
 }) => {
-  const [plans, setPlans] = (0, import_react60.useState)([]);
-  const [loading, setLoading] = (0, import_react60.useState)(true);
-  const [error2, setError] = (0, import_react60.useState)(null);
-  const [selectedPlan, setSelectedPlan] = (0, import_react60.useState)(null);
-  const [selectedDuration, setSelectedDuration] = (0, import_react60.useState)(1);
-  (0, import_react60.useEffect)(() => {
+  const [plans, setPlans] = (0, import_react61.useState)([]);
+  const [loading, setLoading] = (0, import_react61.useState)(true);
+  const [error2, setError] = (0, import_react61.useState)(null);
+  const [selectedPlan, setSelectedPlan] = (0, import_react61.useState)(null);
+  const [selectedDuration, setSelectedDuration] = (0, import_react61.useState)(1);
+  (0, import_react61.useEffect)(() => {
     fetchPlans();
   }, []);
   const fetchPlans = async () => {
@@ -23275,7 +23310,7 @@ var SubscriptionPreviewPage = ({
 };
 
 // src/components/features/Subscriptions/components/PlanSelectionModal.tsx
-var import_react61 = require("react");
+var import_react62 = require("react");
 var import_ui87 = require("@rentalshop/ui");
 var import_lucide_react54 = require("lucide-react");
 var import_jsx_runtime123 = require("react/jsx-runtime");
@@ -23323,11 +23358,11 @@ var PlanSelectionModal = ({
   currentPlan,
   loading = false
 }) => {
-  const [selectedPlan, setSelectedPlan] = (0, import_react61.useState)(null);
-  const [selectedBillingCycle, setSelectedBillingCycle] = (0, import_react61.useState)("monthly");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = (0, import_react61.useState)("STRIPE");
-  const [calculatedPrice, setCalculatedPrice] = (0, import_react61.useState)(0);
-  (0, import_react61.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react62.useState)(null);
+  const [selectedBillingCycle, setSelectedBillingCycle] = (0, import_react62.useState)("monthly");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = (0, import_react62.useState)("STRIPE");
+  const [calculatedPrice, setCalculatedPrice] = (0, import_react62.useState)(0);
+  (0, import_react62.useEffect)(() => {
     if (selectedPlan) {
       const billingCycle = BILLING_CYCLES2.find((bc) => bc.value === selectedBillingCycle);
       if (billingCycle) {
@@ -23503,7 +23538,7 @@ var PlanSelectionModal = ({
 
 // src/components/features/Subscriptions/components/SubscriptionStatusBanner.tsx
 var import_lucide_react55 = require("lucide-react");
-var import_hooks7 = require("@rentalshop/hooks");
+var import_hooks8 = require("@rentalshop/hooks");
 var import_jsx_runtime124 = require("react/jsx-runtime");
 function SubscriptionStatusBanner({
   className = "",
@@ -23525,7 +23560,7 @@ function SubscriptionStatusBanner({
     isReadOnly,
     isLimited,
     isDenied
-  } = (0, import_hooks7.useSubscriptionStatusInfo)();
+  } = (0, import_hooks8.useSubscriptionStatusInfo)();
   if (!isRestricted) {
     return null;
   }
@@ -23620,7 +23655,7 @@ function SubscriptionStatusCard({
     isReadOnly,
     isLimited,
     isDenied
-  } = (0, import_hooks7.useSubscriptionStatusInfo)();
+  } = (0, import_hooks8.useSubscriptionStatusInfo)();
   if (!isRestricted) {
     return null;
   }
@@ -23767,7 +23802,7 @@ function SubscriptionPeriodCard({
 }
 
 // src/components/features/Subscriptions/components/RestrictedButton.tsx
-var import_hooks8 = require("@rentalshop/hooks");
+var import_hooks9 = require("@rentalshop/hooks");
 var import_lucide_react57 = require("lucide-react");
 var import_jsx_runtime126 = require("react/jsx-runtime");
 function RestrictedButton({
@@ -23780,7 +23815,7 @@ function RestrictedButton({
   disabled,
   ...props
 }) {
-  const canPerform = (0, import_hooks8.useCanPerform)(action);
+  const canPerform = (0, import_hooks9.useCanPerform)(action);
   const isDisabled = disabled || !canPerform;
   const getRestrictionIcon = () => {
     if (fallbackIcon)
@@ -23835,7 +23870,7 @@ function RestrictedAction({
   fallback,
   reason
 }) {
-  const canPerform = (0, import_hooks8.useCanPerform)(action);
+  const canPerform = (0, import_hooks9.useCanPerform)(action);
   if (!canPerform) {
     return fallback ? /* @__PURE__ */ (0, import_jsx_runtime126.jsx)(import_jsx_runtime126.Fragment, { children: fallback }) : null;
   }
@@ -23848,7 +23883,7 @@ function RestrictedSection({
   reason,
   className = ""
 }) {
-  const canPerform = (0, import_hooks8.useCanPerform)(action);
+  const canPerform = (0, import_hooks9.useCanPerform)(action);
   if (!canPerform) {
     return fallback ? /* @__PURE__ */ (0, import_jsx_runtime126.jsx)("div", { className, children: fallback }) : null;
   }
@@ -23856,7 +23891,7 @@ function RestrictedSection({
 }
 
 // src/components/features/Subscriptions/components/PaymentHistoryTable.tsx
-var import_react62 = require("react");
+var import_react63 = require("react");
 var import_ui88 = require("@rentalshop/ui");
 var import_utils28 = require("@rentalshop/utils");
 var import_lucide_react58 = require("lucide-react");
@@ -23869,8 +23904,8 @@ function PaymentHistoryTable({
   onDownloadInvoice,
   pagination
 }) {
-  const [statusFilter, setStatusFilter] = (0, import_react62.useState)("all");
-  const [methodFilter, setMethodFilter] = (0, import_react62.useState)("all");
+  const [statusFilter, setStatusFilter] = (0, import_react63.useState)("all");
+  const [methodFilter, setMethodFilter] = (0, import_react63.useState)("all");
   const getStatusBadge = (status) => {
     const statusMap = {
       COMPLETED: { variant: "success", label: "Paid" },
@@ -23984,7 +24019,7 @@ function PaymentHistoryTable({
 }
 
 // src/components/features/Subscriptions/components/ManualRenewalModal.tsx
-var import_react63 = require("react");
+var import_react64 = require("react");
 var import_ui89 = require("@rentalshop/ui");
 var import_utils29 = require("@rentalshop/utils");
 var import_constants12 = require("@rentalshop/constants");
@@ -23998,12 +24033,12 @@ function ManualRenewalModal({
   onRenew,
   loading = false
 }) {
-  const [method, setMethod] = (0, import_react63.useState)("TRANSFER");
-  const [duration, setDuration] = (0, import_react63.useState)(1);
-  const [transactionId, setTransactionId] = (0, import_react63.useState)("");
-  const [reference, setReference] = (0, import_react63.useState)("");
-  const [description, setDescription] = (0, import_react63.useState)("");
-  const [errors, setErrors] = (0, import_react63.useState)({});
+  const [method, setMethod] = (0, import_react64.useState)("TRANSFER");
+  const [duration, setDuration] = (0, import_react64.useState)(1);
+  const [transactionId, setTransactionId] = (0, import_react64.useState)("");
+  const [reference, setReference] = (0, import_react64.useState)("");
+  const [description, setDescription] = (0, import_react64.useState)("");
+  const [errors, setErrors] = (0, import_react64.useState)({});
   const calculateTotal = () => (0, import_utils30.calculateRenewalPrice)(subscription.amount, duration);
   const getSavings = () => (0, import_utils30.calculateSavings)(subscription.amount, duration);
   const nextPeriodStart = new Date(subscription.currentPeriodEnd);
@@ -24224,7 +24259,7 @@ function ManualRenewalModal({
 }
 
 // src/components/features/Subscriptions/components/UpgradeTrialModal.tsx
-var import_react64 = require("react");
+var import_react65 = require("react");
 var import_ui90 = require("@rentalshop/ui");
 var import_utils31 = require("@rentalshop/utils");
 var import_lucide_react60 = require("lucide-react");
@@ -24237,10 +24272,10 @@ function UpgradeTrialModal({
   onUpgrade,
   loading = false
 }) {
-  const [selectedPlan, setSelectedPlan] = (0, import_react64.useState)(null);
-  const [billingCycle, setBillingCycle] = (0, import_react64.useState)("month");
-  const [paymentMethod, setPaymentMethod] = (0, import_react64.useState)("STRIPE");
-  (0, import_react64.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react65.useState)(null);
+  const [billingCycle, setBillingCycle] = (0, import_react65.useState)("month");
+  const [paymentMethod, setPaymentMethod] = (0, import_react65.useState)("STRIPE");
+  (0, import_react65.useEffect)(() => {
     if (plans.length > 0 && !selectedPlan) {
       const firstPaidPlan = plans.find((p) => p.name !== "Trial" && p.basePrice > 0);
       if (firstPaidPlan) {
@@ -24516,7 +24551,7 @@ function UpgradeTrialModal({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionActivityTimeline.tsx
-var import_react65 = __toESM(require("react"));
+var import_react66 = __toESM(require("react"));
 var import_utils32 = require("@rentalshop/utils");
 var import_lucide_react61 = require("lucide-react");
 var import_jsx_runtime130 = require("react/jsx-runtime");
@@ -24526,7 +24561,7 @@ function SubscriptionActivityTimeline({
   loading = false,
   onExport
 }) {
-  const timeline = import_react65.default.useMemo(() => {
+  const timeline = import_react66.default.useMemo(() => {
     const items = [];
     activities.forEach((activity) => {
       items.push({
@@ -24810,16 +24845,16 @@ function SubscriptionActivityTimeline({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionHistoryDialog.tsx
-var import_react66 = require("react");
+var import_react67 = require("react");
 var import_utils33 = require("@rentalshop/utils");
 var import_jsx_runtime131 = require("react/jsx-runtime");
 function SubscriptionHistoryDialog({
   subscriptionId,
   merchantId
 }) {
-  const [activities, setActivities] = (0, import_react66.useState)([]);
-  const [payments, setPayments] = (0, import_react66.useState)([]);
-  const [loading, setLoading] = (0, import_react66.useState)(false);
+  const [activities, setActivities] = (0, import_react67.useState)([]);
+  const [payments, setPayments] = (0, import_react67.useState)([]);
+  const [loading, setLoading] = (0, import_react67.useState)(false);
   const fetchHistory = async () => {
     if (!subscriptionId)
       return;
@@ -24841,7 +24876,7 @@ function SubscriptionHistoryDialog({
       setLoading(false);
     }
   };
-  (0, import_react66.useEffect)(() => {
+  (0, import_react67.useEffect)(() => {
     if (subscriptionId) {
       fetchHistory();
     }
@@ -24947,21 +24982,21 @@ function MerchantPlanManagement({
   const isActivePaidStatus = normalizedStatus === "active";
   const isPaused = normalizedStatus === "paused";
   const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === "trial" || merchant.currentPlan?.price === 0 || currentSubscription?.plan?.name?.toLowerCase() === "trial";
-  const [showChangeDialog, setShowChangeDialog] = (0, import_react67.useState)(false);
-  const [showRenewalModal, setShowRenewalModal] = (0, import_react67.useState)(false);
-  const [showCancelDialog, setShowCancelDialog] = (0, import_react67.useState)(false);
-  const [showSuspendDialog, setShowSuspendDialog] = (0, import_react67.useState)(false);
-  const [showResumeDialog, setShowResumeDialog] = (0, import_react67.useState)(false);
-  const [showHistoryDialog, setShowHistoryDialog] = (0, import_react67.useState)(false);
-  const [cancelReason, setCancelReason] = (0, import_react67.useState)("");
-  const [cancelType, setCancelType] = (0, import_react67.useState)("end_of_period");
-  const [suspendReason, setSuspendReason] = (0, import_react67.useState)("");
-  const [isSubmitting, setIsSubmitting] = (0, import_react67.useState)(false);
-  const [renewalLoading, setRenewalLoading] = (0, import_react67.useState)(false);
-  const [selectedPlanId, setSelectedPlanId] = (0, import_react67.useState)("");
-  const [changeReason, setChangeReason] = (0, import_react67.useState)("");
-  const [notifyMerchant, setNotifyMerchant] = (0, import_react67.useState)(true);
-  const [changeBillingInterval, setChangeBillingInterval] = (0, import_react67.useState)("month");
+  const [showChangeDialog, setShowChangeDialog] = (0, import_react68.useState)(false);
+  const [showRenewalModal, setShowRenewalModal] = (0, import_react68.useState)(false);
+  const [showCancelDialog, setShowCancelDialog] = (0, import_react68.useState)(false);
+  const [showSuspendDialog, setShowSuspendDialog] = (0, import_react68.useState)(false);
+  const [showResumeDialog, setShowResumeDialog] = (0, import_react68.useState)(false);
+  const [showHistoryDialog, setShowHistoryDialog] = (0, import_react68.useState)(false);
+  const [cancelReason, setCancelReason] = (0, import_react68.useState)("");
+  const [cancelType, setCancelType] = (0, import_react68.useState)("end_of_period");
+  const [suspendReason, setSuspendReason] = (0, import_react68.useState)("");
+  const [isSubmitting, setIsSubmitting] = (0, import_react68.useState)(false);
+  const [renewalLoading, setRenewalLoading] = (0, import_react68.useState)(false);
+  const [selectedPlanId, setSelectedPlanId] = (0, import_react68.useState)("");
+  const [changeReason, setChangeReason] = (0, import_react68.useState)("");
+  const [notifyMerchant, setNotifyMerchant] = (0, import_react68.useState)(true);
+  const [changeBillingInterval, setChangeBillingInterval] = (0, import_react68.useState)("month");
   const handleOpenChangeDialog = () => {
     setShowChangeDialog(true);
     setSelectedPlanId("");
@@ -24969,7 +25004,7 @@ function MerchantPlanManagement({
     setChangeBillingInterval("month");
     setNotifyMerchant(true);
   };
-  (0, import_react67.useEffect)(() => {
+  (0, import_react68.useEffect)(() => {
     if (showChangeDialog && !changeBillingInterval) {
       setChangeBillingInterval("month");
     }
@@ -25689,10 +25724,10 @@ function Merchants({
 var Merchants_default = Merchants;
 
 // src/components/features/Merchants/components/MerchantDetail.tsx
-var import_navigation4 = require("next/navigation");
+var import_navigation5 = require("next/navigation");
 
 // src/components/features/Merchants/components/MerchantSubscriptionSection.tsx
-var import_react68 = require("react");
+var import_react69 = require("react");
 var import_lucide_react63 = require("lucide-react");
 var import_jsx_runtime134 = require("react/jsx-runtime");
 function MerchantSubscriptionSection({
@@ -25700,11 +25735,11 @@ function MerchantSubscriptionSection({
   subscription,
   loading = false
 }) {
-  const [activities, setActivities] = (0, import_react68.useState)([]);
-  const [payments, setPayments] = (0, import_react68.useState)([]);
-  const [loadingHistory, setLoadingHistory] = (0, import_react68.useState)(false);
-  const [showHistoryDialog, setShowHistoryDialog] = (0, import_react68.useState)(false);
-  (0, import_react68.useEffect)(() => {
+  const [activities, setActivities] = (0, import_react69.useState)([]);
+  const [payments, setPayments] = (0, import_react69.useState)([]);
+  const [loadingHistory, setLoadingHistory] = (0, import_react69.useState)(false);
+  const [showHistoryDialog, setShowHistoryDialog] = (0, import_react69.useState)(false);
+  (0, import_react69.useEffect)(() => {
     if (subscription && showHistoryDialog) {
       fetchHistory();
     }
@@ -25820,7 +25855,7 @@ function MerchantDetail({
   onSuspend,
   onReactivate
 }) {
-  const router = (0, import_navigation4.useRouter)();
+  const router = (0, import_navigation5.useRouter)();
   const navigateToPage = (page, id) => {
     const url = id ? `/${page}/${id}` : `/${page}`;
     router.push(url);
@@ -25963,7 +25998,7 @@ function MerchantDetail({
 }
 
 // src/components/features/Calendars/Calendars.tsx
-var import_react70 = require("react");
+var import_react71 = require("react");
 
 // src/components/features/Calendars/components/CalendarHeader.tsx
 var import_lucide_react65 = require("lucide-react");
@@ -26100,7 +26135,7 @@ function CalendarStats({
 }
 
 // src/components/features/Calendars/components/CalendarGrid.tsx
-var import_react69 = __toESM(require("react"));
+var import_react70 = __toESM(require("react"));
 var import_jsx_runtime139 = require("react/jsx-runtime");
 function CalendarGrid({
   currentDate,
@@ -26109,7 +26144,7 @@ function CalendarGrid({
   onDateClick,
   className = ""
 }) {
-  const calendarDays = import_react69.default.useMemo(() => {
+  const calendarDays = import_react70.default.useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -26299,20 +26334,20 @@ function Calendars({
   onRetry,
   className = ""
 }) {
-  const [currentDate, setCurrentDate] = (0, import_react70.useState)(/* @__PURE__ */ new Date());
-  const [selectedDate, setSelectedDate] = (0, import_react70.useState)(null);
-  const goToPreviousMonth = (0, import_react70.useCallback)(() => {
+  const [currentDate, setCurrentDate] = (0, import_react71.useState)(/* @__PURE__ */ new Date());
+  const [selectedDate, setSelectedDate] = (0, import_react71.useState)(null);
+  const goToPreviousMonth = (0, import_react71.useCallback)(() => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   }, []);
-  const goToNextMonth = (0, import_react70.useCallback)(() => {
+  const goToNextMonth = (0, import_react71.useCallback)(() => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   }, []);
-  const goToToday = (0, import_react70.useCallback)(() => {
+  const goToToday = (0, import_react71.useCallback)(() => {
     const today = /* @__PURE__ */ new Date();
     setCurrentDate(today);
     setSelectedDate(today);
   }, []);
-  const handleDateClick = (0, import_react70.useCallback)((date2) => {
+  const handleDateClick = (0, import_react71.useCallback)((date2) => {
     setSelectedDate(date2);
     onDateSelect?.(date2);
   }, [onDateSelect]);
@@ -26420,7 +26455,7 @@ function OrdersList({
 }
 
 // src/components/features/Users/Users.tsx
-var import_react78 = __toESM(require("react"));
+var import_react79 = __toESM(require("react"));
 var import_ui106 = require("@rentalshop/ui");
 
 // src/components/features/Users/components/UserHeader.tsx
@@ -26629,7 +26664,7 @@ function UserGrid({ users, onUserAction }) {
 }
 
 // src/components/features/Users/components/UserTable.tsx
-var import_react71 = __toESM(require("react"));
+var import_react72 = __toESM(require("react"));
 var import_lucide_react71 = require("lucide-react");
 var import_jsx_runtime147 = require("react/jsx-runtime");
 function UserTable({
@@ -26639,7 +26674,7 @@ function UserTable({
   sortOrder = "desc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react71.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react72.default.useState(null);
   if (users.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime147.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsx)(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ (0, import_jsx_runtime147.jsx)("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
@@ -26817,18 +26852,18 @@ function UsersLoading() {
 }
 
 // src/components/features/Users/components/UserActions.tsx
-var import_react74 = require("react");
-var import_navigation5 = require("next/navigation");
+var import_react75 = require("react");
+var import_navigation6 = require("next/navigation");
 var import_ui102 = require("@rentalshop/ui");
 
 // src/components/features/Users/components/UserDetailDialog.tsx
-var import_react73 = require("react");
+var import_react74 = require("react");
 var import_ui99 = require("@rentalshop/ui");
 var import_ui100 = require("@rentalshop/ui");
 var import_ui101 = require("@rentalshop/ui");
 
 // src/components/features/Users/components/ChangePasswordDialog.tsx
-var import_react72 = require("react");
+var import_react73 = require("react");
 
 // src/components/features/Users/lib/UserApiClient.ts
 var import_utils35 = require("@rentalshop/utils");
@@ -26931,13 +26966,13 @@ var ChangePasswordDialog = ({
   onSuccess,
   onError
 }) => {
-  const [formData, setFormData] = (0, import_react72.useState)({
+  const [formData, setFormData] = (0, import_react73.useState)({
     newPassword: "",
     confirmPassword: ""
   });
-  const [errors, setErrors] = (0, import_react72.useState)({});
-  const [isLoading, setIsLoading] = (0, import_react72.useState)(false);
-  const [showPasswords, setShowPasswords] = (0, import_react72.useState)({
+  const [errors, setErrors] = (0, import_react73.useState)({});
+  const [isLoading, setIsLoading] = (0, import_react73.useState)(false);
+  const [showPasswords, setShowPasswords] = (0, import_react73.useState)({
     new: false,
     confirm: false
   });
@@ -27284,11 +27319,11 @@ var UserDetailDialog = ({
   onUserUpdated,
   onError
 }) => {
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = (0, import_react73.useState)(false);
-  const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = (0, import_react73.useState)(false);
-  const [isActivateConfirmOpen, setIsActivateConfirmOpen] = (0, import_react73.useState)(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = (0, import_react73.useState)(false);
-  const [isLoading, setIsLoading] = (0, import_react73.useState)(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = (0, import_react74.useState)(false);
+  const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = (0, import_react74.useState)(false);
+  const [isActivateConfirmOpen, setIsActivateConfirmOpen] = (0, import_react74.useState)(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = (0, import_react74.useState)(false);
+  const [isLoading, setIsLoading] = (0, import_react74.useState)(false);
   if (!user)
     return null;
   const handleDeactivateUser = async () => {
@@ -27439,12 +27474,12 @@ function UserActions({
   onError,
   onSuccess
 }) {
-  const router = (0, import_navigation5.useRouter)();
-  const [isViewDialogOpen, setIsViewDialogOpen] = (0, import_react74.useState)(false);
-  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = (0, import_react74.useState)(false);
-  const [selectedUser, setSelectedUser] = (0, import_react74.useState)(null);
-  const [userToDeactivate, setUserToDeactivate] = (0, import_react74.useState)(null);
-  (0, import_react74.useEffect)(() => {
+  const router = (0, import_navigation6.useRouter)();
+  const [isViewDialogOpen, setIsViewDialogOpen] = (0, import_react75.useState)(false);
+  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = (0, import_react75.useState)(false);
+  const [selectedUser, setSelectedUser] = (0, import_react75.useState)(null);
+  const [userToDeactivate, setUserToDeactivate] = (0, import_react75.useState)(null);
+  (0, import_react75.useEffect)(() => {
     const handleUserAction = (event) => {
       const { action, userId, user } = event.detail;
       console.log("\u{1F50D} UserActions: Event received:", { action, userId, user });
@@ -27542,14 +27577,14 @@ function UserActions({
 }
 
 // src/components/features/Users/components/AddUserDialog.tsx
-var import_react77 = require("react");
+var import_react78 = require("react");
 
 // src/components/features/Users/components/UserForm.tsx
-var import_react76 = require("react");
+var import_react77 = require("react");
 var import_lucide_react74 = require("lucide-react");
 
 // src/components/features/Users/components/UserFormFields.tsx
-var import_react75 = require("react");
+var import_react76 = require("react");
 var import_lucide_react73 = require("lucide-react");
 var import_jsx_runtime153 = require("react/jsx-runtime");
 var FormField = ({
@@ -27564,7 +27599,7 @@ var FormField = ({
   type = "text",
   showPasswordToggle = false
 }) => {
-  const [showPassword, setShowPassword] = (0, import_react75.useState)(false);
+  const [showPassword, setShowPassword] = (0, import_react76.useState)(false);
   const inputType = type === "password" && showPassword ? "text" : type;
   return /* @__PURE__ */ (0, import_jsx_runtime153.jsxs)("div", { className: "space-y-2", children: [
     /* @__PURE__ */ (0, import_jsx_runtime153.jsxs)(Label2, { htmlFor: id, children: [
@@ -27877,7 +27912,7 @@ var UserForm = ({
   currentUser
 }) => {
   const isEditMode = mode === "edit";
-  const [formData, setFormData] = (0, import_react76.useState)(() => {
+  const [formData, setFormData] = (0, import_react77.useState)(() => {
     console.log("\u{1F50D} UserForm: Initial state setup - isEditMode:", isEditMode, "user:", user);
     if (isEditMode && user) {
       const initialData = {
@@ -27909,18 +27944,18 @@ var UserForm = ({
       return initialData;
     }
   });
-  const [errors, setErrors] = (0, import_react76.useState)({});
-  const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react76.useState)(false);
-  const [merchants, setMerchants] = (0, import_react76.useState)([]);
-  const [outlets, setOutlets] = (0, import_react76.useState)([]);
-  const [loadingMerchants, setLoadingMerchants] = (0, import_react76.useState)(false);
-  const [loadingOutlets, setLoadingOutlets] = (0, import_react76.useState)(false);
+  const [errors, setErrors] = (0, import_react77.useState)({});
+  const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react77.useState)(false);
+  const [merchants, setMerchants] = (0, import_react77.useState)([]);
+  const [outlets, setOutlets] = (0, import_react77.useState)([]);
+  const [loadingMerchants, setLoadingMerchants] = (0, import_react77.useState)(false);
+  const [loadingOutlets, setLoadingOutlets] = (0, import_react77.useState)(false);
   const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
   const canSelectMerchant = currentUser?.role === "ADMIN";
   const canSelectOutlet = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT";
   const showMerchantField = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT" || currentUser?.role === "OUTLET_ADMIN" || currentUser?.role === "OUTLET_STAFF";
   const showOutletField = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT" || currentUser?.role === "OUTLET_ADMIN" || currentUser?.role === "OUTLET_STAFF";
-  (0, import_react76.useEffect)(() => {
+  (0, import_react77.useEffect)(() => {
     if (isEditMode && user) {
       console.log("\u{1F50D} UserForm: User object for edit:", user);
       console.log("\u{1F50D} UserForm: User role:", user.role, "Type:", typeof user.role);
@@ -27946,7 +27981,7 @@ var UserForm = ({
       console.log("\u{1F50D} UserForm: Final role set:", formData2.role);
     }
   }, [user, isEditMode]);
-  (0, import_react76.useEffect)(() => {
+  (0, import_react77.useEffect)(() => {
     if (!isEditMode && currentUser) {
       const updates = {};
       const userMerchantId = currentUser.merchantId || currentUser.merchant?.id;
@@ -27962,7 +27997,7 @@ var UserForm = ({
       }
     }
   }, [currentUser, canSelectMerchant, canSelectOutlet, isEditMode]);
-  (0, import_react76.useEffect)(() => {
+  (0, import_react77.useEffect)(() => {
     if (!isEditMode && canSelectMerchant) {
       setLoadingMerchants(true);
       import_utils37.merchantsApi.getMerchants().then((response) => {
@@ -27983,7 +28018,7 @@ var UserForm = ({
       setFormData((prev) => ({ ...prev, merchantId: userMerchantId?.toString() || "" }));
     }
   }, [canSelectMerchant, currentUser, isEditMode]);
-  (0, import_react76.useEffect)(() => {
+  (0, import_react77.useEffect)(() => {
     if (!isEditMode && canSelectOutlet) {
       setLoadingOutlets(true);
       const merchantId = canSelectMerchant ? formData.merchantId : currentUser?.merchantId || currentUser?.merchant?.id;
@@ -28019,7 +28054,7 @@ var UserForm = ({
       setFormData((prev) => ({ ...prev, outletId: currentUser.outletId?.toString() || "" }));
     }
   }, [canSelectOutlet, canSelectMerchant, formData.merchantId, currentUser?.merchantId, currentUser?.outletId, isEditMode]);
-  (0, import_react76.useEffect)(() => {
+  (0, import_react77.useEffect)(() => {
     if (!isEditMode && canSelectMerchant && formData.merchantId) {
       console.log("\u{1F50D} UserForm: Merchant changed, resetting outlet and reloading outlets");
       setFormData((prev) => ({ ...prev, outletId: "" }));
@@ -28384,7 +28419,7 @@ var AddUserDialog = ({
   onError,
   currentUser
 }) => {
-  const [isSubmitting, setIsSubmitting] = (0, import_react77.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react78.useState)(false);
   const handleSave = async (userData) => {
     try {
       setIsSubmitting(true);
@@ -28696,7 +28731,7 @@ var AccountManagementCard = ({
 
 // src/components/features/Users/Users.tsx
 var import_lucide_react78 = require("lucide-react");
-var import_hooks9 = require("@rentalshop/hooks");
+var import_hooks10 = require("@rentalshop/hooks");
 var import_jsx_runtime159 = require("react/jsx-runtime");
 var Users10 = ({
   // Data props
@@ -28726,7 +28761,7 @@ var Users10 = ({
   onExport,
   className = ""
 }) => {
-  const { canManageUsers } = (0, import_hooks9.useUserRole)(currentUser);
+  const { canManageUsers } = (0, import_hooks10.useUserRole)(currentUser);
   const handleExport = () => {
     if (onExport) {
       onExport();
@@ -28742,12 +28777,12 @@ var Users10 = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = import_react78.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react78.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react78.default.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnUserAction = import_react78.default.useCallback(onUserAction, [onUserAction]);
-  const memoizedOnPageChange = import_react78.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react78.default.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = import_react79.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react79.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react79.default.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnUserAction = import_react79.default.useCallback(onUserAction, [onUserAction]);
+  const memoizedOnPageChange = import_react79.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react79.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
@@ -28808,7 +28843,7 @@ var Users10 = ({
 var Users_default = Users10;
 
 // src/components/features/Outlets/Outlets.tsx
-var import_react80 = __toESM(require("react"));
+var import_react81 = __toESM(require("react"));
 var import_ui111 = require("@rentalshop/ui");
 
 // src/components/features/Outlets/components/OutletHeader.tsx
@@ -29012,7 +29047,7 @@ function OutletGrid({
 }
 
 // src/components/features/Outlets/components/OutletTable.tsx
-var import_react79 = __toESM(require("react"));
+var import_react80 = __toESM(require("react"));
 var import_lucide_react82 = require("lucide-react");
 var import_jsx_runtime163 = require("react/jsx-runtime");
 function OutletTable({
@@ -29022,7 +29057,7 @@ function OutletTable({
   sortOrder = "desc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react79.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react80.default.useState(null);
   if (outlets.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ (0, import_jsx_runtime163.jsx)(import_lucide_react82.Building2, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
@@ -29222,10 +29257,10 @@ var Outlets = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = import_react80.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnOutletAction = import_react80.default.useCallback(onOutletAction, [onOutletAction]);
-  const memoizedOnPageChange = import_react80.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react80.default.useCallback(onSort, [onSort]);
+  const memoizedOnSearchChange = import_react81.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnOutletAction = import_react81.default.useCallback(onOutletAction, [onOutletAction]);
+  const memoizedOnPageChange = import_react81.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react81.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime166.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime166.jsx)("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime166.jsx)(
       OutletSearch,
@@ -29267,18 +29302,18 @@ var Outlets = ({
 };
 
 // src/components/features/Categories/Categories.tsx
-var import_react86 = __toESM(require("react"));
+var import_react87 = __toESM(require("react"));
 var import_ui120 = require("@rentalshop/ui");
 
 // src/components/features/Categories/components/CategoryHeader.tsx
 var import_ui112 = require("@rentalshop/ui");
 var import_lucide_react85 = require("lucide-react");
-var import_hooks10 = require("@rentalshop/hooks");
+var import_hooks11 = require("@rentalshop/hooks");
 var import_jsx_runtime167 = require("react/jsx-runtime");
 var CategoryHeader = ({
   onAddCategory
 }) => {
-  const { canManageCategories } = (0, import_hooks10.useUserRole)();
+  const { canManageCategories } = (0, import_hooks11.useUserRole)();
   return /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("div", { className: "flex items-center justify-between", children: [
     /* @__PURE__ */ (0, import_jsx_runtime167.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime167.jsx)("h1", { className: "text-3xl font-bold tracking-tight", children: "Product Categories" }),
@@ -29292,14 +29327,14 @@ var CategoryHeader = ({
 };
 
 // src/components/features/Categories/components/CategoryActions.tsx
-var import_react83 = require("react");
-var import_hooks11 = require("@rentalshop/hooks");
+var import_react84 = require("react");
+var import_hooks12 = require("@rentalshop/hooks");
 
 // src/components/features/Categories/components/AddCategoryDialog.tsx
-var import_react82 = require("react");
+var import_react83 = require("react");
 
 // src/components/features/Categories/components/CategoryFormContent.tsx
-var import_react81 = require("react");
+var import_react82 = require("react");
 var import_lucide_react86 = require("lucide-react");
 var import_jsx_runtime168 = require("react/jsx-runtime");
 var CategoryFormContent = ({
@@ -29309,14 +29344,14 @@ var CategoryFormContent = ({
   mode,
   isSubmitting: externalIsSubmitting
 }) => {
-  const [formData, setFormData] = (0, import_react81.useState)({
+  const [formData, setFormData] = (0, import_react82.useState)({
     name: "",
     description: ""
   });
-  const [errors, setErrors] = (0, import_react81.useState)({});
-  const [isSubmitting, setIsSubmitting] = (0, import_react81.useState)(false);
+  const [errors, setErrors] = (0, import_react82.useState)({});
+  const [isSubmitting, setIsSubmitting] = (0, import_react82.useState)(false);
   const submitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : isSubmitting;
-  (0, import_react81.useEffect)(() => {
+  (0, import_react82.useEffect)(() => {
     if (category && mode === "edit") {
       setFormData({
         name: category.name || "",
@@ -29446,7 +29481,7 @@ var AddCategoryDialog = ({
   onCategoryCreated,
   onError
 }) => {
-  const [isSubmitting, setIsSubmitting] = (0, import_react82.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react83.useState)(false);
   const handleSave = async (categoryData) => {
     try {
       setIsSubmitting(true);
@@ -29493,8 +29528,8 @@ var CategoryActions = ({
   onCategoryCreated,
   onError
 }) => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react83.useState)(false);
-  const { canManageCategories } = (0, import_hooks11.useUserRole)();
+  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react84.useState)(false);
+  const { canManageCategories } = (0, import_hooks12.useUserRole)();
   const allActions = [
     {
       id: "add-category",
@@ -29694,7 +29729,7 @@ var CategoryGrid = ({
 };
 
 // src/components/features/Categories/components/CategoryTable.tsx
-var import_react84 = __toESM(require("react"));
+var import_react85 = __toESM(require("react"));
 var import_lucide_react88 = require("lucide-react");
 var import_jsx_runtime173 = require("react/jsx-runtime");
 function CategoryTable({
@@ -29704,7 +29739,7 @@ function CategoryTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react84.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react85.default.useState(null);
   if (categories.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_lucide_react88.FolderOpen, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
@@ -29895,7 +29930,7 @@ var CategoryForm = ({
 };
 
 // src/components/features/Categories/components/CategoryView.tsx
-var import_react85 = require("react");
+var import_react86 = require("react");
 var import_jsx_runtime175 = require("react/jsx-runtime");
 var CategoryView = ({
   category,
@@ -29903,7 +29938,7 @@ var CategoryView = ({
   onEdit,
   onDelete
 }) => {
-  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react85.useState)(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react86.useState)(false);
   if (!category)
     return null;
   const handleEdit = () => {
@@ -30130,10 +30165,10 @@ var Categories = ({
   const currentPage = data?.currentPage || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = import_react86.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnCategoryAction = import_react86.default.useCallback(onCategoryAction, [onCategoryAction]);
-  const memoizedOnPageChange = import_react86.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react86.default.useCallback(onSort, [onSort]);
+  const memoizedOnSearchChange = import_react87.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnCategoryAction = import_react87.default.useCallback(onCategoryAction, [onCategoryAction]);
+  const memoizedOnPageChange = import_react87.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react87.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime179.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime179.jsx)("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(
       CategorySearch,
@@ -30324,7 +30359,7 @@ var PlanActions = ({
 };
 
 // src/components/features/Plans/components/PlanSelection.tsx
-var import_react87 = require("react");
+var import_react88 = require("react");
 var import_ui123 = require("@rentalshop/ui");
 var import_lucide_react93 = require("lucide-react");
 var import_constants13 = require("@rentalshop/constants");
@@ -30338,14 +30373,14 @@ var PlanSelection = ({
   loading = false,
   disabled = false
 }) => {
-  const [selectedPlan, setSelectedPlan] = (0, import_react87.useState)(selectedPlanId);
-  const [selectedCycle, setSelectedCycle] = (0, import_react87.useState)(selectedBillingCycle);
-  (0, import_react87.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react88.useState)(selectedPlanId);
+  const [selectedCycle, setSelectedCycle] = (0, import_react88.useState)(selectedBillingCycle);
+  (0, import_react88.useEffect)(() => {
     if (selectedPlanId) {
       setSelectedPlan(selectedPlanId);
     }
   }, [selectedPlanId]);
-  (0, import_react87.useEffect)(() => {
+  (0, import_react88.useEffect)(() => {
     if (selectedBillingCycle) {
       setSelectedCycle(selectedBillingCycle);
     }
@@ -31441,7 +31476,7 @@ var BillingCycleTable = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleForm.tsx
-var import_react88 = require("react");
+var import_react89 = require("react");
 var import_ui129 = require("@rentalshop/ui");
 var import_jsx_runtime189 = require("react/jsx-runtime");
 var BillingCycleForm = ({
@@ -31450,7 +31485,7 @@ var BillingCycleForm = ({
   onCancel,
   loading = false
 }) => {
-  const [formData, setFormData] = (0, import_react88.useState)({
+  const [formData, setFormData] = (0, import_react89.useState)({
     name: initialData.name || "",
     value: initialData.value || "",
     months: initialData.months || 1,
@@ -31459,8 +31494,8 @@ var BillingCycleForm = ({
     isActive: initialData.isActive !== void 0 ? initialData.isActive : true,
     sortOrder: initialData.sortOrder || 0
   });
-  const [errors, setErrors] = (0, import_react88.useState)({});
-  (0, import_react88.useEffect)(() => {
+  const [errors, setErrors] = (0, import_react89.useState)({});
+  (0, import_react89.useEffect)(() => {
     if (initialData) {
       setFormData({
         name: initialData.name || "",
@@ -31696,7 +31731,7 @@ var BillingCycleForm = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleDetailDialog.tsx
-var import_react89 = __toESM(require("react"));
+var import_react90 = __toESM(require("react"));
 var import_ui130 = require("@rentalshop/ui");
 var import_lucide_react99 = require("lucide-react");
 var import_jsx_runtime190 = require("react/jsx-runtime");
@@ -31709,9 +31744,9 @@ var BillingCycleDetailDialog = ({
   onDelete,
   loading = false
 }) => {
-  const [isEditing, setIsEditing] = (0, import_react89.useState)(false);
-  const [tempStatus, setTempStatus] = (0, import_react89.useState)(billingCycle?.isActive ?? false);
-  import_react89.default.useEffect(() => {
+  const [isEditing, setIsEditing] = (0, import_react90.useState)(false);
+  const [tempStatus, setTempStatus] = (0, import_react90.useState)(billingCycle?.isActive ?? false);
+  import_react90.default.useEffect(() => {
     setTempStatus(billingCycle?.isActive ?? false);
   }, [billingCycle]);
   const handleToggleStatus = () => {
@@ -31917,7 +31952,7 @@ var BillingCycleDetailDialog = ({
 };
 
 // src/components/features/Payments/components/PaymentForm.tsx
-var import_react90 = __toESM(require("react"));
+var import_react91 = __toESM(require("react"));
 var import_ui131 = require("@rentalshop/ui");
 var import_utils40 = require("@rentalshop/utils");
 var import_lucide_react100 = require("lucide-react");
@@ -31942,7 +31977,7 @@ var PaymentForm = ({
   existingPayment
   // ✅ NEW: Existing payment data for edit mode
 }) => {
-  const [formData, setFormData] = (0, import_react90.useState)(() => {
+  const [formData, setFormData] = (0, import_react91.useState)(() => {
     if (mode === "edit" && existingPayment) {
       return {
         merchantId: existingPayment.merchantId,
@@ -31977,10 +32012,10 @@ var PaymentForm = ({
       endDate: nextMonthStr
     };
   });
-  const [selectedPlan, setSelectedPlan] = (0, import_react90.useState)(null);
-  const [selectedPlanVariant, setSelectedPlanVariant] = (0, import_react90.useState)(null);
-  const [isSearchingMerchants, setIsSearchingMerchants] = (0, import_react90.useState)(false);
-  const searchMerchants = import_react90.default.useCallback(async (query) => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react91.useState)(null);
+  const [selectedPlanVariant, setSelectedPlanVariant] = (0, import_react91.useState)(null);
+  const [isSearchingMerchants, setIsSearchingMerchants] = (0, import_react91.useState)(false);
+  const searchMerchants = import_react91.default.useCallback(async (query) => {
     console.log("\u{1F50D} PaymentForm: searchMerchants called with query:", query);
     if (!query.trim()) {
       console.log("\u{1F50D} PaymentForm: Empty query, returning empty array");
@@ -32041,7 +32076,7 @@ var PaymentForm = ({
       console.log("\u{1F50D} PaymentForm: Search completed for query:", query);
     }
   }, []);
-  (0, import_react90.useEffect)(() => {
+  (0, import_react91.useEffect)(() => {
     if (mode === "edit" && existingPayment && plans.length > 0 && planVariants.length > 0) {
       const plan = plans.find((p) => p.id === existingPayment.planId);
       const planVariant = planVariants.find((v) => v.id === existingPayment.planVariantId);
@@ -32051,7 +32086,7 @@ var PaymentForm = ({
         setSelectedPlanVariant(planVariant);
     }
   }, [mode, existingPayment, plans, planVariants]);
-  (0, import_react90.useEffect)(() => {
+  (0, import_react91.useEffect)(() => {
     if (selectedPlan && selectedPlanVariant) {
       const totalAmount = selectedPlanVariant.price;
       const currency = selectedPlan.currency;
@@ -34545,7 +34580,7 @@ function BackupSchedulesGrid({
 }
 
 // src/components/features/ApiManagement/components/ApiKeyCard.tsx
-var import_react91 = require("react");
+var import_react92 = require("react");
 var import_lucide_react112 = require("lucide-react");
 var import_jsx_runtime222 = require("react/jsx-runtime");
 var getTypeColor4 = (type) => {
@@ -34583,7 +34618,7 @@ function ApiKeyCard({
   onDelete,
   onViewDetails
 }) {
-  const [showKey, setShowKey] = (0, import_react91.useState)(false);
+  const [showKey, setShowKey] = (0, import_react92.useState)(false);
   const toggleKeyVisibility = () => {
     setShowKey(!showKey);
   };
@@ -35402,11 +35437,11 @@ function SecurityMetricsCard({ metrics }) {
 }
 
 // src/components/features/AuditLogs/AuditLogViewer.tsx
-var import_react93 = require("react");
+var import_react94 = require("react");
 var import_ui133 = require("@rentalshop/ui");
 
 // src/components/features/AuditLogs/AuditLogDetail.tsx
-var import_react92 = __toESM(require("react"));
+var import_react93 = __toESM(require("react"));
 var import_ui132 = require("@rentalshop/ui");
 var import_lucide_react118 = require("lucide-react");
 var import_jsx_runtime232 = require("react/jsx-runtime");
@@ -35466,7 +35501,7 @@ function ActionBadge({ action }) {
   return /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.Badge, { className: getActionStyle(action), children: action });
 }
 function JsonViewer({ data, title }) {
-  const [isExpanded, setIsExpanded] = import_react92.default.useState(false);
+  const [isExpanded, setIsExpanded] = import_react93.default.useState(false);
   if (!data) {
     return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)(import_ui132.Card, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime232.jsx)(import_ui132.CardTitle, { className: "text-sm", children: title }) }),
@@ -35521,7 +35556,7 @@ function ChangesViewer({ changes }) {
   ] });
 }
 function AuditLogDetail({ log, isOpen, onClose }) {
-  const [activeTab, setActiveTab] = (0, import_react92.useState)("overview");
+  const [activeTab, setActiveTab] = (0, import_react93.useState)("overview");
   if (!log)
     return null;
   const formatDate11 = (dateString) => {
@@ -35999,9 +36034,9 @@ function AuditLogViewer({
   onViewDetails = () => {
   }
 }) {
-  const [selectedLog, setSelectedLog] = (0, import_react93.useState)(null);
-  const [isDetailOpen, setIsDetailOpen] = (0, import_react93.useState)(false);
-  const [activeTab, setActiveTab] = (0, import_react93.useState)("logs");
+  const [selectedLog, setSelectedLog] = (0, import_react94.useState)(null);
+  const [isDetailOpen, setIsDetailOpen] = (0, import_react94.useState)(false);
+  const [activeTab, setActiveTab] = (0, import_react94.useState)("logs");
   const handleViewDetails = (log) => {
     setSelectedLog(log);
     setIsDetailOpen(true);
@@ -36151,7 +36186,7 @@ function AuditLogViewerSimple({ className = "" }) {
 }
 
 // src/components/features/OrderDetail/OrderDetail.tsx
-var import_react94 = require("react");
+var import_react95 = require("react");
 var import_ui136 = require("@rentalshop/ui");
 var import_lucide_react121 = require("lucide-react");
 var import_ui137 = require("@rentalshop/ui");
@@ -36517,23 +36552,23 @@ var OrderDetail = ({
     "Passport",
     "Other"
   ];
-  const [settingsForm, setSettingsForm] = (0, import_react94.useState)({
+  const [settingsForm, setSettingsForm] = (0, import_react95.useState)({
     damageFee: order.damageFee || 0,
     securityDeposit: order.securityDeposit || 0,
     collateralType: order.collateralType || "Other",
     collateralDetails: order.collateralDetails || "",
     notes: order.notes || ""
   });
-  const [isEditingSettings, setIsEditingSettings] = (0, import_react94.useState)(false);
-  const [tempSettings, setTempSettings] = (0, import_react94.useState)(settingsForm);
-  const [isSavingSettings, setIsSavingSettings] = (0, import_react94.useState)(false);
-  const [isCollectionModalOpen, setIsCollectionModalOpen] = (0, import_react94.useState)(false);
-  const [isReturnModalOpen, setIsReturnModalOpen] = (0, import_react94.useState)(false);
-  const [isPickupLoading, setIsPickupLoading] = (0, import_react94.useState)(false);
-  const [isReturnLoading, setIsReturnLoading] = (0, import_react94.useState)(false);
-  const [isCancelLoading, setIsCancelLoading] = (0, import_react94.useState)(false);
-  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = (0, import_react94.useState)(false);
-  (0, import_react94.useEffect)(() => {
+  const [isEditingSettings, setIsEditingSettings] = (0, import_react95.useState)(false);
+  const [tempSettings, setTempSettings] = (0, import_react95.useState)(settingsForm);
+  const [isSavingSettings, setIsSavingSettings] = (0, import_react95.useState)(false);
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = (0, import_react95.useState)(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = (0, import_react95.useState)(false);
+  const [isPickupLoading, setIsPickupLoading] = (0, import_react95.useState)(false);
+  const [isReturnLoading, setIsReturnLoading] = (0, import_react95.useState)(false);
+  const [isCancelLoading, setIsCancelLoading] = (0, import_react95.useState)(false);
+  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = (0, import_react95.useState)(false);
+  (0, import_react95.useEffect)(() => {
     if (order) {
       const newSettings = {
         damageFee: order.damageFee || 0,
@@ -37316,14 +37351,14 @@ function OutletDetailLoading() {
 }
 
 // src/components/features/Settings/Settings.tsx
-var import_react97 = require("react");
+var import_react98 = require("react");
 var import_lucide_react126 = require("lucide-react");
-var import_hooks12 = require("@rentalshop/hooks");
+var import_hooks13 = require("@rentalshop/hooks");
 var import_utils46 = require("@rentalshop/utils");
 var import_ui148 = require("@rentalshop/ui");
 
 // src/components/features/Settings/components/SettingsLayout.tsx
-var import_react95 = require("react");
+var import_react96 = require("react");
 var import_ui140 = require("@rentalshop/ui");
 var import_lucide_react123 = require("lucide-react");
 var import_jsx_runtime239 = require("react/jsx-runtime");
@@ -37335,7 +37370,7 @@ var SettingsLayout2 = ({
   activeSection,
   onSectionChange
 }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react95.useState)(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react96.useState)(false);
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(import_ui140.PageWrapper, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(import_ui140.PageHeader, { children: [
@@ -37486,7 +37521,7 @@ var ProfileSection = ({
 };
 
 // src/components/features/Settings/components/MerchantSection.tsx
-var import_react96 = require("react");
+var import_react97 = require("react");
 var import_ui142 = require("@rentalshop/ui");
 var import_utils45 = require("@rentalshop/utils");
 var import_constants15 = require("@rentalshop/constants");
@@ -37501,16 +37536,16 @@ var MerchantSection = ({
   onCancel,
   onInputChange
 }) => {
-  const [merchantData, setMerchantData] = (0, import_react96.useState)(null);
-  const [loadingMerchant, setLoadingMerchant] = (0, import_react96.useState)(false);
-  const fetchingRef = (0, import_react96.useRef)(false);
+  const [merchantData, setMerchantData] = (0, import_react97.useState)(null);
+  const [loadingMerchant, setLoadingMerchant] = (0, import_react97.useState)(false);
+  const fetchingRef = (0, import_react97.useRef)(false);
   console.log("\u{1F50D} MerchantSection render - user:", user);
   console.log("\u{1F50D} MerchantSection render - user.merchant:", user?.merchant);
   console.log("\u{1F50D} MerchantSection render - user.merchantId:", user?.merchantId);
   console.log("\u{1F50D} MerchantSection render - user role:", user?.role);
   console.log("\u{1F50D} MerchantSection render - loadingMerchant:", loadingMerchant);
   console.log("\u{1F50D} MerchantSection render - fetchingRef.current:", fetchingRef.current);
-  (0, import_react96.useEffect)(() => {
+  (0, import_react97.useEffect)(() => {
     const fetchMerchantData = async () => {
       if (user?.merchantId && !user?.merchant && !fetchingRef.current) {
         console.log("\u{1F504} Fetching merchant data for merchantId:", user.merchantId);
@@ -38187,19 +38222,19 @@ var settingsMenuItems = [
   }
 ];
 var SettingsComponent = () => {
-  const { user, logout, loading } = (0, import_hooks12.useAuth)();
+  const { user, logout, loading } = (0, import_hooks13.useAuth)();
   const { toastSuccess, toastError } = (0, import_ui148.useToast)();
-  const [activeSection, setActiveSection] = (0, import_react97.useState)("profile");
-  const [isEditingPersonal, setIsEditingPersonal] = (0, import_react97.useState)(false);
-  const [isEditingMerchant, setIsEditingMerchant] = (0, import_react97.useState)(false);
-  const [isEditingOutlet, setIsEditingOutlet] = (0, import_react97.useState)(false);
-  const [isUpdating, setIsUpdating] = (0, import_react97.useState)(false);
-  const [personalFormData, setPersonalFormData] = (0, import_react97.useState)({
+  const [activeSection, setActiveSection] = (0, import_react98.useState)("profile");
+  const [isEditingPersonal, setIsEditingPersonal] = (0, import_react98.useState)(false);
+  const [isEditingMerchant, setIsEditingMerchant] = (0, import_react98.useState)(false);
+  const [isEditingOutlet, setIsEditingOutlet] = (0, import_react98.useState)(false);
+  const [isUpdating, setIsUpdating] = (0, import_react98.useState)(false);
+  const [personalFormData, setPersonalFormData] = (0, import_react98.useState)({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     phone: user?.phone || ""
   });
-  const [merchantFormData, setMerchantFormData] = (0, import_react97.useState)({
+  const [merchantFormData, setMerchantFormData] = (0, import_react98.useState)({
     name: "",
     phone: "",
     address: "",
@@ -38211,24 +38246,24 @@ var SettingsComponent = () => {
     pricingType: "",
     taxId: ""
   });
-  const [outletFormData, setOutletFormData] = (0, import_react97.useState)({
+  const [outletFormData, setOutletFormData] = (0, import_react98.useState)({
     name: "",
     phone: "",
     address: "",
     description: ""
   });
-  const [showChangePassword, setShowChangePassword] = (0, import_react97.useState)(false);
-  const [isChangingPassword, setIsChangingPassword] = (0, import_react97.useState)(false);
-  const [passwordData, setPasswordData] = (0, import_react97.useState)({
+  const [showChangePassword, setShowChangePassword] = (0, import_react98.useState)(false);
+  const [isChangingPassword, setIsChangingPassword] = (0, import_react98.useState)(false);
+  const [passwordData, setPasswordData] = (0, import_react98.useState)({
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
-  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react97.useState)(false);
-  const [isDeleting, setIsDeleting] = (0, import_react97.useState)(false);
-  const [subscriptionData, setSubscriptionData] = (0, import_react97.useState)(null);
-  const [subscriptionLoading, setSubscriptionLoading] = (0, import_react97.useState)(true);
-  (0, import_react97.useEffect)(() => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react98.useState)(false);
+  const [isDeleting, setIsDeleting] = (0, import_react98.useState)(false);
+  const [subscriptionData, setSubscriptionData] = (0, import_react98.useState)(null);
+  const [subscriptionLoading, setSubscriptionLoading] = (0, import_react98.useState)(true);
+  (0, import_react98.useEffect)(() => {
     const fetchSubscriptionData = async () => {
       try {
         setSubscriptionLoading(true);
@@ -38302,7 +38337,7 @@ var SettingsComponent = () => {
     };
     fetchSubscriptionData();
   }, []);
-  (0, import_react97.useEffect)(() => {
+  (0, import_react98.useEffect)(() => {
     if (user?.merchant && user?.role === "MERCHANT") {
       setMerchantFormData({
         name: user.merchant.name || "",
@@ -38600,7 +38635,7 @@ var SecuritySection = ({
 };
 
 // src/components/layout/TopNavigation.tsx
-var import_react98 = require("react");
+var import_react99 = require("react");
 var import_lucide_react128 = require("lucide-react");
 var import_jsx_runtime249 = require("react/jsx-runtime");
 function TopNavigation({
@@ -38612,7 +38647,7 @@ function TopNavigation({
   onProfileClick,
   userRole
 }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react98.useState)(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react99.useState)(false);
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: import_lucide_react128.Home },
     { href: "/products", label: "Products", icon: import_lucide_react128.Package },
@@ -38980,7 +39015,7 @@ function ServerTopNavigation({
 }
 
 // src/components/layout/DashboardWrapperClean.tsx
-var import_react99 = require("react");
+var import_react100 = require("react");
 var import_jsx_runtime251 = require("react/jsx-runtime");
 function DashboardWrapperClean({
   children,
@@ -38991,7 +39026,7 @@ function DashboardWrapperClean({
   hideSidebar = false,
   allowCollapse = true
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react99.useState)(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react100.useState)(false);
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -39011,7 +39046,7 @@ function DashboardWrapperClean({
 }
 
 // src/components/layout/DashboardWrapperColorful.tsx
-var import_react100 = require("react");
+var import_react101 = require("react");
 var import_jsx_runtime252 = require("react/jsx-runtime");
 function DashboardWrapperColorful({
   children,
@@ -39022,7 +39057,7 @@ function DashboardWrapperColorful({
   hideSidebar = false,
   allowCollapse = true
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react100.useState)(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react101.useState)(false);
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -39348,11 +39383,11 @@ var QuickActionsGrid = () => {
 };
 
 // src/components/layout/SearchInput.tsx
-var import_react101 = require("react");
+var import_react102 = require("react");
 var import_lucide_react130 = require("lucide-react");
 var import_ui150 = require("@rentalshop/ui");
 var import_ui151 = require("@rentalshop/ui");
-var import_hooks13 = require("@rentalshop/hooks");
+var import_hooks14 = require("@rentalshop/hooks");
 var import_jsx_runtime257 = require("react/jsx-runtime");
 var SearchInput = ({
   placeholder = "Search...",
@@ -39369,17 +39404,17 @@ var SearchInput = ({
     handleSearchChange,
     clearSearch,
     cleanup
-  } = (0, import_hooks13.useThrottledSearch)({
+  } = (0, import_hooks14.useThrottledSearch)({
     delay,
     minLength,
     onSearch
   });
-  (0, import_react101.useEffect)(() => {
+  (0, import_react102.useEffect)(() => {
     if (defaultValue && !query) {
       handleSearchChange(defaultValue);
     }
   }, [defaultValue, query, handleSearchChange]);
-  (0, import_react101.useEffect)(() => {
+  (0, import_react102.useEffect)(() => {
     return cleanup;
   }, [cleanup]);
   return /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: (0, import_ui150.cn)("relative", className), children: [
@@ -39475,7 +39510,7 @@ var LanguageSwitcher = ({
 };
 
 // src/components/layout/navigation.tsx
-var import_react102 = require("react");
+var import_react103 = require("react");
 var import_lucide_react132 = require("lucide-react");
 var import_ui153 = require("@rentalshop/ui");
 var import_jsx_runtime259 = require("react/jsx-runtime");
@@ -39488,7 +39523,7 @@ function Navigation({
   isCollapsed = false,
   userRole
 }) {
-  const [isOpen, setIsOpen] = (0, import_react102.useState)(false);
+  const [isOpen, setIsOpen] = (0, import_react103.useState)(false);
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: import_lucide_react132.Home },
     { href: "/products", label: "Products", icon: import_lucide_react132.Store },
@@ -39591,9 +39626,9 @@ function Navigation({
 }
 
 // src/components/layout/AdminSidebar.tsx
-var import_react103 = require("react");
+var import_react104 = require("react");
 var import_link3 = __toESM(require("next/link"));
-var import_navigation6 = require("next/navigation");
+var import_navigation7 = require("next/navigation");
 var import_ui154 = require("@rentalshop/ui");
 var import_ui155 = require("@rentalshop/ui");
 var import_lucide_react133 = require("lucide-react");
@@ -39662,8 +39697,8 @@ var AdminSidebar = ({
   onCollapseToggle,
   notificationsCount = 0
 }) => {
-  const [expandedItems, setExpandedItems] = (0, import_react103.useState)([]);
-  const pathname = (0, import_navigation6.usePathname)();
+  const [expandedItems, setExpandedItems] = (0, import_react104.useState)([]);
+  const pathname = (0, import_navigation7.usePathname)();
   const toggleExpanded = (href) => {
     setExpandedItems(
       (prev) => prev.includes(href) ? prev.filter((item) => item !== href) : [...prev, href]
@@ -39799,8 +39834,8 @@ var AdminSidebar = ({
 };
 
 // src/components/layout/ClientSidebar.tsx
-var import_react104 = require("react");
-var import_navigation7 = require("next/navigation");
+var import_react105 = require("react");
+var import_navigation8 = require("next/navigation");
 var import_ui156 = require("@rentalshop/ui");
 var import_ui157 = require("@rentalshop/ui");
 var import_lucide_react134 = require("lucide-react");
@@ -39872,11 +39907,11 @@ var ClientSidebar = ({
   onNavigate,
   onPrefetch
 }) => {
-  const [expandedItems, setExpandedItems] = (0, import_react104.useState)([]);
-  const [hoveredTab, setHoveredTab] = (0, import_react104.useState)(null);
-  const [clickedTab, setClickedTab] = (0, import_react104.useState)(null);
-  const [localCurrentPage, setLocalCurrentPage] = (0, import_react104.useState)(currentPath);
-  const pathname = (0, import_navigation7.usePathname)();
+  const [expandedItems, setExpandedItems] = (0, import_react105.useState)([]);
+  const [hoveredTab, setHoveredTab] = (0, import_react105.useState)(null);
+  const [clickedTab, setClickedTab] = (0, import_react105.useState)(null);
+  const [localCurrentPage, setLocalCurrentPage] = (0, import_react105.useState)(currentPath);
+  const pathname = (0, import_navigation8.usePathname)();
   const filterMenuItemsByRole = (items, userRole) => {
     if (!userRole)
       return items;
@@ -39892,10 +39927,10 @@ var ClientSidebar = ({
     return items;
   };
   const menuItems2 = filterMenuItemsByRole(clientMenuItems, user?.role);
-  (0, import_react104.useEffect)(() => {
+  (0, import_react105.useEffect)(() => {
     setLocalCurrentPage(currentPath);
   }, [currentPath]);
-  (0, import_react104.useEffect)(() => {
+  (0, import_react105.useEffect)(() => {
     const handleClickOutside = (event) => {
       const target = event.target;
       const isClickingNavItem = target.closest(".nav-item");
@@ -40097,7 +40132,7 @@ var ClientSidebar = ({
 };
 
 // src/components/layout/layout.tsx
-var import_react105 = require("react");
+var import_react106 = require("react");
 var import_lucide_react135 = require("lucide-react");
 var import_ui158 = require("@rentalshop/ui");
 var import_jsx_runtime262 = require("react/jsx-runtime");
@@ -40111,8 +40146,8 @@ function Layout({
   hideSidebar = false,
   allowCollapse = true
 }) {
-  const [sidebarOpen, setSidebarOpen] = (0, import_react105.useState)(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react105.useState)(false);
+  const [sidebarOpen, setSidebarOpen] = (0, import_react106.useState)(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react106.useState)(false);
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -40160,7 +40195,7 @@ function Layout({
 
 // src/components/layout/SubscriptionStatus.tsx
 var import_lucide_react136 = require("lucide-react");
-var import_hooks14 = require("@rentalshop/hooks");
+var import_hooks15 = require("@rentalshop/hooks");
 var import_jsx_runtime263 = require("react/jsx-runtime");
 function SubscriptionStatus({ showDetails = false, className = "", currentUserRole }) {
   const {
@@ -40177,7 +40212,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     error: error2,
     statusMessage
     // Use statusReason from API
-  } = (0, import_hooks14.useSubscriptionStatusInfo)();
+  } = (0, import_hooks15.useSubscriptionStatusInfo)();
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
   }

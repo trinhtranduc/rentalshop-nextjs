@@ -1627,6 +1627,48 @@ function useUsersData(options) {
     refetch
   };
 }
+
+// src/hooks/useOptimisticNavigation.ts
+import { useRouter } from "next/navigation";
+import { useState as useState14, useCallback as useCallback11, useRef as useRef8, useEffect as useEffect11 } from "react";
+function useOptimisticNavigation(options = {}) {
+  const router = useRouter();
+  const [navigatingTo, setNavigatingTo] = useState14(null);
+  const rafRef = useRef8(null);
+  const timeoutRef = useRef8(null);
+  useEffect11(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+  const navigate = useCallback11((path) => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setNavigatingTo(path);
+    options.onNavigateStart?.(path);
+    rafRef.current = requestAnimationFrame(() => {
+      router.push(path);
+      timeoutRef.current = setTimeout(() => {
+        setNavigatingTo(null);
+        options.onNavigateEnd?.(path);
+      }, 500);
+    });
+  }, [router, options]);
+  return {
+    navigate,
+    navigatingTo,
+    isNavigating: navigatingTo !== null
+  };
+}
 export {
   CurrencyProvider,
   useAuth,
@@ -1643,6 +1685,7 @@ export {
   useCurrency,
   useCustomersData,
   useErrorHandler,
+  useOptimisticNavigation,
   useOrdersData,
   useOutletsData,
   usePagination,

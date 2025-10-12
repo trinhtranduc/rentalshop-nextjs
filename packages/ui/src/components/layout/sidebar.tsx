@@ -1,10 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@rentalshop/ui';
 import { Button, Card } from '@rentalshop/ui';
 import { ChevronLeft, ChevronRight, Home, Users, Package, ShoppingCart, Building2, Settings } from 'lucide-react';
+// @ts-ignore - hooks package doesn't have type declarations yet
+import { useOptimisticNavigation } from '@rentalshop/hooks';
 
 export interface SidebarProps {
   user?: any;
@@ -99,6 +102,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed = false,
   onCollapseToggle,
 }) => {
+  const router = useRouter();
+  const { navigate, navigatingTo } = useOptimisticNavigation();
+
+  // Prefetch all pages on mount for instant navigation
+  useEffect(() => {
+    menuItems.forEach(item => {
+      router.prefetch(item.href);
+    });
+  }, [router]);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -107,6 +120,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onToggle}
         />
+      )}
+
+      {/* Navigation Loading Overlay - Shows during page transition */}
+      {navigatingTo && (
+        <div className="fixed inset-0 bg-white bg-opacity-60 backdrop-blur-sm z-[60] flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-xl p-6 flex flex-col items-center">
+            <svg className="animate-spin h-8 w-8 text-green-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-sm font-medium text-gray-700">Loading...</p>
+          </div>
+        </div>
       )}
 
       {/* Sidebar */}
@@ -120,14 +146,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <Link href="/dashboard" className="flex items-center space-x-2">
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            >
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-bold text-sm">R</span>
               </div>
               {!isCollapsed && (
                 <span className="font-bold text-2xl text-gray-900 leading-none">RentalShop</span>
               )}
-            </Link>
+            </button>
             
             <div className="flex items-center space-x-2">
               {/* Collapse Toggle Button */}
@@ -163,16 +192,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {/* Hidden Links for Next.js prefetching */}
+            <div className="hidden">
+              {menuItems.map((item) => (
+                <Link key={`prefetch-${item.href}`} href={item.href} prefetch={true}>
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
             {menuItems.map((item) => {
               const isActive = currentPath === item.href;
+              const isNavigating = navigatingTo === item.href;
+              const shouldHighlight = isActive || isNavigating;
               
               return (
-                <Link
+                <button
                   key={item.href}
-                  href={item.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(item.href);
+                  }}
+                  onMouseEnter={() => {
+                    // Aggressive prefetch on hover
+                    router.prefetch(item.href);
+                  }}
                   className={cn(
-                    'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group',
-                    isActive
+                    'w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group',
+                    shouldHighlight
                       ? 'bg-green-100 text-green-700 border-r-2 border-green-600'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   )}
@@ -180,15 +227,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="flex items-center space-x-3">
                     <span className={cn(
-                      'flex-shrink-0',
-                      isActive ? 'text-green-600' : 'text-gray-500'
+                      'flex-shrink-0 transition-colors duration-150',
+                      shouldHighlight ? 'text-green-600' : 'text-gray-500'
                     )}>
                       {item.icon}
                     </span>
                     {!isCollapsed && (
                       <span className={cn(
-                        'text-base',
-                        isActive ? 'font-medium' : 'font-normal'
+                        'text-base transition-all duration-150',
+                        shouldHighlight ? 'font-medium' : 'font-normal'
                       )}>{item.label}</span>
                     )}
                   </div>
@@ -198,7 +245,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {item.badge}
                     </span>
                   )}
-                </Link>
+                </button>
               );
             })}
           </nav>
@@ -230,8 +277,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 
                 {!isCollapsed && (
                   <div className="mt-4 space-y-2">
-                    <Link
-                      href="/profile"
+                    <button
+                      onClick={() => navigate('/profile')}
                       className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
                     >
                       <div className="flex items-center space-x-2">
@@ -240,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </svg>
                         <span>Profile</span>
                       </div>
-                    </Link>
+                    </button>
                     
                     <Button
                       onClick={onLogout}
