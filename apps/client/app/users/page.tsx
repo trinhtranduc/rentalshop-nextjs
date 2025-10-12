@@ -6,7 +6,6 @@ import {
   PageHeader,
   PageTitle,
   Users,
-  UsersLoading,
   useToast,
   UserDetailDialog,
   AddUserDialog,
@@ -308,22 +307,8 @@ export default function UsersPage() {
   }, [data]);
 
   // ============================================================================
-  // RENDER
+  // RENDER - Always render immediately, show skeleton conditionally
   // ============================================================================
-
-  if (loading && !data) {
-    return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-        <PageHeader className="flex-shrink-0">
-          <PageTitle>Users</PageTitle>
-          <p className="text-sm text-gray-600">Manage users in the system</p>
-        </PageHeader>
-        <div className="flex-1 min-h-0 overflow-auto">
-          <UsersLoading />
-        </div>
-      </PageWrapper>
-    );
-  }
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
@@ -358,7 +343,7 @@ export default function UsersPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-auto">
         <Users
           data={userData}
           filters={filters}

@@ -6,7 +6,6 @@ import {
   PageHeader,
   PageTitle,
   Products,
-  ProductsLoading,
   useToast,
   ProductAddDialog,
   Dialog,
@@ -384,22 +383,8 @@ export default function ProductsPage() {
   }, [data]);
 
   // ============================================================================
-  // RENDER
+  // RENDER - Always render immediately, show skeleton conditionally
   // ============================================================================
-
-  if (loading && !data) {
-    return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-        <PageHeader className="flex-shrink-0">
-          <PageTitle>Products</PageTitle>
-          <p className="text-sm text-gray-600">Manage your product catalog</p>
-        </PageHeader>
-        <div className="flex-1 min-h-0 overflow-auto">
-          <ProductsLoading />
-        </div>
-      </PageWrapper>
-    );
-  }
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
@@ -434,14 +419,14 @@ export default function ProductsPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0">
-      <Products
+      <div className="flex-1 min-h-0 overflow-auto">
+        <Products
           data={productData}
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onSearchChange={handleSearchChange}
           onClearFilters={handleClearFilters}
-        onProductAction={handleProductAction}
+          onProductAction={handleProductAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
         />

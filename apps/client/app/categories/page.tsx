@@ -7,7 +7,6 @@ import {
   PageTitle,
   PageContent,
   Categories,
-  CategoriesLoading,
   useToast,
   Dialog,
   DialogContent,
@@ -257,32 +256,6 @@ export default function CategoriesPage() {
   // RENDER
   // ============================================================================
 
-  if (error) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <div className="text-center py-12">
-            <p className="text-red-500">{error}</p>
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
-  if (loading && !data) {
-    return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-        <PageHeader className="flex-shrink-0">
-          <PageTitle>Categories</PageTitle>
-          <p className="text-sm text-gray-600">Manage your product categories</p>
-        </PageHeader>
-        <div className="flex-1 min-h-0 overflow-auto">
-          <CategoriesLoading />
-        </div>
-      </PageWrapper>
-    );
-  }
-
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
@@ -303,15 +276,21 @@ export default function CategoriesPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0">
-        <Categories
-          data={categoryData}
-          filters={{ ...filters, q: localSearch }} // Use localSearch for input display
-          onSearchChange={handleSearchChange}
-          onCategoryAction={handleCategoryAction}
-          onPageChange={handlePageChange}
-          onSort={handleSort}
-        />
+      <div className="flex-1 min-h-0 overflow-auto">
+        {error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : (
+          <Categories
+            data={categoryData}
+            filters={{ ...filters, q: localSearch }}
+            onSearchChange={handleSearchChange}
+            onCategoryAction={handleCategoryAction}
+            onPageChange={handlePageChange}
+            onSort={handleSort}
+          />
+        )}
       </div>
 
       {/* View Category Dialog */}

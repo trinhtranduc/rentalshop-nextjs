@@ -45,6 +45,7 @@ __export(src_exports, {
   useCurrency: () => useCurrency,
   useCustomersData: () => useCustomersData,
   useErrorHandler: () => useErrorHandler,
+  useOptimisticNavigation: () => useOptimisticNavigation,
   useOrdersData: () => useOrdersData,
   useOutletsData: () => useOutletsData,
   usePagination: () => usePagination,
@@ -1681,6 +1682,48 @@ function useUsersData(options) {
     refetch
   };
 }
+
+// src/hooks/useOptimisticNavigation.ts
+var import_navigation = require("next/navigation");
+var import_react17 = require("react");
+function useOptimisticNavigation(options = {}) {
+  const router = (0, import_navigation.useRouter)();
+  const [navigatingTo, setNavigatingTo] = (0, import_react17.useState)(null);
+  const rafRef = (0, import_react17.useRef)(null);
+  const timeoutRef = (0, import_react17.useRef)(null);
+  (0, import_react17.useEffect)(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+  const navigate = (0, import_react17.useCallback)((path) => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setNavigatingTo(path);
+    options.onNavigateStart?.(path);
+    rafRef.current = requestAnimationFrame(() => {
+      router.push(path);
+      timeoutRef.current = setTimeout(() => {
+        setNavigatingTo(null);
+        options.onNavigateEnd?.(path);
+      }, 500);
+    });
+  }, [router, options]);
+  return {
+    navigate,
+    navigatingTo,
+    isNavigating: navigatingTo !== null
+  };
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   CurrencyProvider,
@@ -1698,6 +1741,7 @@ function useUsersData(options) {
   useCurrency,
   useCustomersData,
   useErrorHandler,
+  useOptimisticNavigation,
   useOrdersData,
   useOutletsData,
   usePagination,

@@ -7,7 +7,6 @@ import {
   PageTitle,
   PageContent,
   Outlets,
-  OutletsLoading,
   useToast,
   Dialog,
   DialogContent,
@@ -309,20 +308,6 @@ export default function OutletsPage() {
     );
   }
 
-  if (loading && !data) {
-    return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-        <PageHeader className="flex-shrink-0">
-          <PageTitle>Outlets</PageTitle>
-          <p className="text-sm text-gray-600">Manage your business outlets</p>
-        </PageHeader>
-        <div className="flex-1 min-h-0 overflow-auto">
-          <OutletsLoading />
-        </div>
-      </PageWrapper>
-    );
-  }
-
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
@@ -356,12 +341,12 @@ export default function OutletsPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-auto">
         <Outlets
           data={outletData}
           filters={filters}
           onSearchChange={handleSearchChange}
-            onOutletAction={handleOutletAction}
+          onOutletAction={handleOutletAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
         />
