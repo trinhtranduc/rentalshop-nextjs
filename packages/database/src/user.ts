@@ -628,7 +628,13 @@ export const simplifiedUsers = {
    * Search users with simple filters (simplified API)
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { 
+      page = 1, 
+      limit = 20, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc',
+      ...whereFilters 
+    } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -648,6 +654,15 @@ export const simplifiedUsers = {
       ];
     }
 
+    // ✅ Build dynamic orderBy clause
+    const orderBy: any = {};
+    if (sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'email') {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      // Default: createdAt
+      orderBy.createdAt = sortOrder;
+    }
+
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -655,19 +670,22 @@ export const simplifiedUsers = {
           merchant: { select: { id: true, name: true } },
           outlet: { select: { id: true, name: true } }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy, // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.user.count({ where })
     ]);
 
+    console.log(`📊 db.users.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, users=${users.length}`);
+
     return {
       data: users,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
 

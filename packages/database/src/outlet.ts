@@ -552,12 +552,15 @@ export const simplifiedOutlets = {
       prisma.outlet.count({ where })
     ]);
 
+    console.log(`📊 db.outlets.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, outlets=${outlets.length}`);
+
     return {
       data: outlets,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
 

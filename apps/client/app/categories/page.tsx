@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useTransition, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { 
   PageWrapper,
   PageHeader,
@@ -31,13 +31,6 @@ export default function CategoriesPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
-  const [isPending, startTransition] = useTransition();
-  
-  // Local search state for smooth typing (throttled to prevent lag)
-  const [localSearch, setLocalSearch] = useState('');
-  const throttleRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSearchRef = useRef<string>('');
-  const isThrottlingRef = useRef(false);
   
   // Dialog states
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -51,11 +44,6 @@ export default function CategoriesPage() {
   // ============================================================================
   
   const search = searchParams.get('q') || '';
-  
-  // Sync URL search to local state on mount/URL change
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
   const status = searchParams.get('status') || '';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
@@ -65,46 +53,21 @@ export default function CategoriesPage() {
   const merchantId = user?.merchant?.id || user?.merchantId;
   
   // ============================================================================
-  // DATA FETCHING
+  // DATA FETCHING - Clean & Simple
   // ============================================================================
   
-  const filtersRef = useRef<CategoryFilters | null>(null);
-  const filters: CategoryFilters = useMemo(() => {
-    const newFilters: CategoryFilters = {
-      q: search || undefined, // Use URL search for API call (throttled updates)
-      merchantId: merchantId ? Number(merchantId) : undefined,
-      isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    };
-    
-    const filterString = JSON.stringify(newFilters);
-    const prevFilterString = JSON.stringify(filtersRef.current);
-    
-    if (filterString === prevFilterString && filtersRef.current) {
-      return filtersRef.current;
-    }
-    
-    filtersRef.current = newFilters;
-    return newFilters;
-  }, [search, merchantId, status, page, limit, sortBy, sortOrder]);
-  
-  // Cleanup throttle timer on unmount
-  useEffect(() => {
-    return () => {
-      if (throttleRef.current) {
-        clearTimeout(throttleRef.current);
-      }
-    };
-  }, []);
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: CategoryFilters = useMemo(() => ({
+    q: search || undefined,
+    merchantId: merchantId ? Number(merchantId) : undefined,
+    isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [search, merchantId, status, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useCategoriesWithFilters({ 
-    filters,
-    debounceSearch: false, // Already throttled at input level
-    debounceMs: 0
-  });
+  const { data, loading, error } = useCategoriesWithFilters({ filters });
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -122,39 +85,15 @@ export default function CategoriesPage() {
     });
     
     const newURL = `${pathname}?${params.toString()}`;
-    startTransition(() => {
-      router.push(newURL, { scroll: false });
-    });
-  }, [pathname, router, searchParams, startTransition]);
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   // ============================================================================
   // HANDLERS
   // ============================================================================
   
   const handleSearchChange = useCallback((searchValue: string) => {
-    // Update local state immediately for smooth typing
-    setLocalSearch(searchValue);
-    
-    // Throttle URL updates to prevent lag
-    if (!isThrottlingRef.current) {
-      // First call - execute immediately
-      isThrottlingRef.current = true;
-      lastSearchRef.current = searchValue;
-      updateURL({ q: searchValue, page: 1 });
-      
-      // Set throttle timer
-      throttleRef.current = setTimeout(() => {
-        isThrottlingRef.current = false;
-        
-        // If search changed during throttle period, update again
-        if (lastSearchRef.current !== searchValue) {
-          updateURL({ q: searchValue, page: 1 });
-        }
-      }, 300); // 300ms throttle - executes max once per 300ms
-    } else {
-      // During throttle period - just save for later
-      lastSearchRef.current = searchValue;
-    }
+    updateURL({ q: searchValue, page: 1 });
   }, [updateURL]);
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -168,7 +107,7 @@ export default function CategoriesPage() {
   }, [sortBy, sortOrder, updateURL]);
 
   const handleCategoryAction = useCallback(async (action: string, categoryId: number) => {
-    const category = data?.categories.find(c => c.id === categoryId);
+    const category = data?.categories.find((c: Category) => c.id === categoryId);
     
     switch (action) {
       case 'view':
@@ -279,12 +218,12 @@ export default function CategoriesPage() {
       <div className="flex-1 min-h-0 overflow-auto">
         {error ? (
           <div className="text-center py-12">
-            <p className="text-red-500">{error}</p>
+            <p className="text-red-500">{error.message}</p>
           </div>
         ) : (
           <Categories
             data={categoryData}
-            filters={{ ...filters, q: localSearch }}
+            filters={filters}
             onSearchChange={handleSearchChange}
             onCategoryAction={handleCategoryAction}
             onPageChange={handlePageChange}

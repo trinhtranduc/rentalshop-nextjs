@@ -71,7 +71,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
         page: result.page,
         limit: result.limit,
         total: result.total,
-        hasMore: result.hasMore
+        hasMore: result.hasMore,
+        totalPages: result.totalPages || Math.ceil((result.total || 0) / (result.limit || 20))
       }
     });
 

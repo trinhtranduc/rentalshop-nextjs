@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useTransition, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { 
   PageWrapper,
   PageHeader,
@@ -47,7 +47,6 @@ export default function OutletsPage() {
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const canExport = useCanExportData();
-  const [isPending, startTransition] = useTransition();
   
   // Dialog states
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null);
@@ -80,37 +79,21 @@ export default function OutletsPage() {
   const merchantId = user?.merchant?.id || user?.merchantId;
   
   // ============================================================================
-  // DATA FETCHING
+  // DATA FETCHING - Clean & Simple
   // ============================================================================
   
-  const filtersRef = useRef<OutletFilters | null>(null);
-  const filters: OutletFilters = useMemo(() => {
-    const newFilters: OutletFilters = {
-      q: search || undefined,
-      merchantId: merchantId ? Number(merchantId) : undefined,
-      isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    };
-    
-    const filterString = JSON.stringify(newFilters);
-    const prevFilterString = JSON.stringify(filtersRef.current);
-    
-    if (filterString === prevFilterString && filtersRef.current) {
-      return filtersRef.current;
-    }
-    
-    filtersRef.current = newFilters;
-    return newFilters;
-  }, [search, merchantId, status, page, limit, sortBy, sortOrder]);
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: OutletFilters = useMemo(() => ({
+    q: search || undefined,
+    merchantId: merchantId ? Number(merchantId) : undefined,
+    isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [search, merchantId, status, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useOutletsWithFilters({ 
-    filters,
-    debounceSearch: true,
-    debounceMs: 500
-  });
+  const { data, loading, error } = useOutletsWithFilters({ filters });
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -128,10 +111,8 @@ export default function OutletsPage() {
     });
     
     const newURL = `${pathname}?${params.toString()}`;
-    startTransition(() => {
-      router.push(newURL, { scroll: false });
-    });
-  }, [pathname, router, searchParams, startTransition]);
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   // ============================================================================
   // HANDLERS
@@ -152,7 +133,7 @@ export default function OutletsPage() {
   }, [sortBy, sortOrder, updateURL]);
 
   const handleOutletAction = useCallback(async (action: string, outletId: number) => {
-    const outlet = data?.outlets.find(o => o.id === outletId);
+    const outlet = data?.outlets.find((o: Outlet) => o.id === outletId);
     
     switch (action) {
       case 'view':

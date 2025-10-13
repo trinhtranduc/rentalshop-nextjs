@@ -184,12 +184,15 @@ export const search = async (filters: any) => {
     prisma.category.count({ where })
   ]);
 
+  console.log(`📊 db.categories.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, categories=${categories.length}`);
+
   return {
     data: categories,
     total,
     page,
     limit,
-    hasMore: skip + limit < total
+    hasMore: skip + limit < total,
+    totalPages: Math.ceil(total / limit)
   };
 };
 
