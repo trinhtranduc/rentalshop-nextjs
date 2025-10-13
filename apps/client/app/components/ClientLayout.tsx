@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { ClientSidebar } from '@rentalshop/ui';
+import { ClientSidebar, LoadingIndicator } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
@@ -28,16 +28,17 @@ export default function ClientLayout({
   const pathname = usePathname();
 
   // Show loading state while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-action-primary mx-auto mb-4"></div>
-          <p className="text-text-secondary">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+      if (loading) {
+        return (
+          <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
+            <LoadingIndicator 
+              variant="circular" 
+              size="lg"
+              message="Authenticating..."
+            />
+          </div>
+        );
+      }
 
   // Check if we're on auth pages - hide sidebar on auth pages
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forget-password';

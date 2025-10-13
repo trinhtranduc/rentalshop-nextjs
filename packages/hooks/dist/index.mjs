@@ -77,137 +77,46 @@ function useAuth() {
   const refreshUser = useCallback(async () => {
     try {
       const token = getAuthToken();
-      console.log("\u{1F504} refreshUser called, token exists:", !!token);
       if (!token) {
-        console.log("\u274C No token found, setting user to null");
         setState((prev) => ({ ...prev, user: null, loading: false }));
         return;
       }
-      console.log("\u{1F310} Fetching user profile from API...");
       const { apiUrls, authenticatedFetch } = await import("@rentalshop/utils");
       const response = await authenticatedFetch(apiUrls.settings.user);
-      console.log("\u{1F4E5} Profile API response:", {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText
-      });
       if (response.ok) {
         const data = await response.json();
-        console.log("\u{1F4CA} Profile API data:", data);
         if (data.success && data.data) {
-          console.log("\u2705 Setting user data:", data.data);
+          localStorage.setItem("user", JSON.stringify(data.data));
           setState((prev) => ({
             ...prev,
             user: data.data,
             loading: false
           }));
-        } else {
-          console.error("\u274C API returned success:false:", data);
-          throw new Error("Failed to refresh user");
-        }
-      } else if (response.status === 402) {
-        try {
-          const errorData = await response.clone().json();
-          console.log("\u26A0\uFE0F Subscription error detected, not logging out");
-          setState((prev) => ({
-            ...prev,
-            loading: false,
-            error: errorData.message || "Subscription issue detected"
-          }));
-          return;
-        } catch (parseError) {
-          console.log("\u{1F50D} Could not parse 402 error response");
-          setState((prev) => ({
-            ...prev,
-            loading: false,
-            error: "Subscription issue detected"
-          }));
-          return;
         }
       } else if (response.status === 401) {
-        console.log("\u{1F512} Token expired, logging out and redirecting to login");
         logout();
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
-      } else {
-        console.error("\u274C API error:", response.status, response.statusText);
-        console.log("\u26A0\uFE0F API error during refresh, but keeping existing user data");
-        setState((prev) => ({ ...prev, loading: false }));
-        if (response.status >= 500) {
-          console.log("\u{1F525} Server error, keeping user data but not clearing auth");
-        }
       }
     } catch (err) {
-      console.error("\u{1F4A5} Error refreshing user:", err);
-      console.log("\u26A0\uFE0F Refresh failed, but keeping existing user data");
+      console.error("Error refreshing user:", err);
       setState((prev) => ({ ...prev, loading: false }));
-      if (err instanceof Error && (err.message.includes("Failed to fetch") || err.message.includes("Network error") || err.message.includes("fetch"))) {
-        console.log("\u{1F310} Network error during refresh, keeping user data");
-      }
     }
   }, [logout]);
   useEffect(() => {
     const token = getAuthToken();
     const storedUser = getStoredUser();
-    console.log("\u{1F50D} useAuth useEffect - localStorage check:", {
-      hasToken: !!token,
-      hasStoredUser: !!storedUser,
-      tokenLength: token?.length,
-      tokenPreview: token ? token.substring(0, 20) + "..." : "null",
-      storedUserPreview: storedUser ? JSON.stringify(storedUser).substring(0, 100) + "..." : "null",
-      storedUserFirstName: storedUser?.firstName,
-      storedUserLastName: storedUser?.lastName,
-      storedUserPhone: storedUser?.phone
-    });
     if (token && storedUser) {
-      console.log("\u2705 Found stored user data:", storedUser);
-      setState((prev) => ({ ...prev, user: {
-        ...storedUser,
-        id: storedUser.id
-        // Keep as number
-      }, loading: false }));
-      if (!storedUser.merchantId && !storedUser.outletId) {
-        console.log("\u{1F504} User data incomplete (missing merchant/outlet IDs) - refreshing from API...");
-        refreshUser();
-      } else if (!storedUser.firstName || !storedUser.lastName) {
-        console.log("\u{1F504} User data incomplete (missing firstName/lastName) - refreshing from API...");
-        refreshUser();
-      } else {
-        console.log("\u2705 User data complete - no need to refresh");
-      }
-    } else if (token && !storedUser) {
-      console.log("\u{1F504} Token exists but no user data - refreshing from API...");
-      refreshUser();
+      setState((prev) => ({
+        ...prev,
+        user: storedUser,
+        loading: false
+      }));
     } else {
-      console.log("\u274C No auth data found - user not authenticated");
       setState((prev) => ({ ...prev, user: null, loading: false }));
     }
-  }, [refreshUser]);
-  useEffect(() => {
-    const checkTokenExpiry = () => {
-      const token = getAuthToken();
-      if (!token)
-        return;
-      try {
-        const parts = token.split(".");
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          const now = Math.floor(Date.now() / 1e3);
-          const timeUntilExpiry = payload.exp - now;
-          if (timeUntilExpiry < 300 && timeUntilExpiry > 0) {
-            console.log("\u{1F504} Token expires soon, refreshing...");
-            refreshUser();
-          }
-        }
-      } catch (error) {
-        console.warn("Failed to check token expiry:", error);
-      }
-    };
-    const interval = setInterval(checkTokenExpiry, 6e4);
-    checkTokenExpiry();
-    return () => clearInterval(interval);
-  }, [refreshUser]);
+  }, []);
   return {
     user: state.user,
     loading: state.loading,
@@ -601,399 +510,253 @@ function isValidCurrencyCode(code) {
   return ["USD", "VND"].includes(code);
 }
 
-// src/hooks/useCustomersData.ts
-import { useState as useState4, useEffect as useEffect4, useRef } from "react";
-import { customersApi } from "@rentalshop/utils";
-function useCustomersData(options) {
-  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
+// src/utils/useDedupedApi.ts
+import { useState as useState4, useEffect as useEffect4, useRef, useCallback as useCallback6 } from "react";
+var requestCache = /* @__PURE__ */ new Map();
+var dataCache = /* @__PURE__ */ new Map();
+function useDedupedApi(options) {
+  const {
+    filters,
+    fetchFn,
+    enabled = true,
+    staleTime = 3e4,
+    // 30 seconds
+    cacheTime = 3e5,
+    // 5 minutes
+    refetchOnWindowFocus = false
+  } = options;
   const [data, setData] = useState4(null);
   const [loading, setLoading] = useState4(true);
   const [error, setError] = useState4(null);
-  const abortControllerRef = useRef(null);
-  const refetchTriggerRef = useRef(0);
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
+  const [isStale, setIsStale] = useState4(false);
+  const fetchIdRef = useRef(0);
+  const filtersRef = useRef("");
+  const cacheKey = JSON.stringify(filters);
   useEffect4(() => {
-    if (!enabled)
+    if (!enabled) {
+      setLoading(false);
       return;
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
     }
-    abortControllerRef.current = new AbortController();
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+    if (cacheKey === filtersRef.current && data !== null) {
+      console.log("\u{1F50D} useDedupedApi: Filters unchanged, skipping fetch");
+      return;
+    }
+    filtersRef.current = cacheKey;
+    fetchIdRef.current += 1;
+    const currentFetchId = fetchIdRef.current;
+    console.log(`\u{1F50D} Fetch #${currentFetchId}: Starting...`);
+    const cached = dataCache.get(cacheKey);
+    if (cached) {
+      const now = Date.now();
+      const isCacheStale = now - cached.timestamp > cached.staleTime;
+      if (!isCacheStale) {
+        console.log(`\u2705 Fetch #${currentFetchId}: Cache HIT (fresh)`);
+        setData(cached.data);
+        setLoading(false);
         setError(null);
-        console.log("\u{1F50D} useCustomersData: Fetching with filters:", filters);
-        const response = await customersApi.searchCustomers(filters);
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-        if (response.success && response.data) {
-          const apiData = response.data;
-          const customersData = apiData.customers || [];
-          const total = apiData.total || 0;
-          const limit = apiData.limit || filters.limit || 25;
-          const currentPage = apiData.page || filters.page || 1;
-          const totalPages = apiData.totalPages || Math.ceil(total / limit);
-          const hasMore = apiData.hasMore !== void 0 ? apiData.hasMore : currentPage < totalPages;
-          setData({
-            customers: customersData,
-            total,
-            totalPages,
-            currentPage,
-            limit,
-            hasMore
-          });
-        } else {
-          throw new Error("Failed to fetch customers");
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("\u{1F50D} useCustomersData: Error fetching customers:", err);
-          setError(err);
-        }
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
+        setIsStale(false);
+        return;
+      } else {
+        console.log(`\u23F0 Fetch #${currentFetchId}: Cache HIT (stale) - showing stale data`);
+        setData(cached.data);
+        setIsStale(true);
+      }
+    }
+    const existingRequest = requestCache.get(cacheKey);
+    if (existingRequest) {
+      console.log(`\u{1F504} Fetch #${currentFetchId}: DEDUPLICATION - waiting for existing request`);
+      existingRequest.then((result) => {
+        if (currentFetchId === fetchIdRef.current) {
+          setData(result);
           setLoading(false);
+          setError(null);
+          setIsStale(false);
+          console.log(`\u2705 Fetch #${currentFetchId}: Got deduplicated result`);
+        } else {
+          console.log(`\u23ED\uFE0F Fetch #${currentFetchId}: Stale, ignoring`);
+        }
+      }).catch((err) => {
+        if (currentFetchId === fetchIdRef.current) {
+          const error2 = err instanceof Error ? err : new Error("Unknown error");
+          setError(error2);
+          setLoading(false);
+          console.error(`\u274C Fetch #${currentFetchId}: Dedup ERROR:`, error2);
+        }
+      });
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const requestPromise = fetchFn(filters);
+    requestCache.set(cacheKey, requestPromise);
+    requestPromise.then((result) => {
+      if (currentFetchId !== fetchIdRef.current) {
+        console.log(`\u23ED\uFE0F Fetch #${currentFetchId}: Stale, ignoring result`);
+        return;
+      }
+      console.log(`\u2705 Fetch #${currentFetchId}: SUCCESS - caching data`);
+      dataCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now(),
+        staleTime
+      });
+      const now = Date.now();
+      for (const [key, cached2] of dataCache.entries()) {
+        if (now - cached2.timestamp > cacheTime) {
+          dataCache.delete(key);
+          console.log(`\u{1F9F9} Cleaned up old cache entry: ${key}`);
         }
       }
+      setData(result);
+      setError(null);
+      setIsStale(false);
+      setLoading(false);
+    }).catch((err) => {
+      if (currentFetchId !== fetchIdRef.current) {
+        console.log(`\u23ED\uFE0F Fetch #${currentFetchId}: Stale, ignoring error`);
+        return;
+      }
+      const error2 = err instanceof Error ? err : new Error("Unknown error");
+      setError(error2);
+      setLoading(false);
+      console.error(`\u274C Fetch #${currentFetchId}: ERROR:`, error2);
+    }).finally(() => {
+      requestCache.delete(cacheKey);
+    });
+  }, [cacheKey, enabled, fetchFn, staleTime, cacheTime]);
+  useEffect4(() => {
+    if (!refetchOnWindowFocus || !enabled)
+      return;
+    const handleFocus = () => {
+      const cached = dataCache.get(cacheKey);
+      if (!cached)
+        return;
+      const now = Date.now();
+      const isCacheStale = now - cached.timestamp > cached.staleTime;
+      if (isCacheStale) {
+        console.log("\u{1F504} Window focus: Refetching stale data");
+        filtersRef.current = "";
+        fetchIdRef.current += 1;
+      }
     };
-    if (debounceSearch && (filters.search || filters.q)) {
-      console.log("\u{1F50D} useCustomersData: Debouncing search query");
-      const timer = setTimeout(fetchData, debounceMs);
-      return () => {
-        clearTimeout(timer);
-        abortControllerRef.current?.abort();
-      };
-    } else {
-      fetchData();
-      return () => {
-        abortControllerRef.current?.abort();
-      };
-    }
-  }, [
-    filters,
-    // This is now stable from parent's memoization
-    enabled,
-    debounceSearch,
-    debounceMs,
-    refetchTriggerRef.current
-  ]);
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [refetchOnWindowFocus, enabled, cacheKey, staleTime]);
+  const refetch = useCallback6(async () => {
+    if (!enabled)
+      return;
+    console.log("\u{1F504} Manual refetch triggered");
+    dataCache.delete(cacheKey);
+    filtersRef.current = "";
+    fetchIdRef.current += 1;
+  }, [enabled, cacheKey]);
   return {
     data,
     loading,
     error,
-    refetch
+    refetch,
+    isStale
   };
+}
+function clearApiCache() {
+  requestCache.clear();
+  dataCache.clear();
+  console.log("\u{1F9F9} API Cache cleared");
+}
+function getApiCacheStats() {
+  return {
+    requestCacheSize: requestCache.size,
+    dataCacheSize: dataCache.size,
+    cacheKeys: Array.from(dataCache.keys())
+  };
+}
+
+// src/hooks/useCustomersData.ts
+import { customersApi } from "@rentalshop/utils";
+function useCustomersData(options) {
+  const { filters, enabled = true } = options;
+  const result = useDedupedApi({
+    filters,
+    fetchFn: async (filters2) => {
+      console.log("\u{1F465} useCustomersData: Fetching with filters:", filters2);
+      const response = await customersApi.searchCustomers(filters2);
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch customers");
+      }
+      const apiData = response.data;
+      const transformed = {
+        customers: apiData.customers || [],
+        total: apiData.total || 0,
+        page: apiData.page || 1,
+        currentPage: apiData.page || 1,
+        // Alias for compatibility
+        limit: apiData.limit || 25,
+        hasMore: apiData.hasMore || false,
+        totalPages: apiData.totalPages || 1
+      };
+      console.log("\u2705 useCustomersData: Success:", {
+        customersCount: transformed.customers.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      return transformed;
+    },
+    enabled,
+    staleTime: 3e4,
+    // 30 seconds cache
+    cacheTime: 3e5,
+    // 5 minutes
+    refetchOnWindowFocus: false
+  });
+  return result;
 }
 
 // src/hooks/useOrdersData.ts
-import { useState as useState5, useEffect as useEffect5, useRef as useRef2 } from "react";
 import { ordersApi } from "@rentalshop/utils";
 function useOrdersData(options) {
-  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
-  const [data, setData] = useState5(null);
-  const [loading, setLoading] = useState5(true);
-  const [error, setError] = useState5(null);
-  const abortControllerRef = useRef2(null);
-  const refetchTriggerRef = useRef2(0);
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
-  useEffect5(() => {
-    if (!enabled)
-      return;
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("\u{1F50D} useOrdersData: Fetching with filters:", filters);
-        const response = await ordersApi.searchOrders(filters);
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-        if (response.success && response.data) {
-          const ordersData = response.data.orders || [];
-          const total = response.data.total || 0;
-          const limit = filters.limit || 25;
-          const currentPage = filters.page || 1;
-          const totalPages = Math.ceil(total / limit);
-          setData({
-            orders: ordersData,
-            total,
-            totalPages,
-            currentPage,
-            limit,
-            hasMore: currentPage < totalPages
-          });
-        } else {
-          throw new Error("Failed to fetch orders");
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("\u{1F50D} useOrdersData: Error fetching orders:", err);
-          setError(err);
-        }
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
-    if (debounceSearch && filters.search) {
-      console.log("\u{1F50D} useOrdersData: Debouncing search query");
-      const timer = setTimeout(fetchData, debounceMs);
-      return () => {
-        clearTimeout(timer);
-        abortControllerRef.current?.abort();
-      };
-    } else {
-      fetchData();
-      return () => {
-        abortControllerRef.current?.abort();
-      };
-    }
-  }, [
+  const { filters, enabled = true } = options;
+  const result = useDedupedApi({
     filters,
-    // This is now stable from parent's memoization
-    enabled,
-    debounceSearch,
-    debounceMs,
-    refetchTriggerRef.current
-  ]);
-  return {
-    data,
-    loading,
-    error,
-    refetch
-  };
-}
-
-// src/hooks/useOutletsData.ts
-import { useState as useState6, useEffect as useEffect6, useRef as useRef3 } from "react";
-import { outletsApi } from "@rentalshop/utils";
-function useOutletsData(options) {
-  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
-  const [data, setData] = useState6(null);
-  const [loading, setLoading] = useState6(true);
-  const [error, setError] = useState6(null);
-  const abortControllerRef = useRef3(null);
-  const refetchTriggerRef = useRef3(0);
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
-  useEffect6(() => {
-    if (!enabled)
-      return;
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("\u{1F50D} useOutletsData: Fetching with filters:", filters);
-        const response = await outletsApi.searchOutlets(filters);
-        console.log("\u{1F4E6} useOutletsData: API Response:", response);
-        console.log("\u{1F4CA} useOutletsData: Response data:", response.data);
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-        if (response.success && response.data) {
-          const apiData = response.data;
-          if (Array.isArray(apiData)) {
-            const pagination = response.pagination || {};
-            const outletsData = apiData;
-            const total = pagination.total || apiData.length;
-            const limit = pagination.limit || filters.limit || 25;
-            const currentPage = pagination.page || filters.page || 1;
-            const totalPages = Math.ceil(total / limit);
-            const hasMore = pagination.hasMore !== void 0 ? pagination.hasMore : currentPage < totalPages;
-            setData({
-              outlets: outletsData,
-              total,
-              totalPages,
-              currentPage,
-              limit,
-              hasMore
-            });
-          } else {
-            const outletsData = apiData.outlets || [];
-            const total = apiData.total || 0;
-            const limit = apiData.limit || filters.limit || 25;
-            const currentPage = apiData.page || filters.page || 1;
-            const totalPages = apiData.totalPages || Math.ceil(total / limit);
-            const hasMore = apiData.hasMore !== void 0 ? apiData.hasMore : currentPage < totalPages;
-            setData({
-              outlets: outletsData,
-              total,
-              totalPages,
-              currentPage,
-              limit,
-              hasMore
-            });
-          }
-        } else {
-          throw new Error("Failed to fetch outlets");
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("\u{1F50D} useOutletsData: Error fetching outlets:", err);
-          setError(err);
-        }
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
+    fetchFn: async (filters2) => {
+      console.log("\u{1F4E6} useOrdersData: Fetching with filters:", filters2);
+      const response = await ordersApi.searchOrders(filters2);
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch orders");
       }
-    };
-    if (debounceSearch && (filters.search || filters.q)) {
-      console.log("\u{1F50D} useOutletsData: Debouncing search query");
-      const timer = setTimeout(fetchData, debounceMs);
-      return () => {
-        clearTimeout(timer);
-        abortControllerRef.current?.abort();
+      const apiData = response.data;
+      const transformed = {
+        orders: apiData.orders || [],
+        total: apiData.total || 0,
+        page: apiData.page || 1,
+        currentPage: apiData.page || 1,
+        // Alias for compatibility
+        limit: apiData.limit || 25,
+        hasMore: apiData.hasMore || false,
+        totalPages: apiData.totalPages || 1
       };
-    } else {
-      fetchData();
-      return () => {
-        abortControllerRef.current?.abort();
-      };
-    }
-  }, [
-    filters,
+      console.log("\u2705 useOrdersData: Success:", {
+        ordersCount: transformed.orders.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      return transformed;
+    },
     enabled,
-    debounceSearch,
-    debounceMs,
-    refetchTriggerRef.current
-  ]);
-  return {
-    data,
-    loading,
-    error,
-    refetch
-  };
-}
-
-// src/hooks/useCategoriesData.ts
-import { useState as useState7, useEffect as useEffect7, useRef as useRef4 } from "react";
-import { categoriesApi } from "@rentalshop/utils";
-function useCategoriesData(options) {
-  const { filters, enabled = true, debounceSearch = false, debounceMs = 300 } = options;
-  const [data, setData] = useState7(null);
-  const [loading, setLoading] = useState7(false);
-  const [error, setError] = useState7(null);
-  const abortControllerRef = useRef4(null);
-  const refetchTriggerRef = useRef4(0);
-  const searchDebounceRef = useRef4(null);
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
-  useEffect7(() => {
-    if (!enabled)
-      return;
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("\u{1F50D} useCategoriesData: Fetching with filters:", filters);
-        const response = await categoriesApi.searchCategories(filters);
-        console.log("\u{1F4E6} useCategoriesData: API Response:", response);
-        console.log("\u{1F4CA} useCategoriesData: Response data:", response.data);
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-        if (response.success && response.data) {
-          const apiData = response.data;
-          if (Array.isArray(apiData)) {
-            const pagination = response.pagination || {};
-            const categoriesData = apiData;
-            const total = pagination.total || apiData.length;
-            const limit = pagination.limit || filters.limit || 25;
-            const currentPage = pagination.page || filters.page || 1;
-            const totalPages = Math.ceil(total / limit);
-            const hasMore = pagination.hasMore !== void 0 ? pagination.hasMore : currentPage < totalPages;
-            setData({
-              categories: categoriesData,
-              total,
-              totalPages,
-              currentPage,
-              limit,
-              hasMore
-            });
-          } else {
-            const categoriesData = apiData.categories || [];
-            const total = apiData.total || 0;
-            const limit = apiData.limit || filters.limit || 25;
-            const currentPage = apiData.page || filters.page || 1;
-            const totalPages = apiData.totalPages || Math.ceil(total / limit);
-            const hasMore = apiData.hasMore !== void 0 ? apiData.hasMore : currentPage < totalPages;
-            setData({
-              categories: categoriesData,
-              total,
-              totalPages,
-              currentPage,
-              limit,
-              hasMore
-            });
-          }
-        } else {
-          throw new Error(response.message || "Failed to fetch categories");
-        }
-      } catch (err) {
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-        console.error("useCategoriesData: Error fetching categories:", err);
-        setError(err.message || "Failed to fetch categories");
-        setData(null);
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
-    const shouldDebounce = debounceSearch && (filters.q || filters.search);
-    if (shouldDebounce) {
-      console.log("\u{1F50D} useCategoriesData: Debouncing search query");
-      if (searchDebounceRef.current) {
-        clearTimeout(searchDebounceRef.current);
-      }
-      searchDebounceRef.current = setTimeout(() => {
-        fetchData();
-      }, debounceMs);
-    } else {
-      fetchData();
-    }
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      if (searchDebounceRef.current) {
-        clearTimeout(searchDebounceRef.current);
-      }
-    };
-  }, [filters, enabled, debounceSearch, debounceMs, refetchTriggerRef.current]);
-  return { data, loading, error, refetch };
+    staleTime: 3e4,
+    // 30 seconds cache
+    cacheTime: 3e5,
+    // 5 minutes
+    refetchOnWindowFocus: false
+  });
+  return result;
 }
 
 // src/hooks/usePagination.ts
-import { useState as useState8, useCallback as useCallback6 } from "react";
+import { useState as useState5, useCallback as useCallback7 } from "react";
 import { PAGINATION } from "@rentalshop/constants";
 function usePagination(config = {}) {
   const { initialLimit = PAGINATION.DEFAULT_PAGE_SIZE, initialOffset = 0 } = config;
-  const [pagination, setPaginationState] = useState8({
+  const [pagination, setPaginationState] = useState5({
     total: 0,
     limit: initialLimit,
     offset: initialOffset,
@@ -1001,7 +764,7 @@ function usePagination(config = {}) {
     currentPage: 1,
     totalPages: 1
   });
-  const setPagination = useCallback6((newPagination) => {
+  const setPagination = useCallback7((newPagination) => {
     setPaginationState((prev) => ({
       ...prev,
       ...newPagination,
@@ -1009,14 +772,14 @@ function usePagination(config = {}) {
       totalPages: Math.ceil((newPagination.total ?? prev.total) / (newPagination.limit ?? prev.limit))
     }));
   }, []);
-  const handlePageChange = useCallback6((page) => {
+  const handlePageChange = useCallback7((page) => {
     const newOffset = (page - 1) * pagination.limit;
     setPagination({
       offset: newOffset,
       currentPage: page
     });
   }, [pagination.limit, setPagination]);
-  const resetPagination = useCallback6(() => {
+  const resetPagination = useCallback7(() => {
     setPagination({
       total: 0,
       offset: initialOffset,
@@ -1025,7 +788,7 @@ function usePagination(config = {}) {
       totalPages: 1
     });
   }, [initialOffset, setPagination]);
-  const updatePaginationFromResponse = useCallback6((response) => {
+  const updatePaginationFromResponse = useCallback7((response) => {
     setPagination({
       total: response.total,
       limit: response.limit,
@@ -1045,9 +808,9 @@ function usePagination(config = {}) {
 }
 
 // src/hooks/useProductAvailability.ts
-import { useCallback as useCallback7 } from "react";
+import { useCallback as useCallback8 } from "react";
 function useProductAvailability() {
-  const calculateAvailability = useCallback7((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const calculateAvailability = useCallback8((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
     const return_ = new Date(returnDate);
     if (pickup >= return_) {
@@ -1090,11 +853,11 @@ function useProductAvailability() {
       message
     };
   }, []);
-  const isProductAvailable = useCallback7((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const isProductAvailable = useCallback8((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const status = calculateAvailability(product, pickupDate, returnDate, requestedQuantity, existingOrders);
     return status.available;
   }, [calculateAvailability]);
-  const getAvailabilityForDateRange = useCallback7((product, startDate, endDate, existingOrders = []) => {
+  const getAvailabilityForDateRange = useCallback8((product, startDate, endDate, existingOrders = []) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const results = [];
@@ -1123,100 +886,52 @@ function useProductAvailability() {
 }
 
 // src/hooks/useProductsData.ts
-import { useState as useState9, useEffect as useEffect8, useRef as useRef5 } from "react";
 import { productsApi } from "@rentalshop/utils";
 function useProductsData(options) {
-  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
-  const [data, setData] = useState9(null);
-  const [loading, setLoading] = useState9(true);
-  const [error, setError] = useState9(null);
-  const abortControllerRef = useRef5(null);
-  const refetchTriggerRef = useRef5(0);
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
-  useEffect8(() => {
-    if (!enabled)
-      return;
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("\u{1F50D} useProductsData: Fetching with filters:", filters);
-        const response = await productsApi.searchProducts(filters);
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-        if (response.success && response.data) {
-          const apiData = response.data;
-          const productsData = apiData.products || [];
-          const total = apiData.total || 0;
-          const limit = apiData.limit || filters.limit || 25;
-          const currentPage = apiData.page || filters.page || 1;
-          const totalPages = apiData.totalPages || Math.ceil(total / limit);
-          const hasMore = apiData.hasMore !== void 0 ? apiData.hasMore : currentPage < totalPages;
-          setData({
-            products: productsData,
-            total,
-            totalPages,
-            currentPage,
-            limit,
-            hasMore
-          });
-        } else {
-          throw new Error("Failed to fetch products");
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("\u{1F50D} useProductsData: Error fetching products:", err);
-          setError(err);
-        }
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
-    if (debounceSearch && (filters.search || filters.q)) {
-      console.log("\u{1F50D} useProductsData: Debouncing search query");
-      const timer = setTimeout(fetchData, debounceMs);
-      return () => {
-        clearTimeout(timer);
-        abortControllerRef.current?.abort();
-      };
-    } else {
-      fetchData();
-      return () => {
-        abortControllerRef.current?.abort();
-      };
-    }
-  }, [
+  const { filters, enabled = true } = options;
+  const result = useDedupedApi({
     filters,
-    // This is now stable from parent's memoization
+    fetchFn: async (filters2) => {
+      console.log("\u{1F4E6} useProductsData: Fetching with filters:", filters2);
+      const response = await productsApi.searchProducts(filters2);
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch products");
+      }
+      const apiData = response.data;
+      const transformed = {
+        products: apiData.products || [],
+        total: apiData.total || 0,
+        page: apiData.page || 1,
+        currentPage: apiData.page || 1,
+        // Alias for compatibility
+        limit: apiData.limit || 25,
+        hasMore: apiData.hasMore || false,
+        totalPages: apiData.totalPages || 1
+      };
+      console.log("\u2705 useProductsData: Success:", {
+        productsCount: transformed.products.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      return transformed;
+    },
     enabled,
-    debounceSearch,
-    debounceMs,
-    refetchTriggerRef.current
-  ]);
-  return {
-    data,
-    loading,
-    error,
-    refetch
-  };
+    staleTime: 3e4,
+    // 30 seconds cache
+    cacheTime: 3e5,
+    // 5 minutes
+    refetchOnWindowFocus: false
+  });
+  return result;
 }
 
 // src/hooks/useSubscriptionError.ts
-import { useState as useState10, useCallback as useCallback8 } from "react";
+import { useState as useState6, useCallback as useCallback9 } from "react";
 import { useToasts } from "@rentalshop/ui";
 function useSubscriptionError() {
-  const [error, setError] = useState10(null);
+  const [error, setError] = useState6(null);
   const { addToast } = useToasts();
-  const handleSubscriptionError = useCallback8((error2) => {
+  const handleSubscriptionError = useCallback9((error2) => {
     console.error("Subscription error:", error2);
     if (error2?.error === "SUBSCRIPTION_ERROR" || error2?.code === "SUBSCRIPTION_REQUIRED") {
       const subscriptionError = {
@@ -1231,7 +946,7 @@ function useSubscriptionError() {
       addToast("error", "Error", error2?.message || "An error occurred");
     }
   }, [addToast]);
-  const showSubscriptionError = useCallback8((error2) => {
+  const showSubscriptionError = useCallback9((error2) => {
     const { subscriptionStatus, merchantStatus } = error2;
     let message = error2.message;
     let action = "";
@@ -1255,7 +970,7 @@ function useSubscriptionError() {
 
 ${action}` : message, 8e3);
   }, [addToast]);
-  const clearError = useCallback8(() => {
+  const clearError = useCallback9(() => {
     setError(null);
   }, []);
   return {
@@ -1267,19 +982,19 @@ ${action}` : message, 8e3);
 }
 
 // src/hooks/useThrottledSearch.ts
-import { useState as useState11, useEffect as useEffect9, useCallback as useCallback9, useRef as useRef6 } from "react";
+import { useState as useState7, useEffect as useEffect5, useCallback as useCallback10, useRef as useRef2 } from "react";
 function useThrottledSearch(options) {
   const { delay, minLength, onSearch } = options;
-  const [query, setQuery] = useState11("");
-  const [isSearching, setIsSearching] = useState11(false);
-  const timeoutRef = useRef6(null);
-  const isSearchingRef = useRef6(false);
-  const isInitialRender = useRef6(true);
-  const onSearchRef = useRef6(onSearch);
-  useEffect9(() => {
+  const [query, setQuery] = useState7("");
+  const [isSearching, setIsSearching] = useState7(false);
+  const timeoutRef = useRef2(null);
+  const isSearchingRef = useRef2(false);
+  const isInitialRender = useRef2(true);
+  const onSearchRef = useRef2(onSearch);
+  useEffect5(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
-  const handleSearchChange = useCallback9((value) => {
+  const handleSearchChange = useCallback10((value) => {
     console.log("\u{1F50D} useThrottledSearch: handleSearchChange called with:", value);
     setQuery(value);
     if (timeoutRef.current) {
@@ -1308,7 +1023,7 @@ function useThrottledSearch(options) {
       isSearchingRef.current = false;
     }
   }, [delay, minLength]);
-  const clearSearch = useCallback9(() => {
+  const clearSearch = useCallback10(() => {
     setQuery("");
     setIsSearching(false);
     isSearchingRef.current = false;
@@ -1319,12 +1034,12 @@ function useThrottledSearch(options) {
       onSearchRef.current("");
     }
   }, []);
-  const cleanup = useCallback9(() => {
+  const cleanup = useCallback10(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
   }, []);
-  useEffect9(() => {
+  useEffect5(() => {
     isInitialRender.current = false;
     return cleanup;
   }, [cleanup]);
@@ -1339,7 +1054,7 @@ function useThrottledSearch(options) {
 }
 
 // src/hooks/useToast.ts
-import { useState as useState12, useCallback as useCallback10 } from "react";
+import { useState as useState8, useCallback as useCallback11 } from "react";
 import {
   analyzeError,
   withErrorHandlingForUI,
@@ -1353,13 +1068,13 @@ var useErrorHandler = (options = {}) => {
     onDismiss,
     autoHandleAuth = true
   } = options;
-  const [isLoading, setIsLoading] = useState12(false);
+  const [isLoading, setIsLoading] = useState8(false);
   const { addToast } = useToasts2();
-  const handleError = useCallback10((error) => {
+  const handleError = useCallback11((error) => {
     const errorInfo = analyzeError(error);
     return errorInfo;
   }, []);
-  const showErrorToast = useCallback10((error) => {
+  const showErrorToast = useCallback11((error) => {
     const errorInfo = analyzeError(error);
     const toastType = getToastType(errorInfo.type);
     let toastMessage = errorInfo.message;
@@ -1376,7 +1091,7 @@ var useErrorHandler = (options = {}) => {
     }
     addToast(toastType, errorInfo.title, toastMessage, 0);
   }, [addToast]);
-  const handleApiCall = useCallback10(async (apiCall) => {
+  const handleApiCall = useCallback11(async (apiCall) => {
     setIsLoading(true);
     try {
       const result = await withErrorHandlingForUI(apiCall);
@@ -1388,12 +1103,12 @@ var useErrorHandler = (options = {}) => {
       setIsLoading(false);
     }
   }, [showErrorToast]);
-  const retry = useCallback10(() => {
+  const retry = useCallback11(() => {
     if (onRetry) {
       onRetry();
     }
   }, [onRetry]);
-  const login = useCallback10(() => {
+  const login = useCallback11(() => {
     if (onLogin) {
       onLogin();
     } else if (typeof window !== "undefined") {
@@ -1410,7 +1125,7 @@ var useErrorHandler = (options = {}) => {
 };
 var useSimpleErrorHandler = () => {
   const { addToast } = useToasts2();
-  const handleError = useCallback10((error) => {
+  const handleError = useCallback11((error) => {
     const errorInfo = analyzeError(error);
     const toastType = getToastType(errorInfo.type);
     let toastMessage = errorInfo.message;
@@ -1434,19 +1149,19 @@ var useSimpleErrorHandler = () => {
 };
 var useToastHandler = () => {
   const { addToast } = useToasts2();
-  const showError = useCallback10((title, message) => {
+  const showError = useCallback11((title, message) => {
     addToast("error", title, message, 0);
   }, [addToast]);
-  const showSuccess = useCallback10((title, message) => {
+  const showSuccess = useCallback11((title, message) => {
     addToast("success", title, message, 5e3);
   }, [addToast]);
-  const showWarning = useCallback10((title, message) => {
+  const showWarning = useCallback11((title, message) => {
     addToast("warning", title, message, 5e3);
   }, [addToast]);
-  const showInfo = useCallback10((title, message) => {
+  const showInfo = useCallback11((title, message) => {
     addToast("info", title, message, 5e3);
   }, [addToast]);
-  const handleError = useCallback10((error) => {
+  const handleError = useCallback11((error) => {
     const errorInfo = analyzeError(error);
     const toastType = getToastType(errorInfo.type);
     let toastMessage = errorInfo.message;
@@ -1523,120 +1238,76 @@ function useCanExportData() {
 }
 
 // src/hooks/useUsersData.ts
-import { useState as useState13, useEffect as useEffect10, useRef as useRef7 } from "react";
 import { usersApi } from "@rentalshop/utils";
 function useUsersData(options) {
-  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
-  const [data, setData] = useState13(null);
-  const [loading, setLoading] = useState13(true);
-  const [error, setError] = useState13(null);
-  const abortControllerRef = useRef7(null);
-  const refetchTriggerRef = useRef7(0);
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
-  useEffect10(() => {
-    if (!enabled)
-      return;
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("\u{1F50D} useUsersData: Fetching with filters:", filters);
-        const response = await usersApi.searchUsers(filters);
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-        if (response.success && response.data) {
-          const apiData = response.data;
-          if (Array.isArray(apiData)) {
-            const pagination = response.pagination || {};
-            const usersData = apiData;
-            const total = pagination.total || apiData.length;
-            const limit = pagination.limit || filters.limit || 25;
-            const currentPage = pagination.page || filters.page || 1;
-            const totalPages = Math.ceil(total / limit);
-            const hasMore = pagination.hasMore !== void 0 ? pagination.hasMore : currentPage < totalPages;
-            setData({
-              users: usersData,
-              total,
-              totalPages,
-              currentPage,
-              limit,
-              hasMore
-            });
-          } else {
-            const usersData = apiData.users || [];
-            const total = apiData.total || 0;
-            const limit = apiData.limit || filters.limit || 25;
-            const currentPage = apiData.page || filters.page || 1;
-            const totalPages = apiData.totalPages || Math.ceil(total / limit);
-            const hasMore = apiData.hasMore !== void 0 ? apiData.hasMore : currentPage < totalPages;
-            setData({
-              users: usersData,
-              total,
-              totalPages,
-              currentPage,
-              limit,
-              hasMore
-            });
-          }
-        } else {
-          throw new Error("Failed to fetch users");
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("\u{1F50D} useUsersData: Error fetching users:", err);
-          setError(err);
-        }
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
-    if (debounceSearch && (filters.search || filters.q)) {
-      console.log("\u{1F50D} useUsersData: Debouncing search query");
-      const timer = setTimeout(fetchData, debounceMs);
-      return () => {
-        clearTimeout(timer);
-        abortControllerRef.current?.abort();
-      };
-    } else {
-      fetchData();
-      return () => {
-        abortControllerRef.current?.abort();
-      };
-    }
-  }, [
+  const { filters, enabled = true } = options;
+  const result = useDedupedApi({
     filters,
-    // This is now stable from parent's memoization
+    fetchFn: async (filters2) => {
+      console.log("\u{1F464} useUsersData: Fetching with filters:", filters2);
+      const response = await usersApi.searchUsers(filters2);
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch users");
+      }
+      const apiData = response.data;
+      let usersData;
+      let total;
+      let page;
+      let limit;
+      let hasMore;
+      let totalPages;
+      if (Array.isArray(apiData)) {
+        const pagination = response.pagination || {};
+        usersData = apiData;
+        total = pagination.total || apiData.length;
+        page = pagination.page || 1;
+        limit = pagination.limit || 25;
+        totalPages = Math.ceil(total / limit);
+        hasMore = pagination.hasMore !== void 0 ? pagination.hasMore : page < totalPages;
+      } else {
+        usersData = apiData.users || [];
+        total = apiData.total || 0;
+        page = apiData.page || 1;
+        limit = apiData.limit || 25;
+        totalPages = apiData.totalPages || Math.ceil(total / limit);
+        hasMore = apiData.hasMore !== void 0 ? apiData.hasMore : page < totalPages;
+      }
+      const transformed = {
+        users: usersData,
+        total,
+        page,
+        currentPage: page,
+        // Alias for compatibility
+        limit,
+        hasMore,
+        totalPages
+      };
+      console.log("\u2705 useUsersData: Success:", {
+        usersCount: transformed.users.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      return transformed;
+    },
     enabled,
-    debounceSearch,
-    debounceMs,
-    refetchTriggerRef.current
-  ]);
-  return {
-    data,
-    loading,
-    error,
-    refetch
-  };
+    staleTime: 3e4,
+    // 30 seconds cache
+    cacheTime: 3e5,
+    // 5 minutes
+    refetchOnWindowFocus: false
+  });
+  return result;
 }
 
 // src/hooks/useOptimisticNavigation.ts
 import { useRouter } from "next/navigation";
-import { useState as useState14, useCallback as useCallback11, useRef as useRef8, useEffect as useEffect11 } from "react";
+import { useState as useState9, useCallback as useCallback12, useRef as useRef3, useEffect as useEffect6 } from "react";
 function useOptimisticNavigation(options = {}) {
   const router = useRouter();
-  const [navigatingTo, setNavigatingTo] = useState14(null);
-  const rafRef = useRef8(null);
-  const timeoutRef = useRef8(null);
-  useEffect11(() => {
+  const [navigatingTo, setNavigatingTo] = useState9(null);
+  const rafRef = useRef3(null);
+  const timeoutRef = useRef3(null);
+  useEffect6(() => {
     return () => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -1646,22 +1317,19 @@ function useOptimisticNavigation(options = {}) {
       }
     };
   }, []);
-  const navigate = useCallback11((path) => {
+  const navigate = useCallback12((path) => {
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
     }
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    setNavigatingTo(path);
     options.onNavigateStart?.(path);
-    rafRef.current = requestAnimationFrame(() => {
-      router.push(path);
-      timeoutRef.current = setTimeout(() => {
-        setNavigatingTo(null);
-        options.onNavigateEnd?.(path);
-      }, 500);
-    });
+    router.push(path);
+    timeoutRef.current = setTimeout(() => {
+      setNavigatingTo(null);
+      options.onNavigateEnd?.(path);
+    }, 100);
   }, [router, options]);
   return {
     navigate,
@@ -1669,8 +1337,143 @@ function useOptimisticNavigation(options = {}) {
     isNavigating: navigatingTo !== null
   };
 }
+
+// src/hooks/useFiltersData.ts
+import { outletsApi, categoriesApi } from "@rentalshop/utils";
+function useOutletsData() {
+  const { data, loading, error } = useDedupedApi({
+    filters: {},
+    // No filters needed for outlets
+    fetchFn: async () => {
+      console.log("\u{1F50D} useOutletsData: Fetching outlets...");
+      const response = await outletsApi.getOutlets();
+      if (response.success && response.data) {
+        const outletsData = response.data.outlets || [];
+        console.log("\u2705 useOutletsData: Transformed data:", {
+          isArray: Array.isArray(outletsData),
+          count: outletsData.length
+        });
+        return { outlets: outletsData };
+      }
+      throw new Error("Failed to fetch outlets");
+    },
+    enabled: true,
+    staleTime: 3e5,
+    // 5 minutes - outlets don't change often
+    cacheTime: 6e5,
+    // 10 minutes
+    refetchOnMount: false,
+    // Don't refetch on every mount
+    refetchOnWindowFocus: false
+  });
+  return {
+    outlets: data?.outlets || [],
+    loading,
+    error
+  };
+}
+function useCategoriesData() {
+  const { data, loading, error } = useDedupedApi({
+    filters: {},
+    // No filters needed for categories
+    fetchFn: async () => {
+      console.log("\u{1F50D} useCategoriesData: Fetching categories...");
+      const response = await categoriesApi.getCategories();
+      if (response.success && response.data) {
+        const categoriesData = Array.isArray(response.data) ? response.data : response.data.categories || [];
+        console.log("\u2705 useCategoriesData: Transformed data:", {
+          isArray: Array.isArray(categoriesData),
+          count: categoriesData.length
+        });
+        return categoriesData;
+      }
+      throw new Error("Failed to fetch categories");
+    },
+    enabled: true,
+    staleTime: 3e5,
+    // 5 minutes - categories don't change often
+    cacheTime: 6e5,
+    // 10 minutes
+    refetchOnMount: false,
+    // Don't refetch on every mount
+    refetchOnWindowFocus: false
+  });
+  return {
+    categories: Array.isArray(data) ? data : [],
+    loading,
+    error
+  };
+}
+function useOutletsWithFilters(options) {
+  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
+  const { data, loading, error, refetch } = useDedupedApi({
+    filters,
+    fetchFn: async (filters2) => {
+      console.log("\u{1F50D} useOutletsWithFilters: Fetching with filters:", filters2);
+      const response = await outletsApi.getOutlets(filters2);
+      if (response.success && response.data) {
+        const apiData = response.data;
+        return {
+          outlets: apiData.outlets || [],
+          total: apiData.total || 0,
+          totalPages: apiData.totalPages || 1,
+          currentPage: apiData.page || 1,
+          limit: apiData.limit || 25,
+          hasMore: apiData.hasMore || false
+        };
+      }
+      throw new Error("Failed to fetch outlets");
+    },
+    enabled,
+    staleTime: debounceSearch ? 5e3 : 3e4,
+    cacheTime: 3e5,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false
+  });
+  return {
+    data,
+    loading,
+    error,
+    refetch
+  };
+}
+function useCategoriesWithFilters(options) {
+  const { filters, enabled = true, debounceSearch = false, debounceMs = 0 } = options;
+  const { data, loading, error, refetch } = useDedupedApi({
+    filters,
+    fetchFn: async (filters2) => {
+      console.log("\u{1F50D} useCategoriesWithFilters: Fetching with filters:", filters2);
+      const response = await categoriesApi.searchCategories(filters2);
+      if (response.success && response.data) {
+        const apiData = response.data;
+        return {
+          categories: apiData.categories || [],
+          total: apiData.total || 0,
+          currentPage: apiData.page || 1,
+          totalPages: apiData.totalPages || 1,
+          limit: apiData.limit || 25,
+          hasMore: apiData.hasMore || false
+        };
+      }
+      throw new Error("Failed to fetch categories");
+    },
+    enabled,
+    staleTime: debounceSearch ? 5e3 : 3e4,
+    cacheTime: 3e5,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false
+  });
+  return {
+    data,
+    loading,
+    error,
+    refetch
+  };
+}
 export {
   CurrencyProvider,
+  clearApiCache,
+  getApiCacheStats,
   useAuth,
   useAuthErrorHandler,
   useCanExportData,
@@ -1682,12 +1485,15 @@ export {
   useCanPerform,
   useCanViewBilling,
   useCategoriesData,
+  useCategoriesWithFilters,
   useCurrency,
   useCustomersData,
+  useDedupedApi,
   useErrorHandler,
   useOptimisticNavigation,
   useOrdersData,
   useOutletsData,
+  useOutletsWithFilters,
   usePagination,
   useProductAvailability,
   useProductsData,

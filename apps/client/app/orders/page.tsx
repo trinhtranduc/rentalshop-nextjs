@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useTransition, useRef } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { 
   OrdersLoading,
   PageWrapper,
@@ -49,7 +49,6 @@ export default function OrdersPage() {
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const canExport = useCanExportData();
-  const [isPending, startTransition] = useTransition();
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -63,43 +62,45 @@ export default function OrdersPage() {
   const limit = parseInt(searchParams.get('limit') || '25');
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+  
+  // Debug: Log URL params
+  console.log('🔗 URL Params:', {
+    search,
+    status,
+    orderType,
+    outletId,
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  });
 
   // ============================================================================
   // DATA FETCHING - Clean & Simple
   // ============================================================================
   
-  // ✅ FIX: Memoize với ref để tránh re-create khi dependencies không thực sự thay đổi
-  const filtersRef = useRef<OrderFilters | null>(null);
-  const filters: OrderFilters = useMemo(() => {
-    const newFilters = {
-      search: search || undefined,
-      status: (status as any) || undefined,
-      orderType: (orderType as any) || undefined,
-      outletId,
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    };
-    
-    // Only update if actually changed
-    const filterString = JSON.stringify(newFilters);
-    const prevFilterString = JSON.stringify(filtersRef.current);
-    
-    if (filterString === prevFilterString && filtersRef.current) {
-      console.log('🔍 Page: Filters unchanged, returning cached');
-      return filtersRef.current;
-    }
-    
-    console.log('🔍 Page: Filters changed, creating new:', newFilters);
-    filtersRef.current = newFilters;
-    return newFilters;
-  }, [search, status, orderType, outletId, page, limit, sortBy, sortOrder]);
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: OrderFilters = useMemo(() => ({
+    search: search || undefined,
+    status: (status as any) || undefined,
+    orderType: (orderType as any) || undefined,
+    outletId,
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [search, status, orderType, outletId, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useOrdersData({ 
+  const { data, loading, error } = useOrdersData({ filters });
+  
+  // Debug: Log when filters or data changes
+  console.log('📊 Orders Page - Current state:', {
+    page,
     filters,
-    debounceSearch: true,
-    debounceMs: 500
+    hasData: !!data,
+    ordersCount: data?.orders?.length || 0,
+    currentPage: data?.currentPage,
+    loading
   });
 
   // ============================================================================
@@ -118,13 +119,8 @@ export default function OrdersPage() {
     });
     
     const newURL = `${pathname}?${params.toString()}`;
-    console.log('🔄 updateURL: Pushing new URL:', newURL);
-    
-    // Use transition for smooth UI updates
-    startTransition(() => {
-      router.push(newURL, { scroll: false });
-    });
-  }, [pathname, router, searchParams, startTransition]);
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   // ============================================================================
   // FILTER HANDLERS - Simple URL Updates
@@ -166,9 +162,10 @@ export default function OrdersPage() {
   }, [pathname, router]);
 
   const handlePageChange = useCallback((newPage: number) => {
-    console.log('📄 Page: Page changed to:', newPage);
+    console.log('📄 handlePageChange called: current page=', page, ', new page=', newPage);
+    console.log('📄 Current filters:', filters);
     updateURL({ page: newPage });
-  }, [updateURL]);
+  }, [updateURL, page, filters]);
 
   const handleSort = useCallback((column: string) => {
     console.log('🔀 Page: Sort changed:', column);
@@ -260,6 +257,7 @@ export default function OrdersPage() {
   const orderData = useMemo(() => {
     if (!data) {
       return {
+        items: [],
         orders: [],
         total: 0,
         currentPage: 1,
@@ -283,29 +281,36 @@ export default function OrdersPage() {
       };
     }
 
+    const mappedOrders = data.orders.map(order => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: order.status,
+      customerId: order.customer?.id || '',
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
+      customerPhone: order.customer?.phone || '',
+      outletId: order.outlet?.id || '',
+      outletName: order.outlet?.name || '',
+      merchantName: order.outlet?.merchant?.name || 'Unknown',
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
+      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : undefined,
+      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : undefined,
+      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : undefined,
+      createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
+      updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
+      orderItems: [],
+      payments: [],
+      // Additional fields required by OrderSearchResult
+      isReadyToDeliver: false,
+      customer: order.customer,
+      outlet: order.outlet
+    }));
+
     return {
-      orders: data.orders.map(order => ({
-        id: order.id,
-        orderNumber: order.orderNumber,
-        orderType: order.orderType,
-        status: order.status,
-        customerId: order.customer?.id || '',
-        customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
-        customerPhone: order.customer?.phone || '',
-        outletId: order.outlet?.id || '',
-        outletName: order.outlet?.name || '',
-        merchantName: order.outlet?.merchant?.name || 'Unknown',
-        totalAmount: order.totalAmount,
-        depositAmount: order.depositAmount,
-        pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
-        returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : undefined,
-        pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : undefined,
-        returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : undefined,
-        createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
-        updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
-        orderItems: [],
-        payments: []
-      })),
+      items: mappedOrders, // Required by BaseSearchResult
+      orders: mappedOrders, // Alias for backward compatibility
       total: data.total,
       currentPage: data.currentPage,
       totalPages: data.totalPages,

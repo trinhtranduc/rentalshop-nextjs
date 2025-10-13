@@ -52,8 +52,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     }
 
     const { 
+      page,
       limit,
-      offset,
       q, 
       orderType,
       status,
@@ -61,14 +61,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       customerId,
       productId,
       startDate,
-      endDate
+      endDate,
+      sortBy,
+      sortOrder
     } = parsed.data;
 
-    const page = Math.floor((offset || 0) / (limit || 20)) + 1;
-
     console.log('Parsed filters:', { 
-      page, limit, offset, q, orderType, status, 
-      queryOutletId, customerId, productId, startDate, endDate 
+      page, limit, q, orderType, status, 
+      queryOutletId, customerId, productId, startDate, endDate,
+      sortBy, sortOrder
     });
     
     // Implement role-based filtering
@@ -81,7 +82,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       endDate: endDate ? new Date(endDate) : undefined,
       search: q,
       page: page || 1,
-      limit: limit || 20
+      limit: limit || 20,
+      sortBy: sortBy || 'createdAt',
+      sortOrder: sortOrder || 'desc'
     };
 
     // Role-based outlet filtering:
@@ -112,6 +115,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     });
 
     console.log('🔍 Using simplified db.orders.search with filters:', searchFilters);
+    console.log('📊 PAGINATION DEBUG: page=', searchFilters.page, ', limit=', searchFilters.limit);
     
     // Use performance monitoring for query optimization
     const result = await PerformanceMonitor.measureQuery(
@@ -120,6 +124,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     );
     
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
+    console.log('📊 RESULT DEBUG: page=', result.page, ', total=', result.total, ', limit=', result.limit);
 
     return NextResponse.json({
       success: true,

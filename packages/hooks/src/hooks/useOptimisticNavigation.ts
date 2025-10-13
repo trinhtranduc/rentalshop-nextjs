@@ -7,14 +7,14 @@ interface UseOptimisticNavigationOptions {
 }
 
 /**
- * Hook for instant navigation with immediate UI feedback
+ * Hook for instant navigation with immediate page transition
  * 
  * Flow:
- * 1. User clicks → Highlight INSTANTLY (0ms, synchronous state update)
- * 2. Next tick → Start navigation (requestAnimationFrame for smoothness)
- * 3. Page loads → Show skeleton
+ * 1. User clicks → Navigate IMMEDIATELY (0ms, synchronous router.push)
+ * 2. Page transitions → Next.js loading.tsx shows skeleton
+ * 3. Data loads → Real content displays
  * 
- * Key: Use synchronous state update + RAF to avoid any delay
+ * Key: Direct router.push for instant transitions, no overlay blocking
  */
 export function useOptimisticNavigation(options: UseOptimisticNavigationOptions = {}) {
   const router = useRouter();
@@ -43,22 +43,16 @@ export function useOptimisticNavigation(options: UseOptimisticNavigationOptions 
       clearTimeout(timeoutRef.current);
     }
 
-    // 1. INSTANT (0ms): Update UI state IMMEDIATELY (synchronous)
-    // This happens in the same event loop tick as the click
-    setNavigatingTo(path);
+    // 1. INSTANT (0ms): Navigate IMMEDIATELY - no delay, no overlay
+    // Direct router.push for instant page transition
     options.onNavigateStart?.(path);
-
-    // 2. NEXT FRAME: Navigate using RAF for smooth animation
-    // RAF ensures navigation happens after the highlight is painted
-    rafRef.current = requestAnimationFrame(() => {
-      router.push(path);
-      
-      // 3. CLEANUP: Clear state after navigation
-      timeoutRef.current = setTimeout(() => {
-        setNavigatingTo(null);
-        options.onNavigateEnd?.(path);
-      }, 500);
-    });
+    router.push(path);
+    
+    // 2. CLEANUP: Clear state after brief moment
+    timeoutRef.current = setTimeout(() => {
+      setNavigatingTo(null);
+      options.onNavigateEnd?.(path);
+    }, 100); // Short timeout since we're not showing overlay
   }, [router, options]);
 
   return {

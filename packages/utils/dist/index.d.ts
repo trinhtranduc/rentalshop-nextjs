@@ -2472,12 +2472,16 @@ declare const ordersQuerySchema: z.ZodObject<{
     returnDate: z.ZodOptional<z.ZodDate>;
     minAmount: z.ZodOptional<z.ZodNumber>;
     maxAmount: z.ZodOptional<z.ZodNumber>;
+    page: z.ZodDefault<z.ZodNumber>;
     limit: z.ZodDefault<z.ZodNumber>;
-    offset: z.ZodDefault<z.ZodNumber>;
+    sortBy: z.ZodOptional<z.ZodString>;
+    sortOrder: z.ZodOptional<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
+    page: number;
     limit: number;
-    offset: number;
     q?: string | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
     outletId?: number | undefined;
     status?: "CANCELLED" | "RESERVED" | "PICKUPED" | "RETURNED" | "COMPLETED" | undefined;
     startDate?: Date | undefined;
@@ -2492,6 +2496,8 @@ declare const ordersQuerySchema: z.ZodObject<{
     userId?: number | undefined;
 }, {
     q?: string | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
     outletId?: number | undefined;
     status?: "CANCELLED" | "RESERVED" | "PICKUPED" | "RETURNED" | "COMPLETED" | undefined;
     startDate?: Date | undefined;
@@ -2504,8 +2510,8 @@ declare const ordersQuerySchema: z.ZodObject<{
     minAmount?: number | undefined;
     maxAmount?: number | undefined;
     userId?: number | undefined;
+    page?: number | undefined;
     limit?: number | undefined;
-    offset?: number | undefined;
 }>;
 declare const orderCreateSchema: z.ZodObject<{
     orderId: z.ZodOptional<z.ZodNumber>;

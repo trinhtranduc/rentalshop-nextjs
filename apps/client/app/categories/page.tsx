@@ -18,7 +18,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useCategoriesData } from '@rentalshop/hooks';
+import { useAuth, useCategoriesWithFilters } from '@rentalshop/hooks';
 import { categoriesApi } from '@rentalshop/utils';
 import type { CategoryFilters, Category } from '@rentalshop/types';
 
@@ -100,7 +100,7 @@ export default function CategoriesPage() {
     };
   }, []);
 
-  const { data, loading, error } = useCategoriesData({ 
+  const { data, loading, error } = useCategoriesWithFilters({ 
     filters,
     debounceSearch: false, // Already throttled at input level
     debounceMs: 0
