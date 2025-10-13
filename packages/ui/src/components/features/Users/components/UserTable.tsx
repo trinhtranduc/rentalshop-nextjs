@@ -31,9 +31,9 @@ export function UserTable({
   
   if (users.length === 0) {
     return (
-      <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+      <Card className="shadow-sm border-border">
         <CardContent className="text-center py-12">
-          <div className="text-gray-500 dark:text-gray-400">
+          <div className="text-text-tertiary">
             <div className="text-4xl mb-4">👥</div>
             <h3 className="text-lg font-medium mb-2">No users found</h3>
             <p className="text-sm">
@@ -89,181 +89,138 @@ export function UserTable({
   };
 
   return (
-    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full">
-      <div className="flex-1 overflow-auto">
-        <table className="w-full">
-          {/* Table Header with Sorting - Sticky */}
-          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-            <tr>
-              <th 
-                onClick={() => handleSort('id')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <div className="flex items-center gap-1">
-                  ID
-                  {sortBy === 'id' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
-              </th>
-              <th 
-                onClick={() => handleSort('name')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <div className="flex items-center gap-1">
-                  Name
-                  {sortBy === 'name' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Contact
-              </th>
-              <th 
-                onClick={() => handleSort('role')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <div className="flex items-center gap-1">
+    <Card className="shadow-sm border-border flex flex-col h-full">
+      <CardContent className="p-0 flex-1">
+        <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
+          <table className="w-full">
+            {/* Table Header with Sorting - Sticky */}
+            <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Role
-                  {sortBy === 'role' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Outlet / Merchant
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th 
-                onClick={() => handleSort('createdAt')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <div className="flex items-center gap-1">
-                  Created
-                  {sortBy === 'createdAt' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          
-          {/* Table Body */}
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                {/* ID */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    #{user.id}
-                  </div>
-                </td>
-                
-                {/* Name */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {user.firstName} {user.lastName}
-                    </div>
-                  </div>
-                </td>
-                
-                {/* Contact */}
-                <td className="px-6 py-4">
-                  <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">{user.email}</div>
-                    <div className="text-gray-500 dark:text-gray-400 text-xs">{user.phone || 'N/A'}</div>
-                  </div>
-                </td>
-                
-                {/* Role */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getRoleBadge(user.role)}
-                </td>
-                
-                {/* Outlet / Merchant */}
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {user.outlet?.name || user.merchant?.name || 'N/A'}
-                  </div>
-                </td>
-                
-                {/* Status */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(user.isActive)}
-                </td>
-                
-                {/* Created Date */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {formatDate(user.createdAt)}
-                  </div>
-                </td>
-                
-                {/* Actions - Dropdown Menu */}
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setOpenDropdownId(user.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent 
-                      align="end"
-                      open={openDropdownId === user.id}
-                      onOpenChange={(open: boolean) => setOpenDropdownId(open ? user.id : null)}
-                    >
-                      <DropdownMenuItem onClick={() => {
-                        onUserAction('view', user.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        onUserAction('edit', user.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit User
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        onUserAction(user.isActive ? 'deactivate' : 'activate', user.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        {user.isActive ? <UserX className="h-4 w-4 mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
-                        {user.isActive ? 'Deactivate User' : 'Activate User'}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          onUserAction('delete', user.id);
-                          setOpenDropdownId(null);
-                        }}
-                        className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete User
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Outlet / Merchant
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Created At
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            
+            {/* Table Body */}
+            <tbody className="bg-bg-card divide-y divide-border">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-bg-secondary transition-colors">
+                  {/* User Info (Name + Email) */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center">
+                        <span className="text-white font-semibold text-sm">
+                          {user.firstName?.substring(0, 1)}{user.lastName?.substring(0, 1)}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-text-primary">
+                          {user.firstName} {user.lastName}
+                        </div>
+                        <div className="text-sm text-text-tertiary">{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  
+                  {/* Role */}
+                  <td className="px-6 py-4">
+                    {getRoleBadge(user.role)}
+                  </td>
+                  
+                  {/* Outlet / Merchant */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {user.outlet?.name || user.merchant?.name || 'N/A'}
+                    </div>
+                  </td>
+                  
+                  {/* Status */}
+                  <td className="px-6 py-4">
+                    {getStatusBadge(user.isActive)}
+                  </td>
+                  
+                  {/* Created Date */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {formatDate(user.createdAt)}
+                    </div>
+                  </td>
+                
+                  
+                  {/* Actions - Dropdown Menu */}
+                  <td className="px-6 py-4 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        align="end"
+                        open={openDropdownId === user.id}
+                        onOpenChange={(open: boolean) => setOpenDropdownId(open ? user.id : null)}
+                      >
+                        <DropdownMenuItem onClick={() => {
+                          onUserAction('view', user.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          onUserAction('edit', user.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          onUserAction(user.isActive ? 'deactivate' : 'activate', user.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          {user.isActive ? <UserX className="h-4 w-4 mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
+                          {user.isActive ? 'Deactivate' : 'Activate'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            onUserAction('delete', user.id);
+                            setOpenDropdownId(null);
+                          }}
+                          className="text-action-danger focus:text-action-danger"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete User
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
     </Card>
   );
 }

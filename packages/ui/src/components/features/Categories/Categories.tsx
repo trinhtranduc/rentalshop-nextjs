@@ -94,7 +94,7 @@ export const Categories: React.FC<CategoriesProps> = ({
       </div>
 
       {/* Fixed Pagination Section */}
-      {categories.length > 0 && (
+      {categories.length > 0 && totalCategories > limit && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}

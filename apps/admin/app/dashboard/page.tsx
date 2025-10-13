@@ -10,13 +10,19 @@ import { CardClean,
   PageTitle,
   PageContent, 
   useToast,
-  Button } from '@rentalshop/ui';
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  IncomeChart,
+  OrderChart,
+  Badge
+} from '@rentalshop/ui';
 import { 
   AdminPageHeader,
   MetricCard,
-  ActivityFeed,
-  QuickActions,
-  SystemHealth
+  ActivityFeed
 } from '@rentalshop/ui';
 import { usePathname } from 'next/navigation';
 import { analyticsApi } from '@rentalshop/utils';
@@ -26,17 +32,11 @@ import {
   DollarSign, 
   ShoppingCart, 
   Building2, 
-  Activity, 
-  Database, 
-  Server, 
-  TrendingUp,
-  Settings,
+  Activity,
   Store,
-  Package,
-  CreditCard,
-  BarChart3,
   Clock,
   CheckCircle,
+  Bell,
   AlertTriangle
 } from 'lucide-react';
 
@@ -77,6 +77,20 @@ export default function AdminDashboard() {
   });
   const [merchantTrends, setMerchantTrends] = useState<MerchantTrend[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [ordersData, setOrdersData] = useState<any[]>([]);
+  const [newMerchants, setNewMerchants] = useState<any[]>([]);
+  const [subscriptionStats, setSubscriptionStats] = useState({
+    active: 0,
+    trial: 0,
+    expiring: 0,
+    cancelled: 0
+  });
+  const [growthMetrics, setGrowthMetrics] = useState({
+    customerGrowth: 0,
+    revenueGrowth: 0,
+    customerBase: 0
+  });
   const [loading, setLoading] = useState(true);
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>('month');
 
@@ -140,27 +154,156 @@ export default function AdminDashboard() {
         groupBy: filters.groupBy
       });
       
-      // Fetch both system metrics and recent activities in parallel
-      const [systemResponse, activitiesResponse] = await Promise.all([
+      // Fetch all analytics in parallel
+      const [
+        systemResponse,
+        activitiesResponse,
+        revenueResponse,
+        ordersResponse,
+        merchantsResponse,
+        subscriptionsResponse,
+        growthMetricsResponse
+      ] = await Promise.all([
         analyticsApi.getSystemAnalytics(filters),
-        analyticsApi.getRecentActivities(10, 0)
+        analyticsApi.getRecentActivities(10, 0),
+        analyticsApi.getIncomeAnalytics(filters),
+        analyticsApi.getOrderAnalytics(filters),
+        import('@rentalshop/utils').then(({ merchantsApi }) => merchantsApi.getMerchants()),
+        import('@rentalshop/utils').then(({ subscriptionsApi }) => subscriptionsApi.search({ limit: 1000 })),
+        analyticsApi.getGrowthMetrics(filters)
       ]);
 
+      console.log('📊 API Responses:', {
+        system: systemResponse.success,
+        activities: activitiesResponse.success,
+        revenue: revenueResponse.success,
+        orders: ordersResponse.success,
+        merchants: merchantsResponse.success,
+        subscriptions: subscriptionsResponse.success,
+        growthMetrics: growthMetricsResponse.success
+      });
+
+      // System metrics
       if (systemResponse.success && systemResponse.data) {
         setMetrics(systemResponse.data);
         setMerchantTrends(systemResponse.data.merchantTrends || []);
+        console.log('✅ System metrics loaded');
       } else {
-        console.error('Failed to fetch system metrics:', systemResponse.message);
-        toastError('Error', `Failed to fetch system metrics: ${systemResponse.message}`);
-        // Fallback to mock data for now
+        console.error('❌ Failed to fetch system metrics:', systemResponse.message);
       }
 
+      // Recent activities
       if (activitiesResponse.success && activitiesResponse.data) {
         setRecentActivities(activitiesResponse.data || []);
-      } else {
-        console.error('Failed to fetch recent activities:', activitiesResponse.message);
-        toastError('Error', `Failed to fetch recent activities: ${activitiesResponse.message}`);
-        // Keep empty array for activities
+        console.log('✅ Activities loaded:', activitiesResponse.data.length);
+      }
+
+      // Revenue data - Transform for chart compatibility
+      if (revenueResponse.success && revenueResponse.data) {
+        const transformedRevenue = revenueResponse.data.map((item: any) => ({
+          period: item.month || item.period,
+          actual: item.realIncome || 0,
+          projected: item.futureIncome || 0
+        }));
+        setRevenueData(transformedRevenue);
+        console.log('✅ Revenue data loaded & transformed:', transformedRevenue.length);
+      }
+
+      // New Merchants data - Calculate from merchants array
+      if (merchantsResponse.success && merchantsResponse.data) {
+        const merchantsArray = merchantsResponse.data.merchants || [];
+        
+        // Filter merchants within the selected time period
+        const filteredMerchants = merchantsArray.filter((merchant: any) => {
+          if (!merchant.createdAt) return false;
+          const createdDate = new Date(merchant.createdAt);
+          return createdDate >= startDate && createdDate <= endDate;
+        });
+        
+        // Group merchants by creation date period
+        const merchantsByPeriod = new Map<string, { period: string; count: number; sortKey: string }>();
+        
+        filteredMerchants.forEach((merchant: any) => {
+          const date = new Date(merchant.createdAt);
+          let period: string;
+          let sortKey: string;
+          
+          if (groupBy === 'day') {
+            // For day grouping: "Jan 15"
+            period = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            sortKey = date.toISOString().split('T')[0]; // YYYY-MM-DD for sorting
+          } else {
+            // For month grouping: "Jan"
+            period = date.toLocaleDateString('en-US', { month: 'short' });
+            sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM for sorting
+          }
+          
+          const existing = merchantsByPeriod.get(sortKey);
+          if (existing) {
+            existing.count += 1;
+          } else {
+            merchantsByPeriod.set(sortKey, { period, count: 1, sortKey });
+          }
+        });
+        
+        // Transform to chart format and sort chronologically
+        const transformedMerchants = Array.from(merchantsByPeriod.values())
+          .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+          .map(({ period, count }) => ({
+            period,
+            actual: count,
+            projected: 0
+          }));
+        
+        setOrdersData(transformedMerchants);
+        console.log('✅ New merchants data calculated:', {
+          total: filteredMerchants.length,
+          periods: transformedMerchants.length,
+          data: transformedMerchants
+        });
+      }
+
+      // Growth metrics
+      if (growthMetricsResponse.success && growthMetricsResponse.data) {
+        setGrowthMetrics(growthMetricsResponse.data);
+        console.log('✅ Growth metrics loaded:', growthMetricsResponse.data);
+      }
+
+      // New merchants (sort by creation date)
+      if (merchantsResponse.success && merchantsResponse.data) {
+        const merchantsArray = merchantsResponse.data.merchants || [];
+        const newMerchantsData = merchantsArray
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 5)
+          .map((m: any) => ({
+            id: m.id,
+            name: m.name,
+            createdAt: m.createdAt,
+            subscriptionStatus: m.subscriptionStatus,
+            plan: m.plan?.name || 'N/A'
+          }));
+        setNewMerchants(newMerchantsData);
+        console.log('✅ New merchants calculated:', newMerchantsData.length);
+      }
+
+      // Subscription stats (calculate from subscriptions data)
+      if (subscriptionsResponse.success && subscriptionsResponse.data) {
+        const subsData = subscriptionsResponse.data as any;
+        const subscriptions = Array.isArray(subsData) ? subsData : subsData.data || [];
+        
+        const stats = {
+          active: subscriptions.filter((s: any) => s.status === 'active').length,
+          trial: subscriptions.filter((s: any) => s.status === 'trial').length,
+          expiring: subscriptions.filter((s: any) => {
+            if (!s.currentPeriodEnd) return false;
+            const daysUntilExpiry = Math.ceil((new Date(s.currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+            return daysUntilExpiry <= 7 && daysUntilExpiry > 0;
+          }).length,
+          cancelled: subscriptions.filter((s: any) => s.status === 'cancelled').length
+        };
+        setSubscriptionStats(stats);
+        console.log('✅ Subscription stats calculated:', stats);
+
       }
     } catch (error) {
       console.error('Error fetching system metrics:', error);
@@ -238,7 +381,11 @@ export default function AdminDashboard() {
     {
       title: 'Platform Merchants',
       value: metrics.totalMerchants,
-      change: { value: metrics.newMerchantsThisMonth, isPositive: true, period: getPeriodLabel() },
+      change: { 
+        value: metrics.newMerchantsThisMonth, 
+        isPositive: true, 
+        period: getPeriodLabel() 
+      },
       icon: Building2,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
@@ -247,7 +394,11 @@ export default function AdminDashboard() {
     ...(user?.role !== 'OUTLET_STAFF' ? [{
       title: 'Platform Revenue',
       value: `$${metrics.totalRevenue.toLocaleString()}`,
-      change: { value: 22, isPositive: true, period: getPeriodLabel() },
+      change: growthMetrics.revenueGrowth ? { 
+        value: Math.abs(Math.round(growthMetrics.revenueGrowth)), 
+        isPositive: growthMetrics.revenueGrowth >= 0, 
+        period: getPeriodLabel() 
+      } : undefined,
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-100'
@@ -255,7 +406,11 @@ export default function AdminDashboard() {
     {
       title: 'System Users',
       value: metrics.totalUsers,
-      change: { value: 15, isPositive: true, period: getPeriodLabel() },
+      change: growthMetrics.customerGrowth ? { 
+        value: Math.abs(Math.round(growthMetrics.customerGrowth)), 
+        isPositive: growthMetrics.customerGrowth >= 0, 
+        period: getPeriodLabel() 
+      } : undefined,
       icon: Users,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100'
@@ -263,89 +418,16 @@ export default function AdminDashboard() {
     {
       title: 'Platform Orders',
       value: metrics.totalOrders.toLocaleString(),
-      change: { value: 18, isPositive: true, period: getPeriodLabel() },
+      change: undefined,  // No order growth data yet
       icon: ShoppingCart,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100'
     }
   ];
 
-  // System health metrics
-  const healthMetrics = [
-    {
-      name: 'API Response Time',
-      value: 45,
-      max: 100,
-      unit: 'ms',
-      status: 'healthy' as const,
-      icon: Activity
-    },
-    {
-      name: 'Database Performance',
-      value: 78,
-      max: 100,
-      unit: '%',
-      status: 'warning' as const,
-      icon: Database
-    },
-    {
-      name: 'Server Uptime',
-      value: 99,
-      max: 100,
-      unit: '%',
-      status: 'healthy' as const,
-      icon: Server
-    },
-    {
-      name: 'Memory Usage',
-      value: 65,
-      max: 100,
-      unit: '%',
-      status: 'healthy' as const,
-      icon: Activity
-    }
-  ];
-
-
-  // Quick actions
-  const quickActions = [
-    {
-      id: '1',
-      label: 'Manage Merchants',
-      description: 'View and manage merchant accounts',
-      icon: Store,
-      onClick: () => window.location.href = '/merchants'
-    },
-    {
-      id: '2',
-      label: 'View Analytics',
-      description: 'Access detailed platform analytics',
-      icon: BarChart3,
-      onClick: () => window.location.href = '/analytics'
-    },
-    {
-      id: '3',
-      label: 'System Settings',
-      description: 'Configure system-wide settings',
-      icon: Settings,
-      onClick: () => window.location.href = '/system/settings'
-    },
-    {
-      id: '4',
-      label: 'Security Center',
-      description: 'Monitor security and access controls',
-      icon: AlertTriangle,
-      onClick: () => window.location.href = '/system/security'
-    }
-  ];
 
   return (
     <PageWrapper>
-      <AdminPageHeader
-        title="System Operations Dashboard"
-        subtitle="Monitor platform performance and business metrics"
-      />
-
       <PageContent>
         {/* Time Period Selector */}
         <div className="mb-6 flex justify-between items-center">
@@ -395,31 +477,141 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        {/* Subscription Health Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Active Subscriptions</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{subscriptionStats.active}</div>
+              <p className="text-xs text-gray-500">Currently active</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Trial Subscriptions</CardTitle>
+              <Clock className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{subscriptionStats.trial}</div>
+              <p className="text-xs text-gray-500">In trial period</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Expiring Soon</CardTitle>
+              <Bell className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{subscriptionStats.expiring}</div>
+              <p className="text-xs text-gray-500">Within 7 days</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Cancelled</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{subscriptionStats.cancelled}</div>
+              <p className="text-xs text-gray-500">Churned accounts</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Revenue & Orders Charts */}
+        {user?.role !== 'OUTLET_STAFF' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Revenue Trend</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <IncomeChart data={revenueData} loading={loading} />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>New Merchants Growth</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <OrderChart 
+                  data={ordersData} 
+                  loading={loading} 
+                  legendLabel="New Merchants"
+                  tooltipLabel="merchants"
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Enhanced Dashboard Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* New Merchants */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Store className="w-5 h-5 text-blue-600" />
+                  New Merchants
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {newMerchants.length > 0 ? (
+                  <div className="space-y-3">
+                    {newMerchants.map((merchant, index) => (
+                      <div key={merchant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => window.location.href = `/merchants/${merchant.id}`}>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">{merchant.name}</div>
+                            <div className="text-xs text-gray-500">{merchant.plan}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">
+                            {new Date(merchant.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                          <Badge className={`text-xs ${
+                            merchant.subscriptionStatus === 'active' ? 'bg-green-100 text-green-800' :
+                            merchant.subscriptionStatus === 'trial' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {merchant.subscriptionStatus}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Store className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                    <p>No new merchants</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
           {/* Recent Activities */}
-          <div className="lg:col-span-2">
+          <div>
             <ActivityFeed
               title="Recent System Activities"
               activities={recentActivities}
               maxItems={5}
             />
           </div>
-
-          {/* System Health */}
-          <div>
-            <SystemHealth
-              title="System Health"
-              metrics={healthMetrics}
-            />
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <QuickActions
-          title="System Operations"
-          actions={quickActions}
-        />
       </PageContent>
     </PageWrapper>
   );

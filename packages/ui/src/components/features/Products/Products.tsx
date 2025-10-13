@@ -176,7 +176,7 @@ export function Products({
       </div>
 
       {/* Fixed Pagination Section - Always at Bottom */}
-      {products.length > 0 && (
+      {products.length > 0 && totalProducts > limit && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}

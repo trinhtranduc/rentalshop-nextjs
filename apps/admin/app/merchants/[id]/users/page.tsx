@@ -1,102 +1,206 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent,
   Users,
-  Button
+  Breadcrumb,
+  type BreadcrumbItem
 } from '@rentalshop/ui';
-import { ArrowLeft } from 'lucide-react';
+import { Users as UsersIcon } from 'lucide-react';
 import type { User, UserFilters } from '@rentalshop/types';
 
-interface UserData {
-  users: User[];
-  total: number;
-  currentPage: number;
-  totalPages: number;
-  hasMore: boolean;
-}
-
+/**
+ * ✅ MODERN MERCHANT USERS PAGE (URL State Pattern)
+ * 
+ * Architecture:
+ * ✅ URL params as single source of truth
+ * ✅ Shareable URLs (bookmarkable filters)
+ * ✅ Browser back/forward support
+ */
 export default function MerchantUsersPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const merchantId = params.id as string;
   
-  const [userData, setUserData] = useState<UserData>({
-    users: [],
-    total: 0,
-    currentPage: 1,
-    totalPages: 1,
-    hasMore: false
-  });
+  // ============================================================================
+  // URL PARAMS - Single Source of Truth
+  // ============================================================================
+  
+  const search = searchParams.get('q') || '';
+  const role = searchParams.get('role') || '';
+  const status = searchParams.get('status') || '';
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '20');
+  
+  // ============================================================================
+  // LOCAL STATE (API không support full filters yet)
+  // ============================================================================
+  
+  const [users, setUsers] = useState<User[]>([]);
+  const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<UserFilters>({
-    limit: 20,
-    offset: 0
-  });
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
 
   useEffect(() => {
-    fetchUsers();
-  }, [merchantId, filters]);
+    console.log('👤 Merchant Users Page - useEffect triggered, merchantId:', merchantId);
+    fetchData();
+  }, [merchantId]);
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     try {
+      console.log('👤 Merchant Users Page - fetchData started for merchantId:', merchantId);
       setLoading(true);
       
-      // Use centralized API client with automatic authentication and error handling
-      const queryParams = new URLSearchParams();
-      if (filters.search) queryParams.append('search', filters.search);
-      if (filters.role) queryParams.append('role', filters.role);
-      if (filters.status) queryParams.append('isActive', filters.status === 'active' ? 'true' : 'false');
-      if (filters.limit) queryParams.append('limit', filters.limit.toString());
-      if (filters.offset) queryParams.append('offset', filters.offset.toString());
+      // Fetch merchant info
+      console.log('👤 Fetching merchant info...');
+      const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
+      console.log('👤 Merchant data:', merchantData);
+      
+      if (merchantData.success && merchantData.data) {
+        setMerchantName(merchantData.data.name);
+        console.log('👤 Merchant name set:', merchantData.data.name);
+      }
 
-      const response = await merchantsApi.users.list(parseInt(merchantId));
-      const data = await response.json();
+      // Fetch users
+      console.log('👤 Fetching users for merchant:', merchantId);
+      const usersRes = await merchantsApi.users.list(parseInt(merchantId));
+      const usersData = await usersRes.json();
+      console.log('👤 Users API response:', usersData);
+      console.log('👤 Users data structure:', {
+        isArray: Array.isArray(usersData.data),
+        hasUsersProperty: usersData.data && 'users' in usersData.data
+      });
 
-      if (data.success) {
-        setUserData({
-          users: data.data.users || [],
-          total: data.data.total || 0,
-          currentPage: Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1,
-          totalPages: Math.ceil((data.data.total || 0) / (filters.limit || 20)),
-          hasMore: (filters.offset || 0) + (filters.limit || 20) < (data.data.total || 0)
-        });
+      if (usersData.success) {
+        // API returns data as direct array OR data.users
+        const usersList = Array.isArray(usersData.data) 
+          ? usersData.data 
+          : usersData.data?.users || [];
+        setUsers(usersList);
+        console.log('👤 Users set, count:', usersList.length);
       } else {
-        setError(data.message || 'Failed to fetch users');
+        setError(usersData.message || 'Failed to fetch users');
+        console.error('👤 Failed to fetch users:', usersData.message);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
-      setError('Failed to fetch users');
+      console.error('👤 Error fetching data:', error);
+      setError('Failed to fetch data');
     } finally {
       setLoading(false);
+      console.log('👤 fetchData completed');
     }
   };
 
-  const handleFiltersChange = (newFilters: UserFilters) => {
-    setFilters(newFilters);
-  };
+  // ============================================================================
+  // CLIENT-SIDE FILTERING & PAGINATION
+  // ============================================================================
+  
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+    
+    if (search) {
+      filtered = filtered.filter(u => 
+        u.firstName?.toLowerCase().includes(search.toLowerCase()) ||
+        u.lastName?.toLowerCase().includes(search.toLowerCase()) ||
+        u.email?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    if (role && role !== 'all') {
+      filtered = filtered.filter(u => u.role === role);
+    }
+    
+    if (status && status !== 'all') {
+      filtered = filtered.filter(u => 
+        status === 'active' ? u.isActive : !u.isActive
+      );
+    }
+    
+    return filtered;
+  }, [users, search, role, status]);
 
-  const handleSearchChange = (searchValue: string) => {
-    setFilters(prev => ({ ...prev, search: searchValue, offset: 0 }));
-  };
+  const userData = useMemo(() => {
+    console.log('👤 Creating userData:', {
+      usersCount: users.length,
+      filteredUsersCount: filteredUsers.length,
+      page,
+      limit,
+      search,
+      role,
+      status
+    });
+    
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+    const total = filteredUsers.length;
+    const totalPages = Math.ceil(total / limit);
+    
+    const result = {
+      users: paginatedUsers,
+      total,
+      page,
+      currentPage: page,
+      totalPages,
+      limit,
+      hasMore: endIndex < total
+    };
+    
+    console.log('👤 userData created:', result);
+    
+    return result;
+  }, [filteredUsers, page, limit, users, search, role, status]);
 
-  const handleClearFilters = () => {
-    setFilters({ limit: 20, offset: 0 });
-  };
+  // ============================================================================
+  // URL UPDATE HELPER
+  // ============================================================================
+  
+  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== '' && value !== 'all') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
+    
+    const newURL = `${pathname}?${params.toString()}`;
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
-  const handleViewModeChange = (mode: 'grid' | 'table') => {
-    setViewMode(mode);
-  };
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+  
+  const handleSearchChange = useCallback((searchValue: string) => {
+    updateURL({ q: searchValue, page: 1 });
+  }, [updateURL]);
 
-  const handleUserAction = (action: string, userId: string) => {
+  const handleFiltersChange = useCallback((newFilters: UserFilters) => {
+    const updates: Record<string, string | number | undefined> = { page: 1 };
+    if ('role' in newFilters) updates.role = newFilters.role;
+    if ('status' in newFilters) updates.status = newFilters.status;
+    updateURL(updates);
+  }, [updateURL]);
+
+  const handleClearFilters = useCallback(() => {
+    router.push(pathname, { scroll: false });
+  }, [pathname, router]);
+
+  const handlePageChange = useCallback((newPage: number) => {
+    updateURL({ page: newPage });
+  }, [updateURL]);
+
+  const handleUserAction = useCallback((action: string, userId: number) => {
     switch (action) {
       case 'view':
         router.push(`/merchants/${merchantId}/users/${userId}`);
@@ -104,111 +208,64 @@ export default function MerchantUsersPage() {
       case 'edit':
         router.push(`/merchants/${merchantId}/users/${userId}/edit`);
         break;
-      case 'add':
-        router.push(`/merchants/${merchantId}/users/add`);
-        break;
       default:
         console.log('User action:', action, userId);
     }
-  };
+  }, [router, merchantId]);
 
-  const handlePageChange = (page: number) => {
-    const newOffset = (page - 1) * (filters.limit || 20);
-    setFilters(prev => ({ ...prev, offset: newOffset }));
-  };
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
-  const handleUserCreated = async (userInput: any) => {
-    // Handle user creation - would typically make API call
-    console.log('User created:', userInput);
-    await fetchUsers(); // Refresh the list
-  };
-
-  const handleUserUpdated = async (user: User) => {
-    // Handle user update - would typically make API call
-    console.log('User updated:', user);
-    await fetchUsers(); // Refresh the list
-  };
-
-  const handleError = (error: string) => {
-    setError(error);
-  };
-
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <div className="animate-pulse">
-            <div className="h-8 bg-bg-tertiary rounded w-1/4 mb-6"></div>
-            <div className="h-12 bg-bg-tertiary rounded mb-6"></div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-bg-tertiary rounded"></div>
-              ))}
-            </div>
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = useMemo(() => [
+    { label: 'Merchants', href: '/merchants' },
+    { label: merchantName || `Merchant ${merchantId}`, href: `/merchants/${merchantId}` },
+    { label: 'Users', icon: <UsersIcon className="w-4 h-4" /> }
+  ], [merchantId, merchantName]);
 
   if (error) {
     return (
-      <PageWrapper>
-        <PageContent>
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+        </PageHeader>
+        <div className="flex-1 flex items-center justify-center">
           <div className="text-center py-12">
             <div className="text-4xl mb-4">⚠️</div>
             <h3 className="text-lg font-medium mb-2">Error Loading Users</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              {error}
-            </p>
-            <Button
-              onClick={() => router.push(`/merchants/${merchantId}`)}
-              className="px-4 py-2"
-            >
-              Back to Merchant
-            </Button>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
           </div>
-        </PageContent>
+        </div>
       </PageWrapper>
     );
   }
 
+  const filtersData = { search, role, status };
+
+  console.log('👤 About to render Users component with:', {
+    userData,
+    filtersData,
+    loading
+  });
+
   return (
-    <PageWrapper>
-      <PageHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/merchants/${merchantId}`)}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Merchant
-            </Button>
-            <PageTitle subtitle={`Manage users for merchant ${merchantId}`}>
-              Merchant Users
-            </PageTitle>
-          </div>
-        </div>
+    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageHeader className="flex-shrink-0">
+        <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
       </PageHeader>
 
-      <PageContent>
+      <div className="flex-1 min-h-0 overflow-auto">
         <Users
           data={userData}
-          filters={filters}
-          viewMode={viewMode}
+          filters={filtersData}
           onFiltersChange={handleFiltersChange}
           onSearchChange={handleSearchChange}
           onClearFilters={handleClearFilters}
-          onViewModeChange={handleViewModeChange}
           onUserAction={handleUserAction}
           onPageChange={handlePageChange}
-          onUserCreated={handleUserCreated}
-          onUserUpdated={handleUserUpdated}
-          onError={handleError}
         />
-      </PageContent>
+      </div>
     </PageWrapper>
   );
 }

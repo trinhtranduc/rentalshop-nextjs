@@ -487,14 +487,16 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
           onSort={handleSort}
         />
         
-        <Pagination 
-          currentPage={orderData.currentPage}
-          totalPages={orderData.totalPages}
-          total={orderData.total}
-          limit={orderData.limit}
-          onPageChange={handlePageChange}
-          itemName="orders"
-        />
+        {orderData.total > orderData.limit && (
+          <Pagination 
+            currentPage={orderData.currentPage}
+            totalPages={orderData.totalPages}
+            total={orderData.total}
+            limit={orderData.limit}
+            onPageChange={handlePageChange}
+            itemName="orders"
+          />
+        )}
       </div>
     </div>
   );

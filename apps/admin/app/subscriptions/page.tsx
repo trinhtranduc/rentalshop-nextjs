@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { SubscriptionList,
   SubscriptionForm,
   SubscriptionEditDialog,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent,
   Button,
   Card,
   CardHeader,
@@ -18,9 +18,7 @@ import { SubscriptionList,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
   ConfirmationDialogWithReason,
-  
   useToast } from '@rentalshop/ui';
 import { 
   subscriptionsApi,
@@ -31,34 +29,45 @@ import {
   Plus, 
   Download,
   Filter,
-  Search,
   CreditCard,
   Check,
   Clock,
   X
 } from 'lucide-react';
+import { useSubscriptionsData } from '@rentalshop/hooks';
 import type { Subscription, Plan, Merchant, BillingPeriod } from '@rentalshop/types';
-import type { Subscription as ApiSubscription, SubscriptionsResponse } from '@rentalshop/utils';
 
+/**
+ * ✅ MODERN SUBSCRIPTIONS PAGE (URL State Pattern)
+ * 
+ * Architecture:
+ * ✅ URL params as single source of truth
+ * ✅ Clean data fetching with useSubscriptionsData hook
+ * ✅ Request deduplication with useDedupedApi
+ */
 export default function SubscriptionsPage() {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { toastSuccess, toastError, toastWarning } = useToast();
+
+  // ============================================================================
+  // URL PARAMS - Single Source of Truth
+  // ============================================================================
+  
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '20');
+
+  // ============================================================================
+  // DIALOG STATES
+  // ============================================================================
+  
   const [plans, setPlans] = useState<Plan[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0
-  });
-
-  // Toast management
-  const { toasts, toastSuccess, toastError, toastWarning, removeToast } = useToast();
-
-  // Confirmation dialog state
   const [confirmationDialog, setConfirmationDialog] = useState<{
     open: boolean;
     type: 'cancel' | 'changePlan';
@@ -70,154 +79,93 @@ export default function SubscriptionsPage() {
     subscription: null
   });
 
-  // Fetch data
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch subscriptions
-      const subscriptionsResult = await subscriptionsApi.search({
-        limit: pagination.limit,
-        offset: (pagination.page - 1) * pagination.limit
-      });
-      
-      if (subscriptionsResult.success && subscriptionsResult.data) {
-        console.log('Subscriptions API response:', subscriptionsResult);
-        
-        let subscriptionsArray: any[] = [];
-        let paginationData: any = {};
-        
-        // Handle different possible response structures
-        if (Array.isArray(subscriptionsResult.data)) {
-          // Direct array response
-          subscriptionsArray = subscriptionsResult.data;
-          paginationData = (subscriptionsResult as any).pagination || {};
-        } else if (subscriptionsResult.data && Array.isArray(subscriptionsResult.data.data)) {
-          // Wrapped response with data property
-          subscriptionsArray = subscriptionsResult.data.data;
-          paginationData = subscriptionsResult.data.pagination || {};
-        } else {
-          console.error('Invalid subscriptions data structure:', subscriptionsResult.data);
-          setSubscriptions([]);
-          return;
-        }
-        
-        // Convert API subscriptions to UI subscriptions
-        const uiSubscriptions: Subscription[] = subscriptionsArray.map((apiSub: ApiSubscription) => ({
-          id: apiSub.id,
-          id: apiSub.id,
-          merchantId: apiSub.merchantId,
-          planId: apiSub.planId,
-          status: apiSub.status as 'trial' | 'active' | 'past_due' | 'cancelled' | 'paused',
-          currentPeriodStart: new Date(apiSub.currentPeriodStart || apiSub.startDate),
-          currentPeriodEnd: new Date(apiSub.currentPeriodEnd || apiSub.endDate || new Date()),
-          trialStart: apiSub.trialStart ? new Date(apiSub.trialStart) : undefined,
-          trialEnd: apiSub.trialEnd ? new Date(apiSub.trialEnd) : undefined,
-          cancelAtPeriodEnd: apiSub.cancelAtPeriodEnd || false,
-          canceledAt: apiSub.canceledAt ? new Date(apiSub.canceledAt) : undefined,
-          cancelReason: apiSub.cancelReason,
-          amount: apiSub.amount,
-          currency: apiSub.currency,
-          interval: apiSub.interval as 'month' | 'quarter' | 'year',
-          intervalCount: apiSub.intervalCount || 1,
-          period: apiSub.period as 1 | 3 | 12,
-          discount: apiSub.discount || 0,
-          savings: apiSub.savings || 0,
-          createdAt: new Date(apiSub.createdAt),
-          updatedAt: new Date(apiSub.updatedAt),
-          merchant: apiSub.merchant,
-          plan: apiSub.plan
-        }));
-        
-        setSubscriptions(uiSubscriptions);
-        setPagination(prev => ({
-          ...prev,
-          total: paginationData.total || 0
-        }));
-      } else {
-        console.error('Failed to fetch subscriptions:', subscriptionsResult);
-        setSubscriptions([]);
-      }
+  // ============================================================================
+  // DATA FETCHING - Clean & Simple with Deduplication
+  // ============================================================================
+  
+  const filters = useMemo(() => ({
+    page,
+    limit,
+    offset: (page - 1) * limit
+  }), [page, limit]);
 
-      // Fetch plans
-      const plansResult = await plansApi.getPlans();
-      
-      if (plansResult.success && plansResult.data) {
-        console.log('Plans data:', plansResult.data);
-        const plansData = plansResult.data as any;
-        
-        if (Array.isArray(plansData)) {
+  const { data, loading, error, refetch } = useSubscriptionsData({ filters });
+  
+  console.log('📊 Subscriptions Page - Data state:', {
+    hasData: !!data,
+    subscriptionsCount: data?.subscriptions?.length || 0,
+    loading,
+    error: error?.message
+  });
+
+  // Fetch plans and merchants for forms
+  React.useEffect(() => {
+    const fetchFormData = async () => {
+      try {
+        const [plansResult, merchantsResult] = await Promise.all([
+          plansApi.getPlans(),
+          merchantsApi.getMerchants()
+        ]);
+
+        if (plansResult.success && plansResult.data) {
+          const plansData = Array.isArray(plansResult.data) ? plansResult.data : plansResult.data.plans || [];
           setPlans(plansData);
-        } else if (plansData && Array.isArray(plansData.plans)) {
-          setPlans(plansData.plans);
-        } else {
-          console.error('Invalid plans data structure:', plansData);
-          setPlans([]);
         }
-      } else {
-        console.error('Failed to fetch plans:', plansResult);
-        setPlans([]);
-      }
 
-      // Fetch merchants
-      const merchantsResult = await merchantsApi.getMerchants();
-      
-      if (merchantsResult.success && merchantsResult.data) {
-        console.log('Merchants data:', merchantsResult.data);
-        // Convert API merchants to UI merchants
-        const merchantsData = merchantsResult.data as { merchants: any[] };
-        
-        if (merchantsData && merchantsData.merchants && Array.isArray(merchantsData.merchants)) {
-          const uiMerchants: Merchant[] = merchantsData.merchants.map((apiMerchant: any) => ({
-            ...apiMerchant,
-            outletsCount: apiMerchant.outletsCount || 0,
-            usersCount: apiMerchant.usersCount || 0,
-            productsCount: apiMerchant.productsCount || 0
-          }));
-          setMerchants(uiMerchants);
-        } else {
-          console.error('Invalid merchants data structure:', merchantsData);
-          setMerchants([]);
+        if (merchantsResult.success && merchantsResult.data) {
+          const merchantsData = merchantsResult.data.merchants || [];
+          setMerchants(merchantsData);
         }
-      } else {
-        console.error('Failed to fetch merchants:', merchantsResult);
-        setMerchants([]);
+      } catch (error) {
+        console.error('Error fetching form data:', error);
       }
+    };
 
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
+    fetchFormData();
   }, []);
 
-  const handleView = (subscription: Subscription) => {
-    // Navigate to subscription detail page
-    window.location.href = `/admin/subscriptions/${subscription.id}`;
-  };
+  // ============================================================================
+  // URL UPDATE HELPER
+  // ============================================================================
+  
+  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== '') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
+    
+    const newURL = `${pathname}?${params.toString()}`;
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
-  const handleEdit = (subscription: Subscription) => {
-    // Open edit dialog
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+  
+  const handlePageChange = useCallback((newPage: number) => {
+    updateURL({ page: newPage });
+  }, [updateURL]);
+
+  const handleView = useCallback((subscription: Subscription) => {
+    router.push(`/subscriptions/${subscription.id}`);
+  }, [router]);
+
+  const handleEdit = useCallback((subscription: Subscription) => {
     setSelectedSubscription(subscription);
     setShowEditDialog(true);
-  };
+  }, []);
 
-  const handleEditSave = async (data: any) => {
+  const handleEditSave = useCallback(async (editData: any) => {
     try {
       setSubmitting(true);
+      console.log('Updating subscription with data:', editData);
       
-      // Here you would make an API call to update the subscription
-      console.log('Updating subscription with data:', data);
-      
-      // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Refresh the subscriptions list
-      await fetchData();
+      await refetch(); // Refresh data
       
       setShowEditDialog(false);
       setSelectedSubscription(null);
@@ -235,32 +183,29 @@ export default function SubscriptionsPage() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [refetch, toastSuccess, toastError]);
 
-  const handleCancel = (subscription: Subscription) => {
+  const handleCancel = useCallback((subscription: Subscription) => {
     setConfirmationDialog({
       open: true,
       type: 'cancel',
       subscription
     });
-  };
+  }, []);
 
-
-
-  const handleChangePlan = (subscription: Subscription, newPlanId: number, period: BillingPeriod) => {
+  const handleChangePlan = useCallback((subscription: Subscription, newPlanId: number, period: BillingPeriod) => {
     setConfirmationDialog({
       open: true,
       type: 'changePlan',
       subscription,
       data: { newPlanId, period }
     });
-  };
+  }, []);
 
-  const handleConfirmationConfirm = async (reason: string) => {
-    const { type, subscription, data } = confirmationDialog;
+  const handleConfirmationConfirm = useCallback(async (reason: string) => {
+    const { type, subscription, data: confirmData } = confirmationDialog;
     if (!subscription) return;
 
-    // Close dialog immediately to prevent double submission
     setConfirmationDialog({ open: false, type: 'cancel', subscription: null });
 
     try {
@@ -271,14 +216,14 @@ export default function SubscriptionsPage() {
           result = await subscriptionsApi.cancel(subscription.id, reason);
           break;
         case 'changePlan':
-          result = await subscriptionsApi.changePlan(subscription.id, data.newPlanId);
+          result = await subscriptionsApi.changePlan(subscription.id, confirmData.newPlanId);
           break;
         default:
           return;
       }
       
       if (result.success) {
-        await fetchData(); // Refresh data
+        await refetch(); // Refresh data
         toastSuccess(
           'Operation Successful',
           `Subscription ${type === 'cancel' ? 'cancelled' : 'plan changed'} successfully`
@@ -296,37 +241,29 @@ export default function SubscriptionsPage() {
         `Error ${type}ing subscription. Please try again.`
       );
     }
-  };
+  }, [confirmationDialog, refetch, toastSuccess, toastError]);
 
-  const handleConfirmationCancel = () => {
+  const handleConfirmationCancel = useCallback(() => {
     setConfirmationDialog({ open: false, type: 'cancel', subscription: null });
-  };
+  }, []);
 
-  const handleExtend = (subscription: Subscription) => {
-    // Open extension modal
-    // This would typically open a modal component
+  const handleExtend = useCallback((subscription: Subscription) => {
     console.log('Extend subscription:', subscription.id);
-  };
+  }, []);
 
-
-  const handlePageChange = (page: number) => {
-    setPagination(prev => ({ ...prev, page }));
-    // In a real implementation, you'd fetch data for the new page
-  };
-
-  const handleCreateNew = () => {
+  const handleCreateNew = useCallback(() => {
     setShowCreateDialog(true);
-  };
+  }, []);
 
-  const handleCreateSubmit = async (data: any) => {
+  const handleCreateSubmit = useCallback(async (createData: any) => {
     try {
       setSubmitting(true);
       
-      const result = await subscriptionsApi.create(data);
+      const result = await subscriptionsApi.create(createData);
 
       if (result.success) {
         setShowCreateDialog(false);
-        await fetchData(); // Refresh data
+        await refetch(); // Refresh data
         toastSuccess(
           'Subscription Created',
           'New subscription has been created successfully'
@@ -346,15 +283,64 @@ export default function SubscriptionsPage() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [refetch, toastSuccess, toastError]);
 
-  const handleCreateCancel = () => {
+  const handleCreateCancel = useCallback(() => {
     setShowCreateDialog(false);
-  };
+  }, []);
+
+  // ============================================================================
+  // TRANSFORM DATA FOR UI
+  // ============================================================================
+
+  const subscriptions = data?.subscriptions || [];
+  const totalSubscriptions = data?.total || 0;
+
+  // Transform subscriptions for UI
+  const uiSubscriptions: Subscription[] = useMemo(() => {
+    return subscriptions.map((apiSub: any) => ({
+      id: apiSub.id,
+      merchantId: apiSub.merchantId,
+      planId: apiSub.planId,
+      status: apiSub.status as any,
+      billingInterval: apiSub.billingInterval || apiSub.interval || 'month',
+      currentPeriodStart: new Date(apiSub.currentPeriodStart || apiSub.startDate),
+      currentPeriodEnd: new Date(apiSub.currentPeriodEnd || apiSub.endDate || new Date()),
+      amount: apiSub.amount,
+      createdAt: new Date(apiSub.createdAt),
+      updatedAt: new Date(apiSub.updatedAt),
+      merchant: apiSub.merchant || {
+        id: apiSub.merchantId,
+        name: 'Unknown Merchant',
+        email: '',
+        subscriptionStatus: 'active'
+      },
+      plan: apiSub.plan || {
+        id: apiSub.planId,
+        name: 'Unknown Plan',
+        description: '',
+        basePrice: apiSub.amount || 0,
+        currency: 'USD',
+        trialDays: 0,
+        limits: { outlets: 0, users: 0, products: 0, customers: 0, orders: 0 },
+        features: [],
+        isActive: true,
+        isPopular: false,
+        sortOrder: 0,
+        pricing: { monthly: { price: 0, discount: 0, savings: 0 }, quarterly: { price: 0, discount: 0, savings: 0 }, yearly: { price: 0, discount: 0, savings: 0 } },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    }));
+  }, [subscriptions]);
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   return (
-    <PageWrapper>
-      <PageHeader>
+    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
             <PageTitle subtitle="Manage merchant subscriptions with modern pricing tiers (Monthly, Quarterly, Yearly)">
@@ -371,7 +357,7 @@ export default function SubscriptionsPage() {
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => window.location.href = '/plans'}
+              onClick={() => router.push('/plans')}
             >
               <Filter className="w-4 h-4 mr-2" />
               Manage Plans
@@ -384,16 +370,17 @@ export default function SubscriptionsPage() {
         </div>
       </PageHeader>
 
-      <PageContent>
+      {/* Fixed Stats Section */}
+      <div className="flex-shrink-0 space-y-4">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Total Subscriptions</CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pagination.total}</div>
+              <div className="text-2xl font-bold">{totalSubscriptions}</div>
               <p className="text-xs text-muted-foreground">
                 All time subscriptions
               </p>
@@ -406,7 +393,7 @@ export default function SubscriptionsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {subscriptions.filter(s => s.status === 'active').length}
+                {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'active').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Currently active
@@ -420,7 +407,7 @@ export default function SubscriptionsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {subscriptions.filter(s => s.status === 'trial').length}
+                {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'trial').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 In trial period
@@ -434,7 +421,7 @@ export default function SubscriptionsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                {subscriptions.filter(s => s.status === 'cancelled').length}
+                {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'cancelled').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Cancelled or expired
@@ -442,10 +429,12 @@ export default function SubscriptionsPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
 
-        {/* Subscriptions List */}
+      {/* Scrollable Table Section */}
+      <div className="flex-1 min-h-0 overflow-auto mt-4">
         <SubscriptionList
-          subscriptions={subscriptions}
+          subscriptions={uiSubscriptions}
           plans={plans}
           merchants={merchants}
           onView={handleView}
@@ -455,13 +444,13 @@ export default function SubscriptionsPage() {
           onExtend={handleExtend}
           loading={loading}
           pagination={{
-            page: pagination.page,
-            limit: pagination.limit,
-            total: pagination.total,
+            page,
+            limit,
+            total: totalSubscriptions,
             onPageChange: handlePageChange
           }}
         />
-      </PageContent>
+      </div>
 
       {/* Create Subscription Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -529,8 +518,6 @@ export default function SubscriptionsPage() {
         onSave={handleEditSave}
         loading={submitting}
       />
-
-      {/* Toast Container */}
     </PageWrapper>
   );
 }

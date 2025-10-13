@@ -20,9 +20,16 @@ interface RevenueData {
 interface OrderChartProps {
   data: RevenueData[];
   loading?: boolean;
+  legendLabel?: string;
+  tooltipLabel?: string;
 }
 
-export const OrderChart: React.FC<OrderChartProps> = ({ data, loading = false }) => {
+export const OrderChart: React.FC<OrderChartProps> = ({ 
+  data, 
+  loading = false, 
+  legendLabel = "Rental Orders",
+  tooltipLabel = "orders"
+}) => {
   if (loading) {
     return (
       <div className="h-64 flex items-center justify-center">
@@ -39,15 +46,15 @@ export const OrderChart: React.FC<OrderChartProps> = ({ data, loading = false })
     );
   }
 
-  // Transform data for Recharts - use actual order count
+  // Transform data for Recharts - use actual count
   const chartData = data.map(item => ({
     period: item.period,
-    'Rental Orders': item.actual,
+    [legendLabel]: item.actual,
   }));
 
   // Custom tooltip formatter
   const formatTooltip = (value: number, name: string) => {
-    return [`${value.toLocaleString()} orders`, 'Orders'];
+    return [`${value.toLocaleString()} ${tooltipLabel}`, legendLabel];
   };
 
   return (
@@ -75,7 +82,7 @@ export const OrderChart: React.FC<OrderChartProps> = ({ data, loading = false })
         <Legend />
         <Line 
           type="monotone" 
-          dataKey="Rental Orders" 
+          dataKey={legendLabel} 
           stroke="#3B82F6" 
           strokeWidth={2}
           dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}

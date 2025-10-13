@@ -79,7 +79,7 @@ export const Orders = React.memo(function Orders({
       </div>
       
       {/* Fixed Pagination Section - Always at Bottom */}
-      {data.total > 0 && (
+      {data.total > 0 && data.total > (data.limit || 20) && (
         <div className="flex-shrink-0 py-4">
           <Pagination 
             currentPage={data.currentPage}

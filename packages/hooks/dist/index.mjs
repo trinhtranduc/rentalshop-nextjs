@@ -172,8 +172,8 @@ function useSubscriptionStatusInfo(options = {}) {
     }
     try {
       setLoading(true);
-      const { subscriptionsApi } = await import("@rentalshop/utils");
-      const response = await subscriptionsApi.getCurrentUserSubscriptionStatus();
+      const { subscriptionsApi: subscriptionsApi2 } = await import("@rentalshop/utils");
+      const response = await subscriptionsApi2.getCurrentUserSubscriptionStatus();
       if (response.success && response.data) {
         const data = response.data;
         const computedStatus = data.status || "UNKNOWN";
@@ -711,6 +711,84 @@ function useCustomersData(options) {
   return result;
 }
 
+// src/hooks/useMerchantsData.ts
+import { merchantsApi } from "@rentalshop/utils";
+function useMerchantsData(options) {
+  const { filters, enabled = true } = options;
+  const result = useDedupedApi({
+    filters,
+    fetchFn: async (filters2) => {
+      console.log("\u{1F3E2} useMerchantsData: Fetching with filters:", filters2);
+      const response = await merchantsApi.getMerchants();
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch merchants");
+      }
+      const apiData = response.data;
+      const merchantsArray = apiData.merchants || [];
+      console.log("\u{1F3E2} useMerchantsData - API Response:", {
+        hasData: !!apiData,
+        hasMerchantsArray: !!merchantsArray,
+        merchantsCount: merchantsArray.length,
+        firstMerchant: merchantsArray[0]
+      });
+      let filteredMerchants = merchantsArray;
+      if (filters2.search) {
+        const searchLower = filters2.search.toLowerCase();
+        filteredMerchants = filteredMerchants.filter(
+          (m) => m.name?.toLowerCase().includes(searchLower) || m.email?.toLowerCase().includes(searchLower)
+        );
+      }
+      if (filters2.status && filters2.status !== "all") {
+        filteredMerchants = filteredMerchants.filter(
+          (m) => filters2.status === "active" ? m.isActive : !m.isActive
+        );
+      }
+      if (filters2.plan && filters2.plan !== "all") {
+        filteredMerchants = filteredMerchants.filter(
+          (m) => String(m.planId) === filters2.plan
+        );
+      }
+      if (filters2.sortBy) {
+        filteredMerchants.sort((a, b) => {
+          const aVal = a[filters2.sortBy];
+          const bVal = b[filters2.sortBy];
+          const order = filters2.sortOrder === "desc" ? -1 : 1;
+          return (aVal > bVal ? 1 : -1) * order;
+        });
+      }
+      const page = filters2.page || 1;
+      const limit = filters2.limit || 10;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMerchants = filteredMerchants.slice(startIndex, endIndex);
+      const total = filteredMerchants.length;
+      const totalPages = Math.ceil(total / limit);
+      const transformed = {
+        merchants: paginatedMerchants,
+        total,
+        page,
+        currentPage: page,
+        limit,
+        hasMore: endIndex < total,
+        totalPages
+      };
+      console.log("\u2705 useMerchantsData: Success:", {
+        merchantsCount: transformed.merchants.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      return transformed;
+    },
+    enabled,
+    staleTime: 3e4,
+    // 30 seconds cache
+    cacheTime: 3e5,
+    // 5 minutes
+    refetchOnWindowFocus: false
+  });
+  return result;
+}
+
 // src/hooks/useOrdersData.ts
 import { ordersApi } from "@rentalshop/utils";
 function useOrdersData(options) {
@@ -805,6 +883,166 @@ function usePagination(config = {}) {
     resetPagination,
     updatePaginationFromResponse
   };
+}
+
+// src/hooks/usePaymentsData.ts
+import { paymentsApi } from "@rentalshop/utils";
+function usePaymentsData(options) {
+  const { filters, enabled = true } = options;
+  const result = useDedupedApi({
+    filters,
+    fetchFn: async (filters2) => {
+      console.log("\u{1F4B0} usePaymentsData: Fetching with filters:", filters2);
+      const response = await paymentsApi.getPayments();
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch payments");
+      }
+      const apiData = response.data;
+      const paymentsArray = Array.isArray(apiData) ? apiData : apiData.payments || [];
+      console.log("\u{1F4B0} usePaymentsData - API Response:", {
+        hasData: !!apiData,
+        isArray: Array.isArray(apiData),
+        paymentsCount: paymentsArray.length,
+        firstPayment: paymentsArray[0]
+      });
+      let filteredPayments = paymentsArray;
+      if (filters2.search) {
+        const searchLower = filters2.search.toLowerCase();
+        filteredPayments = filteredPayments.filter(
+          (p) => p.subscription?.merchant?.name?.toLowerCase().includes(searchLower) || p.invoiceNumber?.toLowerCase().includes(searchLower) || p.transactionId?.toLowerCase().includes(searchLower)
+        );
+      }
+      if (filters2.status && filters2.status !== "all") {
+        filteredPayments = filteredPayments.filter(
+          (p) => p.status?.toLowerCase() === filters2.status?.toLowerCase()
+        );
+      }
+      if (filters2.dateFilter && filters2.dateFilter !== "all") {
+        const now = /* @__PURE__ */ new Date();
+        filteredPayments = filteredPayments.filter((p) => {
+          const paymentDate = new Date(p.createdAt);
+          if (filters2.dateFilter === "today") {
+            return now.toDateString() === paymentDate.toDateString();
+          } else if (filters2.dateFilter === "this_month") {
+            return now.getMonth() === paymentDate.getMonth() && now.getFullYear() === paymentDate.getFullYear();
+          } else if (filters2.dateFilter === "this_year") {
+            return now.getFullYear() === paymentDate.getFullYear();
+          }
+          return true;
+        });
+      }
+      if (filters2.sortBy) {
+        filteredPayments.sort((a, b) => {
+          const aVal = a[filters2.sortBy];
+          const bVal = b[filters2.sortBy];
+          const order = filters2.sortOrder === "desc" ? -1 : 1;
+          return (aVal > bVal ? 1 : -1) * order;
+        });
+      }
+      const page = filters2.page || 1;
+      const limit = filters2.limit || 20;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedPayments = filteredPayments.slice(startIndex, endIndex);
+      const total = filteredPayments.length;
+      const totalPages = Math.ceil(total / limit);
+      const transformed = {
+        payments: paginatedPayments,
+        total,
+        page,
+        currentPage: page,
+        limit,
+        hasMore: endIndex < total,
+        totalPages
+      };
+      console.log("\u2705 usePaymentsData: Success:", {
+        paymentsCount: transformed.payments.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      return transformed;
+    },
+    enabled,
+    staleTime: 3e4,
+    // 30 seconds cache
+    cacheTime: 3e5,
+    // 5 minutes
+    refetchOnWindowFocus: false
+  });
+  return result;
+}
+
+// src/hooks/usePlansData.ts
+import { plansApi } from "@rentalshop/utils";
+function usePlansData(options) {
+  const { filters, enabled = true } = options;
+  const result = useDedupedApi({
+    filters,
+    fetchFn: async (filters2) => {
+      console.log("\u{1F4CB} usePlansData: Fetching with filters:", filters2);
+      const response = await plansApi.getPlans();
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch plans");
+      }
+      const apiData = response.data;
+      const plansArray = Array.isArray(apiData) ? apiData : apiData.plans || [];
+      console.log("\u{1F4CB} usePlansData - API Response:", {
+        hasData: !!apiData,
+        isArray: Array.isArray(apiData),
+        plansCount: plansArray.length,
+        firstPlan: plansArray[0]
+      });
+      let filteredPlans = plansArray;
+      if (filters2.search) {
+        const searchLower = filters2.search.toLowerCase();
+        filteredPlans = filteredPlans.filter(
+          (p) => p.name?.toLowerCase().includes(searchLower) || p.description?.toLowerCase().includes(searchLower)
+        );
+      }
+      if (filters2.status && filters2.status !== "all") {
+        filteredPlans = filteredPlans.filter(
+          (p) => filters2.status === "active" ? p.isActive : !p.isActive
+        );
+      }
+      if (filters2.sortBy) {
+        filteredPlans.sort((a, b) => {
+          const aVal = a[filters2.sortBy];
+          const bVal = b[filters2.sortBy];
+          const order = filters2.sortOrder === "desc" ? -1 : 1;
+          return (aVal > bVal ? 1 : -1) * order;
+        });
+      }
+      const page = filters2.page || 1;
+      const limit = filters2.limit || 10;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedPlans = filteredPlans.slice(startIndex, endIndex);
+      const total = filteredPlans.length;
+      const totalPages = Math.ceil(total / limit);
+      const transformed = {
+        plans: paginatedPlans,
+        total,
+        page,
+        currentPage: page,
+        limit,
+        hasMore: endIndex < total,
+        totalPages
+      };
+      console.log("\u2705 usePlansData: Success:", {
+        plansCount: transformed.plans.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      return transformed;
+    },
+    enabled,
+    staleTime: 3e4,
+    // 30 seconds cache
+    cacheTime: 3e5,
+    // 5 minutes
+    refetchOnWindowFocus: false
+  });
+  return result;
 }
 
 // src/hooks/useProductAvailability.ts
@@ -910,6 +1148,67 @@ function useProductsData(options) {
       };
       console.log("\u2705 useProductsData: Success:", {
         productsCount: transformed.products.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      return transformed;
+    },
+    enabled,
+    staleTime: 3e4,
+    // 30 seconds cache
+    cacheTime: 3e5,
+    // 5 minutes
+    refetchOnWindowFocus: false
+  });
+  return result;
+}
+
+// src/hooks/useSubscriptionsData.ts
+import { subscriptionsApi } from "@rentalshop/utils";
+function useSubscriptionsData(options) {
+  const { filters, enabled = true } = options;
+  const result = useDedupedApi({
+    filters,
+    fetchFn: async (filters2) => {
+      console.log("\u{1F4B3} useSubscriptionsData: Fetching with filters:", filters2);
+      const response = await subscriptionsApi.search({
+        limit: filters2.limit || 20,
+        offset: filters2.offset || (filters2.page ? (filters2.page - 1) * (filters2.limit || 20) : 0)
+      });
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch subscriptions");
+      }
+      const apiData = response.data;
+      let subscriptionsArray = [];
+      let total = 0;
+      console.log("\u{1F4B3} useSubscriptionsData - API Response:", {
+        hasData: !!apiData,
+        isArray: Array.isArray(apiData),
+        hasDataProperty: apiData && Array.isArray(apiData.data)
+      });
+      if (Array.isArray(apiData)) {
+        subscriptionsArray = apiData;
+        total = apiData.length;
+      } else if (apiData && Array.isArray(apiData.data)) {
+        subscriptionsArray = apiData.data;
+        total = apiData.pagination?.total || apiData.data.length;
+      } else {
+        console.error("Invalid subscriptions data structure:", apiData);
+      }
+      const page = filters2.page || 1;
+      const limit = filters2.limit || 20;
+      const totalPages = Math.ceil(total / limit);
+      const transformed = {
+        subscriptions: subscriptionsArray,
+        total,
+        page,
+        currentPage: page,
+        limit,
+        hasMore: page < totalPages,
+        totalPages
+      };
+      console.log("\u2705 useSubscriptionsData: Success:", {
+        subscriptionsCount: transformed.subscriptions.length,
         total: transformed.total,
         page: transformed.page
       });
@@ -1490,16 +1789,20 @@ export {
   useCustomersData,
   useDedupedApi,
   useErrorHandler,
+  useMerchantsData,
   useOptimisticNavigation,
   useOrdersData,
   useOutletsData,
   useOutletsWithFilters,
   usePagination,
+  usePaymentsData,
+  usePlansData,
   useProductAvailability,
   useProductsData,
   useSimpleErrorHandler,
   useSubscriptionError,
   useSubscriptionStatusInfo,
+  useSubscriptionsData,
   useThrottledSearch,
   useToastHandler,
   useUserRole,
