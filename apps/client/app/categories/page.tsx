@@ -7,6 +7,7 @@ import {
   PageTitle,
   PageContent,
   Categories,
+  CategoriesLoading,
   useToast,
   Dialog,
   DialogContent,
@@ -192,8 +193,20 @@ export default function CategoriesPage() {
   }, [data, page, limit]);
 
   // ============================================================================
-  // RENDER
+  // RENDER - Show skeleton when loading initial data
   // ============================================================================
+
+  if (loading && !data) {
+    return (
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
+          <PageTitle>Categories</PageTitle>
+          <p className="text-sm text-gray-600">Manage your product categories</p>
+        </PageHeader>
+        <CategoriesLoading />
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
