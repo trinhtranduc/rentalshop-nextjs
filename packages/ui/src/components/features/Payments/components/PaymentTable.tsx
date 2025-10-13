@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
+import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
-  Badge,
   Button,
   StatusBadge,
   DropdownMenu,
@@ -14,76 +13,109 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@rentalshop/ui';
+} from '../../../ui';
 import { 
-  Package, 
-  Users, 
-  CreditCard,
-  Star,
-  Eye,
+  Eye, 
   Edit,
-  Settings,
-  ChevronUp,
-  ChevronDown,
-  Trash2,
-  MoreVertical
+  Download,
+  CreditCard,
+  MoreVertical,
+  RefreshCcw
 } from 'lucide-react';
-import type { Plan } from '@rentalshop/types';
 
-interface PlanTableProps {
-  plans: Plan[];
-  onView?: (plan: Plan) => void;
-  onEdit?: (plan: Plan) => void;
-  onDelete?: (plan: Plan) => void;
-  onToggleStatus?: (plan: Plan) => void;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  onSort?: (field: string) => void;
+interface Payment {
+  id: number;
+  subscriptionId: string;
+  amount: number;
+  currency: string;
+  method: string;
+  status: string;
+  transactionId?: string;
+  invoiceNumber?: string;
+  description?: string;
+  failureReason?: string;
+  processedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  subscription?: {
+    id: string;
+    merchantId: string;
+    planId: string;
+    status: string;
+    amount: number;
+    currency: string;
+    merchant?: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    plan?: {
+      id: string;
+      name: string;
+      price: number;
+      currency: string;
+    };
+    billingCycle?: {
+      id: string;
+      name: string;
+      months: number;
+      discount: number;
+    };
+  };
+}
+
+interface PaymentTableProps {
+  payments: Payment[];
+  onView?: (payment: Payment) => void;
+  onDownloadReceipt?: (payment: Payment) => void;
+  onRefund?: (payment: Payment) => void;
   loading?: boolean;
 }
 
-export const PlanTable: React.FC<PlanTableProps> = ({
-  plans,
+export function PaymentTable({ 
+  payments, 
   onView,
-  onEdit,
-  onDelete,
-  onToggleStatus,
-  sortBy = 'sortOrder',
-  sortOrder = 'asc',
-  onSort,
-  loading = false
-}) => {
+  onDownloadReceipt,
+  onRefund,
+  loading = false 
+}: PaymentTableProps) {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const formatCurrency = (price: number, currency: string) => {
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || 'USD'
-    }).format(price);
+      currency: currency
+    }).format(amount);
   };
 
-  const getLimitText = (limit: number | undefined) => {
-    if (limit === undefined || limit === null) return 'N/A';
-    return limit === -1 ? 'Unlimited' : limit.toString();
-  };
-
-  const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
   };
 
-  const handleSort = (field: string) => {
-    if (onSort) {
-      onSort(field);
-    }
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'completed': 'active',
+      'pending': 'warning',
+      'failed': 'danger',
+      'refunded': 'inactive'
+    };
+    
+    return <StatusBadge status={statusMap[status.toLowerCase()] || 'inactive'} />;
   };
 
-  const getSortIcon = (field: string) => {
-    if (sortBy !== field) return null;
-    return sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />;
+  const getPaymentMethodText = (method: string) => {
+    const methodConfig: Record<string, string> = {
+      'credit_card': 'Credit Card',
+      'bank_transfer': 'Bank Transfer',
+      'paypal': 'PayPal',
+      'stripe': 'Stripe'
+    };
+    
+    return methodConfig[method.toLowerCase()] || method;
   };
 
   if (loading) {
@@ -100,15 +132,15 @@ export const PlanTable: React.FC<PlanTableProps> = ({
     );
   }
 
-  if (plans.length === 0) {
+  if (payments.length === 0) {
     return (
       <Card className="shadow-sm border-border">
         <CardContent className="text-center py-12">
           <div className="text-text-tertiary">
-            <div className="text-4xl mb-4">📋</div>
-            <h3 className="text-lg font-medium mb-2">No plans found</h3>
+            <div className="text-4xl mb-4">💳</div>
+            <h3 className="text-lg font-medium mb-2">No payments found</h3>
             <p className="text-sm">
-              Get started by creating your first subscription plan.
+              Try adjusting your search or filter criteria.
             </p>
           </div>
         </CardContent>
@@ -118,6 +150,9 @@ export const PlanTable: React.FC<PlanTableProps> = ({
 
   return (
     <Card className="shadow-sm border-border flex flex-col h-full">
+      <CardHeader>
+        <CardTitle>Payments</CardTitle>
+      </CardHeader>
       <CardContent className="p-0 flex-1">
         {/* Table with scroll */}
         <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
@@ -126,19 +161,22 @@ export const PlanTable: React.FC<PlanTableProps> = ({
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Plan Name
+                  Merchant
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Price & Billing
+                  Plan
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Limits
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Method
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Created At
+                  Date
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Actions
@@ -147,70 +185,60 @@ export const PlanTable: React.FC<PlanTableProps> = ({
             </thead>
             {/* Table Body */}
             <tbody className="bg-bg-card divide-y divide-border">
-              {plans.map((plan) => (
-                <tr key={plan.id} className="hover:bg-bg-secondary transition-colors">
-                  {/* Plan Name with Icon */}
+              {payments.map((payment) => (
+                <tr key={payment.id} className="hover:bg-bg-secondary transition-colors">
+                  {/* Merchant with Icon */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center">
-                        <Package className="w-5 h-5 text-white" />
+                        <CreditCard className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm font-medium text-text-primary">
-                            {plan.name}
+                        <div className="text-sm font-medium text-text-primary">
+                          {payment.subscription?.merchant?.name || 'Unknown Merchant'}
+                        </div>
+                        {payment.invoiceNumber && (
+                          <div className="text-xs text-text-tertiary">
+                            INV: {payment.invoiceNumber}
                           </div>
-                          {plan.isPopular && (
-                            <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                              <Star className="w-3 h-3 mr-1" />
-                              Popular
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-sm text-text-tertiary mt-1">
-                          {plan.description}
-                        </div>
+                        )}
                       </div>
-                    </div>
-                  </td>
-                  {/* Price */}
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="text-sm font-medium text-text-primary">
-                        {formatCurrency(plan.basePrice, plan.currency)}
-                        <span className="text-sm text-text-secondary font-normal">/month</span>
-                      </div>
-                      {plan.trialDays > 0 && (
-                        <div className="text-xs text-action-primary mt-1">
-                          {plan.trialDays}-day trial
-                        </div>
-                      )}
                     </div>
                   </td>
                   
-                  {/* Limits - Compact */}
+                  {/* Plan */}
                   <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
-                      {getLimitText(plan.limits.outlets)} outlets
+                      {payment.subscription?.plan?.name || 'Unknown Plan'}
                     </div>
-                    <div className="text-sm text-text-secondary">
-                      {getLimitText(plan.limits.users)} users
+                  </td>
+                  
+                  {/* Amount */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-text-primary">
+                      {formatCurrency(payment.amount, payment.currency)}
+                    </div>
+                  </td>
+                  
+                  {/* Payment Method */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {getPaymentMethodText(payment.method)}
                     </div>
                   </td>
                   
                   {/* Status */}
                   <td className="px-6 py-4">
-                    <StatusBadge 
-                      status={plan.isActive ? 'active' : 'inactive'}
-                    />
+                    {getStatusBadge(payment.status)}
                   </td>
                   
-                  {/* Created Date */}
+                  {/* Date */}
                   <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
-                      {formatDate(plan.createdAt)}
+                      {formatDate(payment.createdAt)}
                     </div>
                   </td>
+                  
                   {/* Actions - Dropdown Menu */}
                   <td className="px-6 py-4 text-right">
                     <DropdownMenu>
@@ -218,20 +246,20 @@ export const PlanTable: React.FC<PlanTableProps> = ({
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => setOpenMenuId(openMenuId === plan.id ? null : plan.id)}
+                          onClick={() => setOpenMenuId(openMenuId === payment.id ? null : payment.id)}
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent 
                         align="end"
-                        open={openMenuId === plan.id}
-                        onOpenChange={(open: boolean) => setOpenMenuId(open ? plan.id : null)}
+                        open={openMenuId === payment.id}
+                        onOpenChange={(open: boolean) => setOpenMenuId(open ? payment.id : null)}
                       >
                         {onView && (
                           <DropdownMenuItem 
                             onClick={() => {
-                              onView(plan);
+                              onView(payment);
                               setOpenMenuId(null);
                             }}
                           >
@@ -239,40 +267,29 @@ export const PlanTable: React.FC<PlanTableProps> = ({
                             View Details
                           </DropdownMenuItem>
                         )}
-                        {onEdit && (
+                        {onDownloadReceipt && (
                           <DropdownMenuItem 
                             onClick={() => {
-                              onEdit(plan);
+                              onDownloadReceipt(payment);
                               setOpenMenuId(null);
                             }}
                           >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Plan
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Receipt
                           </DropdownMenuItem>
                         )}
-                        {onToggleStatus && (
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              onToggleStatus(plan);
-                              setOpenMenuId(null);
-                            }}
-                          >
-                            <Settings className="h-4 w-4 mr-2" />
-                            {plan.isActive ? 'Deactivate' : 'Activate'}
-                          </DropdownMenuItem>
-                        )}
-                        {onDelete && (
+                        {onRefund && payment.status === 'completed' && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               onClick={() => {
-                                onDelete(plan);
+                                onRefund(payment);
                                 setOpenMenuId(null);
                               }}
                               className="text-action-danger focus:text-action-danger"
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete Plan
+                              <RefreshCcw className="h-4 w-4 mr-2" />
+                              Refund Payment
                             </DropdownMenuItem>
                           </>
                         )}
@@ -287,4 +304,5 @@ export const PlanTable: React.FC<PlanTableProps> = ({
       </CardContent>
     </Card>
   );
-};
+}
+

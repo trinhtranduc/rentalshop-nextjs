@@ -86,6 +86,15 @@ export const Users: React.FC<UsersProps> = ({
   // User role check for permissions
   const { canManageUsers } = useUserRole(currentUser);
   
+  // Debug: Log received data
+  console.log('👥 Users Component - Received data:', {
+    hasData: !!data,
+    usersCount: data?.users?.length || 0,
+    total: data?.total,
+    page: data?.page,
+    filters
+  });
+  
   // Handler for export button
   const handleExport = () => {
     if (onExport) {
@@ -106,6 +115,14 @@ export const Users: React.FC<UsersProps> = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
+  
+  console.log('👥 Users Component - Processed data:', {
+    usersCount: users.length,
+    totalUsers,
+    currentPage,
+    totalPages,
+    limit
+  });
 
   // Memoize handlers to prevent child re-renders
   const memoizedOnFiltersChange = React.useCallback(onFiltersChange, [onFiltersChange]);
@@ -165,7 +182,7 @@ export const Users: React.FC<UsersProps> = ({
       </div>
 
       {/* Fixed Pagination Section - Always at Bottom */}
-      {users.length > 0 && (
+      {users.length > 0 && totalUsers > limit && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}

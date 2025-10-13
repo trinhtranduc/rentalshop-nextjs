@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   CardContent,
   Button,
-  StatusBadge
+  StatusBadge,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '../../../ui';
 import { 
   Eye, 
@@ -29,182 +33,190 @@ export function MerchantTable({
   sortOrder = 'asc',
   onSort
 }: MerchantTableProps) {
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
   const getStatusBadge = (merchant: Merchant) => {
     if (!merchant.isActive) {
       return <StatusBadge status="inactive" size="sm" />;
     }
-    
     return <StatusBadge status={merchant.subscriptionStatus} size="sm" />;
   };
 
   if (merchants.length === 0) {
     return (
-      <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-              <CardContent className="text-center py-12">
-        <div className="text-gray-500 dark:text-gray-400">
-          <div className="text-4xl mb-4">🏪</div>
-          <h3 className="text-lg font-medium mb-2">No merchants found</h3>
-          <p className="text-sm">
-            Try adjusting your filters or create some merchants to get started.
-          </p>
-        </div>
-      </CardContent>
+      <Card className="shadow-sm border-border">
+        <CardContent className="text-center py-12">
+          <div className="text-text-tertiary">
+            <div className="text-4xl mb-4">🏪</div>
+            <h3 className="text-lg font-medium mb-2">No merchants found</h3>
+            <p className="text-sm">
+              Try adjusting your filters or create some merchants to get started.
+            </p>
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with sorting options */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Merchants ({merchants.length})
-        </h2>
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span>Sort by:</span>
-          <div className="flex items-center gap-1">
-            {[
-              { key: 'name', label: 'Name' },
-              { key: 'email', label: 'Email' },
-              { key: 'subscriptionPlan', label: 'Plan' },
-              { key: 'createdAt', label: 'Started At' },
-              { key: 'trialEndsAt', label: 'Trial Expires' },
-              { key: 'lastActiveAt', label: 'Expired At' }
-            ].map(({ key, label }) => (
-              <Button
-                variant="ghost"
-                key={key}
-                onClick={() => onSort?.(key)}
-                className={`px-2 py-1 rounded text-xs transition-colors h-auto ${
-                  sortBy === key
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-              >
-                {label}
-                {sortBy === key && (
-                  <span className="ml-1">
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
+    <Card className="shadow-sm border-border flex flex-col h-full">
+      <CardContent className="p-0 flex-1 overflow-auto">
+        {/* Table with scroll */}
+        <div className="overflow-x-auto h-full overflow-y-auto">
+          <table className="w-full">
+            <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Merchant Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Plan & Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Created At
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Start Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  End Date
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border bg-bg-card">
+              {merchants.map((merchant) => (
+                <tr 
+                  key={merchant.id} 
+                  className="hover:bg-bg-secondary transition-colors"
+                >
+                  {/* Merchant Name */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center">
+                        <span className="text-white font-semibold text-sm">
+                          {merchant.name.substring(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-text-primary">
+                          {merchant.name}
+                        </div>
+                        <div className="text-sm text-text-tertiary">
+                          {merchant.email || 'No email'}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
 
-      {/* Card-style rows */}
-      <div className="grid gap-4">
-        {merchants.map((merchant) => (
-          <Card 
-            key={merchant.id} 
-            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700"
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                {/* Left side - Main info */}
-                <div className="flex items-center gap-4 flex-1">
-                  {/* Merchant Details */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {merchant.name}
-                      </h3>
+                  {/* Plan & Status */}
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="text-sm font-medium text-text-primary">
+                        {merchant.plan?.name || (merchant.planId ? `Plan ${merchant.planId}` : 'No Plan')}
+                      </div>
                       {getStatusBadge(merchant)}
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
-                      {/* Contact Info */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Contact</p>
-                        <p className="text-gray-900 dark:text-white">{merchant.email}</p>
-                        <p className="text-gray-500 dark:text-gray-400">{merchant.phone || 'No phone'}</p>
-                      </div>
-                      
-                      {/* Subscription Plan */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Plan</p>
-                        <p className="text-gray-900 dark:text-white font-medium">
-                          {merchant.plan?.name || (merchant.planId ? `Plan ${merchant.planId}` : 'No Plan')}
-                        </p>
-                        <p className="text-gray-500 dark:text-gray-400 capitalize">{merchant.subscriptionStatus}</p>
-                      </div>
-                      
-                      {/* Created Date */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Created</p>
-                        <p className="text-gray-900 dark:text-white">
-                          {merchant.createdAt ? new Date(merchant.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
+                  </td>
+
+                  {/* Created At */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {merchant.createdAt 
+                        ? new Date(merchant.createdAt).toLocaleDateString('en-US', {
                             month: 'short',
-                            day: 'numeric'
-                          }) : 'N/A'}
-                        </p>
-                      </div>
-                      
-                      {/* Started At */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Started At</p>
-                        <p className="text-gray-900 dark:text-white">
-                          {merchant.createdAt ? new Date(merchant.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          }) : 'N/A'}
-                        </p>
-                      </div>
-                      
-                      {/* Subscription Status */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Status</p>
-                        <StatusBadge
-                          status={merchant.subscriptionStatus}
-                          variant="solid"
-                        />
-                      </div>
-                      
-                      {/* Expired At */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Expired At</p>
-                        <p className="text-gray-900 dark:text-white">
-                          {merchant.lastActiveAt ? new Date(merchant.lastActiveAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          }) : 'N/A'}
-                        </p>
-                      </div>
+                            day: 'numeric',
+                            year: 'numeric'
+                          })
+                        : 'N/A'}
                     </div>
-                  </div>
-                </div>
-                
-                {/* Right side - Actions */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onMerchantAction('view', merchant.id)}
-                    className="h-9 px-4"
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onMerchantAction('edit', merchant.id)}
-                    className="h-9 px-4"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+                  </td>
+
+                  {/* Start Date */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {merchant.currentSubscription?.startDate 
+                        ? new Date(merchant.currentSubscription.startDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })
+                        : merchant.createdAt
+                        ? new Date(merchant.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })
+                        : 'N/A'}
+                    </div>
+                  </td>
+
+                  {/* End Date */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {merchant.currentSubscription?.endDate 
+                        ? new Date(merchant.currentSubscription.endDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })
+                        : merchant.lastActiveAt
+                        ? new Date(merchant.lastActiveAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })
+                        : 'No end date'}
+                    </div>
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-6 py-4 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setOpenMenuId(openMenuId === merchant.id ? null : merchant.id)}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        align="end"
+                        open={openMenuId === merchant.id}
+                        onOpenChange={(open: boolean) => setOpenMenuId(open ? merchant.id : null)}
+                      >
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            onMerchantAction('view', merchant.id);
+                            setOpenMenuId(null);
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            onMerchantAction('edit', merchant.id);
+                            setOpenMenuId(null);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Merchant
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

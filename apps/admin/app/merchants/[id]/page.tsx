@@ -324,24 +324,6 @@ export default function MerchantDetailPage() {
   return (
     <PageWrapper>
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
-      <PageHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <PageTitle subtitle={`Manage merchant: ${merchant?.merchant?.name || merchant?.name || 'Unknown'}`}>
-              Merchant Details
-            </PageTitle>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/merchants/${merchantId}/edit`)}
-            >
-              Edit Merchant
-            </Button>
-          </div>
-        </div>
-      </PageHeader>
-
       <PageContent>
         <MerchantDetail
           data={merchantData}

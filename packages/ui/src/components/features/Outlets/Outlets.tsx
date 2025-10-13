@@ -94,7 +94,7 @@ export const Outlets: React.FC<OutletsProps> = ({
       </div>
 
       {/* Fixed Pagination Section */}
-      {outlets.length > 0 && (
+      {outlets.length > 0 && totalOutlets > limit && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}

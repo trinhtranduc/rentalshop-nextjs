@@ -180,7 +180,7 @@ export const Customers: React.FC<CustomersProps> = ({
       </div>
 
       {/* Fixed Pagination Section - Always at Bottom */}
-      {customers.length > 0 && (
+      {customers.length > 0 && totalCustomers > limit && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}

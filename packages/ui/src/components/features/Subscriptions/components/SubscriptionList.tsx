@@ -21,7 +21,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Pagination
+  Pagination,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '../../../ui';
 import { 
   Search, 
@@ -35,7 +40,9 @@ import {
   Building,
   Package,
   Clock,
-  X
+  X,
+  MoreVertical,
+  Ban
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant, BillingPeriod } from '@rentalshop/types';
 import { SubscriptionViewDialog } from './SubscriptionViewDialog';
@@ -84,6 +91,7 @@ export function SubscriptionList({
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [merchantFilter, setMerchantFilter] = useState<string>('all');
   const [filteredSubscriptions, setFilteredSubscriptions] = useState(subscriptions);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   
   // Dialog states
   const [showViewDialog, setShowViewDialog] = useState(false);
@@ -218,17 +226,11 @@ export function SubscriptionList({
   const canChangePlan = (subscription: Subscription) => ['active', 'trial'].includes(subscription.status);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Subscriptions</h2>
-          <p className="text-gray-600">Manage merchant subscriptions and billing</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <Card>
+    <div className="flex flex-col h-full">
+      {/* Fixed Header & Filters Section */}
+      <div className="flex-shrink-0 space-y-4">
+        {/* Filters */}
+        <Card>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
@@ -285,13 +287,16 @@ export function SubscriptionList({
           </div>
         </CardContent>
       </Card>
+      </div>
 
-      {/* Subscriptions List */}
-      <Card>
+      {/* Scrollable Table Section */}
+      <div className="flex-1 min-h-0 mt-4">
+        {/* Subscriptions Table */}
+        <Card className="shadow-sm border-border flex flex-col h-full">
         <CardHeader>
           <CardTitle>Subscriptions</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 flex-1">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center space-x-2">
@@ -300,145 +305,187 @@ export function SubscriptionList({
               </div>
             </div>
           ) : filteredSubscriptions.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium mb-2">No subscriptions found</h3>
-              <p>Try adjusting your search or filter criteria</p>
+            <div className="text-center py-12">
+              <div className="text-text-tertiary">
+                <div className="text-4xl mb-4">💳</div>
+                <h3 className="text-lg font-medium mb-2">No subscriptions found</h3>
+                <p className="text-sm">
+                  Try adjusting your search or filter criteria.
+                </p>
+              </div>
             </div>
           ) : (
-            /* Card-style rows */
-            <div className="space-y-4">
-              {filteredSubscriptions.map((subscription) => (
-                <Card 
-                  key={subscription.id} 
-                  className="hover:shadow-md transition-shadow duration-200 border-border cursor-pointer"
-                  onClick={() => handleView(subscription)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      {/* Left side - Main info */}
-                      <div className="flex items-center gap-4 flex-1">
-                        {/* Subscription Icon */}
-                        <div className="w-12 h-12 bg-gradient-to-br from-action-primary to-brand-primary rounded-lg flex items-center justify-center">
-                          <Building className="w-6 h-6 text-white" />
-                        </div>
-                        
-                        {/* Subscription Details */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-semibold text-text-primary">
+            /* Table with scroll */
+            <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
+              <table className="w-full">
+                {/* Table Header - Sticky */}
+                <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Merchant
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Plan
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Period
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Next Billing
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                {/* Table Body */}
+                <tbody className="bg-bg-card divide-y divide-border">
+                  {filteredSubscriptions.map((subscription) => (
+                    <tr key={subscription.id} className="hover:bg-bg-secondary transition-colors">
+                      {/* Merchant with Icon */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center">
+                            <Building className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-text-primary">
                               {subscription.merchant?.name || 'Unknown Merchant'}
-                            </h3>
-                            {getStatusBadge(subscription.status)}
-                            {isExpiringSoon(subscription.currentPeriodEnd) && (
-                              <Badge variant="outline" className="text-orange-600 border-orange-200">
-                                Expiring Soon
-                              </Badge>
-                            )}
-                            {isExpired(subscription.currentPeriodEnd) && (
-                              <Badge variant="destructive">Expired</Badge>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-6 text-sm text-text-secondary">
-                            <div className="flex items-center gap-1">
-                              <Package className="w-4 h-4" />
-                              <span>{subscription.plan?.name || 'Unknown Plan'}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>Started {formatDate(subscription.currentPeriodStart)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>Next billing {formatDate(subscription.currentPeriodEnd)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              <span>
-                                {subscription.period === 1 ? 'Monthly' : 
-                                 subscription.period === 3 ? 'Quarterly' : 
-                                 subscription.period === 12 ? 'Yearly' : 'Custom'} billing
-                              </span>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </td>
                       
-                      {/* Right side - Amount and Actions */}
-                      <div className="flex items-center gap-4">
-                        {/* Amount */}
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-text-primary">
-                            {formatCurrency(subscription.amount, subscription.currency)}
-                          </div>
-                          <div className="text-sm text-text-secondary">
-                            {subscription.discount > 0 ? (
-                              <div className="flex items-center gap-2">
-                                <span className="text-green-600 font-medium">
-                                  {subscription.discount}% off
-                                </span>
-                                <span className="text-xs">
-                                  Save {formatCurrency(subscription.savings, subscription.currency)}
-                                </span>
-                              </div>
-                            ) : (
-                              <span>Standard pricing</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-text-tertiary">
-                            {subscription.period === 1 ? 'per month' : 
-                             subscription.period === 3 ? 'per quarter' : 
-                             subscription.period === 12 ? 'per year' : 'per period'}
+                      {/* Plan */}
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-text-primary">
+                          {subscription.plan?.name || 'Unknown Plan'}
+                        </div>
+                      </td>
+                      
+                      {/* Amount */}
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-text-primary">
+                            {formatCurrency(subscription.amount, 'USD')}
                           </div>
                         </div>
-                        
-                        {/* Actions */}
+                      </td>
+                      
+                      {/* Period */}
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-text-primary">
+                          {subscription.billingInterval === 'month' ? 'Monthly' : 
+                           subscription.billingInterval === 'quarter' ? 'Quarterly' : 
+                           subscription.billingInterval === 'year' ? 'Yearly' : 
+                           subscription.billingInterval === 'semiAnnual' ? 'Semi-Annual' : 'Custom'}
+                        </div>
+                      </td>
+                      
+                      {/* Status */}
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          {/* Primary Actions - Always Visible */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => { e.stopPropagation(); handleView(subscription); }}
-                            className="h-8 px-3"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => { e.stopPropagation(); onEdit?.(subscription); }}
-                            className="h-8 px-3"
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                          
+                          {getStatusBadge(subscription.status)}
+                          {isExpiringSoon(subscription.currentPeriodEnd) && (
+                            <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 text-xs">
+                              Expiring
+                            </Badge>
+                          )}
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </td>
+                      
+                      {/* Next Billing */}
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-text-primary">
+                          {formatDate(subscription.currentPeriodEnd)}
+                        </div>
+                      </td>
+                      
+                      {/* Actions - Dropdown Menu */}
+                      <td className="px-6 py-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setOpenMenuId(openMenuId === subscription.id ? null : subscription.id)}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent 
+                            align="end"
+                            open={openMenuId === subscription.id}
+                            onOpenChange={(open: boolean) => setOpenMenuId(open ? subscription.id : null)}
+                          >
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                handleView(subscription);
+                                setOpenMenuId(null);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                onEdit?.(subscription);
+                                setOpenMenuId(null);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            {canCancel(subscription) && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    handleCancel(subscription);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="text-action-danger focus:text-action-danger"
+                                >
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  Cancel Subscription
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </CardContent>
       </Card>
+      </div>
 
-      {/* Pagination */}
-      {pagination && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} subscriptions
+      {/* Fixed Pagination at Bottom */}
+      {pagination && pagination.total > 0 && pagination.total > pagination.limit && (
+        <div className="flex-shrink-0 py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} subscriptions
+            </div>
+            <Pagination
+              currentPage={pagination.page}
+              totalPages={Math.ceil(pagination.total / pagination.limit)}
+              total={pagination.total}
+              limit={pagination.limit}
+              onPageChange={pagination.onPageChange}
+              itemName="subscriptions"
+            />
           </div>
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={Math.ceil(pagination.total / pagination.limit)}
-            total={pagination.total}
-            limit={pagination.limit}
-            onPageChange={pagination.onPageChange}
-          />
         </div>
       )}
 
