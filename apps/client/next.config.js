@@ -27,17 +27,11 @@ const nextConfig = {
   },
   // Performance optimizations
   experimental: {
+    // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
     // Enable optimizations for better performance
     optimizeCss: true,
     optimizePackageImports: ['@rentalshop/ui', '@rentalshop/utils', '@rentalshop/hooks'],
-    // Enable modern JavaScript features for better performance
-    modern: true,
-    // Disable automatic timestamp parameters (_t) in development
-    disableOptimizedLoading: true,
-    // Disable automatic PostCSS optimizations that can add timestamps
-    disablePostcssPresetEnv: true,
-    // Disable automatic CSS optimizations that can add timestamps
-    disableOptimizedCSS: true,
   },
   
   // Disable development caching that adds timestamp parameters
