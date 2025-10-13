@@ -6,6 +6,7 @@ import {
   PageHeader,
   PageTitle,
   Customers,
+  CustomersLoading,
   useToast,
   CustomerDetailDialog,
   AddCustomerDialog,
@@ -272,8 +273,20 @@ export default function CustomersPage() {
   }, [data]);
 
   // ============================================================================
-  // RENDER - Always render immediately, show skeleton conditionally
+  // RENDER - Show skeleton when loading initial data
   // ============================================================================
+
+  if (loading && !data) {
+    return (
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
+          <PageTitle>Customers</PageTitle>
+          <p className="text-sm text-gray-600">Manage your customer database</p>
+        </PageHeader>
+        <CustomersLoading />
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
