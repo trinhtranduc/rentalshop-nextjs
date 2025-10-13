@@ -3,6 +3,11 @@ const nextConfig = {
   // Enable standalone output for proper Prisma binary handling
   output: 'standalone',
   
+  // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
+  },
+  
   transpilePackages: [
     '@rentalshop/database',
     '@rentalshop/auth',
@@ -30,6 +35,7 @@ const nextConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
+        '@prisma/client': require('path').join(__dirname, '../../node_modules/@prisma/client'),
       };
     }
     return config;

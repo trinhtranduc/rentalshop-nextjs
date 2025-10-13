@@ -3,6 +3,11 @@ const nextConfig = {
   // CRITICAL for Railway deployment - reduces bundle size by 90%
   output: 'standalone',
   
+  // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
+  },
+  
   transpilePackages: [
     '@rentalshop/auth',
     '@rentalshop/database', 
@@ -45,10 +50,6 @@ const nextConfig = {
         destination: `${process.env.API_URL || 'http://localhost:3002'}/api/:path*`,
       },
     ];
-  },
-  // Add this to ensure app directory works properly
-  experimental: {
-    appDir: true,
   },
   // Ensure proper routing
   trailingSlash: false,

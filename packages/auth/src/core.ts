@@ -195,8 +195,8 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       name: user.email, // Use email as fallback name
       role: user.role,
       phone: undefined, // Will be populated from database in API routes
-      merchantId: user.merchantId,
-      outletId: user.outletId,
+      merchantId: user.merchantId ?? undefined,
+      outletId: user.outletId ?? undefined,
       merchant: undefined, // Will be populated from database in API routes
       outlet: undefined   // Will be populated from database in API routes
     };
