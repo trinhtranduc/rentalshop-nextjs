@@ -57,6 +57,7 @@ interface JWTPayload {
     role: string;
     merchantId?: number | null;
     outletId?: number | null;
+    planName?: string;
 }
 declare const generateToken: (payload: JWTPayload) => string;
 declare const verifyToken: (token: string) => JWTPayload;
@@ -66,6 +67,7 @@ declare const verifyTokenSimple: (token: string) => Promise<{
     role: string;
     merchantId: number | null;
     outletId: number | null;
+    planName: string | undefined;
 } | null>;
 
 type Role = UserRole;
@@ -341,4 +343,103 @@ declare function validateResourceBelongsToUser(authorizedRequest: AuthorizedRequ
     error?: NextResponse;
 }>;
 
-export { type AuthUser, type AuthorizationOptions, type AuthorizedRequest, type JWTPayload, type LoginCredentials, type Permission, type RegisterData, type Resource, type Role, UserRole, type UserScope, assertAnyRole, authenticateRequest, authorizeRequest, buildSecureWhereClause, canAccessResource, canAccessUserManagement, canCreateOrders, canDeleteOrders, canExportCustomers, canExportOrders, canExportProducts, canManageOrders, canManageOutlets, canManageProducts, canManageUsers, canUpdateOrders, canViewOrders, comparePassword, createAuthError, createPermissionError, createScopeError, generateToken, getUserScope, getUserScopeFromRequest, hasAllPermissions, hasAnyPermission, hasAnyRole, hasPermission, hashPassword, isMerchantLevel, isOutletTeam, loginUser, optionalAuth, registerUser, validateResourceBelongsToUser, validateScope, verifyToken, verifyTokenSimple, withAdminAuth, withAuth, withAuthAndAuthz, withBillingManagementAuth, withCustomerExportAuth, withCustomerManagementAuth, withMerchantScope, withOrderCreateAuth, withOrderDeleteAuth, withOrderExportAuth, withOrderManagementAuth, withOrderUpdateAuth, withOrderViewAuth, withOutletScope, withProductExportAuth, withProductManagementAuth, withUserManagementAuth, withViewAuth };
+interface PlanLimits {
+    outlets: number;
+    users: number;
+    products: number;
+    customers: number;
+    orders: number;
+    allowWebAccess?: boolean;
+    allowMobileAccess?: boolean;
+}
+interface PlanPricing {
+    price: number;
+    discount: number;
+    savings: number;
+}
+interface Plan {
+    id: number;
+    name: string;
+    description: string;
+    basePrice: number;
+    currency: string;
+    trialDays: number;
+    limits: PlanLimits;
+    features: string[];
+    isActive: boolean;
+    isPopular: boolean;
+    sortOrder: number;
+    pricing: {
+        monthly: PlanPricing;
+        quarterly: PlanPricing;
+        yearly: PlanPricing;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt?: Date;
+}
+
+/**
+ * Platform Detection Types
+ * Used to identify if API requests come from web or mobile clients
+ */
+type ClientPlatform = 'web' | 'mobile' | 'unknown';
+
+/**
+ * Platform Access Control
+ * Controls which subscription plans can access which platforms (web/mobile)
+ */
+
+/**
+ * Platform access rules based on subscription plan
+ */
+interface PlatformAccessRules {
+    allowWebAccess: boolean;
+    allowMobileAccess: boolean;
+    restrictionMessage?: string;
+}
+/**
+ * Check if a subscription plan allows access from a specific platform
+ *
+ * Business Logic:
+ * - Basic plan: Mobile only (no web access)
+ * - Other plans: Both web and mobile access
+ *
+ * @param plan - User's subscription plan
+ * @param platform - Platform trying to access (web/mobile)
+ * @returns true if access is allowed, false otherwise
+ */
+declare function isPlatformAllowed(plan: Plan | null, platform: ClientPlatform): boolean;
+/**
+ * Get platform access rules for a subscription plan
+ *
+ * @param plan - User's subscription plan
+ * @returns Platform access rules
+ */
+declare function getPlatformAccessRules(plan: Plan | null): PlatformAccessRules;
+/**
+ * Assert platform access - throws error if access denied
+ *
+ * @param plan - User's subscription plan
+ * @param platform - Platform trying to access
+ * @throws Error if access is denied
+ */
+declare function assertPlatformAccess(plan: Plan | null, platform: ClientPlatform): void;
+/**
+ * Get user-friendly error message for platform restriction
+ *
+ * @param plan - User's subscription plan
+ * @param platform - Platform trying to access
+ * @returns Error message or null if access allowed
+ */
+declare function getPlatformRestrictionMessage(plan: Plan | null, platform: ClientPlatform): string | null;
+/**
+ * Check if plan allows web access
+ */
+declare function allowsWebAccess(plan: Plan | null): boolean;
+/**
+ * Check if plan allows mobile access
+ */
+declare function allowsMobileAccess(plan: Plan | null): boolean;
+
+export { type AuthUser, type AuthorizationOptions, type AuthorizedRequest, type JWTPayload, type LoginCredentials, type Permission, type PlatformAccessRules, type RegisterData, type Resource, type Role, UserRole, type UserScope, allowsMobileAccess, allowsWebAccess, assertAnyRole, assertPlatformAccess, authenticateRequest, authorizeRequest, buildSecureWhereClause, canAccessResource, canAccessUserManagement, canCreateOrders, canDeleteOrders, canExportCustomers, canExportOrders, canExportProducts, canManageOrders, canManageOutlets, canManageProducts, canManageUsers, canUpdateOrders, canViewOrders, comparePassword, createAuthError, createPermissionError, createScopeError, generateToken, getPlatformAccessRules, getPlatformRestrictionMessage, getUserScope, getUserScopeFromRequest, hasAllPermissions, hasAnyPermission, hasAnyRole, hasPermission, hashPassword, isMerchantLevel, isOutletTeam, isPlatformAllowed, loginUser, optionalAuth, registerUser, validateResourceBelongsToUser, validateScope, verifyToken, verifyTokenSimple, withAdminAuth, withAuth, withAuthAndAuthz, withBillingManagementAuth, withCustomerExportAuth, withCustomerManagementAuth, withMerchantScope, withOrderCreateAuth, withOrderDeleteAuth, withOrderExportAuth, withOrderManagementAuth, withOrderUpdateAuth, withOrderViewAuth, withOutletScope, withProductExportAuth, withProductManagementAuth, withUserManagementAuth, withViewAuth };

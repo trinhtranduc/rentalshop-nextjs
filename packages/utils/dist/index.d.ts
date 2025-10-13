@@ -882,6 +882,8 @@ interface PlanLimits {
     products: number;
     customers: number;
     orders: number;
+    allowWebAccess?: boolean;
+    allowMobileAccess?: boolean;
 }
 interface PlanPricing {
     price: number;

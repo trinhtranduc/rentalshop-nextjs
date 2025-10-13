@@ -71,6 +71,10 @@ export const publicFetch = async (
   const headers: Record<string, string> = {
     [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
     [API.HEADERS.ACCEPT]: API.CONTENT_TYPES.JSON,
+    // Platform detection headers for web clients
+    'X-Client-Platform': 'web',
+    'X-App-Version': '1.0.0',
+    'X-Device-Type': 'browser',
   };
 
   // Create full URL
@@ -170,6 +174,10 @@ export const authenticatedFetch = async (
   const headers: Record<string, string> = {
     [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
     [API.HEADERS.ACCEPT]: API.CONTENT_TYPES.JSON,
+    // Platform detection headers for web clients
+    'X-Client-Platform': 'web',
+    'X-App-Version': '1.0.0',
+    'X-Device-Type': 'browser',
     ...(options.headers as Record<string, string>),
   };
   

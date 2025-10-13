@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
 import { API } from '@rentalshop/constants';
+import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
 
 // Protected routes that require authentication
 const protectedRoutes = [
@@ -49,10 +50,17 @@ const adminRoutes = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  console.log('🔍 MIDDLEWARE: Request received:', {
+  // Detect platform from request headers
+  const platformInfo = detectPlatform(request);
+  
+  console.log(formatPlatformLog(request, `Request received: ${request.method} ${pathname}`));
+  console.log('🔍 MIDDLEWARE: Request details:', {
     method: request.method,
     pathname,
     url: request.url,
+    platform: platformInfo.platform,
+    deviceType: platformInfo.deviceType,
+    version: platformInfo.version,
     headers: Object.fromEntries(request.headers.entries())
   });
 
@@ -179,11 +187,66 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    // ============================================================================
+    // PLATFORM ACCESS CONTROL - SIMPLE CHECK
+    // ============================================================================
+    // Basic plan only allows mobile app access
+    // All other plans allow both web and mobile access
+    
+    if (payload.role !== 'ADMIN' && platformInfo.platform === 'web') {
+      const planName = payload.planName || 'Basic'; // Default to Basic if not set
+      
+      if (planName === 'Basic') {
+        console.log('❌ MIDDLEWARE: Platform access denied:', {
+          planName,
+          platform: platformInfo.platform,
+          message: 'Basic plan only supports mobile app'
+        });
+        
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'PLATFORM_ACCESS_DENIED',
+            message: 'Basic plan only supports mobile app. Please upgrade to Premium or Enterprise to access the web dashboard.',
+            details: {
+              currentPlan: planName,
+              currentPlatform: platformInfo.platform,
+              allowedPlatforms: ['mobile'],
+              upgradeRequired: true,
+              upgradeUrl: '/settings/subscription'
+            }
+          },
+          {
+            status: API.STATUS.FORBIDDEN,
+            headers: {
+              ...corsHeaders,
+              'X-Platform-Access-Denied': 'true',
+              'X-Upgrade-Required': 'true'
+            }
+          }
+        );
+      }
+    }
+    
+    console.log('✅ MIDDLEWARE: Platform access granted:', {
+      planName: payload.planName || 'Default',
+      platform: platformInfo.platform
+    });
+
     // Forward user context to downstream handlers via request headers
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-user-id', payload.userId.toString());
     requestHeaders.set('x-user-email', payload.email);
     requestHeaders.set('x-user-role', payload.role);
+    
+    // Forward platform info to downstream handlers
+    requestHeaders.set('x-platform', platformInfo.platform);
+    if (platformInfo.deviceType) {
+      requestHeaders.set('x-device-type', platformInfo.deviceType);
+    }
+    if (platformInfo.version) {
+      requestHeaders.set('x-app-version', platformInfo.version);
+    }
 
     // Note: Subscription validation is handled in the centralized authenticateRequest function
     // in packages/auth/src/core.ts, which is called by each API route
