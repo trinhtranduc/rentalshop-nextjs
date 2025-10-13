@@ -10,6 +10,7 @@ export interface JWTPayload {
   role: string;
   merchantId?: number | null;  // Optional merchant ID for merchant/outlet users
   outletId?: number | null;    // Optional outlet ID for outlet users
+  planName?: string;            // Plan name for platform access control (e.g., 'Basic', 'Premium', 'Enterprise')
 }
 
 export const generateToken = (payload: JWTPayload): string => {
@@ -39,6 +40,7 @@ export const verifyTokenSimple = async (token: string) => {
       role: payload.role,
       merchantId: payload.merchantId ?? null,
       outletId: payload.outletId ?? null,
+      planName: payload.planName,
     };
   } catch (error) {
     console.error('❌ JWT: Token verification failed:', error);

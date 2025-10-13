@@ -7847,7 +7847,11 @@ var publicFetch = async (url, options = {}) => {
   }
   const headers = {
     [API2.HEADERS.CONTENT_TYPE]: API2.CONTENT_TYPES.JSON,
-    [API2.HEADERS.ACCEPT]: API2.CONTENT_TYPES.JSON
+    [API2.HEADERS.ACCEPT]: API2.CONTENT_TYPES.JSON,
+    // Platform detection headers for web clients
+    "X-Client-Platform": "web",
+    "X-App-Version": "1.0.0",
+    "X-Device-Type": "browser"
   };
   const fullUrl = createApiUrl(url);
   const requestOptions = {
@@ -7913,6 +7917,10 @@ var authenticatedFetch = async (url, options = {}) => {
   const headers = {
     [API2.HEADERS.CONTENT_TYPE]: API2.CONTENT_TYPES.JSON,
     [API2.HEADERS.ACCEPT]: API2.CONTENT_TYPES.JSON,
+    // Platform detection headers for web clients
+    "X-Client-Platform": "web",
+    "X-App-Version": "1.0.0",
+    "X-Device-Type": "browser",
     ...options.headers
   };
   if (token) {

@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
+import { detectPlatform, getPlatformLimits, formatPlatformLog } from '../../../lib/platform-detector';
 
 /**
  * GET /api/orders
@@ -11,8 +12,11 @@ import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
  * REFACTORED: Now uses unified withAuth pattern
  */
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
-  console.log(`🔍 GET /api/orders - User: ${user.email} (${user.role})`);
+  // Detect platform from request
+  const platformInfo = detectPlatform(request);
+  console.log(formatPlatformLog(request, `GET /api/orders - User: ${user.email} (${user.role})`));
   console.log(`🔍 GET /api/orders - UserScope:`, userScope);
+  console.log(`🔍 Platform Info:`, platformInfo);
   
   // Validate that non-admin users have merchant association
   if (user.role !== 'ADMIN' && !userScope.merchantId) {

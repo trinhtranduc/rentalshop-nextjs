@@ -14,6 +14,9 @@ export interface JWTPayload {
   userId: number;
   email: string;
   role: string;
+  merchantId?: number | null;
+  outletId?: number | null;
+  planName?: string;  // Plan name for platform access control
   iat: number;
   exp: number;
 }
