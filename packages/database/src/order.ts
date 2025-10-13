@@ -749,7 +749,14 @@ export const simplifiedOrders = {
    * Search orders with simple filters (simplified API)
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, where: whereClause, ...whereFilters } = filters;
+    const { 
+      page = 1, 
+      limit = 20, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc',
+      where: whereClause, 
+      ...whereFilters 
+    } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause - start with provided where clause if any
@@ -796,6 +803,19 @@ export const simplifiedOrders = {
         { customer: { lastName: { contains: whereFilters.search } } },
         { customer: { phone: { contains: whereFilters.search } } }
       ];
+    }
+
+    // ✅ Build dynamic orderBy clause
+    const orderBy: any = {};
+    if (sortBy === 'orderNumber') {
+      orderBy.orderNumber = sortOrder;
+    } else if (sortBy === 'totalAmount') {
+      orderBy.totalAmount = sortOrder;
+    } else if (sortBy === 'customer') {
+      orderBy.customer = { firstName: sortOrder };
+    } else {
+      // Default: createdAt
+      orderBy.createdAt = sortOrder;
     }
 
     const [orders, total] = await Promise.all([
@@ -846,19 +866,22 @@ export const simplifiedOrders = {
             }
           }
         },
-        orderBy: { createdAt: 'desc' }, // Uses @@index([createdAt])
+        orderBy, // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.order.count({ where })
     ]);
 
+    console.log(`📊 db.orders.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, orders=${orders.length}`);
+
     return {
       data: orders,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
 

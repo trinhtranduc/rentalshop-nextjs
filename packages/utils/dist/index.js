@@ -10930,8 +10930,13 @@ var init_validation = __esm({
       returnDate: zod.z.coerce.date().optional(),
       minAmount: zod.z.coerce.number().optional(),
       maxAmount: zod.z.coerce.number().optional(),
+      page: zod.z.coerce.number().int().min(1).default(1),
+      // ✅ Use page instead of offset
       limit: zod.z.coerce.number().int().min(1).max(100).default(20),
-      offset: zod.z.coerce.number().int().min(0).default(0)
+      sortBy: zod.z.string().optional(),
+      // Add sortBy support
+      sortOrder: zod.z.enum(["asc", "desc"]).optional()
+      // Add sortOrder support
     });
     orderItemSchema = zod.z.object({
       productId: zod.z.coerce.number().int().positive(),

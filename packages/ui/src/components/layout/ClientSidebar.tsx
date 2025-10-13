@@ -153,6 +153,15 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
     setLocalCurrentPage(currentPath);
   }, [currentPath]);
 
+  // AGGRESSIVE PREFETCHING: Prefetch all pages on mount for instant navigation
+  useEffect(() => {
+    if (onPrefetch) {
+      menuItems.forEach(item => {
+        onPrefetch(item.href);
+      });
+    }
+  }, [menuItems, onPrefetch]);
+
   // Close submenu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -339,6 +348,13 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       'flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300',
       isCollapsed ? 'w-16' : 'w-64'
     )}>
+      {/* Hidden Link components for Next.js automatic prefetching */}
+      <div className="hidden">
+        {menuItems.map(item => (
+          <Link key={item.href} href={item.href} />
+        ))}
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (

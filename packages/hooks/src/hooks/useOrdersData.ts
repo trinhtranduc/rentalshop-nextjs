@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useDedupedApi } from '../utils/useDedupedApi';
 import { ordersApi } from '@rentalshop/utils';
-import type { OrderFilters, OrderWithDetails, OrderStatus, OrderType } from '@rentalshop/types';
+import type { OrderFilters, OrderWithDetails } from '@rentalshop/types';
 
 // ============================================================================
 // TYPES
@@ -11,24 +11,24 @@ import type { OrderFilters, OrderWithDetails, OrderStatus, OrderType } from '@re
 export interface OrdersDataResponse {
   orders: OrderWithDetails[];
   total: number;
-  totalPages: number;
-  currentPage: number;
+  page: number;
+  currentPage: number; // Alias for page
   limit: number;
   hasMore: boolean;
+  totalPages: number;
 }
 
 export interface UseOrdersDataOptions {
   filters: OrderFilters;
-  enabled?: boolean; // Allow disabling fetch
-  debounceSearch?: boolean; // Debounce search queries
-  debounceMs?: number; // Debounce delay
+  enabled?: boolean;
 }
 
 export interface UseOrdersDataReturn {
   data: OrdersDataResponse | null;
   loading: boolean;
   error: Error | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
+  isStale: boolean;
 }
 
 // ============================================================================
@@ -36,107 +36,62 @@ export interface UseOrdersDataReturn {
 // ============================================================================
 
 /**
- * ✅ CLEAN DATA FETCHING HOOK
- * - Single responsibility: fetch orders based on filters
- * - Automatic request cancellation
- * - Debounced search
- * - No state management (that's the page's job)
+ * ✅ MODERN ORDERS DATA HOOK
+ * 
+ * Clean and simple wrapper around useDedupedApi for orders
+ * 
+ * Features:
+ * - Automatic request deduplication
+ * - Intelligent caching (30s stale time)
+ * - Request cancellation and race condition protection
+ * - Transform API response to consistent format
+ * 
+ * Usage:
+ * ```tsx
+ * const { data, loading, error } = useOrdersData({ 
+ *   filters: { page: 1, status: 'RESERVED' }
+ * });
+ * ```
  */
 export function useOrdersData(options: UseOrdersDataOptions): UseOrdersDataReturn {
-  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
+  const { filters, enabled = true } = options;
   
-  const [data, setData] = useState<OrdersDataResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const refetchTriggerRef = useRef(0);
+  const result = useDedupedApi({
+    filters,
+    fetchFn: async (filters: OrderFilters) => {
+      console.log('📦 useOrdersData: Fetching with filters:', filters);
+      
+      const response = await ordersApi.searchOrders(filters);
 
-  // Refetch function
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        console.log('🔍 useOrdersData: Fetching with filters:', filters);
-
-        const response = await ordersApi.searchOrders(filters);
-
-        // Check if request was aborted
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-
-        if (response.success && response.data) {
-          const ordersData = response.data.orders || [];
-          const total = response.data.total || 0;
-          const limit = filters.limit || 25;
-          const currentPage = filters.page || 1;
-          const totalPages = Math.ceil(total / limit);
-
-          setData({
-            orders: ordersData as OrderWithDetails[],
-            total,
-            totalPages,
-            currentPage,
-            limit,
-            hasMore: currentPage < totalPages
-          });
-        } else {
-          throw new Error('Failed to fetch orders');
-        }
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('🔍 useOrdersData: Error fetching orders:', err);
-          setError(err as Error);
-        }
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
+      if (!response.success || !response.data) {
+        throw new Error('Failed to fetch orders');
       }
-    };
 
-    // Debounce search queries only
-    if (debounceSearch && filters.search) {
-      console.log('🔍 useOrdersData: Debouncing search query');
-      const timer = setTimeout(fetchData, debounceMs);
-      return () => {
-        clearTimeout(timer);
-        abortControllerRef.current?.abort();
+      // Transform API response to consistent format
+      const apiData = response.data as any;
+      const transformed: OrdersDataResponse = {
+        orders: apiData.orders || [],
+        total: apiData.total || 0,
+        page: apiData.page || 1,
+        currentPage: apiData.page || 1, // Alias for compatibility
+        limit: apiData.limit || 25,
+        hasMore: apiData.hasMore || false,
+        totalPages: apiData.totalPages || 1
       };
-    } else {
-      // Immediate fetch for non-search filters
-      fetchData();
-      return () => {
-        abortControllerRef.current?.abort();
-      };
-    }
-  }, [
-    filters, // This is now stable from parent's memoization
+      
+      console.log('✅ useOrdersData: Success:', {
+        ordersCount: transformed.orders.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      
+      return transformed;
+    },
     enabled,
-    debounceSearch,
-    debounceMs,
-    refetchTriggerRef.current
-  ]);
+    staleTime: 30000, // 30 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false
+  });
 
-  return {
-    data,
-    loading,
-    error,
-    refetch
-  };
+  return result;
 }
-

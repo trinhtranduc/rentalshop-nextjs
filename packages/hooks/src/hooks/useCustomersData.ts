@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useDedupedApi } from '../utils/useDedupedApi';
 import { customersApi } from '@rentalshop/utils';
 import type { CustomerFilters, Customer } from '@rentalshop/types';
 
@@ -11,24 +11,24 @@ import type { CustomerFilters, Customer } from '@rentalshop/types';
 export interface CustomersDataResponse {
   customers: Customer[];
   total: number;
-  totalPages: number;
-  currentPage: number;
+  page: number;
+  currentPage: number; // Alias for page
   limit: number;
   hasMore: boolean;
+  totalPages: number;
 }
 
 export interface UseCustomersDataOptions {
   filters: CustomerFilters;
-  enabled?: boolean; // Allow disabling fetch
-  debounceSearch?: boolean; // Debounce search queries
-  debounceMs?: number; // Debounce delay
+  enabled?: boolean;
 }
 
 export interface UseCustomersDataReturn {
   data: CustomersDataResponse | null;
   loading: boolean;
   error: Error | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
+  isStale: boolean;
 }
 
 // ============================================================================
@@ -36,110 +36,62 @@ export interface UseCustomersDataReturn {
 // ============================================================================
 
 /**
- * ✅ CLEAN DATA FETCHING HOOK
- * - Single responsibility: fetch customers based on filters
- * - Automatic request cancellation
- * - Debounced search
- * - No state management (that's the page's job)
+ * ✅ MODERN CUSTOMERS DATA HOOK
+ * 
+ * Clean and simple wrapper around useDedupedApi for customers
+ * 
+ * Features:
+ * - Automatic request deduplication
+ * - Intelligent caching (30s stale time)
+ * - Request cancellation and race condition protection
+ * - Transform API response to consistent format
+ * 
+ * Usage:
+ * ```tsx
+ * const { data, loading, error } = useCustomersData({ 
+ *   filters: { page: 1, search: 'john' }
+ * });
+ * ```
  */
 export function useCustomersData(options: UseCustomersDataOptions): UseCustomersDataReturn {
-  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
+  const { filters, enabled = true } = options;
   
-  const [data, setData] = useState<CustomersDataResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const refetchTriggerRef = useRef(0);
+  const result = useDedupedApi({
+    filters,
+    fetchFn: async (filters: CustomerFilters) => {
+      console.log('👥 useCustomersData: Fetching with filters:', filters);
+      
+      const response = await customersApi.searchCustomers(filters);
 
-  // Refetch function
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        console.log('🔍 useCustomersData: Fetching with filters:', filters);
-
-        const response = await customersApi.searchCustomers(filters);
-
-        // Check if request was aborted
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-
-        if (response.success && response.data) {
-          // API returns: { success: true, data: { customers, total, page, limit, hasMore, totalPages } }
-          const apiData = response.data as any;
-          const customersData = apiData.customers || [];
-          const total = apiData.total || 0;
-          const limit = apiData.limit || filters.limit || 25;
-          const currentPage = apiData.page || filters.page || 1;
-          const totalPages = apiData.totalPages || Math.ceil(total / limit);
-          const hasMore = apiData.hasMore !== undefined ? apiData.hasMore : currentPage < totalPages;
-
-          setData({
-            customers: customersData as Customer[],
-            total,
-            totalPages,
-            currentPage,
-            limit,
-            hasMore
-          });
-        } else {
-          throw new Error('Failed to fetch customers');
-        }
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('🔍 useCustomersData: Error fetching customers:', err);
-          setError(err as Error);
-        }
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
+      if (!response.success || !response.data) {
+        throw new Error('Failed to fetch customers');
       }
-    };
 
-    // Debounce search queries only
-    if (debounceSearch && (filters.search || filters.q)) {
-      console.log('🔍 useCustomersData: Debouncing search query');
-      const timer = setTimeout(fetchData, debounceMs);
-      return () => {
-        clearTimeout(timer);
-        abortControllerRef.current?.abort();
+      // Transform API response to consistent format
+      const apiData = response.data as any;
+      const transformed: CustomersDataResponse = {
+        customers: apiData.customers || [],
+        total: apiData.total || 0,
+        page: apiData.page || 1,
+        currentPage: apiData.page || 1, // Alias for compatibility
+        limit: apiData.limit || 25,
+        hasMore: apiData.hasMore || false,
+        totalPages: apiData.totalPages || 1
       };
-    } else {
-      // Immediate fetch for non-search filters
-      fetchData();
-      return () => {
-        abortControllerRef.current?.abort();
-      };
-    }
-  }, [
-    filters, // This is now stable from parent's memoization
+      
+      console.log('✅ useCustomersData: Success:', {
+        customersCount: transformed.customers.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      
+      return transformed;
+    },
     enabled,
-    debounceSearch,
-    debounceMs,
-    refetchTriggerRef.current
-  ]);
+    staleTime: 30000, // 30 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false
+  });
 
-  return {
-    data,
-    loading,
-    error,
-    refetch
-  };
+  return result;
 }
-

@@ -122,18 +122,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Navigation Loading Overlay - Shows during page transition */}
-      {navigatingTo && (
-        <div className="fixed inset-0 bg-white bg-opacity-60 backdrop-blur-sm z-[60] flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-xl p-6 flex flex-col items-center">
-            <svg className="animate-spin h-8 w-8 text-green-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p className="text-sm font-medium text-gray-700">Loading...</p>
-          </div>
-        </div>
-      )}
+      {/* Navigation Loading Overlay - REMOVED for instant transitions */}
+      {/* Let Next.js loading.tsx handle skeleton loading instead */}
 
       {/* Sidebar */}
       <aside
@@ -221,7 +211,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     'w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group',
                     shouldHighlight
                       ? 'bg-green-100 text-green-700 border-r-2 border-green-600'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+                    // Add click feedback
+                    navigatingTo === item.href && 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                   )}
                   title={isCollapsed ? item.label : undefined}
                 >

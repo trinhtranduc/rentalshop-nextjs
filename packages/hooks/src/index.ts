@@ -9,8 +9,6 @@ export * from './hooks/useCanPerform';
 export * from './hooks/useCurrency';
 export * from './hooks/useCustomersData';
 export * from './hooks/useOrdersData';
-export * from './hooks/useOutletsData';
-export * from './hooks/useCategoriesData';
 export * from './hooks/usePagination';
 export * from './hooks/useProductAvailability';
 export * from './hooks/useProductsData';
@@ -21,3 +19,9 @@ export * from './hooks/useToast';
 export * from './hooks/useUserRole';
 export * from './hooks/useUsersData';
 export * from './hooks/useOptimisticNavigation';
+
+// Modern API utilities
+export * from './utils/useDedupedApi';
+
+// Modern filter data hooks
+export * from './hooks/useFiltersData';

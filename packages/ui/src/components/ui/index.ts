@@ -18,6 +18,7 @@ export { ConfirmationDialog } from './confirmation-dialog';
 export { ConfirmationDialogWithReason } from './confirmation-dialog-with-reason';
 export { Input } from './input';
 export { Label } from './label';
+export { LoadingIndicator, LoadingInline } from './loading-indicator';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 export { Separator } from './separator';
 export { Switch } from './switch';

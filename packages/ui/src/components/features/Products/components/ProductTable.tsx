@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
 import { Product } from '@rentalshop/types';
-import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
+import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package, ArrowUpDown } from 'lucide-react';
 
 interface ProductTableProps {
   products: Product[];
@@ -28,6 +28,13 @@ export function ProductTable({
   onSort 
 }: ProductTableProps) {
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+  
+  // Debug: Log products received
+  console.log('🔍 ProductTable: Received products:', {
+    isArray: Array.isArray(products),
+    length: products?.length,
+    firstProduct: products?.[0]?.name
+  });
   
   if (products.length === 0) {
     return (
@@ -88,56 +95,59 @@ export function ProductTable({
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>
-              <th 
-                onClick={() => handleSort('id')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <div className="flex items-center gap-1">
-                  ID
-                  {sortBy === 'id' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
-              </th>
+              {/* Product Name - Sortable */}
               <th 
                 onClick={() => handleSort('name')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <div className="flex items-center gap-1">
-                  Name
+                <div className="flex items-center gap-2">
+                  <span>Product Name</span>
+                  <ArrowUpDown className="w-3 h-3" />
                   {sortBy === 'name' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                    <span className="text-blue-600 dark:text-blue-400">
+                      {sortOrder === 'desc' ? '↓' : '↑'}
+                    </span>
                   )}
                 </div>
               </th>
+              
+              {/* Category */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Category
               </th>
-              <th 
-                onClick={() => handleSort('rentPrice')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <div className="flex items-center gap-1">
-                  Price
-                  {sortBy === 'rentPrice' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
+              
+              {/* Price */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Price
               </th>
-              <th 
-                onClick={() => handleSort('stock')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <div className="flex items-center gap-1">
-                  Stock
-                  {sortBy === 'stock' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
+              
+              {/* Stock */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Stock
               </th>
+              
+              {/* Status */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Status
               </th>
+              
+              {/* Created Date - Sortable */}
+              <th 
+                onClick={() => handleSort('createdAt')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span>Created Date</span>
+                  <ArrowUpDown className="w-3 h-3" />
+                  {sortBy === 'createdAt' && (
+                    <span className="text-blue-600 dark:text-blue-400">
+                      {sortOrder === 'desc' ? '↓' : '↑'}
+                    </span>
+                  )}
+                </div>
+              </th>
+              
+              {/* Actions */}
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
@@ -148,14 +158,7 @@ export function ProductTable({
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             {products.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                {/* ID */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    #{product.id}
-                  </div>
-                </td>
-                
-                {/* Name */}
+                {/* Product Name with Image */}
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     {/* Product Icon/Image */}
@@ -230,6 +233,17 @@ export function ProductTable({
                 {/* Status */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(product.isActive)}
+                </td>
+                
+                {/* Created Date */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    }) : 'N/A'}
+                  </div>
                 </td>
                 
                 {/* Actions - Dropdown Menu */}

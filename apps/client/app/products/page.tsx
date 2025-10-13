@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useTransition, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { 
   PageWrapper,
   PageHeader,
@@ -56,7 +56,6 @@ export default function ProductsPage() {
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const canExport = useCanExportData();
-  const [isPending, startTransition] = useTransition();
   
   // Dialog states
   const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
@@ -100,8 +99,6 @@ export default function ProductsPage() {
   const search = searchParams.get('q') || '';
   const categoryId = searchParams.get('category') ? parseInt(searchParams.get('category')!) : undefined;
   const outletId = searchParams.get('outlet') ? parseInt(searchParams.get('outlet')!) : undefined;
-  const available = searchParams.get('available') || '';
-  const status = searchParams.get('status') || '';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
   const sortBy = searchParams.get('sortBy') || 'createdAt';
@@ -111,41 +108,26 @@ export default function ProductsPage() {
   // DATA FETCHING - Clean & Simple
   // ============================================================================
   
-  // ✅ FIX: Memoize với ref để tránh re-create khi dependencies không thực sự thay đổi
-  const filtersRef = useRef<ProductFilters | null>(null);
-  const filters: ProductFilters = useMemo(() => {
-    const newFilters: ProductFilters = {
-      q: search || undefined,
-      search: search || undefined,
-      categoryId,
-      outletId,
-      available: available === 'in-stock' ? true : 
-                 available === 'out-of-stock' ? false : undefined,
-      status: (status as any) || undefined,
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    };
-    
-    // Only update if actually changed
-    const filterString = JSON.stringify(newFilters);
-    const prevFilterString = JSON.stringify(filtersRef.current);
-    
-    if (filterString === prevFilterString && filtersRef.current) {
-      console.log('🔍 Page: Filters unchanged, returning cached');
-      return filtersRef.current;
-    }
-    
-    console.log('🔍 Page: Filters changed, creating new:', newFilters);
-    filtersRef.current = newFilters;
-    return newFilters;
-  }, [search, categoryId, outletId, available, status, page, limit, sortBy, sortOrder]);
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: ProductFilters = useMemo(() => ({
+    q: search || undefined,
+    search: search || undefined,
+    categoryId,
+    outletId,
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [search, categoryId, outletId, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useProductsData({ 
-    filters,
-    debounceSearch: true,
-    debounceMs: 500
+  const { data, loading, error } = useProductsData({ filters });
+  
+  // Debug: Log data state
+  console.log('📊 Products Page - Data state:', {
+    hasData: !!data,
+    productsCount: data?.products?.length || 0,
+    loading,
+    error: error?.message
   });
 
   // ============================================================================
@@ -164,13 +146,8 @@ export default function ProductsPage() {
     });
     
     const newURL = `${pathname}?${params.toString()}`;
-    console.log('🔄 updateURL: Pushing new URL:', newURL);
-    
-    // Use transition for smooth UI updates
-    startTransition(() => {
-      router.push(newURL, { scroll: false });
-    });
-  }, [pathname, router, searchParams, startTransition]);
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   // ============================================================================
   // FILTER HANDLERS - Simple URL Updates
@@ -182,8 +159,6 @@ export default function ProductsPage() {
   }, [updateURL]);
 
   const handleFiltersChange = useCallback((newFilters: Partial<ProductFilters>) => {
-    console.log('🔧 Page: Filters changed:', newFilters);
-    
     const updates: Record<string, string | number | undefined> = { page: 1 }; // Reset page
     
     if ('categoryId' in newFilters) {
@@ -191,24 +166,6 @@ export default function ProductsPage() {
     }
     if ('outletId' in newFilters) {
       updates.outlet = newFilters.outletId as any;
-    }
-    if ('available' in newFilters) {
-      if (newFilters.available === true) {
-        updates.available = 'in-stock';
-      } else if (newFilters.available === false) {
-        updates.available = 'out-of-stock';
-      } else {
-        updates.available = undefined;
-      }
-    }
-    if ('status' in newFilters) {
-      updates.status = newFilters.status as any;
-    }
-    if ('sortBy' in newFilters) {
-      updates.sortBy = newFilters.sortBy;
-    }
-    if ('sortOrder' in newFilters) {
-      updates.sortOrder = newFilters.sortOrder;
     }
     
     updateURL(updates);
@@ -221,15 +178,13 @@ export default function ProductsPage() {
   }, [pathname, router]);
 
   const handlePageChange = useCallback((newPage: number) => {
-    console.log('📄 Page: Page changed to:', newPage);
     updateURL({ page: newPage });
   }, [updateURL]);
 
   const handleSort = useCallback((column: string) => {
-    console.log('🔀 Page: Sort changed:', column);
-    const newSortBy = column;
+    // Toggle sort order if clicking same column, otherwise default to asc
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
+    updateURL({ sortBy: column, sortOrder: newSortOrder, page: 1 });
   }, [sortBy, sortOrder, updateURL]);
 
   // ============================================================================
@@ -372,8 +327,8 @@ export default function ProductsPage() {
     }
 
     return {
-      items: data.products,
-      products: data.products,
+      items: data.products, // Required by BaseSearchResult
+      products: data.products, // Alias for backward compatibility
       total: data.total,
       page: data.currentPage,
       totalPages: data.totalPages,

@@ -10561,8 +10561,13 @@ var ordersQuerySchema = z.object({
   returnDate: z.coerce.date().optional(),
   minAmount: z.coerce.number().optional(),
   maxAmount: z.coerce.number().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  // ✅ Use page instead of offset
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  offset: z.coerce.number().int().min(0).default(0)
+  sortBy: z.string().optional(),
+  // Add sortBy support
+  sortOrder: z.enum(["asc", "desc"]).optional()
+  // Add sortOrder support
 });
 var orderItemSchema = z.object({
   productId: z.coerce.number().int().positive(),

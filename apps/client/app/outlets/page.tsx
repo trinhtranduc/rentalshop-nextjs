@@ -22,7 +22,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useOutletsData, useCanExportData } from '@rentalshop/hooks';
+import { useAuth, useOutletsWithFilters, useCanExportData } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
 import type { OutletFilters, Outlet, OutletUpdateInput } from '@rentalshop/types';
 
@@ -106,7 +106,7 @@ export default function OutletsPage() {
     return newFilters;
   }, [search, merchantId, status, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useOutletsData({ 
+  const { data, loading, error } = useOutletsWithFilters({ 
     filters,
     debounceSearch: true,
     debounceMs: 500

@@ -967,7 +967,14 @@ var simplifiedOrders = {
    * Search orders with simple filters (simplified API)
    */
   search: async (filters) => {
-    const { page = 1, limit = 20, where: whereClause, ...whereFilters } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      where: whereClause,
+      ...whereFilters
+    } = filters;
     const skip = (page - 1) * limit;
     const where = whereClause || {};
     if (whereFilters.merchantId) {
@@ -1000,6 +1007,16 @@ var simplifiedOrders = {
         { customer: { lastName: { contains: whereFilters.search } } },
         { customer: { phone: { contains: whereFilters.search } } }
       ];
+    }
+    const orderBy = {};
+    if (sortBy === "orderNumber") {
+      orderBy.orderNumber = sortOrder;
+    } else if (sortBy === "totalAmount") {
+      orderBy.totalAmount = sortOrder;
+    } else if (sortBy === "customer") {
+      orderBy.customer = { firstName: sortOrder };
+    } else {
+      orderBy.createdAt = sortOrder;
     }
     const [orders, total] = await Promise.all([
       // OPTIMIZED: Use select instead of include for better performance
@@ -1049,19 +1066,21 @@ var simplifiedOrders = {
             }
           }
         },
-        orderBy: { createdAt: "desc" },
-        // Uses @@index([createdAt])
+        orderBy,
+        // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.order.count({ where })
     ]);
+    console.log(`\u{1F4CA} db.orders.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, orders=${orders.length}`);
     return {
       data: orders,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
   /**

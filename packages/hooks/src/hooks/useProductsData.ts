@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useDedupedApi } from '../utils/useDedupedApi';
 import { productsApi } from '@rentalshop/utils';
 import type { ProductFilters, ProductWithDetails } from '@rentalshop/types';
 
@@ -11,24 +11,24 @@ import type { ProductFilters, ProductWithDetails } from '@rentalshop/types';
 export interface ProductsDataResponse {
   products: ProductWithDetails[];
   total: number;
-  totalPages: number;
-  currentPage: number;
+  page: number;
+  currentPage: number; // Alias for page
   limit: number;
   hasMore: boolean;
+  totalPages: number;
 }
 
 export interface UseProductsDataOptions {
   filters: ProductFilters;
-  enabled?: boolean; // Allow disabling fetch
-  debounceSearch?: boolean; // Debounce search queries
-  debounceMs?: number; // Debounce delay
+  enabled?: boolean;
 }
 
 export interface UseProductsDataReturn {
   data: ProductsDataResponse | null;
   loading: boolean;
   error: Error | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
+  isStale: boolean;
 }
 
 // ============================================================================
@@ -36,110 +36,62 @@ export interface UseProductsDataReturn {
 // ============================================================================
 
 /**
- * ✅ CLEAN DATA FETCHING HOOK
- * - Single responsibility: fetch products based on filters
- * - Automatic request cancellation
- * - Debounced search
- * - No state management (that's the page's job)
+ * ✅ MODERN PRODUCTS DATA HOOK
+ * 
+ * Clean and simple wrapper around useDedupedApi for products
+ * 
+ * Features:
+ * - Automatic request deduplication
+ * - Intelligent caching (30s stale time)
+ * - Request cancellation and race condition protection
+ * - Transform API response to consistent format
+ * 
+ * Usage:
+ * ```tsx
+ * const { data, loading, error } = useProductsData({ 
+ *   filters: { page: 1, search: 'abc' }
+ * });
+ * ```
  */
 export function useProductsData(options: UseProductsDataOptions): UseProductsDataReturn {
-  const { filters, enabled = true, debounceSearch = true, debounceMs = 500 } = options;
+  const { filters, enabled = true } = options;
   
-  const [data, setData] = useState<ProductsDataResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const refetchTriggerRef = useRef(0);
+  const result = useDedupedApi({
+    filters,
+    fetchFn: async (filters: ProductFilters) => {
+      console.log('📦 useProductsData: Fetching with filters:', filters);
+      
+      const response = await productsApi.searchProducts(filters);
 
-  // Refetch function
-  const refetch = () => {
-    refetchTriggerRef.current += 1;
-  };
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        console.log('🔍 useProductsData: Fetching with filters:', filters);
-
-        const response = await productsApi.searchProducts(filters);
-
-        // Check if request was aborted
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-
-        if (response.success && response.data) {
-          // API returns: { success: true, data: { products, total, page, limit, hasMore, totalPages } }
-          const apiData = response.data as any;
-          const productsData = apiData.products || [];
-          const total = apiData.total || 0;
-          const limit = apiData.limit || filters.limit || 25;
-          const currentPage = apiData.page || filters.page || 1;
-          const totalPages = apiData.totalPages || Math.ceil(total / limit);
-          const hasMore = apiData.hasMore !== undefined ? apiData.hasMore : currentPage < totalPages;
-
-          setData({
-            products: productsData as ProductWithDetails[],
-            total,
-            totalPages,
-            currentPage,
-            limit,
-            hasMore
-          });
-        } else {
-          throw new Error('Failed to fetch products');
-        }
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('🔍 useProductsData: Error fetching products:', err);
-          setError(err as Error);
-        }
-      } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
+      if (!response.success || !response.data) {
+        throw new Error('Failed to fetch products');
       }
-    };
 
-    // Debounce search queries only
-    if (debounceSearch && (filters.search || filters.q)) {
-      console.log('🔍 useProductsData: Debouncing search query');
-      const timer = setTimeout(fetchData, debounceMs);
-      return () => {
-        clearTimeout(timer);
-        abortControllerRef.current?.abort();
+      // Transform API response to consistent format
+      const apiData = response.data as any;
+      const transformed: ProductsDataResponse = {
+        products: apiData.products || [],
+        total: apiData.total || 0,
+        page: apiData.page || 1,
+        currentPage: apiData.page || 1, // Alias for compatibility
+        limit: apiData.limit || 25,
+        hasMore: apiData.hasMore || false,
+        totalPages: apiData.totalPages || 1
       };
-    } else {
-      // Immediate fetch for non-search filters
-      fetchData();
-      return () => {
-        abortControllerRef.current?.abort();
-      };
-    }
-  }, [
-    filters, // This is now stable from parent's memoization
+      
+      console.log('✅ useProductsData: Success:', {
+        productsCount: transformed.products.length,
+        total: transformed.total,
+        page: transformed.page
+      });
+      
+      return transformed;
+    },
     enabled,
-    debounceSearch,
-    debounceMs,
-    refetchTriggerRef.current
-  ]);
+    staleTime: 30000, // 30 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false
+  });
 
-  return {
-    data,
-    loading,
-    error,
-    refetch
-  };
+  return result;
 }
-
