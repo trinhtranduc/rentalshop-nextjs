@@ -255,7 +255,7 @@ export default function OrdersPage() {
   // ============================================================================
   
   const orderData = useMemo(() => {
-    if (!data) {
+    if (!data || !data.orders) {
       return {
         items: [],
         orders: [],

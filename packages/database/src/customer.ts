@@ -517,7 +517,13 @@ export const simplifiedCustomers = {
    * Search customers with pagination (simplified API)
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { 
+      page = 1, 
+      limit = 20, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc',
+      ...whereFilters 
+    } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -546,6 +552,15 @@ export const simplifiedCustomers = {
     if (whereFilters.state) where.state = { contains: whereFilters.state };
     if (whereFilters.country) where.country = { contains: whereFilters.country };
 
+    // ✅ Build dynamic orderBy clause
+    const orderBy: any = {};
+    if (sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'email' || sortBy === 'phone') {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      // Default: createdAt
+      orderBy.createdAt = sortOrder;
+    }
+
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
         where,
@@ -555,19 +570,22 @@ export const simplifiedCustomers = {
             select: { orders: true }
           }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy, // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.customer.count({ where })
     ]);
 
+    console.log(`📊 db.customers.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, customers=${customers.length}`);
+
     return {
       data: customers,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
 

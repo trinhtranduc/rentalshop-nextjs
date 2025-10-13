@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useTransition, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { 
   PageWrapper,
   PageHeader,
@@ -42,7 +42,6 @@ export default function CustomersPage() {
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const canExport = useCanExportData();
-  const [isPending, startTransition] = useTransition();
   
   // Dialog states
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -66,36 +65,25 @@ export default function CustomersPage() {
   // DATA FETCHING - Clean & Simple
   // ============================================================================
   
-  // Memoize filters với ref để tránh re-create
-  const filtersRef = useRef<CustomerFilters | null>(null);
-  const filters: CustomerFilters = useMemo(() => {
-    const newFilters: CustomerFilters = {
-      q: search || undefined,
-      search: search || undefined,
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    };
-    
-    // Only update if actually changed
-    const filterString = JSON.stringify(newFilters);
-    const prevFilterString = JSON.stringify(filtersRef.current);
-    
-    if (filterString === prevFilterString && filtersRef.current) {
-      console.log('🔍 Page: Filters unchanged, returning cached');
-      return filtersRef.current;
-    }
-    
-    console.log('🔍 Page: Filters changed, creating new:', newFilters);
-    filtersRef.current = newFilters;
-    return newFilters;
-  }, [search, page, limit, sortBy, sortOrder]);
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: CustomerFilters = useMemo(() => ({
+    q: search || undefined,
+    search: search || undefined,
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [search, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useCustomersData({ 
-    filters,
-    debounceSearch: true,
-    debounceMs: 500
+  const { data, loading, error } = useCustomersData({ filters });
+  
+  // Debug: Log data state
+  console.log('📊 Customers Page - Data state:', {
+    hasData: !!data,
+    customersCount: data?.customers?.length || 0,
+    total: data?.total,
+    currentPage: data?.currentPage,
+    loading
   });
 
   // ============================================================================
@@ -114,13 +102,8 @@ export default function CustomersPage() {
     });
     
     const newURL = `${pathname}?${params.toString()}`;
-    console.log('🔄 updateURL: Pushing new URL:', newURL);
-    
-    // Use transition for smooth UI updates
-    startTransition(() => {
-      router.push(newURL, { scroll: false });
-    });
-  }, [pathname, router, searchParams, startTransition]);
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   // ============================================================================
   // FILTER HANDLERS - Simple URL Updates
@@ -251,7 +234,13 @@ export default function CustomersPage() {
   // ============================================================================
   
   const customerData = useMemo(() => {
-    if (!data) {
+    console.log('🔄 customerData memo - Input data:', {
+      hasData: !!data,
+      customersLength: data?.customers?.length,
+      total: data?.total
+    });
+    
+    if (!data || !data.customers) {
       return {
         items: [],
         customers: [],
@@ -263,15 +252,23 @@ export default function CustomersPage() {
       };
     }
 
-    return {
-      items: data.customers,
-      customers: data.customers,
+    const result = {
+      items: data.customers, // Required by BaseSearchResult
+      customers: data.customers, // Alias for backward compatibility
       total: data.total,
       page: data.currentPage,
       totalPages: data.totalPages,
       limit: data.limit,
       hasMore: data.hasMore
     };
+    
+    console.log('✅ customerData memo - Output:', {
+      customersLength: result.customers.length,
+      total: result.total,
+      page: result.page
+    });
+    
+    return result;
   }, [data]);
 
   // ============================================================================

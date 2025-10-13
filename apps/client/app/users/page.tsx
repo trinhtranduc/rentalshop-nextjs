@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useTransition, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { 
   PageWrapper,
   PageHeader,
@@ -42,7 +42,6 @@ export default function UsersPage() {
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const canExport = useCanExportData();
-  const [isPending, startTransition] = useTransition();
   
   // Dialog states
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -68,37 +67,19 @@ export default function UsersPage() {
   // DATA FETCHING - Clean & Simple
   // ============================================================================
   
-  const filtersRef = useRef<UserFilters | null>(null);
-  const filters: UserFilters = useMemo(() => {
-    const newFilters: UserFilters = {
-      q: search || undefined,
-      search: search || undefined,
-      role: (role as any) || undefined,
-      isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    };
-    
-    const filterString = JSON.stringify(newFilters);
-    const prevFilterString = JSON.stringify(filtersRef.current);
-    
-    if (filterString === prevFilterString && filtersRef.current) {
-      console.log('🔍 Page: Filters unchanged, returning cached');
-      return filtersRef.current;
-    }
-    
-    console.log('🔍 Page: Filters changed, creating new:', newFilters);
-    filtersRef.current = newFilters;
-    return newFilters;
-  }, [search, role, status, page, limit, sortBy, sortOrder]);
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: UserFilters = useMemo(() => ({
+    q: search || undefined,
+    search: search || undefined,
+    role: (role as any) || undefined,
+    isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [search, role, status, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useUsersData({ 
-    filters,
-    debounceSearch: true,
-    debounceMs: 500
-  });
+  const { data, loading, error } = useUsersData({ filters });
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -116,12 +97,8 @@ export default function UsersPage() {
     });
     
     const newURL = `${pathname}?${params.toString()}`;
-    console.log('🔄 updateURL: Pushing new URL:', newURL);
-    
-    startTransition(() => {
-      router.push(newURL, { scroll: false });
-    });
-  }, [pathname, router, searchParams, startTransition]);
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   // ============================================================================
   // FILTER HANDLERS

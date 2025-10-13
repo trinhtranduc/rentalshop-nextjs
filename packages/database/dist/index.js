@@ -269,7 +269,13 @@ var simplifiedUsers = {
    * Search users with simple filters (simplified API)
    */
   search: async (filters) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      ...whereFilters
+    } = filters;
     const skip = (page - 1) * limit;
     const where = {};
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
@@ -283,6 +289,12 @@ var simplifiedUsers = {
         { email: { contains: whereFilters.search, mode: "insensitive" } }
       ];
     }
+    const orderBy = {};
+    if (sortBy === "firstName" || sortBy === "lastName" || sortBy === "email") {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = sortOrder;
+    }
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -290,18 +302,21 @@ var simplifiedUsers = {
           merchant: { select: { id: true, name: true } },
           outlet: { select: { id: true, name: true } }
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
+        // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.user.count({ where })
     ]);
+    console.log(`\u{1F4CA} db.users.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, users=${users.length}`);
     return {
       data: users,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
   count: async (options) => {
@@ -360,7 +375,13 @@ var simplifiedCustomers = {
    * Search customers with pagination (simplified API)
    */
   search: async (filters) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      ...whereFilters
+    } = filters;
     const skip = (page - 1) * limit;
     const where = {};
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
@@ -381,6 +402,12 @@ var simplifiedCustomers = {
     if (whereFilters.city) where.city = { contains: whereFilters.city };
     if (whereFilters.state) where.state = { contains: whereFilters.state };
     if (whereFilters.country) where.country = { contains: whereFilters.country };
+    const orderBy = {};
+    if (sortBy === "firstName" || sortBy === "lastName" || sortBy === "email" || sortBy === "phone") {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = sortOrder;
+    }
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
         where,
@@ -390,18 +417,21 @@ var simplifiedCustomers = {
             select: { orders: true }
           }
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
+        // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.customer.count({ where })
     ]);
+    console.log(`\u{1F4CA} db.customers.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, customers=${customers.length}`);
     return {
       data: customers,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
   /**
@@ -1381,12 +1411,14 @@ var simplifiedOutlets = {
       }),
       prisma.outlet.count({ where })
     ]);
+    console.log(`\u{1F4CA} db.outlets.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, outlets=${outlets.length}`);
     return {
       data: outlets,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
   count: async (options) => {
@@ -2592,12 +2624,14 @@ var search2 = async (filters) => {
     }),
     prisma.category.count({ where })
   ]);
+  console.log(`\u{1F4CA} db.categories.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, categories=${categories.length}`);
   return {
     data: categories,
     total,
     page,
     limit,
-    hasMore: skip + limit < total
+    hasMore: skip + limit < total,
+    totalPages: Math.ceil(total / limit)
   };
 };
 var getStats2 = async (where = {}) => {

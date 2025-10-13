@@ -97,7 +97,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
-        hasMore: result.hasMore || false
+        hasMore: result.hasMore || false,
+        totalPages: result.totalPages || Math.ceil((result.total || 0) / (result.limit || 20))
       }
     };
 
