@@ -45,16 +45,16 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
         where.isActive = true;
       } else if (status === 'inactive') {
         where.isActive = false;
-      } else if (status === 'trial') {
-        where.subscriptionStatus = 'trial';
-      } else if (status === 'expired') {
-        where.subscriptionStatus = 'expired';
       }
+      // trial/expired will be filtered via subscription.status (post-processing)
     }
 
-    // Direct status filtering
+    // Subscription status filtering (stored for post-processing)
+    let subscriptionStatusFilter: string | null = null;
     if (subscriptionStatus && subscriptionStatus !== 'all') {
-      where.subscriptionStatus = subscriptionStatus;
+      subscriptionStatusFilter = subscriptionStatus;
+    } else if (status === 'trial' || status === 'expired') {
+      subscriptionStatusFilter = status;
     }
 
     // Active status filtering
@@ -96,7 +96,8 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
     } else if (sortBy === 'email') {
       orderBy.email = sortOrder;
     } else if (sortBy === 'subscriptionStatus') {
-      orderBy.subscriptionStatus = sortOrder;
+      // Sort by subscription status (will be handled via subscription relation)
+      orderBy.subscription = { status: sortOrder };
     } else if (sortBy === 'planId') {
       orderBy.planId = sortOrder;
           } else if (sortBy === 'createdAt') {
@@ -121,8 +122,16 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
       limit
     });
 
-    const merchants = result.data;
-    const total = result.total;
+    let merchants = result.data;
+    let total = result.total;
+
+    // Apply subscription status filter (post-processing)
+    if (subscriptionStatusFilter) {
+      merchants = merchants.filter((m: any) => 
+        m.subscription?.status?.toLowerCase() === subscriptionStatusFilter.toLowerCase()
+      );
+      total = merchants.length;
+    }
 
     // Get counts for each merchant
     const merchantIds = merchants.map((m: any) => m.id);
@@ -180,7 +189,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
       description: merchant.description,
       isActive: merchant.isActive,
       planId: merchant.planId,
-      subscriptionStatus: merchant.subscriptionStatus,
+      subscription: merchant.subscription, // ✅ Include subscription object (single source of truth)
       outletsCount: outletCountMap[merchant.id] || 0,
       usersCount: userCountMap[merchant.id] || 0,
       productsCount: productCountMap[merchant.id] || 0,
