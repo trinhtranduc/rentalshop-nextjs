@@ -312,8 +312,7 @@ export default function SubscriptionsPage() {
       merchant: apiSub.merchant || {
         id: apiSub.merchantId,
         name: 'Unknown Merchant',
-        email: '',
-        subscriptionStatus: 'active'
+        email: ''
       },
       plan: apiSub.plan || {
         id: apiSub.planId,
