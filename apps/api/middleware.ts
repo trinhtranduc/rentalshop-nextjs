@@ -26,6 +26,7 @@ const publicRoutes = [
   '/api/docs',
   '/api/plans/public',
   '/api/test',
+  '/api/debug', // Debug endpoints for troubleshooting
 ];
 
 // Note: Subscription validation routes are now defined in @rentalshop/middleware
