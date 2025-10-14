@@ -25184,9 +25184,9 @@ function MerchantPlanManagement({
           /* @__PURE__ */ jsxs117("div", { className: "flex items-center justify-between text-sm", children: [
             /* @__PURE__ */ jsx132("span", { className: "text-gray-600", children: "Period:" }),
             /* @__PURE__ */ jsxs117("span", { className: "font-medium", children: [
-              formatDateTimeLong(currentSubscription.startDate),
+              formatDateTimeLong(currentSubscription.currentPeriodStart),
               " - ",
-              formatDateTimeLong(currentSubscription.endDate)
+              formatDateTimeLong(currentSubscription.currentPeriodEnd)
             ] })
           ] }),
           /* @__PURE__ */ jsxs117("div", { className: "flex items-center justify-between text-sm", children: [
@@ -25316,9 +25316,9 @@ function MerchantPlanManagement({
         /* @__PURE__ */ jsxs117("div", { children: [
           /* @__PURE__ */ jsx132("p", { className: "font-medium", children: subscription.planName || "Unknown Plan" }),
           /* @__PURE__ */ jsxs117("p", { className: "text-sm text-gray-500", children: [
-            formatDate11(subscription.startDate),
+            formatDate11(subscription.currentPeriodStart),
             " - ",
-            subscription.endDate ? formatDate11(subscription.endDate) : "N/A"
+            subscription.currentPeriodEnd ? formatDate11(subscription.currentPeriodEnd) : "N/A"
           ] }),
           subscription.changeReason && /* @__PURE__ */ jsxs117("p", { className: "text-xs text-gray-400 mt-1", children: [
             "Reason: ",

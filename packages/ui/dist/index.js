@@ -25102,9 +25102,9 @@ function MerchantPlanManagement({
           /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
             /* @__PURE__ */ (0, import_jsx_runtime132.jsx)("span", { className: "text-gray-600", children: "Period:" }),
             /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)("span", { className: "font-medium", children: [
-              (0, import_utils34.formatDateTimeLong)(currentSubscription.startDate),
+              (0, import_utils34.formatDateTimeLong)(currentSubscription.currentPeriodStart),
               " - ",
-              (0, import_utils34.formatDateTimeLong)(currentSubscription.endDate)
+              (0, import_utils34.formatDateTimeLong)(currentSubscription.currentPeriodEnd)
             ] })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)("div", { className: "flex items-center justify-between text-sm", children: [
@@ -25234,9 +25234,9 @@ function MerchantPlanManagement({
         /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime132.jsx)("p", { className: "font-medium", children: subscription.planName || "Unknown Plan" }),
           /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)("p", { className: "text-sm text-gray-500", children: [
-            formatDate11(subscription.startDate),
+            formatDate11(subscription.currentPeriodStart),
             " - ",
-            subscription.endDate ? formatDate11(subscription.endDate) : "N/A"
+            subscription.currentPeriodEnd ? formatDate11(subscription.currentPeriodEnd) : "N/A"
           ] }),
           subscription.changeReason && /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)("p", { className: "text-xs text-gray-400 mt-1", children: [
             "Reason: ",
