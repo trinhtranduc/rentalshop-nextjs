@@ -39,6 +39,15 @@ import {
   Bell,
   AlertTriangle
 } from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
 
 interface SystemMetrics {
   totalMerchants: number;
@@ -59,6 +68,143 @@ interface MerchantTrend {
   activeMerchants: number;
 }
 
+interface SubscriptionRevenueData {
+  period: string;
+  actual: number;
+}
+
+interface SubscriptionRevenueChartProps {
+  data: SubscriptionRevenueData[];
+  loading?: boolean;
+}
+
+interface MerchantsRegistrationData {
+  period: string;
+  actual: number;
+}
+
+interface MerchantsRegistrationChartProps {
+  data: MerchantsRegistrationData[];
+  loading?: boolean;
+}
+
+const SubscriptionRevenueChart: React.FC<SubscriptionRevenueChartProps> = ({ data, loading = false }) => {
+  if (loading) {
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <div className="text-gray-500">Loading chart data...</div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <div className="text-gray-500">No data available</div>
+      </div>
+    );
+  }
+
+  // Transform data for Recharts
+  const chartData = data.map(item => ({
+    period: item.period,
+    'Subscription Revenue': item.actual,
+  }));
+
+  // Custom tooltip formatter
+  const formatTooltip = (value: number, name: string) => [
+    `$${value.toLocaleString()}`,
+    name
+  ];
+
+  return (
+    <ResponsiveContainer width="100%" height={400}>
+      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="period" 
+          tick={{ fontSize: 12 }}
+          angle={-45}
+          textAnchor="end"
+          height={80}
+        />
+        <YAxis 
+          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          tick={{ fontSize: 12 }}
+        />
+        <Tooltip 
+          formatter={formatTooltip}
+          labelStyle={{ color: '#374151' }}
+        />
+        <Bar 
+          dataKey="Subscription Revenue" 
+          fill="#10B981" 
+          radius={[4, 4, 0, 0]}
+          name="Subscription Revenue"
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
+
+const MerchantsRegistrationChart: React.FC<MerchantsRegistrationChartProps> = ({ data, loading = false }) => {
+  if (loading) {
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <div className="text-gray-500">Loading chart data...</div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <div className="text-gray-500">No data available</div>
+      </div>
+    );
+  }
+
+  // Transform data for Recharts
+  const chartData = data.map(item => ({
+    period: item.period,
+    'Merchants Registered': item.actual,
+  }));
+
+  // Custom tooltip formatter
+  const formatTooltip = (value: number, name: string) => [
+    `${value} merchants`,
+    name
+  ];
+
+  return (
+    <ResponsiveContainer width="100%" height={400}>
+      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="period" 
+          tick={{ fontSize: 12 }}
+          angle={-45}
+          textAnchor="end"
+          height={80}
+        />
+        <YAxis 
+          tick={{ fontSize: 12 }}
+        />
+        <Tooltip 
+          formatter={formatTooltip}
+          labelStyle={{ color: '#374151' }}
+        />
+        <Bar 
+          dataKey="Merchants Registered" 
+          fill="#3B82F6" 
+          radius={[4, 4, 0, 0]}
+          name="Merchants Registered"
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
+
 export default function AdminDashboard() {
   const pathname = usePathname();
   const { toastError } = useToast();
@@ -78,13 +224,16 @@ export default function AdminDashboard() {
   const [merchantTrends, setMerchantTrends] = useState<MerchantTrend[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [subscriptionRevenueData, setSubscriptionRevenueData] = useState<any[]>([]);
+  const [merchantsRegistrationData, setMerchantsRegistrationData] = useState<any[]>([]);
   const [ordersData, setOrdersData] = useState<any[]>([]);
   const [newMerchants, setNewMerchants] = useState<any[]>([]);
   const [subscriptionStats, setSubscriptionStats] = useState({
     active: 0,
     trial: 0,
     expiring: 0,
-    cancelled: 0
+    cancelled: 0,
+    totalRevenue: 0
   });
   const [growthMetrics, setGrowthMetrics] = useState({
     customerGrowth: 0,
@@ -93,6 +242,189 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>('month');
+
+  // Calculate subscription revenue data for chart based on subscription creation/success date
+  const calculateSubscriptionRevenueData = (subscriptions: any[], timePeriod: string, startDate: Date, endDate: Date) => {
+    // Filter subscriptions that were created/successful in the time period
+    const subscriptionsInPeriod = subscriptions.filter((s: any) => {
+      const createdAt = new Date(s.createdAt);
+      return createdAt >= startDate && createdAt <= endDate && ['active', 'trial'].includes(s.status);
+    });
+    
+    if (timePeriod === 'today') {
+      // For today, show hourly breakdown of subscriptions created today
+      const hourlyData = [];
+      for (let hour = 0; hour < 24; hour++) {
+        const hourStart = new Date(startDate);
+        hourStart.setHours(hour, 0, 0, 0);
+        const hourEnd = new Date(startDate);
+        hourEnd.setHours(hour + 1, 0, 0, 0);
+        
+        // Calculate revenue for subscriptions created in this hour
+        const hourlyRevenue = subscriptionsInPeriod.reduce((sum, sub) => {
+          const createdAt = new Date(sub.createdAt);
+          
+          // Check if subscription was created in this hour
+          if (createdAt >= hourStart && createdAt < hourEnd) {
+            return sum + (sub.amount || 0);
+          }
+          return sum;
+        }, 0);
+        
+        hourlyData.push({
+          period: hourStart.toLocaleTimeString('en-US', { hour: '2-digit', hour12: false }),
+          actual: hourlyRevenue
+        });
+      }
+      return hourlyData;
+      
+    } else if (timePeriod === 'month') {
+      // For month, show daily breakdown of subscriptions created in this month
+      const dailyData = [];
+      const current = new Date(startDate);
+      
+      while (current <= endDate) {
+        const dayStart = new Date(current);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(current);
+        dayEnd.setHours(23, 59, 59, 999);
+        
+        // Calculate revenue for subscriptions created on this day
+        const dailyRevenue = subscriptionsInPeriod.reduce((sum, sub) => {
+          const createdAt = new Date(sub.createdAt);
+          
+          // Check if subscription was created on this day
+          if (createdAt >= dayStart && createdAt <= dayEnd) {
+            return sum + (sub.amount || 0);
+          }
+          return sum;
+        }, 0);
+        
+        dailyData.push({
+          period: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          actual: dailyRevenue
+        });
+        
+        current.setDate(current.getDate() + 1);
+      }
+      return dailyData;
+      
+    } else if (timePeriod === 'year') {
+      // For year, show monthly breakdown of subscriptions created in this year
+      const monthlyData = [];
+      const current = new Date(startDate);
+      
+      while (current <= endDate) {
+        const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
+        const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
+        
+        // Calculate revenue for subscriptions created during this month
+        const monthlyRevenue = subscriptionsInPeriod.reduce((sum, sub) => {
+          const createdAt = new Date(sub.createdAt);
+          
+          // Check if subscription was created during this month
+          if (createdAt >= monthStart && createdAt <= monthEnd) {
+            return sum + (sub.amount || 0);
+          }
+          return sum;
+        }, 0);
+        
+        monthlyData.push({
+          period: current.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          actual: monthlyRevenue
+        });
+        
+        current.setMonth(current.getMonth() + 1);
+      }
+      return monthlyData;
+    }
+    
+    return [];
+  };
+
+  // Calculate merchants registration data for chart based on merchant creation date
+  const calculateMerchantsRegistrationData = (merchants: any[], timePeriod: string, startDate: Date, endDate: Date) => {
+    // Filter merchants that were created in the time period
+    const merchantsInPeriod = merchants.filter((m: any) => {
+      const createdAt = new Date(m.createdAt);
+      return createdAt >= startDate && createdAt <= endDate;
+    });
+    
+    if (timePeriod === 'today') {
+      // For today, show hourly breakdown of merchants created today
+      const hourlyData = [];
+      for (let hour = 0; hour < 24; hour++) {
+        const hourStart = new Date(startDate);
+        hourStart.setHours(hour, 0, 0, 0);
+        const hourEnd = new Date(startDate);
+        hourEnd.setHours(hour + 1, 0, 0, 0);
+        
+        // Count merchants created in this hour
+        const hourlyCount = merchantsInPeriod.filter((m: any) => {
+          const createdAt = new Date(m.createdAt);
+          return createdAt >= hourStart && createdAt < hourEnd;
+        }).length;
+        
+        hourlyData.push({
+          period: hourStart.toLocaleTimeString('en-US', { hour: '2-digit', hour12: false }),
+          actual: hourlyCount
+        });
+      }
+      return hourlyData;
+      
+    } else if (timePeriod === 'month') {
+      // For month, show daily breakdown of merchants created in this month
+      const dailyData = [];
+      const current = new Date(startDate);
+      
+      while (current <= endDate) {
+        const dayStart = new Date(current);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(current);
+        dayEnd.setHours(23, 59, 59, 999);
+        
+        // Count merchants created on this day
+        const dailyCount = merchantsInPeriod.filter((m: any) => {
+          const createdAt = new Date(m.createdAt);
+          return createdAt >= dayStart && createdAt <= dayEnd;
+        }).length;
+        
+        dailyData.push({
+          period: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          actual: dailyCount
+        });
+        
+        current.setDate(current.getDate() + 1);
+      }
+      return dailyData;
+      
+    } else if (timePeriod === 'year') {
+      // For year, show monthly breakdown of merchants created in this year
+      const monthlyData = [];
+      const current = new Date(startDate);
+      
+      while (current <= endDate) {
+        const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
+        const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
+        
+        // Count merchants created during this month
+        const monthlyCount = merchantsInPeriod.filter((m: any) => {
+          const createdAt = new Date(m.createdAt);
+          return createdAt >= monthStart && createdAt <= monthEnd;
+        }).length;
+        
+        monthlyData.push({
+          period: current.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          actual: monthlyCount
+        });
+        
+        current.setMonth(current.getMonth() + 1);
+      }
+      return monthlyData;
+    }
+    
+    return [];
+  };
 
   useEffect(() => {
     fetchSystemMetrics();
@@ -284,6 +616,11 @@ export default function AdminDashboard() {
           }));
         setNewMerchants(newMerchantsData);
         console.log('✅ New merchants calculated:', newMerchantsData.length);
+
+        // Calculate merchants registration data for chart based on time period
+        const merchantsRegistrationChartData = calculateMerchantsRegistrationData(merchantsArray, timePeriod, startDate, endDate);
+        setMerchantsRegistrationData(merchantsRegistrationChartData);
+        console.log('✅ Merchants registration chart data calculated:', merchantsRegistrationChartData);
       }
 
       // Subscription stats (calculate from subscriptions data)
@@ -299,10 +636,21 @@ export default function AdminDashboard() {
             const daysUntilExpiry = Math.ceil((new Date(s.currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 7 && daysUntilExpiry > 0;
           }).length,
-          cancelled: subscriptions.filter((s: any) => s.status === 'cancelled').length
+          cancelled: subscriptions.filter((s: any) => s.status === 'cancelled').length,
+          totalRevenue: subscriptions
+            .filter((s: any) => {
+              const createdAt = new Date(s.createdAt);
+              return createdAt >= startDate && createdAt <= endDate && ['active', 'trial'].includes(s.status);
+            })
+            .reduce((sum: number, s: any) => sum + (s.amount || 0), 0)
         };
         setSubscriptionStats(stats);
         console.log('✅ Subscription stats calculated:', stats);
+
+        // Calculate subscription revenue data for chart based on time period
+        const subscriptionRevenueChartData = calculateSubscriptionRevenueData(subscriptions, timePeriod, startDate, endDate);
+        setSubscriptionRevenueData(subscriptionRevenueChartData);
+        console.log('✅ Subscription revenue chart data calculated:', subscriptionRevenueChartData);
 
       }
     } catch (error) {
@@ -529,24 +877,29 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <Card>
               <CardHeader>
-                <CardTitle>Platform Revenue Trend</CardTitle>
+                <CardTitle>
+                  Subscription Revenue by Creation Date
+                  {timePeriod === 'today' && ' (Today)'}
+                  {timePeriod === 'month' && ' (This Month)'}
+                  {timePeriod === 'year' && ' (This Year)'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <IncomeChart data={revenueData} loading={loading} />
+                <SubscriptionRevenueChart data={subscriptionRevenueData} loading={loading} />
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader>
-                <CardTitle>New Merchants Growth</CardTitle>
+                <CardTitle>
+                  Total Merchants Registered
+                  {timePeriod === 'today' && ' (Today)'}
+                  {timePeriod === 'month' && ' (This Month)'}
+                  {timePeriod === 'year' && ' (This Year)'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <OrderChart 
-                  data={ordersData} 
-                  loading={loading} 
-                  legendLabel="New Merchants"
-                  tooltipLabel="merchants"
-                />
+                <MerchantsRegistrationChart data={merchantsRegistrationData} loading={loading} />
               </CardContent>
             </Card>
           </div>

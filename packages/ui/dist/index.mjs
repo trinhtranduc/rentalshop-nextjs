@@ -20542,7 +20542,7 @@ function MerchantTable({
       /* @__PURE__ */ jsx114("p", { className: "text-sm", children: "Try adjusting your filters or create some merchants to get started." })
     ] }) }) });
   }
-  return /* @__PURE__ */ jsx114(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx114(CardContent2, { className: "p-0 flex-1 overflow-auto", children: /* @__PURE__ */ jsx114("div", { className: "overflow-x-auto h-full overflow-y-auto", children: /* @__PURE__ */ jsxs100("table", { className: "w-full", children: [
+  return /* @__PURE__ */ jsx114(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx114(CardContent2, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsx114("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ jsxs100("table", { className: "w-full", children: [
     /* @__PURE__ */ jsx114("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs100("tr", { children: [
       /* @__PURE__ */ jsx114("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Merchant Name" }),
       /* @__PURE__ */ jsx114("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan & Status" }),
@@ -20646,12 +20646,11 @@ function MerchantTable({
 var MerchantTable_default = MerchantTable;
 
 // src/components/features/Merchants/components/MerchantPlanManagement.tsx
-import { useState as useState55, useEffect as useEffect32 } from "react";
+import { useState as useState55, useEffect as useEffect31 } from "react";
 
 // src/components/features/Subscriptions/components/SubscriptionList.tsx
-import { useState as useState47, useEffect as useEffect26 } from "react";
+import { useState as useState47 } from "react";
 import {
-  Search as Search6,
   Eye as Eye8,
   Edit as Edit8,
   Building as Building4,
@@ -22007,35 +22006,13 @@ function SubscriptionList({
   loading = false,
   pagination
 }) {
-  const [searchTerm, setSearchTerm] = useState47("");
-  const [statusFilter, setStatusFilter] = useState47("all");
-  const [planFilter, setPlanFilter] = useState47("all");
-  const [merchantFilter, setMerchantFilter] = useState47("all");
-  const [filteredSubscriptions, setFilteredSubscriptions] = useState47(subscriptions);
   const [openMenuId, setOpenMenuId] = useState47(null);
   const [showViewDialog, setShowViewDialog] = useState47(false);
   const [showEditDialog, setShowEditDialog] = useState47(false);
   const [showExtendDialog, setShowExtendDialog] = useState47(false);
   const [showChangePlanDialog, setShowChangePlanDialog] = useState47(false);
   const [selectedSubscription, setSelectedSubscription] = useState47(null);
-  useEffect26(() => {
-    let filtered = subscriptions;
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (sub) => sub.merchant?.name.toLowerCase().includes(searchTerm.toLowerCase()) || sub.plan?.name.toLowerCase().includes(searchTerm.toLowerCase()) || sub.id.toString().includes(searchTerm)
-      );
-    }
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((sub) => sub.status === statusFilter);
-    }
-    if (planFilter !== "all") {
-      filtered = filtered.filter((sub) => sub.planId.toString() === planFilter);
-    }
-    if (merchantFilter !== "all") {
-      filtered = filtered.filter((sub) => sub.merchantId.toString() === merchantFilter);
-    }
-    setFilteredSubscriptions(filtered);
-  }, [subscriptions, searchTerm, statusFilter, planFilter, merchantFilter]);
+  const filteredSubscriptions = subscriptions;
   const getStatusBadge = (status) => {
     const statusMap = {
       "trial": "trial",
@@ -22117,49 +22094,10 @@ function SubscriptionList({
   const canCancel = (subscription) => ["active", "trial"].includes(subscription.status);
   const canExtend = (subscription) => ["active", "trial", "past_due"].includes(subscription.status);
   const canChangePlan = (subscription) => ["active", "trial"].includes(subscription.status);
-  return /* @__PURE__ */ jsxs106("div", { className: "flex flex-col h-full", children: [
-    /* @__PURE__ */ jsx120("div", { className: "flex-shrink-0 space-y-4", children: /* @__PURE__ */ jsx120(Card2, { children: /* @__PURE__ */ jsx120(CardContent2, { className: "p-6", children: /* @__PURE__ */ jsxs106("div", { className: "grid grid-cols-1 md:grid-cols-4 gap-4", children: [
-      /* @__PURE__ */ jsxs106("div", { className: "relative", children: [
-        /* @__PURE__ */ jsx120(Search6, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" }),
-        /* @__PURE__ */ jsx120(
-          Input2,
-          {
-            placeholder: "Search subscriptions...",
-            value: searchTerm,
-            onChange: (e) => setSearchTerm(e.target.value),
-            className: "pl-10"
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsxs106(Select2, { value: statusFilter, onValueChange: setStatusFilter, children: [
-        /* @__PURE__ */ jsx120(SelectTrigger2, { children: /* @__PURE__ */ jsx120(SelectValue2, { placeholder: "Filter by status" }) }),
-        /* @__PURE__ */ jsxs106(SelectContent2, { children: [
-          /* @__PURE__ */ jsx120(SelectItem2, { value: "all", children: "All Statuses" }),
-          /* @__PURE__ */ jsx120(SelectItem2, { value: "trial", children: "Trial" }),
-          /* @__PURE__ */ jsx120(SelectItem2, { value: "active", children: "Active" }),
-          /* @__PURE__ */ jsx120(SelectItem2, { value: "past_due", children: "Past Due" }),
-          /* @__PURE__ */ jsx120(SelectItem2, { value: "cancelled", children: "Cancelled" }),
-          /* @__PURE__ */ jsx120(SelectItem2, { value: "paused", children: "Paused" })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxs106(Select2, { value: planFilter, onValueChange: setPlanFilter, children: [
-        /* @__PURE__ */ jsx120(SelectTrigger2, { children: /* @__PURE__ */ jsx120(SelectValue2, { placeholder: "Filter by plan" }) }),
-        /* @__PURE__ */ jsxs106(SelectContent2, { children: [
-          /* @__PURE__ */ jsx120(SelectItem2, { value: "all", children: "All Plans" }),
-          plans && plans.length > 0 ? plans.map((plan) => /* @__PURE__ */ jsx120(SelectItem2, { value: plan.id.toString(), children: plan.name }, plan.id)) : null
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxs106(Select2, { value: merchantFilter, onValueChange: setMerchantFilter, children: [
-        /* @__PURE__ */ jsx120(SelectTrigger2, { children: /* @__PURE__ */ jsx120(SelectValue2, { placeholder: "Filter by merchant" }) }),
-        /* @__PURE__ */ jsxs106(SelectContent2, { children: [
-          /* @__PURE__ */ jsx120(SelectItem2, { value: "all", children: "All Merchants" }),
-          merchants && merchants.length > 0 ? merchants.map((merchant) => /* @__PURE__ */ jsx120(SelectItem2, { value: merchant.id.toString(), children: merchant.name }, merchant.id)) : null
-        ] })
-      ] })
-    ] }) }) }) }),
-    /* @__PURE__ */ jsx120("div", { className: "flex-1 min-h-0 mt-4", children: /* @__PURE__ */ jsxs106(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: [
-      /* @__PURE__ */ jsx120(CardHeader2, { children: /* @__PURE__ */ jsx120(CardTitle2, { children: "Subscriptions" }) }),
-      /* @__PURE__ */ jsx120(CardContent2, { className: "p-0 flex-1", children: loading ? /* @__PURE__ */ jsx120("div", { className: "flex items-center justify-center py-12", children: /* @__PURE__ */ jsxs106("div", { className: "flex items-center space-x-2", children: [
+  return /* @__PURE__ */ jsxs106(Fragment17, { children: [
+    /* @__PURE__ */ jsxs106(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: [
+      /* @__PURE__ */ jsx120(CardHeader2, { className: "flex-shrink-0", children: /* @__PURE__ */ jsx120(CardTitle2, { children: "Subscriptions" }) }),
+      loading ? /* @__PURE__ */ jsx120("div", { className: "flex items-center justify-center py-12", children: /* @__PURE__ */ jsxs106("div", { className: "flex items-center space-x-2", children: [
         /* @__PURE__ */ jsx120("div", { className: "animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" }),
         /* @__PURE__ */ jsx120("span", { children: "Loading subscriptions..." })
       ] }) }) : filteredSubscriptions.length === 0 ? /* @__PURE__ */ jsx120("div", { className: "text-center py-12", children: /* @__PURE__ */ jsxs106("div", { className: "text-text-tertiary", children: [
@@ -22167,8 +22105,8 @@ function SubscriptionList({
         /* @__PURE__ */ jsx120("h3", { className: "text-lg font-medium mb-2", children: "No subscriptions found" }),
         /* @__PURE__ */ jsx120("p", { className: "text-sm", children: "Try adjusting your search or filter criteria." })
       ] }) }) : (
-        /* Table with scroll */
-        /* @__PURE__ */ jsx120("div", { className: "overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto", children: /* @__PURE__ */ jsxs106("table", { className: "w-full", children: [
+        /* Table with scroll - same structure as ProductTable */
+        /* @__PURE__ */ jsx120("div", { className: "flex-1 overflow-auto", children: /* @__PURE__ */ jsxs106("table", { className: "w-full", children: [
           /* @__PURE__ */ jsx120("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs106("tr", { children: [
             /* @__PURE__ */ jsx120("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Merchant" }),
             /* @__PURE__ */ jsx120("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan" }),
@@ -22207,6 +22145,7 @@ function SubscriptionList({
                   align: "end",
                   open: openMenuId === subscription.id,
                   onOpenChange: (open) => setOpenMenuId(open ? subscription.id : null),
+                  className: "z-50",
                   children: [
                     /* @__PURE__ */ jsxs106(
                       DropdownMenuItem,
@@ -22257,30 +22196,18 @@ function SubscriptionList({
             ] }) })
           ] }, subscription.id)) })
         ] }) })
-      ) })
-    ] }) }),
-    pagination && pagination.total > 0 && pagination.total > pagination.limit && /* @__PURE__ */ jsx120("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ jsxs106("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsxs106("div", { className: "text-sm text-gray-500", children: [
-        "Showing ",
-        (pagination.page - 1) * pagination.limit + 1,
-        " to ",
-        Math.min(pagination.page * pagination.limit, pagination.total),
-        " of ",
-        pagination.total,
-        " subscriptions"
-      ] }),
-      /* @__PURE__ */ jsx120(
-        Pagination,
-        {
-          currentPage: pagination.page,
-          totalPages: Math.ceil(pagination.total / pagination.limit),
-          total: pagination.total,
-          limit: pagination.limit,
-          onPageChange: pagination.onPageChange,
-          itemName: "subscriptions"
-        }
       )
-    ] }) }),
+    ] }),
+    pagination && filteredSubscriptions.length > 0 && pagination.total > pagination.limit && /* @__PURE__ */ jsx120("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ jsx120(
+      Pagination,
+      {
+        currentPage: pagination.page,
+        totalPages: Math.ceil(pagination.total / pagination.limit),
+        total: pagination.total,
+        limit: pagination.limit,
+        onPageChange: pagination.onPageChange
+      }
+    ) }),
     /* @__PURE__ */ jsx120(
       SubscriptionViewDialog,
       {
@@ -22332,13 +22259,13 @@ function SubscriptionList({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionForm.tsx
-import { useState as useState48, useEffect as useEffect27 } from "react";
+import { useState as useState48, useEffect as useEffect26 } from "react";
 import {
-  Calendar as Calendar12,
-  DollarSign as DollarSign12,
-  Users as Users7,
+  Calendar as Calendar11,
+  DollarSign as DollarSign11,
+  Users as Users6,
   Building as Building5,
-  CreditCard as CreditCard5,
+  CreditCard as CreditCard4,
   AlertCircle as AlertCircle7,
   CheckCircle as CheckCircle14
 } from "lucide-react";
@@ -22387,7 +22314,7 @@ function SubscriptionForm({
   const [selectedMerchant, setSelectedMerchant] = useState48(null);
   console.log("SubscriptionForm - merchants:", merchants);
   console.log("SubscriptionForm - plans:", plans);
-  useEffect27(() => {
+  useEffect26(() => {
     const options = merchants.map((merchant) => ({
       value: merchant.id.toString(),
       label: merchant.name,
@@ -22418,7 +22345,7 @@ function SubscriptionForm({
     );
     return filtered;
   };
-  useEffect27(() => {
+  useEffect26(() => {
     const plan = plans.find((p) => p.id === formData.planId);
     setSelectedPlan(plan || null);
     if (plan) {
@@ -22430,7 +22357,7 @@ function SubscriptionForm({
       }));
     }
   }, [formData.planId, plans]);
-  useEffect27(() => {
+  useEffect26(() => {
     if (selectedPlan && formData.status === "trial" && selectedPlan.trialDays > 0) {
       const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setDate(endDate.getDate() + selectedPlan.trialDays);
@@ -22443,7 +22370,7 @@ function SubscriptionForm({
       }));
     }
   }, [selectedPlan, formData.startDate, formData.status]);
-  useEffect27(() => {
+  useEffect26(() => {
     if (formData.status === "ACTIVE" && selectedPlan) {
       const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setMonth(endDate.getMonth() + 1);
@@ -22525,7 +22452,7 @@ function SubscriptionForm({
   return /* @__PURE__ */ jsxs107("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
     /* @__PURE__ */ jsxs107(Card2, { children: [
       /* @__PURE__ */ jsx121(CardHeader2, { children: /* @__PURE__ */ jsxs107(CardTitle2, { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ jsx121(CreditCard5, { className: "h-5 w-5" }),
+        /* @__PURE__ */ jsx121(CreditCard4, { className: "h-5 w-5" }),
         /* @__PURE__ */ jsx121("span", { children: title || (mode === "create" ? "Create Subscription" : "Edit Subscription") })
       ] }) }),
       /* @__PURE__ */ jsxs107(CardContent2, { className: "space-y-6", children: [
@@ -22555,7 +22482,7 @@ function SubscriptionForm({
         ] }),
         /* @__PURE__ */ jsxs107("div", { className: "space-y-2", children: [
           /* @__PURE__ */ jsxs107(Label2, { htmlFor: "planId", className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ jsx121(CreditCard5, { className: "h-4 w-4" }),
+            /* @__PURE__ */ jsx121(CreditCard4, { className: "h-4 w-4" }),
             /* @__PURE__ */ jsx121("span", { children: "Plan *" })
           ] }),
           /* @__PURE__ */ jsxs107(
@@ -22624,7 +22551,7 @@ function SubscriptionForm({
         /* @__PURE__ */ jsxs107("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs107("div", { className: "space-y-2", children: [
             /* @__PURE__ */ jsxs107(Label2, { htmlFor: "currentPeriodStart", className: "flex items-center space-x-2", children: [
-              /* @__PURE__ */ jsx121(Calendar12, { className: "h-4 w-4" }),
+              /* @__PURE__ */ jsx121(Calendar11, { className: "h-4 w-4" }),
               /* @__PURE__ */ jsx121("span", { children: "Start Date *" })
             ] }),
             /* @__PURE__ */ jsx121(
@@ -22644,7 +22571,7 @@ function SubscriptionForm({
           ] }),
           /* @__PURE__ */ jsxs107("div", { className: "space-y-2", children: [
             /* @__PURE__ */ jsxs107(Label2, { htmlFor: "nextBillingDate", className: "flex items-center space-x-2", children: [
-              /* @__PURE__ */ jsx121(Calendar12, { className: "h-4 w-4" }),
+              /* @__PURE__ */ jsx121(Calendar11, { className: "h-4 w-4" }),
               /* @__PURE__ */ jsx121("span", { children: "Next Billing Date *" })
             ] }),
             /* @__PURE__ */ jsx121(
@@ -22665,7 +22592,7 @@ function SubscriptionForm({
         ] }),
         formData.status === "TRIAL" && formData.endDate && /* @__PURE__ */ jsxs107("div", { className: "space-y-2", children: [
           /* @__PURE__ */ jsxs107(Label2, { htmlFor: "endDate", className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ jsx121(Calendar12, { className: "h-4 w-4" }),
+            /* @__PURE__ */ jsx121(Calendar11, { className: "h-4 w-4" }),
             /* @__PURE__ */ jsx121("span", { children: "Trial End Date" })
           ] }),
           /* @__PURE__ */ jsx121(
@@ -22685,7 +22612,7 @@ function SubscriptionForm({
         ] }),
         formData.status === "ACTIVE" && formData.endDate && /* @__PURE__ */ jsxs107("div", { className: "space-y-2", children: [
           /* @__PURE__ */ jsxs107(Label2, { htmlFor: "endDate", className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ jsx121(Calendar12, { className: "h-4 w-4" }),
+            /* @__PURE__ */ jsx121(Calendar11, { className: "h-4 w-4" }),
             /* @__PURE__ */ jsx121("span", { children: "End Date" })
           ] }),
           /* @__PURE__ */ jsx121(
@@ -22701,7 +22628,7 @@ function SubscriptionForm({
         /* @__PURE__ */ jsxs107("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs107("div", { className: "space-y-2", children: [
             /* @__PURE__ */ jsxs107(Label2, { htmlFor: "amount", className: "flex items-center space-x-2", children: [
-              /* @__PURE__ */ jsx121(DollarSign12, { className: "h-4 w-4" }),
+              /* @__PURE__ */ jsx121(DollarSign11, { className: "h-4 w-4" }),
               /* @__PURE__ */ jsx121("span", { children: "Amount *" })
             ] }),
             /* @__PURE__ */ jsx121(
@@ -22744,7 +22671,7 @@ function SubscriptionForm({
         ] }),
         /* @__PURE__ */ jsxs107("div", { className: "space-y-2", children: [
           /* @__PURE__ */ jsxs107(Label2, { htmlFor: "discount", className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ jsx121(DollarSign12, { className: "h-4 w-4" }),
+            /* @__PURE__ */ jsx121(DollarSign11, { className: "h-4 w-4" }),
             /* @__PURE__ */ jsx121("span", { children: "Discount %" })
           ] }),
           /* @__PURE__ */ jsx121(
@@ -22765,7 +22692,7 @@ function SubscriptionForm({
         ] }),
         /* @__PURE__ */ jsxs107("div", { className: "space-y-2", children: [
           /* @__PURE__ */ jsxs107(Label2, { htmlFor: "platform", className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ jsx121(Users7, { className: "h-4 w-4" }),
+            /* @__PURE__ */ jsx121(Users6, { className: "h-4 w-4" }),
             /* @__PURE__ */ jsx121("span", { children: "Platform Support" })
           ] }),
           /* @__PURE__ */ jsxs107(
@@ -22840,12 +22767,12 @@ function SubscriptionForm({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionPreviewPage.tsx
-import { useState as useState49, useEffect as useEffect28 } from "react";
+import { useState as useState49, useEffect as useEffect27 } from "react";
 import {
   Card as Card34,
   CardHeader as CardHeader29,
   CardTitle as CardTitle29,
-  CardContent as CardContent33,
+  CardContent as CardContent34,
   Button as Button28,
   Badge as Badge17,
   cn as cn5
@@ -22853,9 +22780,9 @@ import {
 import { publicPlansApi, formatCurrency as formatCurrency11 } from "@rentalshop/utils";
 import {
   Check as Check4,
-  Users as Users8,
+  Users as Users7,
   Store as Store2,
-  Package as Package12,
+  Package as Package11,
   UserCheck,
   Zap,
   Shield,
@@ -22872,7 +22799,7 @@ var SubscriptionPreviewPage = ({
   const [error2, setError] = useState49(null);
   const [selectedPlan, setSelectedPlan] = useState49(null);
   const [selectedDuration, setSelectedDuration] = useState49(1);
-  useEffect28(() => {
+  useEffect27(() => {
     fetchPlans();
   }, []);
   const fetchPlans = async () => {
@@ -22905,10 +22832,10 @@ var SubscriptionPreviewPage = ({
       return /* @__PURE__ */ jsx122(Store2, { className: "w-4 h-4" });
     }
     if (featureLower.includes("user") || featureLower.includes("staff")) {
-      return /* @__PURE__ */ jsx122(Users8, { className: "w-4 h-4" });
+      return /* @__PURE__ */ jsx122(Users7, { className: "w-4 h-4" });
     }
     if (featureLower.includes("product") || featureLower.includes("inventory")) {
-      return /* @__PURE__ */ jsx122(Package12, { className: "w-4 h-4" });
+      return /* @__PURE__ */ jsx122(Package11, { className: "w-4 h-4" });
     }
     if (featureLower.includes("customer")) {
       return /* @__PURE__ */ jsx122(UserCheck, { className: "w-4 h-4" });
@@ -22963,7 +22890,7 @@ var SubscriptionPreviewPage = ({
   const getPlatformIcon = (platform) => {
     switch (platform) {
       case "web-only":
-        return /* @__PURE__ */ jsx122(Package12, { className: "w-4 h-4" });
+        return /* @__PURE__ */ jsx122(Package11, { className: "w-4 h-4" });
       case "mobile-only":
         return /* @__PURE__ */ jsx122(Zap, { className: "w-4 h-4" });
       case "web-mobile":
@@ -23108,7 +23035,7 @@ var SubscriptionPreviewPage = ({
                 ] })
               ] }) })
             ] }),
-            /* @__PURE__ */ jsxs108(CardContent33, { className: "pt-0", children: [
+            /* @__PURE__ */ jsxs108(CardContent34, { className: "pt-0", children: [
               /* @__PURE__ */ jsxs108("div", { className: "space-y-3 mb-6", children: [
                 /* @__PURE__ */ jsxs108("div", { className: "flex items-center justify-between text-sm", children: [
                   /* @__PURE__ */ jsx122("span", { className: "text-gray-700", children: "Outlets" }),
@@ -23275,15 +23202,15 @@ var SubscriptionPreviewPage = ({
 };
 
 // src/components/features/Subscriptions/components/PlanSelectionModal.tsx
-import { useState as useState50, useEffect as useEffect29 } from "react";
+import { useState as useState50, useEffect as useEffect28 } from "react";
 import {
-  Dialog as Dialog11,
-  DialogContent as DialogContent11,
-  DialogHeader as DialogHeader11,
-  DialogTitle as DialogTitle11,
+  Dialog as Dialog10,
+  DialogContent as DialogContent10,
+  DialogHeader as DialogHeader10,
+  DialogTitle as DialogTitle10,
   Button as Button29,
   Card as Card35,
-  CardContent as CardContent34,
+  CardContent as CardContent35,
   CardHeader as CardHeader30,
   CardTitle as CardTitle30,
   Badge as Badge18,
@@ -23296,9 +23223,9 @@ import {
 } from "@rentalshop/ui";
 import {
   Check as Check5,
-  CreditCard as CreditCard6,
+  CreditCard as CreditCard5,
   AlertTriangle as AlertTriangle7,
-  Clock as Clock9,
+  Clock as Clock8,
   Shield as Shield2,
   Zap as Zap2
 } from "lucide-react";
@@ -23334,10 +23261,10 @@ var BILLING_CYCLES2 = [
   }
 ];
 var PAYMENT_METHODS = [
-  { value: "STRIPE", label: "Credit Card (Stripe)", icon: CreditCard6 },
-  { value: "PAYPAL", label: "PayPal", icon: CreditCard6 },
-  { value: "BANK_TRANSFER", label: "Bank Transfer", icon: CreditCard6 },
-  { value: "MANUAL", label: "Manual Payment", icon: CreditCard6 }
+  { value: "STRIPE", label: "Credit Card (Stripe)", icon: CreditCard5 },
+  { value: "PAYPAL", label: "PayPal", icon: CreditCard5 },
+  { value: "BANK_TRANSFER", label: "Bank Transfer", icon: CreditCard5 },
+  { value: "MANUAL", label: "Manual Payment", icon: CreditCard5 }
 ];
 var PlanSelectionModal = ({
   isOpen,
@@ -23351,7 +23278,7 @@ var PlanSelectionModal = ({
   const [selectedBillingCycle, setSelectedBillingCycle] = useState50("monthly");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState50("STRIPE");
   const [calculatedPrice, setCalculatedPrice] = useState50(0);
-  useEffect29(() => {
+  useEffect28(() => {
     if (selectedPlan) {
       const billingCycle = BILLING_CYCLES2.find((bc) => bc.value === selectedBillingCycle);
       if (billingCycle) {
@@ -23395,15 +23322,15 @@ var PlanSelectionModal = ({
   const getBillingCycleInfo = () => {
     return BILLING_CYCLES2.find((bc) => bc.value === selectedBillingCycle);
   };
-  return /* @__PURE__ */ jsx123(Dialog11, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs109(DialogContent11, { className: "max-w-6xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ jsx123(DialogHeader11, { children: /* @__PURE__ */ jsxs109(DialogTitle11, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsx123(Dialog10, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs109(DialogContent10, { className: "max-w-6xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ jsx123(DialogHeader10, { children: /* @__PURE__ */ jsxs109(DialogTitle10, { className: "flex items-center gap-2", children: [
       /* @__PURE__ */ jsx123(AlertTriangle7, { className: "h-5 w-5 text-orange-500" }),
       "Subscription Expired - Select a Plan"
     ] }) }),
     /* @__PURE__ */ jsxs109("div", { className: "space-y-6", children: [
-      currentPlan && /* @__PURE__ */ jsx123(Card35, { className: "border-orange-200 bg-orange-50", children: /* @__PURE__ */ jsxs109(CardContent34, { className: "pt-6", children: [
+      currentPlan && /* @__PURE__ */ jsx123(Card35, { className: "border-orange-200 bg-orange-50", children: /* @__PURE__ */ jsxs109(CardContent35, { className: "pt-6", children: [
         /* @__PURE__ */ jsxs109("div", { className: "flex items-center gap-2 text-orange-700", children: [
-          /* @__PURE__ */ jsx123(Clock9, { className: "h-4 w-4" }),
+          /* @__PURE__ */ jsx123(Clock8, { className: "h-4 w-4" }),
           /* @__PURE__ */ jsxs109("span", { className: "font-medium", children: [
             "Current Plan: ",
             currentPlan.name
@@ -23434,7 +23361,7 @@ var PlanSelectionModal = ({
                 ] }),
                 /* @__PURE__ */ jsx123("p", { className: "text-sm text-gray-600", children: plan.description })
               ] }),
-              /* @__PURE__ */ jsx123(CardContent34, { className: "pt-0", children: /* @__PURE__ */ jsx123("div", { className: "space-y-2", children: (typeof plan.features === "string" ? JSON.parse(plan.features) : plan.features || []).map((feature, index) => {
+              /* @__PURE__ */ jsx123(CardContent35, { className: "pt-0", children: /* @__PURE__ */ jsx123("div", { className: "space-y-2", children: (typeof plan.features === "string" ? JSON.parse(plan.features) : plan.features || []).map((feature, index) => {
                 const Icon2 = getFeatureIcon(feature);
                 return /* @__PURE__ */ jsxs109("div", { className: "flex items-center gap-2 text-sm", children: [
                   /* @__PURE__ */ jsx123(Icon2, { className: "h-4 w-4 text-green-500" }),
@@ -23453,7 +23380,7 @@ var PlanSelectionModal = ({
           {
             className: `cursor-pointer transition-all hover:shadow-md ${selectedBillingCycle === cycle.value ? "ring-2 ring-blue-500 border-blue-500" : "hover:border-gray-300"}`,
             onClick: () => handleBillingCycleChange(cycle.value),
-            children: /* @__PURE__ */ jsx123(CardContent34, { className: "pt-4", children: /* @__PURE__ */ jsxs109("div", { className: "text-center", children: [
+            children: /* @__PURE__ */ jsx123(CardContent35, { className: "pt-4", children: /* @__PURE__ */ jsxs109("div", { className: "text-center", children: [
               /* @__PURE__ */ jsx123("h4", { className: "font-semibold", children: cycle.label }),
               cycle.discount > 0 && /* @__PURE__ */ jsxs109(Badge18, { className: "mt-1 bg-green-500", children: [
                 "Save ",
@@ -23479,7 +23406,7 @@ var PlanSelectionModal = ({
           }) })
         ] })
       ] }),
-      selectedPlan && /* @__PURE__ */ jsx123(Card35, { className: "bg-gray-50", children: /* @__PURE__ */ jsx123(CardContent34, { className: "pt-4", children: /* @__PURE__ */ jsxs109("div", { className: "space-y-2", children: [
+      selectedPlan && /* @__PURE__ */ jsx123(Card35, { className: "bg-gray-50", children: /* @__PURE__ */ jsx123(CardContent35, { className: "pt-4", children: /* @__PURE__ */ jsxs109("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsxs109("div", { className: "flex justify-between items-center", children: [
           /* @__PURE__ */ jsx123("span", { className: "font-medium", children: "Plan:" }),
           /* @__PURE__ */ jsx123("span", { children: selectedPlan.name })
@@ -23528,9 +23455,9 @@ var PlanSelectionModal = ({
 // src/components/features/Subscriptions/components/SubscriptionStatusBanner.tsx
 import {
   AlertTriangle as AlertTriangle8,
-  CreditCard as CreditCard7,
+  CreditCard as CreditCard6,
   Download as Download4,
-  Clock as Clock10,
+  Clock as Clock9,
   Shield as Shield3,
   XCircle as XCircle8,
   CheckCircle as CheckCircle15,
@@ -23568,9 +23495,9 @@ function SubscriptionStatusBanner({
     if (isReadOnly)
       return /* @__PURE__ */ jsx124(Shield3, { className: "w-5 h-5" });
     if (isLimited)
-      return /* @__PURE__ */ jsx124(Clock10, { className: "w-5 h-5" });
+      return /* @__PURE__ */ jsx124(Clock9, { className: "w-5 h-5" });
     if (requiresPayment)
-      return /* @__PURE__ */ jsx124(CreditCard7, { className: "w-5 h-5" });
+      return /* @__PURE__ */ jsx124(CreditCard6, { className: "w-5 h-5" });
     if (upgradeRequired)
       return /* @__PURE__ */ jsx124(AlertTriangle8, { className: "w-5 h-5" });
     return /* @__PURE__ */ jsx124(Info6, { className: "w-5 h-5" });
@@ -23611,7 +23538,7 @@ function SubscriptionStatusBanner({
         ] }),
         /* @__PURE__ */ jsx124(AlertDescription, { className: "mt-1", children: statusMessage }),
         gracePeriodEnds && /* @__PURE__ */ jsxs110("div", { className: "mt-2 text-sm text-muted-foreground", children: [
-          /* @__PURE__ */ jsx124(Clock10, { className: "w-4 h-4 inline mr-1" }),
+          /* @__PURE__ */ jsx124(Clock9, { className: "w-4 h-4 inline mr-1" }),
           "Grace period ends: ",
           gracePeriodEnds.toLocaleDateString()
         ] })
@@ -23623,7 +23550,7 @@ function SubscriptionStatusBanner({
         "Upgrade Now"
       ] }),
       requiresPayment && onPayment && /* @__PURE__ */ jsxs110(Button, { size: "sm", variant: "outline", onClick: onPayment, children: [
-        /* @__PURE__ */ jsx124(CreditCard7, { className: "w-4 h-4 mr-1" }),
+        /* @__PURE__ */ jsx124(CreditCard6, { className: "w-4 h-4 mr-1" }),
         "Make Payment"
       ] }),
       canExportData && onExport && /* @__PURE__ */ jsxs110(Button, { size: "sm", variant: "outline", onClick: onExport, children: [
@@ -23663,9 +23590,9 @@ function SubscriptionStatusCard({
     if (isReadOnly)
       return /* @__PURE__ */ jsx124(Shield3, { className: "w-6 h-6 text-yellow-500" });
     if (isLimited)
-      return /* @__PURE__ */ jsx124(Clock10, { className: "w-6 h-6 text-orange-500" });
+      return /* @__PURE__ */ jsx124(Clock9, { className: "w-6 h-6 text-orange-500" });
     if (requiresPayment)
-      return /* @__PURE__ */ jsx124(CreditCard7, { className: "w-6 h-6 text-orange-500" });
+      return /* @__PURE__ */ jsx124(CreditCard6, { className: "w-6 h-6 text-orange-500" });
     if (upgradeRequired)
       return /* @__PURE__ */ jsx124(AlertTriangle8, { className: "w-6 h-6 text-red-500" });
     return /* @__PURE__ */ jsx124(Info6, { className: "w-6 h-6 text-blue-500" });
@@ -23693,7 +23620,7 @@ function SubscriptionStatusCard({
       ] }),
       /* @__PURE__ */ jsx124("p", { className: "text-gray-700 mb-3", children: statusMessage }),
       gracePeriodEnds && /* @__PURE__ */ jsxs110("div", { className: "text-sm text-gray-600 mb-3", children: [
-        /* @__PURE__ */ jsx124(Clock10, { className: "w-4 h-4 inline mr-1" }),
+        /* @__PURE__ */ jsx124(Clock9, { className: "w-4 h-4 inline mr-1" }),
         "Grace period ends: ",
         gracePeriodEnds.toLocaleDateString()
       ] }),
@@ -23703,7 +23630,7 @@ function SubscriptionStatusCard({
           "Upgrade Now"
         ] }),
         requiresPayment && onPayment && /* @__PURE__ */ jsxs110(Button, { size: "sm", variant: "outline", onClick: onPayment, children: [
-          /* @__PURE__ */ jsx124(CreditCard7, { className: "w-4 h-4 mr-1" }),
+          /* @__PURE__ */ jsx124(CreditCard6, { className: "w-4 h-4 mr-1" }),
           "Make Payment"
         ] }),
         canExportData && onExport && /* @__PURE__ */ jsxs110(Button, { size: "sm", variant: "outline", onClick: onExport, children: [
@@ -23717,8 +23644,8 @@ function SubscriptionStatusCard({
 
 // src/components/features/Subscriptions/SubscriptionPeriodCard.tsx
 import {
-  Calendar as Calendar14,
-  Clock as Clock11,
+  Calendar as Calendar13,
+  Clock as Clock10,
   AlertTriangle as AlertTriangle9,
   CheckCircle as CheckCircle16,
   Pause as Pause2,
@@ -23739,7 +23666,7 @@ function SubscriptionPeriodCard({
   const getStatusIcon5 = () => {
     switch (statusBadge.icon) {
       case "clock":
-        return /* @__PURE__ */ jsx125(Clock11, { className: "w-4 h-4" });
+        return /* @__PURE__ */ jsx125(Clock10, { className: "w-4 h-4" });
       case "alert-triangle":
         return /* @__PURE__ */ jsx125(AlertTriangle9, { className: "w-4 h-4" });
       case "check-circle":
@@ -23774,7 +23701,7 @@ function SubscriptionPeriodCard({
         ] })
       ] }),
       /* @__PURE__ */ jsxs111("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx125(Calendar14, { className: "w-4 h-4 text-gray-500" }),
+        /* @__PURE__ */ jsx125(Calendar13, { className: "w-4 h-4 text-gray-500" }),
         /* @__PURE__ */ jsxs111("div", { className: "flex-1", children: [
           /* @__PURE__ */ jsx125("div", { className: "text-sm font-medium text-gray-900", children: formatted.period }),
           /* @__PURE__ */ jsxs111("div", { className: "text-xs text-gray-500", children: [
@@ -23784,7 +23711,7 @@ function SubscriptionPeriodCard({
         ] })
       ] }),
       /* @__PURE__ */ jsxs111("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx125(Clock11, { className: "w-4 h-4 text-gray-500" }),
+        /* @__PURE__ */ jsx125(Clock10, { className: "w-4 h-4 text-gray-500" }),
         /* @__PURE__ */ jsxs111("div", { className: "flex-1", children: [
           /* @__PURE__ */ jsx125("div", { className: "text-sm font-medium text-gray-900", children: formatted.timeRemaining }),
           /* @__PURE__ */ jsxs111("div", { className: "text-xs text-gray-500", children: [
@@ -23794,7 +23721,7 @@ function SubscriptionPeriodCard({
         ] })
       ] }),
       period.isTrial && period.endDate && /* @__PURE__ */ jsx125("div", { className: "bg-blue-50 border border-blue-200 rounded-lg p-3", children: /* @__PURE__ */ jsxs111("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx125(Clock11, { className: "w-4 h-4 text-blue-600" }),
+        /* @__PURE__ */ jsx125(Clock10, { className: "w-4 h-4 text-blue-600" }),
         /* @__PURE__ */ jsxs111("div", { children: [
           /* @__PURE__ */ jsx125("div", { className: "text-sm font-medium text-blue-900", children: "Trial Period" }),
           /* @__PURE__ */ jsxs111("div", { className: "text-xs text-blue-700", children: [
@@ -23902,7 +23829,7 @@ import {
   Card as Card36,
   CardHeader as CardHeader31,
   CardTitle as CardTitle31,
-  CardContent as CardContent35,
+  CardContent as CardContent36,
   Button as Button30,
   Badge as Badge19,
   Pagination as Pagination7
@@ -23961,7 +23888,7 @@ function PaymentHistoryTable({
     a.click();
   };
   if (loading) {
-    return /* @__PURE__ */ jsx127(Card36, { children: /* @__PURE__ */ jsxs113(CardContent35, { className: "p-8 text-center", children: [
+    return /* @__PURE__ */ jsx127(Card36, { children: /* @__PURE__ */ jsxs113(CardContent36, { className: "p-8 text-center", children: [
       /* @__PURE__ */ jsx127("div", { className: "animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" }),
       /* @__PURE__ */ jsx127("p", { className: "mt-4 text-gray-600", children: "Loading payment history..." })
     ] }) });
@@ -23974,7 +23901,7 @@ function PaymentHistoryTable({
         "Export CSV"
       ] }) })
     ] }) }),
-    /* @__PURE__ */ jsx127(CardContent35, { children: payments.length === 0 ? /* @__PURE__ */ jsxs113("div", { className: "text-center py-12", children: [
+    /* @__PURE__ */ jsx127(CardContent36, { children: payments.length === 0 ? /* @__PURE__ */ jsxs113("div", { className: "text-center py-12", children: [
       /* @__PURE__ */ jsx127(FileText2, { className: "w-12 h-12 text-gray-300 mx-auto mb-4" }),
       /* @__PURE__ */ jsx127("p", { className: "text-gray-600", children: "No payment history yet" })
     ] }) : /* @__PURE__ */ jsxs113(Fragment20, { children: [
@@ -24035,12 +23962,12 @@ function PaymentHistoryTable({
 // src/components/features/Subscriptions/components/ManualRenewalModal.tsx
 import { useState as useState52 } from "react";
 import {
-  Dialog as Dialog12,
-  DialogContent as DialogContent12,
-  DialogHeader as DialogHeader12,
-  DialogTitle as DialogTitle12,
-  DialogDescription as DialogDescription9,
-  DialogFooter as DialogFooter7,
+  Dialog as Dialog11,
+  DialogContent as DialogContent11,
+  DialogHeader as DialogHeader11,
+  DialogTitle as DialogTitle11,
+  DialogDescription as DialogDescription8,
+  DialogFooter as DialogFooter6,
   Button as Button31,
   Input as Input17,
   Label as Label8,
@@ -24060,7 +23987,7 @@ import {
   calculateSavings,
   getDiscountPercentage
 } from "@rentalshop/utils";
-import { CreditCard as CreditCard10, Building2 as Building24, AlertCircle as AlertCircle8 } from "lucide-react";
+import { CreditCard as CreditCard9, Building2 as Building24, AlertCircle as AlertCircle8 } from "lucide-react";
 import { jsx as jsx128, jsxs as jsxs114 } from "react/jsx-runtime";
 function ManualRenewalModal({
   isOpen,
@@ -24106,13 +24033,13 @@ function ManualRenewalModal({
       console.error("Renewal failed:", error2);
     }
   };
-  return /* @__PURE__ */ jsx128(Dialog12, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs114(DialogContent12, { className: "max-w-2xl max-h-[90vh] overflow-hidden flex flex-col", children: [
-    /* @__PURE__ */ jsxs114(DialogHeader12, { className: "flex-shrink-0", children: [
-      /* @__PURE__ */ jsxs114(DialogTitle12, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx128(CreditCard10, { className: "h-5 w-5 text-green-500" }),
+  return /* @__PURE__ */ jsx128(Dialog11, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs114(DialogContent11, { className: "max-w-2xl max-h-[90vh] overflow-hidden flex flex-col", children: [
+    /* @__PURE__ */ jsxs114(DialogHeader11, { className: "flex-shrink-0", children: [
+      /* @__PURE__ */ jsxs114(DialogTitle11, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx128(CreditCard9, { className: "h-5 w-5 text-green-500" }),
         "Renew Subscription"
       ] }),
-      /* @__PURE__ */ jsxs114(DialogDescription9, { children: [
+      /* @__PURE__ */ jsxs114(DialogDescription8, { children: [
         "Extend subscription for ",
         subscription.merchantName
       ] })
@@ -24234,7 +24161,7 @@ function ManualRenewalModal({
               onClick: () => setMethod("STRIPE"),
               className: `p-3 border-2 rounded-lg text-left transition-all justify-start h-auto ${method === "STRIPE" ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`,
               children: /* @__PURE__ */ jsxs114("div", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ jsx128(CreditCard10, { className: "w-5 h-5 text-gray-600" }),
+                /* @__PURE__ */ jsx128(CreditCard9, { className: "w-5 h-5 text-gray-600" }),
                 /* @__PURE__ */ jsx128("span", { className: "font-medium", children: "Stripe" })
               ] })
             }
@@ -24287,7 +24214,7 @@ function ManualRenewalModal({
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsxs114(DialogFooter7, { className: "flex-shrink-0 border-t pt-4 mt-4", children: [
+    /* @__PURE__ */ jsxs114(DialogFooter6, { className: "flex-shrink-0 border-t pt-4 mt-4", children: [
       /* @__PURE__ */ jsx128(Button31, { variant: "outline", onClick: onClose, disabled: loading, children: "Cancel" }),
       /* @__PURE__ */ jsx128(Button31, { onClick: handleSubmit, disabled: loading, children: loading ? "Processing..." : "Process Renewal" })
     ] })
@@ -24295,20 +24222,20 @@ function ManualRenewalModal({
 }
 
 // src/components/features/Subscriptions/components/UpgradeTrialModal.tsx
-import { useState as useState53, useEffect as useEffect30 } from "react";
+import { useState as useState53, useEffect as useEffect29 } from "react";
 import {
-  Dialog as Dialog13,
-  DialogContent as DialogContent13,
-  DialogHeader as DialogHeader13,
-  DialogTitle as DialogTitle13,
-  DialogDescription as DialogDescription10,
-  DialogFooter as DialogFooter8,
+  Dialog as Dialog12,
+  DialogContent as DialogContent12,
+  DialogHeader as DialogHeader12,
+  DialogTitle as DialogTitle12,
+  DialogDescription as DialogDescription9,
+  DialogFooter as DialogFooter7,
   Button as Button32,
   Label as Label9,
   Card as Card37
 } from "@rentalshop/ui";
 import { formatDate as formatDate9, formatCurrency as formatCurrency14 } from "@rentalshop/utils";
-import { Check as Check6, CreditCard as CreditCard11, Building2 as Building25, Sparkles } from "lucide-react";
+import { Check as Check6, CreditCard as CreditCard10, Building2 as Building25, Sparkles } from "lucide-react";
 import { Fragment as Fragment21, jsx as jsx129, jsxs as jsxs115 } from "react/jsx-runtime";
 function UpgradeTrialModal({
   isOpen,
@@ -24321,7 +24248,7 @@ function UpgradeTrialModal({
   const [selectedPlan, setSelectedPlan] = useState53(null);
   const [billingCycle, setBillingCycle] = useState53("month");
   const [paymentMethod, setPaymentMethod] = useState53("STRIPE");
-  useEffect30(() => {
+  useEffect29(() => {
     if (plans.length > 0 && !selectedPlan) {
       const firstPaidPlan = plans.find((p) => p.name !== "Trial" && p.basePrice > 0);
       if (firstPaidPlan) {
@@ -24370,10 +24297,10 @@ function UpgradeTrialModal({
     }
   };
   const paidPlans = plans.filter((p) => p.name !== "Trial" && p.basePrice > 0);
-  return /* @__PURE__ */ jsx129(Dialog13, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs115(DialogContent13, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ jsxs115(DialogHeader13, { children: [
-      /* @__PURE__ */ jsx129(DialogTitle13, { children: "\u{1F4C8} Upgrade Subscription" }),
-      /* @__PURE__ */ jsx129(DialogDescription10, { children: "Upgrade from Trial to a paid plan to unlock all features" })
+  return /* @__PURE__ */ jsx129(Dialog12, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs115(DialogContent12, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ jsxs115(DialogHeader12, { children: [
+      /* @__PURE__ */ jsx129(DialogTitle12, { children: "\u{1F4C8} Upgrade Subscription" }),
+      /* @__PURE__ */ jsx129(DialogDescription9, { children: "Upgrade from Trial to a paid plan to unlock all features" })
     ] }),
     /* @__PURE__ */ jsxs115("div", { className: "space-y-6", children: [
       /* @__PURE__ */ jsx129("div", { className: "bg-yellow-50 border border-yellow-200 p-4 rounded-lg", children: /* @__PURE__ */ jsxs115("div", { className: "flex items-center gap-2", children: [
@@ -24534,7 +24461,7 @@ function UpgradeTrialModal({
                   }
                 ),
                 /* @__PURE__ */ jsxs115(Label9, { className: "flex items-center gap-2 cursor-pointer flex-1", children: [
-                  /* @__PURE__ */ jsx129(CreditCard11, { className: "w-4 h-4" }),
+                  /* @__PURE__ */ jsx129(CreditCard10, { className: "w-4 h-4" }),
                   /* @__PURE__ */ jsx129("span", { children: "Stripe (Card Payment)" })
                 ] })
               ]
@@ -24586,7 +24513,7 @@ function UpgradeTrialModal({
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsxs115(DialogFooter8, { children: [
+    /* @__PURE__ */ jsxs115(DialogFooter7, { children: [
       /* @__PURE__ */ jsx129(Button32, { variant: "outline", onClick: onClose, disabled: loading, children: "Cancel" }),
       /* @__PURE__ */ jsx129(Button32, { onClick: handleSubmit, disabled: loading || !selectedPlan, children: loading ? /* @__PURE__ */ jsxs115(Fragment21, { children: [
         /* @__PURE__ */ jsx129("div", { className: "animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" }),
@@ -24600,16 +24527,16 @@ function UpgradeTrialModal({
 import React74 from "react";
 import { formatDate as formatDate10, formatCurrency as formatCurrency15 } from "@rentalshop/utils";
 import {
-  Clock as Clock13,
+  Clock as Clock12,
   TrendingUp as TrendingUp5,
   RefreshCw as RefreshCw3,
   XCircle as XCircle10,
   Pause as Pause3,
   Play as Play2,
-  CreditCard as CreditCard12,
+  CreditCard as CreditCard11,
   User as User10,
   Download as Download6,
-  DollarSign as DollarSign14,
+  DollarSign as DollarSign13,
   AlertCircle as AlertCircle9,
   AlertTriangle as AlertTriangle11,
   Percent as Percent2,
@@ -24665,13 +24592,13 @@ function SubscriptionActivityTimeline({
         return Play2;
       case "SUBSCRIPTION_CREATED":
       case "CREATE":
-        return CreditCard12;
+        return CreditCard11;
       case "PAYMENT_RECEIVED":
-        return DollarSign14;
+        return DollarSign13;
       case "PAYMENT_FAILED":
         return AlertCircle9;
       case "TRIAL_STARTED":
-        return Clock13;
+        return Clock12;
       case "TRIAL_ENDED":
         return AlertTriangle11;
       case "DISCOUNT_APPLIED":
@@ -24689,7 +24616,7 @@ function SubscriptionActivityTimeline({
       case "SUBSCRIPTION_REACTIVATED":
         return Play2;
       default:
-        return Clock13;
+        return Clock12;
     }
   };
   const getActivityColor = (action) => {
@@ -24766,7 +24693,7 @@ function SubscriptionActivityTimeline({
       ] })
     ] }) }),
     /* @__PURE__ */ jsx130(CardContent2, { children: timeline.length === 0 ? /* @__PURE__ */ jsxs116("div", { className: "text-center py-12", children: [
-      /* @__PURE__ */ jsx130(Clock13, { className: "w-12 h-12 text-gray-300 mx-auto mb-4" }),
+      /* @__PURE__ */ jsx130(Clock12, { className: "w-12 h-12 text-gray-300 mx-auto mb-4" }),
       /* @__PURE__ */ jsx130("p", { className: "text-gray-600", children: "No activity yet" })
     ] }) : /* @__PURE__ */ jsxs116("div", { className: "relative", children: [
       /* @__PURE__ */ jsx130("div", { className: "absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" }),
@@ -24871,7 +24798,7 @@ function SubscriptionActivityTimeline({
           ] }, `activity-${item.id}-${index}`);
         } else {
           return /* @__PURE__ */ jsxs116("div", { className: "relative pl-14", children: [
-            /* @__PURE__ */ jsx130("div", { className: "absolute left-3 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center", children: /* @__PURE__ */ jsx130(CreditCard12, { className: "w-3 h-3" }) }),
+            /* @__PURE__ */ jsx130("div", { className: "absolute left-3 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center", children: /* @__PURE__ */ jsx130(CreditCard11, { className: "w-3 h-3" }) }),
             /* @__PURE__ */ jsx130("div", { className: "bg-white border rounded-lg p-4 shadow-sm", children: /* @__PURE__ */ jsxs116("div", { className: "flex items-start justify-between", children: [
               /* @__PURE__ */ jsxs116("div", { className: "flex-1", children: [
                 /* @__PURE__ */ jsxs116("div", { className: "flex items-center gap-2 mb-1", children: [
@@ -24908,7 +24835,7 @@ function SubscriptionActivityTimeline({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionHistoryDialog.tsx
-import { useState as useState54, useEffect as useEffect31 } from "react";
+import { useState as useState54, useEffect as useEffect30 } from "react";
 import { subscriptionsApi } from "@rentalshop/utils";
 import { jsx as jsx131 } from "react/jsx-runtime";
 function SubscriptionHistoryDialog({
@@ -24939,7 +24866,7 @@ function SubscriptionHistoryDialog({
       setLoading(false);
     }
   };
-  useEffect31(() => {
+  useEffect30(() => {
     if (subscriptionId) {
       fetchHistory();
     }
@@ -24962,13 +24889,13 @@ function SubscriptionHistoryDialog({
 
 // src/components/features/Merchants/components/MerchantPlanManagement.tsx
 import {
-  CreditCard as CreditCard13,
-  Clock as Clock14,
+  CreditCard as CreditCard12,
+  Clock as Clock13,
   ArrowRight as ArrowRight3,
   Pause as Pause4,
   Play as Play3,
   Plus as Plus6,
-  X as X14,
+  X as X13,
   History
 } from "lucide-react";
 import { formatDateTimeLong } from "@rentalshop/utils";
@@ -25076,7 +25003,7 @@ function MerchantPlanManagement({
     setChangeBillingInterval("month");
     setNotifyMerchant(true);
   };
-  useEffect32(() => {
+  useEffect31(() => {
     if (showChangeDialog && !changeBillingInterval) {
       setChangeBillingInterval("month");
     }
@@ -25211,7 +25138,7 @@ function MerchantPlanManagement({
   if (loading) {
     return /* @__PURE__ */ jsxs117(Card2, { children: [
       /* @__PURE__ */ jsx132(CardHeader2, { children: /* @__PURE__ */ jsxs117(CardTitle2, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx132(CreditCard13, { className: "h-5 w-5" }),
+        /* @__PURE__ */ jsx132(CreditCard12, { className: "h-5 w-5" }),
         "Plan Management"
       ] }) }),
       /* @__PURE__ */ jsx132(CardContent2, { children: /* @__PURE__ */ jsxs117("div", { className: "animate-pulse space-y-4", children: [
@@ -25225,7 +25152,7 @@ function MerchantPlanManagement({
     /* @__PURE__ */ jsxs117(Card2, { children: [
       /* @__PURE__ */ jsx132(CardHeader2, { children: /* @__PURE__ */ jsxs117("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsxs117(CardTitle2, { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx132(CreditCard13, { className: "h-5 w-5" }),
+          /* @__PURE__ */ jsx132(CreditCard12, { className: "h-5 w-5" }),
           "Current Subscription"
         ] }),
         currentSubscription && (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs117(
@@ -25346,19 +25273,19 @@ function MerchantPlanManagement({
               onClick: () => setShowCancelDialog(true),
               className: "flex items-center gap-2 text-red-600 hover:text-red-700",
               children: [
-                /* @__PURE__ */ jsx132(X14, { className: "h-4 w-4" }),
+                /* @__PURE__ */ jsx132(X13, { className: "h-4 w-4" }),
                 isTrialStatus ? "End Trial" : "Cancel Plan"
               ]
             }
           )
         ] })
       ] }) : /* @__PURE__ */ jsxs117("div", { className: "text-center py-8", children: [
-        /* @__PURE__ */ jsx132(CreditCard13, { className: "h-12 w-12 text-gray-400 mx-auto mb-4" }),
+        /* @__PURE__ */ jsx132(CreditCard12, { className: "h-12 w-12 text-gray-400 mx-auto mb-4" }),
         /* @__PURE__ */ jsx132("h3", { className: "text-lg font-medium text-gray-900 mb-2", children: "No Subscription" }),
         /* @__PURE__ */ jsx132("p", { className: "text-gray-500 mb-4", children: "This merchant doesn't have an active subscription." }),
         (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs117("div", { className: "flex flex-wrap items-center justify-center gap-3", children: [
           /* @__PURE__ */ jsxs117(Button, { onClick: handleOpenChangeDialog, children: [
-            /* @__PURE__ */ jsx132(CreditCard13, { className: "h-4 w-4 mr-2" }),
+            /* @__PURE__ */ jsx132(CreditCard12, { className: "h-4 w-4 mr-2" }),
             "Create Subscription"
           ] }),
           /* @__PURE__ */ jsxs117(
@@ -25379,7 +25306,7 @@ function MerchantPlanManagement({
     ] }),
     subscriptions.length > 1 && /* @__PURE__ */ jsxs117(Card2, { children: [
       /* @__PURE__ */ jsx132(CardHeader2, { children: /* @__PURE__ */ jsxs117(CardTitle2, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx132(Clock14, { className: "h-5 w-5" }),
+        /* @__PURE__ */ jsx132(Clock13, { className: "h-5 w-5" }),
         "Plan History"
       ] }) }),
       /* @__PURE__ */ jsx132(CardContent2, { children: /* @__PURE__ */ jsx132("div", { className: "space-y-3", children: subscriptions.slice(1).map((subscription) => /* @__PURE__ */ jsxs117("div", { className: "flex items-center justify-between p-3 border rounded-lg", children: [
@@ -25551,7 +25478,7 @@ function MerchantPlanManagement({
     /* @__PURE__ */ jsx132(Dialog, { open: showCancelDialog, onOpenChange: setShowCancelDialog, children: /* @__PURE__ */ jsxs117(DialogContent, { className: "max-w-md max-h-[90vh] overflow-y-auto flex flex-col", children: [
       /* @__PURE__ */ jsxs117(DialogHeader, { children: [
         /* @__PURE__ */ jsxs117(DialogTitle, { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx132(X14, { className: "h-5 w-5 text-red-500" }),
+          /* @__PURE__ */ jsx132(X13, { className: "h-5 w-5 text-red-500" }),
           "Cancel Plan"
         ] }),
         /* @__PURE__ */ jsxs117(DialogDescription, { children: [
@@ -25562,7 +25489,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ jsxs117("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx132("div", { className: "p-4 bg-red-50 border border-red-200 rounded-lg", children: /* @__PURE__ */ jsxs117("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx132(X14, { className: "h-5 w-5 text-red-500" }),
+          /* @__PURE__ */ jsx132(X13, { className: "h-5 w-5 text-red-500" }),
           /* @__PURE__ */ jsx132("p", { className: "text-sm text-red-700 font-medium", children: "Warning: This will permanently cancel the subscription" })
         ] }) }),
         /* @__PURE__ */ jsxs117("div", { children: [
@@ -25625,7 +25552,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ jsxs117("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx132("div", { className: "p-4 bg-orange-50 border border-orange-200 rounded-lg", children: /* @__PURE__ */ jsxs117("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx132(Clock14, { className: "h-5 w-5 text-orange-500" }),
+          /* @__PURE__ */ jsx132(Clock13, { className: "h-5 w-5 text-orange-500" }),
           /* @__PURE__ */ jsx132("p", { className: "text-sm text-orange-700 font-medium", children: "Pausing preserves subscription history and makes reactivation easier" })
         ] }) }),
         /* @__PURE__ */ jsxs117("div", { children: [
@@ -25814,13 +25741,13 @@ var Merchants_default = Merchants;
 import { useRouter as useRouter5 } from "next/navigation";
 
 // src/components/features/Merchants/components/MerchantSubscriptionSection.tsx
-import { useState as useState56, useEffect as useEffect33 } from "react";
+import { useState as useState56, useEffect as useEffect32 } from "react";
 import {
   Pause as Pause5,
   XCircle as XCircle11,
   AlertCircle as AlertCircle10,
   CheckCircle as CheckCircle17,
-  Clock as Clock15,
+  Clock as Clock14,
   History as History2
 } from "lucide-react";
 import { Fragment as Fragment22, jsx as jsx134, jsxs as jsxs119 } from "react/jsx-runtime";
@@ -25833,7 +25760,7 @@ function MerchantSubscriptionSection({
   const [payments, setPayments] = useState56([]);
   const [loadingHistory, setLoadingHistory] = useState56(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState56(false);
-  useEffect33(() => {
+  useEffect32(() => {
     if (subscription && showHistoryDialog) {
       fetchHistory();
     }
@@ -25871,12 +25798,12 @@ function MerchantSubscriptionSection({
   const getStatusBadge = (status) => {
     const statusMap = {
       active: { variant: "success", label: "Active", icon: CheckCircle17 },
-      trial: { variant: "warning", label: "Trial", icon: Clock15 },
+      trial: { variant: "warning", label: "Trial", icon: Clock14 },
       past_due: { variant: "danger", label: "Past Due", icon: AlertCircle10 },
       paused: { variant: "secondary", label: "Paused", icon: Pause5 },
       cancelled: { variant: "danger", label: "Cancelled", icon: XCircle11 }
     };
-    const config = statusMap[status] || { variant: "default", label: status, icon: Clock15 };
+    const config = statusMap[status] || { variant: "default", label: status, icon: Clock14 };
     const Icon2 = config.icon;
     return /* @__PURE__ */ jsxs119(Badge, { variant: config.variant, className: "flex items-center gap-1", children: [
       /* @__PURE__ */ jsx134(Icon2, { className: "w-3 h-3" }),
@@ -25932,7 +25859,7 @@ function MerchantSubscriptionSection({
 }
 
 // src/components/features/Merchants/components/MerchantDetail.tsx
-import { Building2 as Building26, Users as Users9, Package as Package13, ShoppingCart as ShoppingCart7 } from "lucide-react";
+import { Building2 as Building26, Users as Users8, Package as Package12, ShoppingCart as ShoppingCart7 } from "lucide-react";
 import { jsx as jsx135, jsxs as jsxs120 } from "react/jsx-runtime";
 function MerchantDetail({
   data,
@@ -26045,7 +25972,7 @@ function MerchantDetail({
       /* @__PURE__ */ jsxs120(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: [
         /* @__PURE__ */ jsxs120(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
           /* @__PURE__ */ jsx135(CardTitle2, { className: "text-sm font-medium", children: "Manage Products" }),
-          /* @__PURE__ */ jsx135(Package13, { className: "w-5 h-5 text-green-600" })
+          /* @__PURE__ */ jsx135(Package12, { className: "w-5 h-5 text-green-600" })
         ] }),
         /* @__PURE__ */ jsx135(CardContent2, { children: /* @__PURE__ */ jsx135(
           Button,
@@ -26060,7 +25987,7 @@ function MerchantDetail({
       /* @__PURE__ */ jsxs120(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: [
         /* @__PURE__ */ jsxs120(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
           /* @__PURE__ */ jsx135(CardTitle2, { className: "text-sm font-medium", children: "Manage Users" }),
-          /* @__PURE__ */ jsx135(Users9, { className: "w-5 h-5 text-purple-600" })
+          /* @__PURE__ */ jsx135(Users8, { className: "w-5 h-5 text-purple-600" })
         ] }),
         /* @__PURE__ */ jsx135(CardContent2, { children: /* @__PURE__ */ jsx135(
           Button,
@@ -26095,7 +26022,7 @@ function MerchantDetail({
 import { useState as useState57, useCallback as useCallback9 } from "react";
 
 // src/components/features/Calendars/components/CalendarHeader.tsx
-import { Calendar as Calendar16 } from "lucide-react";
+import { Calendar as Calendar15 } from "lucide-react";
 import { jsx as jsx136, jsxs as jsxs121 } from "react/jsx-runtime";
 function CalendarHeader({
   title = "Pickup Calendar",
@@ -26104,7 +26031,7 @@ function CalendarHeader({
 }) {
   return /* @__PURE__ */ jsxs121("div", { className: "flex items-center justify-between mb-6", children: [
     /* @__PURE__ */ jsxs121("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ jsx136("div", { className: "w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx136(Calendar16, { className: "w-6 h-6 text-blue-600" }) }),
+      /* @__PURE__ */ jsx136("div", { className: "w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx136(Calendar15, { className: "w-6 h-6 text-blue-600" }) }),
       /* @__PURE__ */ jsxs121("div", { children: [
         /* @__PURE__ */ jsx136("h1", { className: "text-2xl font-bold text-gray-900", children: title }),
         subtitle && /* @__PURE__ */ jsx136("p", { className: "text-sm text-gray-600", children: subtitle })
@@ -26184,7 +26111,7 @@ function CalendarNavigation({
 }
 
 // src/components/features/Calendars/components/CalendarStats.tsx
-import { Package as Package14, ArrowUpRight } from "lucide-react";
+import { Package as Package13, ArrowUpRight } from "lucide-react";
 import { jsx as jsx138, jsxs as jsxs123 } from "react/jsx-runtime";
 function CalendarStats({
   totalPickups,
@@ -26215,7 +26142,7 @@ function CalendarStats({
       ] })
     ] }) }),
     /* @__PURE__ */ jsx138("div", { className: "bg-white rounded-lg border border-gray-200 p-4", children: /* @__PURE__ */ jsxs123("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ jsx138("div", { className: "w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx138(Package14, { className: "w-5 h-5 text-purple-600" }) }),
+      /* @__PURE__ */ jsx138("div", { className: "w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx138(Package13, { className: "w-5 h-5 text-purple-600" }) }),
       /* @__PURE__ */ jsxs123("div", { children: [
         /* @__PURE__ */ jsx138("p", { className: "text-sm font-medium text-gray-600", children: "Month" }),
         /* @__PURE__ */ jsxs123("p", { className: "text-lg font-semibold text-gray-900", children: [
@@ -26490,7 +26417,7 @@ function Calendars({
 }
 
 // src/components/features/Calendars/components/OrdersList.tsx
-import { Package as Package15, User as User11, Clock as Clock16 } from "lucide-react";
+import { Package as Package14, User as User11, Clock as Clock15 } from "lucide-react";
 import { jsx as jsx142, jsxs as jsxs127 } from "react/jsx-runtime";
 function OrdersList({
   orders,
@@ -26500,7 +26427,7 @@ function OrdersList({
 }) {
   if (orders.length === 0) {
     return /* @__PURE__ */ jsxs127("div", { className: `text-center py-8 text-gray-500 ${className}`, children: [
-      /* @__PURE__ */ jsx142(Package15, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
+      /* @__PURE__ */ jsx142(Package14, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
       /* @__PURE__ */ jsx142("p", { className: "text-lg font-medium", children: "No orders found" }),
       selectedDate && /* @__PURE__ */ jsxs127("p", { className: "text-sm", children: [
         "for ",
@@ -26534,11 +26461,11 @@ function OrdersList({
             ] })
           ] }),
           /* @__PURE__ */ jsxs127("div", { className: "flex items-center space-x-2 mb-3", children: [
-            /* @__PURE__ */ jsx142(Package15, { className: "w-4 h-4 text-gray-500" }),
+            /* @__PURE__ */ jsx142(Package14, { className: "w-4 h-4 text-gray-500" }),
             /* @__PURE__ */ jsx142("span", { className: "text-sm text-gray-700", children: order.productName })
           ] }),
           /* @__PURE__ */ jsxs127("div", { className: "flex items-center text-sm text-gray-600", children: [
-            /* @__PURE__ */ jsx142(Clock16, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ jsx142(Clock15, { className: "w-4 h-4 mr-2" }),
             /* @__PURE__ */ jsx142("span", { className: "capitalize", children: order.status })
           ] })
         ]
@@ -26611,7 +26538,7 @@ import {
   SelectTrigger as SelectTrigger12,
   SelectValue as SelectValue12,
   Card as Card39,
-  CardContent as CardContent37
+  CardContent as CardContent38
 } from "@rentalshop/ui";
 import { jsx as jsx144, jsxs as jsxs129 } from "react/jsx-runtime";
 function UserFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }) {
@@ -26626,7 +26553,7 @@ function UserFilters({ filters, onFiltersChange, onSearchChange, onClearFilters 
   const handleInputChange = (e) => {
     onSearchChange(e.target.value);
   };
-  return /* @__PURE__ */ jsx144(Card39, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx144(CardContent37, { className: "pt-6 space-y-4", children: /* @__PURE__ */ jsxs129("div", { className: "flex flex-col md:flex-row gap-4", children: [
+  return /* @__PURE__ */ jsx144(Card39, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx144(CardContent38, { className: "pt-6 space-y-4", children: /* @__PURE__ */ jsxs129("div", { className: "flex flex-col md:flex-row gap-4", children: [
     /* @__PURE__ */ jsxs129("div", { className: "flex-1 space-y-2", children: [
       /* @__PURE__ */ jsx144("label", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: "Search Users" }),
       /* @__PURE__ */ jsx144(
@@ -26657,7 +26584,7 @@ function UserFilters({ filters, onFiltersChange, onSearchChange, onClearFilters 
 
 // src/components/features/Users/components/UserCard.tsx
 import { Card as Card40, Badge as Badge22, Button as Button33 } from "@rentalshop/ui";
-import { Mail as Mail7, Phone as Phone4, Calendar as Calendar17, Building as Building6, User as UserIcon2 } from "lucide-react";
+import { Mail as Mail7, Phone as Phone4, Calendar as Calendar16, Building as Building6, User as UserIcon2 } from "lucide-react";
 import { jsx as jsx145, jsxs as jsxs130 } from "react/jsx-runtime";
 function UserCard({ user, onUserAction }) {
   const getRoleBadgeVariant = (role) => {
@@ -26716,7 +26643,7 @@ function UserCard({ user, onUserAction }) {
         /* @__PURE__ */ jsx145("span", { children: user.phone })
       ] }),
       /* @__PURE__ */ jsxs130("div", { className: "flex items-center gap-2 text-sm text-gray-600", children: [
-        /* @__PURE__ */ jsx145(Calendar17, { className: "w-4 h-4" }),
+        /* @__PURE__ */ jsx145(Calendar16, { className: "w-4 h-4" }),
         /* @__PURE__ */ jsxs130("span", { children: [
           "Joined ",
           formatDate11(user.createdAt.toString())
@@ -26749,11 +26676,11 @@ function UserCard({ user, onUserAction }) {
 }
 
 // src/components/features/Users/components/UserGrid.tsx
-import { Card as Card41, CardContent as CardContent39 } from "@rentalshop/ui";
+import { Card as Card41, CardContent as CardContent40 } from "@rentalshop/ui";
 import { jsx as jsx146, jsxs as jsxs131 } from "react/jsx-runtime";
 function UserGrid({ users, onUserAction }) {
   if (users.length === 0) {
-    return /* @__PURE__ */ jsx146(Card41, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx146(CardContent39, { className: "text-center py-12", children: /* @__PURE__ */ jsxs131("div", { className: "text-gray-500 dark:text-gray-400", children: [
+    return /* @__PURE__ */ jsx146(Card41, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx146(CardContent40, { className: "text-center py-12", children: /* @__PURE__ */ jsxs131("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx146("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
       /* @__PURE__ */ jsx146("h3", { className: "text-lg font-medium mb-2", children: "No users found" }),
       /* @__PURE__ */ jsx146("p", { className: "text-sm", children: "Try adjusting your filters or add some users to get started." })
@@ -26815,7 +26742,7 @@ function UserTable({
       onSort(column);
     }
   };
-  return /* @__PURE__ */ jsx147(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx147(CardContent2, { className: "p-0 flex-1", children: /* @__PURE__ */ jsx147("div", { className: "overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto", children: /* @__PURE__ */ jsxs132("table", { className: "w-full", children: [
+  return /* @__PURE__ */ jsx147(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx147(CardContent2, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsx147("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ jsxs132("table", { className: "w-full", children: [
     /* @__PURE__ */ jsx147("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs132("tr", { children: [
       /* @__PURE__ */ jsx147("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "User" }),
       /* @__PURE__ */ jsx147("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Role" }),
@@ -26916,19 +26843,19 @@ function UsersLoading() {
 }
 
 // src/components/features/Users/components/UserActions.tsx
-import { useState as useState60, useEffect as useEffect35 } from "react";
+import { useState as useState60, useEffect as useEffect34 } from "react";
 import { useRouter as useRouter6 } from "next/navigation";
 import { ConfirmationDialog as ConfirmationDialog3 } from "@rentalshop/ui";
 
 // src/components/features/Users/components/UserDetailDialog.tsx
 import { useState as useState59 } from "react";
 import {
-  Dialog as Dialog14,
-  DialogContent as DialogContent14,
-  DialogHeader as DialogHeader14,
-  DialogTitle as DialogTitle14,
-  DialogDescription as DialogDescription11,
-  DialogFooter as DialogFooter9
+  Dialog as Dialog13,
+  DialogContent as DialogContent13,
+  DialogHeader as DialogHeader13,
+  DialogTitle as DialogTitle13,
+  DialogDescription as DialogDescription10,
+  DialogFooter as DialogFooter8
 } from "@rentalshop/ui";
 import { Button as Button35 } from "@rentalshop/ui";
 import { ConfirmationDialog as ConfirmationDialog2 } from "@rentalshop/ui";
@@ -27202,7 +27129,7 @@ var ChangePasswordDialog = ({
 };
 
 // src/components/features/Users/components/UserDisplayInfo.tsx
-import { Card as Card42, CardContent as CardContent40, Button as Button34 } from "@rentalshop/ui";
+import { Card as Card42, CardContent as CardContent41, Button as Button34 } from "@rentalshop/ui";
 import { Fragment as Fragment23, jsx as jsx150, jsxs as jsxs135 } from "react/jsx-runtime";
 var UserDisplayInfo = ({
   user,
@@ -27258,7 +27185,7 @@ var UserDisplayInfo = ({
     return isActive ? "Active" : "Inactive";
   };
   return /* @__PURE__ */ jsxs135("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsx150(Card42, { children: /* @__PURE__ */ jsxs135(CardContent40, { className: "p-6", children: [
+    /* @__PURE__ */ jsx150(Card42, { children: /* @__PURE__ */ jsxs135(CardContent41, { className: "p-6", children: [
       /* @__PURE__ */ jsxs135("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
         /* @__PURE__ */ jsx150("span", { className: "w-2 h-2 bg-blue-500 rounded-full" }),
         "Personal Information"
@@ -27290,7 +27217,7 @@ var UserDisplayInfo = ({
         ] })
       ] })
     ] }) }),
-    user.outlet && /* @__PURE__ */ jsx150(Card42, { children: /* @__PURE__ */ jsxs135(CardContent40, { className: "p-6", children: [
+    user.outlet && /* @__PURE__ */ jsx150(Card42, { children: /* @__PURE__ */ jsxs135(CardContent41, { className: "p-6", children: [
       /* @__PURE__ */ jsxs135("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
         /* @__PURE__ */ jsx150("span", { className: "w-2 h-2 bg-green-500 rounded-full" }),
         "Outlet Information"
@@ -27316,7 +27243,7 @@ var UserDisplayInfo = ({
         ] })
       ] }) })
     ] }) }),
-    showActions && /* @__PURE__ */ jsx150(Card42, { children: /* @__PURE__ */ jsxs135(CardContent40, { className: "p-6", children: [
+    showActions && /* @__PURE__ */ jsx150(Card42, { children: /* @__PURE__ */ jsxs135(CardContent41, { className: "p-6", children: [
       /* @__PURE__ */ jsxs135("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
         /* @__PURE__ */ jsx150("span", { className: "w-2 h-2 bg-orange-500 rounded-full" }),
         "Account Actions"
@@ -27457,10 +27384,10 @@ var UserDetailDialog = ({
     }
   };
   return /* @__PURE__ */ jsxs136(Fragment24, { children: [
-    /* @__PURE__ */ jsx151(Dialog14, { open, onOpenChange, children: /* @__PURE__ */ jsxs136(DialogContent14, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-      /* @__PURE__ */ jsx151(DialogHeader14, { children: /* @__PURE__ */ jsxs136("div", { children: [
-        /* @__PURE__ */ jsx151(DialogTitle14, { className: "text-xl font-semibold", children: "User Details" }),
-        /* @__PURE__ */ jsx151(DialogDescription11, { className: "text-sm text-gray-600 mt-1", children: "View user information and details" })
+    /* @__PURE__ */ jsx151(Dialog13, { open, onOpenChange, children: /* @__PURE__ */ jsxs136(DialogContent13, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+      /* @__PURE__ */ jsx151(DialogHeader13, { children: /* @__PURE__ */ jsxs136("div", { children: [
+        /* @__PURE__ */ jsx151(DialogTitle13, { className: "text-xl font-semibold", children: "User Details" }),
+        /* @__PURE__ */ jsx151(DialogDescription10, { className: "text-sm text-gray-600 mt-1", children: "View user information and details" })
       ] }) }),
       /* @__PURE__ */ jsx151("div", { className: "mt-6", children: /* @__PURE__ */ jsx151(
         UserDisplayInfo,
@@ -27474,7 +27401,7 @@ var UserDetailDialog = ({
           isLoading
         }
       ) }),
-      /* @__PURE__ */ jsx151(DialogFooter9, { className: "flex justify-end space-x-2", children: /* @__PURE__ */ jsx151(
+      /* @__PURE__ */ jsx151(DialogFooter8, { className: "flex justify-end space-x-2", children: /* @__PURE__ */ jsx151(
         Button35,
         {
           variant: "outline",
@@ -27550,7 +27477,7 @@ function UserActions({
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState60(false);
   const [selectedUser, setSelectedUser] = useState60(null);
   const [userToDeactivate, setUserToDeactivate] = useState60(null);
-  useEffect35(() => {
+  useEffect34(() => {
     const handleUserAction = (event) => {
       const { action, userId, user } = event.detail;
       console.log("\u{1F50D} UserActions: Event received:", { action, userId, user });
@@ -27651,8 +27578,8 @@ function UserActions({
 import { useState as useState63 } from "react";
 
 // src/components/features/Users/components/UserForm.tsx
-import { useState as useState62, useEffect as useEffect36 } from "react";
-import { Save as Save5, X as X15 } from "lucide-react";
+import { useState as useState62, useEffect as useEffect35 } from "react";
+import { Save as Save5, X as X14 } from "lucide-react";
 
 // src/components/features/Users/components/UserFormFields.tsx
 import { useState as useState61 } from "react";
@@ -28026,7 +27953,7 @@ var UserForm = ({
   const canSelectOutlet = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT";
   const showMerchantField = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT" || currentUser?.role === "OUTLET_ADMIN" || currentUser?.role === "OUTLET_STAFF";
   const showOutletField = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT" || currentUser?.role === "OUTLET_ADMIN" || currentUser?.role === "OUTLET_STAFF";
-  useEffect36(() => {
+  useEffect35(() => {
     if (isEditMode && user) {
       console.log("\u{1F50D} UserForm: User object for edit:", user);
       console.log("\u{1F50D} UserForm: User role:", user.role, "Type:", typeof user.role);
@@ -28052,7 +27979,7 @@ var UserForm = ({
       console.log("\u{1F50D} UserForm: Final role set:", formData2.role);
     }
   }, [user, isEditMode]);
-  useEffect36(() => {
+  useEffect35(() => {
     if (!isEditMode && currentUser) {
       const updates = {};
       const userMerchantId = currentUser.merchantId || currentUser.merchant?.id;
@@ -28068,7 +27995,7 @@ var UserForm = ({
       }
     }
   }, [currentUser, canSelectMerchant, canSelectOutlet, isEditMode]);
-  useEffect36(() => {
+  useEffect35(() => {
     if (!isEditMode && canSelectMerchant) {
       setLoadingMerchants(true);
       merchantsApi.getMerchants().then((response) => {
@@ -28089,7 +28016,7 @@ var UserForm = ({
       setFormData((prev) => ({ ...prev, merchantId: userMerchantId?.toString() || "" }));
     }
   }, [canSelectMerchant, currentUser, isEditMode]);
-  useEffect36(() => {
+  useEffect35(() => {
     if (!isEditMode && canSelectOutlet) {
       setLoadingOutlets(true);
       const merchantId = canSelectMerchant ? formData.merchantId : currentUser?.merchantId || currentUser?.merchant?.id;
@@ -28125,7 +28052,7 @@ var UserForm = ({
       setFormData((prev) => ({ ...prev, outletId: currentUser.outletId?.toString() || "" }));
     }
   }, [canSelectOutlet, canSelectMerchant, formData.merchantId, currentUser?.merchantId, currentUser?.outletId, isEditMode]);
-  useEffect36(() => {
+  useEffect35(() => {
     if (!isEditMode && canSelectMerchant && formData.merchantId) {
       console.log("\u{1F50D} UserForm: Merchant changed, resetting outlet and reloading outlets");
       setFormData((prev) => ({ ...prev, outletId: "" }));
@@ -28461,7 +28388,7 @@ var UserForm = ({
           onClick: handleCancel,
           disabled: isSubmitting,
           children: [
-            /* @__PURE__ */ jsx154(X15, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ jsx154(X14, { className: "w-4 h-4 mr-2" }),
             "Cancel"
           ]
         }
@@ -28531,7 +28458,7 @@ var AddUserDialog = ({
 // src/components/features/Users/components/UserRow.tsx
 import {
   Card as Card43,
-  CardContent as CardContent41,
+  CardContent as CardContent42,
   Button as Button36
 } from "@rentalshop/ui";
 import {
@@ -28540,7 +28467,7 @@ import {
   Store as Store5,
   Mail as Mail8,
   Phone as Phone5,
-  Calendar as Calendar18
+  Calendar as Calendar17
 } from "lucide-react";
 import { jsx as jsx156, jsxs as jsxs141 } from "react/jsx-runtime";
 function UserRow({
@@ -28651,7 +28578,7 @@ function UserRow({
         return null;
     }
   };
-  return /* @__PURE__ */ jsx156(Card43, { className: "hover:shadow-md transition-shadow duration-200", children: /* @__PURE__ */ jsx156(CardContent41, { className, children: /* @__PURE__ */ jsxs141("div", { className: "flex items-center justify-between", children: [
+  return /* @__PURE__ */ jsx156(Card43, { className: "hover:shadow-md transition-shadow duration-200", children: /* @__PURE__ */ jsx156(CardContent42, { className, children: /* @__PURE__ */ jsxs141("div", { className: "flex items-center justify-between", children: [
     /* @__PURE__ */ jsx156("div", { className: "flex-1", children: /* @__PURE__ */ jsx156("div", { className: "flex items-center gap-4", children: /* @__PURE__ */ jsxs141("div", { className: "flex-1", children: [
       /* @__PURE__ */ jsxs141("div", { className: "flex items-center gap-3 mb-2", children: [
         /* @__PURE__ */ jsx156("h3", { className: "text-lg font-semibold text-text-primary", children: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.name || "Unknown User" }),
@@ -28676,7 +28603,7 @@ function UserRow({
           ] })
         ] }),
         /* @__PURE__ */ jsxs141("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx156(Calendar18, { className: "w-4 h-4" }),
+          /* @__PURE__ */ jsx156(Calendar17, { className: "w-4 h-4" }),
           /* @__PURE__ */ jsxs141("span", { children: [
             "Joined ",
             formatDate11(typeof user.createdAt === "string" ? user.createdAt : user.createdAt.toISOString())
@@ -28817,7 +28744,7 @@ import {
 } from "lucide-react";
 import { useUserRole as useUserRole4 } from "@rentalshop/hooks";
 import { jsx as jsx159, jsxs as jsxs144 } from "react/jsx-runtime";
-var Users10 = ({
+var Users9 = ({
   // Data props
   data,
   filters = {},
@@ -28938,7 +28865,7 @@ var Users10 = ({
     ) })
   ] });
 };
-var Users_default = Users10;
+var Users_default = Users9;
 
 // src/components/features/Outlets/Outlets.tsx
 import React90 from "react";
@@ -29009,7 +28936,7 @@ function OutletHeader({
 // src/components/features/Outlets/components/OutletFilters.tsx
 import {
   Card as Card45,
-  CardContent as CardContent43,
+  CardContent as CardContent44,
   CardHeader as CardHeader36,
   CardTitle as CardTitle36,
   Input as Input20,
@@ -29020,8 +28947,8 @@ import {
   SelectValue as SelectValue14
 } from "@rentalshop/ui";
 import {
-  Search as Search7,
-  Filter as Filter5
+  Search as Search6,
+  Filter as Filter4
 } from "lucide-react";
 import { jsx as jsx161, jsxs as jsxs146 } from "react/jsx-runtime";
 function OutletFilters({
@@ -29047,14 +28974,14 @@ function OutletFilters({
   const hasActiveFilters = filters.search || filters.status;
   return /* @__PURE__ */ jsxs146(Card45, { children: [
     /* @__PURE__ */ jsx161(CardHeader36, { children: /* @__PURE__ */ jsxs146(CardTitle36, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ jsx161(Filter5, { className: "w-5 h-5" }),
+      /* @__PURE__ */ jsx161(Filter4, { className: "w-5 h-5" }),
       "Filters"
     ] }) }),
-    /* @__PURE__ */ jsx161(CardContent43, { children: /* @__PURE__ */ jsxs146("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+    /* @__PURE__ */ jsx161(CardContent44, { children: /* @__PURE__ */ jsxs146("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
       /* @__PURE__ */ jsxs146("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx161("label", { className: "text-sm font-medium", children: "Search" }),
         /* @__PURE__ */ jsxs146("div", { className: "relative", children: [
-          /* @__PURE__ */ jsx161(Search7, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
+          /* @__PURE__ */ jsx161(Search6, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
           /* @__PURE__ */ jsx161(
             Input20,
             {
@@ -29091,7 +29018,7 @@ function OutletFilters({
 // src/components/features/Outlets/components/OutletGrid.tsx
 import {
   Card as Card46,
-  CardContent as CardContent44,
+  CardContent as CardContent45,
   CardHeader as CardHeader37,
   CardTitle as CardTitle37,
   Button as Button41,
@@ -29110,7 +29037,7 @@ function OutletGrid({
   onOutletAction
 }) {
   if (outlets.length === 0) {
-    return /* @__PURE__ */ jsx162(Card46, { children: /* @__PURE__ */ jsxs147(CardContent44, { className: "text-center py-8 text-gray-500 dark:text-gray-400", children: [
+    return /* @__PURE__ */ jsx162(Card46, { children: /* @__PURE__ */ jsxs147(CardContent45, { className: "text-center py-8 text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx162(Building211, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
       /* @__PURE__ */ jsx162("h3", { className: "text-lg font-medium mb-2", children: "No Outlets Found" }),
       /* @__PURE__ */ jsx162("p", { className: "text-sm", children: "No outlets match your current filters." })
@@ -29138,7 +29065,7 @@ function OutletGrid({
         }
       )
     ] }) }),
-    /* @__PURE__ */ jsxs147(CardContent44, { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs147(CardContent45, { className: "space-y-4", children: [
       outlet.address && /* @__PURE__ */ jsxs147("div", { className: "flex items-start gap-2", children: [
         /* @__PURE__ */ jsx162(MapPin6, { className: "w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" }),
         /* @__PURE__ */ jsx162("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: outlet.address })
@@ -29320,13 +29247,13 @@ function OutletTable({
 }
 
 // src/components/features/Outlets/components/OutletSearch.tsx
-import { Search as Search8, X as X17 } from "lucide-react";
+import { Search as Search7, X as X16 } from "lucide-react";
 import { jsx as jsx164, jsxs as jsxs149 } from "react/jsx-runtime";
 function OutletSearch({ value, onChange, onClear }) {
   return /* @__PURE__ */ jsx164(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx164(CardContent2, { className: "pt-6 space-y-4", children: /* @__PURE__ */ jsx164("div", { className: "flex justify-between items-end gap-4", children: /* @__PURE__ */ jsxs149("div", { className: "space-y-2 flex-1", children: [
     /* @__PURE__ */ jsx164("label", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: "Search Outlets" }),
     /* @__PURE__ */ jsxs149("div", { className: "relative", children: [
-      /* @__PURE__ */ jsx164("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none", children: /* @__PURE__ */ jsx164(Search8, { className: "h-4 w-4 text-gray-400" }) }),
+      /* @__PURE__ */ jsx164("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none", children: /* @__PURE__ */ jsx164(Search7, { className: "h-4 w-4 text-gray-400" }) }),
       /* @__PURE__ */ jsx164(
         Input2,
         {
@@ -29344,7 +29271,7 @@ function OutletSearch({ value, onChange, onClear }) {
           size: "icon",
           onClick: onClear,
           className: "absolute inset-y-0 right-0 pr-3 flex items-center h-full w-auto",
-          children: /* @__PURE__ */ jsx164(X17, { className: "h-4 w-4 text-gray-400 hover:text-gray-600" })
+          children: /* @__PURE__ */ jsx164(X16, { className: "h-4 w-4 text-gray-400 hover:text-gray-600" })
         }
       )
     ] })
@@ -29475,7 +29402,7 @@ import { useUserRole as useUserRole6 } from "@rentalshop/hooks";
 import { useState as useState65 } from "react";
 
 // src/components/features/Categories/components/CategoryFormContent.tsx
-import { useState as useState64, useEffect as useEffect37 } from "react";
+import { useState as useState64, useEffect as useEffect36 } from "react";
 import { Save as Save6, Loader2 as Loader27 } from "lucide-react";
 import { Fragment as Fragment28, jsx as jsx168, jsxs as jsxs152 } from "react/jsx-runtime";
 var CategoryFormContent = ({
@@ -29492,7 +29419,7 @@ var CategoryFormContent = ({
   const [errors, setErrors] = useState64({});
   const [isSubmitting, setIsSubmitting] = useState64(false);
   const submitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : isSubmitting;
-  useEffect37(() => {
+  useEffect36(() => {
     if (category && mode === "edit") {
       setFormData({
         name: category.name || "",
@@ -29746,7 +29673,7 @@ var CategoryActions = ({
 };
 
 // src/components/features/Categories/components/CategoryCard.tsx
-import { Edit as Edit13, Tag as Tag2, Calendar as Calendar19, Eye as Eye17 } from "lucide-react";
+import { Edit as Edit13, Tag as Tag2, Calendar as Calendar18, Eye as Eye17 } from "lucide-react";
 import { jsx as jsx171, jsxs as jsxs155 } from "react/jsx-runtime";
 var CategoryCard = ({
   category,
@@ -29808,7 +29735,7 @@ var CategoryCard = ({
       category.description ? /* @__PURE__ */ jsx171("p", { className: "text-sm text-muted-foreground line-clamp-2 mb-3", children: category.description }) : /* @__PURE__ */ jsx171("p", { className: "text-sm text-muted-foreground mb-3 italic", children: "No description provided" }),
       /* @__PURE__ */ jsxs155("div", { className: "flex items-center justify-between text-xs text-muted-foreground", children: [
         /* @__PURE__ */ jsxs155("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ jsx171(Calendar19, { className: "h-3 w-3" }),
+          /* @__PURE__ */ jsx171(Calendar18, { className: "h-3 w-3" }),
           /* @__PURE__ */ jsxs155("span", { children: [
             "Created ",
             new Date(category.createdAt).toLocaleDateString()
@@ -30190,8 +30117,8 @@ var CategoryView = ({
 };
 
 // src/components/features/Categories/components/CategoryFilters.tsx
-import { Input as Input21, Card as Card47, CardContent as CardContent45, Button as Button43 } from "@rentalshop/ui";
-import { Search as Search9 } from "lucide-react";
+import { Input as Input21, Card as Card47, CardContent as CardContent46, Button as Button43 } from "@rentalshop/ui";
+import { Search as Search8 } from "lucide-react";
 import { jsx as jsx176, jsxs as jsxs160 } from "react/jsx-runtime";
 var CategoryFilters = ({
   filters,
@@ -30207,9 +30134,9 @@ var CategoryFilters = ({
     const newOrder = currentSort?.field === field && currentSort?.order === "asc" ? "desc" : "asc";
     onSortChange(field, newOrder);
   };
-  return /* @__PURE__ */ jsx176(Card47, { className: "bg-white", children: /* @__PURE__ */ jsx176(CardContent45, { className: "p-4", children: /* @__PURE__ */ jsxs160("div", { className: "flex items-center space-x-4", children: [
+  return /* @__PURE__ */ jsx176(Card47, { className: "bg-white", children: /* @__PURE__ */ jsx176(CardContent46, { className: "p-4", children: /* @__PURE__ */ jsxs160("div", { className: "flex items-center space-x-4", children: [
     /* @__PURE__ */ jsxs160("div", { className: "flex-1 relative", children: [
-      /* @__PURE__ */ jsx176(Search9, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" }),
+      /* @__PURE__ */ jsx176(Search8, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" }),
       /* @__PURE__ */ jsx176(
         Input21,
         {
@@ -30234,13 +30161,13 @@ var CategoryFilters = ({
 };
 
 // src/components/features/Categories/components/CategorySearch.tsx
-import { Search as Search10, X as X18 } from "lucide-react";
+import { Search as Search9, X as X17 } from "lucide-react";
 import { jsx as jsx177, jsxs as jsxs161 } from "react/jsx-runtime";
 function CategorySearch({ value, onChange, onClear }) {
   return /* @__PURE__ */ jsx177(Card2, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx177(CardContent2, { className: "pt-6 space-y-4", children: /* @__PURE__ */ jsx177("div", { className: "flex justify-between items-end gap-4", children: /* @__PURE__ */ jsxs161("div", { className: "space-y-2 flex-1", children: [
     /* @__PURE__ */ jsx177("label", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: "Search Categories" }),
     /* @__PURE__ */ jsxs161("div", { className: "relative", children: [
-      /* @__PURE__ */ jsx177("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none", children: /* @__PURE__ */ jsx177(Search10, { className: "h-4 w-4 text-gray-400" }) }),
+      /* @__PURE__ */ jsx177("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none", children: /* @__PURE__ */ jsx177(Search9, { className: "h-4 w-4 text-gray-400" }) }),
       /* @__PURE__ */ jsx177(
         Input2,
         {
@@ -30258,7 +30185,7 @@ function CategorySearch({ value, onChange, onClear }) {
           variant: "ghost",
           size: "icon",
           className: "absolute inset-y-0 right-0 h-full w-10",
-          children: /* @__PURE__ */ jsx177(X18, { className: "h-4 w-4 text-gray-400 hover:text-gray-600" })
+          children: /* @__PURE__ */ jsx177(X17, { className: "h-4 w-4 text-gray-400 hover:text-gray-600" })
         }
       )
     ] })
@@ -30352,11 +30279,11 @@ var Categories = ({
 
 // src/components/features/Plans/components/PlanDialog.tsx
 import {
-  Dialog as Dialog15,
-  DialogContent as DialogContent15,
-  DialogHeader as DialogHeader15,
-  DialogTitle as DialogTitle15,
-  DialogDescription as DialogDescription12
+  Dialog as Dialog14,
+  DialogContent as DialogContent14,
+  DialogHeader as DialogHeader14,
+  DialogTitle as DialogTitle14,
+  DialogDescription as DialogDescription11
 } from "@rentalshop/ui";
 import { jsx as jsx180, jsxs as jsxs164 } from "react/jsx-runtime";
 var PlanDialog = ({
@@ -30402,10 +30329,10 @@ var PlanDialog = ({
   const handleCancel = () => {
     onOpenChange(false);
   };
-  return /* @__PURE__ */ jsx180(Dialog15, { open, onOpenChange, children: /* @__PURE__ */ jsxs164(DialogContent15, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ jsxs164(DialogHeader15, { children: [
-      /* @__PURE__ */ jsx180(DialogTitle15, { children: getDialogTitle() }),
-      /* @__PURE__ */ jsx180(DialogDescription12, { children: getDialogDescription() })
+  return /* @__PURE__ */ jsx180(Dialog14, { open, onOpenChange, children: /* @__PURE__ */ jsxs164(DialogContent14, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ jsxs164(DialogHeader14, { children: [
+      /* @__PURE__ */ jsx180(DialogTitle14, { children: getDialogTitle() }),
+      /* @__PURE__ */ jsx180(DialogDescription11, { children: getDialogDescription() })
     ] }),
     /* @__PURE__ */ jsx180(
       PlanForm,
@@ -30522,12 +30449,12 @@ var PlanActions = ({
 };
 
 // src/components/features/Plans/components/PlanSelection.tsx
-import { useState as useState68, useEffect as useEffect38 } from "react";
+import { useState as useState68, useEffect as useEffect37 } from "react";
 import {
   Card as Card48,
   CardHeader as CardHeader38,
   CardTitle as CardTitle38,
-  CardContent as CardContent46,
+  CardContent as CardContent47,
   Button as Button45,
   Badge as Badge23,
   RadioGroup as RadioGroup2,
@@ -30537,9 +30464,9 @@ import {
 import {
   CheckCircle as CheckCircle21,
   Star as Star4,
-  Package as Package16,
-  Users as Users11,
-  CreditCard as CreditCard15
+  Package as Package15,
+  Users as Users10,
+  CreditCard as CreditCard14
 } from "lucide-react";
 import { BILLING_CYCLES as BILLING_CYCLES3 } from "@rentalshop/constants";
 import {
@@ -30557,12 +30484,12 @@ var PlanSelection = ({
 }) => {
   const [selectedPlan, setSelectedPlan] = useState68(selectedPlanId);
   const [selectedCycle, setSelectedCycle] = useState68(selectedBillingCycle);
-  useEffect38(() => {
+  useEffect37(() => {
     if (selectedPlanId) {
       setSelectedPlan(selectedPlanId);
     }
   }, [selectedPlanId]);
-  useEffect38(() => {
+  useEffect37(() => {
     if (selectedBillingCycle) {
       setSelectedCycle(selectedBillingCycle);
     }
@@ -30673,7 +30600,7 @@ var PlanSelection = ({
               /* @__PURE__ */ jsx182(CardTitle38, { children: plan.name }),
               /* @__PURE__ */ jsx182("p", { className: "text-text-secondary text-sm mt-2", children: plan.description })
             ] }) }),
-            /* @__PURE__ */ jsxs166(CardContent46, { children: [
+            /* @__PURE__ */ jsxs166(CardContent47, { children: [
               /* @__PURE__ */ jsxs166("div", { className: "text-center mb-6", children: [
                 /* @__PURE__ */ jsx182("div", { className: "text-4xl font-bold text-text-primary", children: formatCurrency20(getBillingCyclePrice(plan, selectedCycle), plan.currency) }),
                 /* @__PURE__ */ jsxs166("div", { className: "text-lg text-text-secondary", children: [
@@ -30696,28 +30623,28 @@ var PlanSelection = ({
               /* @__PURE__ */ jsxs166("div", { className: "space-y-3 mb-6", children: [
                 /* @__PURE__ */ jsxs166("div", { className: "flex items-center justify-between text-sm", children: [
                   /* @__PURE__ */ jsxs166("span", { className: "text-text-secondary flex items-center gap-2", children: [
-                    /* @__PURE__ */ jsx182(Package16, { className: "w-4 h-4" }),
+                    /* @__PURE__ */ jsx182(Package15, { className: "w-4 h-4" }),
                     "Outlets"
                   ] }),
                   /* @__PURE__ */ jsx182("span", { className: "font-medium", children: getLimitText(plan.limits.outlets) })
                 ] }),
                 /* @__PURE__ */ jsxs166("div", { className: "flex items-center justify-between text-sm", children: [
                   /* @__PURE__ */ jsxs166("span", { className: "text-text-secondary flex items-center gap-2", children: [
-                    /* @__PURE__ */ jsx182(Users11, { className: "w-4 h-4" }),
+                    /* @__PURE__ */ jsx182(Users10, { className: "w-4 h-4" }),
                     "Users"
                   ] }),
                   /* @__PURE__ */ jsx182("span", { className: "font-medium", children: getLimitText(plan.limits.users) })
                 ] }),
                 /* @__PURE__ */ jsxs166("div", { className: "flex items-center justify-between text-sm", children: [
                   /* @__PURE__ */ jsxs166("span", { className: "text-text-secondary flex items-center gap-2", children: [
-                    /* @__PURE__ */ jsx182(CreditCard15, { className: "w-4 h-4" }),
+                    /* @__PURE__ */ jsx182(CreditCard14, { className: "w-4 h-4" }),
                     "Products"
                   ] }),
                   /* @__PURE__ */ jsx182("span", { className: "font-medium", children: getLimitText(plan.limits.products) })
                 ] }),
                 /* @__PURE__ */ jsxs166("div", { className: "flex items-center justify-between text-sm", children: [
                   /* @__PURE__ */ jsxs166("span", { className: "text-text-secondary flex items-center gap-2", children: [
-                    /* @__PURE__ */ jsx182(Users11, { className: "w-4 h-4" }),
+                    /* @__PURE__ */ jsx182(Users10, { className: "w-4 h-4" }),
                     "Customers"
                   ] }),
                   /* @__PURE__ */ jsx182("span", { className: "font-medium", children: getLimitText(plan.limits.customers) })
@@ -30760,14 +30687,14 @@ import {
   Card as Card49,
   CardHeader as CardHeader39,
   CardTitle as CardTitle39,
-  CardContent as CardContent47,
+  CardContent as CardContent48,
   Badge as Badge24,
   Button as Button46
 } from "@rentalshop/ui";
 import {
-  Package as Package17,
-  Users as Users12,
-  CreditCard as CreditCard16,
+  Package as Package16,
+  Users as Users11,
+  CreditCard as CreditCard15,
   Star as Star5,
   Eye as Eye20,
   Edit as Edit16,
@@ -30803,9 +30730,9 @@ var PlanCard = ({
     });
   };
   if (variant === "compact") {
-    return /* @__PURE__ */ jsx183(Card49, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ jsx183(CardContent47, { className: "p-4", children: /* @__PURE__ */ jsxs167("div", { className: "flex items-center justify-between", children: [
+    return /* @__PURE__ */ jsx183(Card49, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ jsx183(CardContent48, { className: "p-4", children: /* @__PURE__ */ jsxs167("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsx183("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ jsxs167("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx183(Package17, { className: "w-4 h-4 text-text-tertiary" }),
+        /* @__PURE__ */ jsx183(Package16, { className: "w-4 h-4 text-text-tertiary" }),
         /* @__PURE__ */ jsx183("span", { className: "font-medium text-text-primary", children: plan.name }),
         plan.isPopular && /* @__PURE__ */ jsxs167(Badge24, { variant: "default", className: "text-xs", children: [
           /* @__PURE__ */ jsx183(Star5, { className: "w-3 h-3 mr-1" }),
@@ -30822,7 +30749,7 @@ var PlanCard = ({
     return /* @__PURE__ */ jsxs167(Card49, { className: "hover:shadow-md transition-shadow", children: [
       /* @__PURE__ */ jsx183(CardHeader39, { children: /* @__PURE__ */ jsxs167("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsxs167(CardTitle39, { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx183(Package17, { className: "w-5 h-5" }),
+          /* @__PURE__ */ jsx183(Package16, { className: "w-5 h-5" }),
           plan.name,
           plan.isPopular && /* @__PURE__ */ jsxs167(Badge24, { variant: "default", className: "text-xs", children: [
             /* @__PURE__ */ jsx183(Star5, { className: "w-3 h-3 mr-1" }),
@@ -30840,26 +30767,26 @@ var PlanCard = ({
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ jsxs167(CardContent47, { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs167(CardContent48, { className: "space-y-4", children: [
         /* @__PURE__ */ jsx183("p", { className: "text-text-secondary", children: plan.description }),
         /* @__PURE__ */ jsxs167("div", { className: "grid grid-cols-2 gap-4 text-sm", children: [
           /* @__PURE__ */ jsxs167("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx183(Package17, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx183(Package16, { className: "w-4 h-4 text-text-tertiary" }),
             /* @__PURE__ */ jsx183("span", { className: "text-text-secondary", children: "Outlets:" }),
             /* @__PURE__ */ jsx183("span", { className: "font-medium", children: getLimitText(plan.limits.outlets) })
           ] }),
           /* @__PURE__ */ jsxs167("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx183(Users12, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx183(Users11, { className: "w-4 h-4 text-text-tertiary" }),
             /* @__PURE__ */ jsx183("span", { className: "text-text-secondary", children: "Users:" }),
             /* @__PURE__ */ jsx183("span", { className: "font-medium", children: getLimitText(plan.limits.users) })
           ] }),
           /* @__PURE__ */ jsxs167("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx183(CreditCard16, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx183(CreditCard15, { className: "w-4 h-4 text-text-tertiary" }),
             /* @__PURE__ */ jsx183("span", { className: "text-text-secondary", children: "Products:" }),
             /* @__PURE__ */ jsx183("span", { className: "font-medium", children: getLimitText(plan.limits.products) })
           ] }),
           /* @__PURE__ */ jsxs167("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx183(Users12, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx183(Users11, { className: "w-4 h-4 text-text-tertiary" }),
             /* @__PURE__ */ jsx183("span", { className: "text-text-secondary", children: "Customers:" }),
             /* @__PURE__ */ jsx183("span", { className: "font-medium", children: getLimitText(plan.limits.customers) })
           ] })
@@ -30923,7 +30850,7 @@ var PlanCard = ({
   return /* @__PURE__ */ jsxs167(Card49, { className: "hover:shadow-md transition-shadow", children: [
     /* @__PURE__ */ jsx183(CardHeader39, { children: /* @__PURE__ */ jsxs167("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsxs167(CardTitle39, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx183(Package17, { className: "w-5 h-5" }),
+        /* @__PURE__ */ jsx183(Package16, { className: "w-5 h-5" }),
         plan.name,
         plan.isPopular && /* @__PURE__ */ jsxs167(Badge24, { variant: "default", className: "text-xs", children: [
           /* @__PURE__ */ jsx183(Star5, { className: "w-3 h-3 mr-1" }),
@@ -30941,16 +30868,16 @@ var PlanCard = ({
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsxs167(CardContent47, { className: "space-y-3", children: [
+    /* @__PURE__ */ jsxs167(CardContent48, { className: "space-y-3", children: [
       /* @__PURE__ */ jsx183("p", { className: "text-sm text-text-secondary line-clamp-2", children: plan.description }),
       /* @__PURE__ */ jsxs167("div", { className: "grid grid-cols-2 gap-2 text-xs", children: [
         /* @__PURE__ */ jsxs167("div", { className: "flex items-center gap-1", children: [
-          /* @__PURE__ */ jsx183(Package17, { className: "w-3 h-3 text-text-tertiary" }),
+          /* @__PURE__ */ jsx183(Package16, { className: "w-3 h-3 text-text-tertiary" }),
           /* @__PURE__ */ jsx183("span", { className: "text-text-secondary", children: "Outlets:" }),
           /* @__PURE__ */ jsx183("span", { className: "font-medium", children: getLimitText(plan.maxOutlets) })
         ] }),
         /* @__PURE__ */ jsxs167("div", { className: "flex items-center gap-1", children: [
-          /* @__PURE__ */ jsx183(Users12, { className: "w-3 h-3 text-text-tertiary" }),
+          /* @__PURE__ */ jsx183(Users11, { className: "w-3 h-3 text-text-tertiary" }),
           /* @__PURE__ */ jsx183("span", { className: "text-text-secondary", children: "Users:" }),
           /* @__PURE__ */ jsx183("span", { className: "font-medium", children: getLimitText(plan.maxUsers) })
         ] })
@@ -30995,7 +30922,7 @@ var PlanCard = ({
 import { useState as useState69 } from "react";
 import {
   Card as Card50,
-  CardContent as CardContent48,
+  CardContent as CardContent49,
   Badge as Badge25,
   Button as Button47,
   StatusBadge as StatusBadge3,
@@ -31006,7 +30933,7 @@ import {
   DropdownMenuSeparator as DropdownMenuSeparator4
 } from "@rentalshop/ui";
 import {
-  Package as Package18,
+  Package as Package17,
   Star as Star6,
   Eye as Eye21,
   Edit as Edit17,
@@ -31059,16 +30986,16 @@ var PlanTable = ({
     return sortOrder === "asc" ? /* @__PURE__ */ jsx184(ChevronUp2, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx184(ChevronDown5, { className: "w-4 h-4" });
   };
   if (loading) {
-    return /* @__PURE__ */ jsx184(Card50, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx184(CardContent48, { className: "p-0", children: /* @__PURE__ */ jsx184("div", { className: "animate-pulse space-y-4 p-6", children: [...Array(3)].map((_, i) => /* @__PURE__ */ jsx184("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) }) });
+    return /* @__PURE__ */ jsx184(Card50, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx184(CardContent49, { className: "p-0", children: /* @__PURE__ */ jsx184("div", { className: "animate-pulse space-y-4 p-6", children: [...Array(3)].map((_, i) => /* @__PURE__ */ jsx184("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) }) });
   }
   if (plans.length === 0) {
-    return /* @__PURE__ */ jsx184(Card50, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx184(CardContent48, { className: "text-center py-12", children: /* @__PURE__ */ jsxs168("div", { className: "text-text-tertiary", children: [
+    return /* @__PURE__ */ jsx184(Card50, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx184(CardContent49, { className: "text-center py-12", children: /* @__PURE__ */ jsxs168("div", { className: "text-text-tertiary", children: [
       /* @__PURE__ */ jsx184("div", { className: "text-4xl mb-4", children: "\u{1F4CB}" }),
       /* @__PURE__ */ jsx184("h3", { className: "text-lg font-medium mb-2", children: "No plans found" }),
       /* @__PURE__ */ jsx184("p", { className: "text-sm", children: "Get started by creating your first subscription plan." })
     ] }) }) });
   }
-  return /* @__PURE__ */ jsx184(Card50, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx184(CardContent48, { className: "p-0 flex-1", children: /* @__PURE__ */ jsx184("div", { className: "overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto", children: /* @__PURE__ */ jsxs168("table", { className: "w-full", children: [
+  return /* @__PURE__ */ jsx184(Card50, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx184(CardContent49, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsx184("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ jsxs168("table", { className: "w-full", children: [
     /* @__PURE__ */ jsx184("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs168("tr", { children: [
       /* @__PURE__ */ jsx184("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan Name" }),
       /* @__PURE__ */ jsx184("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Price & Billing" }),
@@ -31079,7 +31006,7 @@ var PlanTable = ({
     ] }) }),
     /* @__PURE__ */ jsx184("tbody", { className: "bg-bg-card divide-y divide-border", children: plans.map((plan) => /* @__PURE__ */ jsxs168("tr", { className: "hover:bg-bg-secondary transition-colors", children: [
       /* @__PURE__ */ jsx184("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsxs168("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ jsx184("div", { className: "flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center", children: /* @__PURE__ */ jsx184(Package18, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ jsx184("div", { className: "flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center", children: /* @__PURE__ */ jsx184(Package17, { className: "w-5 h-5 text-white" }) }),
         /* @__PURE__ */ jsxs168("div", { children: [
           /* @__PURE__ */ jsxs168("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx184("div", { className: "text-sm font-medium text-text-primary", children: plan.name }),
@@ -31202,7 +31129,7 @@ var PlanTable = ({
 // src/components/features/Plans/components/PlanFilters.tsx
 import {
   Card as Card51,
-  CardContent as CardContent49,
+  CardContent as CardContent50,
   Input as Input22,
   Select as Select15,
   SelectContent as SelectContent15,
@@ -31212,8 +31139,8 @@ import {
   Button as Button48
 } from "@rentalshop/ui";
 import {
-  Search as Search11,
-  X as X19
+  Search as Search10,
+  X as X18
 } from "lucide-react";
 import { jsx as jsx185, jsxs as jsxs169 } from "react/jsx-runtime";
 var PlanFilters = ({
@@ -31225,9 +31152,9 @@ var PlanFilters = ({
   showClearButton = true
 }) => {
   const hasActiveFilters = searchTerm || statusFilter !== "all";
-  return /* @__PURE__ */ jsx185(Card51, { className: "mb-6", children: /* @__PURE__ */ jsx185(CardContent49, { className: "pt-6", children: /* @__PURE__ */ jsxs169("div", { className: "flex flex-col sm:flex-row gap-4", children: [
+  return /* @__PURE__ */ jsx185(Card51, { className: "mb-6", children: /* @__PURE__ */ jsx185(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs169("div", { className: "flex flex-col sm:flex-row gap-4", children: [
     /* @__PURE__ */ jsx185("div", { className: "flex-1", children: /* @__PURE__ */ jsxs169("div", { className: "relative", children: [
-      /* @__PURE__ */ jsx185(Search11, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" }),
+      /* @__PURE__ */ jsx185(Search10, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" }),
       /* @__PURE__ */ jsx185(
         Input22,
         {
@@ -31253,7 +31180,7 @@ var PlanFilters = ({
         onClick: onClearFilters,
         className: "w-full sm:w-auto",
         children: [
-          /* @__PURE__ */ jsx185(X19, { className: "w-4 h-4 mr-2" }),
+          /* @__PURE__ */ jsx185(X18, { className: "w-4 h-4 mr-2" }),
           "Clear Filters"
         ]
       }
@@ -31264,7 +31191,7 @@ var PlanFilters = ({
 // src/components/features/Plans/components/PlanStats.tsx
 import {
   Card as Card52,
-  CardContent as CardContent50
+  CardContent as CardContent51
 } from "@rentalshop/ui";
 import { jsx as jsx186, jsxs as jsxs170 } from "react/jsx-runtime";
 var PlanStats = ({
@@ -31275,19 +31202,19 @@ var PlanStats = ({
   className = ""
 }) => {
   return /* @__PURE__ */ jsxs170("div", { className: `grid grid-cols-1 md:grid-cols-4 gap-6 ${className}`, children: [
-    /* @__PURE__ */ jsx186(Card52, { children: /* @__PURE__ */ jsx186(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
+    /* @__PURE__ */ jsx186(Card52, { children: /* @__PURE__ */ jsx186(CardContent51, { className: "pt-6", children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
       /* @__PURE__ */ jsx186("div", { className: "text-2xl font-bold text-action-primary", children: totalPlans }),
       /* @__PURE__ */ jsx186("div", { className: "text-sm text-text-secondary", children: "Total Plans" })
     ] }) }) }),
-    /* @__PURE__ */ jsx186(Card52, { children: /* @__PURE__ */ jsx186(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
+    /* @__PURE__ */ jsx186(Card52, { children: /* @__PURE__ */ jsx186(CardContent51, { className: "pt-6", children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
       /* @__PURE__ */ jsx186("div", { className: "text-2xl font-bold text-action-success", children: activePlans }),
       /* @__PURE__ */ jsx186("div", { className: "text-sm text-text-secondary", children: "Active Plans" })
     ] }) }) }),
-    /* @__PURE__ */ jsx186(Card52, { children: /* @__PURE__ */ jsx186(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
+    /* @__PURE__ */ jsx186(Card52, { children: /* @__PURE__ */ jsx186(CardContent51, { className: "pt-6", children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
       /* @__PURE__ */ jsx186("div", { className: "text-2xl font-bold text-brand-secondary", children: featuredPlans }),
       /* @__PURE__ */ jsx186("div", { className: "text-sm text-text-secondary", children: "Featured Plans" })
     ] }) }) }),
-    /* @__PURE__ */ jsx186(Card52, { children: /* @__PURE__ */ jsx186(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
+    /* @__PURE__ */ jsx186(Card52, { children: /* @__PURE__ */ jsx186(CardContent51, { className: "pt-6", children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
       /* @__PURE__ */ jsx186("div", { className: "text-2xl font-bold text-action-primary", children: plansWithTrial }),
       /* @__PURE__ */ jsx186("div", { className: "text-sm text-text-secondary", children: "Plans with Trial" })
     ] }) }) })
@@ -31295,7 +31222,7 @@ var PlanStats = ({
 };
 
 // src/components/features/Plans/components/PlanDetailModal.tsx
-import { X as X20, Check as Check7, Star as Star7 } from "lucide-react";
+import { X as X19, Check as Check7, Star as Star7 } from "lucide-react";
 import { formatCurrency as formatCurrency16 } from "@rentalshop/utils";
 import { jsx as jsx187, jsxs as jsxs171 } from "react/jsx-runtime";
 var BILLING_CYCLES4 = [
@@ -31361,7 +31288,7 @@ var PlanDetailModal = ({
             size: "sm",
             onClick: () => onOpenChange(false),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ jsx187(X20, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ jsx187(X19, { className: "w-4 h-4" })
           }
         )
       ] }),
@@ -31496,15 +31423,13 @@ var PlanDetailModal = ({
 // src/components/features/BillingCycles/components/BillingCycleTable.tsx
 import {
   Card as Card53,
-  CardHeader as CardHeader41,
-  CardTitle as CardTitle41,
-  CardContent as CardContent51,
+  CardContent as CardContent52,
   Badge as Badge26,
   Button as Button49,
   StatusBadge as StatusBadge4
 } from "@rentalshop/ui";
 import {
-  Calendar as Calendar21,
+  Calendar as Calendar20,
   Edit as Edit18,
   ChevronUp as ChevronUp3,
   ChevronDown as ChevronDown6,
@@ -31539,132 +31464,126 @@ var BillingCycleTable = ({
     return sortOrder === "asc" ? /* @__PURE__ */ jsx188(ChevronUp3, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx188(ChevronDown6, { className: "w-4 h-4" });
   };
   if (loading) {
-    return /* @__PURE__ */ jsxs172(Card53, { children: [
-      /* @__PURE__ */ jsx188(CardHeader41, { children: /* @__PURE__ */ jsx188(CardTitle41, { children: "Billing Cycles" }) }),
-      /* @__PURE__ */ jsx188(CardContent51, { children: /* @__PURE__ */ jsx188("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ jsx188("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) })
-    ] });
+    return /* @__PURE__ */ jsx188(Card53, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx188(CardContent52, { children: /* @__PURE__ */ jsx188("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ jsx188("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) }) });
   }
-  return /* @__PURE__ */ jsxs172(Card53, { children: [
-    /* @__PURE__ */ jsx188(CardHeader41, { children: /* @__PURE__ */ jsx188(CardTitle41, { children: "Billing Cycles" }) }),
-    /* @__PURE__ */ jsx188(CardContent51, { children: /* @__PURE__ */ jsxs172("div", { className: "overflow-x-auto", children: [
-      /* @__PURE__ */ jsxs172("table", { className: "w-full", children: [
-        /* @__PURE__ */ jsx188("thead", { children: /* @__PURE__ */ jsxs172("tr", { className: "border-b border-border", children: [
-          /* @__PURE__ */ jsx188(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("name"),
-              children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
-                "Name",
-                getSortIcon("name")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ jsx188(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("value"),
-              children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
-                "Value",
-                getSortIcon("value")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ jsx188(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("months"),
-              children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
-                "Months",
-                getSortIcon("months")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ jsx188(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("discount"),
-              children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
-                "Discount",
-                getSortIcon("discount")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ jsx188("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Description" }),
-          /* @__PURE__ */ jsx188("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Status" }),
-          /* @__PURE__ */ jsx188(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("createdAt"),
-              children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
-                "Created",
-                getSortIcon("createdAt")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ jsx188("th", { className: "text-right py-3 px-4 font-medium text-text-primary", children: "Actions" })
+  return /* @__PURE__ */ jsx188(Card53, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx188(CardContent52, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsxs172("div", { className: "flex-1 overflow-auto h-full", children: [
+    /* @__PURE__ */ jsxs172("table", { className: "w-full", children: [
+      /* @__PURE__ */ jsx188("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs172("tr", { children: [
+        /* @__PURE__ */ jsx188(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("name"),
+            children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
+              "Name",
+              getSortIcon("name")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ jsx188(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("value"),
+            children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
+              "Value",
+              getSortIcon("value")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ jsx188(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("months"),
+            children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
+              "Months",
+              getSortIcon("months")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ jsx188(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("discount"),
+            children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
+              "Discount",
+              getSortIcon("discount")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ jsx188("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Description" }),
+        /* @__PURE__ */ jsx188("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Status" }),
+        /* @__PURE__ */ jsx188(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("createdAt"),
+            children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
+              "Created",
+              getSortIcon("createdAt")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ jsx188("th", { className: "text-right py-3 px-4 font-medium text-text-primary", children: "Actions" })
+      ] }) }),
+      /* @__PURE__ */ jsx188("tbody", { children: billingCycles.map((cycle) => /* @__PURE__ */ jsxs172("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
+        /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188("div", { className: "font-medium text-text-primary", children: cycle.name }) }),
+        /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188(Badge26, { variant: "outline", className: "font-mono", children: cycle.value }) }),
+        /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx188(Calendar20, { className: "w-4 h-4 text-text-tertiary" }),
+          /* @__PURE__ */ jsx188("span", { className: "font-medium", children: cycle.months }),
+          /* @__PURE__ */ jsx188("span", { className: "text-sm text-text-secondary", children: cycle.months === 1 ? "month" : "months" })
         ] }) }),
-        /* @__PURE__ */ jsx188("tbody", { children: billingCycles.map((cycle) => /* @__PURE__ */ jsxs172("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
-          /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188("div", { className: "font-medium text-text-primary", children: cycle.name }) }),
-          /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188(Badge26, { variant: "outline", className: "font-mono", children: cycle.value }) }),
-          /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx188(Calendar21, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ jsx188("span", { className: "font-medium", children: cycle.months }),
-            /* @__PURE__ */ jsx188("span", { className: "text-sm text-text-secondary", children: cycle.months === 1 ? "month" : "months" })
-          ] }) }),
-          /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188("div", { className: "flex items-center gap-2", children: cycle.discount > 0 ? /* @__PURE__ */ jsxs172(Badge26, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
-            cycle.discount,
-            "%"
-          ] }) : /* @__PURE__ */ jsx188("span", { className: "text-text-tertiary", children: "No discount" }) }) }),
-          /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188("div", { className: "text-sm text-text-secondary max-w-xs truncate", children: cycle.description || "No description" }) }),
-          /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx188(
-            StatusBadge4,
+        /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188("div", { className: "flex items-center gap-2", children: cycle.discount > 0 ? /* @__PURE__ */ jsxs172(Badge26, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
+          cycle.discount,
+          "%"
+        ] }) : /* @__PURE__ */ jsx188("span", { className: "text-text-tertiary", children: "No discount" }) }) }),
+        /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188("div", { className: "text-sm text-text-secondary max-w-xs truncate", children: cycle.description || "No description" }) }),
+        /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx188("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx188(
+          StatusBadge4,
+          {
+            status: cycle.isActive ? "active" : "inactive"
+          }
+        ) }) }),
+        /* @__PURE__ */ jsx188("td", { className: "py-4 px-4 text-sm text-text-secondary", children: formatDate11(cycle.createdAt) }),
+        /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center justify-end gap-2", children: [
+          onView && /* @__PURE__ */ jsx188(
+            Button49,
             {
-              status: cycle.isActive ? "active" : "inactive"
+              variant: "ghost",
+              size: "sm",
+              onClick: () => onView(cycle),
+              className: "h-8 w-8 p-0",
+              title: "View billing cycle",
+              children: /* @__PURE__ */ jsx188(Eye22, { className: "w-4 h-4" })
             }
-          ) }) }),
-          /* @__PURE__ */ jsx188("td", { className: "py-4 px-4 text-sm text-text-secondary", children: formatDate11(cycle.createdAt) }),
-          /* @__PURE__ */ jsx188("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsxs172("div", { className: "flex items-center justify-end gap-2", children: [
-            onView && /* @__PURE__ */ jsx188(
-              Button49,
-              {
-                variant: "ghost",
-                size: "sm",
-                onClick: () => onView(cycle),
-                className: "h-8 w-8 p-0",
-                title: "View billing cycle",
-                children: /* @__PURE__ */ jsx188(Eye22, { className: "w-4 h-4" })
-              }
-            ),
-            onEdit && /* @__PURE__ */ jsx188(
-              Button49,
-              {
-                variant: "ghost",
-                size: "sm",
-                onClick: () => onEdit(cycle),
-                className: "h-8 w-8 p-0",
-                title: "Edit billing cycle",
-                children: /* @__PURE__ */ jsx188(Edit18, { className: "w-4 h-4" })
-              }
-            )
-          ] }) })
-        ] }, cycle.id)) })
-      ] }),
-      billingCycles.length === 0 && /* @__PURE__ */ jsxs172("div", { className: "text-center py-12", children: [
-        /* @__PURE__ */ jsx188(Calendar21, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
-        /* @__PURE__ */ jsx188("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No billing cycles found" }),
-        /* @__PURE__ */ jsx188("p", { className: "text-text-secondary", children: "Get started by creating your first billing cycle" })
-      ] })
-    ] }) })
-  ] });
+          ),
+          onEdit && /* @__PURE__ */ jsx188(
+            Button49,
+            {
+              variant: "ghost",
+              size: "sm",
+              onClick: () => onEdit(cycle),
+              className: "h-8 w-8 p-0",
+              title: "Edit billing cycle",
+              children: /* @__PURE__ */ jsx188(Edit18, { className: "w-4 h-4" })
+            }
+          )
+        ] }) })
+      ] }, cycle.id)) })
+    ] }),
+    billingCycles.length === 0 && /* @__PURE__ */ jsxs172("div", { className: "text-center py-12", children: [
+      /* @__PURE__ */ jsx188(Calendar20, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
+      /* @__PURE__ */ jsx188("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No billing cycles found" }),
+      /* @__PURE__ */ jsx188("p", { className: "text-text-secondary", children: "Get started by creating your first billing cycle" })
+    ] })
+  ] }) }) });
 };
 
 // src/components/features/BillingCycles/components/BillingCycleForm.tsx
-import { useState as useState70, useEffect as useEffect39 } from "react";
+import { useState as useState70, useEffect as useEffect38 } from "react";
 import {
   Button as Button50,
   Input as Input23,
@@ -31689,7 +31608,7 @@ var BillingCycleForm = ({
     sortOrder: initialData.sortOrder || 0
   });
   const [errors, setErrors] = useState70({});
-  useEffect39(() => {
+  useEffect38(() => {
     if (initialData) {
       setFormData({
         name: initialData.name || "",
@@ -31927,13 +31846,13 @@ var BillingCycleForm = ({
 // src/components/features/BillingCycles/components/BillingCycleDetailDialog.tsx
 import React100, { useState as useState71 } from "react";
 import {
-  Dialog as Dialog16,
-  DialogContent as DialogContent16,
-  DialogHeader as DialogHeader16,
-  DialogTitle as DialogTitle16,
-  DialogDescription as DialogDescription13,
+  Dialog as Dialog15,
+  DialogContent as DialogContent15,
+  DialogHeader as DialogHeader15,
+  DialogTitle as DialogTitle15,
+  DialogDescription as DialogDescription12,
   Card as Card54,
-  CardContent as CardContent52,
+  CardContent as CardContent53,
   Button as Button51,
   Badge as Badge27,
   StatusBadge as StatusBadge5,
@@ -31941,14 +31860,14 @@ import {
   Label as Label12
 } from "@rentalshop/ui";
 import {
-  Calendar as Calendar22,
+  Calendar as Calendar21,
   Percent as Percent3,
-  Clock as Clock17,
+  Clock as Clock16,
   Edit as Edit19,
   Save as Save7,
-  X as X21,
+  X as X20,
   Info as Info7,
-  DollarSign as DollarSign16,
+  DollarSign as DollarSign15,
   Trash2 as Trash215
 } from "lucide-react";
 import { Fragment as Fragment33, jsx as jsx190, jsxs as jsxs174 } from "react/jsx-runtime";
@@ -32003,11 +31922,11 @@ var BillingCycleDetailDialog = ({
   };
   if (!billingCycle)
     return null;
-  return /* @__PURE__ */ jsx190(Dialog16, { open, onOpenChange, children: /* @__PURE__ */ jsxs174(DialogContent16, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ jsx190(DialogHeader16, { children: /* @__PURE__ */ jsxs174("div", { className: "flex items-center justify-between", children: [
+  return /* @__PURE__ */ jsx190(Dialog15, { open, onOpenChange, children: /* @__PURE__ */ jsxs174(DialogContent15, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ jsx190(DialogHeader15, { children: /* @__PURE__ */ jsxs174("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsxs174("div", { children: [
-        /* @__PURE__ */ jsx190(DialogTitle16, { className: "text-xl font-semibold", children: "Billing Cycle Details" }),
-        /* @__PURE__ */ jsx190(DialogDescription13, { className: "text-sm text-text-secondary mt-1", children: "View and manage billing cycle information" })
+        /* @__PURE__ */ jsx190(DialogTitle15, { className: "text-xl font-semibold", children: "Billing Cycle Details" }),
+        /* @__PURE__ */ jsx190(DialogDescription12, { className: "text-sm text-text-secondary mt-1", children: "View and manage billing cycle information" })
       ] }),
       /* @__PURE__ */ jsxs174("div", { className: "flex items-center gap-2", children: [
         onEdit && /* @__PURE__ */ jsxs174(
@@ -32039,7 +31958,7 @@ var BillingCycleDetailDialog = ({
       ] })
     ] }) }),
     /* @__PURE__ */ jsxs174("div", { className: "mt-6 space-y-6", children: [
-      /* @__PURE__ */ jsx190(Card54, { children: /* @__PURE__ */ jsxs174(CardContent52, { className: "p-6", children: [
+      /* @__PURE__ */ jsx190(Card54, { children: /* @__PURE__ */ jsxs174(CardContent53, { className: "p-6", children: [
         /* @__PURE__ */ jsxs174("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
           /* @__PURE__ */ jsx190(Info7, { className: "w-5 h-5 text-text-tertiary" }),
           "Basic Information"
@@ -32063,16 +31982,16 @@ var BillingCycleDetailDialog = ({
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ jsx190(Card54, { children: /* @__PURE__ */ jsxs174(CardContent52, { className: "p-6", children: [
+      /* @__PURE__ */ jsx190(Card54, { children: /* @__PURE__ */ jsxs174(CardContent53, { className: "p-6", children: [
         /* @__PURE__ */ jsxs174("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx190(DollarSign16, { className: "w-5 h-5 text-text-tertiary" }),
+          /* @__PURE__ */ jsx190(DollarSign15, { className: "w-5 h-5 text-text-tertiary" }),
           "Billing Details"
         ] }),
         /* @__PURE__ */ jsxs174("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
           /* @__PURE__ */ jsxs174("div", { children: [
             /* @__PURE__ */ jsx190(Label12, { className: "text-sm font-medium text-text-secondary", children: "Billing Period" }),
             /* @__PURE__ */ jsxs174("div", { className: "flex items-center gap-2 mt-1", children: [
-              /* @__PURE__ */ jsx190(Calendar22, { className: "w-4 h-4 text-text-tertiary" }),
+              /* @__PURE__ */ jsx190(Calendar21, { className: "w-4 h-4 text-text-tertiary" }),
               /* @__PURE__ */ jsx190("span", { className: "text-lg font-semibold text-text-primary", children: billingCycle.months }),
               /* @__PURE__ */ jsx190("span", { className: "text-text-secondary", children: billingCycle.months === 1 ? "month" : "months" })
             ] })
@@ -32089,9 +32008,9 @@ var BillingCycleDetailDialog = ({
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ jsx190(Card54, { children: /* @__PURE__ */ jsxs174(CardContent52, { className: "p-6", children: [
+      /* @__PURE__ */ jsx190(Card54, { children: /* @__PURE__ */ jsxs174(CardContent53, { className: "p-6", children: [
         /* @__PURE__ */ jsxs174("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx190(Clock17, { className: "w-5 h-5 text-text-tertiary" }),
+          /* @__PURE__ */ jsx190(Clock16, { className: "w-5 h-5 text-text-tertiary" }),
           "Status Management"
         ] }),
         /* @__PURE__ */ jsx190("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs174("div", { className: "flex items-center justify-between", children: [
@@ -32132,7 +32051,7 @@ var BillingCycleDetailDialog = ({
                   size: "sm",
                   onClick: handleCancelEdit,
                   disabled: loading,
-                  children: /* @__PURE__ */ jsx190(X21, { className: "w-4 h-4" })
+                  children: /* @__PURE__ */ jsx190(X20, { className: "w-4 h-4" })
                 }
               )
             ] })
@@ -32148,9 +32067,9 @@ var BillingCycleDetailDialog = ({
           ) })
         ] }) })
       ] }) }),
-      /* @__PURE__ */ jsx190(Card54, { children: /* @__PURE__ */ jsxs174(CardContent52, { className: "p-6", children: [
+      /* @__PURE__ */ jsx190(Card54, { children: /* @__PURE__ */ jsxs174(CardContent53, { className: "p-6", children: [
         /* @__PURE__ */ jsxs174("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx190(Clock17, { className: "w-5 h-5 text-text-tertiary" }),
+          /* @__PURE__ */ jsx190(Clock16, { className: "w-5 h-5 text-text-tertiary" }),
           "Timestamps"
         ] }),
         /* @__PURE__ */ jsxs174("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
@@ -32169,7 +32088,7 @@ var BillingCycleDetailDialog = ({
 };
 
 // src/components/features/Payments/components/PaymentForm.tsx
-import React101, { useState as useState72, useEffect as useEffect40 } from "react";
+import React101, { useState as useState72, useEffect as useEffect39 } from "react";
 import {
   Button as Button52,
   Input as Input24,
@@ -32181,14 +32100,14 @@ import {
   SelectTrigger as SelectTrigger16,
   SelectValue as SelectValue16,
   Card as Card55,
-  CardContent as CardContent53,
-  CardHeader as CardHeader42,
-  CardTitle as CardTitle42,
+  CardContent as CardContent54,
+  CardHeader as CardHeader41,
+  CardTitle as CardTitle41,
   Switch as Switch4,
   SearchableSelect as SearchableSelect4
 } from "@rentalshop/ui";
 import { merchantsApi as merchantsApi2 } from "@rentalshop/utils";
-import { DollarSign as DollarSign17, CreditCard as CreditCard18 } from "lucide-react";
+import { DollarSign as DollarSign16, CreditCard as CreditCard17 } from "lucide-react";
 import { jsx as jsx191, jsxs as jsxs175 } from "react/jsx-runtime";
 var PAYMENT_METHODS2 = [
   { value: "STRIPE", label: "Stripe" },
@@ -32309,7 +32228,7 @@ var PaymentForm = ({
       console.log("\u{1F50D} PaymentForm: Search completed for query:", query);
     }
   }, []);
-  useEffect40(() => {
+  useEffect39(() => {
     if (mode === "edit" && existingPayment && plans.length > 0 && planVariants.length > 0) {
       const plan = plans.find((p) => p.id === existingPayment.planId);
       const planVariant = planVariants.find((v) => v.id === existingPayment.planVariantId);
@@ -32319,7 +32238,7 @@ var PaymentForm = ({
         setSelectedPlanVariant(planVariant);
     }
   }, [mode, existingPayment, plans, planVariants]);
-  useEffect40(() => {
+  useEffect39(() => {
     if (selectedPlan && selectedPlanVariant) {
       const totalAmount = selectedPlanVariant.price;
       const currency = selectedPlan.currency;
@@ -32378,11 +32297,11 @@ var PaymentForm = ({
   };
   const isFormValid = formData.merchantId && formData.planId && formData.planVariantId > 0 && formData.amount > 0 && formData.startDate && formData.endDate;
   return /* @__PURE__ */ jsxs175(Card55, { children: [
-    /* @__PURE__ */ jsx191(CardHeader42, { children: /* @__PURE__ */ jsxs175(CardTitle42, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ jsx191(DollarSign17, { className: "w-5 h-5" }),
+    /* @__PURE__ */ jsx191(CardHeader41, { children: /* @__PURE__ */ jsxs175(CardTitle41, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx191(DollarSign16, { className: "w-5 h-5" }),
       mode === "edit" ? "Edit Payment" : "Create Manual Payment"
     ] }) }),
-    /* @__PURE__ */ jsx191(CardContent53, { children: /* @__PURE__ */ jsxs175("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
+    /* @__PURE__ */ jsx191(CardContent54, { children: /* @__PURE__ */ jsxs175("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
       /* @__PURE__ */ jsxs175("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx191(Label13, { htmlFor: "merchant", children: "Merchant *" }),
         /* @__PURE__ */ jsx191(
@@ -32490,7 +32409,7 @@ var PaymentForm = ({
             children: [
               /* @__PURE__ */ jsx191(SelectTrigger16, { children: /* @__PURE__ */ jsx191(SelectValue16, { placeholder: "Select payment method" }) }),
               /* @__PURE__ */ jsx191(SelectContent16, { children: PAYMENT_METHODS2.map((method) => /* @__PURE__ */ jsx191(SelectItem16, { value: method.value, children: /* @__PURE__ */ jsxs175("div", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ jsx191(CreditCard18, { className: "w-4 h-4" }),
+                /* @__PURE__ */ jsx191(CreditCard17, { className: "w-4 h-4" }),
                 method.label
               ] }) }, method.value)) })
             ]
@@ -32613,14 +32532,14 @@ var PaymentForm = ({
 
 // src/components/features/Payments/components/PaymentDetailDialog.tsx
 import {
-  CreditCard as CreditCard19,
-  DollarSign as DollarSign18,
-  Clock as Clock18,
+  CreditCard as CreditCard18,
+  DollarSign as DollarSign17,
+  Clock as Clock17,
   CheckCircle as CheckCircle22,
   XCircle as XCircle15,
   AlertCircle as AlertCircle11,
   Building as Building7,
-  Package as Package20,
+  Package as Package19,
   FileText as FileText4,
   RotateCcw as RotateCcw2,
   Download as Download9
@@ -32639,7 +32558,7 @@ var PaymentDetailDialog = ({
   const getStatusBadge = (status) => {
     const statusConfig = {
       "completed": { color: "bg-action-success/10 text-action-success", icon: CheckCircle22, text: "Completed" },
-      "pending": { color: "bg-action-warning/10 text-action-warning", icon: Clock18, text: "Pending" },
+      "pending": { color: "bg-action-warning/10 text-action-warning", icon: Clock17, text: "Pending" },
       "failed": { color: "bg-action-danger/10 text-action-danger", icon: XCircle15, text: "Failed" },
       "refunded": { color: "bg-text-tertiary/10 text-text-tertiary", icon: AlertCircle11, text: "Refunded" }
     };
@@ -32652,12 +32571,12 @@ var PaymentDetailDialog = ({
   };
   const getPaymentMethodIcon = (method) => {
     const methodConfig = {
-      "credit_card": CreditCard19,
-      "bank_transfer": DollarSign18,
-      "paypal": DollarSign18,
-      "stripe": CreditCard19
+      "credit_card": CreditCard18,
+      "bank_transfer": DollarSign17,
+      "paypal": DollarSign17,
+      "stripe": CreditCard18
     };
-    const Icon2 = methodConfig[method] || CreditCard19;
+    const Icon2 = methodConfig[method] || CreditCard18;
     return /* @__PURE__ */ jsx192(Icon2, { className: "w-4 h-4" });
   };
   const getPaymentMethodText = (method) => {
@@ -32782,7 +32701,7 @@ var PaymentDetailDialog = ({
       ] }) }),
       payment.subscription?.plan && /* @__PURE__ */ jsx192(Card2, { children: /* @__PURE__ */ jsxs176(CardContent2, { className: "p-6", children: [
         /* @__PURE__ */ jsxs176("h3", { className: "text-lg font-medium text-gray-900 mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx192(Package20, { className: "w-5 h-5" }),
+          /* @__PURE__ */ jsx192(Package19, { className: "w-5 h-5" }),
           "Subscription Details"
         ] }),
         /* @__PURE__ */ jsxs176("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
@@ -32870,7 +32789,7 @@ import { useState as useState73 } from "react";
 import {
   Eye as Eye23,
   Download as Download10,
-  CreditCard as CreditCard20,
+  CreditCard as CreditCard19,
   MoreVertical as MoreVertical9,
   RefreshCcw
 } from "lucide-react";
@@ -32924,101 +32843,98 @@ function PaymentTable({
       /* @__PURE__ */ jsx193("p", { className: "text-sm", children: "Try adjusting your search or filter criteria." })
     ] }) }) });
   }
-  return /* @__PURE__ */ jsxs177(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: [
-    /* @__PURE__ */ jsx193(CardHeader2, { children: /* @__PURE__ */ jsx193(CardTitle2, { children: "Payments" }) }),
-    /* @__PURE__ */ jsx193(CardContent2, { className: "p-0 flex-1", children: /* @__PURE__ */ jsx193("div", { className: "overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto", children: /* @__PURE__ */ jsxs177("table", { className: "w-full", children: [
-      /* @__PURE__ */ jsx193("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs177("tr", { children: [
-        /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Merchant" }),
-        /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan" }),
-        /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Amount" }),
-        /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Method" }),
-        /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Status" }),
-        /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Date" }),
-        /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Actions" })
-      ] }) }),
-      /* @__PURE__ */ jsx193("tbody", { className: "bg-bg-card divide-y divide-border", children: payments.map((payment) => /* @__PURE__ */ jsxs177("tr", { className: "hover:bg-bg-secondary transition-colors", children: [
-        /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsxs177("div", { className: "flex items-center gap-3", children: [
-          /* @__PURE__ */ jsx193("div", { className: "flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center", children: /* @__PURE__ */ jsx193(CreditCard20, { className: "w-5 h-5 text-white" }) }),
-          /* @__PURE__ */ jsxs177("div", { children: [
-            /* @__PURE__ */ jsx193("div", { className: "text-sm font-medium text-text-primary", children: payment.subscription?.merchant?.name || "Unknown Merchant" }),
-            payment.invoiceNumber && /* @__PURE__ */ jsxs177("div", { className: "text-xs text-text-tertiary", children: [
-              "INV: ",
-              payment.invoiceNumber
-            ] })
+  return /* @__PURE__ */ jsx193(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx193(CardContent2, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsx193("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ jsxs177("table", { className: "w-full", children: [
+    /* @__PURE__ */ jsx193("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs177("tr", { children: [
+      /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Merchant" }),
+      /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan" }),
+      /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Amount" }),
+      /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Method" }),
+      /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Status" }),
+      /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Date" }),
+      /* @__PURE__ */ jsx193("th", { className: "px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Actions" })
+    ] }) }),
+    /* @__PURE__ */ jsx193("tbody", { className: "bg-bg-card divide-y divide-border", children: payments.map((payment) => /* @__PURE__ */ jsxs177("tr", { className: "hover:bg-bg-secondary transition-colors", children: [
+      /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsxs177("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ jsx193("div", { className: "flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center", children: /* @__PURE__ */ jsx193(CreditCard19, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ jsxs177("div", { children: [
+          /* @__PURE__ */ jsx193("div", { className: "text-sm font-medium text-text-primary", children: payment.subscription?.merchant?.name || "Unknown Merchant" }),
+          payment.invoiceNumber && /* @__PURE__ */ jsxs177("div", { className: "text-xs text-text-tertiary", children: [
+            "INV: ",
+            payment.invoiceNumber
           ] })
-        ] }) }),
-        /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx193("div", { className: "text-sm text-text-primary", children: payment.subscription?.plan?.name || "Unknown Plan" }) }),
-        /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx193("div", { className: "text-sm font-medium text-text-primary", children: formatCurrency20(payment.amount, payment.currency) }) }),
-        /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx193("div", { className: "text-sm text-text-primary", children: getPaymentMethodText(payment.method) }) }),
-        /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: getStatusBadge(payment.status) }),
-        /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx193("div", { className: "text-sm text-text-primary", children: formatDate11(payment.createdAt) }) }),
-        /* @__PURE__ */ jsx193("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ jsxs177(DropdownMenu, { children: [
-          /* @__PURE__ */ jsx193(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx193(
-            Button,
-            {
-              variant: "ghost",
-              size: "sm",
-              onClick: () => setOpenMenuId(openMenuId === payment.id ? null : payment.id),
-              children: /* @__PURE__ */ jsx193(MoreVertical9, { className: "h-4 w-4" })
-            }
-          ) }),
-          /* @__PURE__ */ jsxs177(
-            DropdownMenuContent,
-            {
-              align: "end",
-              open: openMenuId === payment.id,
-              onOpenChange: (open) => setOpenMenuId(open ? payment.id : null),
-              children: [
-                onView && /* @__PURE__ */ jsxs177(
+        ] })
+      ] }) }),
+      /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx193("div", { className: "text-sm text-text-primary", children: payment.subscription?.plan?.name || "Unknown Plan" }) }),
+      /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx193("div", { className: "text-sm font-medium text-text-primary", children: formatCurrency20(payment.amount, payment.currency) }) }),
+      /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx193("div", { className: "text-sm text-text-primary", children: getPaymentMethodText(payment.method) }) }),
+      /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: getStatusBadge(payment.status) }),
+      /* @__PURE__ */ jsx193("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx193("div", { className: "text-sm text-text-primary", children: formatDate11(payment.createdAt) }) }),
+      /* @__PURE__ */ jsx193("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ jsxs177(DropdownMenu, { children: [
+        /* @__PURE__ */ jsx193(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx193(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
+            onClick: () => setOpenMenuId(openMenuId === payment.id ? null : payment.id),
+            children: /* @__PURE__ */ jsx193(MoreVertical9, { className: "h-4 w-4" })
+          }
+        ) }),
+        /* @__PURE__ */ jsxs177(
+          DropdownMenuContent,
+          {
+            align: "end",
+            open: openMenuId === payment.id,
+            onOpenChange: (open) => setOpenMenuId(open ? payment.id : null),
+            children: [
+              onView && /* @__PURE__ */ jsxs177(
+                DropdownMenuItem,
+                {
+                  onClick: () => {
+                    onView(payment);
+                    setOpenMenuId(null);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsx193(Eye23, { className: "h-4 w-4 mr-2" }),
+                    "View Details"
+                  ]
+                }
+              ),
+              onDownloadReceipt && /* @__PURE__ */ jsxs177(
+                DropdownMenuItem,
+                {
+                  onClick: () => {
+                    onDownloadReceipt(payment);
+                    setOpenMenuId(null);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsx193(Download10, { className: "h-4 w-4 mr-2" }),
+                    "Download Receipt"
+                  ]
+                }
+              ),
+              onRefund && payment.status === "completed" && /* @__PURE__ */ jsxs177(Fragment34, { children: [
+                /* @__PURE__ */ jsx193(DropdownMenuSeparator, {}),
+                /* @__PURE__ */ jsxs177(
                   DropdownMenuItem,
                   {
                     onClick: () => {
-                      onView(payment);
+                      onRefund(payment);
                       setOpenMenuId(null);
                     },
+                    className: "text-action-danger focus:text-action-danger",
                     children: [
-                      /* @__PURE__ */ jsx193(Eye23, { className: "h-4 w-4 mr-2" }),
-                      "View Details"
+                      /* @__PURE__ */ jsx193(RefreshCcw, { className: "h-4 w-4 mr-2" }),
+                      "Refund Payment"
                     ]
                   }
-                ),
-                onDownloadReceipt && /* @__PURE__ */ jsxs177(
-                  DropdownMenuItem,
-                  {
-                    onClick: () => {
-                      onDownloadReceipt(payment);
-                      setOpenMenuId(null);
-                    },
-                    children: [
-                      /* @__PURE__ */ jsx193(Download10, { className: "h-4 w-4 mr-2" }),
-                      "Download Receipt"
-                    ]
-                  }
-                ),
-                onRefund && payment.status === "completed" && /* @__PURE__ */ jsxs177(Fragment34, { children: [
-                  /* @__PURE__ */ jsx193(DropdownMenuSeparator, {}),
-                  /* @__PURE__ */ jsxs177(
-                    DropdownMenuItem,
-                    {
-                      onClick: () => {
-                        onRefund(payment);
-                        setOpenMenuId(null);
-                      },
-                      className: "text-action-danger focus:text-action-danger",
-                      children: [
-                        /* @__PURE__ */ jsx193(RefreshCcw, { className: "h-4 w-4 mr-2" }),
-                        "Refund Payment"
-                      ]
-                    }
-                  )
-                ] })
-              ]
-            }
-          )
-        ] }) })
-      ] }, payment.id)) })
-    ] }) }) })
-  ] });
+                )
+              ] })
+            ]
+          }
+        )
+      ] }) })
+    ] }, payment.id)) })
+  ] }) }) }) });
 }
 
 // src/components/features/Admin/components/StatsOverview.tsx
@@ -33044,7 +32960,7 @@ function StatsOverview({ stats, className = "" }) {
 }
 
 // src/components/features/Admin/components/SearchAndFilters.tsx
-import { Search as Search12 } from "lucide-react";
+import { Search as Search11 } from "lucide-react";
 import { jsx as jsx195, jsxs as jsxs179 } from "react/jsx-runtime";
 function SearchAndFilters({
   searchTerm,
@@ -33055,7 +32971,7 @@ function SearchAndFilters({
 }) {
   return /* @__PURE__ */ jsx195(Card2, { className, children: /* @__PURE__ */ jsx195(CardContent2, { children: /* @__PURE__ */ jsxs179("div", { className: "flex flex-col sm:flex-row gap-4", children: [
     /* @__PURE__ */ jsx195("div", { className: "flex-1", children: /* @__PURE__ */ jsxs179("div", { className: "relative", children: [
-      /* @__PURE__ */ jsx195(Search12, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" }),
+      /* @__PURE__ */ jsx195(Search11, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" }),
       /* @__PURE__ */ jsx195(
         Input2,
         {
@@ -33788,7 +33704,7 @@ function MetricCard({
 }
 
 // src/components/features/Admin/components/ActivityFeed.tsx
-import { User as User14, Settings as Settings6, Database, CreditCard as CreditCard21, ShoppingCart as ShoppingCart8, Building2 as Building214, AlertCircle as AlertCircle12, CheckCircle as CheckCircle23, Info as Info8 } from "lucide-react";
+import { User as User14, Settings as Settings6, Database, CreditCard as CreditCard20, ShoppingCart as ShoppingCart8, Building2 as Building214, AlertCircle as AlertCircle12, CheckCircle as CheckCircle23, Info as Info8 } from "lucide-react";
 import { jsx as jsx208, jsxs as jsxs191 } from "react/jsx-runtime";
 function ActivityFeed({
   title,
@@ -33821,7 +33737,7 @@ function ActivityFeed({
     } else if (actionLower.includes("login") || actionLower.includes("auth")) {
       return User14;
     } else if (actionLower.includes("payment") || actionLower.includes("billing")) {
-      return CreditCard21;
+      return CreditCard20;
     } else if (actionLower.includes("order") || actionLower.includes("purchase")) {
       return ShoppingCart8;
     } else if (actionLower.includes("backup") || actionLower.includes("system")) {
@@ -34064,7 +33980,7 @@ function PerformanceMetricCard({ metric, onClick }) {
 var PerformanceMetricCard_default = PerformanceMetricCard;
 
 // src/components/features/Performance/components/PerformanceAlertCard.tsx
-import { AlertTriangle as AlertTriangle12, CheckCircle as CheckCircle24, Clock as Clock19, User as User15 } from "lucide-react";
+import { AlertTriangle as AlertTriangle12, CheckCircle as CheckCircle24, Clock as Clock18, User as User15 } from "lucide-react";
 import { jsx as jsx212, jsxs as jsxs195 } from "react/jsx-runtime";
 var getSeverityColor = (severity) => {
   switch (severity) {
@@ -34112,7 +34028,7 @@ function PerformanceAlertCard({
       /* @__PURE__ */ jsx212("p", { className: "text-sm text-text-secondary mb-3", children: alert2.message }),
       /* @__PURE__ */ jsxs195("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary mb-3", children: [
         /* @__PURE__ */ jsxs195("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ jsx212(Clock19, { className: "h-3 w-3" }),
+          /* @__PURE__ */ jsx212(Clock18, { className: "h-3 w-3" }),
           /* @__PURE__ */ jsx212("span", { children: new Date(alert2.timestamp).toLocaleString() })
         ] }),
         alert2.resolved && alert2.resolvedBy && /* @__PURE__ */ jsxs195("div", { className: "flex items-center space-x-1", children: [
@@ -34238,8 +34154,8 @@ import {
   Play as Play5,
   CheckCircle as CheckCircle25,
   XCircle as XCircle16,
-  Clock as Clock20,
-  Calendar as Calendar25,
+  Clock as Clock19,
+  Calendar as Calendar24,
   User as User16
 } from "lucide-react";
 import { jsx as jsx215, jsxs as jsxs197 } from "react/jsx-runtime";
@@ -34290,7 +34206,7 @@ var getPriorityColor = (priority) => {
 var getStatusIcon = (status) => {
   switch (status) {
     case "PENDING":
-      return Clock20;
+      return Clock19;
     case "IN_PROGRESS":
       return Play5;
     case "COMPLETED":
@@ -34300,7 +34216,7 @@ var getStatusIcon = (status) => {
     case "CANCELLED":
       return XCircle16;
     default:
-      return Clock20;
+      return Clock19;
   }
 };
 function MaintenanceTaskCard({
@@ -34326,11 +34242,11 @@ function MaintenanceTaskCard({
       /* @__PURE__ */ jsx215("p", { className: "text-sm text-text-secondary mb-3", children: task.description }),
       /* @__PURE__ */ jsxs197("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary mb-3", children: [
         /* @__PURE__ */ jsxs197("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ jsx215(Calendar25, { className: "h-3 w-3" }),
+          /* @__PURE__ */ jsx215(Calendar24, { className: "h-3 w-3" }),
           /* @__PURE__ */ jsx215("span", { children: new Date(task.scheduledAt).toLocaleDateString() })
         ] }),
         /* @__PURE__ */ jsxs197("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ jsx215(Clock20, { className: "h-3 w-3" }),
+          /* @__PURE__ */ jsx215(Clock19, { className: "h-3 w-3" }),
           /* @__PURE__ */ jsx215("span", { children: task.estimatedDuration })
         ] }),
         /* @__PURE__ */ jsxs197("div", { className: "flex items-center space-x-1", children: [
@@ -34479,7 +34395,7 @@ function MaintenanceTasksGrid({
 }
 
 // src/components/features/Maintenance/components/MaintenanceWindowCard.tsx
-import { Calendar as Calendar26, Clock as Clock21, Bell as Bell3, BellOff } from "lucide-react";
+import { Calendar as Calendar25, Clock as Clock20, Bell as Bell3, BellOff } from "lucide-react";
 import { jsx as jsx218, jsxs as jsxs199 } from "react/jsx-runtime";
 var getStatusColor6 = (status) => {
   switch (status) {
@@ -34498,15 +34414,15 @@ var getStatusColor6 = (status) => {
 var getStatusIcon2 = (status) => {
   switch (status) {
     case "ACTIVE":
-      return Clock21;
+      return Clock20;
     case "SCHEDULED":
-      return Calendar26;
+      return Calendar25;
     case "COMPLETED":
-      return Calendar26;
+      return Calendar25;
     case "CANCELLED":
-      return Calendar26;
+      return Calendar25;
     default:
-      return Calendar26;
+      return Calendar25;
   }
 };
 function MaintenanceWindowCard({
@@ -34607,7 +34523,7 @@ import {
   Download as Download11,
   Play as Play6,
   Trash2 as Trash216,
-  Clock as Clock22,
+  Clock as Clock21,
   User as User17,
   HardDrive as HardDrive2,
   Cloud,
@@ -34648,13 +34564,13 @@ var getStatusIcon3 = (status) => {
     case "COMPLETED":
       return CheckCircle26;
     case "IN_PROGRESS":
-      return Clock22;
+      return Clock21;
     case "FAILED":
       return XCircle17;
     case "SCHEDULED":
       return AlertTriangle14;
     default:
-      return Clock22;
+      return Clock21;
   }
 };
 var getLocationIcon = (location) => {
@@ -34781,7 +34697,7 @@ var BackupCard_default = BackupCard;
 
 // src/components/features/Backup/components/BackupScheduleCard.tsx
 import {
-  Clock as Clock23,
+  Clock as Clock22,
   Play as Play7,
   Pause as Pause7,
   Settings as Settings7,
@@ -34854,7 +34770,7 @@ function BackupScheduleCard({
   return /* @__PURE__ */ jsxs201(Card2, { className: "hover:shadow-md transition-shadow", children: [
     /* @__PURE__ */ jsxs201(CardHeader2, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
       /* @__PURE__ */ jsxs201("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ jsx220(Clock23, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ jsx220(Clock22, { className: "h-4 w-4 text-text-tertiary" }),
         /* @__PURE__ */ jsx220(CardTitle2, { className: "text-sm font-medium text-text-primary", children: schedule.name })
       ] }),
       /* @__PURE__ */ jsxs201("div", { className: "flex items-center space-x-2", children: [
@@ -35520,7 +35436,7 @@ function LogsList({
 }
 
 // src/components/features/SystemLogs/components/LogFilters.tsx
-import { Search as Search13, Filter as Filter7, RefreshCw as RefreshCw5, Download as Download12 } from "lucide-react";
+import { Search as Search12, Filter as Filter6, RefreshCw as RefreshCw5, Download as Download12 } from "lucide-react";
 import { jsx as jsx229, jsxs as jsxs206 } from "react/jsx-runtime";
 var levelOptions = [
   { value: "all", label: "All Levels" },
@@ -35561,7 +35477,7 @@ function LogFilters({
 }) {
   return /* @__PURE__ */ jsxs206(Card2, { children: [
     /* @__PURE__ */ jsx229(CardHeader2, { children: /* @__PURE__ */ jsxs206(CardTitle2, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ jsx229(Filter7, { className: "w-4 h-4" }),
+      /* @__PURE__ */ jsx229(Filter6, { className: "w-4 h-4" }),
       "Log Filters"
     ] }) }),
     /* @__PURE__ */ jsxs206(CardContent2, { children: [
@@ -35569,7 +35485,7 @@ function LogFilters({
         /* @__PURE__ */ jsxs206("div", { children: [
           /* @__PURE__ */ jsx229("label", { className: "text-sm font-medium text-text-secondary mb-1 block", children: "Search" }),
           /* @__PURE__ */ jsxs206("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx229(Search13, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx229(Search12, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-tertiary" }),
             /* @__PURE__ */ jsx229(
               Input2,
               {
@@ -35903,9 +35819,9 @@ function SecurityMetricsCard({ metrics }) {
 import { useState as useState76 } from "react";
 import {
   Card as Card57,
-  CardContent as CardContent55,
-  CardHeader as CardHeader44,
-  CardTitle as CardTitle44,
+  CardContent as CardContent56,
+  CardHeader as CardHeader43,
+  CardTitle as CardTitle43,
   Button as Button54,
   Input as Input25,
   Select as Select17,
@@ -35919,20 +35835,20 @@ import {
 // src/components/features/AuditLogs/AuditLogDetail.tsx
 import React104, { useState as useState75 } from "react";
 import {
-  Dialog as Dialog17,
-  DialogContent as DialogContent17,
-  DialogHeader as DialogHeader17,
-  DialogTitle as DialogTitle17,
+  Dialog as Dialog16,
+  DialogContent as DialogContent16,
+  DialogHeader as DialogHeader16,
+  DialogTitle as DialogTitle16,
   Button as Button53,
   Badge as Badge28,
   Card as Card56,
-  CardContent as CardContent54,
-  CardHeader as CardHeader43,
-  CardTitle as CardTitle43
+  CardContent as CardContent55,
+  CardHeader as CardHeader42,
+  CardTitle as CardTitle42
 } from "@rentalshop/ui";
 import {
   User as User22,
-  Calendar as Calendar29,
+  Calendar as Calendar28,
   MapPin as MapPin7,
   Monitor as Monitor2,
   Activity as Activity6,
@@ -36003,12 +35919,12 @@ function JsonViewer({ data, title }) {
   const [isExpanded, setIsExpanded] = React104.useState(false);
   if (!data) {
     return /* @__PURE__ */ jsxs210(Card56, { children: [
-      /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsx233(CardTitle43, { className: "text-sm", children: title }) }),
-      /* @__PURE__ */ jsx233(CardContent54, { children: /* @__PURE__ */ jsx233("p", { className: "text-text-secondary text-sm", children: "No data available" }) })
+      /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsx233(CardTitle42, { className: "text-sm", children: title }) }),
+      /* @__PURE__ */ jsx233(CardContent55, { children: /* @__PURE__ */ jsx233("p", { className: "text-text-secondary text-sm", children: "No data available" }) })
     ] });
   }
   return /* @__PURE__ */ jsxs210(Card56, { children: [
-    /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsxs210(CardTitle43, { className: "text-sm flex items-center justify-between", children: [
+    /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsxs210(CardTitle42, { className: "text-sm flex items-center justify-between", children: [
       title,
       /* @__PURE__ */ jsxs210(
         Button53,
@@ -36023,23 +35939,23 @@ function JsonViewer({ data, title }) {
         }
       )
     ] }) }),
-    /* @__PURE__ */ jsx233(CardContent54, { children: /* @__PURE__ */ jsx233("pre", { className: `text-xs font-mono bg-bg-secondary p-3 rounded-lg overflow-auto ${isExpanded ? "max-h-96" : "max-h-32"}`, children: JSON.stringify(data, null, 2) }) })
+    /* @__PURE__ */ jsx233(CardContent55, { children: /* @__PURE__ */ jsx233("pre", { className: `text-xs font-mono bg-bg-secondary p-3 rounded-lg overflow-auto ${isExpanded ? "max-h-96" : "max-h-32"}`, children: JSON.stringify(data, null, 2) }) })
   ] });
 }
 function ChangesViewer({ changes }) {
   if (!changes || Object.keys(changes).length === 0) {
     return /* @__PURE__ */ jsxs210(Card56, { children: [
-      /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsx233(CardTitle43, { className: "text-sm", children: "Changes" }) }),
-      /* @__PURE__ */ jsx233(CardContent54, { children: /* @__PURE__ */ jsx233("p", { className: "text-text-secondary text-sm", children: "No changes detected" }) })
+      /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsx233(CardTitle42, { className: "text-sm", children: "Changes" }) }),
+      /* @__PURE__ */ jsx233(CardContent55, { children: /* @__PURE__ */ jsx233("p", { className: "text-text-secondary text-sm", children: "No changes detected" }) })
     ] });
   }
   return /* @__PURE__ */ jsxs210(Card56, { children: [
-    /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsxs210(CardTitle43, { className: "text-sm", children: [
+    /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsxs210(CardTitle42, { className: "text-sm", children: [
       "Changes (",
       Object.keys(changes).length,
       " fields)"
     ] }) }),
-    /* @__PURE__ */ jsx233(CardContent54, { children: /* @__PURE__ */ jsx233("div", { className: "space-y-3", children: Object.entries(changes).map(([field, change]) => /* @__PURE__ */ jsxs210("div", { className: "border rounded-lg p-3", children: [
+    /* @__PURE__ */ jsx233(CardContent55, { children: /* @__PURE__ */ jsx233("div", { className: "space-y-3", children: Object.entries(changes).map(([field, change]) => /* @__PURE__ */ jsxs210("div", { className: "border rounded-lg p-3", children: [
       /* @__PURE__ */ jsx233("div", { className: "font-medium text-sm mb-2", children: field }),
       /* @__PURE__ */ jsxs210("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-3", children: [
         /* @__PURE__ */ jsxs210("div", { children: [
@@ -36083,10 +35999,10 @@ function AuditLogDetail({ log, isOpen, onClose }) {
         return /* @__PURE__ */ jsx233(Info11, { className: "w-4 h-4" });
     }
   };
-  return /* @__PURE__ */ jsx233(Dialog17, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs210(DialogContent17, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
-    /* @__PURE__ */ jsx233(DialogHeader17, { children: /* @__PURE__ */ jsx233(DialogTitle17, { children: "Audit Log Details" }) }),
+  return /* @__PURE__ */ jsx233(Dialog16, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs210(DialogContent16, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
+    /* @__PURE__ */ jsx233(DialogHeader16, { children: /* @__PURE__ */ jsx233(DialogTitle16, { children: "Audit Log Details" }) }),
     /* @__PURE__ */ jsxs210("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ jsx233(Card56, { children: /* @__PURE__ */ jsxs210(CardContent54, { className: "p-4", children: [
+      /* @__PURE__ */ jsx233(Card56, { children: /* @__PURE__ */ jsxs210(CardContent55, { className: "p-4", children: [
         /* @__PURE__ */ jsxs210("div", { className: "flex items-center gap-3 mb-4", children: [
           /* @__PURE__ */ jsx233(ActionBadge, { action: log.action }),
           /* @__PURE__ */ jsx233(SeverityBadge, { severity: log.severity }),
@@ -36146,11 +36062,11 @@ function AuditLogDetail({ log, isOpen, onClose }) {
         activeTab === "overview" && /* @__PURE__ */ jsxs210("div", { className: "space-y-4", children: [
           /* @__PURE__ */ jsxs210("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
             /* @__PURE__ */ jsxs210(Card56, { children: [
-              /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsxs210(CardTitle43, { className: "text-sm flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsxs210(CardTitle42, { className: "text-sm flex items-center gap-2", children: [
                 /* @__PURE__ */ jsx233(User22, { className: "w-4 h-4" }),
                 "User Information"
               ] }) }),
-              /* @__PURE__ */ jsx233(CardContent54, { className: "space-y-2", children: log.user ? /* @__PURE__ */ jsxs210(Fragment35, { children: [
+              /* @__PURE__ */ jsx233(CardContent55, { className: "space-y-2", children: log.user ? /* @__PURE__ */ jsxs210(Fragment35, { children: [
                 /* @__PURE__ */ jsxs210("div", { children: [
                   /* @__PURE__ */ jsx233("div", { className: "text-xs text-text-secondary", children: "Name" }),
                   /* @__PURE__ */ jsx233("div", { className: "text-sm font-medium", children: log.user.name })
@@ -36166,11 +36082,11 @@ function AuditLogDetail({ log, isOpen, onClose }) {
               ] }) : /* @__PURE__ */ jsx233("p", { className: "text-text-secondary text-sm", children: "No user information available" }) })
             ] }),
             /* @__PURE__ */ jsxs210(Card56, { children: [
-              /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsxs210(CardTitle43, { className: "text-sm flex items-center gap-2", children: [
-                /* @__PURE__ */ jsx233(Calendar29, { className: "w-4 h-4" }),
+              /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsxs210(CardTitle42, { className: "text-sm flex items-center gap-2", children: [
+                /* @__PURE__ */ jsx233(Calendar28, { className: "w-4 h-4" }),
                 "Event Information"
               ] }) }),
-              /* @__PURE__ */ jsxs210(CardContent54, { className: "space-y-2", children: [
+              /* @__PURE__ */ jsxs210(CardContent55, { className: "space-y-2", children: [
                 /* @__PURE__ */ jsxs210("div", { children: [
                   /* @__PURE__ */ jsx233("div", { className: "text-xs text-text-secondary", children: "Timestamp" }),
                   /* @__PURE__ */ jsx233("div", { className: "text-sm", children: formatDate11(log.createdAt) })
@@ -36191,8 +36107,8 @@ function AuditLogDetail({ log, isOpen, onClose }) {
             ] })
           ] }),
           log.merchant && /* @__PURE__ */ jsxs210(Card56, { children: [
-            /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsx233(CardTitle43, { className: "text-sm", children: "Merchant Context" }) }),
-            /* @__PURE__ */ jsx233(CardContent54, { children: /* @__PURE__ */ jsxs210("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsx233(CardTitle42, { className: "text-sm", children: "Merchant Context" }) }),
+            /* @__PURE__ */ jsx233(CardContent55, { children: /* @__PURE__ */ jsxs210("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs210("div", { children: [
                 /* @__PURE__ */ jsx233("div", { className: "text-xs text-text-secondary", children: "Merchant Name" }),
                 /* @__PURE__ */ jsx233("div", { className: "text-sm font-medium", children: log.merchant.name })
@@ -36204,8 +36120,8 @@ function AuditLogDetail({ log, isOpen, onClose }) {
             ] }) })
           ] }),
           log.outlet && /* @__PURE__ */ jsxs210(Card56, { children: [
-            /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsx233(CardTitle43, { className: "text-sm", children: "Outlet Context" }) }),
-            /* @__PURE__ */ jsx233(CardContent54, { children: /* @__PURE__ */ jsxs210("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsx233(CardTitle42, { className: "text-sm", children: "Outlet Context" }) }),
+            /* @__PURE__ */ jsx233(CardContent55, { children: /* @__PURE__ */ jsxs210("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs210("div", { children: [
                 /* @__PURE__ */ jsx233("div", { className: "text-xs text-text-secondary", children: "Outlet Name" }),
                 /* @__PURE__ */ jsx233("div", { className: "text-sm font-medium", children: log.outlet.name })
@@ -36220,11 +36136,11 @@ function AuditLogDetail({ log, isOpen, onClose }) {
         activeTab === "changes" && /* @__PURE__ */ jsx233("div", { className: "space-y-4", children: /* @__PURE__ */ jsx233(ChangesViewer, { changes: log.changes }) }),
         activeTab === "context" && /* @__PURE__ */ jsx233("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs210("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs210(Card56, { children: [
-            /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsxs210(CardTitle43, { className: "text-sm flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsxs210(CardTitle42, { className: "text-sm flex items-center gap-2", children: [
               /* @__PURE__ */ jsx233(MapPin7, { className: "w-4 h-4" }),
               "Network Information"
             ] }) }),
-            /* @__PURE__ */ jsxs210(CardContent54, { className: "space-y-2", children: [
+            /* @__PURE__ */ jsxs210(CardContent55, { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs210("div", { children: [
                 /* @__PURE__ */ jsx233("div", { className: "text-xs text-text-secondary", children: "IP Address" }),
                 /* @__PURE__ */ jsx233("div", { className: "text-sm font-mono", children: log.ipAddress || "Unknown" })
@@ -36240,11 +36156,11 @@ function AuditLogDetail({ log, isOpen, onClose }) {
             ] })
           ] }),
           /* @__PURE__ */ jsxs210(Card56, { children: [
-            /* @__PURE__ */ jsx233(CardHeader43, { children: /* @__PURE__ */ jsxs210(CardTitle43, { className: "text-sm flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx233(CardHeader42, { children: /* @__PURE__ */ jsxs210(CardTitle42, { className: "text-sm flex items-center gap-2", children: [
               /* @__PURE__ */ jsx233(Monitor2, { className: "w-4 h-4" }),
               "User Agent"
             ] }) }),
-            /* @__PURE__ */ jsx233(CardContent54, { children: /* @__PURE__ */ jsx233("div", { className: "text-xs font-mono bg-bg-secondary p-2 rounded break-all", children: log.userAgent || "Unknown" }) })
+            /* @__PURE__ */ jsx233(CardContent55, { children: /* @__PURE__ */ jsx233("div", { className: "text-xs font-mono bg-bg-secondary p-2 rounded break-all", children: log.userAgent || "Unknown" }) })
           ] })
         ] }) }),
         activeTab === "raw" && /* @__PURE__ */ jsxs210("div", { className: "space-y-4", children: [
@@ -36259,7 +36175,7 @@ function AuditLogDetail({ log, isOpen, onClose }) {
 
 // src/components/features/AuditLogs/AuditLogViewer.tsx
 import {
-  Filter as Filter8,
+  Filter as Filter7,
   Download as Download13,
   RefreshCw as RefreshCw6,
   Eye as Eye29,
@@ -36267,7 +36183,7 @@ import {
   AlertTriangle as AlertTriangle20,
   XCircle as XCircle24,
   Info as Info12,
-  Clock as Clock29
+  Clock as Clock28
 } from "lucide-react";
 import { jsx as jsx234, jsxs as jsxs211 } from "react/jsx-runtime";
 function SeverityBadge2({ severity }) {
@@ -36334,7 +36250,7 @@ function AuditLogRow({ log, onViewDetails }) {
       minute: "2-digit"
     });
   };
-  return /* @__PURE__ */ jsx234(Card57, { className: "mb-2 hover:shadow-sm transition-shadow", children: /* @__PURE__ */ jsx234(CardContent55, { className: "p-3", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
+  return /* @__PURE__ */ jsx234(Card57, { className: "mb-2 hover:shadow-sm transition-shadow", children: /* @__PURE__ */ jsx234(CardContent56, { className: "p-3", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
     /* @__PURE__ */ jsxs211("div", { className: "flex items-center gap-3 flex-1 min-w-0", children: [
       /* @__PURE__ */ jsx234(ActionBadge2, { action: log.action }),
       /* @__PURE__ */ jsx234(SeverityBadge2, { severity: log.severity }),
@@ -36377,11 +36293,11 @@ function AuditLogFilter({ filter, onFilterChange, onReset }) {
     });
   };
   return /* @__PURE__ */ jsxs211(Card57, { className: "mb-6", children: [
-    /* @__PURE__ */ jsx234(CardHeader44, { children: /* @__PURE__ */ jsxs211(CardTitle44, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ jsx234(Filter8, { className: "w-5 h-5" }),
+    /* @__PURE__ */ jsx234(CardHeader43, { children: /* @__PURE__ */ jsxs211(CardTitle43, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx234(Filter7, { className: "w-5 h-5" }),
       "Filter Audit Logs"
     ] }) }),
-    /* @__PURE__ */ jsxs211(CardContent55, { children: [
+    /* @__PURE__ */ jsxs211(CardContent56, { children: [
       /* @__PURE__ */ jsxs211("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
         /* @__PURE__ */ jsxs211("div", { className: "space-y-2", children: [
           /* @__PURE__ */ jsx234("label", { className: "text-sm font-medium", children: "Action" }),
@@ -36589,7 +36505,7 @@ function AuditLogViewer({
           }
         ),
         /* @__PURE__ */ jsxs211(Card57, { children: [
-          /* @__PURE__ */ jsx234(CardHeader44, { children: /* @__PURE__ */ jsxs211(CardTitle44, { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ jsx234(CardHeader43, { children: /* @__PURE__ */ jsxs211(CardTitle43, { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsxs211("span", { children: [
               "Audit Logs (",
               pagination?.total || 0,
@@ -36615,7 +36531,7 @@ function AuditLogViewer({
               ] })
             ] })
           ] }) }),
-          /* @__PURE__ */ jsx234(CardContent55, { children: loading ? /* @__PURE__ */ jsxs211("div", { className: "text-center py-8", children: [
+          /* @__PURE__ */ jsx234(CardContent56, { children: loading ? /* @__PURE__ */ jsxs211("div", { className: "text-center py-8", children: [
             /* @__PURE__ */ jsx234(RefreshCw6, { className: "w-6 h-6 animate-spin mx-auto mb-2" }),
             /* @__PURE__ */ jsx234("p", { className: "text-text-secondary", children: "Loading audit logs..." })
           ] }) : !logs || logs.length === 0 ? /* @__PURE__ */ jsx234("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx234("p", { className: "text-text-secondary", children: "No audit logs found." }) }) : /* @__PURE__ */ jsx234("div", { className: "space-y-3", children: logs.map((log) => /* @__PURE__ */ jsx234(
@@ -36629,29 +36545,29 @@ function AuditLogViewer({
         ] })
       ] }),
       activeTab === "stats" && /* @__PURE__ */ jsx234("div", { className: "space-y-6", children: stats ? /* @__PURE__ */ jsxs211("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
-        /* @__PURE__ */ jsx234(Card57, { children: /* @__PURE__ */ jsx234(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx234(Card57, { children: /* @__PURE__ */ jsx234(CardContent56, { className: "p-6", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs211("div", { children: [
             /* @__PURE__ */ jsx234("p", { className: "text-sm font-medium text-text-secondary", children: "Total Logs" }),
             /* @__PURE__ */ jsx234("p", { className: "text-2xl font-bold text-text-primary", children: stats.totalLogs })
           ] }),
           /* @__PURE__ */ jsx234(Activity7, { className: "w-8 h-8 text-blue-500" })
         ] }) }) }),
-        /* @__PURE__ */ jsx234(Card57, { children: /* @__PURE__ */ jsx234(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx234(Card57, { children: /* @__PURE__ */ jsx234(CardContent56, { className: "p-6", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs211("div", { children: [
             /* @__PURE__ */ jsx234("p", { className: "text-sm font-medium text-text-secondary", children: "Recent Activity" }),
             /* @__PURE__ */ jsx234("p", { className: "text-2xl font-bold text-text-primary", children: stats.recentActivity }),
             /* @__PURE__ */ jsx234("p", { className: "text-xs text-text-tertiary", children: "Last 24 hours" })
           ] }),
-          /* @__PURE__ */ jsx234(Clock29, { className: "w-8 h-8 text-green-500" })
+          /* @__PURE__ */ jsx234(Clock28, { className: "w-8 h-8 text-green-500" })
         ] }) }) }),
-        /* @__PURE__ */ jsx234(Card57, { children: /* @__PURE__ */ jsx234(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx234(Card57, { children: /* @__PURE__ */ jsx234(CardContent56, { className: "p-6", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs211("div", { children: [
             /* @__PURE__ */ jsx234("p", { className: "text-sm font-medium text-text-secondary", children: "Security Events" }),
             /* @__PURE__ */ jsx234("p", { className: "text-2xl font-bold text-text-primary", children: stats.logsByCategory.SECURITY || 0 })
           ] }),
           /* @__PURE__ */ jsx234(AlertTriangle20, { className: "w-8 h-8 text-red-500" })
         ] }) }) }),
-        /* @__PURE__ */ jsx234(Card57, { children: /* @__PURE__ */ jsx234(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx234(Card57, { children: /* @__PURE__ */ jsx234(CardContent56, { className: "p-6", children: /* @__PURE__ */ jsxs211("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs211("div", { children: [
             /* @__PURE__ */ jsx234("p", { className: "text-sm font-medium text-text-secondary", children: "Business Events" }),
             /* @__PURE__ */ jsx234("p", { className: "text-2xl font-bold text-text-primary", children: stats.logsByCategory.BUSINESS || 0 })
@@ -36695,12 +36611,12 @@ function AuditLogViewerSimple({ className = "" }) {
 }
 
 // src/components/features/OrderDetail/OrderDetail.tsx
-import { useState as useState77, useEffect as useEffect42 } from "react";
+import { useState as useState77, useEffect as useEffect41 } from "react";
 import {
   Card as Card58,
-  CardHeader as CardHeader45,
-  CardTitle as CardTitle45,
-  CardContent as CardContent56,
+  CardHeader as CardHeader44,
+  CardTitle as CardTitle44,
+  CardContent as CardContent57,
   Button as Button56,
   Badge as Badge31,
   Input as Input26,
@@ -36716,11 +36632,11 @@ import {
 } from "@rentalshop/ui";
 import {
   Info as Info14,
-  Package as Package22,
-  DollarSign as DollarSign20,
+  Package as Package21,
+  DollarSign as DollarSign19,
   Settings as Settings9,
   Save as Save8,
-  X as X22,
+  X as X21,
   RotateCcw as RotateCcw4,
   Printer,
   Edit as Edit21
@@ -36731,15 +36647,15 @@ import { useToast as useToast9 } from "@rentalshop/ui";
 
 // src/components/features/OrderDetail/components/CollectionReturnModal.tsx
 import {
-  Dialog as Dialog18,
-  DialogContent as DialogContent18,
-  DialogHeader as DialogHeader18,
-  DialogTitle as DialogTitle18,
-  DialogFooter as DialogFooter11,
+  Dialog as Dialog17,
+  DialogContent as DialogContent17,
+  DialogHeader as DialogHeader17,
+  DialogTitle as DialogTitle17,
+  DialogFooter as DialogFooter10,
   Button as Button55,
   Badge as Badge30
 } from "@rentalshop/ui";
-import { Package as Package21, RotateCcw as RotateCcw3 } from "lucide-react";
+import { Package as Package20, RotateCcw as RotateCcw3 } from "lucide-react";
 import { formatCurrency as formatCurrency17 } from "@rentalshop/ui";
 
 // src/components/features/OrderDetail/utils.ts
@@ -36914,7 +36830,7 @@ var CollectionReturnModal = ({
   };
   const getModalIcon = () => {
     if (isCollectionMode) {
-      return /* @__PURE__ */ jsx235(Package21, { className: "w-5 h-5 text-green-600" });
+      return /* @__PURE__ */ jsx235(Package20, { className: "w-5 h-5 text-green-600" });
     }
     return /* @__PURE__ */ jsx235(RotateCcw3, { className: "w-5 h-5 text-blue-600" });
   };
@@ -36936,8 +36852,8 @@ var CollectionReturnModal = ({
       console.error("Error in modal confirmation:", error2);
     }
   };
-  return /* @__PURE__ */ jsx235(Dialog18, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs212(DialogContent18, { className: "max-w-2xl", children: [
-    /* @__PURE__ */ jsx235(DialogHeader18, { children: /* @__PURE__ */ jsxs212(DialogTitle18, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsx235(Dialog17, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs212(DialogContent17, { className: "max-w-2xl", children: [
+    /* @__PURE__ */ jsx235(DialogHeader17, { children: /* @__PURE__ */ jsxs212(DialogTitle17, { className: "flex items-center gap-2", children: [
       getModalIcon(),
       /* @__PURE__ */ jsx235("span", { className: "font-semibold", children: getModalTitle() })
     ] }) }),
@@ -36976,7 +36892,7 @@ var CollectionReturnModal = ({
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsxs212(DialogFooter11, { className: "flex gap-3", children: [
+    /* @__PURE__ */ jsxs212(DialogFooter10, { className: "flex gap-3", children: [
       /* @__PURE__ */ jsx235(Button55, { variant: "outline", onClick: onClose, children: "Close" }),
       details.calculation && details.calculation.length > 0 && /* @__PURE__ */ jsx235(Button55, { onClick: handleConfirm, children: getActionButtonText() })
     ] })
@@ -37004,11 +36920,11 @@ var OrderDetailSkeleton = () => {
     /* @__PURE__ */ jsxs213("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
       /* @__PURE__ */ jsxs213("div", { className: "lg:col-span-2 space-y-4", children: [
         /* @__PURE__ */ jsxs213(Card58, { className: "flex flex-col", children: [
-          /* @__PURE__ */ jsx236(CardHeader45, { children: /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx236(CardHeader44, { children: /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx236(Skeleton5, { className: "h-5 w-5" }),
             /* @__PURE__ */ jsx236(Skeleton5, { className: "h-6 w-32" })
           ] }) }),
-          /* @__PURE__ */ jsxs213(CardContent56, { className: "space-y-4 flex-1", children: [
+          /* @__PURE__ */ jsxs213(CardContent57, { className: "space-y-4 flex-1", children: [
             /* @__PURE__ */ jsxs213("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
               /* @__PURE__ */ jsx236("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsxs213("div", { className: "flex justify-between", children: [
                 /* @__PURE__ */ jsx236(Skeleton5, { className: "h-4 w-24" }),
@@ -37023,11 +36939,11 @@ var OrderDetailSkeleton = () => {
           ] })
         ] }),
         /* @__PURE__ */ jsxs213(Card58, { children: [
-          /* @__PURE__ */ jsx236(CardHeader45, { children: /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx236(CardHeader44, { children: /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx236(Skeleton5, { className: "h-5 w-5" }),
             /* @__PURE__ */ jsx236(Skeleton5, { className: "h-6 w-20" })
           ] }) }),
-          /* @__PURE__ */ jsx236(CardContent56, { children: /* @__PURE__ */ jsx236("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsx236("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs213("div", { className: "flex items-start gap-3", children: [
+          /* @__PURE__ */ jsx236(CardContent57, { children: /* @__PURE__ */ jsx236("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsx236("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs213("div", { className: "flex items-start gap-3", children: [
             /* @__PURE__ */ jsx236(Skeleton5, { className: "w-12 h-12 rounded-lg" }),
             /* @__PURE__ */ jsxs213("div", { className: "flex-1 space-y-2", children: [
               /* @__PURE__ */ jsx236(Skeleton5, { className: "h-4 w-32" }),
@@ -37039,11 +36955,11 @@ var OrderDetailSkeleton = () => {
       ] }),
       /* @__PURE__ */ jsxs213("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs213(Card58, { children: [
-          /* @__PURE__ */ jsx236(CardHeader45, { children: /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx236(CardHeader44, { children: /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx236(Skeleton5, { className: "h-5 w-5" }),
             /* @__PURE__ */ jsx236(Skeleton5, { className: "h-6 w-28" })
           ] }) }),
-          /* @__PURE__ */ jsxs213(CardContent56, { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxs213(CardContent57, { className: "space-y-3", children: [
             Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs213("div", { className: "flex justify-between text-sm", children: [
               /* @__PURE__ */ jsx236(Skeleton5, { className: "h-4 w-20" }),
               /* @__PURE__ */ jsx236(Skeleton5, { className: "h-4 w-16" })
@@ -37055,11 +36971,11 @@ var OrderDetailSkeleton = () => {
           ] })
         ] }),
         /* @__PURE__ */ jsxs213(Card58, { children: [
-          /* @__PURE__ */ jsx236(CardHeader45, { children: /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx236(CardHeader44, { children: /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx236(Skeleton5, { className: "h-5 w-5" }),
             /* @__PURE__ */ jsx236(Skeleton5, { className: "h-6 w-28" })
           ] }) }),
-          /* @__PURE__ */ jsxs213(CardContent56, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs213(CardContent57, { className: "space-y-4", children: [
             /* @__PURE__ */ jsx236("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs213("div", { className: "flex justify-between", children: [
               /* @__PURE__ */ jsx236(Skeleton5, { className: "h-4 w-24" }),
               /* @__PURE__ */ jsx236(Skeleton5, { className: "h-4 w-32" })
@@ -37112,7 +37028,7 @@ var OrderDetail = ({
   const [isReturnLoading, setIsReturnLoading] = useState77(false);
   const [isCancelLoading, setIsCancelLoading] = useState77(false);
   const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState77(false);
-  useEffect42(() => {
+  useEffect41(() => {
     if (order) {
       const newSettings = {
         damageFee: order.damageFee || 0,
@@ -37350,11 +37266,11 @@ var OrderDetail = ({
     /* @__PURE__ */ jsxs213("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
       /* @__PURE__ */ jsxs213("div", { className: "lg:col-span-2 space-y-4", children: [
         /* @__PURE__ */ jsxs213(Card58, { className: "flex flex-col", children: [
-          /* @__PURE__ */ jsx236(CardHeader45, { children: /* @__PURE__ */ jsxs213(CardTitle45, { className: "text-lg flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx236(CardHeader44, { children: /* @__PURE__ */ jsxs213(CardTitle44, { className: "text-lg flex items-center gap-2", children: [
             /* @__PURE__ */ jsx236(Info14, { className: "w-5 h-5" }),
             "Order Information"
           ] }) }),
-          /* @__PURE__ */ jsxs213(CardContent56, { className: "space-y-4 flex-1", children: [
+          /* @__PURE__ */ jsxs213(CardContent57, { className: "space-y-4 flex-1", children: [
             /* @__PURE__ */ jsxs213("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
               /* @__PURE__ */ jsxs213("div", { className: "space-y-3", children: [
                 /* @__PURE__ */ jsxs213("div", { className: "flex justify-between", children: [
@@ -37403,15 +37319,15 @@ var OrderDetail = ({
           ] })
         ] }),
         /* @__PURE__ */ jsxs213(Card58, { children: [
-          /* @__PURE__ */ jsx236(CardHeader45, { children: /* @__PURE__ */ jsxs213(CardTitle45, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx236(Package22, { className: "w-5 h-5" }),
+          /* @__PURE__ */ jsx236(CardHeader44, { children: /* @__PURE__ */ jsxs213(CardTitle44, { className: "text-lg flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx236(Package21, { className: "w-5 h-5" }),
             "Products"
           ] }) }),
-          /* @__PURE__ */ jsx236(CardContent56, { children: order.orderItems.length === 0 ? /* @__PURE__ */ jsxs213("div", { className: "text-center py-4 text-gray-500", children: [
-            /* @__PURE__ */ jsx236(Package22, { className: "w-8 h-8 mx-auto mb-2 text-gray-300" }),
+          /* @__PURE__ */ jsx236(CardContent57, { children: order.orderItems.length === 0 ? /* @__PURE__ */ jsxs213("div", { className: "text-center py-4 text-gray-500", children: [
+            /* @__PURE__ */ jsx236(Package21, { className: "w-8 h-8 mx-auto mb-2 text-gray-300" }),
             /* @__PURE__ */ jsx236("p", { className: "text-sm", children: "No products in this order" })
           ] }) : /* @__PURE__ */ jsx236("div", { className: "space-y-3", children: order.orderItems.map((item, index) => /* @__PURE__ */ jsx236("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs213("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ jsx236("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx236("div", { className: "w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200", children: /* @__PURE__ */ jsx236(Package22, { className: "w-6 h-6 text-gray-400" }) }) }),
+            /* @__PURE__ */ jsx236("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx236("div", { className: "w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200", children: /* @__PURE__ */ jsx236(Package21, { className: "w-6 h-6 text-gray-400" }) }) }),
             /* @__PURE__ */ jsxs213("div", { className: "flex-1 min-w-0", children: [
               /* @__PURE__ */ jsx236("div", { className: "font-medium text-gray-900 text-sm", children: item.product?.name || "Unknown Product" }),
               /* @__PURE__ */ jsx236("div", { className: "text-xs text-gray-500", children: item.product?.name ? `Product: ${item.product.name}` : "Unknown Product" }),
@@ -37430,11 +37346,11 @@ var OrderDetail = ({
       ] }),
       /* @__PURE__ */ jsxs213("div", { className: "space-y-6", children: [
         /* @__PURE__ */ jsxs213(Card58, { children: [
-          /* @__PURE__ */ jsx236(CardHeader45, { children: /* @__PURE__ */ jsxs213(CardTitle45, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx236(DollarSign20, { className: "w-5 h-5" }),
+          /* @__PURE__ */ jsx236(CardHeader44, { children: /* @__PURE__ */ jsxs213(CardTitle44, { className: "text-lg flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx236(DollarSign19, { className: "w-5 h-5" }),
             "Order Summary"
           ] }) }),
-          /* @__PURE__ */ jsxs213(CardContent56, { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxs213(CardContent57, { className: "space-y-3", children: [
             /* @__PURE__ */ jsxs213("div", { className: "flex justify-between text-sm", children: [
               /* @__PURE__ */ jsx236("span", { className: "text-gray-600", children: "Subtotal:" }),
               /* @__PURE__ */ jsx236("span", { className: "font-medium", children: formatCurrency18(order.totalAmount || 0) })
@@ -37476,11 +37392,11 @@ var OrderDetail = ({
           ] })
         ] }),
         /* @__PURE__ */ jsxs213(Card58, { children: [
-          /* @__PURE__ */ jsx236(CardHeader45, { children: /* @__PURE__ */ jsxs213(CardTitle45, { className: "text-lg flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx236(CardHeader44, { children: /* @__PURE__ */ jsxs213(CardTitle44, { className: "text-lg flex items-center gap-2", children: [
             /* @__PURE__ */ jsx236(Settings9, { className: "w-5 h-5" }),
             "Order Settings"
           ] }) }),
-          /* @__PURE__ */ jsx236(CardContent56, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ jsxs213(Fragment36, { children: [
+          /* @__PURE__ */ jsx236(CardContent57, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ jsxs213(Fragment36, { children: [
             /* @__PURE__ */ jsxs213("div", { children: [
               /* @__PURE__ */ jsxs213(Label14, { htmlFor: "damageFee", className: "text-sm font-medium text-gray-700", children: [
                 "Damage Fee",
@@ -37638,7 +37554,7 @@ var OrderDetail = ({
             className: "px-6",
             disabled: isCancelLoading,
             children: [
-              /* @__PURE__ */ jsx236(X22, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ jsx236(X21, { className: "w-4 h-4 mr-2" }),
               isCancelLoading ? "Cancelling..." : "Cancel Order"
             ]
           }
@@ -37666,7 +37582,7 @@ var OrderDetail = ({
               className: "px-6",
               disabled: isPickupLoading,
               children: [
-                /* @__PURE__ */ jsx236(Package22, { className: "w-4 h-4 mr-2" }),
+                /* @__PURE__ */ jsx236(Package21, { className: "w-4 h-4 mr-2" }),
                 isPickupLoading ? "Picking up..." : "Pickup Order"
               ]
             }
@@ -37760,7 +37676,7 @@ var OrderDetail = ({
 };
 
 // src/components/features/OrderDetail/components/OrderSummary.tsx
-import { DollarSign as DollarSign21 } from "lucide-react";
+import { DollarSign as DollarSign20 } from "lucide-react";
 import { formatCurrency as formatCurrency19 } from "@rentalshop/ui";
 import { jsx as jsx237, jsxs as jsxs214 } from "react/jsx-runtime";
 var OrderSummary = ({ order, settingsForm }) => {
@@ -37768,7 +37684,7 @@ var OrderSummary = ({ order, settingsForm }) => {
   const collectionTitle = getCollectionTitle(order);
   return /* @__PURE__ */ jsxs214("div", { className: "p-6", children: [
     /* @__PURE__ */ jsxs214("div", { className: "flex items-center gap-2 mb-4", children: [
-      /* @__PURE__ */ jsx237(DollarSign21, { className: "w-5 h-5 text-gray-600" }),
+      /* @__PURE__ */ jsx237(DollarSign20, { className: "w-5 h-5 text-gray-600" }),
       /* @__PURE__ */ jsx237("h3", { className: "text-lg font-semibold text-gray-900", children: "Order Summary" })
     ] }),
     /* @__PURE__ */ jsxs214("div", { className: "space-y-4", children: [
@@ -37895,10 +37811,10 @@ function OutletDetailLoading() {
 }
 
 // src/components/features/Settings/Settings.tsx
-import { useState as useState80, useEffect as useEffect44 } from "react";
+import { useState as useState80, useEffect as useEffect43 } from "react";
 import {
   User as User25,
-  CreditCard as CreditCard23,
+  CreditCard as CreditCard22,
   Settings as SettingsIcon,
   Building2 as Building215,
   Store as Store6
@@ -37911,7 +37827,7 @@ import { useToast as useToast10 } from "@rentalshop/ui";
 import { useState as useState78 } from "react";
 import {
   Card as Card59,
-  CardContent as CardContent57,
+  CardContent as CardContent58,
   PageWrapper as PageWrapper5,
   PageHeader as PageHeader2,
   PageTitle as PageTitle2,
@@ -37947,7 +37863,7 @@ var SettingsLayout2 = ({
       /* @__PURE__ */ jsx240("p", { children: "Manage your account settings and preferences" })
     ] }),
     /* @__PURE__ */ jsxs217("div", { className: "flex flex-col lg:flex-row gap-6", children: [
-      /* @__PURE__ */ jsx240("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ jsx240(Card59, { children: /* @__PURE__ */ jsx240(CardContent57, { className: "p-0", children: /* @__PURE__ */ jsx240("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
+      /* @__PURE__ */ jsx240("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ jsx240(Card59, { children: /* @__PURE__ */ jsx240(CardContent58, { className: "p-0", children: /* @__PURE__ */ jsx240("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
         if (!item.roles)
           return true;
         const userRole = (user?.role || "").trim().toUpperCase();
@@ -37982,7 +37898,7 @@ var SettingsLayout2 = ({
 // src/components/features/Settings/components/ProfileSection.tsx
 import {
   Card as Card60,
-  CardContent as CardContent58,
+  CardContent as CardContent59,
   Button as Button58,
   Input as Input27,
   Label as Label15
@@ -38018,7 +37934,7 @@ var ProfileSection = ({
         /* @__PURE__ */ jsx241(Button58, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
       ] })
     ] }),
-    /* @__PURE__ */ jsx241(Card60, { children: /* @__PURE__ */ jsx241(CardContent58, { className: "p-6", children: /* @__PURE__ */ jsx241("div", { className: "space-y-8", children: /* @__PURE__ */ jsxs218("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    /* @__PURE__ */ jsx241(Card60, { children: /* @__PURE__ */ jsx241(CardContent59, { className: "p-6", children: /* @__PURE__ */ jsx241("div", { className: "space-y-8", children: /* @__PURE__ */ jsxs218("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
       /* @__PURE__ */ jsxs218("div", { children: [
         /* @__PURE__ */ jsx241(Label15, { htmlFor: "firstName", className: "block text-sm font-medium text-gray-700 mb-2", children: "First Name" }),
         isEditing ? /* @__PURE__ */ jsx241(
@@ -38085,10 +38001,10 @@ var ProfileSection = ({
 };
 
 // src/components/features/Settings/components/MerchantSection.tsx
-import { useState as useState79, useEffect as useEffect43, useRef as useRef7 } from "react";
+import { useState as useState79, useEffect as useEffect42, useRef as useRef7 } from "react";
 import {
   Card as Card61,
-  CardContent as CardContent59,
+  CardContent as CardContent60,
   Button as Button59,
   Input as Input28,
   Label as Label16
@@ -38118,7 +38034,7 @@ var MerchantSection = ({
   console.log("\u{1F50D} MerchantSection render - user role:", user?.role);
   console.log("\u{1F50D} MerchantSection render - loadingMerchant:", loadingMerchant);
   console.log("\u{1F50D} MerchantSection render - fetchingRef.current:", fetchingRef.current);
-  useEffect43(() => {
+  useEffect42(() => {
     const fetchMerchantData = async () => {
       if (user?.merchantId && !user?.merchant && !fetchingRef.current) {
         console.log("\u{1F504} Fetching merchant data for merchantId:", user.merchantId);
@@ -38168,7 +38084,7 @@ var MerchantSection = ({
         /* @__PURE__ */ jsx242(Button59, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
       ] })
     ] }),
-    /* @__PURE__ */ jsx242(Card61, { children: /* @__PURE__ */ jsx242(CardContent59, { className: "p-6", children: loadingMerchant ? /* @__PURE__ */ jsx242("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx242("p", { className: "text-gray-500", children: "Loading business information..." }) }) : !merchant && !user?.merchantId ? /* @__PURE__ */ jsxs219("div", { className: "text-center py-8", children: [
+    /* @__PURE__ */ jsx242(Card61, { children: /* @__PURE__ */ jsx242(CardContent60, { className: "p-6", children: loadingMerchant ? /* @__PURE__ */ jsx242("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx242("p", { className: "text-gray-500", children: "Loading business information..." }) }) : !merchant && !user?.merchantId ? /* @__PURE__ */ jsxs219("div", { className: "text-center py-8", children: [
       /* @__PURE__ */ jsx242("p", { className: "text-gray-500", children: "No business information available" }),
       /* @__PURE__ */ jsxs219("p", { className: "text-gray-400 text-sm mt-2", children: [
         "User role: ",
@@ -38349,7 +38265,7 @@ var MerchantSection = ({
 // src/components/features/Settings/components/OutletSection.tsx
 import {
   Card as Card62,
-  CardContent as CardContent60,
+  CardContent as CardContent61,
   Button as Button60,
   Input as Input29,
   Label as Label17
@@ -38376,7 +38292,7 @@ var OutletSection = ({
         /* @__PURE__ */ jsx243(Button60, { onClick: onCancel, variant: "outline", disabled: isUpdating, children: "Cancel" })
       ] })
     ] }),
-    /* @__PURE__ */ jsx243(Card62, { children: /* @__PURE__ */ jsx243(CardContent60, { className: "p-6", children: !user?.outlet ? /* @__PURE__ */ jsx243("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx243("p", { className: "text-gray-500", children: "No outlet information available" }) }) : /* @__PURE__ */ jsxs220("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    /* @__PURE__ */ jsx243(Card62, { children: /* @__PURE__ */ jsx243(CardContent61, { className: "p-6", children: !user?.outlet ? /* @__PURE__ */ jsx243("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx243("p", { className: "text-gray-500", children: "No outlet information available" }) }) : /* @__PURE__ */ jsxs220("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
       /* @__PURE__ */ jsxs220("div", { children: [
         /* @__PURE__ */ jsx243(Label17, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Name" }),
         isEditing ? /* @__PURE__ */ jsx243(
@@ -38440,16 +38356,16 @@ var OutletSection = ({
 // src/components/features/Settings/components/SubscriptionSection.tsx
 import {
   Card as Card63,
-  CardContent as CardContent61,
+  CardContent as CardContent62,
   Button as Button61,
   Badge as Badge32
 } from "@rentalshop/ui";
 import {
-  CreditCard as CreditCard22,
+  CreditCard as CreditCard21,
   CheckCircle as CheckCircle33,
   AlertTriangle as AlertTriangle21,
-  Calendar as Calendar32,
-  DollarSign as DollarSign22
+  Calendar as Calendar31,
+  DollarSign as DollarSign21
 } from "lucide-react";
 import { jsx as jsx244, jsxs as jsxs221 } from "react/jsx-runtime";
 var SubscriptionSection = ({
@@ -38463,7 +38379,7 @@ var SubscriptionSection = ({
         /* @__PURE__ */ jsx244("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
         /* @__PURE__ */ jsx244("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
       ] }),
-      /* @__PURE__ */ jsx244(Card63, { children: /* @__PURE__ */ jsx244(CardContent61, { className: "p-6", children: /* @__PURE__ */ jsxs221("div", { className: "flex items-center justify-center py-8", children: [
+      /* @__PURE__ */ jsx244(Card63, { children: /* @__PURE__ */ jsx244(CardContent62, { className: "p-6", children: /* @__PURE__ */ jsxs221("div", { className: "flex items-center justify-center py-8", children: [
         /* @__PURE__ */ jsx244("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
         /* @__PURE__ */ jsx244("span", { className: "ml-2 text-gray-600", children: "Loading subscription data..." })
       ] }) }) })
@@ -38475,10 +38391,10 @@ var SubscriptionSection = ({
         /* @__PURE__ */ jsx244("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
         /* @__PURE__ */ jsx244("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
       ] }),
-      /* @__PURE__ */ jsx244("div", { className: "space-y-6", children: /* @__PURE__ */ jsx244(Card63, { children: /* @__PURE__ */ jsxs221(CardContent61, { className: "p-6", children: [
+      /* @__PURE__ */ jsx244("div", { className: "space-y-6", children: /* @__PURE__ */ jsx244(Card63, { children: /* @__PURE__ */ jsxs221(CardContent62, { className: "p-6", children: [
         /* @__PURE__ */ jsxs221("div", { className: "flex items-center justify-between mb-4", children: [
           /* @__PURE__ */ jsxs221("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ jsx244(CreditCard22, { className: "h-6 w-6 text-blue-600" }),
+            /* @__PURE__ */ jsx244(CreditCard21, { className: "h-6 w-6 text-blue-600" }),
             /* @__PURE__ */ jsxs221("div", { children: [
               /* @__PURE__ */ jsx244("h3", { className: "text-lg font-semibold text-gray-900", children: "Current Plan" }),
               /* @__PURE__ */ jsx244("p", { className: "text-sm text-gray-600", children: subscriptionData.subscription.plan?.name || "Professional Plan" })
@@ -38496,7 +38412,7 @@ var SubscriptionSection = ({
         /* @__PURE__ */ jsxs221("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
           /* @__PURE__ */ jsxs221("div", { className: "bg-gray-50 rounded-lg p-4", children: [
             /* @__PURE__ */ jsxs221("div", { className: "flex items-center space-x-2 mb-2", children: [
-              /* @__PURE__ */ jsx244(DollarSign22, { className: "h-4 w-4 text-gray-600" }),
+              /* @__PURE__ */ jsx244(DollarSign21, { className: "h-4 w-4 text-gray-600" }),
               /* @__PURE__ */ jsx244("span", { className: "text-sm font-medium text-gray-700", children: "Amount" })
             ] }),
             /* @__PURE__ */ jsxs221("p", { className: "text-xl font-bold text-gray-900", children: [
@@ -38507,7 +38423,7 @@ var SubscriptionSection = ({
           ] }),
           /* @__PURE__ */ jsxs221("div", { className: "bg-gray-50 rounded-lg p-4", children: [
             /* @__PURE__ */ jsxs221("div", { className: "flex items-center space-x-2 mb-2", children: [
-              /* @__PURE__ */ jsx244(Calendar32, { className: "h-4 w-4 text-gray-600" }),
+              /* @__PURE__ */ jsx244(Calendar31, { className: "h-4 w-4 text-gray-600" }),
               /* @__PURE__ */ jsx244("span", { className: "text-sm font-medium text-gray-700", children: "Next Billing" })
             ] }),
             /* @__PURE__ */ jsx244("p", { className: "text-lg font-bold text-gray-900", children: subscriptionData.subscription.currentPeriodEnd ? new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString("en-US", {
@@ -38546,8 +38462,8 @@ var SubscriptionSection = ({
       /* @__PURE__ */ jsx244("h2", { className: "text-2xl font-bold text-gray-900", children: "Subscription" }),
       /* @__PURE__ */ jsx244("p", { className: "text-gray-600", children: "Manage your subscription and billing information" })
     ] }),
-    /* @__PURE__ */ jsx244(Card63, { children: /* @__PURE__ */ jsx244(CardContent61, { className: "p-6", children: /* @__PURE__ */ jsxs221("div", { className: "text-center py-8", children: [
-      /* @__PURE__ */ jsx244(CreditCard22, { className: "mx-auto h-12 w-12 text-gray-400 mb-4" }),
+    /* @__PURE__ */ jsx244(Card63, { children: /* @__PURE__ */ jsx244(CardContent62, { className: "p-6", children: /* @__PURE__ */ jsxs221("div", { className: "text-center py-8", children: [
+      /* @__PURE__ */ jsx244(CreditCard21, { className: "mx-auto h-12 w-12 text-gray-400 mb-4" }),
       /* @__PURE__ */ jsx244("h3", { className: "text-lg font-medium text-gray-900 mb-2", children: "No Active Subscription" }),
       /* @__PURE__ */ jsx244("p", { className: "text-gray-600 mb-6", children: "You don't have an active subscription. Choose a plan to get started." }),
       (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsx244(Button61, { children: "View Available Plans" }),
@@ -38559,7 +38475,7 @@ var SubscriptionSection = ({
 // src/components/features/Settings/components/AccountSection.tsx
 import {
   Card as Card64,
-  CardContent as CardContent62,
+  CardContent as CardContent63,
   Button as Button62,
   Separator as Separator6
 } from "@rentalshop/ui";
@@ -38576,7 +38492,7 @@ var AccountSection = ({
       /* @__PURE__ */ jsx245("h2", { className: "text-2xl font-bold text-gray-900", children: "Account" }),
       /* @__PURE__ */ jsx245("p", { className: "text-gray-600", children: "Manage your account settings and preferences" })
     ] }),
-    /* @__PURE__ */ jsx245(Card64, { children: /* @__PURE__ */ jsx245(CardContent62, { className: "p-6", children: /* @__PURE__ */ jsxs222("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsx245(Card64, { children: /* @__PURE__ */ jsx245(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs222("div", { className: "space-y-6", children: [
       /* @__PURE__ */ jsxs222("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
         /* @__PURE__ */ jsxs222("div", { className: "flex items-center space-x-3", children: [
           /* @__PURE__ */ jsx245(Key2, { className: "h-5 w-5 text-gray-600" }),
@@ -38808,7 +38724,7 @@ var settingsMenuItems = [
   {
     id: "subscription",
     label: "Subscription",
-    icon: CreditCard23,
+    icon: CreditCard22,
     description: "Manage your subscription and billing",
     roles: ["ADMIN", "MERCHANT", "OUTLET_ADMIN"]
     // ADMIN, MERCHANT, and OUTLET_ADMIN can access subscription
@@ -38862,7 +38778,7 @@ var SettingsComponent = () => {
   const [isDeleting, setIsDeleting] = useState80(false);
   const [subscriptionData, setSubscriptionData] = useState80(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState80(true);
-  useEffect44(() => {
+  useEffect43(() => {
     const fetchSubscriptionData = async () => {
       try {
         setSubscriptionLoading(true);
@@ -38936,7 +38852,7 @@ var SettingsComponent = () => {
     };
     fetchSubscriptionData();
   }, []);
-  useEffect44(() => {
+  useEffect43(() => {
     if (user?.merchant && user?.role === "MERCHANT") {
       setMerchantFormData({
         name: user.merchant.name || "",
@@ -39204,7 +39120,7 @@ var Settings_default = SettingsComponent;
 // src/components/features/Settings/components/SecuritySection.tsx
 import {
   Card as Card65,
-  CardContent as CardContent63,
+  CardContent as CardContent64,
   Button as Button65
 } from "@rentalshop/ui";
 import { Shield as Shield8 } from "lucide-react";
@@ -39217,7 +39133,7 @@ var SecuritySection = ({
       /* @__PURE__ */ jsx249("h2", { className: "text-2xl font-bold text-gray-900", children: "Security" }),
       /* @__PURE__ */ jsx249("p", { className: "text-gray-600", children: "Manage your password and account security settings" })
     ] }),
-    /* @__PURE__ */ jsx249(Card65, { children: /* @__PURE__ */ jsx249(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsx249("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs226("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+    /* @__PURE__ */ jsx249(Card65, { children: /* @__PURE__ */ jsx249(CardContent64, { className: "p-6", children: /* @__PURE__ */ jsx249("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs226("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
       /* @__PURE__ */ jsxs226("div", { className: "flex items-center space-x-3", children: [
         /* @__PURE__ */ jsx249(Shield8, { className: "h-5 w-5 text-gray-600" }),
         /* @__PURE__ */ jsxs226("div", { children: [
@@ -39241,8 +39157,8 @@ var SecuritySection = ({
 import { useState as useState81 } from "react";
 import {
   Home as Home4,
-  Package as Package23,
-  Users as Users14,
+  Package as Package22,
+  Users as Users13,
   Settings as Settings10,
   ShoppingCart as ShoppingCart9,
   Store as Store7,
@@ -39250,10 +39166,10 @@ import {
   Bell as Bell4,
   User as User26,
   LogOut as LogOut2,
-  X as X23,
+  X as X22,
   Menu,
-  CreditCard as CreditCard24,
-  Clock as Clock30,
+  CreditCard as CreditCard23,
+  Clock as Clock29,
   ChevronDown as ChevronDown7,
   ShieldCheck,
   FileText as FileText6,
@@ -39272,8 +39188,8 @@ function TopNavigation({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState81(false);
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home4 },
-    { href: "/products", label: "Products", icon: Package23 },
-    { href: "/customers", label: "Customers", icon: Users14 },
+    { href: "/products", label: "Products", icon: Package22 },
+    { href: "/customers", label: "Customers", icon: Users13 },
     { href: "/orders", label: "Orders", icon: ShoppingCart9 },
     { href: "/settings", label: "Settings", icon: Settings10 }
   ];
@@ -39283,11 +39199,11 @@ function TopNavigation({
     {
       href: "/plans",
       label: "Plans",
-      icon: Package23
+      icon: Package22
     },
-    { href: "/subscriptions", label: "Subscriptions", icon: Clock30 },
-    { href: "/payments", label: "Payments", icon: CreditCard24 },
-    { href: "/users", label: "Users", icon: Users14 },
+    { href: "/subscriptions", label: "Subscriptions", icon: Clock29 },
+    { href: "/payments", label: "Payments", icon: CreditCard23 },
+    { href: "/users", label: "Users", icon: Users13 },
     {
       href: "/system",
       label: "System",
@@ -39429,7 +39345,7 @@ function TopNavigation({
             size: "sm",
             onClick: () => setIsMobileMenuOpen(!isMobileMenuOpen),
             className: "p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-            children: isMobileMenuOpen ? /* @__PURE__ */ jsx250(X23, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx250(Menu, { className: "w-6 h-6" })
+            children: isMobileMenuOpen ? /* @__PURE__ */ jsx250(X22, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx250(Menu, { className: "w-6 h-6" })
           }
         ) })
       ] })
@@ -39477,19 +39393,19 @@ function TopNavigation({
 import {
   Home as Home5,
   Store as Store8,
-  Users as Users15,
+  Users as Users14,
   Settings as Settings11,
   User as User27,
   LogOut as LogOut3,
   Menu as Menu2,
-  Search as Search15,
+  Search as Search14,
   Bell as Bell5,
   ShoppingCart as ShoppingCart10,
-  Package as Package24,
-  CreditCard as CreditCard25,
+  Package as Package23,
+  CreditCard as CreditCard24,
   BarChart3 as BarChart33,
   Shield as Shield9,
-  Clock as Clock31
+  Clock as Clock30
 } from "lucide-react";
 import { jsx as jsx251, jsxs as jsxs228 } from "react/jsx-runtime";
 function ServerTopNavigation({
@@ -39503,17 +39419,17 @@ function ServerTopNavigation({
 }) {
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home5 },
-    { href: "/products", label: "Products", icon: Package24 },
-    { href: "/customers", label: "Customers", icon: Users15 },
+    { href: "/products", label: "Products", icon: Package23 },
+    { href: "/customers", label: "Customers", icon: Users14 },
     { href: "/orders", label: "Orders", icon: ShoppingCart10 },
     { href: "/settings", label: "Settings", icon: Settings11 }
   ];
   const adminNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home5 },
     { href: "/merchants", label: "Merchants", icon: Store8 },
-    { href: "/plans", label: "Plans", icon: Package24 },
-    { href: "/subscriptions", label: "Subscriptions", icon: Clock31 },
-    { href: "/payments", label: "Payments", icon: CreditCard25 },
+    { href: "/plans", label: "Plans", icon: Package23 },
+    { href: "/subscriptions", label: "Subscriptions", icon: Clock30 },
+    { href: "/payments", label: "Payments", icon: CreditCard24 },
     { href: "/settings", label: "Settings", icon: Settings11 },
     { href: "/analytics", label: "Analytics", icon: BarChart33 },
     { href: "/security", label: "Security", icon: Shield9 }
@@ -39547,7 +39463,7 @@ function ServerTopNavigation({
         }) }),
         /* @__PURE__ */ jsxs228("div", { className: "flex items-center space-x-4", children: [
           /* @__PURE__ */ jsx251("form", { action: searchAction, method: "GET", className: "hidden md:block", children: /* @__PURE__ */ jsxs228("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx251(Search15, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
+            /* @__PURE__ */ jsx251(Search14, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
             /* @__PURE__ */ jsx251(
               Input2,
               {
@@ -39621,7 +39537,7 @@ function ServerTopNavigation({
         ] })
       ] }),
       /* @__PURE__ */ jsx251("div", { className: "md:hidden pb-4", children: /* @__PURE__ */ jsx251("form", { action: searchAction, method: "GET", children: /* @__PURE__ */ jsxs228("div", { className: "relative", children: [
-        /* @__PURE__ */ jsx251(Search15, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
+        /* @__PURE__ */ jsx251(Search14, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
         /* @__PURE__ */ jsx251(
           Input2,
           {
@@ -40021,8 +39937,8 @@ var QuickActionsGrid = () => {
 };
 
 // src/components/layout/SearchInput.tsx
-import { useEffect as useEffect45 } from "react";
-import { Search as Search16, X as X25 } from "lucide-react";
+import { useEffect as useEffect44 } from "react";
+import { Search as Search15, X as X24 } from "lucide-react";
 import { cn as cn6 } from "@rentalshop/ui";
 import { Button as Button66 } from "@rentalshop/ui";
 import { useThrottledSearch } from "@rentalshop/hooks";
@@ -40047,17 +39963,17 @@ var SearchInput = ({
     minLength,
     onSearch
   });
-  useEffect45(() => {
+  useEffect44(() => {
     if (defaultValue && !query) {
       handleSearchChange(defaultValue);
     }
   }, [defaultValue, query, handleSearchChange]);
-  useEffect45(() => {
+  useEffect44(() => {
     return cleanup;
   }, [cleanup]);
   return /* @__PURE__ */ jsxs235("div", { className: cn6("relative", className), children: [
     /* @__PURE__ */ jsxs235("div", { className: "relative", children: [
-      /* @__PURE__ */ jsx258(Search16, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
+      /* @__PURE__ */ jsx258(Search15, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
       /* @__PURE__ */ jsx258(
         "input",
         {
@@ -40082,7 +39998,7 @@ var SearchInput = ({
           onClick: clearSearch,
           type: "button",
           className: "absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0",
-          children: /* @__PURE__ */ jsx258(X25, { className: "h-4 w-4" })
+          children: /* @__PURE__ */ jsx258(X24, { className: "h-4 w-4" })
         }
       )
     ] }),
@@ -40152,12 +40068,12 @@ import { useState as useState84 } from "react";
 import {
   Home as Home6,
   Store as Store9,
-  Users as Users16,
+  Users as Users15,
   Settings as Settings12,
   User as User28,
   LogOut as LogOut4,
   Menu as Menu3,
-  X as X26,
+  X as X25,
   ChevronLeft as ChevronLeft4,
   ChevronRight as ChevronRight6,
   Tag as Tag5,
@@ -40179,13 +40095,13 @@ function Navigation({
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home6 },
     { href: "/products", label: "Products", icon: Store9 },
-    { href: "/customers", label: "Customers", icon: Users16 },
+    { href: "/customers", label: "Customers", icon: Users15 },
     { href: "/orders", label: "Orders", icon: Store9 },
     { href: "/settings", label: "Settings", icon: Settings12 }
   ];
   const adminNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home6 },
-    { href: "/users", label: "Users", icon: Users16 },
+    { href: "/users", label: "Users", icon: Users15 },
     { href: "/outlets", label: "Outlets", icon: Building217 },
     { href: "/products", label: "Products", icon: Store9 },
     { href: "/categories", label: "Categories", icon: Tag5 },
@@ -40254,7 +40170,7 @@ function Navigation({
             size: "sm",
             onClick: () => setIsOpen(!isOpen),
             className: "text-nav-tint hover:text-gray-300",
-            children: isOpen ? /* @__PURE__ */ jsx260(X26, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx260(Menu3, { className: "w-6 h-6" })
+            children: isOpen ? /* @__PURE__ */ jsx260(X25, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx260(Menu3, { className: "w-6 h-6" })
           }
         ) })
       ] })
@@ -40287,12 +40203,12 @@ import {
   ChevronLeft as ChevronLeft5,
   ChevronRight as ChevronRight7,
   Home as Home7,
-  Users as Users17,
-  Package as Package25,
+  Users as Users16,
+  Package as Package24,
   Building2 as Building218,
   Settings as Settings13,
-  CreditCard as CreditCard26,
-  Clock as Clock32,
+  CreditCard as CreditCard25,
+  Clock as Clock31,
   Database as Database5,
   ShieldCheck as ShieldCheck2,
   FileText as FileText7,
@@ -40315,22 +40231,22 @@ var adminMenuItems = [
   {
     label: "Plans",
     href: "/plans",
-    icon: Package25
+    icon: Package24
   },
   {
     label: "Subscriptions",
     href: "/subscriptions",
-    icon: Clock32
+    icon: Clock31
   },
   {
     label: "Payments",
     href: "/payments",
-    icon: CreditCard26
+    icon: CreditCard25
   },
   {
     label: "Users",
     href: "/users",
-    icon: Users17
+    icon: Users16
   },
   {
     label: "System",
@@ -40502,7 +40418,7 @@ var AdminSidebar = ({
 };
 
 // src/components/layout/ClientSidebar.tsx
-import { useState as useState86, useEffect as useEffect46 } from "react";
+import { useState as useState86, useEffect as useEffect45 } from "react";
 import Link4 from "next/link";
 import { usePathname as usePathname2 } from "next/navigation";
 import { cn as cn8 } from "@rentalshop/ui";
@@ -40511,12 +40427,12 @@ import {
   ChevronLeft as ChevronLeft6,
   ChevronRight as ChevronRight8,
   Home as Home8,
-  Users as Users18,
-  Package as Package26,
+  Users as Users17,
+  Package as Package25,
   ShoppingCart as ShoppingCart13,
   Building2 as Building219,
   Settings as Settings14,
-  Calendar as Calendar36,
+  Calendar as Calendar35,
   Tag as Tag6,
   User as User30,
   LogOut as LogOut6,
@@ -40538,12 +40454,12 @@ var clientMenuItems = [
   {
     label: "Products",
     href: "/products",
-    icon: Package26,
+    icon: Package25,
     subItems: [
       {
         label: "All Products",
         href: "/products",
-        icon: Package26
+        icon: Package25
       },
       {
         label: "Categories",
@@ -40555,7 +40471,7 @@ var clientMenuItems = [
   {
     label: "Customers",
     href: "/customers",
-    icon: Users18
+    icon: Users17
   },
   {
     label: "Users",
@@ -40570,7 +40486,7 @@ var clientMenuItems = [
   {
     label: "Calendar",
     href: "/calendar",
-    icon: Calendar36
+    icon: Calendar35
   },
   {
     label: "Settings",
@@ -40611,17 +40527,17 @@ var ClientSidebar = ({
     return items;
   };
   const menuItems2 = filterMenuItemsByRole(clientMenuItems, user?.role);
-  useEffect46(() => {
+  useEffect45(() => {
     setLocalCurrentPage(currentPath);
   }, [currentPath]);
-  useEffect46(() => {
+  useEffect45(() => {
     if (onPrefetch) {
       menuItems2.forEach((item) => {
         onPrefetch(item.href);
       });
     }
   }, [menuItems2, onPrefetch]);
-  useEffect46(() => {
+  useEffect45(() => {
     const handleClickOutside = (event) => {
       const target = event.target;
       const isClickingNavItem = target.closest(".nav-item");
@@ -40889,8 +40805,8 @@ function Layout({
 import {
   AlertTriangle as AlertTriangle23,
   CheckCircle as CheckCircle34,
-  Clock as Clock33,
-  CreditCard as CreditCard27,
+  Clock as Clock32,
+  CreditCard as CreditCard26,
   TrendingUp as TrendingUp9,
   Zap as Zap3
 } from "lucide-react";
@@ -40923,7 +40839,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
         size: "sm",
         onClick: () => window.location.href = "/plans",
         children: [
-          /* @__PURE__ */ jsx264(CreditCard27, { className: "h-4 w-4 mr-2" }),
+          /* @__PURE__ */ jsx264(CreditCard26, { className: "h-4 w-4 mr-2" }),
           "Get Started"
         ]
       }
@@ -40940,11 +40856,11 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
       case "CANCELED":
         return /* @__PURE__ */ jsx264(AlertTriangle23, { className: "h-4 w-4" });
       case "PAST_DUE":
-        return /* @__PURE__ */ jsx264(CreditCard27, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx264(CreditCard26, { className: "h-4 w-4" });
       case "PAUSED":
-        return /* @__PURE__ */ jsx264(Clock33, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx264(Clock32, { className: "h-4 w-4" });
       default:
-        return /* @__PURE__ */ jsx264(Clock33, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx264(Clock32, { className: "h-4 w-4" });
     }
   };
   const getStatusVariant = () => {
