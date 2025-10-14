@@ -182,7 +182,7 @@ export async function updateUser(
           description: true,
           isActive: true,
           planId: true,
-          subscriptionStatus: true,
+          // subscriptionStatus removed - use subscription.status
           totalRevenue: true,
           createdAt: true,
           lastActiveAt: true,
@@ -408,7 +408,7 @@ export const simplifiedUsers = {
             description: true,
             isActive: true,
             planId: true,
-            subscriptionStatus: true,
+            // subscriptionStatus removed - use subscription.status
             totalRevenue: true,
             createdAt: true,
             lastActiveAt: true
@@ -562,7 +562,7 @@ export const simplifiedUsers = {
               description: true,
               isActive: true,
               planId: true,
-              subscriptionStatus: true,
+              // subscriptionStatus removed - use subscription.status
               totalRevenue: true,
               createdAt: true,
               lastActiveAt: true

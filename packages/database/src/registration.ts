@@ -189,8 +189,8 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
       state: data.state,
       zipCode: data.zipCode,
       country: data.country,
-      isActive: true,
-      subscriptionStatus: 'trial'
+      isActive: true
+      // subscriptionStatus removed - will be set in subscription.status
     }
   });
 

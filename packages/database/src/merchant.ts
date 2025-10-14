@@ -12,7 +12,7 @@ import type { SimpleFilters, SimpleResponse } from './index';
 
 export interface MerchantFilters extends SimpleFilters {
   businessType?: string;
-  subscriptionStatus?: string;
+  // subscriptionStatus removed - use subscription.status instead
   planId?: number;
   isActive?: boolean;
 }
@@ -33,7 +33,7 @@ export interface MerchantCreateData {
   description?: string;
   pricingConfig?: string;
   planId?: number;
-  subscriptionStatus?: string;
+  // subscriptionStatus removed - use subscription.status instead
 }
 
 export interface MerchantUpdateData extends Partial<MerchantCreateData> {
@@ -100,7 +100,6 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     limit = 20,
     search,
     businessType,
-    subscriptionStatus,
     planId,
     isActive
   } = filters;
@@ -122,9 +121,12 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     where.businessType = businessType;
   }
 
-  if (subscriptionStatus) {
-    where.subscriptionStatus = subscriptionStatus;
-  }
+  // subscriptionStatus filter removed - use subscription.status instead
+  // if (subscriptionStatus) {
+  //   where.subscription = {
+  //     status: subscriptionStatus
+  //   };
+  // }
 
   if (planId !== undefined) {
     where.planId = planId;

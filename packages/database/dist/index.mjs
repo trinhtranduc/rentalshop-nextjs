@@ -42,7 +42,7 @@ var simplifiedUsers = {
             description: true,
             isActive: true,
             planId: true,
-            subscriptionStatus: true,
+            // subscriptionStatus removed - use subscription.status
             totalRevenue: true,
             createdAt: true,
             lastActiveAt: true
@@ -170,7 +170,7 @@ var simplifiedUsers = {
               description: true,
               isActive: true,
               planId: true,
-              subscriptionStatus: true,
+              // subscriptionStatus removed - use subscription.status
               totalRevenue: true,
               createdAt: true,
               lastActiveAt: true
@@ -1940,7 +1940,6 @@ async function search(filters) {
     limit = 20,
     search: search3,
     businessType,
-    subscriptionStatus,
     planId,
     isActive
   } = filters;
@@ -1955,9 +1954,6 @@ async function search(filters) {
   }
   if (businessType) {
     where.businessType = businessType;
-  }
-  if (subscriptionStatus) {
-    where.subscriptionStatus = subscriptionStatus;
   }
   if (planId !== void 0) {
     where.planId = planId;
@@ -3139,8 +3135,8 @@ async function registerMerchant(tx, data) {
       state: data.state,
       zipCode: data.zipCode,
       country: data.country,
-      isActive: true,
-      subscriptionStatus: "trial"
+      isActive: true
+      // subscriptionStatus removed - will be set in subscription.status
     }
   });
   const lastOutlet = await tx.outlet.findFirst({
