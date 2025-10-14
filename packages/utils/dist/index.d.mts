@@ -281,7 +281,6 @@ interface Merchant extends BaseEntity, Address, ContactInfo {
     taxId?: string;
     isActive: boolean;
     planId?: number;
-    subscriptionStatus: 'active' | 'trial' | 'expired' | 'cancelled';
     totalRevenue: number;
     lastActiveAt?: Date | string;
     pricingConfig?: MerchantPricingConfig | string;

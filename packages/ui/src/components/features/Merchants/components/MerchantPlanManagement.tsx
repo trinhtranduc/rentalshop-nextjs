@@ -156,18 +156,17 @@ export function MerchantPlanManagement({
   console.log('🔍 MerchantPlanManagement Debug:', {
     merchantId: merchant.id,
     merchantName: merchant.name,
-    subscriptionStatus: merchant.subscriptionStatus,
     currentSubscription: currentSubscription,
     subscriptionStatusFromSubscription: subscriptions[0]?.status
   });
 
   // Normalize subscription status to lowercase for consistent comparison
-  const normalizedStatus = merchant.subscriptionStatus?.toLowerCase() || 'unknown';
-  const isActiveStatus = normalizedStatus === 'trial' || normalizedStatus === 'active';
-  const isPausedStatus = normalizedStatus === 'paused' || normalizedStatus === 'cancelled' || normalizedStatus === 'expired';
-  const isTrialStatus = normalizedStatus === 'trial';
-  const isActivePaidStatus = normalizedStatus === 'active';
-  const isPaused = normalizedStatus === 'paused';
+  const subscriptionStatus = currentSubscription?.status?.toLowerCase() || 'unknown';
+  const isActiveStatus = subscriptionStatus === 'trial' || subscriptionStatus === 'active';
+  const isPausedStatus = subscriptionStatus === 'paused' || subscriptionStatus === 'cancelled' || subscriptionStatus === 'expired';
+  const isTrialStatus = subscriptionStatus === 'trial';
+  const isActivePaidStatus = subscriptionStatus === 'active';
+  const isPaused = subscriptionStatus === 'paused';
   
   // Check if current plan is Trial plan (free)
   const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === 'trial' || 
@@ -416,7 +415,7 @@ export function MerchantPlanManagement({
                     currentSubscription?.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {currentSubscription?.status || merchant.subscriptionStatus || 'Unknown'}
+                    {currentSubscription?.status || 'Unknown'}
                   </div>
                 </div>
               </div>

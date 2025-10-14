@@ -505,7 +505,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Status</Label>
                   <div className="mt-1">
-                    <StatusBadge status={subscription.merchant?.subscriptionStatus || 'Active'} />
+                    <StatusBadge status={subscription.status || 'Unknown'} />
                   </div>
                 </div>
               </div>
