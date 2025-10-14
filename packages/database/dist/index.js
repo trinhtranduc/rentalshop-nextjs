@@ -1576,8 +1576,7 @@ async function getSubscriptionByMerchantId(merchantId) {
         select: {
           id: true,
           name: true,
-          email: true,
-          subscriptionStatus: true
+          email: true
         }
       },
       plan: true
@@ -1615,8 +1614,7 @@ async function getExpiredSubscriptions() {
         select: {
           id: true,
           name: true,
-          email: true,
-          subscriptionStatus: true
+          email: true
         }
       },
       plan: true
@@ -1646,8 +1644,7 @@ async function getSubscriptionById(id) {
         select: {
           id: true,
           name: true,
-          email: true,
-          subscriptionStatus: true
+          email: true
         }
       },
       plan: true
@@ -1681,8 +1678,7 @@ async function updateSubscription(subscriptionId, data) {
         select: {
           id: true,
           name: true,
-          email: true,
-          subscriptionStatus: true
+          email: true
         }
       },
       plan: true
