@@ -25020,8 +25020,8 @@ function MerchantPlanManagement({
   const formatDate11 = (date2) => {
     return new Date(date2).toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long",
-      day: "numeric"
+      month: "2-digit",
+      day: "2-digit"
     });
   };
   const billingIntervals = getActiveBillingIntervals();
