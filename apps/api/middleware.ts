@@ -74,12 +74,18 @@ export async function middleware(request: NextRequest) {
     .map(s => s.trim())
     .filter(Boolean);
   
-  // Add localhost fallbacks for development
+  // Add localhost and Railway domains
   const allowedOrigins = [
     ...corsOrigins,
+    // Local development
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
+    // Railway production domains
+    'https://rental-client.up.railway.app',
+    'https://rental-admin.up.railway.app',
+    'https://dev-apis-development.up.railway.app',
+    'https://apis-development.up.railway.app'
   ];
   
   // Get request origin
@@ -102,7 +108,7 @@ export async function middleware(request: NextRequest) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   };

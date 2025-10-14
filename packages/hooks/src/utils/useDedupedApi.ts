@@ -73,6 +73,10 @@ export function useDedupedApi<TFilters, TData>(
   
   const fetchIdRef = useRef(0);
   const filtersRef = useRef<string>('');
+  const fetchFnRef = useRef(fetchFn); // ✅ Store stable reference to fetchFn
+  
+  // Update fetchFnRef when fetchFn changes
+  fetchFnRef.current = fetchFn;
 
   // Generate cache key from filters
   const cacheKey = JSON.stringify(filters);
@@ -168,7 +172,7 @@ export function useDedupedApi<TFilters, TData>(
     setLoading(true);
     setError(null);
 
-    const requestPromise = fetchFn(filters);
+    const requestPromise = fetchFnRef.current(filters); // ✅ Use ref
     requestCache.set(cacheKey, requestPromise);
 
     requestPromise
@@ -220,7 +224,7 @@ export function useDedupedApi<TFilters, TData>(
         requestCache.delete(cacheKey);
       });
 
-  }, [cacheKey, enabled, fetchFn, staleTime, cacheTime]);
+  }, [cacheKey, enabled, staleTime, cacheTime]); // ✅ fetchFn removed - use ref instead
 
   // ============================================================================
   // WINDOW FOCUS REFETCH (Optional)
