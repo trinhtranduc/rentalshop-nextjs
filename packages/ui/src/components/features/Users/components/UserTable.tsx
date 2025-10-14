@@ -90,8 +90,9 @@ export function UserTable({
 
   return (
     <Card className="shadow-sm border-border flex flex-col h-full">
-      <CardContent className="p-0 flex-1">
-        <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
+      <CardContent className="p-0 flex-1 overflow-hidden">
+        {/* Table with scroll - flex layout */}
+        <div className="flex-1 overflow-auto h-full">
           <table className="w-full">
             {/* Table Header with Sorting - Sticky */}
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">

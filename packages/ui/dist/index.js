@@ -20676,7 +20676,7 @@ function MerchantTable({
       /* @__PURE__ */ (0, import_jsx_runtime114.jsx)("p", { className: "text-sm", children: "Try adjusting your filters or create some merchants to get started." })
     ] }) }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime114.jsx)(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime114.jsx)(CardContent2, { className: "p-0 flex-1 overflow-auto", children: /* @__PURE__ */ (0, import_jsx_runtime114.jsx)("div", { className: "overflow-x-auto h-full overflow-y-auto", children: /* @__PURE__ */ (0, import_jsx_runtime114.jsxs)("table", { className: "w-full", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime114.jsx)(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime114.jsx)(CardContent2, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime114.jsx)("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ (0, import_jsx_runtime114.jsxs)("table", { className: "w-full", children: [
     /* @__PURE__ */ (0, import_jsx_runtime114.jsx)("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime114.jsxs)("tr", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime114.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Merchant Name" }),
       /* @__PURE__ */ (0, import_jsx_runtime114.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan & Status" }),
@@ -22056,35 +22056,13 @@ function SubscriptionList({
   loading = false,
   pagination
 }) {
-  const [searchTerm, setSearchTerm] = (0, import_react60.useState)("");
-  const [statusFilter, setStatusFilter] = (0, import_react60.useState)("all");
-  const [planFilter, setPlanFilter] = (0, import_react60.useState)("all");
-  const [merchantFilter, setMerchantFilter] = (0, import_react60.useState)("all");
-  const [filteredSubscriptions, setFilteredSubscriptions] = (0, import_react60.useState)(subscriptions);
   const [openMenuId, setOpenMenuId] = (0, import_react60.useState)(null);
   const [showViewDialog, setShowViewDialog] = (0, import_react60.useState)(false);
   const [showEditDialog, setShowEditDialog] = (0, import_react60.useState)(false);
   const [showExtendDialog, setShowExtendDialog] = (0, import_react60.useState)(false);
   const [showChangePlanDialog, setShowChangePlanDialog] = (0, import_react60.useState)(false);
   const [selectedSubscription, setSelectedSubscription] = (0, import_react60.useState)(null);
-  (0, import_react60.useEffect)(() => {
-    let filtered = subscriptions;
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (sub) => sub.merchant?.name.toLowerCase().includes(searchTerm.toLowerCase()) || sub.plan?.name.toLowerCase().includes(searchTerm.toLowerCase()) || sub.id.toString().includes(searchTerm)
-      );
-    }
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((sub) => sub.status === statusFilter);
-    }
-    if (planFilter !== "all") {
-      filtered = filtered.filter((sub) => sub.planId.toString() === planFilter);
-    }
-    if (merchantFilter !== "all") {
-      filtered = filtered.filter((sub) => sub.merchantId.toString() === merchantFilter);
-    }
-    setFilteredSubscriptions(filtered);
-  }, [subscriptions, searchTerm, statusFilter, planFilter, merchantFilter]);
+  const filteredSubscriptions = subscriptions;
   const getStatusBadge = (status) => {
     const statusMap = {
       "trial": "trial",
@@ -22166,49 +22144,10 @@ function SubscriptionList({
   const canCancel = (subscription) => ["active", "trial"].includes(subscription.status);
   const canExtend = (subscription) => ["active", "trial", "past_due"].includes(subscription.status);
   const canChangePlan = (subscription) => ["active", "trial"].includes(subscription.status);
-  return /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("div", { className: "flex flex-col h-full", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "flex-shrink-0 space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(Card2, { children: /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(CardContent2, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-4 gap-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("div", { className: "relative", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(import_lucide_react52.Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(
-          Input2,
-          {
-            placeholder: "Search subscriptions...",
-            value: searchTerm,
-            onChange: (e) => setSearchTerm(e.target.value),
-            className: "pl-10"
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(Select2, { value: statusFilter, onValueChange: setStatusFilter, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectTrigger2, { children: /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectValue2, { placeholder: "Filter by status" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(SelectContent2, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: "all", children: "All Statuses" }),
-          /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: "trial", children: "Trial" }),
-          /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: "active", children: "Active" }),
-          /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: "past_due", children: "Past Due" }),
-          /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: "cancelled", children: "Cancelled" }),
-          /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: "paused", children: "Paused" })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(Select2, { value: planFilter, onValueChange: setPlanFilter, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectTrigger2, { children: /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectValue2, { placeholder: "Filter by plan" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(SelectContent2, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: "all", children: "All Plans" }),
-          plans && plans.length > 0 ? plans.map((plan) => /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: plan.id.toString(), children: plan.name }, plan.id)) : null
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(Select2, { value: merchantFilter, onValueChange: setMerchantFilter, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectTrigger2, { children: /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectValue2, { placeholder: "Filter by merchant" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(SelectContent2, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: "all", children: "All Merchants" }),
-          merchants && merchants.length > 0 ? merchants.map((merchant) => /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(SelectItem2, { value: merchant.id.toString(), children: merchant.name }, merchant.id)) : null
-        ] })
-      ] })
-    ] }) }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "flex-1 min-h-0 mt-4", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(CardTitle2, { children: "Subscriptions" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(CardContent2, { className: "p-0 flex-1", children: loading ? /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "flex items-center justify-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("div", { className: "flex items-center space-x-2", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(import_jsx_runtime120.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(CardHeader2, { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(CardTitle2, { children: "Subscriptions" }) }),
+      loading ? /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "flex items-center justify-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("div", { className: "flex items-center space-x-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" }),
         /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("span", { children: "Loading subscriptions..." })
       ] }) }) : filteredSubscriptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("div", { className: "text-text-tertiary", children: [
@@ -22216,8 +22155,8 @@ function SubscriptionList({
         /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No subscriptions found" }),
         /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("p", { className: "text-sm", children: "Try adjusting your search or filter criteria." })
       ] }) }) : (
-        /* Table with scroll */
-        /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("table", { className: "w-full", children: [
+        /* Table with scroll - same structure as ProductTable */
+        /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "flex-1 overflow-auto", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("table", { className: "w-full", children: [
           /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("tr", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Merchant" }),
             /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan" }),
@@ -22256,6 +22195,7 @@ function SubscriptionList({
                   align: "end",
                   open: openMenuId === subscription.id,
                   onOpenChange: (open) => setOpenMenuId(open ? subscription.id : null),
+                  className: "z-50",
                   children: [
                     /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)(
                       DropdownMenuItem,
@@ -22306,30 +22246,18 @@ function SubscriptionList({
             ] }) })
           ] }, subscription.id)) })
         ] }) })
-      ) })
-    ] }) }),
-    pagination && pagination.total > 0 && pagination.total > pagination.limit && /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime120.jsxs)("div", { className: "text-sm text-gray-500", children: [
-        "Showing ",
-        (pagination.page - 1) * pagination.limit + 1,
-        " to ",
-        Math.min(pagination.page * pagination.limit, pagination.total),
-        " of ",
-        pagination.total,
-        " subscriptions"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(
-        Pagination,
-        {
-          currentPage: pagination.page,
-          totalPages: Math.ceil(pagination.total / pagination.limit),
-          total: pagination.total,
-          limit: pagination.limit,
-          onPageChange: pagination.onPageChange,
-          itemName: "subscriptions"
-        }
       )
-    ] }) }),
+    ] }),
+    pagination && filteredSubscriptions.length > 0 && pagination.total > pagination.limit && /* @__PURE__ */ (0, import_jsx_runtime120.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(
+      Pagination,
+      {
+        currentPage: pagination.page,
+        totalPages: Math.ceil(pagination.total / pagination.limit),
+        total: pagination.total,
+        limit: pagination.limit,
+        onPageChange: pagination.onPageChange
+      }
+    ) }),
     /* @__PURE__ */ (0, import_jsx_runtime120.jsx)(
       SubscriptionViewDialog,
       {
@@ -26713,7 +26641,7 @@ function UserTable({
       onSort(column);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime147.jsx)(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsx)(CardContent2, { className: "p-0 flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsx)("div", { className: "overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsxs)("table", { className: "w-full", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime147.jsx)(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsx)(CardContent2, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsx)("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsxs)("table", { className: "w-full", children: [
     /* @__PURE__ */ (0, import_jsx_runtime147.jsx)("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime147.jsxs)("tr", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime147.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "User" }),
       /* @__PURE__ */ (0, import_jsx_runtime147.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Role" }),
@@ -28695,7 +28623,7 @@ var AccountManagementCard = ({
 var import_lucide_react79 = require("lucide-react");
 var import_hooks11 = require("@rentalshop/hooks");
 var import_jsx_runtime159 = require("react/jsx-runtime");
-var Users10 = ({
+var Users9 = ({
   // Data props
   data,
   filters = {},
@@ -28816,7 +28744,7 @@ var Users10 = ({
     ) })
   ] });
 };
-var Users_default = Users10;
+var Users_default = Users9;
 
 // src/components/features/Outlets/Outlets.tsx
 var import_react83 = __toESM(require("react"));
@@ -30826,7 +30754,7 @@ var PlanTable = ({
       /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("p", { className: "text-sm", children: "Get started by creating your first subscription plan." })
     ] }) }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.Card, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.CardContent, { className: "p-0 flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("div", { className: "overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("table", { className: "w-full", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.Card, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)(import_ui125.CardContent, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("table", { className: "w-full", children: [
     /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("tr", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan Name" }),
       /* @__PURE__ */ (0, import_jsx_runtime184.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Price & Billing" }),
@@ -31267,128 +31195,122 @@ var BillingCycleTable = ({
     return sortOrder === "asc" ? /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.ChevronUp, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.ChevronDown, { className: "w-4 h-4" });
   };
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.Card, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardTitle, { children: "Billing Cycles" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) })
-    ] });
+    return /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Card, { className: "shadow-sm border-border", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.Card, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardTitle, { children: "Billing Cycles" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "overflow-x-auto", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("table", { className: "w-full", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("tr", { className: "border-b border-border", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("name"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
-                "Name",
-                getSortIcon("name")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("value"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
-                "Value",
-                getSortIcon("value")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("months"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
-                "Months",
-                getSortIcon("months")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("discount"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
-                "Discount",
-                getSortIcon("discount")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Description" }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Status" }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            "th",
-            {
-              className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
-              onClick: () => handleSort("createdAt"),
-              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
-                "Created",
-                getSortIcon("createdAt")
-              ] })
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-right py-3 px-4 font-medium text-text-primary", children: "Actions" })
+  return /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Card, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.CardContent, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex-1 overflow-auto h-full", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("table", { className: "w-full", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("name"),
+            children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
+              "Name",
+              getSortIcon("name")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("value"),
+            children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
+              "Value",
+              getSortIcon("value")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("months"),
+            children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
+              "Months",
+              getSortIcon("months")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("discount"),
+            children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
+              "Discount",
+              getSortIcon("discount")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Description" }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-left py-3 px-4 font-medium text-text-primary", children: "Status" }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+          "th",
+          {
+            className: "text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary",
+            onClick: () => handleSort("createdAt"),
+            children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
+              "Created",
+              getSortIcon("createdAt")
+            ] })
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("th", { className: "text-right py-3 px-4 font-medium text-text-primary", children: "Actions" })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("tbody", { children: billingCycles.map((cycle) => /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "font-medium text-text-primary", children: cycle.name }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Badge, { variant: "outline", className: "font-mono", children: cycle.value }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.Calendar, { className: "w-4 h-4 text-text-tertiary" }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "font-medium", children: cycle.months }),
+          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "text-sm text-text-secondary", children: cycle.months === 1 ? "month" : "months" })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("tbody", { children: billingCycles.map((cycle) => /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "font-medium text-text-primary", children: cycle.name }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_ui128.Badge, { variant: "outline", className: "font-mono", children: cycle.value }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.Calendar, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "font-medium", children: cycle.months }),
-            /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "text-sm text-text-secondary", children: cycle.months === 1 ? "month" : "months" })
-          ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "flex items-center gap-2", children: cycle.discount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.Badge, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
-            cycle.discount,
-            "%"
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "text-text-tertiary", children: "No discount" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "text-sm text-text-secondary max-w-xs truncate", children: cycle.description || "No description" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-            import_ui128.StatusBadge,
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "flex items-center gap-2", children: cycle.discount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)(import_ui128.Badge, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
+          cycle.discount,
+          "%"
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("span", { className: "text-text-tertiary", children: "No discount" }) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "text-sm text-text-secondary max-w-xs truncate", children: cycle.description || "No description" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+          import_ui128.StatusBadge,
+          {
+            status: cycle.isActive ? "active" : "inactive"
+          }
+        ) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4 text-sm text-text-secondary", children: formatDate11(cycle.createdAt) }),
+        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
+          onView && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+            import_ui128.Button,
             {
-              status: cycle.isActive ? "active" : "inactive"
+              variant: "ghost",
+              size: "sm",
+              onClick: () => onView(cycle),
+              className: "h-8 w-8 p-0",
+              title: "View billing cycle",
+              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.Eye, { className: "w-4 h-4" })
             }
-          ) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4 text-sm text-text-secondary", children: formatDate11(cycle.createdAt) }),
-          /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("td", { className: "py-4 px-4", children: /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
-            onView && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-              import_ui128.Button,
-              {
-                variant: "ghost",
-                size: "sm",
-                onClick: () => onView(cycle),
-                className: "h-8 w-8 p-0",
-                title: "View billing cycle",
-                children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.Eye, { className: "w-4 h-4" })
-              }
-            ),
-            onEdit && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
-              import_ui128.Button,
-              {
-                variant: "ghost",
-                size: "sm",
-                onClick: () => onEdit(cycle),
-                className: "h-8 w-8 p-0",
-                title: "Edit billing cycle",
-                children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.Edit, { className: "w-4 h-4" })
-              }
-            )
-          ] }) })
-        ] }, cycle.id)) })
-      ] }),
-      billingCycles.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "text-center py-12", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.Calendar, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No billing cycles found" }),
-        /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-text-secondary", children: "Get started by creating your first billing cycle" })
-      ] })
-    ] }) })
-  ] });
+          ),
+          onEdit && /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(
+            import_ui128.Button,
+            {
+              variant: "ghost",
+              size: "sm",
+              onClick: () => onEdit(cycle),
+              className: "h-8 w-8 p-0",
+              title: "Edit billing cycle",
+              children: /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.Edit, { className: "w-4 h-4" })
+            }
+          )
+        ] }) })
+      ] }, cycle.id)) })
+    ] }),
+    billingCycles.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime188.jsxs)("div", { className: "text-center py-12", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)(import_lucide_react99.Calendar, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
+      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No billing cycles found" }),
+      /* @__PURE__ */ (0, import_jsx_runtime188.jsx)("p", { className: "text-text-secondary", children: "Get started by creating your first billing cycle" })
+    ] })
+  ] }) }) });
 };
 
 // src/components/features/BillingCycles/components/BillingCycleForm.tsx
@@ -32589,101 +32511,98 @@ function PaymentTable({
       /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("p", { className: "text-sm", children: "Try adjusting your search or filter criteria." })
     ] }) }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(CardHeader2, { children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(CardTitle2, { children: "Payments" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(CardContent2, { className: "p-0 flex-1", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("table", { className: "w-full", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("tr", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Merchant" }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan" }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Amount" }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Method" }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Status" }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Date" }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Actions" })
-      ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("tbody", { className: "bg-bg-card divide-y divide-border", children: payments.map((payment) => /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("tr", { className: "hover:bg-bg-secondary transition-colors", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { className: "flex items-center gap-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.CreditCard, { className: "w-5 h-5 text-white" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm font-medium text-text-primary", children: payment.subscription?.merchant?.name || "Unknown Merchant" }),
-            payment.invoiceNumber && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { className: "text-xs text-text-tertiary", children: [
-              "INV: ",
-              payment.invoiceNumber
-            ] })
+  return /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(Card2, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(CardContent2, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("table", { className: "w-full", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("tr", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Merchant" }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan" }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Amount" }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Method" }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Status" }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Date" }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("th", { className: "px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Actions" })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("tbody", { className: "bg-bg-card divide-y divide-border", children: payments.map((payment) => /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("tr", { className: "hover:bg-bg-secondary transition-colors", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.CreditCard, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm font-medium text-text-primary", children: payment.subscription?.merchant?.name || "Unknown Merchant" }),
+          payment.invoiceNumber && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)("div", { className: "text-xs text-text-tertiary", children: [
+            "INV: ",
+            payment.invoiceNumber
           ] })
-        ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm text-text-primary", children: payment.subscription?.plan?.name || "Unknown Plan" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm font-medium text-text-primary", children: formatCurrency20(payment.amount, payment.currency) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm text-text-primary", children: getPaymentMethodText(payment.method) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: getStatusBadge(payment.status) }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm text-text-primary", children: formatDate11(payment.createdAt) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(DropdownMenu, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(
-            Button,
-            {
-              variant: "ghost",
-              size: "sm",
-              onClick: () => setOpenMenuId(openMenuId === payment.id ? null : payment.id),
-              children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.MoreVertical, { className: "h-4 w-4" })
-            }
-          ) }),
-          /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
-            DropdownMenuContent,
-            {
-              align: "end",
-              open: openMenuId === payment.id,
-              onOpenChange: (open) => setOpenMenuId(open ? payment.id : null),
-              children: [
-                onView && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
+        ] })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm text-text-primary", children: payment.subscription?.plan?.name || "Unknown Plan" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm font-medium text-text-primary", children: formatCurrency20(payment.amount, payment.currency) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm text-text-primary", children: getPaymentMethodText(payment.method) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: getStatusBadge(payment.status) }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("div", { className: "text-sm text-text-primary", children: formatDate11(payment.createdAt) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(DropdownMenu, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
+            onClick: () => setOpenMenuId(openMenuId === payment.id ? null : payment.id),
+            children: /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.MoreVertical, { className: "h-4 w-4" })
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
+          DropdownMenuContent,
+          {
+            align: "end",
+            open: openMenuId === payment.id,
+            onOpenChange: (open) => setOpenMenuId(open ? payment.id : null),
+            children: [
+              onView && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
+                DropdownMenuItem,
+                {
+                  onClick: () => {
+                    onView(payment);
+                    setOpenMenuId(null);
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.Eye, { className: "h-4 w-4 mr-2" }),
+                    "View Details"
+                  ]
+                }
+              ),
+              onDownloadReceipt && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
+                DropdownMenuItem,
+                {
+                  onClick: () => {
+                    onDownloadReceipt(payment);
+                    setOpenMenuId(null);
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.Download, { className: "h-4 w-4 mr-2" }),
+                    "Download Receipt"
+                  ]
+                }
+              ),
+              onRefund && payment.status === "completed" && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(import_jsx_runtime193.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(DropdownMenuSeparator, {}),
+                /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
                   DropdownMenuItem,
                   {
                     onClick: () => {
-                      onView(payment);
+                      onRefund(payment);
                       setOpenMenuId(null);
                     },
+                    className: "text-action-danger focus:text-action-danger",
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.Eye, { className: "h-4 w-4 mr-2" }),
-                      "View Details"
+                      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.RefreshCcw, { className: "h-4 w-4 mr-2" }),
+                      "Refund Payment"
                     ]
                   }
-                ),
-                onDownloadReceipt && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
-                  DropdownMenuItem,
-                  {
-                    onClick: () => {
-                      onDownloadReceipt(payment);
-                      setOpenMenuId(null);
-                    },
-                    children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.Download, { className: "h-4 w-4 mr-2" }),
-                      "Download Receipt"
-                    ]
-                  }
-                ),
-                onRefund && payment.status === "completed" && /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(import_jsx_runtime193.Fragment, { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(DropdownMenuSeparator, {}),
-                  /* @__PURE__ */ (0, import_jsx_runtime193.jsxs)(
-                    DropdownMenuItem,
-                    {
-                      onClick: () => {
-                        onRefund(payment);
-                        setOpenMenuId(null);
-                      },
-                      className: "text-action-danger focus:text-action-danger",
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime193.jsx)(import_lucide_react103.RefreshCcw, { className: "h-4 w-4 mr-2" }),
-                        "Refund Payment"
-                      ]
-                    }
-                  )
-                ] })
-              ]
-            }
-          )
-        ] }) })
-      ] }, payment.id)) })
-    ] }) }) })
-  ] });
+                )
+              ] })
+            ]
+          }
+        )
+      ] }) })
+    ] }, payment.id)) })
+  ] }) }) }) });
 }
 
 // src/components/features/Admin/components/StatsOverview.tsx

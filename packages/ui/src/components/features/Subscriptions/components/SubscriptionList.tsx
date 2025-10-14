@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardHeader,
@@ -9,18 +9,6 @@ import {
   Button,
   Badge,
   StatusBadge,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Pagination,
   DropdownMenu,
   DropdownMenuContent,
@@ -29,18 +17,9 @@ import {
   DropdownMenuSeparator
 } from '../../../ui';
 import { 
-  Search, 
-  Filter, 
   Eye, 
   Edit, 
-  CreditCard,
-  Calendar,
-  DollarSign,
-  Users,
   Building,
-  Package,
-  Clock,
-  X,
   MoreVertical,
   Ban
 } from 'lucide-react';
@@ -86,11 +65,6 @@ export function SubscriptionList({
   loading = false,
   pagination
 }: SubscriptionListProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [planFilter, setPlanFilter] = useState<string>('all');
-  const [merchantFilter, setMerchantFilter] = useState<string>('all');
-  const [filteredSubscriptions, setFilteredSubscriptions] = useState(subscriptions);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   
   // Dialog states
@@ -100,33 +74,8 @@ export function SubscriptionList({
   const [showChangePlanDialog, setShowChangePlanDialog] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   
-
-  // Filter subscriptions
-  useEffect(() => {
-    let filtered = subscriptions;
-
-    if (searchTerm) {
-      filtered = filtered.filter(sub => 
-        sub.merchant?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.plan?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.id.toString().includes(searchTerm)
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(sub => sub.status === statusFilter);
-    }
-
-    if (planFilter !== 'all') {
-      filtered = filtered.filter(sub => sub.planId.toString() === planFilter);
-    }
-
-    if (merchantFilter !== 'all') {
-      filtered = filtered.filter(sub => sub.merchantId.toString() === merchantFilter);
-    }
-
-    setFilteredSubscriptions(filtered);
-  }, [subscriptions, searchTerm, statusFilter, planFilter, merchantFilter]);
+  // Use subscriptions directly (filtering handled by page)
+  const filteredSubscriptions = subscriptions;
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
@@ -226,98 +175,33 @@ export function SubscriptionList({
   const canChangePlan = (subscription: Subscription) => ['active', 'trial'].includes(subscription.status);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Fixed Header & Filters Section */}
-      <div className="flex-shrink-0 space-y-4">
-        {/* Filters */}
-        <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search subscriptions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="trial">Trial</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="past_due">Past Due</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={planFilter} onValueChange={setPlanFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by plan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Plans</SelectItem>
-                {plans && plans.length > 0 ? plans.map(plan => (
-                  <SelectItem key={plan.id} value={plan.id.toString()}>
-                    {plan.name}
-                  </SelectItem>
-                )) : null}
-              </SelectContent>
-            </Select>
-
-            <Select value={merchantFilter} onValueChange={setMerchantFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by merchant" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Merchants</SelectItem>
-                {merchants && merchants.length > 0 ? merchants.map(merchant => (
-                  <SelectItem key={merchant.id} value={merchant.id.toString()}>
-                    {merchant.name}
-                  </SelectItem>
-                )) : null}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-      </div>
-
-      {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0 mt-4">
-        {/* Subscriptions Table */}
-        <Card className="shadow-sm border-border flex flex-col h-full">
-        <CardHeader>
+    <>
+      <Card className="shadow-sm border-border flex flex-col h-full">
+        <CardHeader className="flex-shrink-0">
           <CardTitle>Subscriptions</CardTitle>
         </CardHeader>
-        <CardContent className="p-0 flex-1">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span>Loading subscriptions...</span>
-              </div>
+        
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span>Loading subscriptions...</span>
             </div>
-          ) : filteredSubscriptions.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-text-tertiary">
-                <div className="text-4xl mb-4">💳</div>
-                <h3 className="text-lg font-medium mb-2">No subscriptions found</h3>
-                <p className="text-sm">
-                  Try adjusting your search or filter criteria.
-                </p>
-              </div>
+          </div>
+        ) : filteredSubscriptions.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-text-tertiary">
+              <div className="text-4xl mb-4">💳</div>
+              <h3 className="text-lg font-medium mb-2">No subscriptions found</h3>
+              <p className="text-sm">
+                Try adjusting your search or filter criteria.
+              </p>
             </div>
-          ) : (
-            /* Table with scroll */
-            <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
-              <table className="w-full">
+          </div>
+        ) : (
+          /* Table with scroll - same structure as ProductTable */
+          <div className="flex-1 overflow-auto">
+            <table className="w-full">
                 {/* Table Header - Sticky */}
                 <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
                   <tr>
@@ -423,6 +307,7 @@ export function SubscriptionList({
                             align="end"
                             open={openMenuId === subscription.id}
                             onOpenChange={(open: boolean) => setOpenMenuId(open ? subscription.id : null)}
+                            className="z-50"
                           >
                             <DropdownMenuItem 
                               onClick={() => {
@@ -466,26 +351,18 @@ export function SubscriptionList({
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
-      </div>
+        </Card>
 
-      {/* Fixed Pagination at Bottom */}
-      {pagination && pagination.total > 0 && pagination.total > pagination.limit && (
+      {/* Pagination Section - Same pattern as Merchants component */}
+      {pagination && filteredSubscriptions.length > 0 && pagination.total > pagination.limit && (
         <div className="flex-shrink-0 py-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} subscriptions
-            </div>
-            <Pagination
-              currentPage={pagination.page}
-              totalPages={Math.ceil(pagination.total / pagination.limit)}
-              total={pagination.total}
-              limit={pagination.limit}
-              onPageChange={pagination.onPageChange}
-              itemName="subscriptions"
-            />
-          </div>
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={Math.ceil(pagination.total / pagination.limit)}
+            total={pagination.total}
+            limit={pagination.limit}
+            onPageChange={pagination.onPageChange}
+          />
         </div>
       )}
 
@@ -529,6 +406,6 @@ export function SubscriptionList({
         onConfirm={handleChangePlanConfirm}
         loading={loading}
       />
-    </div>
+    </>
   );
 }
