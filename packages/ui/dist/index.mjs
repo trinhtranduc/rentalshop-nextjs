@@ -837,6 +837,9 @@ var StatusBadge = ({
   size = "md",
   className
 }) => {
+  if (!status) {
+    return /* @__PURE__ */ jsx3("span", { className: cn("inline-flex items-center gap-1.5 rounded-full font-medium border px-2 py-1 text-xs bg-gray-100 text-gray-600 border-gray-300", className), children: "Unknown" });
+  }
   const specialConfig = specialStatusConfig[status.toLowerCase()];
   let config;
   if (specialConfig) {
@@ -20533,7 +20536,8 @@ function MerchantTable({
     if (!merchant.isActive) {
       return /* @__PURE__ */ jsx114(StatusBadge, { status: "inactive", size: "sm" });
     }
-    return /* @__PURE__ */ jsx114(StatusBadge, { status: merchant.subscriptionStatus, size: "sm" });
+    const status = merchant.subscription?.status;
+    return /* @__PURE__ */ jsx114(StatusBadge, { status, size: "sm" });
   };
   if (merchants.length === 0) {
     return /* @__PURE__ */ jsx114(Card2, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx114(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ jsxs100("div", { className: "text-text-tertiary", children: [
@@ -20572,7 +20576,7 @@ function MerchantTable({
             day: "numeric",
             year: "numeric"
           }) : "N/A" }) }),
-          /* @__PURE__ */ jsx114("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx114("div", { className: "text-sm text-text-primary", children: merchant.currentSubscription?.startDate ? new Date(merchant.currentSubscription.startDate).toLocaleDateString("en-US", {
+          /* @__PURE__ */ jsx114("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx114("div", { className: "text-sm text-text-primary", children: merchant.subscription?.currentPeriodStart ? new Date(merchant.subscription.currentPeriodStart).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric"
@@ -20581,7 +20585,7 @@ function MerchantTable({
             day: "numeric",
             year: "numeric"
           }) : "N/A" }) }),
-          /* @__PURE__ */ jsx114("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx114("div", { className: "text-sm text-text-primary", children: merchant.currentSubscription?.endDate ? new Date(merchant.currentSubscription.endDate).toLocaleDateString("en-US", {
+          /* @__PURE__ */ jsx114("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx114("div", { className: "text-sm text-text-primary", children: merchant.subscription?.currentPeriodEnd ? new Date(merchant.subscription.currentPeriodEnd).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric"
@@ -20800,7 +20804,7 @@ function SubscriptionViewDialog({
           ] }),
           /* @__PURE__ */ jsxs101("div", { children: [
             /* @__PURE__ */ jsx115("label", { className: "text-sm font-medium text-gray-500", children: "Subscription Status" }),
-            /* @__PURE__ */ jsx115("p", { className: "text-sm", children: subscription.merchant?.subscriptionStatus || "Unknown" })
+            /* @__PURE__ */ jsx115("p", { className: "text-sm", children: subscription.status || "Unknown" })
           ] })
         ] }) })
       ] }),
@@ -24966,20 +24970,20 @@ function MerchantPlanManagement({
   loading = false,
   currentUserRole
 }) {
-  const currentSubscription = merchant.currentSubscription || subscriptions[0];
+  const currentSubscription = merchant.subscription || subscriptions[0];
   console.log("\u{1F50D} MerchantPlanManagement Debug:", {
     merchantId: merchant.id,
     merchantName: merchant.name,
-    currentSubscription,
-    subscriptionStatusFromSubscription: subscriptions[0]?.status
+    subscription: currentSubscription,
+    subscriptionStatus: currentSubscription?.status
   });
-  const subscriptionStatus = currentSubscription?.status?.toLowerCase() || "unknown";
+  const subscriptionStatus = currentSubscription.status.toLowerCase();
   const isActiveStatus = subscriptionStatus === "trial" || subscriptionStatus === "active";
   const isPausedStatus = subscriptionStatus === "paused" || subscriptionStatus === "cancelled" || subscriptionStatus === "expired";
   const isTrialStatus = subscriptionStatus === "trial";
   const isActivePaidStatus = subscriptionStatus === "active";
   const isPaused = subscriptionStatus === "paused";
-  const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === "trial" || merchant.currentPlan?.price === 0 || currentSubscription?.plan?.name?.toLowerCase() === "trial";
+  const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === "trial" || merchant.currentPlan?.price === 0 || currentSubscription.plan?.name?.toLowerCase() === "trial";
   const [showChangeDialog, setShowChangeDialog] = useState55(false);
   const [showRenewalModal, setShowRenewalModal] = useState55(false);
   const [showCancelDialog, setShowCancelDialog] = useState55(false);
@@ -25933,9 +25937,9 @@ function MerchantDetail({
             price: data.merchant.plan.basePrice,
             currency: data.merchant.plan.currency
           } : null,
-          subscriptionStatus: data.merchant.currentSubscription?.status || data.merchant.subscriptionStatus || "unknown"
+          subscriptionStatus: data.merchant.subscription?.status || "unknown"
         },
-        subscriptions: data.merchant.currentSubscription ? [data.merchant.currentSubscription] : [],
+        subscriptions: data.merchant.subscription ? [data.merchant.subscription] : [],
         plans,
         currentUserRole,
         onPlanChange,
@@ -25945,11 +25949,11 @@ function MerchantDetail({
         onReactivate
       }
     ),
-    data.merchant.currentSubscription && /* @__PURE__ */ jsx135(
+    data.merchant.subscription && /* @__PURE__ */ jsx135(
       MerchantSubscriptionSection,
       {
         merchantId: data.merchant.id,
-        subscription: data.merchant.currentSubscription
+        subscription: data.merchant.subscription
       }
     ),
     /* @__PURE__ */ jsxs120("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", children: [

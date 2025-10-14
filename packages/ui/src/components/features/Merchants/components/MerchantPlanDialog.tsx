@@ -185,7 +185,7 @@ export function MerchantPlanDialog({
                   </div>
                 </div>
                 <StatusBadge 
-                  status={getStatusColor(merchant.subscriptionStatus)} 
+                  status={merchant.subscription?.status} 
                   size="sm"
                 />
               </div>

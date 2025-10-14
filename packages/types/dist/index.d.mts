@@ -447,13 +447,12 @@ interface Merchant extends BaseEntity, Address, ContactInfo {
     lastActiveAt?: Date | string;
     pricingConfig?: MerchantPricingConfig | string;
     plan?: PlanDetails;
-    currentSubscription?: CurrentSubscription;
+    subscription?: CurrentSubscription;
     outlets?: OutletReference[];
     users?: UserReference[];
     customers?: CustomerReference[];
     products?: ProductReference[];
     categories?: any[];
-    subscriptions?: any[];
 }
 /**
  * Plan details interface

@@ -178,7 +178,7 @@ export function SubscriptionViewDialog({
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Subscription Status</label>
-                  <p className="text-sm">{subscription.merchant?.subscriptionStatus || 'Unknown'}</p>
+                  <p className="text-sm">{subscription.status || 'Unknown'}</p>
                 </div>
               </div>
             </CardContent>
