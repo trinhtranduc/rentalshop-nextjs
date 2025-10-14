@@ -449,7 +449,8 @@ export default function OrdersPage() {
             <p className="text-sm text-gray-600">Manage orders and rental/sale transactions</p>
           </div>
           <div className="flex gap-3">
-            {canExport && (
+            {/* Export feature - temporarily hidden, will be enabled in the future */}
+            {/* {canExport && (
               <Button
                 onClick={() => {
                   toastSuccess('Export Feature', 'Export functionality coming soon!');
@@ -460,7 +461,7 @@ export default function OrdersPage() {
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
-            )}
+            )} */}
             <Button 
               onClick={() => router.push('/orders/create')}
               variant="success"

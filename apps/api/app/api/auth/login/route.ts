@@ -41,10 +41,35 @@ export async function POST(request: NextRequest) {
 
     // Get merchant's active subscription plan (for platform access control)
     let planName = 'Basic'; // Default plan
+    let merchantData = null; // MerchantReference | null
+    let outletData = null;   // OutletReference | null
+    
     if (user.merchantId) {
       const merchant = await db.merchants.findById(user.merchantId);
-      if (merchant?.subscription?.plan) {
-        planName = merchant.subscription.plan.name;
+      if (merchant) {
+        if (merchant.subscription?.plan) {
+          planName = merchant.subscription.plan.name;
+        }
+        // ✅ Follow MerchantReference type: { id, name, email? }
+        merchantData = {
+          id: merchant.id,
+          name: merchant.name,
+          email: merchant.email || undefined
+        };
+      }
+    }
+
+    // Get outlet data if user has outlet assignment
+    if (user.outletId) {
+      const outlet = await db.outlets.findById(user.outletId);
+      if (outlet) {
+        // ✅ Follow OutletReference type: { id, name, address?, merchantId }
+        outletData = {
+          id: outlet.id,
+          name: outlet.name,
+          address: outlet.address || undefined,
+          merchantId: outlet.merchantId
+        };
       }
     }
 
@@ -69,6 +94,10 @@ export async function POST(request: NextRequest) {
           role: user.role,
           merchantId: user.merchantId,
           outletId: user.outletId,
+          // ✅ Optional: merchant object (null for ADMIN users without merchant)
+          merchant: merchantData,  // MerchantReference | null
+          // ✅ Optional: outlet object (null for ADMIN/MERCHANT users without outlet)
+          outlet: outletData,      // OutletReference | null
         },
         token,
       },

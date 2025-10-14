@@ -186,7 +186,7 @@ export default function UsersPage() {
           onUserAction={handleUserAction}
           title="User Management"
           subtitle="Manage all users across the platform"
-          showExportButton={true}
+          showExportButton={false} // Export feature - temporarily hidden, will be enabled in the future
           showAddButton={true}
           addButtonText="Add User"
           exportButtonText="Export Users"

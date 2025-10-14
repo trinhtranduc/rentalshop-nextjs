@@ -16,7 +16,6 @@ import { AuditLogDetail } from './AuditLogDetail';
 import { 
   Search,
   Filter,
-  Download,
   RefreshCw,
   Eye,
   User,
@@ -468,7 +467,7 @@ export function AuditLogViewer({
               <CardTitle className="flex items-center justify-between">
                 <span>Audit Logs ({pagination?.total || 0} total)</span>
                 <div className="flex items-center gap-2">
-                                      <Button
+                  <Button
                       variant="outline"
                       size="sm"
                       onClick={onRefresh}
@@ -477,10 +476,6 @@ export function AuditLogViewer({
                       <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                       Refresh
                     </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
                 </div>
               </CardTitle>
             </CardHeader>

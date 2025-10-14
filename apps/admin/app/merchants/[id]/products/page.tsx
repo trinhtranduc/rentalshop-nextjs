@@ -233,7 +233,7 @@ export default function MerchantProductsPage() {
           onSort={handleSort}
           title="Merchant Products"
           subtitle={`Manage products for ${merchantName}`}
-          showExportButton={true}
+          showExportButton={false} // Export feature - temporarily hidden, will be enabled in the future
           showAddButton={true}
           addButtonText="Add Product"
           exportButtonText="Export Products"
