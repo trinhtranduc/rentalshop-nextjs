@@ -39,7 +39,9 @@ export function MerchantTable({
     if (!merchant.isActive) {
       return <StatusBadge status="inactive" size="sm" />;
     }
-    return <StatusBadge status={merchant.subscriptionStatus} size="sm" />;
+    // Get status from subscription (single source of truth - always exists)
+    const status = merchant.subscription?.status;
+    return <StatusBadge status={status} size="sm" />;
   };
 
   if (merchants.length === 0) {
@@ -137,8 +139,8 @@ export function MerchantTable({
                   {/* Start Date */}
                   <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
-                      {merchant.currentSubscription?.startDate 
-                        ? new Date(merchant.currentSubscription.startDate).toLocaleDateString('en-US', {
+                      {merchant.subscription?.currentPeriodStart 
+                        ? new Date(merchant.subscription.currentPeriodStart).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'
@@ -156,8 +158,8 @@ export function MerchantTable({
                   {/* End Date */}
                   <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
-                      {merchant.currentSubscription?.endDate 
-                        ? new Date(merchant.currentSubscription.endDate).toLocaleDateString('en-US', {
+                      {merchant.subscription?.currentPeriodEnd 
+                        ? new Date(merchant.subscription.currentPeriodEnd).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'

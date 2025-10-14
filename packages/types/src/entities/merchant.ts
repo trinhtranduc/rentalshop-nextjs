@@ -47,13 +47,12 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   
   // Related entities (populated when needed)
   plan?: PlanDetails;
-  currentSubscription?: CurrentSubscription;
+  subscription?: CurrentSubscription; // ✅ Always exists (default trial)
   outlets?: OutletReference[];
   users?: UserReference[];
   customers?: CustomerReference[];
   products?: ProductReference[];
   categories?: any[];
-  subscriptions?: any[];
 }
 
 // ============================================================================

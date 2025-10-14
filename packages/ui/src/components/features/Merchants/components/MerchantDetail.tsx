@@ -124,9 +124,9 @@ export function MerchantDetail({
               price: data.merchant.plan.basePrice,
               currency: data.merchant.plan.currency
             } : null,
-            subscriptionStatus: data.merchant.currentSubscription?.status || data.merchant.subscriptionStatus || 'unknown'
+            subscriptionStatus: data.merchant.subscription?.status || 'unknown'
           }}
-          subscriptions={data.merchant.currentSubscription ? [data.merchant.currentSubscription as any] : []}
+          subscriptions={data.merchant.subscription ? [data.merchant.subscription] : []}
           plans={plans}
           currentUserRole={currentUserRole}
           onPlanChange={onPlanChange}
@@ -138,10 +138,10 @@ export function MerchantDetail({
       )}
 
       {/* Activity Timeline - Add below plan management */}
-      {data.merchant.currentSubscription && (
+      {data.merchant.subscription && (
         <MerchantSubscriptionSection
           merchantId={data.merchant.id}
-          subscription={data.merchant.currentSubscription as any}
+          subscription={data.merchant.subscription}
         />
       )}
 

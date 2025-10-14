@@ -149,19 +149,19 @@ export function MerchantPlanManagement({
   loading = false,
   currentUserRole
 }: MerchantPlanManagementProps) {
-  // Get current subscription
-  const currentSubscription = (merchant as any).currentSubscription || subscriptions[0];
+  // Get current subscription from merchant.subscription (single source of truth - always exists)
+  const currentSubscription = merchant.subscription || subscriptions[0];
 
   // Debug: Log subscription status values
   console.log('🔍 MerchantPlanManagement Debug:', {
     merchantId: merchant.id,
     merchantName: merchant.name,
-    currentSubscription: currentSubscription,
-    subscriptionStatusFromSubscription: subscriptions[0]?.status
+    subscription: currentSubscription,
+    subscriptionStatus: currentSubscription?.status
   });
 
   // Normalize subscription status to lowercase for consistent comparison
-  const subscriptionStatus = currentSubscription?.status?.toLowerCase() || 'unknown';
+  const subscriptionStatus = currentSubscription.status.toLowerCase();
   const isActiveStatus = subscriptionStatus === 'trial' || subscriptionStatus === 'active';
   const isPausedStatus = subscriptionStatus === 'paused' || subscriptionStatus === 'cancelled' || subscriptionStatus === 'expired';
   const isTrialStatus = subscriptionStatus === 'trial';
@@ -171,7 +171,7 @@ export function MerchantPlanManagement({
   // Check if current plan is Trial plan (free)
   const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === 'trial' || 
                       merchant.currentPlan?.price === 0 ||
-                      (currentSubscription?.plan?.name?.toLowerCase() === 'trial');
+                      currentSubscription.plan?.name?.toLowerCase() === 'trial';
   
   const [showChangeDialog, setShowChangeDialog] = useState(false);
   const [showRenewalModal, setShowRenewalModal] = useState(false);
