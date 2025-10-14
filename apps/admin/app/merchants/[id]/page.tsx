@@ -294,12 +294,7 @@ export default function MerchantDetailPage() {
   const merchantData = {
     merchant: {
       ...merchant,
-      currentSubscription: merchant.subscription ? {
-        ...merchant.subscription,
-        // Add aliases for date fields that component expects
-        startDate: merchant.subscription.currentPeriodStart,
-        endDate: merchant.subscription.currentPeriodEnd
-      } : null,
+      subscription: merchant.subscription,
       plan: merchant.subscription?.plan
     },
     stats: {
