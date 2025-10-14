@@ -106,143 +106,110 @@ export const OrderFilters = React.memo(function OrderFilters({
   };
 
   // ============================================================================
-  // RENDER
+  // RENDER - Compact inline filters (no card wrapper)
   // ============================================================================
   
   return (
-    <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
-      <CardContent className="pt-6 space-y-6">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            {/* Search Field */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Search Orders
-              </label>
-              <div className="relative">
-                <Input
-                  placeholder="Order #, customer name..."
-                  value={localSearch}
-                  onChange={(e) => handleSearchInput(e.target.value)}
-                  className="pl-10 pr-4 py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200"
+    <>
+      {/* Compact single-line filters */}
+          {/* Search Field - Larger width */}
+          <div className="flex-1 min-w-[280px]">
+            <div className="relative">
+              <Input
+                placeholder="Search orders..."
+                value={localSearch}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                className="pl-9 h-10"
+              />
+              <svg 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
                 />
-                <svg 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-                  />
-                </svg>
-              </div>
-            </div>
-            
-            {/* Status Filter */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Status
-              </label>
-              <Select 
-                value={(filters.status as string) || 'all'} 
-                onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
-              >
-                <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="font-medium">All Status</SelectItem>
-                  <SelectItem value={ORDER_STATUS.RESERVED}>Reserved</SelectItem>
-                  <SelectItem value={ORDER_STATUS.PICKUPED}>Picked Up</SelectItem>
-                  <SelectItem value={ORDER_STATUS.RETURNED}>Returned</SelectItem>
-                  <SelectItem value={ORDER_STATUS.COMPLETED}>Completed</SelectItem>
-                  <SelectItem value={ORDER_STATUS.CANCELLED}>Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Order Type Filter */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Order Type
-              </label>
-              <Select 
-                value={filters.orderType || 'all'} 
-                onValueChange={(value) => handleFilterChange('orderType', value === 'all' ? undefined : value)}
-              >
-                <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="font-medium">All Types</SelectItem>
-                  <SelectItem value={ORDER_TYPE.RENT}>Rental</SelectItem>
-                  <SelectItem value={ORDER_TYPE.SALE}>Sale</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Outlet Filter */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Outlet
-                </label>
-                {filters.outletId && (
-                  <Button
-                    variant="link"
-                    onClick={() => handleFilterChange('outletId', undefined)}
-                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline p-0 h-auto"
-                  >
-                    × Clear
-                  </Button>
-                )}
-              </div>
-              <Select 
-                value={filters.outletId ? filters.outletId.toString() : 'all'} 
-                onValueChange={(value) => {
-                  const newValue = value === 'all' ? undefined : parseInt(value);
-                  handleFilterChange('outletId', newValue);
-                }}
-              >
-                <SelectTrigger className="py-3 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 transition-all duration-200">
-                  <SelectValue placeholder="All Outlets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="font-medium">All Outlets</SelectItem>
-                  {loadingOutlets ? (
-                    <SelectItem value="loading" disabled>Loading outlets...</SelectItem>
-                  ) : outletError ? (
-                    <SelectItem value="error" disabled className="text-red-500">Error loading outlets</SelectItem>
-                  ) : outlets.length === 0 ? (
-                    <SelectItem value="none" disabled className="text-gray-500">No outlets available</SelectItem>
-                  ) : (
-                    outlets.map((outlet) => (
-                      <SelectItem key={outlet.id} value={outlet.id.toString()}>
-                        {outlet.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              {outletError && (
-                <p className="text-xs text-red-500 dark:text-red-400">
-                  {outletError}
-                </p>
-              )}
-              {!loadingOutlets && !outletError && outlets.length === 0 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  No outlets available for your role
-                </p>
-              )}
+              </svg>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+          
+          {/* Status Filter */}
+          <Select 
+            value={(filters.status as string) || 'all'} 
+            onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
+          >
+            <SelectTrigger className="w-[160px] h-10">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value={ORDER_STATUS.RESERVED}>Reserved</SelectItem>
+              <SelectItem value={ORDER_STATUS.PICKUPED}>Picked Up</SelectItem>
+              <SelectItem value={ORDER_STATUS.RETURNED}>Returned</SelectItem>
+              <SelectItem value={ORDER_STATUS.COMPLETED}>Completed</SelectItem>
+              <SelectItem value={ORDER_STATUS.CANCELLED}>Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Order Type Filter */}
+          <Select 
+            value={filters.orderType || 'all'} 
+            onValueChange={(value) => handleFilterChange('orderType', value === 'all' ? undefined : value)}
+          >
+            <SelectTrigger className="w-[130px] h-10">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value={ORDER_TYPE.RENT}>Rental</SelectItem>
+              <SelectItem value={ORDER_TYPE.SALE}>Sale</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Outlet Filter */}
+          <Select 
+            value={filters.outletId ? filters.outletId.toString() : 'all'} 
+            onValueChange={(value) => {
+              const newValue = value === 'all' ? undefined : parseInt(value);
+              handleFilterChange('outletId', newValue);
+            }}
+          >
+            <SelectTrigger className="w-[160px] h-10">
+              <SelectValue placeholder="Outlet" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Outlets</SelectItem>
+              {loadingOutlets ? (
+                <SelectItem value="loading" disabled>Loading...</SelectItem>
+              ) : outletError ? (
+                <SelectItem value="error" disabled>Error</SelectItem>
+              ) : outlets.length === 0 ? (
+                <SelectItem value="empty" disabled>No outlets</SelectItem>
+              ) : (
+                outlets.map((outlet) => (
+                  <SelectItem key={outlet.id} value={outlet.id.toString()}>
+                    {outlet.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          
+      {/* Clear Filters Button */}
+      {onClearFilters && (filters.status || filters.orderType || filters.outletId || localSearch) && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearFilters}
+          className="h-10"
+        >
+          Clear
+        </Button>
+      )}
+    </>
   );
 });

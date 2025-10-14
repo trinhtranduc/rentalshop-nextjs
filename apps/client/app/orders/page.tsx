@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { 
   OrdersLoading,
   PageWrapper,
@@ -8,7 +8,8 @@ import {
   PageTitle,
   Orders,
   useToast,
-  Button
+  Button,
+  type QuickFilterOption
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -47,8 +48,16 @@ export default function OrdersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError } = useToast();
+  const { toastSuccess, toastError, toastWarning } = useToast();
   const canExport = useCanExportData();
+
+  // ============================================================================
+  // QUICK FILTER STATE - Modern time-based filtering
+  // ============================================================================
+  
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string | undefined>(
+    searchParams.get('quickFilter') || 'month' // ⭐ Default to Last 30 Days
+  );
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -62,6 +71,37 @@ export default function OrdersPage() {
   const limit = parseInt(searchParams.get('limit') || '25');
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+  
+  // ============================================================================
+  // DATE FILTERS - Default to Last 30 Days (optimal performance)
+  // ============================================================================
+  
+  const getDefaultDateRange = () => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setDate(start.getDate() - 30); // ⭐ Last 30 days default
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+  };
+  
+  // Parse dates from yyyy-mm-dd format
+  const parseDateParam = (dateStr: string | null, isEndDate: boolean = false): Date => {
+    if (!dateStr) {
+      return isEndDate ? getDefaultDateRange().end : getDefaultDateRange().start;
+    }
+    
+    const date = new Date(dateStr);
+    if (isEndDate) {
+      date.setHours(23, 59, 59, 999); // End of day
+    } else {
+      date.setHours(0, 0, 0, 0); // Start of day
+    }
+    return date;
+  };
+  
+  const startDate = parseDateParam(searchParams.get('startDate'), false);
+  const endDate = parseDateParam(searchParams.get('endDate'), true);
   
   // Debug: Log URL params
   console.log('🔗 URL Params:', {
@@ -85,11 +125,13 @@ export default function OrdersPage() {
     status: (status as any) || undefined,
     orderType: (orderType as any) || undefined,
     outletId,
+    startDate, // ⭐ Always include date filters for better performance
+    endDate,   // ⭐ Always include date filters for better performance
     page,
     limit,
     sortBy,
     sortOrder
-  }), [search, status, orderType, outletId, page, limit, sortBy, sortOrder]);
+  }), [search, status, orderType, outletId, startDate, endDate, page, limit, sortBy, sortOrder]);
 
   const { data, loading, error } = useOrdersData({ filters });
   
@@ -173,6 +215,49 @@ export default function OrdersPage() {
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
     updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
   }, [sortBy, sortOrder, updateURL]);
+
+  // ============================================================================
+  // QUICK FILTER HANDLER - Modern time-based filtering
+  // ============================================================================
+  
+  // ============================================================================
+  // DATE RANGE HANDLER - Modern dropdown filter
+  // ============================================================================
+  
+  const handleDateRangeChange = useCallback((rangeId: string, start: Date, end: Date) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    // Format dates as yyyy-mm-dd (clean URL format)
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    // Set date range with simple format
+    params.set('startDate', formatDate(start));
+    params.set('endDate', formatDate(end));
+    params.set('quickFilter', rangeId);
+    params.set('page', '1'); // Reset to page 1
+    
+    setActiveQuickFilter(rangeId);
+    
+    console.log('⚡ Date range applied:', rangeId, {
+      start: formatDate(start),
+      end: formatDate(end)
+    });
+    
+    // Show warning if "All time" selected with large dataset
+    if (rangeId === 'all' && data?.total && data.total > 10000) {
+      toastWarning(
+        'Viewing All Orders',
+        `You are viewing all ${data.total.toLocaleString()} orders. This may be slow. Consider using a shorter date range for better performance.`
+      );
+    }
+    
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, pathname, router, data?.total, toastWarning]);
 
   // ============================================================================
   // ORDER ACTION HANDLERS
@@ -294,18 +379,24 @@ export default function OrdersPage() {
       merchantName: order.outlet?.merchant?.name || 'Unknown',
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
-      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
-      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : undefined,
-      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : undefined,
-      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : undefined,
+      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : null,
+      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : null,
+      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : null,
+      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : null,
       createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
       updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
       orderItems: [],
       payments: [],
       // Additional fields required by OrderSearchResult
       isReadyToDeliver: false,
-      customer: order.customer,
-      outlet: order.outlet
+      customer: order.customer ? {
+        id: order.customer.id,
+        firstName: order.customer.firstName,
+        lastName: order.customer.lastName,
+        email: order.customer.email || null,
+        phone: order.customer.phone
+      } : null,
+      outlet: order.outlet || null
     }));
 
     return {
@@ -392,6 +483,10 @@ export default function OrdersPage() {
           onOrderAction={handleOrderAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
+          onDateRangeChange={handleDateRangeChange}     // 🆕 Modern dropdown filter
+          activeQuickFilter={activeQuickFilter}          // 🆕 Active filter state
+          showQuickFilters={true}                         // 🆕 Show date range filter
+          filterStyle="dropdown"                          // 🆕 Dropdown style (Shopify/Stripe)
           showStats={false}
         />
       </div>

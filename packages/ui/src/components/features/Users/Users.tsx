@@ -6,7 +6,9 @@ import {
   PageContent,
   Pagination,
   EmptyState,
-  Button
+  Button,
+  Card,
+  CardContent
 } from '@rentalshop/ui';
 import { UserPageHeader, UserFilters as UserFiltersComponent, UserTable } from './components';
 import { 
@@ -147,13 +149,19 @@ export const Users: React.FC<UsersProps> = ({
           exportButtonText={exportButtonText}
         />
 
-        {/* Filters */}
-        <UserFiltersComponent
-          filters={filters}
-          onFiltersChange={memoizedOnFiltersChange}
-          onSearchChange={memoizedOnSearchChange}
-          onClearFilters={memoizedOnClearFilters}
-        />
+        {/* Compact Filters - All in one row */}
+        <Card className="shadow-sm border-border">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <UserFiltersComponent
+                filters={filters}
+                onFiltersChange={memoizedOnFiltersChange}
+                onSearchChange={memoizedOnSearchChange}
+                onClearFilters={memoizedOnClearFilters}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Scrollable Table Section */}

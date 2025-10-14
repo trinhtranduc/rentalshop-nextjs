@@ -249,7 +249,8 @@ export default function AdminDashboard() {
     // Filter subscriptions that were created/successful in the time period
     const subscriptionsInPeriod = subscriptions.filter((s: any) => {
       const createdAt = new Date(s.createdAt);
-      return createdAt >= startDate && createdAt <= endDate && ['active', 'trial'].includes(s.status);
+      const status = String(s.status).toLowerCase();
+      return createdAt >= startDate && createdAt <= endDate && ['active', 'trial'].includes(status);
     });
     
     if (timePeriod === 'today') {
@@ -630,18 +631,19 @@ export default function AdminDashboard() {
         const subscriptions = Array.isArray(subsData) ? subsData : subsData.data || [];
         
         const stats = {
-          active: subscriptions.filter((s: any) => s.status === 'active').length,
-          trial: subscriptions.filter((s: any) => s.status === 'trial').length,
+          active: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'active').length,
+          trial: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'trial').length,
           expiring: subscriptions.filter((s: any) => {
             if (!s.currentPeriodEnd) return false;
             const daysUntilExpiry = Math.ceil((new Date(s.currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 7 && daysUntilExpiry > 0;
           }).length,
-          cancelled: subscriptions.filter((s: any) => s.status === 'cancelled').length,
+          cancelled: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'cancelled').length,
           totalRevenue: subscriptions
             .filter((s: any) => {
               const createdAt = new Date(s.createdAt);
-              return createdAt >= startDate && createdAt <= endDate && ['active', 'trial'].includes(s.status);
+              const status = String(s.status).toLowerCase();
+              return createdAt >= startDate && createdAt <= endDate && ['active', 'trial'].includes(status);
             })
             .reduce((sum: number, s: any) => sum + (s.amount || 0), 0)
         };
@@ -880,9 +882,6 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle>
                   Subscription Revenue by Creation Date
-                  {timePeriod === 'today' && ' (Today)'}
-                  {timePeriod === 'month' && ' (This Month)'}
-                  {timePeriod === 'year' && ' (This Year)'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -894,9 +893,6 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle>
                   Total Merchants Registered
-                  {timePeriod === 'today' && ' (Today)'}
-                  {timePeriod === 'month' && ' (This Month)'}
-                  {timePeriod === 'year' && ' (This Year)'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
