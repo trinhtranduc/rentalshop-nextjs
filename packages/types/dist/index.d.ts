@@ -443,7 +443,6 @@ interface Merchant extends BaseEntity, Address, ContactInfo {
     taxId?: string;
     isActive: boolean;
     planId?: number;
-    subscriptionStatus: 'active' | 'trial' | 'expired' | 'cancelled';
     totalRevenue: number;
     lastActiveAt?: Date | string;
     pricingConfig?: MerchantPricingConfig | string;
@@ -560,7 +559,6 @@ interface MerchantStats {
     name: string;
     email: string;
     isActive: boolean;
-    subscriptionStatus: string;
     planName?: string;
     subscriptionEndDate?: Date | string;
     totalRevenue: number;
@@ -2204,7 +2202,6 @@ interface Subscription {
         id: number;
         name: string;
         email: string;
-        subscriptionStatus: string;
     };
     plan: Plan;
 }

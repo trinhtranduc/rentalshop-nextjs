@@ -51,7 +51,6 @@ model Merchant {
   website            String?
   description        String?
   planId             Int?
-  subscriptionStatus String        @default("trial")
   totalRevenue       Float         @default(0)
   lastActiveAt       DateTime?
   isActive           Boolean       @default(true)
@@ -70,7 +69,6 @@ model Merchant {
 
   @@index([name])
   @@index([email])
-  @@index([subscriptionStatus])
   @@index([planId])
 }
 

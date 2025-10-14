@@ -24970,16 +24970,15 @@ function MerchantPlanManagement({
   console.log("\u{1F50D} MerchantPlanManagement Debug:", {
     merchantId: merchant.id,
     merchantName: merchant.name,
-    subscriptionStatus: merchant.subscriptionStatus,
     currentSubscription,
     subscriptionStatusFromSubscription: subscriptions[0]?.status
   });
-  const normalizedStatus = merchant.subscriptionStatus?.toLowerCase() || "unknown";
-  const isActiveStatus = normalizedStatus === "trial" || normalizedStatus === "active";
-  const isPausedStatus = normalizedStatus === "paused" || normalizedStatus === "cancelled" || normalizedStatus === "expired";
-  const isTrialStatus = normalizedStatus === "trial";
-  const isActivePaidStatus = normalizedStatus === "active";
-  const isPaused = normalizedStatus === "paused";
+  const subscriptionStatus = currentSubscription?.status?.toLowerCase() || "unknown";
+  const isActiveStatus = subscriptionStatus === "trial" || subscriptionStatus === "active";
+  const isPausedStatus = subscriptionStatus === "paused" || subscriptionStatus === "cancelled" || subscriptionStatus === "expired";
+  const isTrialStatus = subscriptionStatus === "trial";
+  const isActivePaidStatus = subscriptionStatus === "active";
+  const isPaused = subscriptionStatus === "paused";
   const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === "trial" || merchant.currentPlan?.price === 0 || currentSubscription?.plan?.name?.toLowerCase() === "trial";
   const [showChangeDialog, setShowChangeDialog] = useState55(false);
   const [showRenewalModal, setShowRenewalModal] = useState55(false);
@@ -25175,7 +25174,7 @@ function MerchantPlanManagement({
             /* @__PURE__ */ jsx132("h3", { className: "text-lg font-semibold", children: merchant.currentPlan?.name || currentSubscription?.plan?.name || "No plan assigned" }),
             /* @__PURE__ */ jsx132("p", { className: "text-sm text-gray-500", children: merchant.currentPlan ? formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency) + "/month" : currentSubscription ? formatPrice(currentSubscription.amount, currentSubscription.currency) + "/month" : "No pricing available" })
           ] }),
-          /* @__PURE__ */ jsx132("div", { className: "flex flex-col items-end gap-2", children: /* @__PURE__ */ jsx132("div", { className: `px-3 py-1.5 rounded-lg font-semibold text-sm ${currentSubscription?.status === "ACTIVE" ? "bg-green-100 text-green-800" : currentSubscription?.status === "TRIAL" ? "bg-blue-100 text-blue-800" : currentSubscription?.status === "PAUSED" ? "bg-orange-100 text-orange-800" : currentSubscription?.status === "CANCELLED" ? "bg-red-100 text-red-800" : currentSubscription?.status === "EXPIRED" ? "bg-gray-100 text-gray-800" : "bg-gray-100 text-gray-800"}`, children: currentSubscription?.status || merchant.subscriptionStatus || "Unknown" }) })
+          /* @__PURE__ */ jsx132("div", { className: "flex flex-col items-end gap-2", children: /* @__PURE__ */ jsx132("div", { className: `px-3 py-1.5 rounded-lg font-semibold text-sm ${currentSubscription?.status === "ACTIVE" ? "bg-green-100 text-green-800" : currentSubscription?.status === "TRIAL" ? "bg-blue-100 text-blue-800" : currentSubscription?.status === "PAUSED" ? "bg-orange-100 text-orange-800" : currentSubscription?.status === "CANCELLED" ? "bg-red-100 text-red-800" : currentSubscription?.status === "EXPIRED" ? "bg-gray-100 text-gray-800" : "bg-gray-100 text-gray-800"}`, children: currentSubscription?.status || "Unknown" }) })
         ] }),
         currentSubscription && /* @__PURE__ */ jsxs117("div", { className: "p-4 bg-gray-50 border rounded-lg space-y-2", children: [
           /* @__PURE__ */ jsxs117("div", { className: "flex items-center justify-between text-sm", children: [

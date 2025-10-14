@@ -37,7 +37,6 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   
   // Subscription and plan information
   planId?: number;
-  subscriptionStatus: 'active' | 'trial' | 'expired' | 'cancelled';
   
   // Business metrics
   totalRevenue: number;
@@ -183,7 +182,6 @@ export interface MerchantStats {
   name: string;
   email: string;
   isActive: boolean;
-  subscriptionStatus: string;
   planName?: string;
   subscriptionEndDate?: Date | string;
   totalRevenue: number;
