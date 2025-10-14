@@ -1,6 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui';
-import { Search, X } from 'lucide-react';
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui';
 
 interface MerchantFiltersData {
   search: string;
@@ -17,6 +16,13 @@ interface MerchantFiltersProps {
   onClearFilters?: () => void;
 }
 
+/**
+ * ✅ COMPACT MERCHANT FILTERS (Following Orders pattern)
+ * - No card wrapper (parent wraps)
+ * - h-10 height for all inputs
+ * - No labels, clean inline layout
+ * - Responsive flex-wrap
+ */
 export function MerchantFilters({ 
   filters, 
   onFiltersChange, 
@@ -35,81 +41,73 @@ export function MerchantFilters({
     onFiltersChange({ ...filters, plan: value });
   };
 
-  const handleClearFilters = () => {
-    if (onClearFilters) {
-      onClearFilters();
-    }
-  };
-
   return (
-    <Card className="mb-6 shadow-sm border-gray-200 dark:border-gray-700">
-      <CardContent className="p-6">
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-          {/* Search */}
-          <div className="flex-1 w-full lg:w-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search merchants by name or email..."
-                value={filters.search}
-                onChange={handleSearchChange}
-                className="pl-10 w-full lg:w-80"
-              />
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3 items-center">
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</label>
-              <Select value={filters.status} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="trial">Trial</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Plan Filter */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Plan:</label>
-              <Select value={filters.plan} onValueChange={handlePlanChange}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="All Plans" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Plans</SelectItem>
-                  <SelectItem value="Basic">Basic</SelectItem>
-                  <SelectItem value="Professional">Professional</SelectItem>
-                  <SelectItem value="Enterprise">Enterprise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Clear Filters */}
-            {onClearFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearFilters}
-                className="h-9 px-3"
-              >
-                <X className="w-4 h-4 mr-1" />
-                Clear
-              </Button>
-            )}
-          </div>
+    <>
+      {/* Search Field */}
+      <div className="flex-1 min-w-[280px]">
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search merchants..."
+            value={filters.search}
+            onChange={handleSearchChange}
+            className="pl-9 h-10"
+          />
+          <svg 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+            />
+          </svg>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Status Filter */}
+      <Select value={filters.status} onValueChange={handleStatusChange}>
+        <SelectTrigger className="w-[150px] h-10">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Status</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="trial">Trial</SelectItem>
+          <SelectItem value="expired">Expired</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Plan Filter */}
+      <Select value={filters.plan} onValueChange={handlePlanChange}>
+        <SelectTrigger className="w-[160px] h-10">
+          <SelectValue placeholder="Plan" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Plans</SelectItem>
+          <SelectItem value="Basic">Basic</SelectItem>
+          <SelectItem value="Professional">Professional</SelectItem>
+          <SelectItem value="Enterprise">Enterprise</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Clear Filters */}
+      {onClearFilters && (filters.search || filters.status !== 'all' || filters.plan !== 'all') && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearFilters}
+          className="h-10"
+        >
+          Clear
+        </Button>
+      )}
+    </>
   );
 }
 

@@ -1,8 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Input, Card, CardContent, Button } from '@rentalshop/ui';
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Input, Button } from '@rentalshop/ui';
 import type { CategorySearchParams as CategoryFiltersType } from '@rentalshop/types';
 
 interface CategoryFiltersProps {
@@ -14,66 +13,53 @@ interface CategoryFiltersProps {
   currentSort?: { field: string; order: 'asc' | 'desc' };
 }
 
+/**
+ * ✅ COMPACT CATEGORY FILTERS (Following Orders pattern)
+ */
 export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
   filters,
-  onFiltersChange,
   onSearchChange,
-  onClearFilters,
-  onSortChange,
-  currentSort
+  onClearFilters
 }) => {
-  const handleSortToggle = (field: string) => {
-    if (!onSortChange) return;
-    
-    const newOrder = currentSort?.field === field && currentSort?.order === 'asc' ? 'desc' : 'asc';
-    onSortChange(field, newOrder);
-  };
-
   return (
-    <Card className="bg-white">
-      <CardContent className="p-4">
-        <div className="flex items-center space-x-4">
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search categories..."
-              value={filters.search || ''}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Clear Filters Button */}
-          {(filters.search) && (
-            <Button
-              onClick={onClearFilters}
-              variant="ghost"
-              size="sm"
-            >
-              Clear
-            </Button>
-          )}
-        </div>
-
-        {/* Status Filter - Hidden */}
-        {/* <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium">Status:</label>
-          <select
-            value={filters.isActive ?? ''}
-            onChange={(e) => onFiltersChange({
-              ...filters,
-              isActive: e.target.value === '' ? undefined : e.target.value === 'true'
-            })}
-            className="px-3 py-1 border rounded-md text-sm"
+    <>
+      {/* Search Field */}
+      <div className="flex-1 min-w-[280px]">
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search categories..."
+            value={filters.search || ''}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9 h-10"
+          />
+          <svg 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
           >
-            <option value="">All</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
-        </div> */}
-      </CardContent>
-    </Card>
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+            />
+          </svg>
+        </div>
+      </div>
+
+      {/* Clear Filters */}
+      {filters.search && (
+        <Button
+          onClick={onClearFilters}
+          variant="outline"
+          size="sm"
+          className="h-10"
+        >
+          Clear
+        </Button>
+      )}
+    </>
   );
 };

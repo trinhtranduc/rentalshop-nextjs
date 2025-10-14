@@ -3,7 +3,9 @@
 import React from 'react';
 import { 
   Pagination,
-  EmptyState
+  EmptyState,
+  Card,
+  CardContent
 } from '@rentalshop/ui';
 import { OutletTable, OutletSearch } from './components';
 import { Building2 } from 'lucide-react';
@@ -63,11 +65,17 @@ export const Outlets: React.FC<OutletsProps> = ({
     <div className={`flex flex-col h-full ${className}`}>
       {/* Fixed Search Section */}
       <div className="flex-shrink-0 mb-4">
-        <OutletSearch
-          value={filters.q || ''}
-          onChange={memoizedOnSearchChange}
-          onClear={() => memoizedOnSearchChange('')}
-        />
+        <Card className="shadow-sm border-border">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <OutletSearch
+                value={filters.q || ''}
+                onChange={memoizedOnSearchChange}
+                onClear={() => memoizedOnSearchChange('')}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Scrollable Table Section */}

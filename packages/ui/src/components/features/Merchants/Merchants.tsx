@@ -4,7 +4,7 @@ import {
   MerchantFilters,
   MerchantTable
 } from './components';
-import { Pagination } from '../../ui';
+import { Pagination, Card, CardContent } from '../../ui';
 import type { Merchant } from '@rentalshop/types';
 
 interface MerchantFiltersData {
@@ -86,12 +86,19 @@ export function Merchants({
       <div className="flex-shrink-0 space-y-4">
         <MerchantListHeader stats={data.stats} />
         
-        <MerchantFilters 
-          filters={filters}
-          onFiltersChange={memoizedOnFiltersChange}
-          onSearchChange={memoizedOnSearchChange}
-          onClearFilters={memoizedOnClearFilters}
-        />
+        {/* Compact Filters - All in one row */}
+        <Card className="shadow-sm border-border">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <MerchantFilters 
+                filters={filters}
+                onFiltersChange={memoizedOnFiltersChange}
+                onSearchChange={memoizedOnSearchChange}
+                onClearFilters={memoizedOnClearFilters}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Scrollable Table Section */}

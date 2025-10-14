@@ -3,7 +3,9 @@
 import React from 'react';
 import { 
   Pagination,
-  EmptyState
+  EmptyState,
+  Card,
+  CardContent
 } from '@rentalshop/ui';
 import { CategoryTable, CategorySearch } from './components';
 import { FolderOpen } from 'lucide-react';
@@ -63,11 +65,17 @@ export const Categories: React.FC<CategoriesProps> = ({
     <div className={`flex flex-col h-full ${className}`}>
       {/* Fixed Search Section */}
       <div className="flex-shrink-0 mb-4">
-        <CategorySearch
-          value={filters.q || ''}
-          onChange={memoizedOnSearchChange}
-          onClear={() => memoizedOnSearchChange('')}
-        />
+        <Card className="shadow-sm border-border">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <CategorySearch
+                value={filters.q || ''}
+                onChange={memoizedOnSearchChange}
+                onClear={() => memoizedOnSearchChange('')}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Scrollable Table Section */}

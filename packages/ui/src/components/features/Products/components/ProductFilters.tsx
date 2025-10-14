@@ -56,87 +56,86 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
   const hasActiveFilters = !!(filters.search || filters.outletId || filters.categoryId);
 
   // ============================================================================
-  // RENDER
+  // RENDER - Compact inline filters (Following Orders pattern)
   // ============================================================================
 
   return (
-    <Card>
-      <CardHeader className="pb-1">
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Search</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search by name, barcode..."
-                value={filters.search || ''}
-                onChange={handleSearchChange}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          {/* Outlet Filter */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Outlet</label>
-            <Select
-              value={filters.outletId?.toString() || 'all'}
-              onValueChange={handleOutletChange}
-              disabled={loadingOutlets}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All outlets" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Outlets</SelectItem>
-                {outlets.map((outlet) => (
-                  <SelectItem key={outlet.id} value={outlet.id.toString()}>
-                    {outlet.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Category Filter */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Category</label>
-            <Select
-              value={filters.categoryId?.toString() || 'all'}
-              onValueChange={handleCategoryChange}
-              disabled={loadingCategories}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <>
+      {/* Search Field */}
+      <div className="flex-1 min-w-[280px]">
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search products..."
+            value={filters.search || ''}
+            onChange={handleSearchChange}
+            className="pl-9 h-10"
+          />
+          <svg 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+            />
+          </svg>
         </div>
+      </div>
 
-        {/* Clear Filters Button */}
-        {hasActiveFilters && onClearFilters && (
-          <div className="mt-4 pt-4 border-t">
-            <button
-              onClick={onClearFilters}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-            >
-              Clear all filters
-            </button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Outlet Filter */}
+      <Select
+        value={filters.outletId?.toString() || 'all'}
+        onValueChange={handleOutletChange}
+        disabled={loadingOutlets}
+      >
+        <SelectTrigger className="w-[160px] h-10">
+          <SelectValue placeholder="Outlet" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Outlets</SelectItem>
+          {outlets.map((outlet) => (
+            <SelectItem key={outlet.id} value={outlet.id.toString()}>
+              {outlet.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Category Filter */}
+      <Select
+        value={filters.categoryId?.toString() || 'all'}
+        onValueChange={handleCategoryChange}
+        disabled={loadingCategories}
+      >
+        <SelectTrigger className="w-[160px] h-10">
+          <SelectValue placeholder="Category" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Categories</SelectItem>
+          {categories.map((category) => (
+            <SelectItem key={category.id} value={category.id.toString()}>
+              {category.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Clear Filters */}
+      {hasActiveFilters && onClearFilters && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearFilters}
+          className="h-10"
+        >
+          Clear
+        </Button>
+      )}
+    </>
   );
 }

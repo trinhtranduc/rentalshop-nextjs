@@ -1,8 +1,5 @@
 import React from 'react';
-import { Input } from '../../../ui/input';
-import { Card, CardContent } from '../../../ui/card';
-import { Button } from '../../../ui/button';
-import { Search, X } from 'lucide-react';
+import { Input, Button } from '@rentalshop/ui';
 
 interface CategorySearchProps {
   value: string;
@@ -10,41 +7,50 @@ interface CategorySearchProps {
   onClear: () => void;
 }
 
+/**
+ * ✅ COMPACT CATEGORY SEARCH (Following Orders pattern)
+ */
 export function CategorySearch({ value, onChange, onClear }: CategorySearchProps) {
   return (
-    <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-      <CardContent className="pt-6 space-y-4">
-        <div className="flex justify-between items-end gap-4">
-          <div className="space-y-2 flex-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Search Categories
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <Input
-                type="text"
-                placeholder="Search by category name..."
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="pl-10 pr-10"
-              />
-              {value && (
-                <Button
-                  onClick={onClear}
-                  variant="ghost"
-                  size="icon"
-                  className="absolute inset-y-0 right-0 h-full w-10"
-                >
-                  <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                </Button>
-              )}
-            </div>
-          </div>
+    <>
+      {/* Search Field */}
+      <div className="flex-1 min-w-[280px]">
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search categories..."
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="pl-9 h-10"
+          />
+          <svg 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+            />
+          </svg>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Clear Button */}
+      {value && (
+        <Button
+          onClick={onClear}
+          variant="outline"
+          size="sm"
+          className="h-10"
+        >
+          Clear
+        </Button>
+      )}
+    </>
   );
 }
 
