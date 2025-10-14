@@ -426,7 +426,7 @@ export function MerchantPlanManagement({
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Period:</span>
                     <span className="font-medium">
-                      {formatDateTimeLong((currentSubscription as any).startDate)} - {formatDateTimeLong((currentSubscription as any).endDate)}
+                      {formatDateTimeLong(currentSubscription.currentPeriodStart)} - {formatDateTimeLong(currentSubscription.currentPeriodEnd)}
                     </span>
                   </div>
                   
@@ -585,7 +585,7 @@ export function MerchantPlanManagement({
                   <div>
                     <p className="font-medium">{(subscription as any).planName || 'Unknown Plan'}</p>
                     <p className="text-sm text-gray-500">
-                      {formatDate((subscription as any).startDate)} - {(subscription as any).endDate ? formatDate((subscription as any).endDate) : 'N/A'}
+                      {formatDate(subscription.currentPeriodStart)} - {subscription.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : 'N/A'}
                     </p>
                     {(subscription as any).changeReason && (
                       <p className="text-xs text-gray-400 mt-1">
