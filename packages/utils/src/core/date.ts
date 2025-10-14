@@ -92,8 +92,8 @@ export const formatDateTimeLong = (date: Date | string | null | undefined): stri
   try {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
