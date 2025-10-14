@@ -169,9 +169,8 @@ export function MerchantPlanManagement({
   const isPaused = subscriptionStatus === 'paused';
   
   // Check if current plan is Trial plan (free)
-  const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === 'trial' || 
-                      merchant.currentPlan?.price === 0 ||
-                      currentSubscription.plan?.name?.toLowerCase() === 'trial';
+  const isTrialPlan = currentSubscription.plan?.name?.toLowerCase() === 'trial' || 
+                      currentSubscription.plan?.basePrice === 0;
   
   const [showChangeDialog, setShowChangeDialog] = useState(false);
   const [showRenewalModal, setShowRenewalModal] = useState(false);
@@ -388,18 +387,16 @@ export function MerchantPlanManagement({
           </div>
         </CardHeader>
         <CardContent>
-          {(merchant.currentPlan || currentSubscription) ? (
+          {currentSubscription ? (
             <div className="space-y-4">
               {/* Plan Name, Price & Status */}
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">
-                    {merchant.currentPlan?.name || currentSubscription?.plan?.name || 'No plan assigned'}
+                    {currentSubscription?.plan?.name || 'No plan assigned'}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {merchant.currentPlan ? 
-                      formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency) + '/month' :
-                      currentSubscription ? 
+                    {currentSubscription ? 
                         formatPrice(currentSubscription.amount, currentSubscription.currency) + '/month' :
                         'No pricing available'
                     }
@@ -618,8 +615,8 @@ export function MerchantPlanManagement({
           subscription={{
             id: currentSubscription.id,
             merchantName: merchant.name,
-            planName: merchant.currentPlan?.name || 'Unknown Plan',
-            amount: merchant.currentPlan?.price || currentSubscription.amount || 0,
+            planName: currentSubscription.plan?.name || 'Unknown Plan',
+            amount: currentSubscription.plan?.basePrice || currentSubscription.amount || 0,
             currency: currentSubscription.currency || 'USD',
             currentPeriodEnd: currentSubscription.currentPeriodEnd 
               ? new Date(currentSubscription.currentPeriodEnd)
@@ -645,12 +642,12 @@ export function MerchantPlanManagement({
 
           <div className="space-y-6">
             {/* Current Plan Display */}
-            {merchant.currentPlan && (
+            {currentSubscription?.plan && (
               <div className="p-4 bg-gray-50 border rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Current Plan</p>
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-lg">{merchant.currentPlan.name}</p>
-                  <p className="font-semibold text-lg">{formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency)}/month</p>
+                  <p className="font-semibold text-lg">{currentSubscription.plan.name}</p>
+                  <p className="font-semibold text-lg">{formatPrice(currentSubscription.plan.basePrice, currentSubscription.plan.currency)}/month</p>
                 </div>
               </div>
             )}

@@ -37,11 +37,11 @@ export function MerchantTable({
 
   const getStatusBadge = (merchant: Merchant) => {
     if (!merchant.isActive) {
-      return <StatusBadge status="inactive" size="sm" />;
+      return <StatusBadge status="inactive" type="entity" size="sm" />;
     }
     // Get status from subscription (single source of truth - always exists)
     const status = merchant.subscription?.status;
-    return <StatusBadge status={status} size="sm" />;
+    return <StatusBadge status={status} type="subscription" size="sm" />;
   };
 
   if (merchants.length === 0) {
@@ -117,7 +117,7 @@ export function MerchantTable({
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
                       <div className="text-sm font-medium text-text-primary">
-                        {merchant.plan?.name || (merchant.planId ? `Plan ${merchant.planId}` : 'No Plan')}
+                        {merchant.subscription?.plan?.name || 'No Plan'}
                       </div>
                       {getStatusBadge(merchant)}
                     </div>

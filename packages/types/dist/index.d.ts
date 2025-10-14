@@ -480,25 +480,26 @@ interface PlanDetails {
 interface CurrentSubscription {
     id: number;
     status: string;
-    startDate: Date | string;
-    endDate?: Date | string;
-    nextBillingDate?: Date | string;
+    currentPeriodStart: Date | string;
+    currentPeriodEnd: Date | string;
+    trialStart?: Date | string;
+    trialEnd?: Date | string;
     amount: number;
     currency: string;
-    autoRenew: boolean;
+    interval: string;
+    period: number;
+    discount: number;
+    savings: number;
+    cancelAtPeriodEnd: boolean;
+    canceledAt?: Date | string;
+    cancelReason?: string;
     plan?: {
         id: number;
         name: string;
+        description: string;
         basePrice: number;
         currency: string;
-    };
-    planVariant?: {
-        id: number;
-        name: string;
-        duration: number;
-        price: number;
-        discount: number;
-        savings: number;
+        trialDays: number;
     };
 }
 /**

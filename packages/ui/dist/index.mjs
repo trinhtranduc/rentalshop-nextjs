@@ -20534,10 +20534,10 @@ function MerchantTable({
   const [openMenuId, setOpenMenuId] = useState42(null);
   const getStatusBadge = (merchant) => {
     if (!merchant.isActive) {
-      return /* @__PURE__ */ jsx114(StatusBadge, { status: "inactive", size: "sm" });
+      return /* @__PURE__ */ jsx114(StatusBadge, { status: "inactive", type: "entity", size: "sm" });
     }
     const status = merchant.subscription?.status;
-    return /* @__PURE__ */ jsx114(StatusBadge, { status, size: "sm" });
+    return /* @__PURE__ */ jsx114(StatusBadge, { status, type: "subscription", size: "sm" });
   };
   if (merchants.length === 0) {
     return /* @__PURE__ */ jsx114(Card2, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx114(CardContent2, { className: "text-center py-12", children: /* @__PURE__ */ jsxs100("div", { className: "text-text-tertiary", children: [
@@ -20568,7 +20568,7 @@ function MerchantTable({
             ] })
           ] }) }),
           /* @__PURE__ */ jsx114("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsxs100("div", { className: "flex flex-col gap-1", children: [
-            /* @__PURE__ */ jsx114("div", { className: "text-sm font-medium text-text-primary", children: merchant.plan?.name || (merchant.planId ? `Plan ${merchant.planId}` : "No Plan") }),
+            /* @__PURE__ */ jsx114("div", { className: "text-sm font-medium text-text-primary", children: merchant.subscription?.plan?.name || "No Plan" }),
             getStatusBadge(merchant)
           ] }) }),
           /* @__PURE__ */ jsx114("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx114("div", { className: "text-sm text-text-primary", children: merchant.createdAt ? new Date(merchant.createdAt).toLocaleDateString("en-US", {
@@ -24983,7 +24983,7 @@ function MerchantPlanManagement({
   const isTrialStatus = subscriptionStatus === "trial";
   const isActivePaidStatus = subscriptionStatus === "active";
   const isPaused = subscriptionStatus === "paused";
-  const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === "trial" || merchant.currentPlan?.price === 0 || currentSubscription.plan?.name?.toLowerCase() === "trial";
+  const isTrialPlan = currentSubscription.plan?.name?.toLowerCase() === "trial" || currentSubscription.plan?.basePrice === 0;
   const [showChangeDialog, setShowChangeDialog] = useState55(false);
   const [showRenewalModal, setShowRenewalModal] = useState55(false);
   const [showCancelDialog, setShowCancelDialog] = useState55(false);
@@ -25172,11 +25172,11 @@ function MerchantPlanManagement({
           }
         )
       ] }) }),
-      /* @__PURE__ */ jsx132(CardContent2, { children: merchant.currentPlan || currentSubscription ? /* @__PURE__ */ jsxs117("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsx132(CardContent2, { children: currentSubscription ? /* @__PURE__ */ jsxs117("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs117("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs117("div", { children: [
-            /* @__PURE__ */ jsx132("h3", { className: "text-lg font-semibold", children: merchant.currentPlan?.name || currentSubscription?.plan?.name || "No plan assigned" }),
-            /* @__PURE__ */ jsx132("p", { className: "text-sm text-gray-500", children: merchant.currentPlan ? formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency) + "/month" : currentSubscription ? formatPrice(currentSubscription.amount, currentSubscription.currency) + "/month" : "No pricing available" })
+            /* @__PURE__ */ jsx132("h3", { className: "text-lg font-semibold", children: currentSubscription?.plan?.name || "No plan assigned" }),
+            /* @__PURE__ */ jsx132("p", { className: "text-sm text-gray-500", children: currentSubscription ? formatPrice(currentSubscription.amount, currentSubscription.currency) + "/month" : "No pricing available" })
           ] }),
           /* @__PURE__ */ jsx132("div", { className: "flex flex-col items-end gap-2", children: /* @__PURE__ */ jsx132("div", { className: `px-3 py-1.5 rounded-lg font-semibold text-sm ${currentSubscription?.status === "ACTIVE" ? "bg-green-100 text-green-800" : currentSubscription?.status === "TRIAL" ? "bg-blue-100 text-blue-800" : currentSubscription?.status === "PAUSED" ? "bg-orange-100 text-orange-800" : currentSubscription?.status === "CANCELLED" ? "bg-red-100 text-red-800" : currentSubscription?.status === "EXPIRED" ? "bg-gray-100 text-gray-800" : "bg-gray-100 text-gray-800"}`, children: currentSubscription?.status || "Unknown" }) })
         ] }),
@@ -25345,8 +25345,8 @@ function MerchantPlanManagement({
         subscription: {
           id: currentSubscription.id,
           merchantName: merchant.name,
-          planName: merchant.currentPlan?.name || "Unknown Plan",
-          amount: merchant.currentPlan?.price || currentSubscription.amount || 0,
+          planName: currentSubscription.plan?.name || "Unknown Plan",
+          amount: currentSubscription.plan?.basePrice || currentSubscription.amount || 0,
           currency: currentSubscription.currency || "USD",
           currentPeriodEnd: currentSubscription.currentPeriodEnd ? new Date(currentSubscription.currentPeriodEnd) : /* @__PURE__ */ new Date()
         },
@@ -25366,12 +25366,12 @@ function MerchantPlanManagement({
         ] })
       ] }),
       /* @__PURE__ */ jsxs117("div", { className: "space-y-6", children: [
-        merchant.currentPlan && /* @__PURE__ */ jsxs117("div", { className: "p-4 bg-gray-50 border rounded-lg", children: [
+        currentSubscription?.plan && /* @__PURE__ */ jsxs117("div", { className: "p-4 bg-gray-50 border rounded-lg", children: [
           /* @__PURE__ */ jsx132("p", { className: "text-sm text-gray-600 mb-1", children: "Current Plan" }),
           /* @__PURE__ */ jsxs117("div", { className: "flex items-center justify-between", children: [
-            /* @__PURE__ */ jsx132("p", { className: "font-semibold text-lg", children: merchant.currentPlan.name }),
+            /* @__PURE__ */ jsx132("p", { className: "font-semibold text-lg", children: currentSubscription.plan.name }),
             /* @__PURE__ */ jsxs117("p", { className: "font-semibold text-lg", children: [
-              formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency),
+              formatPrice(currentSubscription.plan.basePrice, currentSubscription.plan.currency),
               "/month"
             ] })
           ] })

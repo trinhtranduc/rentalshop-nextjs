@@ -141,22 +141,33 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     prisma.merchant.findMany({
       where,
       include: {
-        Plan: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            basePrice: true,
-            currency: true
-          }
-        },
         subscription: {
           select: {
             id: true,
             status: true,
             currentPeriodStart: true,
             currentPeriodEnd: true,
-            amount: true
+            trialStart: true,
+            trialEnd: true,
+            amount: true,
+            currency: true,
+            interval: true,
+            period: true,
+            discount: true,
+            savings: true,
+            cancelAtPeriodEnd: true,
+            canceledAt: true,
+            cancelReason: true,
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                basePrice: true,
+                currency: true,
+                trialDays: true
+              }
+            }
           }
         },
         _count: {
