@@ -17,7 +17,8 @@ import { CardClean,
   CardContent,
   IncomeChart,
   OrderChart,
-  Badge
+  Badge,
+  StatusBadge
 } from '@rentalshop/ui';
 import { 
   AdminPageHeader,
@@ -934,13 +935,11 @@ export default function AdminDashboard() {
                           <div className="text-xs text-gray-500">
                             {new Date(merchant.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </div>
-                          <Badge className={`text-xs ${
-                            merchant.subscriptionStatus === 'active' ? 'bg-green-100 text-green-800' :
-                            merchant.subscriptionStatus === 'trial' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {merchant.subscriptionStatus}
-                          </Badge>
+                          <StatusBadge 
+                            status={merchant.subscriptionStatus} 
+                            type="subscription" 
+                            size="sm" 
+                          />
                         </div>
                       </div>
                     ))}

@@ -189,7 +189,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
       description: merchant.description,
       isActive: merchant.isActive,
       planId: merchant.planId,
-      subscription: merchant.subscription, // ✅ Include subscription object (single source of truth)
+      subscription: merchant.subscription, // ✅ subscription.plan contains plan info (single source of truth)
       outletsCount: outletCountMap[merchant.id] || 0,
       usersCount: userCountMap[merchant.id] || 0,
       productsCount: productCountMap[merchant.id] || 0,
