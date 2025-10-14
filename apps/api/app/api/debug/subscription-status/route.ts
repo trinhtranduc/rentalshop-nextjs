@@ -4,6 +4,7 @@ import { prisma } from '@rentalshop/database';
 /**
  * DEBUG ENDPOINT: Check subscription status in database
  * GET /api/debug/subscription-status?merchantId=1
+ * No auth required for debugging
  */
 export async function GET(request: NextRequest) {
   try {
