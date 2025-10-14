@@ -1901,7 +1901,7 @@ async function findById2(id) {
   return await prisma.merchant.findUnique({
     where: { id },
     include: {
-      Plan: true,
+      // Plan removed - use subscription.plan instead (single source of truth)
       subscription: {
         include: {
           plan: true
