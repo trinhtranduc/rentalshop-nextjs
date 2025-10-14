@@ -974,7 +974,6 @@ interface Subscription {
         id: number;
         name: string;
         email: string;
-        subscriptionStatus: string;
     };
     plan: Plan;
 }
