@@ -311,7 +311,8 @@ export default function OutletsPage() {
             <p className="text-sm text-gray-600">Manage your business outlets and branches</p>
           </div>
           <div className="flex gap-3">
-            {canExport && (
+            {/* Export feature - temporarily hidden, will be enabled in the future */}
+            {/* {canExport && (
               <Button
                 onClick={() => {
                   toastSuccess('Export Feature', 'Export functionality coming soon!');
@@ -322,7 +323,7 @@ export default function OutletsPage() {
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
-            )}
+            )} */}
             <Button 
               onClick={() => router.push('/outlets/create')}
               variant="success"

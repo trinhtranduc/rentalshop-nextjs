@@ -36519,25 +36519,19 @@ function AuditLogViewer({
               pagination?.total || 0,
               " total)"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)(
-                import_ui135.Button,
-                {
-                  variant: "outline",
-                  size: "sm",
-                  onClick: onRefresh,
-                  disabled: loading,
-                  children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_lucide_react117.RefreshCw, { className: `w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}` }),
-                    "Refresh"
-                  ]
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)(import_ui135.Button, { variant: "outline", size: "sm", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_lucide_react117.Download, { className: "w-4 h-4 mr-2" }),
-                "Export"
-              ] })
-            ] })
+            /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)(
+              import_ui135.Button,
+              {
+                variant: "outline",
+                size: "sm",
+                onClick: onRefresh,
+                disabled: loading,
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_lucide_react117.RefreshCw, { className: `w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}` }),
+                  "Refresh"
+                ]
+              }
+            ) })
           ] }) }),
           /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_ui135.CardContent, { children: loading ? /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "text-center py-8", children: [
             /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(import_lucide_react117.RefreshCw, { className: "w-6 h-6 animate-spin mx-auto mb-2" }),

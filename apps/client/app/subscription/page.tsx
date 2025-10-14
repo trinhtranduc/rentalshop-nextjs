@@ -410,12 +410,13 @@ export default function MerchantSubscriptionPage() {
               <CreditCard className="h-5 w-5" />
               <span>Payment History</span>
             </span>
-            {canExport && (
+            {/* Export feature - temporarily hidden, will be enabled in the future */}
+            {/* {canExport && (
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-            )}
+            )} */}
           </CardTitle>
         </CardHeader>
         <CardContent>

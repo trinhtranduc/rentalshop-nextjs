@@ -36620,7 +36620,6 @@ function AuditLogDetail({ log, isOpen, onClose }) {
 // src/components/features/AuditLogs/AuditLogViewer.tsx
 import {
   Filter as Filter5,
-  Download as Download13,
   RefreshCw as RefreshCw6,
   Eye as Eye29,
   Activity as Activity7,
@@ -36955,25 +36954,19 @@ function AuditLogViewer({
               pagination?.total || 0,
               " total)"
             ] }),
-            /* @__PURE__ */ jsxs213("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsxs213(
-                Button59,
-                {
-                  variant: "outline",
-                  size: "sm",
-                  onClick: onRefresh,
-                  disabled: loading,
-                  children: [
-                    /* @__PURE__ */ jsx236(RefreshCw6, { className: `w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}` }),
-                    "Refresh"
-                  ]
-                }
-              ),
-              /* @__PURE__ */ jsxs213(Button59, { variant: "outline", size: "sm", children: [
-                /* @__PURE__ */ jsx236(Download13, { className: "w-4 h-4 mr-2" }),
-                "Export"
-              ] })
-            ] })
+            /* @__PURE__ */ jsx236("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsxs213(
+              Button59,
+              {
+                variant: "outline",
+                size: "sm",
+                onClick: onRefresh,
+                disabled: loading,
+                children: [
+                  /* @__PURE__ */ jsx236(RefreshCw6, { className: `w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}` }),
+                  "Refresh"
+                ]
+              }
+            ) })
           ] }) }),
           /* @__PURE__ */ jsx236(CardContent55, { children: loading ? /* @__PURE__ */ jsxs213("div", { className: "text-center py-8", children: [
             /* @__PURE__ */ jsx236(RefreshCw6, { className: "w-6 h-6 animate-spin mx-auto mb-2" }),

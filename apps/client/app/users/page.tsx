@@ -309,7 +309,8 @@ export default function UsersPage() {
             <p className="text-sm text-gray-600">Manage users in the system</p>
           </div>
           <div className="flex gap-3">
-            {canExport && (
+            {/* Export feature - temporarily hidden, will be enabled in the future */}
+            {/* {canExport && (
               <Button
                 onClick={() => {
                   toastSuccess('Export Feature', 'Export functionality coming soon!');
@@ -320,7 +321,7 @@ export default function UsersPage() {
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
-            )}
+            )} */}
             <Button 
               onClick={() => setShowAddDialog(true)}
               variant="success"
