@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
@@ -24,7 +24,7 @@ export async function GET(
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -45,6 +45,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: order,
+        code: 'ORDER_RETRIEVED_SUCCESS',
         message: 'Order retrieved successfully'
       });
 
