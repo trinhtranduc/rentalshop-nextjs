@@ -130,18 +130,34 @@ export function formatCurrencyAdvanced(
   const locale = 'en-US';
   const showSymbol = options.showSymbol ?? currentSettings.showSymbol;
   const showCode = options.showCode ?? currentSettings.showCode;
-  const fractionDigits = options.fractionDigits ?? currency.maxFractionDigits;
 
   // Smart decimal formatting:
   // - USD: Only show decimals if there are cents (e.g., $91 not $91.00, but $91.50 stays)
-  // - VND: Never show decimals (already 0)
+  // - VND: Never show decimals (always 0)
   const hasDecimals = amount % 1 !== 0; // Check if there's a fractional part
-  const minDecimals = hasDecimals ? currency.minFractionDigits : 0;
+  
+  // Determine fraction digits dynamically
+  let minDecimals: number;
+  let maxDecimals: number;
+  
+  if (currency.code === 'VND') {
+    // VND: Never show decimals
+    minDecimals = 0;
+    maxDecimals = 0;
+  } else if (hasDecimals) {
+    // USD with decimals: Show up to 2 decimals
+    minDecimals = 0; // Don't force trailing zeros
+    maxDecimals = 2; // But allow up to 2 decimals
+  } else {
+    // USD whole number: No decimals
+    minDecimals = 0;
+    maxDecimals = 0;
+  }
   
   // Format the number with en-US locale - always "," for thousands and "." for decimals
   const formattedNumber = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: minDecimals, // 0 if whole number, 2 if has decimals
-    maximumFractionDigits: fractionDigits, // Allow up to max decimals
+    minimumFractionDigits: minDecimals,
+    maximumFractionDigits: maxDecimals,
   }).format(amount);
 
   // Build the result string

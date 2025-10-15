@@ -36,7 +36,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useToast, ToastContainer } from '@rentalshop/ui';
 import { AddCustomerForm } from '../../features/Customers/components/AddCustomerForm';
 
-import { customersApi, handleApiError } from '@rentalshop/utils';
+import { customersApi, handleApiError, formatCurrency } from '@rentalshop/utils';
 import { useProductAvailability } from '@rentalshop/hooks';
 import { VALIDATION, BUSINESS } from '@rentalshop/constants';
 
@@ -98,7 +98,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   } = useCreateOrderForm(props);
 
   const { validationErrors, validateForm, isFormValid } = useOrderValidation();
-  const { isLoadingProducts, searchProductsForSelect, searchProducts } = useProductSearch();
+  const { isLoadingProducts, searchProductsForSelect, searchProducts } = useProductSearch(currency as any);
   const { 
     isLoadingCustomers, 
     customerSearchResults, 
@@ -180,8 +180,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         image: product.images?.[0],
         subtitle: product.barcode ? `Barcode: ${product.barcode}` : 'No Barcode',
         details: [
-          `$${(product.rentPrice || 0).toFixed(2)}`,
-          `Deposit: $${(product.deposit || 0).toFixed(2)}`,
+          formatCurrency(product.rentPrice || 0, currency as any),
+          `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
           `Available: ${product.outletStock?.[0]?.available || 0}`,
           `Total Stock: ${product.outletStock?.[0]?.stock || 0}`,
           product.category?.name || 'No Category'
@@ -192,7 +192,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       console.error('Error searching products:', error);
       return [];
     }
-  }, [searchProducts]);
+  }, [searchProducts, currency]);
 
   // Create a custom getProductAvailabilityStatus function
   const getProductAvailabilityStatus = useCallback(async (

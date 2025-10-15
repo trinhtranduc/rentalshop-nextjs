@@ -3,11 +3,12 @@
  */
 
 import { useState, useCallback } from 'react';
-import { productsApi } from '@rentalshop/utils';
+import { productsApi, formatCurrency } from '@rentalshop/utils';
 import { PAGINATION } from '@rentalshop/constants';
 import type { ProductWithStock, ProductSearchOption } from '../types';
+import type { CurrencyCode } from '@rentalshop/types';
 
-export const useProductSearch = () => {
+export const useProductSearch = (currency: CurrencyCode = 'USD') => {
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
   // Search products for SearchableSelect
@@ -39,8 +40,8 @@ export const useProductSearch = () => {
             image: product.image || product.imageUrl, // Support both image and imageUrl fields
             subtitle: product.barcode ? `Barcode: ${product.barcode}` : 'No Barcode',
             details: [
-              `$${(product.rentPrice || 0).toFixed(2)}`,
-              `Deposit: $${(product.deposit || 0).toFixed(2)}`,
+              formatCurrency(product.rentPrice || 0, currency),
+              `Deposit: ${formatCurrency(product.deposit || 0, currency)}`,
               `Available: ${available}`,
               `Total Stock: ${totalStock}`,
               product.category?.name || 'No Category'
@@ -56,7 +57,7 @@ export const useProductSearch = () => {
     } finally {
       setIsLoadingProducts(false);
     }
-  }, []);
+  }, [currency]);
 
   // Search products for general use
   const searchProducts = useCallback(async (query: string): Promise<ProductWithStock[]> => {

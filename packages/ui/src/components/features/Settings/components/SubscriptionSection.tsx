@@ -77,7 +77,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                     <DollarSign className="h-4 w-4 text-gray-600" />
                     <span className="text-sm font-medium text-gray-700">Amount</span>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-base font-semibold text-gray-900">
                     ${subscriptionData.subscription.amount || '0.00'}
                   </p>
                   <p className="text-xs text-gray-600">
@@ -90,7 +90,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                     <Calendar className="h-4 w-4 text-gray-600" />
                     <span className="text-sm font-medium text-gray-700">Next Billing</span>
                   </div>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-base font-semibold text-gray-900">
                     {subscriptionData.subscription.currentPeriodEnd ? 
                       new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', { 
                         month: 'short', 
@@ -110,7 +110,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                     <CheckCircle className="h-4 w-4 text-gray-600" />
                     <span className="text-sm font-medium text-gray-700">Status</span>
                   </div>
-                  <p className="text-lg font-bold text-gray-900 capitalize">
+                  <p className="text-base font-semibold text-gray-900 capitalize">
                     {subscriptionData.subscription.status || 'Active'}
                   </p>
                   <p className="text-xs text-gray-600">
@@ -152,8 +152,8 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
         <CardContent className="p-6">
           <div className="text-center py-8">
             <CreditCard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Subscription</h3>
-            <p className="text-gray-600 mb-6">You don't have an active subscription. Choose a plan to get started.</p>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">No Active Subscription</h3>
+            <p className="text-sm text-gray-600 mb-6">You don't have an active subscription. Choose a plan to get started.</p>
             
             {/* Only show action button for ADMIN and MERCHANT roles */}
             {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
