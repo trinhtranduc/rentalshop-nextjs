@@ -76,6 +76,7 @@ export { ProductAvailabilityAsyncDisplay } from './product-availability-async-di
 export { ProductAvailabilityBadge } from './product-availability-badge';
 export { ProductAvailabilityWarning } from './product-availability-warning';
 export { SearchableSelect } from './searchable-select';
+export { SearchableCountrySelect } from './searchable-country-select';
 
 // ============================================================================
 // TOAST COMPONENTS
