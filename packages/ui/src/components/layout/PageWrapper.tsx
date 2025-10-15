@@ -44,6 +44,9 @@ export function PageWrapper({
   padding = 'sm',
   spacing = 'sm'
 }: PageWrapperProps) {
+  // Extract height-related classes from className to apply to wrapper
+  const hasHeightClass = className?.includes('h-full') || className?.includes('h-screen');
+  
   return (
     <div className={cn(
       // Base container

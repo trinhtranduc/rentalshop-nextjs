@@ -3,6 +3,7 @@
 import React from 'react';
 import { 
   Card, 
+  CardHeader,
   CardContent,
   Button,
   Input,
@@ -45,29 +46,25 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Outlet Information</h2>
-          <p className="text-gray-600">Manage your outlet details and settings</p>
-        </div>
-        {!isEditing ? (
-          <Button onClick={onEdit}>
-            Edit Outlet Info
-          </Button>
-        ) : (
-          <div className="flex gap-2">
-            <Button onClick={onSave} variant="default" disabled={isUpdating}>
-              {isUpdating ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button onClick={onCancel} variant="outline" disabled={isUpdating}>
-              Cancel
-            </Button>
-          </div>
-        )}
-      </div>
-
       <Card>
-        <CardContent className="p-6">
+        <CardHeader className="flex flex-row items-center justify-between py-4 pb-3">
+          <h3 className="text-base font-semibold text-gray-900">Outlet Information</h3>
+          {!isEditing ? (
+            <Button onClick={onEdit} size="sm">
+              Edit
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button onClick={onSave} variant="default" size="sm" disabled={isUpdating}>
+                {isUpdating ? 'Saving...' : 'Save'}
+              </Button>
+              <Button onClick={onCancel} variant="outline" size="sm" disabled={isUpdating}>
+                Cancel
+              </Button>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="p-6 pt-4">
           {!user?.outlet ? (
             <div className="text-center py-8">
               <p className="text-gray-500">No outlet information available</p>

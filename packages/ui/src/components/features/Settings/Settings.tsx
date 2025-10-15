@@ -312,30 +312,51 @@ export const SettingsComponent: React.FC = () => {
   const handleEditMerchantInfo = () => setIsEditingMerchant(true);
   const handleUpdateMerchantInfo = async () => {
     try {
+      console.log('🔧 handleUpdateMerchantInfo called');
+      console.log('🔧 merchantFormData:', merchantFormData);
       setIsUpdating(true);
       const response = await settingsApi.updateMerchantInfo(merchantFormData);
+      console.log('🔧 API response:', response);
+      
       if (response.success) {
-        // Update user object in localStorage with new merchant data
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          if (userData.merchant) {
-            // Update merchant data with form values
-            userData.merchant = {
-              ...userData.merchant,
-              ...merchantFormData
-            };
-            localStorage.setItem('user', JSON.stringify(userData));
-            console.log('✅ Updated merchant in localStorage:', userData.merchant);
+        console.log('🔧 API success, updating localStorage...');
+        
+        // Update authData in localStorage (NOT 'user' key - it's 'authData')
+        const storedAuth = localStorage.getItem('authData');
+        console.log('🔧 storedAuth before update:', storedAuth ? 'exists' : 'null');
+        
+        if (storedAuth) {
+          const authData = JSON.parse(storedAuth);
+          console.log('🔧 authData.user.merchant before:', authData.user?.merchant);
+          
+          if (authData.user && authData.user.merchant) {
+            // Only update the country field (API already updated all fields in database)
+            authData.user.merchant.country = merchantFormData.country;
+            console.log('🔧 Updated country in authData.user.merchant:', authData.user.merchant.country);
+            
+            localStorage.setItem('authData', JSON.stringify(authData));
+            console.log('✅ Updated merchant country in localStorage:', authData.user.merchant.country);
+            
+            // IMPORTANT: Also update user object in memory so next Edit shows new country
+            if (user && user.merchant) {
+              user.merchant.country = merchantFormData.country;
+              console.log('✅ Updated merchant country in memory:', user.merchant.country);
+            }
+          } else {
+            console.log('❌ authData.user.merchant is null/undefined');
           }
+        } else {
+          console.log('❌ No authData found in localStorage');
         }
         
         setIsEditingMerchant(false);
         toastSuccess('Success', 'Business information updated successfully!');
       } else {
+        console.log('❌ API failed:', response.error);
         toastError('Error', response.error || 'Failed to update business information');
       }
     } catch (error) {
+      console.error('❌ Error in handleUpdateMerchantInfo:', error);
       toastError('Error', 'Failed to update business information. Please try again.');
     } finally {
       setIsUpdating(false);
@@ -425,13 +446,13 @@ export const SettingsComponent: React.FC = () => {
         // Update currency in context - CurrencyProvider will re-render all components
         setCurrency(newCurrency);
         
-        // Update user object in localStorage to persist currency
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          if (userData.merchant) {
-            userData.merchant.currency = newCurrency;
-            localStorage.setItem('user', JSON.stringify(userData));
+        // Update authData in localStorage to persist currency
+        const storedAuth = localStorage.getItem('authData');
+        if (storedAuth) {
+          const authData = JSON.parse(storedAuth);
+          if (authData.user && authData.user.merchant) {
+            authData.user.merchant.currency = newCurrency;
+            localStorage.setItem('authData', JSON.stringify(authData));
           }
         }
         
