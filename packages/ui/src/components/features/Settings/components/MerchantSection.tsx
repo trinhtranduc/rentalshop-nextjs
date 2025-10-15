@@ -410,10 +410,13 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     options={COUNTRIES}
                     value={formData.country}
                     onChange={(countryName) => {
+                      console.log('🌍 MerchantSection: Country onChange called with:', countryName);
+                      console.log('🌍 MerchantSection: Current formData.country:', formData.country);
                       // Trigger parent's onChange handler with synthetic event
                       onInputChange({ 
                         target: { name: 'country', value: countryName } 
                       } as React.ChangeEvent<HTMLInputElement>);
+                      console.log('🌍 MerchantSection: onInputChange called');
                     }}
                     placeholder="Type to search countries..."
                     emptyMessage="No countries found"
