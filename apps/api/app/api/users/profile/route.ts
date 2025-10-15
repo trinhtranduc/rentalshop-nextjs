@@ -185,9 +185,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         whereClause.merchantId = null;
       }
 
-      const existingUserWithPhone = await db.users.findFirst({
-        where: whereClause,
-      });
+      const existingUserWithPhone = await db.users.findFirst(whereClause);
 
       if (existingUserWithPhone) {
         const scopeMessage = currentUser?.role === 'ADMIN' 

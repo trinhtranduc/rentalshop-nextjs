@@ -125,6 +125,17 @@ export const SettingsComponent: React.FC = () => {
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
+  // Update personalFormData when user data loads
+  useEffect(() => {
+    if (user) {
+      setPersonalFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user]);
+
   // Fetch subscription data
   useEffect(() => {
     const fetchSubscriptionData = async () => {
