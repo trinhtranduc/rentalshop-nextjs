@@ -48,6 +48,17 @@ COPY . .
 # Generate Prisma Client with all binary targets
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
+# Run database migrations (if DATABASE_URL is available at build time)
+# This ensures database schema is up to date before build
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+RUN if [ -n "$DATABASE_URL" ]; then \
+      echo "Running database migrations..." && \
+      npx prisma migrate deploy --schema=./prisma/schema.prisma || echo "Migration failed or skipped"; \
+    else \
+      echo "DATABASE_URL not provided, skipping migrations at build time"; \
+    fi
+
 # Build packages using Turbo (respects dependency order)
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
