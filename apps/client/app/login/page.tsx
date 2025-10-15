@@ -22,10 +22,9 @@ export default function LoginPage() {
       
       if (success) {
         console.log('✅ Login successful, redirecting to dashboard...');
-        // Small delay to ensure auth state is updated
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 200);
+        // Use window.location.href for hard redirect to ensure localStorage is fully written
+        // This prevents race condition where router.push reads localStorage before write completes
+        window.location.href = '/dashboard';
       } else {
         console.log('❌ Login failed');
         // Don't set local error - let authError from useAuth handle it
