@@ -259,7 +259,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
         phone,
         address,
         planId,
-        subscriptionStatus: subscriptionStatus || 'trial',
+        // subscriptionStatus removed - use subscription.status instead (single source of truth)
         // isActive: true, // TODO: Add isActive field to MerchantCreateData type
         // totalRevenue: 0, // TODO: Add totalRevenue field to MerchantCreateData type
         businessType: businessType || 'GENERAL',
@@ -287,7 +287,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
         phone: merchant.phone,
         isActive: merchant.isActive,
         planId: merchant.planId,
-        subscriptionStatus: merchant.subscriptionStatus,
+        // subscriptionStatus removed - use subscription.status instead
         outletsCount: 1,
         usersCount: 0,
         productsCount: 0,
