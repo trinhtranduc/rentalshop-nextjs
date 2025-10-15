@@ -407,7 +407,19 @@ export const SettingsComponent: React.FC = () => {
       setIsUpdating(true);
       const response = await settingsApi.updateMerchantCurrency({ currency: newCurrency });
       if (response.success) {
+        // Update currency in context - CurrencyProvider will re-render all components
         setCurrency(newCurrency);
+        
+        // Update user object in localStorage to persist currency
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          if (userData.merchant) {
+            userData.merchant.currency = newCurrency;
+            localStorage.setItem('user', JSON.stringify(userData));
+          }
+        }
+        
         toastSuccess('Success', 'Currency updated successfully!');
       } else {
         toastError('Error', response.error || 'Failed to update currency');

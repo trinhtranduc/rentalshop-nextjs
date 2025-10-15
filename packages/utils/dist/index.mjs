@@ -14121,6 +14121,14 @@ var settingsApi = {
     });
     const result = await parseApiResponse(response);
     return result;
+  },
+  /**
+   * Get merchant currency
+   */
+  async getMerchantCurrency() {
+    const response = await authenticatedFetch(apiUrls.settings.currency);
+    const result = await parseApiResponse(response);
+    return result;
   }
 };
 

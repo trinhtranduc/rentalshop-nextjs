@@ -50,11 +50,21 @@ export async function POST(request: NextRequest) {
         if (merchant.subscription?.plan) {
           planName = merchant.subscription.plan.name;
         }
-        // ✅ Follow MerchantReference type: { id, name, email? }
+        // ✅ Return complete merchant data for Settings page
         merchantData = {
           id: merchant.id,
           name: merchant.name,
-          email: merchant.email || undefined
+          email: merchant.email || undefined,
+          phone: merchant.phone || undefined,
+          address: merchant.address || undefined,
+          city: merchant.city || undefined,
+          state: merchant.state || undefined,
+          zipCode: merchant.zipCode || undefined,
+          country: merchant.country || undefined,
+          businessType: merchant.businessType || undefined,
+          pricingType: merchant.pricingType || undefined,
+          taxId: merchant.taxId || undefined,
+          currency: (merchant as any).currency || 'USD',
         };
       }
     }

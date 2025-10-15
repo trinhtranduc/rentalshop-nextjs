@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CreateOrderForm, Breadcrumb, FormSkeleton, PageWrapper, useToast, Button, CurrencyProvider } from '@rentalshop/ui';
+import { CreateOrderForm, Breadcrumb, FormSkeleton, PageWrapper, useToast, Button } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 import { 
@@ -44,9 +44,6 @@ export default function EditOrderPage() {
   const [outlets, setOutlets] = useState<Array<{ id: number; name: string }>>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [merchantId, setMerchantId] = useState<string>('');
-  
-  // Get merchant currency from user or order data
-  const merchantCurrency = (order?.outlet?.merchant as any)?.currency || user?.merchant?.currency || 'USD';
 
   // Toast notifications
   const { toastSuccess, toastError, removeToast } = useToast();
@@ -451,31 +448,29 @@ export default function EditOrderPage() {
   ];
 
   return (
-    <CurrencyProvider merchantCurrency={merchantCurrency}>
-      <div className="min-h-screen bg-bg-secondary">
-        {/* Breadcrumb - At top */}
-        <div className="px-6 py-3">
-          <Breadcrumb items={breadcrumbItems} showHome={false} />
-        </div>
-        
-        {/* Main Content */}
-        <div className="w-full">
-          <CreateOrderForm
-            isEditMode={true}
-            initialOrder={order}
-            orderNumber={order.orderNumber}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            loading={actionLoading}
-            customers={customers}
-            products={products}
-            outlets={outlets}
-            categories={categories}
-            merchantId={Number(merchantId)}
-            onFormReady={handleFormReady}
-          />
-        </div>
+    <div className="min-h-screen bg-bg-secondary">
+      {/* Breadcrumb - At top */}
+      <div className="px-6 py-3">
+        <Breadcrumb items={breadcrumbItems} showHome={false} />
       </div>
-    </CurrencyProvider>
+      
+      {/* Main Content */}
+      <div className="w-full">
+        <CreateOrderForm
+          isEditMode={true}
+          initialOrder={order}
+          orderNumber={order.orderNumber}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          loading={actionLoading}
+          customers={customers}
+          products={products}
+          outlets={outlets}
+          categories={categories}
+          merchantId={Number(merchantId)}
+          onFormReady={handleFormReady}
+        />
+      </div>
+    </div>
   );
 }

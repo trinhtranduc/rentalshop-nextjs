@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { ClientSidebar, LoadingIndicator } from '@rentalshop/ui';
+import { ClientSidebar, LoadingIndicator, CurrencyProvider } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 import { useAuth } from '@rentalshop/hooks';
+import type { CurrencyCode } from '@rentalshop/types';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,9 @@ export default function ClientLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { navigateTo, prefetchRoute } = useNavigation();
   const pathname = usePathname();
+
+  // Get merchant currency from user object (already loaded from login)
+  const merchantCurrency: CurrencyCode = (user?.merchant?.currency as CurrencyCode) || 'USD';
 
   // Show loading state while checking authentication
       if (loading) {
@@ -72,7 +76,8 @@ export default function ClientLayout({
   const showSidebar = !isAuthPage && !isFullWidthPage;
 
   return (
-    <div className="flex h-screen bg-bg-primary">
+    <CurrencyProvider merchantCurrency={merchantCurrency}>
+      <div className="flex h-screen bg-bg-primary">
       {/* Show sidebar on all pages except login */}
       {showSidebar && (
         <>
@@ -137,6 +142,7 @@ export default function ClientLayout({
           </div>
         </main>
       </div>
-    </div>
+      </div>
+    </CurrencyProvider>
   );
 }

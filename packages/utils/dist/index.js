@@ -14506,6 +14506,14 @@ var init_settings = __esm({
         });
         const result = await exports.parseApiResponse(response);
         return result;
+      },
+      /**
+       * Get merchant currency
+       */
+      async getMerchantCurrency() {
+        const response = await exports.authenticatedFetch(exports.apiUrls.settings.currency);
+        const result = await exports.parseApiResponse(response);
+        return result;
       }
     };
   }

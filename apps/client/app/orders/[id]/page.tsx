@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast, CurrencyProvider } from '@rentalshop/ui';
+import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 
@@ -21,9 +21,6 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  
-  // Get merchant currency
-  const merchantCurrency = (order as any)?.outlet?.merchant?.currency || user?.merchant?.currency || 'USD';
 
   const orderId = params.id as string;
   
@@ -302,24 +299,22 @@ export default function OrderDetailPage() {
   ];
 
   return (
-    <CurrencyProvider merchantCurrency={merchantCurrency}>
-      <PageWrapper>
-        {/* Breadcrumb */}
-        <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
 
-        {/* Order Detail Component */}
-          <OrderDetail
-            order={order}
-            onEdit={handleEditOrder}
-            onCancel={handleCancelOrder}
-            onStatusChange={handleStatusChange}
-            onPickup={handlePickupWrapper}
-            onReturn={handleReturnWrapper}
-            onSaveSettings={handleSaveSettings}
-            loading={actionLoading}
-            showActions={true}
-          />
-      </PageWrapper>
-    </CurrencyProvider>
+      {/* Order Detail Component */}
+      <OrderDetail
+        order={order}
+        onEdit={handleEditOrder}
+        onCancel={handleCancelOrder}
+        onStatusChange={handleStatusChange}
+        onPickup={handlePickupWrapper}
+        onReturn={handleReturnWrapper}
+        onSaveSettings={handleSaveSettings}
+        loading={actionLoading}
+        showActions={true}
+      />
+    </PageWrapper>
   );
 }
