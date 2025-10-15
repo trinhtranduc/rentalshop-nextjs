@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid user ID format' },
+          ResponseBuilder.error('INVALID_USER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -33,7 +33,7 @@ export async function GET(
       if (!foundUser) {
         console.log('❌ User not found in database for userId:', userId);
         return NextResponse.json(
-          { success: false, message: 'User not found' },
+          ResponseBuilder.error('USER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -43,6 +43,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: foundUser,
+        code: 'USER_RETRIEVED_SUCCESS',
         message: 'User retrieved successfully'
       });
 
@@ -71,7 +72,7 @@ export async function PUT(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid user ID format' },
+          ResponseBuilder.error('INVALID_USER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -86,7 +87,7 @@ export async function PUT(
       const existingUser = await db.users.findById(userId);
       if (!existingUser) {
         return NextResponse.json(
-          { success: false, message: 'User not found' },
+          ResponseBuilder.error('USER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -98,6 +99,7 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedUser,
+        code: 'USER_UPDATED_SUCCESS',
         message: 'User updated successfully'
       });
 
@@ -126,7 +128,7 @@ export async function DELETE(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid user ID format' },
+          ResponseBuilder.error('INVALID_USER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -137,7 +139,7 @@ export async function DELETE(
       const existingUser = await db.users.findById(userId);
       if (!existingUser) {
         return NextResponse.json(
-          { success: false, message: 'User not found' },
+          ResponseBuilder.error('USER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -149,6 +151,7 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedUser,
+        code: 'USER_DELETED_SUCCESS',
         message: 'User deleted successfully'
       });
 

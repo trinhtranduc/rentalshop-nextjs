@@ -1,4 +1,4 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
@@ -33,7 +33,7 @@ export async function PATCH(
     const numericId = parseInt(id);
     if (isNaN(numericId) || numericId <= 0) {
       return NextResponse.json(
-        { success: false, message: 'Invalid user ID format' },
+          ResponseBuilder.error('INVALID_USER_ID_FORMAT'),
         { status: 400 }
       );
     }
@@ -41,7 +41,7 @@ export async function PATCH(
     // Validate input
     if (!newPassword || newPassword.length < 6) {
       return NextResponse.json(
-        { success: false, message: 'New password must be at least 6 characters' },
+          ResponseBuilder.error('PASSWORD_MIN_LENGTH'),
         { status: 400 }
       );
     }
@@ -50,7 +50,7 @@ export async function PATCH(
     // Admin password changes don't require confirmPassword
     if (confirmPassword && newPassword !== confirmPassword) {
       return NextResponse.json(
-        { success: false, message: 'New passwords do not match' },
+          ResponseBuilder.error('PASSWORD_MISMATCH'),
         { status: 400 }
       );
     }
@@ -60,7 +60,7 @@ export async function PATCH(
 
     if (!targetUser) {
       return NextResponse.json(
-        { success: false, message: 'User not found' },
+          ResponseBuilder.error('USER_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -97,7 +97,8 @@ export async function PATCH(
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Insufficient permissions to change password for this user',
+            code: 'INSUFFICIENT_PERMISSIONS',
+            message: 'Insufficient permissions to change password for this user',
           required: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'],
           current: currentUser.role
         },
@@ -119,7 +120,8 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      message: 'Password changed successfully'
+        code: 'PASSWORD_CHANGED_SUCCESS',
+        message: 'Password changed successfully'
     });
 
   } catch (error) {
@@ -127,6 +129,7 @@ export async function PATCH(
       return NextResponse.json(
         { 
           success: false, 
+          code: 'CHANGE_PASSWORD_FAILED',
           message: 'Failed to change password' 
         },
         { status: API.STATUS.INTERNAL_SERVER_ERROR }

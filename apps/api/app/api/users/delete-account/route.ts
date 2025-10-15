@@ -1,4 +1,4 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
@@ -19,7 +19,7 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
 
     if (!userId || typeof userId !== 'number') {
       return NextResponse.json(
-        { success: false, message: 'Valid user ID is required' },
+        ResponseBuilder.error('VALID_USER_ID_REQUIRED'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
@@ -27,7 +27,7 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
     // Check if user is trying to delete their own account
     if (user.id !== userId) {
       return NextResponse.json(
-        { success: false, message: 'You can only delete your own account' },
+        ResponseBuilder.error('DELETE_OWN_ACCOUNT_ONLY'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -45,7 +45,8 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
 
     return NextResponse.json({
       success: true,
-      message: 'Account deleted successfully',
+        code: 'ACCOUNT_DELETED_SUCCESS',
+        message: 'Account deleted successfully',
       data: {
         id: deletedUser.id,
         email: deletedUser.email,
@@ -60,14 +61,14 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
     // Handle specific error cases
     if (error.message.includes('not found')) {
       return NextResponse.json(
-        { success: false, message: 'User not found' },
+        ResponseBuilder.error('USER_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
 
     if (error.message.includes('already deleted')) {
       return NextResponse.json(
-        { success: false, message: 'Account is already deleted' },
+        ResponseBuilder.error('ACCOUNT_ALREADY_DELETED'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
