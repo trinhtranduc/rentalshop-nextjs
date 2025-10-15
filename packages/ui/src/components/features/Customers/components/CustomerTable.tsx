@@ -61,9 +61,9 @@ export function CustomerTable({
   };
 
   return (
-    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full">
-      <div className="flex-1 overflow-auto">
-        <table className="w-full">
+    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
+      <div className="overflow-auto flex-1">
+        <table className="w-full min-w-[900px]">
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>

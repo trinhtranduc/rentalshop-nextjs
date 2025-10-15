@@ -37,11 +37,6 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
   if (subscriptionLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Subscription</h2>
-          <p className="text-gray-600">Manage your subscription and billing information</p>
-        </div>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-center py-8">
@@ -57,14 +52,8 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
   if (subscriptionData?.hasSubscription) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Subscription</h2>
-          <p className="text-gray-600">Manage your subscription and billing information</p>
-        </div>
-
-        <div className="space-y-6">
-          {/* Current Plan Card */}
-          <Card>
+        {/* Current Plan Card */}
+        <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -153,18 +142,12 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Subscription</h2>
-        <p className="text-gray-600">Manage your subscription and billing information</p>
-      </div>
-
       <Card>
         <CardContent className="p-6">
           <div className="text-center py-8">
