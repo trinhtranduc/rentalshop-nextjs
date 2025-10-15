@@ -3726,9 +3726,7 @@ var SearchableCountrySelect = ({
     console.log("\u{1F30D} Country selected:", country.name);
     onChange?.(country.name);
     setQuery("");
-    setTimeout(() => {
-      setOpen(false);
-    }, 100);
+    setOpen(false);
   };
   const handleClear = () => {
     onChange?.("");
@@ -3740,7 +3738,7 @@ var SearchableCountrySelect = ({
       /* @__PURE__ */ jsx37(
         "input",
         {
-          value: open ? query : selected ? `${selected.flag} ${selected.name}` : query,
+          value: open ? query : selected ? `${selected.flag} ${selected.name}` : "",
           onFocus: () => {
             setOpen(true);
             setQuery("");
@@ -3748,6 +3746,11 @@ var SearchableCountrySelect = ({
           onChange: (e) => {
             setQuery(e.target.value);
             setOpen(true);
+          },
+          onBlur: () => {
+            setTimeout(() => {
+              setOpen(false);
+            }, 200);
           },
           placeholder,
           className: cn2(
@@ -3791,9 +3794,12 @@ var SearchableCountrySelect = ({
       "button",
       {
         type: "button",
+        onClick: () => {
+          console.log("\u{1F5B1}\uFE0F Click:", country.name);
+          handleSelect(country);
+        },
         onMouseDown: (e) => {
           e.preventDefault();
-          handleSelect(country);
         },
         className: cn2(
           "flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all cursor-pointer",

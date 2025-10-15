@@ -70,10 +70,7 @@ export const SearchableCountrySelect: React.FC<SearchableCountrySelectProps> = (
     console.log('🌍 Country selected:', country.name);
     onChange?.(country.name);
     setQuery('');
-    // Close after a short delay to ensure click is processed
-    setTimeout(() => {
-      setOpen(false);
-    }, 100);
+    setOpen(false);
   };
 
   const handleClear = () => {
@@ -87,7 +84,7 @@ export const SearchableCountrySelect: React.FC<SearchableCountrySelectProps> = (
       {/* Input field */}
       <div className="relative">
         <input
-          value={open ? query : (selected ? `${selected.flag} ${selected.name}` : query)}
+          value={open ? query : (selected ? `${selected.flag} ${selected.name}` : '')}
           onFocus={() => {
             setOpen(true);
             setQuery('');
@@ -154,6 +151,8 @@ export const SearchableCountrySelect: React.FC<SearchableCountrySelectProps> = (
                     key={country.code}
                     onMouseDown={(e) => {
                       e.preventDefault(); // Prevent input blur
+                      e.stopPropagation(); // Prevent event bubbling
+                      console.log('🖱️ Selecting country:', country.name);
                       handleSelect(country);
                     }}
                     className={cn(
