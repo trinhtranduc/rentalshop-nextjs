@@ -162,5 +162,14 @@ export const settingsApi = {
     });
     const result = await parseApiResponse<any>(response);
     return result;
+  },
+
+  /**
+   * Get merchant currency
+   */
+  async getMerchantCurrency(): Promise<ApiResponse<{ currency: string }>> {
+    const response = await authenticatedFetch(apiUrls.settings.currency);
+    const result = await parseApiResponse<{ currency: string }>(response);
+    return result;
   }
 };

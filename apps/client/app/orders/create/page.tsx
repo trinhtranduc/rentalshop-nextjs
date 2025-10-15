@@ -9,8 +9,7 @@ import {
   PageWrapper,
   useToast,
   FormSkeleton,
-  Breadcrumb,
-  CurrencyProvider
+  Breadcrumb
 } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { CreateOrderForm } from '@rentalshop/ui';
@@ -37,9 +36,8 @@ export default function CreateOrderPage() {
   // Toast notifications
   const { toastSuccess, toastError, removeToast } = useToast();
 
-  // Get merchant ID and currency from user context
+  // Get merchant ID from user context
   const merchantId = user?.merchant?.id;
-  const merchantCurrency = user?.merchant?.currency || 'USD';
 
   useEffect(() => {
     if (!merchantId) return; // Don't fetch without merchant ID
@@ -175,35 +173,33 @@ export default function CreateOrderPage() {
   }
 
   return (
-    <CurrencyProvider merchantCurrency={merchantCurrency}>
-      <div className="min-h-screen bg-bg-secondary">
-        {/* Breadcrumb - At top */}
-        <div className="px-6 py-3">
-          <Breadcrumb items={breadcrumbItems} showHome={false} />
-        </div>
-        
-        {/* Main Content */}
-        <div className="w-full">
-          {loading ? (
-            <div className="p-6">
-              <FormSkeleton />
-            </div>
-          ) : (
-            <CreateOrderForm
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-              customers={customers}
-              products={products}
-              outlets={outlets}
-              loading={submitting}
-              layout="three-column"
-              merchantId={Number(merchantId)}
-              onFormReady={handleFormReady}
-            />
-          )}
-        </div>
+    <div className="min-h-screen bg-bg-secondary">
+      {/* Breadcrumb - At top */}
+      <div className="px-6 py-3">
+        <Breadcrumb items={breadcrumbItems} showHome={false} />
       </div>
-    </CurrencyProvider>
+      
+      {/* Main Content */}
+      <div className="w-full">
+        {loading ? (
+          <div className="p-6">
+            <FormSkeleton />
+          </div>
+        ) : (
+          <CreateOrderForm
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            customers={customers}
+            products={products}
+            outlets={outlets}
+            loading={submitting}
+            layout="three-column"
+            merchantId={Number(merchantId)}
+            onFormReady={handleFormReady}
+          />
+        )}
+      </div>
+    </div>
   );
 }
 

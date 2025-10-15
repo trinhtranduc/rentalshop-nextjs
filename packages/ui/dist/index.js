@@ -39176,6 +39176,14 @@ var SettingsComponent = () => {
       const response = await import_utils46.settingsApi.updateMerchantCurrency({ currency: newCurrency });
       if (response.success) {
         setCurrency(newCurrency);
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          if (userData.merchant) {
+            userData.merchant.currency = newCurrency;
+            localStorage.setItem("user", JSON.stringify(userData));
+          }
+        }
         toastSuccess("Success", "Currency updated successfully!");
       } else {
         toastError("Error", response.error || "Failed to update currency");

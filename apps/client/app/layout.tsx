@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import ClientLayout from './components/ClientLayout'
-import { CurrencyProvider } from '@rentalshop/hooks'
 // AuthProvider removed - using centralized useAuth hook from @rentalshop/hooks
 import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
@@ -25,13 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans`}>
-        <CurrencyProvider>
-          <ToastProvider>
-            <ClientLayout>
-              {children}
-            </ClientLayout>
-          </ToastProvider>
-        </CurrencyProvider>
+        <ToastProvider>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </ToastProvider>
         <Script src="/mobile-menu.js" />
       </body>
     </html>
