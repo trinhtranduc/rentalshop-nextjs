@@ -307,6 +307,31 @@ export const SettingsComponent: React.FC = () => {
       setIsUpdating(true);
       const response = await settingsApi.updateUserProfile(personalFormData);
       if (response.success) {
+        // Update authData in localStorage
+        const storedAuth = localStorage.getItem('authData');
+        if (storedAuth) {
+          const authData = JSON.parse(storedAuth);
+          if (authData.user) {
+            // Update user personal data
+            authData.user.firstName = personalFormData.firstName;
+            authData.user.lastName = personalFormData.lastName;
+            authData.user.phone = personalFormData.phone;
+            authData.user.name = `${personalFormData.firstName} ${personalFormData.lastName}`;
+            
+            localStorage.setItem('authData', JSON.stringify(authData));
+            console.log('✅ Updated user personal data in localStorage');
+            
+            // Also update user object in memory
+            if (user) {
+              user.firstName = personalFormData.firstName;
+              user.lastName = personalFormData.lastName;
+              user.phone = personalFormData.phone;
+              user.name = `${personalFormData.firstName} ${personalFormData.lastName}`;
+              console.log('✅ Updated user personal data in memory');
+            }
+          }
+        }
+        
         setIsEditingPersonal(false);
         toastSuccess('Success', 'Personal profile updated successfully!');
       } else {
