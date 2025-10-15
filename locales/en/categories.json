@@ -1,0 +1,51 @@
+{
+  "title": "Categories",
+  "addCategory": "Add Category",
+  "editCategory": "Edit Category",
+  "categoryDetails": "Category Details",
+  "fields": {
+    "name": "Category Name",
+    "description": "Description",
+    "status": "Status",
+    "productCount": "Number of Products",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "filters": {
+    "all": "All Categories",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "addCategory": "Add Category",
+    "editCategory": "Edit Category",
+    "deleteCategory": "Delete Category",
+    "viewProducts": "View Products",
+    "backToCategories": "Back to Categories"
+  },
+  "messages": {
+    "createSuccess": "Category created successfully",
+    "createFailed": "Failed to create category",
+    "updateSuccess": "Category updated successfully",
+    "updateFailed": "Failed to update category",
+    "deleteSuccess": "Category deleted successfully",
+    "deleteFailed": "Failed to delete category",
+    "confirmDelete": "Are you sure you want to delete this category?",
+    "noCategories": "No categories found",
+    "loadingCategories": "Loading categories..."
+  },
+  "search": {
+    "placeholder": "Search categories..."
+  },
+  "stats": {
+    "totalCategories": "Total Categories",
+    "activeCategories": "Active",
+    "totalProducts": "Total Products"
+  },
+  "dialogs": {
+    "addCategoryTitle": "Add New Category",
+    "editCategoryTitle": "Edit Category",
+    "deleteCategoryTitle": "Delete Category"
+  }
+}
+

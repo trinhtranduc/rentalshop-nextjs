@@ -1,4 +1,4 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
@@ -22,7 +22,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     if (!userProfile) {
       console.log('❌ User not found with id:', user.id);
       return NextResponse.json(
-        { success: false, message: 'User not found' },
+        ResponseBuilder.error('USER_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -70,7 +70,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         description: userProfile.merchant.description,
         isActive: userProfile.merchant.isActive,
         planId: userProfile.merchant.planId,
-        subscriptionStatus: userProfile.merchant.subscriptionStatus,
+        subscriptionStatus: userProfile.merchant.subscription?.status,
         totalRevenue: userProfile.merchant.totalRevenue,
         createdAt: userProfile.merchant.createdAt,
         lastActiveAt: userProfile.merchant.lastActiveAt,
@@ -123,7 +123,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   } catch (error) {
     console.error('❌ Error fetching user profile:', error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -237,11 +237,9 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       } : undefined,
     };
 
-    return NextResponse.json({
-      success: true,
-      data: transformedUser,
-      message: 'Profile updated successfully',
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('PROFILE_UPDATED_SUCCESS', transformedUser)
+    );
   } catch (error) {
     console.error('❌ Error updating user profile:', error);
     console.error('Error details:', {

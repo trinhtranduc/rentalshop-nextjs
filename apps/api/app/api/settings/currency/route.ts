@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { isValidCurrency } from '@rentalshop/constants';
 import type { CurrencyCode } from '@rentalshop/types';
@@ -67,15 +67,13 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     });
 
     console.log('🔍 CURRENCY API: Update successful, new currency:', currency);
-    return NextResponse.json({
-      success: true,
-      message: 'Currency updated successfully',
-      data: {
+    return NextResponse.json(
+      ResponseBuilder.success('CURRENCY_UPDATED_SUCCESS', {
         id: updatedMerchant.id,
         currency: currency,
         name: updatedMerchant.name
-      }
-    });
+      })
+    );
 
   } catch (error) {
     console.error('🔍 CURRENCY API: Error updating currency:', error);

@@ -1,0 +1,90 @@
+{
+  "title": "Subscription",
+  "mySubscription": "My Subscription",
+  "currentPlan": "Current Plan",
+  "planDetails": "Plan Details",
+  "billingInformation": "Billing Information",
+  "paymentHistory": "Payment History",
+  "status": {
+    "active": "Active",
+    "trialing": "Trial",
+    "past_due": "Past Due",
+    "canceled": "Canceled",
+    "unpaid": "Unpaid",
+    "paused": "Paused"
+  },
+  "billing": {
+    "cycle": "Billing Cycle",
+    "amount": "Billing Amount",
+    "nextBilling": "Next Billing Date",
+    "lastBilling": "Last Billing Date",
+    "method": "Payment Method",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "quarterly": "Quarterly"
+  },
+  "trial": {
+    "status": "Trial Status",
+    "daysRemaining": "Days Remaining",
+    "endsOn": "Trial Ends On",
+    "expired": "Trial Expired"
+  },
+  "actions": {
+    "upgrade": "Upgrade Plan",
+    "downgrade": "Downgrade Plan",
+    "cancel": "Cancel Subscription",
+    "resume": "Resume Subscription",
+    "updatePayment": "Update Payment Method",
+    "viewInvoices": "View Invoices",
+    "changePlan": "Change Plan"
+  },
+  "modals": {
+    "upgrade": {
+      "title": "Upgrade Subscription",
+      "description": "Choose a plan to upgrade to",
+      "confirm": "Confirm Upgrade",
+      "cancel": "Cancel"
+    },
+    "cancel": {
+      "title": "Cancel Subscription",
+      "description": "Are you sure you want to cancel your subscription?",
+      "reason": "Cancellation Reason",
+      "confirm": "Confirm Cancellation",
+      "keepSubscription": "Keep Subscription"
+    },
+    "payment": {
+      "title": "Update Payment Method",
+      "cardNumber": "Card Number",
+      "expiryDate": "Expiry Date",
+      "cvv": "CVV",
+      "save": "Save Payment Method"
+    }
+  },
+  "messages": {
+    "upgradeSuccess": "Subscription upgraded successfully",
+    "upgradeFailed": "Failed to upgrade subscription",
+    "cancelSuccess": "Subscription canceled successfully",
+    "cancelFailed": "Failed to cancel subscription",
+    "resumeSuccess": "Subscription resumed successfully",
+    "resumeFailed": "Failed to resume subscription",
+    "paymentUpdateSuccess": "Payment method updated successfully",
+    "paymentUpdateFailed": "Failed to update payment method"
+  },
+  "features": {
+    "title": "Plan Features",
+    "included": "Included",
+    "notIncluded": "Not Included",
+    "unlimited": "Unlimited"
+  },
+  "usage": {
+    "title": "Current Usage",
+    "orders": "Orders",
+    "products": "Products",
+    "customers": "Customers",
+    "outlets": "Outlets",
+    "limit": "Limit",
+    "used": "Used",
+    "remaining": "Remaining"
+  }
+}
+

@@ -1,0 +1,94 @@
+{
+  "title": "Sản phẩm",
+  "createProduct": "Thêm sản phẩm",
+  "editProduct": "Sửa sản phẩm",
+  "viewProduct": "Xem sản phẩm",
+  "productDetails": "Chi tiết sản phẩm",
+  "fields": {
+    "name": "Tên sản phẩm",
+    "category": "Danh mục",
+    "barcode": "Mã vạch",
+    "sku": "Mã SKU",
+    "description": "Mô tả",
+    "price": "Giá",
+    "rentPrice": "Giá thuê",
+    "salePrice": "Giá bán",
+    "deposit": "Đặt cọc",
+    "stock": "Tồn kho",
+    "available": "Có sẵn",
+    "renting": "Đang cho thuê",
+    "minRentalPeriod": "Thời gian thuê tối thiểu",
+    "maxRentalPeriod": "Thời gian thuê tối đa",
+    "images": "Hình ảnh sản phẩm",
+    "specifications": "Thông số kỹ thuật",
+    "notes": "Ghi chú"
+  },
+  "inventory": {
+    "title": "Kho hàng",
+    "inStock": "Còn hàng",
+    "outOfStock": "Hết hàng",
+    "lowStock": "Sắp hết hàng",
+    "totalStock": "Tổng tồn kho",
+    "availableStock": "Có sẵn",
+    "rentedOut": "Đã cho thuê",
+    "reserved": "Đã đặt",
+    "updateStock": "Cập nhật tồn kho",
+    "stockHistory": "Lịch sử tồn kho"
+  },
+  "availability": {
+    "title": "Tình trạng",
+    "available": "Có sẵn",
+    "notAvailable": "Không có sẵn",
+    "partiallyAvailable": "Có sẵn một phần",
+    "checkAvailability": "Kiểm tra tình trạng",
+    "availableFrom": "Có sẵn từ",
+    "availableUntil": "Có sẵn đến"
+  },
+  "pricing": {
+    "title": "Định giá",
+    "hourly": "Theo giờ",
+    "daily": "Theo ngày",
+    "weekly": "Theo tuần",
+    "monthly": "Theo tháng",
+    "custom": "Tùy chỉnh",
+    "depositRequired": "Yêu cầu đặt cọc"
+  },
+  "actions": {
+    "viewOrders": "Xem đơn hàng",
+    "viewHistory": "Xem lịch sử",
+    "duplicate": "Nhân bản sản phẩm",
+    "archive": "Lưu trữ sản phẩm",
+    "restore": "Khôi phục sản phẩm",
+    "delete": "Xóa sản phẩm"
+  },
+  "messages": {
+    "createSuccess": "Tạo sản phẩm thành công",
+    "createFailed": "Tạo sản phẩm thất bại",
+    "updateSuccess": "Cập nhật sản phẩm thành công",
+    "updateFailed": "Cập nhật sản phẩm thất bại",
+    "deleteSuccess": "Xóa sản phẩm thành công",
+    "deleteFailed": "Xóa sản phẩm thất bại",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa sản phẩm này?",
+    "noProducts": "Không tìm thấy sản phẩm",
+    "loadingProducts": "Đang tải sản phẩm..."
+  },
+  "filters": {
+    "all": "Tất cả sản phẩm",
+    "available": "Có sẵn",
+    "rented": "Đang cho thuê",
+    "outOfStock": "Hết hàng",
+    "category": "Danh mục",
+    "priceRange": "Khoảng giá"
+  },
+  "search": {
+    "placeholder": "Tìm kiếm theo tên, mã vạch hoặc SKU...",
+    "noResults": "Không tìm thấy sản phẩm phù hợp"
+  },
+  "stats": {
+    "totalProducts": "Tổng sản phẩm",
+    "availableProducts": "Có sẵn",
+    "rentedProducts": "Đang thuê",
+    "totalValue": "Tổng giá trị kho"
+  }
+}
+

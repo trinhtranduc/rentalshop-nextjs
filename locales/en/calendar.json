@@ -1,0 +1,64 @@
+{
+  "title": "Calendar",
+  "navigation": {
+    "today": "Today",
+    "previousMonth": "Previous Month",
+    "nextMonth": "Next Month",
+    "goToToday": "Go to Today"
+  },
+  "labels": {
+    "pickups": "Pickups",
+    "returns": "Returns",
+    "totalOrders": "Total Orders",
+    "pickupOrders": "Pickup Orders",
+    "returnOrders": "Return Orders"
+  },
+  "stats": {
+    "ordersToday": "Orders Today",
+    "ordersThisWeek": "Orders This Week",
+    "ordersThisMonth": "Orders This Month",
+    "pickupsToday": "Pickups Today",
+    "returnsToday": "Returns Today"
+  },
+  "modal": {
+    "ordersFor": "Orders for {date}",
+    "pickupOrders": "Pickup Orders",
+    "returnOrders": "Return Orders",
+    "viewDetails": "View Details",
+    "close": "Close"
+  },
+  "empty": {
+    "noOrders": "No orders scheduled",
+    "noPickups": "No pickups scheduled",
+    "noReturns": "No returns scheduled",
+    "selectDate": "Select a date to view orders"
+  },
+  "loading": {
+    "loadingCalendar": "Loading calendar...",
+    "loadingOrders": "Loading orders..."
+  },
+  "days": {
+    "sunday": "Sun",
+    "monday": "Mon",
+    "tuesday": "Tue",
+    "wednesday": "Wed",
+    "thursday": "Thu",
+    "friday": "Fri",
+    "saturday": "Sat"
+  },
+  "months": {
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
+  }
+}
+

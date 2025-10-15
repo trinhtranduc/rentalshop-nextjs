@@ -1,0 +1,94 @@
+{
+  "title": "Bảng điều khiển",
+  "welcome": "Chào mừng trở lại",
+  "overview": "Tổng quan",
+  "stats": {
+    "totalOrders": "Tổng đơn hàng",
+    "activeRentals": "Đơn thuê đang hoạt động",
+    "totalRevenue": "Tổng doanh thu",
+    "totalCustomers": "Tổng khách hàng",
+    "totalProducts": "Tổng sản phẩm",
+    "availableProducts": "Sản phẩm có sẵn",
+    "pendingOrders": "Đơn hàng chờ xử lý",
+    "completedOrders": "Đơn hàng hoàn thành",
+    "overdueReturns": "Đơn trả quá hạn",
+    "todayRevenue": "Doanh thu hôm nay",
+    "thisWeekRevenue": "Doanh thu tuần này",
+    "thisMonthRevenue": "Doanh thu tháng này",
+    "futureRevenue": "Doanh thu tương lai",
+    "realTimeData": "Dữ liệu thời gian thực",
+    "bookedRevenue": "Doanh thu đã đặt",
+    "expectedRevenue": "Doanh thu dự kiến từ các đơn hàng sắp tới và đang diễn ra"
+  },
+  "charts": {
+    "revenueOverTime": "Doanh thu theo thời gian",
+    "ordersByStatus": "Đơn hàng theo trạng thái",
+    "topProducts": "Sản phẩm bán chạy",
+    "customerActivity": "Hoạt động khách hàng",
+    "rentalTrends": "Xu hướng cho thuê",
+    "noData": "Không có dữ liệu cho khoảng thời gian này"
+  },
+  "recentActivity": {
+    "title": "Hoạt động gần đây",
+    "newOrder": "Đơn hàng mới được tạo",
+    "orderPickedUp": "Đơn hàng đã lấy",
+    "orderReturned": "Đơn hàng đã trả",
+    "newCustomer": "Khách hàng mới đăng ký",
+    "productAdded": "Sản phẩm mới được thêm",
+    "viewAll": "Xem tất cả hoạt động"
+  },
+  "quickActions": {
+    "title": "Thao tác nhanh",
+    "createOrder": "Tạo đơn hàng",
+    "addProduct": "Thêm sản phẩm",
+    "addCustomer": "Thêm khách hàng",
+    "viewCalendar": "Xem lịch",
+    "viewReports": "Xem báo cáo"
+  },
+  "upcomingReturns": {
+    "title": "Lịch trả hàng sắp tới",
+    "dueToday": "Hôm nay",
+    "dueTomorrow": "Ngày mai",
+    "dueThisWeek": "Tuần này",
+    "overdue": "Quá hạn",
+    "noReturns": "Không có lịch trả hàng"
+  },
+  "orderStatuses": {
+    "reserved": "Đã đặt",
+    "pickup": "Đã lấy hàng",
+    "return": "Đã trả",
+    "completed": "Hoàn thành",
+    "cancelled": "Đã hủy",
+    "ordersCount": "đơn hàng"
+  },
+  "chartTitles": {
+    "monthlyRevenue": "Doanh thu",
+    "yearlyRevenue": "Doanh thu",
+    "monthlyRentals": "Đơn thuê",
+    "yearlyRentals": "Đơn thuê"
+  },
+  "stats": {
+    "totalOrders": "Tổng đơn hàng",
+    "activeRentals": "Đơn thuê đang hoạt động",
+    "totalRevenue": "Tổng doanh thu",
+    "totalCustomers": "Tổng khách hàng",
+    "totalProducts": "Tổng sản phẩm",
+    "availableProducts": "Sản phẩm có sẵn",
+    "pendingOrders": "Đơn hàng chờ xử lý",
+    "completedOrders": "Đơn hàng hoàn thành",
+    "overdueReturns": "Đơn trả quá hạn",
+    "todayRevenue": "Doanh thu hôm nay",
+    "thisWeekRevenue": "Doanh thu tuần này",
+    "thisMonthRevenue": "Doanh thu tháng này",
+    "futureRevenue": "Doanh thu tương lai",
+    "realTimeData": "Dữ liệu thời gian thực",
+    "bookedRevenue": "Doanh thu đã đặt",
+    "expectedRevenue": "Doanh thu dự kiến từ các đơn hàng sắp tới và đang diễn ra",
+    "todayPickups": "Lấy hàng hôm nay",
+    "todayReturns": "Trả hàng hôm nay",
+    "productUtilization": "Mức sử dụng sản phẩm",
+    "revenueGrowth": "Tăng trưởng doanh thu",
+    "customerGrowth": "Tăng trưởng khách hàng"
+  }
+}
+

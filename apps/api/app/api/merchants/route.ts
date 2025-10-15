@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 // Force TypeScript refresh - address field added
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 import { getDefaultPricingConfig } from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';
@@ -219,7 +219,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
     console.error('Error fetching merchants:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch merchants', error: errorMessage },
+      ResponseBuilder.error('FETCH_MERCHANTS_FAILED', { error: errorMessage }),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -234,7 +234,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
     // Validate required fields
     if (!name || !email || !phone || !planId) {
       return NextResponse.json(
-        { success: false, message: 'Missing required fields' },
+        ResponseBuilder.error('MISSING_REQUIRED_FIELD'),
         { status: 400 }
       );
     }
@@ -244,7 +244,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
 
     if (existingMerchant) {
       return NextResponse.json(
-        { success: false, message: 'Email already exists' },
+        ResponseBuilder.error('EMAIL_EXISTS'),
         { status: 400 }
       );
     }
@@ -277,10 +277,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
       isDefault: true
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Merchant created successfully with default outlet',
-      data: {
+    return NextResponse.json(
+      ResponseBuilder.success('MERCHANT_CREATED_SUCCESS', {
         id: merchant.id,
         name: merchant.name,
         email: merchant.email,
@@ -299,8 +297,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
           name: defaultOutlet.name,
           address: defaultOutlet.address
         }
-      }
-    });
+      })
+    );
 
   } catch (error) {
     console.error('Error creating merchant:', error);

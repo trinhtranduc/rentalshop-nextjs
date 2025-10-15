@@ -1,0 +1,94 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome back",
+  "overview": "Overview",
+  "stats": {
+    "totalOrders": "Total Orders",
+    "activeRentals": "Active Rentals",
+    "totalRevenue": "Total Revenue",
+    "totalCustomers": "Total Customers",
+    "totalProducts": "Total Products",
+    "availableProducts": "Available Products",
+    "pendingOrders": "Pending Orders",
+    "completedOrders": "Completed Orders",
+    "overdueReturns": "Overdue Returns",
+    "todayRevenue": "Today's Revenue",
+    "thisWeekRevenue": "This Week's Revenue",
+    "thisMonthRevenue": "This Month's Revenue",
+    "futureRevenue": "Future Revenue",
+    "realTimeData": "Real-time data",
+    "bookedRevenue": "Booked revenue",
+    "expectedRevenue": "Expected revenue from upcoming and ongoing rentals"
+  },
+  "charts": {
+    "revenueOverTime": "Revenue Over Time",
+    "ordersByStatus": "Orders by Status",
+    "topProducts": "Top Products",
+    "customerActivity": "Customer Activity",
+    "rentalTrends": "Rental Trends",
+    "noData": "No data available for this period"
+  },
+  "recentActivity": {
+    "title": "Recent Activity",
+    "newOrder": "New order created",
+    "orderPickedUp": "Order picked up",
+    "orderReturned": "Order returned",
+    "newCustomer": "New customer registered",
+    "productAdded": "New product added",
+    "viewAll": "View all activities"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "createOrder": "Create Order",
+    "addProduct": "Add Product",
+    "addCustomer": "Add Customer",
+    "viewCalendar": "View Calendar",
+    "viewReports": "View Reports"
+  },
+  "upcomingReturns": {
+    "title": "Upcoming Returns",
+    "dueToday": "Due Today",
+    "dueTomorrow": "Due Tomorrow",
+    "dueThisWeek": "Due This Week",
+    "overdue": "Overdue",
+    "noReturns": "No upcoming returns"
+  },
+  "orderStatuses": {
+    "reserved": "Reserved",
+    "pickup": "Pickup",
+    "return": "Return",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "ordersCount": "orders"
+  },
+  "chartTitles": {
+    "monthlyRevenue": "Revenue",
+    "yearlyRevenue": "Revenue",
+    "monthlyRentals": "Rentals",
+    "yearlyRentals": "Rentals"
+  },
+  "stats": {
+    "totalOrders": "Total Orders",
+    "activeRentals": "Active Rentals",
+    "totalRevenue": "Total Revenue",
+    "totalCustomers": "Total Customers",
+    "totalProducts": "Total Products",
+    "availableProducts": "Available Products",
+    "pendingOrders": "Pending Orders",
+    "completedOrders": "Completed Orders",
+    "overdueReturns": "Overdue Returns",
+    "todayRevenue": "Today's Revenue",
+    "thisWeekRevenue": "This Week's Revenue",
+    "thisMonthRevenue": "This Month's Revenue",
+    "futureRevenue": "Future Revenue",
+    "realTimeData": "Real-time data",
+    "bookedRevenue": "Booked revenue",
+    "expectedRevenue": "Expected revenue from upcoming and ongoing rentals",
+    "todayPickups": "Today's Pickups",
+    "todayReturns": "Today's Returns",
+    "productUtilization": "Product Utilization",
+    "revenueGrowth": "Revenue Growth",
+    "customerGrowth": "Customer Growth"
+  }
+}
+

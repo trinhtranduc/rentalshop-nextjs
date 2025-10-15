@@ -1,0 +1,94 @@
+{
+  "title": "Products",
+  "createProduct": "Add Product",
+  "editProduct": "Edit Product",
+  "viewProduct": "View Product",
+  "productDetails": "Product Details",
+  "fields": {
+    "name": "Product Name",
+    "category": "Category",
+    "barcode": "Barcode",
+    "sku": "SKU",
+    "description": "Description",
+    "price": "Price",
+    "rentPrice": "Rental Price",
+    "salePrice": "Sale Price",
+    "deposit": "Deposit",
+    "stock": "Stock",
+    "available": "Available",
+    "renting": "Currently Renting",
+    "minRentalPeriod": "Minimum Rental Period",
+    "maxRentalPeriod": "Maximum Rental Period",
+    "images": "Product Images",
+    "specifications": "Specifications",
+    "notes": "Notes"
+  },
+  "inventory": {
+    "title": "Inventory",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "lowStock": "Low Stock",
+    "totalStock": "Total Stock",
+    "availableStock": "Available",
+    "rentedOut": "Rented Out",
+    "reserved": "Reserved",
+    "updateStock": "Update Stock",
+    "stockHistory": "Stock History"
+  },
+  "availability": {
+    "title": "Availability",
+    "available": "Available",
+    "notAvailable": "Not Available",
+    "partiallyAvailable": "Partially Available",
+    "checkAvailability": "Check Availability",
+    "availableFrom": "Available from",
+    "availableUntil": "Available until"
+  },
+  "pricing": {
+    "title": "Pricing",
+    "hourly": "Hourly Rate",
+    "daily": "Daily Rate",
+    "weekly": "Weekly Rate",
+    "monthly": "Monthly Rate",
+    "custom": "Custom Rate",
+    "depositRequired": "Deposit Required"
+  },
+  "actions": {
+    "viewOrders": "View Orders",
+    "viewHistory": "View History",
+    "duplicate": "Duplicate Product",
+    "archive": "Archive Product",
+    "restore": "Restore Product",
+    "delete": "Delete Product"
+  },
+  "messages": {
+    "createSuccess": "Product created successfully",
+    "createFailed": "Failed to create product",
+    "updateSuccess": "Product updated successfully",
+    "updateFailed": "Failed to update product",
+    "deleteSuccess": "Product deleted successfully",
+    "deleteFailed": "Failed to delete product",
+    "confirmDelete": "Are you sure you want to delete this product?",
+    "noProducts": "No products found",
+    "loadingProducts": "Loading products..."
+  },
+  "filters": {
+    "all": "All Products",
+    "available": "Available",
+    "rented": "Currently Rented",
+    "outOfStock": "Out of Stock",
+    "category": "Category",
+    "priceRange": "Price Range"
+  },
+  "search": {
+    "placeholder": "Search products by name, barcode, or SKU...",
+    "noResults": "No products found matching your search"
+  },
+  "stats": {
+    "totalProducts": "Total Products",
+    "availableProducts": "Available",
+    "rentedProducts": "Rented",
+    "totalValue": "Total Inventory Value"
+  }
+}
+
