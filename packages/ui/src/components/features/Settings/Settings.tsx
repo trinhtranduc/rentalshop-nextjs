@@ -315,6 +315,21 @@ export const SettingsComponent: React.FC = () => {
       setIsUpdating(true);
       const response = await settingsApi.updateMerchantInfo(merchantFormData);
       if (response.success) {
+        // Update user object in localStorage with new merchant data
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          if (userData.merchant) {
+            // Update merchant data with form values
+            userData.merchant = {
+              ...userData.merchant,
+              ...merchantFormData
+            };
+            localStorage.setItem('user', JSON.stringify(userData));
+            console.log('✅ Updated merchant in localStorage:', userData.merchant);
+          }
+        }
+        
         setIsEditingMerchant(false);
         toastSuccess('Success', 'Business information updated successfully!');
       } else {
