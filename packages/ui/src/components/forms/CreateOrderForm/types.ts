@@ -84,6 +84,7 @@ export interface CreateOrderFormProps {
   loading?: boolean;
   layout?: 'stacked' | 'split';
   merchantId?: number;
+  currency?: 'USD' | 'VND'; // Merchant's currency, defaults to USD
   // Edit mode props
   isEditMode?: boolean;
   initialOrder?: any; // Order data for editing

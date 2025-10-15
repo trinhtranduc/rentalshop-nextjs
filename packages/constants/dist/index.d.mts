@@ -775,6 +775,109 @@ declare function formatCountryDisplay(country: Country): string;
 declare function getDefaultCountry(): Country;
 
 /**
+ * Currency Constants
+ *
+ * Centralized currency-related constants for the rental shop application.
+ * Supports USD and VND currencies at the merchant level.
+ */
+/**
+ * Currency code type
+ */
+type CurrencyCode = 'USD' | 'VND';
+/**
+ * Supported currency codes
+ */
+declare const SUPPORTED_CURRENCIES: readonly CurrencyCode[];
+/**
+ * Default currency for new merchants
+ */
+declare const DEFAULT_CURRENCY: CurrencyCode;
+/**
+ * Currency symbols mapped to currency codes
+ */
+declare const CURRENCY_SYMBOLS: Record<CurrencyCode, string>;
+/**
+ * Currency names mapped to currency codes
+ */
+declare const CURRENCY_NAMES: Record<CurrencyCode, string>;
+/**
+ * Currency locales for formatting
+ */
+declare const CURRENCY_LOCALES: Record<CurrencyCode, string>;
+/**
+ * Currency decimal places
+ */
+declare const CURRENCY_DECIMALS: Record<CurrencyCode, number>;
+/**
+ * Symbol position (before or after amount)
+ */
+declare const CURRENCY_SYMBOL_POSITION: Record<CurrencyCode, 'before' | 'after'>;
+/**
+ * Exchange rates to USD (base currency)
+ * Note: These are approximate rates for reference only
+ * In production, fetch real-time rates from an API
+ */
+declare const EXCHANGE_RATES: Record<CurrencyCode, number>;
+/**
+ * Currency configuration for easy access
+ */
+interface CurrencyConfig {
+    code: CurrencyCode;
+    symbol: string;
+    name: string;
+    locale: string;
+    decimals: number;
+    symbolPosition: 'before' | 'after';
+    exchangeRate: number;
+}
+/**
+ * Complete currency configurations
+ */
+declare const CURRENCY_CONFIGS: Record<CurrencyCode, CurrencyConfig>;
+/**
+ * Get currency configuration by code
+ * @param code - Currency code
+ * @returns Currency configuration
+ */
+declare function getCurrencyConfig(code: CurrencyCode): CurrencyConfig;
+/**
+ * Check if a currency code is valid
+ * @param code - Currency code to check
+ * @returns True if valid, false otherwise
+ */
+declare function isValidCurrency(code: string): code is CurrencyCode;
+/**
+ * Get currency symbol
+ * @param code - Currency code
+ * @returns Currency symbol
+ */
+declare function getCurrencySymbol(code: CurrencyCode): string;
+/**
+ * Get currency name
+ * @param code - Currency code
+ * @returns Currency name
+ */
+declare function getCurrencyName(code: CurrencyCode): string;
+/**
+ * Currency selection options for dropdowns
+ */
+declare const CURRENCY_OPTIONS: {
+    value: CurrencyCode;
+    label: string;
+    symbol: string;
+    name: string;
+}[];
+/**
+ * Default currency settings
+ */
+declare const DEFAULT_CURRENCY_SETTINGS: {
+    currentCurrency: "USD";
+    baseCurrency: "USD";
+    showSymbol: boolean;
+    showCode: boolean;
+};
+
+/**
  * Centralized Constants for Rental Shop Monorepo
  *
  * This package provides all constants used across the application
@@ -995,4 +1098,4 @@ declare const CONSTANTS: {
     readonly STATUS: typeof STATUS;
 };
 
-export { API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ApiValue, type AuditAction, type AuditEntityType, BILLING_CYCLES, BILLING_INTERVAL, BUSINESS, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, type BillingInterval, type BusinessType, type BusinessTypeOption, type BusinessValue, CONSTANTS, COUNTRIES, type Country, ENTITY_STATUS, ENVIRONMENT, type EntityStatus, type EnvironmentValue, type MerchantPricingConfig, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_COLORS, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_COLORS, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, type SearchValue, type SubscriptionStatus, TRIAL_CONFIG, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, formatCountryDisplay, getActivePlans, getAllPlans, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, requiresRentalDates, validatePlanConfig };
+export { API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ApiValue, type AuditAction, type AuditEntityType, BILLING_CYCLES, BILLING_INTERVAL, BUSINESS, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, type BillingInterval, type BusinessType, type BusinessTypeOption, type BusinessValue, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, type MerchantPricingConfig, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_COLORS, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_COLORS, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUPPORTED_CURRENCIES, type SearchValue, type SubscriptionStatus, TRIAL_CONFIG, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, formatCountryDisplay, getActivePlans, getAllPlans, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, isValidCurrency, requiresRentalDates, validatePlanConfig };

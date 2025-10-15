@@ -55,6 +55,8 @@ export * from './components/charts';
 // CONTEXTS & HOOKS
 // ============================================================================
 // Note: Business logic hooks are imported directly from @rentalshop/hooks where needed
+export * from './contexts/CurrencyContext';
+export * from './hooks';
 
 // ============================================================================
 // UTILITIES

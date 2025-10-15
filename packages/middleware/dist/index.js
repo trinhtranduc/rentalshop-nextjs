@@ -573,6 +573,59 @@ var API = {
   }
 };
 
+// ../constants/src/currency.ts
+var SUPPORTED_CURRENCIES = ["USD", "VND"];
+var CURRENCY_SYMBOLS = {
+  USD: "$",
+  VND: "\u0111"
+};
+var CURRENCY_NAMES = {
+  USD: "US Dollar",
+  VND: "Vietnamese Dong"
+};
+var CURRENCY_LOCALES = {
+  USD: "en-US",
+  VND: "vi-VN"
+};
+var CURRENCY_DECIMALS = {
+  USD: 2,
+  VND: 0
+};
+var CURRENCY_SYMBOL_POSITION = {
+  USD: "before",
+  VND: "after"
+};
+var EXCHANGE_RATES = {
+  USD: 1,
+  VND: 24500
+};
+var CURRENCY_CONFIGS = {
+  USD: {
+    code: "USD",
+    symbol: CURRENCY_SYMBOLS.USD,
+    name: CURRENCY_NAMES.USD,
+    locale: CURRENCY_LOCALES.USD,
+    decimals: CURRENCY_DECIMALS.USD,
+    symbolPosition: CURRENCY_SYMBOL_POSITION.USD,
+    exchangeRate: EXCHANGE_RATES.USD
+  },
+  VND: {
+    code: "VND",
+    symbol: CURRENCY_SYMBOLS.VND,
+    name: CURRENCY_NAMES.VND,
+    locale: CURRENCY_LOCALES.VND,
+    decimals: CURRENCY_DECIMALS.VND,
+    symbolPosition: CURRENCY_SYMBOL_POSITION.VND,
+    exchangeRate: EXCHANGE_RATES.VND
+  }
+};
+var CURRENCY_OPTIONS = SUPPORTED_CURRENCIES.map((code) => ({
+  value: code,
+  label: `${CURRENCY_SYMBOLS[code]} ${code} - ${CURRENCY_NAMES[code]}`,
+  symbol: CURRENCY_SYMBOLS[code],
+  name: CURRENCY_NAMES[code]
+}));
+
 // src/auth/auth.ts
 function createAuthMiddleware(config = {}) {
   const {

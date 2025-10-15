@@ -8,13 +8,13 @@ import {
   CardHeader, 
   CardTitle, 
   CardContent,
-  Button
+  Button,
+  useFormatCurrency
 } from '@rentalshop/ui';
 import { 
   CheckCircle, 
   XCircle 
 } from 'lucide-react';
-import { formatCurrency } from '@rentalshop/utils';
 import type { 
   OrderFormData, 
   OrderItemFormData 
@@ -37,19 +37,22 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
   loading,
   isFormValid,
   onPreviewClick,
-  onCancel
+  onCancel,
 }) => {
+  // Use formatCurrency hook - automatically uses merchant's currency
+  const formatMoney = useFormatCurrency();
+  
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle className="text-base flex items-center gap-2">
           Order Summary & Actions
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Order Summary */}
         <div className="space-y-3 p-4 border border-border rounded-lg bg-bg-primary">
-          <h4 className="font-medium text-text-primary">Order Summary</h4>
+          <h4 className="text-sm font-semibold text-text-primary">Order Summary</h4>
           
           {/* Rental Duration - Show for RENT orders with dates */}
           {formData.orderType === 'RENT' && formData.pickupPlanAt && formData.returnPlanAt && (
@@ -75,14 +78,14 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
           {/* Subtotal */}
           <div className="flex justify-between text-sm">
             <span className="text-text-secondary">Subtotal:</span>
-            <span className="font-medium">{formatCurrency(formData.subtotal)}</span>
+            <span className="font-medium">{formatMoney(formData.subtotal)}</span>
           </div>
 
           {/* Discount */}
           {formData.discountAmount > 0 && (
             <div className="flex justify-between text-sm text-action-success">
               <span>Discount:</span>
-              <span className="font-medium">-{formatCurrency(formData.discountAmount)}</span>
+              <span className="font-medium">-{formatMoney(formData.discountAmount)}</span>
             </div>
           )}
 
@@ -90,20 +93,20 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
           {formData.orderType === 'RENT' && formData.depositAmount > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-text-secondary">Deposit:</span>
-              <span className="font-medium">{formatCurrency(formData.depositAmount)}</span>
+              <span className="font-medium">{formatMoney(formData.depositAmount)}</span>
             </div>
           )}
 
           {/* Grand Total */}
-          <div className="flex justify-between text-lg font-bold text-action-primary pt-2 border-t border-border">
+          <div className="flex justify-between text-base font-bold text-action-primary pt-2 border-t border-border">
             <span>Grand Total:</span>
-            <span>{formatCurrency(formData.totalAmount)}</span>
+            <span>{formatMoney(formData.totalAmount)}</span>
           </div>
         </div>
 
         {/* Validation Summary */}
         <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-          <h4 className="font-medium text-gray-700 mb-2">Order Requirements:</h4>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Order Requirements:</h4>
           <div className="space-y-2 text-sm">
             {/* Products Required */}
             <div className="flex items-center gap-2">

@@ -2,15 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, 
+import { 
+  Card, 
   CardContent, 
   Button,
   PageWrapper,
-  PageHeader,
-  PageTitle,
-  PageContent,
   useToast,
-  FormSkeleton } from '@rentalshop/ui';
+  FormSkeleton,
+  Breadcrumb,
+  CurrencyProvider
+} from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { CreateOrderForm } from '@rentalshop/ui';
 import type { CustomerSearchResult, ProductWithStock, OrderInput } from '@rentalshop/types';
 import { 
@@ -35,8 +37,9 @@ export default function CreateOrderPage() {
   // Toast notifications
   const { toastSuccess, toastError, removeToast } = useToast();
 
-  // Get merchant ID from user context
+  // Get merchant ID and currency from user context
   const merchantId = user?.merchant?.id;
+  const merchantCurrency = user?.merchant?.currency || 'USD';
 
   useEffect(() => {
     if (!merchantId) return; // Don't fetch without merchant ID
@@ -151,41 +154,56 @@ export default function CreateOrderPage() {
     setResetForm(() => resetFormFn);
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Orders', href: '/orders' },
+    { label: 'Create New Order' }
+  ];
+
   if (!merchantId) {
     return (
       <PageWrapper>
-        <PageContent>
-          <Card>
-            <CardContent className="p-8 text-center text-gray-600">
-              <div className="mb-4">Merchant ID not found</div>
-              <div className="text-sm text-gray-500">Please log in again to access this page</div>
-            </CardContent>
-          </Card>
-        </PageContent>
+        <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
+        <Card>
+          <CardContent className="p-8 text-center text-gray-600">
+            <div className="mb-4">Merchant ID not found</div>
+            <div className="text-sm text-gray-500">Please log in again to access this page</div>
+          </CardContent>
+        </Card>
       </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg-primary">
-      {loading ? (
-        <div className="p-6">
-          <FormSkeleton />
+    <CurrencyProvider merchantCurrency={merchantCurrency}>
+      <div className="min-h-screen bg-bg-secondary">
+        {/* Breadcrumb - At top */}
+        <div className="px-6 py-3">
+          <Breadcrumb items={breadcrumbItems} showHome={false} />
         </div>
-      ) : (
-        <CreateOrderForm
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          customers={customers}
-          products={products}
-          outlets={outlets}
-          loading={submitting}
-          layout="three-column"
-          merchantId={Number(merchantId)}
-          onFormReady={handleFormReady}
-        />
-      )}
-    </div>
+        
+        {/* Main Content */}
+        <div className="w-full">
+          {loading ? (
+            <div className="p-6">
+              <FormSkeleton />
+            </div>
+          ) : (
+            <CreateOrderForm
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+              customers={customers}
+              products={products}
+              outlets={outlets}
+              loading={submitting}
+              layout="three-column"
+              merchantId={Number(merchantId)}
+              onFormReady={handleFormReady}
+            />
+          )}
+        </div>
+      </div>
+    </CurrencyProvider>
   );
 }
 

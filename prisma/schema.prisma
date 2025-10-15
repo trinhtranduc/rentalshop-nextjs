@@ -50,6 +50,7 @@ model Merchant {
   taxId              String?
   website            String?
   description        String?
+  currency           String        @default("USD")
   planId             Int?
   totalRevenue       Float         @default(0)
   lastActiveAt       DateTime?

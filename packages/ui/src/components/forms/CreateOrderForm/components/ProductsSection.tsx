@@ -11,20 +11,104 @@ import {
   Input,
   SearchableSelect,
   Skeleton,
-  Button
+  Button,
+  useFormatCurrency
 } from '@rentalshop/ui';
 import { 
   Search, 
   Package, 
   Trash2 
 } from 'lucide-react';
-import { formatCurrency } from '@rentalshop/utils';
 import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui';
 import type { 
   OrderItemFormData, 
   ProductWithStock,
   ProductAvailabilityStatus 
 } from '../types';
+
+// ============================================================================
+// NUMBER INPUT WITH THOUSAND SEPARATOR
+// ============================================================================
+
+interface NumberInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  className?: string;
+  placeholder?: string;
+  decimals?: number;
+}
+
+const NumberInput: React.FC<NumberInputProps> = ({
+  value,
+  onChange,
+  min = 0,
+  max,
+  step = 1,
+  className = '',
+  placeholder = '',
+  decimals = 0
+}) => {
+  const [displayValue, setDisplayValue] = React.useState('');
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  // Format number with thousand separators when not focused
+  React.useEffect(() => {
+    if (!isFocused) {
+      if (value === 0 || value === null || value === undefined) {
+        setDisplayValue('');
+      } else {
+        // Format with thousand separators
+        const formatted = new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }).format(value);
+        setDisplayValue(formatted);
+      }
+    }
+  }, [value, isFocused, decimals]);
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    // Show raw number when focused (without commas for easier editing)
+    setDisplayValue(value ? value.toString() : '');
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    // Parse and validate
+    const numValue = parseFloat(displayValue.replace(/,/g, '')) || 0;
+    const bounded = max !== undefined ? Math.min(max, numValue) : numValue;
+    const final = Math.max(min, bounded);
+    onChange(final);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    // Allow only numbers, decimal point (for price inputs)
+    if (input === '' || /^[\d\.]*$/.test(input)) {
+      setDisplayValue(input);
+    }
+  };
+
+  return (
+    <Input
+      type="text"
+      value={displayValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      className={className}
+      placeholder={placeholder}
+    />
+  );
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 interface ProductsSectionProps {
   orderItems: OrderItemFormData[];
@@ -38,6 +122,7 @@ interface ProductsSectionProps {
   pickupDate?: string;
   returnDate?: string;
   getProductAvailabilityStatus: (product: ProductWithStock, startDate?: string, endDate?: string, requestedQuantity?: number) => Promise<ProductAvailabilityStatus>;
+  currency?: 'USD' | 'VND';
 }
 
 export const ProductsSection: React.FC<ProductsSectionProps> = ({
@@ -51,7 +136,8 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   orderType,
   pickupDate,
   returnDate,
-  getProductAvailabilityStatus
+  getProductAvailabilityStatus,
+  currency = 'USD',
 }) => {
   return (
     <Card>
@@ -92,7 +178,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         <div className="space-y-4">
           <Card className="border border-gray-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
                 <Package className="w-5 h-5" />
                 Selected Products <span className="text-red-500">*</span>
                 <span className="text-sm font-normal text-gray-500">({orderItems.length})</span>
@@ -160,6 +246,9 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
   returnDate,
   getProductAvailabilityStatus
 }) => {
+  // Use formatCurrency hook - automatically uses merchant's currency
+  const formatMoney = useFormatCurrency();
+  
   // Use the product information stored in the item instead of the external product
   // This ensures all order items are displayed even if the external products array is incomplete
   const displayProduct = item.product || product;
@@ -337,11 +426,11 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Quantity
           </label>
-          <Input
-            type="number"
-            min="1"
+          <NumberInput
             value={item.quantity}
-            onChange={(e) => onUpdate(item.productId, 'quantity', parseInt(e.target.value) || 1)}
+            onChange={(value) => onUpdate(item.productId, 'quantity', value)}
+            min={1}
+            decimals={0}
             className="h-8 text-sm"
           />
         </div>
@@ -351,12 +440,12 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Unit Price
           </label>
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
+          <NumberInput
             value={item.unitPrice}
-            onChange={(e) => onUpdate(item.productId, 'unitPrice', parseFloat(e.target.value) || 0)}
+            onChange={(value) => onUpdate(item.productId, 'unitPrice', value)}
+            min={0}
+            step={0.01}
+            decimals={0}
             className="h-8 text-sm"
           />
         </div>
@@ -366,12 +455,12 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Deposit
           </label>
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={item.deposit}
-            onChange={(e) => onUpdate(item.productId, 'deposit', parseFloat(e.target.value) || 0)}
+          <NumberInput
+            value={item.deposit || 0}
+            onChange={(value) => onUpdate(item.productId, 'deposit', value)}
+            min={0}
+            step={0.01}
+            decimals={0}
             className="h-8 text-sm"
           />
         </div>
@@ -393,10 +482,10 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
       {/* Summary */}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
         <div className="text-sm text-gray-600">
-          Total: {item.quantity} × {formatCurrency(item.unitPrice)} = {formatCurrency(item.quantity * item.unitPrice)}
+          Total: {item.quantity} × {formatMoney(item.unitPrice)} = {formatMoney(item.quantity * item.unitPrice)}
         </div>
         <div className="text-sm text-gray-600">
-          Deposit: {formatCurrency(item.deposit)}
+          Deposit: {formatMoney(item.deposit)}
         </div>
       </div>
     </div>

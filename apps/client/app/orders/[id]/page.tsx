@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast } from '@rentalshop/ui';
+import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast, CurrencyProvider } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 
 import { ArrowLeft } from 'lucide-react';
 import { ordersApi } from '@rentalshop/utils';
+import { useAuth } from '@rentalshop/hooks';
 
 import type { Order } from '@rentalshop/types';
 
@@ -15,10 +16,14 @@ export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toastSuccess, toastError } = useToast();
+  const { user } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // Get merchant currency
+  const merchantCurrency = (order as any)?.outlet?.merchant?.currency || user?.merchant?.currency || 'USD';
 
   const orderId = params.id as string;
   
@@ -297,22 +302,24 @@ export default function OrderDetailPage() {
   ];
 
   return (
-    <PageWrapper>
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
+    <CurrencyProvider merchantCurrency={merchantCurrency}>
+      <PageWrapper>
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
 
-      {/* Order Detail Component */}
-        <OrderDetail
-          order={order}
-          onEdit={handleEditOrder}
-          onCancel={handleCancelOrder}
-          onStatusChange={handleStatusChange}
-          onPickup={handlePickupWrapper}
-          onReturn={handleReturnWrapper}
-          onSaveSettings={handleSaveSettings}
-          loading={actionLoading}
-          showActions={true}
-        />
-    </PageWrapper>
+        {/* Order Detail Component */}
+          <OrderDetail
+            order={order}
+            onEdit={handleEditOrder}
+            onCancel={handleCancelOrder}
+            onStatusChange={handleStatusChange}
+            onPickup={handlePickupWrapper}
+            onReturn={handleReturnWrapper}
+            onSaveSettings={handleSaveSettings}
+            loading={actionLoading}
+            showActions={true}
+          />
+      </PageWrapper>
+    </CurrencyProvider>
   );
 }

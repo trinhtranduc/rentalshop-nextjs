@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
+import { useFormatCurrency } from '@rentalshop/ui';
 import { Eye, Edit } from 'lucide-react';
 
 // Local interface matching what OrderTable actually uses
@@ -35,6 +36,9 @@ export const OrderTable = React.memo(function OrderTable({
   sortOrder = 'desc',
   onSort
 }: OrderTableProps) {
+  // Use formatCurrency hook - automatically uses merchant's currency
+  const formatMoney = useFormatCurrency();
+  
   // Debug: Log order statuses
   React.useEffect(() => {
     if (orders.length > 0) {
@@ -90,14 +94,6 @@ export const OrderTable = React.memo(function OrderTable({
         {type.replace('_', ' ')}
       </Badge>
     );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
   };
 
   const formatDate = (dateString: string | Date | undefined) => {
@@ -232,10 +228,10 @@ export const OrderTable = React.memo(function OrderTable({
                 {/* Amount */}
                 <td className="px-6 py-3 whitespace-nowrap">
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
+                    <div className="font-medium text-gray-900 dark:text-white">{formatMoney(order.totalAmount)}</div>
                     {order.depositAmount > 0 && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        Deposit: {formatCurrency(order.depositAmount)}
+                        Deposit: {formatMoney(order.depositAmount)}
                       </div>
                     )}
                   </div>

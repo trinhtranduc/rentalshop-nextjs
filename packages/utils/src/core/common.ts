@@ -644,6 +644,9 @@ export const storeAuthData = (token: string, user: User): void => {
       updatedAt: user.updatedAt,
       merchantId: user.merchantId ? Number(user.merchantId) : undefined,
       outletId: user.outletId ? Number(user.outletId) : undefined,
+      // ✅ Store merchant and outlet objects (optional)
+      merchant: user.merchant || undefined,
+      outlet: user.outlet || undefined,
     },
     expiresAt, // Use actual JWT expiration time
   };

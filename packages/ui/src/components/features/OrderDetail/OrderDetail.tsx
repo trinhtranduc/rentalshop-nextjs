@@ -37,7 +37,7 @@ import {
   Edit,
   Calculator
 } from 'lucide-react';
-import { formatCurrency } from '@rentalshop/ui';
+import { useFormatCurrency } from '@rentalshop/ui';
 import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
 import type { OrderWithDetails } from '@rentalshop/types';
 
@@ -93,8 +93,9 @@ const OrderDetailSkeleton: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column Skeleton */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Order Information Card Skeleton */}
-            <Card className="flex flex-col">
+            {/* Order Information Card Skeleton - Sticky */}
+            <div className="lg:sticky lg:top-4 lg:z-10 lg:self-start">
+              <Card className="flex flex-col">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-5 w-5" />
@@ -124,7 +125,8 @@ const OrderDetailSkeleton: React.FC = () => {
                 </div>
                 <div className="flex-1"></div>
               </CardContent>
-            </Card>
+              </Card>
+            </div>
 
             {/* Products Card Skeleton */}
             <Card>
@@ -231,6 +233,8 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   loading = false,
   showActions = true
 }) => {
+  // Use formatCurrency hook - automatically uses merchant's currency
+  const formatMoney = useFormatCurrency();
   const { toastSuccess, toastError, toastInfo, removeToast } = useToast();
   
   // Predefined collateral types
@@ -592,11 +596,12 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-screen">
           {/* Left Column - Order Information & Products (2/3 width) */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Order Information Card */}
-            <Card className="flex flex-col">
+            {/* Order Information Card - Sticky */}
+            <div className="lg:sticky lg:top-4 lg:z-10 lg:self-start">
+              <Card className="flex flex-col">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Info className="w-5 h-5" />
@@ -668,7 +673,8 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                 {/* Spacer to fill remaining height */}
                 <div className="flex-1"></div>
               </CardContent>
-            </Card>
+              </Card>
+            </div>
 
             {/* Products Card */}
             <Card>
@@ -705,7 +711,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                               {item.product?.name ? `Product: ${item.product.name}` : 'Unknown Product'}
                             </div>
                             <div className="text-xs text-gray-600">
-                              {formatCurrency(item.unitPrice)} x {item.quantity}
+                              {formatMoney(item.unitPrice)} x {item.quantity}
                             </div>
                             {(item as any).notes && (
                               <div className="text-xs text-gray-500 mt-1">
@@ -723,7 +729,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
           </div>
 
                     {/* Right Column - Order Summary & Settings */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:sticky lg:top-4 lg:self-start">
             {/* Order Summary Card */}
             <Card>
               <CardHeader>
@@ -736,7 +742,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                 {/* Subtotal */}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">{formatCurrency(order.totalAmount || 0)}</span>
+                  <span className="font-medium">{formatMoney(order.totalAmount || 0)}</span>
                 </div>
 
                 {/* Discount Display */}
@@ -747,7 +753,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                         ? `(${(order as any).discountValue}%)` 
                         : '(amount)'}:
                     </span>
-                    <span className="font-medium">-{formatCurrency((order as any).discountAmount)}</span>
+                    <span className="font-medium">-{formatMoney((order as any).discountAmount)}</span>
                   </div>
                 )}
 
@@ -755,14 +761,14 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                 {order.orderType === 'RENT' && order.depositAmount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Deposit:</span>
-                    <span className="font-medium">{formatCurrency(order.depositAmount)}</span>
+                    <span className="font-medium">{formatMoney(order.depositAmount)}</span>
                   </div>
                 )}
 
                 {/* Grand Total */}
                 <div className="flex justify-between text-lg font-bold text-green-700 pt-2 border-t border-gray-200">
                   <span>Grand Total:</span>
-                  <span>{formatCurrency(order.totalAmount || 0)}</span>
+                  <span>{formatMoney(order.totalAmount || 0)}</span>
                 </div>
 
                 {/* Collection Amount - Single field for RENT orders */}
@@ -776,7 +782,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                     }`}>
                       {order.status === 'RESERVED' ? (
                         <span className="flex items-center gap-2">
-                          <span>{formatCurrency(calculateCollectionTotal(order, tempSettings))}</span>
+                          <span>{formatMoney(calculateCollectionTotal(order, tempSettings))}</span>
                           {tempSettings.collateralType && tempSettings.collateralType !== 'Other' && (
                             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                               + {tempSettings.collateralType}
@@ -936,7 +942,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                         <span className="text-sm text-gray-600">Damage Fee:</span>
                         <span className="text-sm font-medium">
                           {isDamageFeeEnabled() 
-                            ? formatCurrency(settingsForm.damageFee || 0)
+                            ? formatMoney(settingsForm.damageFee || 0)
                             : <span className="text-gray-400 italic">Disabled</span>
                           }
                         </span>
@@ -945,7 +951,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                         <span className="text-sm text-gray-600">Security Deposit:</span>
                         <span className="text-sm font-medium">
                           {isSecurityDepositEnabled() 
-                            ? formatCurrency(settingsForm.securityDeposit || 0)
+                            ? formatMoney(settingsForm.securityDeposit || 0)
                             : <span className="text-gray-400 italic">Disabled</span>
                           }
                         </span>

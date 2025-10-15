@@ -8,9 +8,11 @@ import {
   Building2,
   Store
 } from 'lucide-react';
+import type { CurrencyCode } from '@rentalshop/types';
 import { useAuth } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
 import { useToast } from '@rentalshop/ui';
+import { useCurrency } from '../../../contexts/CurrencyContext';
 
 // Import components
 import { SettingsLayout } from './components/SettingsLayout';
@@ -37,7 +39,7 @@ const settingsMenuItems = [
     id: 'merchant',
     label: 'Business',
     icon: Building2,
-    description: 'Manage your business information and pricing',
+    description: 'Manage your business information, pricing, and currency',
     roles: ['MERCHANT']
   },
   {
@@ -69,6 +71,7 @@ const settingsMenuItems = [
 export const SettingsComponent: React.FC = () => {
   const { user, logout, loading } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const { currency, setCurrency } = useCurrency();
   
   // Navigation state
   const [activeSection, setActiveSection] = useState('profile');
@@ -360,7 +363,7 @@ export const SettingsComponent: React.FC = () => {
         throw new Error('User ID not found');
       }
       
-      const response = await usersApi.deleteAccount(user.id);
+      const response = await usersApi.deleteUser(user.id);
       if (response.success) {
         toastSuccess('Account Deleted', 'Your account has been deleted successfully.');
         await logout();
@@ -399,6 +402,23 @@ export const SettingsComponent: React.FC = () => {
     }
   };
 
+  const handleCurrencyChange = async (newCurrency: CurrencyCode) => {
+    try {
+      setIsUpdating(true);
+      const response = await settingsApi.updateMerchantCurrency({ currency: newCurrency });
+      if (response.success) {
+        setCurrency(newCurrency);
+        toastSuccess('Success', 'Currency updated successfully!');
+      } else {
+        toastError('Error', response.error || 'Failed to update currency');
+      }
+    } catch (error) {
+      toastError('Error', 'Failed to update currency. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'profile':
@@ -421,10 +441,12 @@ export const SettingsComponent: React.FC = () => {
             isEditing={isEditingMerchant}
             isUpdating={isUpdating}
             formData={merchantFormData}
+            currentCurrency={currency}
             onEdit={handleEditMerchantInfo}
             onSave={handleUpdateMerchantInfo}
             onCancel={handleCancelMerchant}
             onInputChange={handleMerchantInputChange}
+            onCurrencyChange={handleCurrencyChange}
           />
         );
       case 'outlet':

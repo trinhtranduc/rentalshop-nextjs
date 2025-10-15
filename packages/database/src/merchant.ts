@@ -31,6 +31,7 @@ export interface MerchantCreateData {
   taxId?: string;
   website?: string;
   description?: string;
+  currency?: string; // Currency code (USD, VND), defaults to USD
   pricingConfig?: string;
   planId?: number;
   // subscriptionStatus removed - use subscription.status instead

@@ -11,6 +11,7 @@ const merchantRegistrationSchema = z.object({
   merchantEmail: z.string().email('Invalid merchant email'),
   merchantPhone: z.string().optional(),
   merchantDescription: z.string().optional(),
+  currency: z.enum(['USD', 'VND']).default('USD'),
   
   // User details (merchant owner)
   userEmail: z.string().email('Invalid user email'),
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
       email: validatedData.merchantEmail,
       phone: validatedData.merchantPhone,
       description: validatedData.merchantDescription,
+      currency: validatedData.currency,
       businessType: 'RENTAL_SHOP',
       address: validatedData.outletAddress || 'Address to be updated',
       city: 'City to be updated',
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
       planId: trialPlan?.id || 1,
       status: 'TRIAL',
       amount: 0,
-      currency: 'USD',
+      currency: validatedData.currency, // Use merchant's currency
       currentPeriodStart: new Date(),
       currentPeriodEnd: trialEndDate,
       trialEnd: trialEndDate

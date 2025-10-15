@@ -9,8 +9,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
+import { useFormatCurrency } from '@rentalshop/ui';
 import { Product } from '@rentalshop/types';
-import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package, ArrowUpDown } from 'lucide-react';
+import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
 
 interface ProductTableProps {
   products: Product[];
@@ -28,6 +29,9 @@ export function ProductTable({
   onSort 
 }: ProductTableProps) {
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+  
+  // Use formatCurrency hook - automatically uses merchant's currency
+  const formatMoney = useFormatCurrency();
   
   // Debug: Log products received
   console.log('🔍 ProductTable: Received products:', {
@@ -100,13 +104,10 @@ export function ProductTable({
                 onClick={() => handleSort('name')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  <span>Product Name</span>
-                  <ArrowUpDown className="w-3 h-3" />
+                <div className="flex items-center gap-1">
+                  Product Name
                   {sortBy === 'name' && (
-                    <span className="text-blue-600 dark:text-blue-400">
-                      {sortOrder === 'desc' ? '↓' : '↑'}
-                    </span>
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
@@ -136,13 +137,10 @@ export function ProductTable({
                 onClick={() => handleSort('createdAt')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  <span>Created Date</span>
-                  <ArrowUpDown className="w-3 h-3" />
+                <div className="flex items-center gap-1">
+                  Created
                   {sortBy === 'createdAt' && (
-                    <span className="text-blue-600 dark:text-blue-400">
-                      {sortOrder === 'desc' ? '↓' : '↑'}
-                    </span>
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
@@ -203,11 +201,11 @@ export function ProductTable({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">
-                      {formatCurrency(product.rentPrice || 0)}
+                      {formatMoney(product.rentPrice || 0)}
                     </div>
                     {product.salePrice && product.salePrice > 0 && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        Sale: {formatCurrency(product.salePrice)}
+                        Sale: {formatMoney(product.salePrice)}
                       </div>
                     )}
                   </div>
