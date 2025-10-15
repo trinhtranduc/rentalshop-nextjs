@@ -36,7 +36,7 @@ export async function GET(
 
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: 404 }
         );
       }
@@ -134,7 +134,7 @@ export async function PUT(
 
       if (!existingMerchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: 404 }
         );
       }
