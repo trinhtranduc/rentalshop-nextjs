@@ -20,7 +20,7 @@ export async function GET(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid product ID format' },
+          ResponseBuilder.error('INVALID_PRODUCT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -32,7 +32,7 @@ export async function GET(
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -111,7 +111,7 @@ export async function PUT(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid product ID format' },
+          ResponseBuilder.error('INVALID_PRODUCT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -123,7 +123,7 @@ export async function PUT(
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -196,7 +196,7 @@ export async function DELETE(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid product ID format' },
+          ResponseBuilder.error('INVALID_PRODUCT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -208,7 +208,7 @@ export async function DELETE(
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }

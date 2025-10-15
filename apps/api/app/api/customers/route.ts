@@ -125,7 +125,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   } catch (error) {
     console.error('Error fetching customers:', error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -218,13 +218,13 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     // Handle specific Prisma errors
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { success: false, message: 'A customer with this email or phone already exists' },
+        ResponseBuilder.error('CUSTOMER_DUPLICATE'),
         { status: 409 }
       );
     }
     
     return NextResponse.json(
-      { success: false, message: 'Failed to create customer' },
+      ResponseBuilder.error('CREATE_CUSTOMER_FAILED'),
       { status: 500 }
     );
   }
@@ -255,7 +255,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     if (!id) {
       return NextResponse.json(
-        { success: false, message: 'Customer ID is required' },
+        ResponseBuilder.error('CUSTOMER_ID_REQUIRED'),
         { status: 400 }
       );
     }
@@ -264,7 +264,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const existingCustomer = await db.customers.findById(id);
     if (!existingCustomer) {
       return NextResponse.json(
-        { success: false, message: 'Customer not found' },
+        ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -272,7 +272,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Check if user can access this customer (ADMIN can access all customers)
     if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userScope.merchantId) {
       return NextResponse.json(
-        { success: false, message: 'Forbidden' },
+        ResponseBuilder.error('FORBIDDEN'),
         { status: 403 }
       );
     }
@@ -295,7 +295,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Handle specific Prisma errors
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { success: false, message: 'A customer with this email or phone already exists' },
+        ResponseBuilder.error('CUSTOMER_DUPLICATE'),
         { status: 409 }
       );
     }
