@@ -171,7 +171,9 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
   // Shared Calendar UI for FIXED, DAILY, WEEKLY
   const renderCalendarUI = (label: string, quickButtons?: { value: number; unit: 'day' | 'week'; label: string }[]) => (
     <div className="space-y-3">
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label className="text-sm font-medium">
+        {label} <span className="text-red-500">*</span>
+      </Label>
       <DateRangePicker
         value={{
           from: rentalStartAt || undefined,
@@ -225,7 +227,9 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
 
     return (
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Rental Period (Hourly)</Label>
+        <Label className="text-sm font-medium">
+          Rental Period (Hourly) <span className="text-red-500">*</span>
+        </Label>
         
         {/* Single Date Picker - Same day rental using DateRangePicker */}
         <div className="space-y-2">

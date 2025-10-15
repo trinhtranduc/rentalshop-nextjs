@@ -441,6 +441,7 @@ interface Merchant extends BaseEntity, Address, ContactInfo {
     businessType?: string;
     pricingType?: string;
     taxId?: string;
+    currency: string;
     isActive: boolean;
     planId?: number;
     totalRevenue: number;
@@ -511,6 +512,7 @@ interface MerchantCreateInput extends BaseFormInput {
     email: string;
     phone?: string;
     description?: string;
+    currency?: string;
     planId?: number;
     isActive?: boolean;
 }
@@ -529,6 +531,7 @@ interface MerchantUpdateInput extends BaseUpdateInput {
     country?: string;
     businessType?: string;
     taxId?: number;
+    currency?: string;
     isActive?: boolean;
 }
 /**

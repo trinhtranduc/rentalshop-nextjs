@@ -33,6 +33,85 @@ import type {
   CustomerSearchResult 
 } from '../types';
 
+// ============================================================================
+// NUMBER INPUT WITH THOUSAND SEPARATOR
+// ============================================================================
+
+interface NumberInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  className?: string;
+  placeholder?: string;
+  decimals?: number;
+}
+
+const NumberInput: React.FC<NumberInputProps> = ({
+  value,
+  onChange,
+  min = 0,
+  max,
+  step = 1,
+  className = '',
+  placeholder = '',
+  decimals = 0
+}) => {
+  const [displayValue, setDisplayValue] = React.useState('');
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isFocused) {
+      if (value === 0 || value === null || value === undefined) {
+        setDisplayValue('');
+      } else {
+        const formatted = new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }).format(value);
+        setDisplayValue(formatted);
+      }
+    }
+  }, [value, isFocused, decimals]);
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    setDisplayValue(value ? value.toString() : '');
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    const numValue = parseFloat(displayValue.replace(/,/g, '')) || 0;
+    const bounded = max !== undefined ? Math.min(max, numValue) : numValue;
+    const final = Math.max(min, bounded);
+    onChange(final);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    if (input === '' || /^[\d\.]*$/.test(input)) {
+      setDisplayValue(input);
+    }
+  };
+
+  return (
+    <Input
+      type="text"
+      value={displayValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      className={className}
+      placeholder={placeholder}
+    />
+  );
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 interface OrderInfoSectionProps {
   formData: OrderFormData;
   outlets: Array<{ id: number; name: string; merchantId?: number }>;
@@ -73,45 +152,12 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <User className="w-4 h-4" />
+        <CardTitle className="text-base flex items-center gap-2">
           Order Information
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* 1. Outlet Selection */}
-        <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">
-            Outlet <span className="text-red-500">*</span>
-          </label>
-          <Select
-            value={formData.outletId ? String(formData.outletId) : undefined}
-            onValueChange={(value: string) => {
-              console.log('🔍 Outlet selection changed:', { 
-                previousValue: formData.outletId, 
-                newValue: value,
-                convertedValue: value ? parseInt(value, 10) : undefined,
-                outlets: outlets
-              });
-              // Convert string back to number for form data
-              const outletId = value ? parseInt(value, 10) : undefined;
-              onFormDataChange('outletId', outletId);
-            }}
-          >
-            <SelectTrigger variant="filled" className="w-full">
-              <SelectValue placeholder="Select outlet..." />
-            </SelectTrigger>
-            <SelectContent>
-              {outlets.map(outlet => (
-                <SelectItem key={outlet.id} value={String(outlet.id)}>
-                  {outlet.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* 2. Order Type Toggle */}
+        {/* 1. Order Type Toggle */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
             Order Type
@@ -154,7 +200,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </div>
         </div>
 
-        {/* 3. Rental Period Selection - Smart pricing based on merchant configuration */}
+        {/* 2. Rental Period Selection - Smart pricing based on merchant configuration */}
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
             {/* Debug logs */}
@@ -221,6 +267,38 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             )}
           </div>
         )}
+
+        {/* 3. Outlet Selection */}
+        <div className="space-y-2 w-full">
+          <label className="text-sm font-medium text-text-primary">
+            Outlet <span className="text-red-500">*</span>
+          </label>
+          <Select
+            value={formData.outletId ? String(formData.outletId) : undefined}
+            onValueChange={(value: string) => {
+              console.log('🔍 Outlet selection changed:', { 
+                previousValue: formData.outletId, 
+                newValue: value,
+                convertedValue: value ? parseInt(value, 10) : undefined,
+                outlets: outlets
+              });
+              // Convert string back to number for form data
+              const outletId = value ? parseInt(value, 10) : undefined;
+              onFormDataChange('outletId', outletId);
+            }}
+          >
+            <SelectTrigger variant="filled" className="w-full">
+              <SelectValue placeholder="Select outlet..." />
+            </SelectTrigger>
+            <SelectContent>
+              {outlets.map(outlet => (
+                <SelectItem key={outlet.id} value={String(outlet.id)}>
+                  {outlet.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* 4. Customer Selection */}
         <div className="space-y-2 w-full">
@@ -355,14 +433,12 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
             <label className="text-sm font-medium text-text-primary">Deposit</label>
-            <Input
-              type="number"
+            <NumberInput
+              value={formData.depositAmount || 0}
+              onChange={(value) => onFormDataChange('depositAmount', value)}
+              min={0}
+              decimals={0}
               placeholder="Enter deposit amount..."
-              value={formData.depositAmount || ''}
-              onChange={(e) => {
-                const value = parseFloat(e.target.value) || 0;
-                onFormDataChange('depositAmount', value);
-              }}
               className="w-full"
             />
           </div>
@@ -373,14 +449,12 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           <label className="text-sm font-medium text-text-primary">Discount</label>
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
-              <Input
-                type="number"
+              <NumberInput
+                value={formData.discountValue || 0}
+                onChange={(value) => onFormDataChange('discountValue', value)}
+                min={0}
+                decimals={0}
                 placeholder="Discount amount..."
-                value={formData.discountValue || ''}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value) || 0;
-                  onFormDataChange('discountValue', value);
-                }}
                 className="w-full"
               />
             </div>

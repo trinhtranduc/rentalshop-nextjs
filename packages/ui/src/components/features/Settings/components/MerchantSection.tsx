@@ -6,14 +6,17 @@ import {
   CardContent,
   Button,
   Input,
-  Label
+  Label,
+  Badge
 } from '@rentalshop/ui';
-import { merchantsApi } from '@rentalshop/utils';
+import { CheckCircle2, DollarSign } from 'lucide-react';
+import { merchantsApi, formatCurrency, getCurrency } from '@rentalshop/utils';
 import { 
   getBusinessTypeDescription, 
   getPricingTypeDescription
 } from '@rentalshop/constants';
 import type { BusinessType, PricingType } from '@rentalshop/constants/src/pricing';
+import type { CurrencyCode } from '@rentalshop/types';
 
 // ============================================================================
 // TYPES
@@ -35,10 +38,12 @@ export interface MerchantSectionProps {
     pricingType: string;
     taxId: string;
   };
+  currentCurrency: CurrencyCode;
   onEdit: () => void;
   onSave: () => void;
   onCancel: () => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onCurrencyChange: (currency: CurrencyCode) => Promise<void>;
 }
 
 // ============================================================================
@@ -50,14 +55,24 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   isEditing,
   isUpdating,
   formData,
+  currentCurrency,
   onEdit,
   onSave,
   onCancel,
-  onInputChange
+  onInputChange,
+  onCurrencyChange
 }) => {
   const [merchantData, setMerchantData] = useState<any>(null);
   const [loadingMerchant, setLoadingMerchant] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(currentCurrency);
+  const [isSavingCurrency, setIsSavingCurrency] = useState(false);
   const fetchingRef = useRef(false);
+  
+  // Currency options
+  const CURRENCY_OPTIONS: Array<{ value: CurrencyCode; label: string; symbol: string }> = [
+    { value: 'USD', label: 'US Dollar', symbol: '$' },
+    { value: 'VND', label: 'Vietnamese Dong', symbol: 'đ' },
+  ];
   
   // Debug logging
   console.log('🔍 MerchantSection render - user:', user);
@@ -107,6 +122,27 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   
   // Use merchant data from user object or fetched data
   const merchant = user?.merchant || merchantData;
+  
+  // Update selected currency when current currency changes
+  useEffect(() => {
+    setSelectedCurrency(currentCurrency);
+  }, [currentCurrency]);
+  
+  // Handle currency change
+  const handleCurrencySelect = async (currency: CurrencyCode) => {
+    if (currency === currentCurrency) return;
+    
+    setIsSavingCurrency(true);
+    try {
+      await onCurrencyChange(currency);
+      setSelectedCurrency(currency);
+    } catch (error) {
+      console.error('Failed to update currency:', error);
+      setSelectedCurrency(currentCurrency); // Revert on error
+    } finally {
+      setIsSavingCurrency(false);
+    }
+  };
   
   // Debug merchant data
   console.log('🔍 MerchantSection - Final merchant data:', {
@@ -383,6 +419,78 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 )}
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Currency Settings Card */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Currency Settings</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Select your preferred currency for displaying prices across your rental shop.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {CURRENCY_OPTIONS.map((option) => {
+              const config = getCurrency(option.value);
+              const isSelected = selectedCurrency === option.value;
+              const isCurrent = currentCurrency === option.value;
+              
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => handleCurrencySelect(option.value)}
+                  disabled={isSavingCurrency || isCurrent}
+                  className={`
+                    relative p-4 border-2 rounded-lg text-left transition-all
+                    ${isCurrent 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
+                    }
+                    ${isSavingCurrency ? 'opacity-50 cursor-wait' : isCurrent ? 'cursor-default' : 'cursor-pointer'}
+                  `}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">{option.symbol}</div>
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          {option.label}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {option.value}
+                        </div>
+                      </div>
+                    </div>
+                    {isCurrent && (
+                      <Badge variant="default" className="bg-green-100 text-green-800">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Active
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Preview */}
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Preview:</div>
+                    <div className="flex gap-4 text-sm text-gray-700">
+                      <span>{formatCurrency(100, option.value)}</span>
+                      <span>{formatCurrency(10000, option.value)}</span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {isSavingCurrency && (
+            <p className="text-sm text-blue-600 mt-3">
+              Updating currency settings...
+            </p>
           )}
         </CardContent>
       </Card>

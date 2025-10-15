@@ -45,7 +45,6 @@ import { useCreateOrderForm } from './hooks/useCreateOrderForm';
 import { useOrderValidation } from './hooks/useOrderValidation';
 import { useProductSearch } from './hooks/useProductSearch';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
-import { OrderFormHeader } from './components/OrderFormHeader';
 import { useAuth } from '@rentalshop/hooks';
 import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
@@ -71,6 +70,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     loading = false,
     layout = 'split',
     merchantId,
+    currency = 'USD', // Default to USD if not provided
     isEditMode = false,
     initialOrder,
     orderNumber,
@@ -449,15 +449,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   const isFormValidForUI = isFormValid(formData, orderItems);
 
   return (
-    <div className="min-h-screen bg-bg-secondary">
+    <div className="w-full min-h-full bg-bg-secondary">
       <div className="w-full">
-        {/* Header for edit mode */}
-        <OrderFormHeader 
-          orderNumber={orderNumber} 
-          isEditMode={isEditMode} 
-        />
-
-        <div className="flex flex-col lg:flex-row gap-4 p-4">
+        <div className="flex flex-col lg:flex-row gap-4 px-4 py-4">
           {/* Column 1 - Products Section (40%) */}
           <div className="lg:w-[40%] space-y-4">
             <ProductsSection
@@ -472,6 +466,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               pickupDate={formData.pickupPlanAt}
               returnDate={formData.returnPlanAt}
               getProductAvailabilityStatus={getProductAvailabilityStatus}
+              currency={currency}
             />
           </div>
 
@@ -497,20 +492,24 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               onCustomerSearch={searchCustomers}
               onShowAddCustomerDialog={() => setShowAddCustomerDialog(true)}
               onUpdateRentalDates={updateRentalDates}
+              currency={currency}
             />
           </div>
 
-          {/* Column 3 - Order Summary & Actions (30%) */}
+          {/* Column 3 - Order Summary & Actions (30%) - Sticky positioning */}
           <div className="lg:w-[30%] space-y-4">
-            <OrderSummarySection
-              formData={formData}
-              orderItems={orderItems}
-              isEditMode={isEditMode}
-              loading={loading || isSubmitting}
-              isFormValid={isFormValidForUI}
-              onPreviewClick={handlePreviewClick}
-              onCancel={onCancel}
-            />
+            <div className="lg:sticky lg:top-4">
+              <OrderSummarySection
+                formData={formData}
+                orderItems={orderItems}
+                isEditMode={isEditMode}
+                loading={loading || isSubmitting}
+                isFormValid={isFormValidForUI}
+                onPreviewClick={handlePreviewClick}
+                onCancel={onCancel}
+                currency={currency}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ interface MerchantRegistrationData {
   merchantEmail: string;
   merchantPhone: string;
   merchantDescription: string;
+  currency: 'USD' | 'VND';
   userEmail: string;
   userPassword: string;
   userFirstName: string;

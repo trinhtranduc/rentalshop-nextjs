@@ -1,6 +1,7 @@
 import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../core';
+import type { CurrencyCode } from '@rentalshop/types';
 
 // ============================================================================
 // TYPES
@@ -18,6 +19,10 @@ export interface MerchantSettings {
   taxId?: string;
   website?: string;
   description?: string;
+}
+
+export interface MerchantCurrencyUpdate {
+  currency: CurrencyCode;
 }
 
 export interface UserProfile {
@@ -145,5 +150,17 @@ export const settingsApi = {
       body: JSON.stringify({ intervals }),
     });
     return await parseApiResponse<BillingInterval[]>(response);
+  },
+
+  /**
+   * Update merchant currency
+   */
+  async updateMerchantCurrency(data: MerchantCurrencyUpdate): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.settings.currency, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    const result = await parseApiResponse<any>(response);
+    return result;
   }
 };

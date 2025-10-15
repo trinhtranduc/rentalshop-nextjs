@@ -9,5 +9,6 @@ export { OutletSection } from './OutletSection';
 export { SecuritySection } from './SecuritySection';
 export { SubscriptionSection } from './SubscriptionSection';
 export { AccountSection } from './AccountSection';
+export { CurrencySection } from './CurrencySection';
 export { ChangePasswordDialog as SettingsChangePasswordDialog } from './ChangePasswordDialog';
 export { DeleteAccountDialog } from './DeleteAccountDialog';

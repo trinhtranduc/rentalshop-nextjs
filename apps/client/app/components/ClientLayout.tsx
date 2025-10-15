@@ -106,7 +106,7 @@ export default function ClientLayout({
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col overflow-hidden ${!showSidebar ? 'w-full' : ''}`}>
+      <div className={`flex-1 flex flex-col ${!showSidebar ? 'w-full' : ''}`}>
         {/* Top Bar for Mobile - Only show if sidebar is visible */}
         {showSidebar && (
           <div className="lg:hidden bg-bg-card border-b border-border px-4 py-3 flex items-center justify-between">
@@ -131,8 +131,10 @@ export default function ClientLayout({
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-hidden bg-bg-primary h-full">
-          {children}
+        <main className="flex-1 bg-bg-primary">
+          <div className="h-full overflow-y-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

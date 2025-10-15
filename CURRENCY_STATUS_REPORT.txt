@@ -1,0 +1,121 @@
+=================================================================
+          CURRENCY IMPLEMENTATION STATUS REPORT
+=================================================================
+
+📊 TỔNG QUAN:
+-----------------------------------------------------------------
+✅ Core Infrastructure:    100% Complete
+✅ Hook Pattern:            100% Complete  
+🔄 Component Migration:     30% Complete (7/23 files)
+⚠️  Remaining Work:         16 files cần update
+
+=================================================================
+✅ ĐÃ HOÀN THÀNH:
+=================================================================
+
+1. DATABASE & TYPES:
+   ✅ Prisma schema - Added currency field to Merchant
+   ✅ Merchant types - currency in all interfaces
+   ✅ Database operations - currency in CRUD
+
+2. API & BACKEND:
+   ✅ Registration API - validates currency (USD/VND)
+   ✅ Merchant creation - stores currency
+   ✅ Subscription - uses merchant currency
+
+3. UI INFRASTRUCTURE:
+   ✅ CurrencyContext - React context
+   ✅ useCurrency() - Low-level hook
+   ✅ useFormatCurrency() - Format hook (RECOMMENDED)
+   ✅ <Money /> Component - Display component
+   ✅ Smart decimal formatting:
+      - USD: $91 (no .00), $91.50 (keeps decimals)
+      - VND: 91,000đ (no decimals ever)
+
+4. REGISTRATION:
+   ✅ MerchantRegistrationForm - Currency selector
+   ✅ Register page - Currency field
+
+5. UPDATED COMPONENTS (7 files):
+   ✅ OrderSummarySection.tsx
+   ✅ ProductsSection.tsx  
+   ✅ OrderTable.tsx
+   ✅ OrderDetail.tsx
+   ✅ ProductTable.tsx
+   ✅ orders/create/page.tsx (wrapped)
+   ✅ orders/[id]/edit/page.tsx (wrapped)
+
+=================================================================
+🔄 CẦN UPDATE (16 files):
+=================================================================
+
+PRIORITY 1 - ORDER COMPONENTS (8 files):
+-----------------------------------------
+1. OrderDetail/components/OrderItems.tsx (7 instances)
+2. OrderDetail/components/OrderSummary.tsx (9 instances)
+3. OrderDetail/components/CollectionReturnModal.tsx (1 instance)
+4. Orders/components/OrderHeader.tsx (2 instances)
+5. Orders/components/OrderStats.tsx (3 instances)
+6. forms/CreateOrderForm/components/OrderPreviewForm.tsx
+7. forms/OrderForm.tsx
+8. features/Orders/RentalPeriodSelector.tsx
+
+PRIORITY 2 - PRODUCT COMPONENTS (4 files):
+-------------------------------------------
+9. Products/components/ProductOrdersView.tsx (3 instances)
+10. Products/components/ProductDetailList.tsx (3 instances)
+11. Products/components/ProductOrdersDialog.tsx (2 instances)
+12. forms/ProductForm.tsx
+
+PRIORITY 3 - CUSTOMER COMPONENTS (4 files):
+--------------------------------------------
+13. Customers/components/CustomerHeader.tsx (1 instance)
+14. Customers/components/CustomerStats.tsx (3 instances)
+15. Customers/components/CustomerOrdersDialog.tsx (2 instances)
+16. Customers/components/CustomerOrdersSummaryCard.tsx (1 instance)
+
+=================================================================
+📋 PATTERN ÁP DỤNG:
+=================================================================
+
+Cho mỗi component:
+
+1. ADD IMPORT:
+   import { useFormatCurrency } from '@rentalshop/ui';
+
+2. ADD HOOK (đầu component):
+   const formatMoney = useFormatCurrency();
+
+3. REPLACE ALL:
+   formatCurrency(amount) → formatMoney(amount)
+   formatCurrency(amount, 'USD') → formatMoney(amount)
+
+4. REMOVE OLD IMPORT:
+   import { formatCurrency } from '@rentalshop/utils';
+
+=================================================================
+🧪 TESTING:
+=================================================================
+
+Sau khi RESTART dev server:
+
+✅ Test USD merchant:
+   - $91 (không .00)
+   - $91.50 (có .50)
+   - $91,000 (có comma)
+
+✅ Test VND merchant:
+   - 91,000đ (không decimal)
+   - 1.234.567đ (format đúng)
+
+=================================================================
+⚠️  QUAN TRỌNG:
+=================================================================
+
+PHẢI RESTART DEV SERVER để lỗi mất:
+1. Stop: Ctrl+C
+2. Start: yarn dev
+
+Lý do: Next.js cache old bundle, restart để load new code.
+
+=================================================================

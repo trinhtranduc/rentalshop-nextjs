@@ -10,15 +10,22 @@ import {
   Input, 
   Label, 
   Textarea,
-  Badge
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '../ui';
 import { 
   Building2, 
   User, 
   MapPin, 
   CheckCircle,
-  Loader2
+  Loader2,
+  DollarSign
 } from 'lucide-react';
+import { getCurrencyDisplay } from '@rentalshop/utils';
 
 interface MerchantRegistrationFormData {
   // Merchant details
@@ -26,6 +33,7 @@ interface MerchantRegistrationFormData {
   merchantEmail: string;
   merchantPhone: string;
   merchantDescription: string;
+  currency: 'USD' | 'VND';
   
   // User details (merchant owner)
   userEmail: string;
@@ -56,6 +64,7 @@ export const MerchantRegistrationForm: React.FC<MerchantRegistrationFormProps> =
     merchantEmail: '',
     merchantPhone: '',
     merchantDescription: '',
+    currency: 'USD', // Default to USD
     userEmail: '',
     userPassword: '',
     userFirstName: '',
@@ -171,14 +180,42 @@ export const MerchantRegistrationForm: React.FC<MerchantRegistrationFormProps> =
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="merchantPhone">Business Phone</Label>
-                <Input
-                  id="merchantPhone"
-                  value={formData.merchantPhone}
-                  onChange={(e) => handleInputChange('merchantPhone', e.target.value)}
-                  placeholder="+1 (555) 123-4567"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="merchantPhone">Business Phone</Label>
+                  <Input
+                    id="merchantPhone"
+                    value={formData.merchantPhone}
+                    onChange={(e) => handleInputChange('merchantPhone', e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="currency" className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4" />
+                    Currency *
+                  </Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value: 'USD' | 'VND') => handleInputChange('currency', value)}
+                  >
+                    <SelectTrigger id="currency">
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">
+                        {getCurrencyDisplay('USD')} - US Dollar
+                      </SelectItem>
+                      <SelectItem value="VND">
+                        {getCurrencyDisplay('VND')} - Vietnamese Dong
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    All prices and transactions will be in this currency
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-2">
