@@ -59,7 +59,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                 <div className="flex items-center space-x-3">
                   <CreditCard className="h-6 w-6 text-blue-600" />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Current Plan</h3>
+                    <h3 className="text-base font-semibold text-gray-900">Current Plan</h3>
                     <p className="text-sm text-gray-600">{subscriptionData.subscription.plan?.name || 'Professional Plan'}</p>
                   </div>
                 </div>

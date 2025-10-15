@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Button,
   Input,
   Label
 } from '@rentalshop/ui';
+import { Eye, EyeOff } from 'lucide-react';
 
 // ============================================================================
 // TYPES
@@ -36,6 +37,11 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   onChange,
   onSubmit
 }) => {
+  // State for show/hide password
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   if (!isOpen) return null;
 
   return (
@@ -60,42 +66,84 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             <Label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
               Current Password
             </Label>
-            <Input
-              id="currentPassword"
-              name="currentPassword"
-              type="password"
-              value={passwordData.currentPassword}
-              onChange={onChange}
-              placeholder="Enter your current password"
-            />
+            <div className="relative">
+              <Input
+                id="currentPassword"
+                name="currentPassword"
+                type={showCurrentPassword ? "text" : "password"}
+                value={passwordData.currentPassword}
+                onChange={onChange}
+                placeholder="Enter your current password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showCurrentPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div>
             <Label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
               New Password
             </Label>
-            <Input
-              id="newPassword"
-              name="newPassword"
-              type="password"
-              value={passwordData.newPassword}
-              onChange={onChange}
-              placeholder="Enter your new password"
-            />
+            <div className="relative">
+              <Input
+                id="newPassword"
+                name="newPassword"
+                type={showNewPassword ? "text" : "password"}
+                value={passwordData.newPassword}
+                onChange={onChange}
+                placeholder="Enter your new password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showNewPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div>
             <Label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
               Confirm New Password
             </Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={onChange}
-              placeholder="Confirm your new password"
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={passwordData.confirmPassword}
+                onChange={onChange}
+                placeholder="Confirm your new password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 

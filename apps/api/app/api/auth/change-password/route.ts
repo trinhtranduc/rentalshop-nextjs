@@ -15,7 +15,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
   try {
 
     const body = await request.json();
-    const { currentPassword, newPassword, confirmPassword } = body;
+    const { currentPassword, newPassword } = body;
 
     // Validate input
     if (!currentPassword) {
@@ -32,12 +32,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       );
     }
 
-    if (newPassword !== confirmPassword) {
-      return NextResponse.json(
-        { success: false, message: 'New passwords do not match' },
-        { status: 400 }
-      );
-    }
+    // Note: confirmPassword validation is done on frontend for better UX
+    // No need to validate again on backend
 
     // Get current user from database to verify current password
     const currentUser = await db.users.findById(user.id);
