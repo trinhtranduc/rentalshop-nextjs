@@ -7,13 +7,15 @@ import {
   Button,
   Input,
   Label,
-  Badge
+  Badge,
+  SearchableCountrySelect
 } from '@rentalshop/ui';
 import { CheckCircle2, DollarSign } from 'lucide-react';
 import { merchantsApi, formatCurrency, getCurrency } from '@rentalshop/utils';
 import { 
   getBusinessTypeDescription, 
-  getPricingTypeDescription
+  getPricingTypeDescription,
+  COUNTRIES
 } from '@rentalshop/constants';
 import type { BusinessType, PricingType } from '@rentalshop/constants/src/pricing';
 import type { CurrencyCode } from '@rentalshop/types';
@@ -404,17 +406,28 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   Country
                 </Label>
                 {isEditing ? (
-                  <Input
-                    id="merchantCountry"
-                    name="country"
-                    type="text"
+                  <SearchableCountrySelect
+                    options={COUNTRIES}
                     value={formData.country}
-                    onChange={onInputChange}
-                    placeholder="Enter country"
+                    onChange={(countryName) => {
+                      // Trigger parent's onChange handler with synthetic event
+                      onInputChange({ 
+                        target: { name: 'country', value: countryName } 
+                      } as React.ChangeEvent<HTMLInputElement>);
+                    }}
+                    placeholder="Type to search countries..."
+                    emptyMessage="No countries found"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.country || 'Not provided'}
+                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex items-center gap-2">
+                    {merchant?.country ? (
+                      <>
+                        {COUNTRIES.find(c => c.name === merchant.country)?.flag || ''}
+                        {merchant.country}
+                      </>
+                    ) : (
+                      'Not provided'
+                    )}
                   </p>
                 )}
               </div>
