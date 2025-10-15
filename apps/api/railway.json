@@ -5,7 +5,7 @@
     "dockerfilePath": "apps/api/Dockerfile"
   },
   "deploy": {
-    "startCommand": "cd apps/api && ../../node_modules/.bin/next start -p 3002",
+    "startCommand": "cd apps/api && sh start.sh",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
@@ -21,7 +21,7 @@
     },
     "production": {
       "deploy": {
-        "startCommand": "cd apps/api && ../../node_modules/.bin/next start -p 3002",
+        "startCommand": "cd apps/api && sh start.sh",
         "healthcheckPath": "/api/health",
         "healthcheckTimeout": 300,
         "restartPolicyType": "ON_FAILURE",
