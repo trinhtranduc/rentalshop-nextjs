@@ -3682,7 +3682,7 @@ var SearchableSelect = ({
 
 // src/components/ui/searchable-country-select.tsx
 import * as React24 from "react";
-import { ChevronDown as ChevronDown4, X as X3 } from "lucide-react";
+import { ChevronDown as ChevronDown4 } from "lucide-react";
 import { Fragment as Fragment2, jsx as jsx37, jsxs as jsxs23 } from "react/jsx-runtime";
 var SearchableCountrySelect = ({
   value,
@@ -3705,6 +3705,7 @@ var SearchableCountrySelect = ({
     );
   }, [query, options]);
   const selected = options.find((o) => o.name === value);
+  const displayValue = selected?.label || query;
   React24.useEffect(() => {
     const handler = (e) => {
       const el = rootRef.current;
@@ -3712,7 +3713,6 @@ var SearchableCountrySelect = ({
         return;
       if (open && !el.contains(e.target)) {
         setOpen(false);
-        setQuery("");
       }
     };
     document.addEventListener("mousedown", handler);
@@ -3725,8 +3725,10 @@ var SearchableCountrySelect = ({
   const handleSelect = (country) => {
     console.log("\u{1F30D} Country selected:", country.name);
     onChange?.(country.name);
-    setQuery("");
     setOpen(false);
+    setTimeout(() => {
+      setQuery("");
+    }, 100);
   };
   const handleClear = () => {
     onChange?.("");
@@ -3734,14 +3736,13 @@ var SearchableCountrySelect = ({
     setOpen(false);
   };
   return /* @__PURE__ */ jsxs23("div", { className: cn2("relative", className), ref: rootRef, children: [
-    /* @__PURE__ */ jsxs23("div", { className: "relative", children: [
+    /* @__PURE__ */ jsxs23(Fragment2, { children: [
       /* @__PURE__ */ jsx37(
         "input",
         {
-          value: open ? query : selected ? `${selected.flag} ${selected.name}` : "",
+          value: displayValue,
           onFocus: () => {
             setOpen(true);
-            setQuery("");
           },
           onChange: (e) => {
             setQuery(e.target.value);
@@ -3750,27 +3751,17 @@ var SearchableCountrySelect = ({
           onBlur: () => {
             setTimeout(() => {
               setOpen(false);
-            }, 200);
+            }, 300);
           },
-          placeholder,
+          placeholder: selected ? `${selected.flag} ${selected.name}` : placeholder,
           className: cn2(
-            "h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-20 text-sm transition-all duration-200",
+            "h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200",
             "focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0",
             "hover:border-gray-400"
           )
         }
       ),
-      value && !query && /* @__PURE__ */ jsx37(
-        Button2,
-        {
-          variant: "ghost",
-          size: "icon",
-          type: "button",
-          onClick: handleClear,
-          className: "absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6 p-0",
-          children: /* @__PURE__ */ jsx37(X3, { className: "h-4 w-4" })
-        }
-      ),
+      /* @__PURE__ */ jsx37("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
       /* @__PURE__ */ jsx37(
         Button2,
         {
@@ -3778,12 +3769,26 @@ var SearchableCountrySelect = ({
           size: "icon",
           type: "button",
           "aria-label": "Toggle options",
-          className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6 p-0",
+          className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
           onMouseDown: (e) => {
             e.preventDefault();
             setOpen((o) => !o);
           },
-          children: /* @__PURE__ */ jsx37(ChevronDown4, { className: cn2("h-5 w-5 transition-transform", open && "rotate-180") })
+          children: /* @__PURE__ */ jsx37(ChevronDown4, { className: "h-5 w-5" })
+        }
+      ),
+      query && /* @__PURE__ */ jsx37(
+        Button2,
+        {
+          variant: "ghost",
+          size: "icon",
+          type: "button",
+          onClick: () => {
+            setQuery("");
+            setOpen(false);
+          },
+          className: "absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
+          children: "\u2715"
         }
       )
     ] }),
@@ -3791,18 +3796,16 @@ var SearchableCountrySelect = ({
       /* @__PURE__ */ jsx37("div", { className: "w-8 h-8 mx-auto mb-2 text-gray-300", children: /* @__PURE__ */ jsx37("svg", { className: "w-8 h-8", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx37("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" }) }) }),
       /* @__PURE__ */ jsx37("div", { children: emptyMessage })
     ] }) : /* @__PURE__ */ jsx37(Fragment2, { children: filtered.map((country) => /* @__PURE__ */ jsxs23(
-      "button",
+      Button2,
       {
+        variant: "ghost",
         type: "button",
         onClick: () => {
-          console.log("\u{1F5B1}\uFE0F Click:", country.name);
+          console.log("\u{1F5B1}\uFE0F Selecting country:", country.name);
           handleSelect(country);
         },
-        onMouseDown: (e) => {
-          e.preventDefault();
-        },
         className: cn2(
-          "flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all cursor-pointer",
+          "flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none",
           value === country.name && "bg-blue-50 text-blue-700 hover:bg-blue-100"
         ),
         children: [
@@ -3821,7 +3824,7 @@ var SearchableCountrySelect = ({
 
 // src/components/ui/toast.tsx
 import { useState as useState9, useEffect as useEffect8, createContext as createContext2, useContext as useContext2 } from "react";
-import { X as X4, CheckCircle as CheckCircle5, AlertCircle as AlertCircle3, Info as Info3, AlertTriangle as AlertTriangle5 } from "lucide-react";
+import { X as X3, CheckCircle as CheckCircle5, AlertCircle as AlertCircle3, Info as Info3, AlertTriangle as AlertTriangle5 } from "lucide-react";
 import { jsx as jsx38, jsxs as jsxs24 } from "react/jsx-runtime";
 var toastIcons = {
   success: CheckCircle5,
@@ -3890,7 +3893,7 @@ var Toast = ({
                   setTimeout(() => onClose(id), 300);
                 },
                 className: "ml-2 flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity h-6 w-6 p-0",
-                children: /* @__PURE__ */ jsx38(X4, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ jsx38(X3, { className: "w-4 h-4" })
               }
             )
           ]
@@ -6123,7 +6126,7 @@ import {
 } from "@rentalshop/ui";
 import {
   Search as Search2,
-  X as X5,
+  X as X4,
   Plus as Plus2
 } from "lucide-react";
 import { Fragment as Fragment5, jsx as jsx42, jsxs as jsxs28 } from "react/jsx-runtime";
@@ -6374,7 +6377,7 @@ var OrderInfoSection = ({
                 onClick: onCustomerClear,
                 className: "absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150 h-6 w-6 p-0",
                 title: "Clear selected customer",
-                children: /* @__PURE__ */ jsx42(X5, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ jsx42(X4, { className: "w-4 h-4" })
               }
             ) : /* @__PURE__ */ jsx42(
               Button5,
@@ -6651,7 +6654,7 @@ import {
 
 // src/components/features/Customers/components/AddCustomerForm.tsx
 import { useState as useState17 } from "react";
-import { Save, X as X6 } from "lucide-react";
+import { Save, X as X5 } from "lucide-react";
 import { jsx as jsx44, jsxs as jsxs30 } from "react/jsx-runtime";
 var AddCustomerForm = ({
   onSave,
@@ -6926,7 +6929,7 @@ var AddCustomerForm = ({
           onClick: handleCancel,
           disabled: isSubmitting,
           children: [
-            /* @__PURE__ */ jsx44(X6, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ jsx44(X5, { className: "w-4 h-4 mr-2" }),
             "Cancel"
           ]
         }
@@ -7027,7 +7030,7 @@ import {
   Smartphone,
   AlertTriangle as AlertTriangle6,
   CheckCircle as CheckCircle8,
-  X as X7,
+  X as X6,
   ArrowLeft
 } from "lucide-react";
 import { Fragment as Fragment6, jsx as jsx46, jsxs as jsxs32 } from "react/jsx-runtime";
@@ -7279,7 +7282,7 @@ var OrderPreviewForm = ({
           onClick: onCancel,
           className: "flex items-center gap-2",
           children: [
-            /* @__PURE__ */ jsx46(X7, { className: "w-4 h-4" }),
+            /* @__PURE__ */ jsx46(X6, { className: "w-4 h-4" }),
             cancelText
           ]
         }
@@ -18259,7 +18262,7 @@ import {
   User as User6,
   DollarSign as DollarSign6,
   Package as Package9,
-  X as X8
+  X as X7
 } from "lucide-react";
 import { ordersApi as ordersApi2 } from "@rentalshop/utils";
 import { jsx as jsx96, jsxs as jsxs80 } from "react/jsx-runtime";
@@ -18349,7 +18352,7 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
           size: "sm",
           onClick: () => onOpenChange(false),
           className: "h-8 w-8 p-0",
-          children: /* @__PURE__ */ jsx96(X8, { className: "w-4 h-4" })
+          children: /* @__PURE__ */ jsx96(X7, { className: "w-4 h-4" })
         }
       )
     ] }) }),
@@ -19260,7 +19263,7 @@ var AddCustomerDialog = ({
 
 // src/components/features/Customers/components/EditCustomerForm.tsx
 import { useState as useState40, useEffect as useEffect21, forwardRef as forwardRef13, useImperativeHandle as useImperativeHandle2 } from "react";
-import { Save as Save3, X as X9 } from "lucide-react";
+import { Save as Save3, X as X8 } from "lucide-react";
 import { Button as Button20 } from "@rentalshop/ui";
 import { Input as Input11 } from "@rentalshop/ui";
 import { Label as Label3 } from "@rentalshop/ui";
@@ -19552,7 +19555,7 @@ var EditCustomerForm = forwardRef13(({
           onClick: onCancel,
           disabled: isSubmitting,
           children: [
-            /* @__PURE__ */ jsx104(X9, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ jsx104(X8, { className: "w-4 h-4 mr-2" }),
             "Cancel"
           ]
         }
@@ -19576,7 +19579,7 @@ EditCustomerForm.displayName = "EditCustomerForm";
 
 // src/components/features/Customers/components/CustomerForm.tsx
 import { useState as useState41, useEffect as useEffect22 } from "react";
-import { Save as Save4, X as X10 } from "lucide-react";
+import { Save as Save4, X as X9 } from "lucide-react";
 import { Button as Button21 } from "@rentalshop/ui";
 import { Input as Input12 } from "@rentalshop/ui";
 import { Label as Label4 } from "@rentalshop/ui";
@@ -19910,7 +19913,7 @@ var CustomerForm = ({
           onClick: handleCancel,
           disabled: isFormSubmitting,
           children: [
-            /* @__PURE__ */ jsx105(X10, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ jsx105(X9, { className: "w-4 h-4 mr-2" }),
             "Cancel"
           ]
         }
@@ -21365,7 +21368,7 @@ import {
   Play,
   Clock as Clock5,
   ArrowRight,
-  X as X11
+  X as X10
 } from "lucide-react";
 import { jsx as jsx119, jsxs as jsxs103 } from "react/jsx-runtime";
 function SubscriptionViewDialog({
@@ -21618,7 +21621,7 @@ function SubscriptionViewDialog({
             onClick: () => onCancel(subscription),
             className: "flex items-center gap-2",
             children: [
-              /* @__PURE__ */ jsx119(X11, { className: "h-4 w-4" }),
+              /* @__PURE__ */ jsx119(X10, { className: "h-4 w-4" }),
               "Cancel Subscription"
             ]
           }
@@ -21881,7 +21884,7 @@ import {
   Badge as Badge12
 } from "@rentalshop/ui";
 import { formatCurrency as formatCurrency8 } from "@rentalshop/ui";
-import { ArrowRight as ArrowRight2, Check as Check3, X as X12 } from "lucide-react";
+import { ArrowRight as ArrowRight2, Check as Check3, X as X11 } from "lucide-react";
 import { jsx as jsx121, jsxs as jsxs105 } from "react/jsx-runtime";
 function SubscriptionChangePlanDialog({
   subscription,
@@ -22029,7 +22032,7 @@ function SubscriptionChangePlanDialog({
             /* @__PURE__ */ jsxs105("div", { className: "text-center flex items-center justify-center gap-1", children: [
               feature.selected === -1 ? "Unlimited" : feature.selected,
               feature.change === "upgrade" && /* @__PURE__ */ jsx121(ArrowRight2, { className: "h-4 w-4 text-green-600" }),
-              feature.change === "downgrade" && /* @__PURE__ */ jsx121(X12, { className: "h-4 w-4 text-red-600" })
+              feature.change === "downgrade" && /* @__PURE__ */ jsx121(X11, { className: "h-4 w-4 text-red-600" })
             ] })
           ] }, feature.key))
         ] }) })
@@ -25579,7 +25582,7 @@ import {
   Pause as Pause4,
   Play as Play3,
   Plus as Plus6,
-  X as X13,
+  X as X12,
   History
 } from "lucide-react";
 import { formatDateTimeLong } from "@rentalshop/utils";
@@ -25956,7 +25959,7 @@ function MerchantPlanManagement({
               onClick: () => setShowCancelDialog(true),
               className: "flex items-center gap-2 text-red-600 hover:text-red-700",
               children: [
-                /* @__PURE__ */ jsx136(X13, { className: "h-4 w-4" }),
+                /* @__PURE__ */ jsx136(X12, { className: "h-4 w-4" }),
                 isTrialStatus ? "End Trial" : "Cancel Plan"
               ]
             }
@@ -26161,7 +26164,7 @@ function MerchantPlanManagement({
     /* @__PURE__ */ jsx136(Dialog, { open: showCancelDialog, onOpenChange: setShowCancelDialog, children: /* @__PURE__ */ jsxs119(DialogContent, { className: "max-w-md max-h-[90vh] overflow-y-auto flex flex-col", children: [
       /* @__PURE__ */ jsxs119(DialogHeader, { children: [
         /* @__PURE__ */ jsxs119(DialogTitle, { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx136(X13, { className: "h-5 w-5 text-red-500" }),
+          /* @__PURE__ */ jsx136(X12, { className: "h-5 w-5 text-red-500" }),
           "Cancel Plan"
         ] }),
         /* @__PURE__ */ jsxs119(DialogDescription, { children: [
@@ -26172,7 +26175,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ jsxs119("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx136("div", { className: "p-4 bg-red-50 border border-red-200 rounded-lg", children: /* @__PURE__ */ jsxs119("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx136(X13, { className: "h-5 w-5 text-red-500" }),
+          /* @__PURE__ */ jsx136(X12, { className: "h-5 w-5 text-red-500" }),
           /* @__PURE__ */ jsx136("p", { className: "text-sm text-red-700 font-medium", children: "Warning: This will permanently cancel the subscription" })
         ] }) }),
         /* @__PURE__ */ jsxs119("div", { children: [
@@ -28285,7 +28288,7 @@ import { useState as useState66 } from "react";
 
 // src/components/features/Users/components/UserForm.tsx
 import { useState as useState65, useEffect as useEffect37 } from "react";
-import { Save as Save5, X as X14 } from "lucide-react";
+import { Save as Save5, X as X13 } from "lucide-react";
 
 // src/components/features/Users/components/UserFormFields.tsx
 import { useState as useState64 } from "react";
@@ -29094,7 +29097,7 @@ var UserForm = ({
           onClick: handleCancel,
           disabled: isSubmitting,
           children: [
-            /* @__PURE__ */ jsx158(X14, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ jsx158(X13, { className: "w-4 h-4 mr-2" }),
             "Cancel"
           ]
         }
@@ -31978,7 +31981,7 @@ var PlanStats = ({
 };
 
 // src/components/features/Plans/components/PlanDetailModal.tsx
-import { X as X15, Check as Check7, Star as Star7 } from "lucide-react";
+import { X as X14, Check as Check7, Star as Star7 } from "lucide-react";
 import { formatCurrency as formatCurrency15 } from "@rentalshop/utils";
 import { jsx as jsx191, jsxs as jsxs173 } from "react/jsx-runtime";
 var BILLING_CYCLES4 = [
@@ -32044,7 +32047,7 @@ var PlanDetailModal = ({
             size: "sm",
             onClick: () => onOpenChange(false),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ jsx191(X15, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ jsx191(X14, { className: "w-4 h-4" })
           }
         )
       ] }),
@@ -32621,7 +32624,7 @@ import {
   Clock as Clock17,
   Edit as Edit19,
   Save as Save7,
-  X as X16,
+  X as X15,
   Info as Info7,
   DollarSign as DollarSign16,
   Trash2 as Trash215
@@ -32807,7 +32810,7 @@ var BillingCycleDetailDialog = ({
                   size: "sm",
                   onClick: handleCancelEdit,
                   disabled: loading,
-                  children: /* @__PURE__ */ jsx194(X16, { className: "w-4 h-4" })
+                  children: /* @__PURE__ */ jsx194(X15, { className: "w-4 h-4" })
                 }
               )
             ] })
@@ -37385,7 +37388,7 @@ import {
   DollarSign as DollarSign20,
   Settings as Settings9,
   Save as Save8,
-  X as X17,
+  X as X16,
   RotateCcw as RotateCcw4,
   Printer,
   Edit as Edit21
@@ -38304,7 +38307,7 @@ var OrderDetail = ({
             className: "px-6",
             disabled: isCancelLoading,
             children: [
-              /* @__PURE__ */ jsx240(X17, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ jsx240(X16, { className: "w-4 h-4 mr-2" }),
               isCancelLoading ? "Cancelling..." : "Cancel Order"
             ]
           }
@@ -40221,7 +40224,7 @@ import {
   Bell as Bell4,
   User as User26,
   LogOut as LogOut2,
-  X as X18,
+  X as X17,
   Menu,
   CreditCard as CreditCard23,
   Clock as Clock30,
@@ -40400,7 +40403,7 @@ function TopNavigation({
             size: "sm",
             onClick: () => setIsMobileMenuOpen(!isMobileMenuOpen),
             className: "p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-            children: isMobileMenuOpen ? /* @__PURE__ */ jsx255(X18, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx255(Menu, { className: "w-6 h-6" })
+            children: isMobileMenuOpen ? /* @__PURE__ */ jsx255(X17, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx255(Menu, { className: "w-6 h-6" })
           }
         ) })
       ] })
@@ -40993,7 +40996,7 @@ var QuickActionsGrid = () => {
 
 // src/components/layout/SearchInput.tsx
 import { useEffect as useEffect47 } from "react";
-import { Search as Search8, X as X20 } from "lucide-react";
+import { Search as Search8, X as X19 } from "lucide-react";
 import { cn as cn6 } from "@rentalshop/ui";
 import { Button as Button71 } from "@rentalshop/ui";
 import { useThrottledSearch } from "@rentalshop/hooks";
@@ -41053,7 +41056,7 @@ var SearchInput = ({
           onClick: clearSearch,
           type: "button",
           className: "absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0",
-          children: /* @__PURE__ */ jsx263(X20, { className: "h-4 w-4" })
+          children: /* @__PURE__ */ jsx263(X19, { className: "h-4 w-4" })
         }
       )
     ] }),
@@ -41128,7 +41131,7 @@ import {
   User as User28,
   LogOut as LogOut4,
   Menu as Menu3,
-  X as X21,
+  X as X20,
   ChevronLeft as ChevronLeft4,
   ChevronRight as ChevronRight6,
   Tag as Tag5,
@@ -41225,7 +41228,7 @@ function Navigation({
             size: "sm",
             onClick: () => setIsOpen(!isOpen),
             className: "text-nav-tint hover:text-gray-300",
-            children: isOpen ? /* @__PURE__ */ jsx265(X21, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx265(Menu3, { className: "w-6 h-6" })
+            children: isOpen ? /* @__PURE__ */ jsx265(X20, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx265(Menu3, { className: "w-6 h-6" })
           }
         ) })
       ] })

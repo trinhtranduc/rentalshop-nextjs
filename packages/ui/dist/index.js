@@ -4078,6 +4078,7 @@ var SearchableCountrySelect = ({
     );
   }, [query, options]);
   const selected = options.find((o) => o.name === value);
+  const displayValue = selected?.label || query;
   React24.useEffect(() => {
     const handler = (e) => {
       const el = rootRef.current;
@@ -4085,7 +4086,6 @@ var SearchableCountrySelect = ({
         return;
       if (open && !el.contains(e.target)) {
         setOpen(false);
-        setQuery("");
       }
     };
     document.addEventListener("mousedown", handler);
@@ -4098,8 +4098,10 @@ var SearchableCountrySelect = ({
   const handleSelect = (country) => {
     console.log("\u{1F30D} Country selected:", country.name);
     onChange?.(country.name);
-    setQuery("");
     setOpen(false);
+    setTimeout(() => {
+      setQuery("");
+    }, 100);
   };
   const handleClear = () => {
     onChange?.("");
@@ -4107,14 +4109,13 @@ var SearchableCountrySelect = ({
     setOpen(false);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)("div", { className: cn2("relative", className), ref: rootRef, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)("div", { className: "relative", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)(import_jsx_runtime37.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
         "input",
         {
-          value: open ? query : selected ? `${selected.flag} ${selected.name}` : "",
+          value: displayValue,
           onFocus: () => {
             setOpen(true);
-            setQuery("");
           },
           onChange: (e) => {
             setQuery(e.target.value);
@@ -4123,27 +4124,17 @@ var SearchableCountrySelect = ({
           onBlur: () => {
             setTimeout(() => {
               setOpen(false);
-            }, 200);
+            }, 300);
           },
-          placeholder,
+          placeholder: selected ? `${selected.flag} ${selected.name}` : placeholder,
           className: cn2(
-            "h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-20 text-sm transition-all duration-200",
+            "h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200",
             "focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0",
             "hover:border-gray-400"
           )
         }
       ),
-      value && !query && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
-        Button2,
-        {
-          variant: "ghost",
-          size: "icon",
-          type: "button",
-          onClick: handleClear,
-          className: "absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6 p-0",
-          children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(import_lucide_react13.X, { className: "h-4 w-4" })
-        }
-      ),
+      /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
       /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
         Button2,
         {
@@ -4151,12 +4142,26 @@ var SearchableCountrySelect = ({
           size: "icon",
           type: "button",
           "aria-label": "Toggle options",
-          className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6 p-0",
+          className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
           onMouseDown: (e) => {
             e.preventDefault();
             setOpen((o) => !o);
           },
-          children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(import_lucide_react13.ChevronDown, { className: cn2("h-5 w-5 transition-transform", open && "rotate-180") })
+          children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(import_lucide_react13.ChevronDown, { className: "h-5 w-5" })
+        }
+      ),
+      query && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+        Button2,
+        {
+          variant: "ghost",
+          size: "icon",
+          type: "button",
+          onClick: () => {
+            setQuery("");
+            setOpen(false);
+          },
+          className: "absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
+          children: "\u2715"
         }
       )
     ] }),
@@ -4164,18 +4169,16 @@ var SearchableCountrySelect = ({
       /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "w-8 h-8 mx-auto mb-2 text-gray-300", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("svg", { className: "w-8 h-8", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" }) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { children: emptyMessage })
     ] }) : /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(import_jsx_runtime37.Fragment, { children: filtered.map((country) => /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)(
-      "button",
+      Button2,
       {
+        variant: "ghost",
         type: "button",
         onClick: () => {
-          console.log("\u{1F5B1}\uFE0F Click:", country.name);
+          console.log("\u{1F5B1}\uFE0F Selecting country:", country.name);
           handleSelect(country);
         },
-        onMouseDown: (e) => {
-          e.preventDefault();
-        },
         className: cn2(
-          "flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all cursor-pointer",
+          "flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none",
           value === country.name && "bg-blue-50 text-blue-700 hover:bg-blue-100"
         ),
         children: [

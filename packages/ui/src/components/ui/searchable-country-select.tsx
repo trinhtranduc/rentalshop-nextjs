@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { cn } from '../../lib/cn';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from './button';
 
 export interface CountryOption {
@@ -46,14 +46,16 @@ export const SearchableCountrySelect: React.FC<SearchableCountrySelectProps> = (
 
   const selected = options.find((o) => o.name === value);
 
-  // Close on outside click
+  // Keep selected label in input for better UX
+  const displayValue = selected?.label || query;
+
+  // Close on outside click (same as searchable-select.tsx)
   React.useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
       const el = rootRef.current;
       if (!el) return;
       if (open && !el.contains(e.target as Node)) {
         setOpen(false);
-        setQuery('');
       }
     };
 
@@ -69,8 +71,11 @@ export const SearchableCountrySelect: React.FC<SearchableCountrySelectProps> = (
   const handleSelect = (country: CountryOption) => {
     console.log('🌍 Country selected:', country.name);
     onChange?.(country.name);
-    setQuery('');
     setOpen(false);
+    // Clear the query after a short delay (same as searchable-select.tsx)
+    setTimeout(() => {
+      setQuery('');
+    }, 100);
   };
 
   const handleClear = () => {
@@ -81,54 +86,63 @@ export const SearchableCountrySelect: React.FC<SearchableCountrySelectProps> = (
 
   return (
     <div className={cn('relative', className)} ref={rootRef}>
-      {/* Input field */}
-      <div className="relative">
+      {/* Input field - EXACT COPY from searchable-select.tsx */}
+      <>
         <input
-          value={open ? query : (selected ? `${selected.flag} ${selected.name}` : '')}
+          value={displayValue}
           onFocus={() => {
             setOpen(true);
-            setQuery('');
           }}
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
           }}
-          placeholder={placeholder}
+          onBlur={() => {
+            // Only close dropdown after a longer delay (same as searchable-select.tsx)
+            setTimeout(() => {
+              setOpen(false);
+              // Don't clear query here - let it persist for search
+            }, 300);
+          }}
+          placeholder={selected ? `${selected.flag} ${selected.name}` : placeholder}
           className={cn(
-            'h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-20 text-sm transition-all duration-200',
+            'h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200',
             'focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0',
             'hover:border-gray-400'
           )}
         />
-        
-        {/* Clear button */}
-        {value && !query && (
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            onClick={handleClear}
-            className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-        
-        {/* Dropdown toggle */}
+        <span className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" />
         <Button
           variant="ghost"
           size="icon"
           type="button"
           aria-label="Toggle options"
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6 p-0"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
           onMouseDown={(e) => {
             e.preventDefault();
             setOpen((o) => !o);
           }}
         >
-          <ChevronDown className={cn('h-5 w-5 transition-transform', open && 'rotate-180')} />
+          <ChevronDown className="h-5 w-5" />
         </Button>
-      </div>
+
+        
+        {/* Clear button when there's a query (same as searchable-select.tsx) */}
+        {query && (
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            onClick={() => {
+              setQuery('');
+              setOpen(false);
+            }}
+            className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
+          >
+            ✕
+          </Button>
+        )}
+      </>
 
       {/* Dropdown */}
       {open && (
@@ -146,17 +160,16 @@ export const SearchableCountrySelect: React.FC<SearchableCountrySelectProps> = (
             ) : (
               <>
                 {filtered.map((country) => (
-                  <button
+                  <Button
+                    variant="ghost"
                     type="button"
                     key={country.code}
-                    onMouseDown={(e) => {
-                      e.preventDefault(); // Prevent input blur
-                      e.stopPropagation(); // Prevent event bubbling
+                    onClick={() => {
                       console.log('🖱️ Selecting country:', country.name);
                       handleSelect(country);
                     }}
                     className={cn(
-                      'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all cursor-pointer',
+                      'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none',
                       value === country.name && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                     )}
                   >
@@ -177,7 +190,7 @@ export const SearchableCountrySelect: React.FC<SearchableCountrySelectProps> = (
                         </svg>
                       </div>
                     )}
-                  </button>
+                  </Button>
                 ))}
               </>
             )}
