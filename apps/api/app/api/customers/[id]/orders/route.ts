@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -17,7 +17,7 @@ export async function GET(
       const customerId = parseInt(params.id);
       if (isNaN(customerId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid customer ID' },
+          ResponseBuilder.error('INVALID_CUSTOMER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -25,7 +25,7 @@ export async function GET(
       const customer = await db.customers.findById(customerId);
       if (!customer) {
         return NextResponse.json(
-          { success: false, message: 'Customer not found' },
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }

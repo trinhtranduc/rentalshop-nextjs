@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
@@ -22,7 +22,7 @@ export const GET = async (
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid order ID format' },
+          ResponseBuilder.error('INVALID_ORDER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -34,7 +34,7 @@ export const GET = async (
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -80,7 +80,7 @@ export const PUT = async (
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid order ID format' },
+          ResponseBuilder.error('INVALID_ORDER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -92,7 +92,7 @@ export const PUT = async (
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -105,7 +105,7 @@ export const PUT = async (
       const existingOrder = await db.orders.findById(orderIdNum);
       if (!existingOrder) {
         return NextResponse.json(
-          { success: false, message: 'Order not found' },
+          ResponseBuilder.error('ORDER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
