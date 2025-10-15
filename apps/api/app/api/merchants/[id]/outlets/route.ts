@@ -27,7 +27,7 @@ export async function GET(
 
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -79,7 +79,7 @@ export async function POST(
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }

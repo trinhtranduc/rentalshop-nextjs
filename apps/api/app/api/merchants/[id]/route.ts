@@ -20,7 +20,7 @@ export async function GET(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID format' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -33,7 +33,7 @@ export async function GET(
       if (!merchant) {
         console.log('❌ Merchant not found in database for merchantId:', merchantId);
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -75,7 +75,7 @@ export async function PUT(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID format' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -90,7 +90,7 @@ export async function PUT(
       const existingMerchant = await db.merchants.findById(merchantId);
       if (!existingMerchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -134,7 +134,7 @@ export async function DELETE(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID format' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -145,7 +145,7 @@ export async function DELETE(
       const existingMerchant = await db.merchants.findById(merchantId);
       if (!existingMerchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }

@@ -25,7 +25,7 @@ export async function GET(
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -73,7 +73,7 @@ export async function PUT(
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
