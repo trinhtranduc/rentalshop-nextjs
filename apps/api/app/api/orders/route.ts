@@ -143,7 +143,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   } catch (error) {
     console.error('Error in GET /api/orders:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch orders' },
+      ResponseBuilder.error('FETCH_ORDERS_FAILED'),
       { status: 500 }
     );
   }
@@ -172,7 +172,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     const outlet = await db.outlets.findById(parsed.data.outletId);
     if (!outlet) {
       return NextResponse.json(
-        { success: false, message: 'Outlet not found' },
+        ResponseBuilder.error('OUTLET_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -181,7 +181,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     const merchant = await db.merchants.findById(outlet.merchantId);
     if (!merchant) {
       return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
+        ResponseBuilder.error('MERCHANT_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -323,7 +323,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
 
     if (!id) {
       return NextResponse.json(
-        { success: false, message: 'Order ID is required' },
+        ResponseBuilder.error('ORDER_ID_REQUIRED'),
         { status: 400 }
       );
     }
@@ -332,7 +332,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     const existingOrder = await db.orders.findById(id);
     if (!existingOrder) {
       return NextResponse.json(
-        { success: false, message: 'Order not found' },
+        ResponseBuilder.error('ORDER_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -367,7 +367,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     console.error('Error in PUT /api/orders:', error);
     
     return NextResponse.json(
-      { success: false, message: 'Failed to update order' },
+      ResponseBuilder.error('UPDATE_ORDER_FAILED'),
       { status: 500 }
     );
   }

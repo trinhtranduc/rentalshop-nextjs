@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
+        ResponseBuilder.error('INVALID_CREDENTIALS'),
         { status: 401 }
       );
     }
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Check if user is active
     if (!user.isActive) {
       return NextResponse.json(
-        { success: false, message: 'Account is deactivated. Please contact support.' },
+        ResponseBuilder.error('ACCOUNT_DEACTIVATED'),
         { status: 403 }
       );
     }

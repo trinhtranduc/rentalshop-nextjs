@@ -89,7 +89,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   } catch (error) {
     console.error('Error in GET /api/products:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch products' },
+      ResponseBuilder.error('FETCH_PRODUCTS_FAILED'),
       { status: 500 }
     );
   }
@@ -120,7 +120,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     // Validate that outletStock is provided (required)
     if (!parsed.data.outletStock || !Array.isArray(parsed.data.outletStock) || parsed.data.outletStock.length === 0) {
       return NextResponse.json(
-        { success: false, message: 'Product must have at least one outlet stock entry' },
+        ResponseBuilder.error('PRODUCT_NO_STOCK_ENTRY'),
         { status: 400 }
       );
     }
