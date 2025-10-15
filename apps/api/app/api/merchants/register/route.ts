@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { z } from 'zod';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // Validation schema for merchant registration
@@ -86,10 +86,8 @@ export async function POST(request: NextRequest) {
       trialEnd: trialEndDate
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Merchant registered successfully with 14-day free trial',
-      data: {
+    return NextResponse.json(
+      ResponseBuilder.success('MERCHANT_REGISTERED_TRIAL_SUCCESS', {
         merchant,
         user,
         subscription,
@@ -98,8 +96,9 @@ export async function POST(request: NextRequest) {
           planName: trialPlan?.name || 'Free Trial',
           daysRemaining: Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
         }
-      }
-    }, { status: 201 });
+      }),
+      { status: 201 }
+    );
     
   } catch (error: any) {
     console.error('Merchant registration error:', error);

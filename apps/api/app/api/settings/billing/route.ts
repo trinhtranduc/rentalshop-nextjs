@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // Simple in-memory storage (in production, use database)
@@ -20,7 +20,7 @@ export async function GET() {
     });
   } catch (error) {
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch billing configuration' },
+      ResponseBuilder.error('FETCH_BILLING_FAILED'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Validate the billing configuration
     if (!body.intervals || !Array.isArray(body.intervals)) {
       return NextResponse.json(
-        { success: false, message: 'Invalid billing configuration' },
+        ResponseBuilder.error('INVALID_BILLING_CONFIG'),
         { status: 400 }
       );
     }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     for (const interval of body.intervals) {
       if (!interval.id || !interval.name || typeof interval.months !== 'number' || typeof interval.discountPercentage !== 'number') {
         return NextResponse.json(
-          { success: false, message: 'Invalid interval configuration' },
+          ResponseBuilder.error('INVALID_INTERVAL_CONFIG'),
           { status: 400 }
         );
       }
@@ -51,11 +51,9 @@ export async function POST(request: NextRequest) {
     // Update the configuration
     billingConfig = body;
 
-    return NextResponse.json({
-      success: true,
-      message: 'Billing configuration updated successfully',
-      data: billingConfig
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('BILLING_CONFIG_UPDATED_SUCCESS', billingConfig)
+    );
   } catch (error) {
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);

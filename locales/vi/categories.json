@@ -1,0 +1,51 @@
+{
+  "title": "Danh mục",
+  "addCategory": "Thêm danh mục",
+  "editCategory": "Sửa danh mục",
+  "categoryDetails": "Chi tiết danh mục",
+  "fields": {
+    "name": "Tên danh mục",
+    "description": "Mô tả",
+    "status": "Trạng thái",
+    "productCount": "Số lượng sản phẩm",
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động"
+  },
+  "filters": {
+    "all": "Tất cả danh mục",
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động"
+  },
+  "actions": {
+    "addCategory": "Thêm danh mục",
+    "editCategory": "Sửa danh mục",
+    "deleteCategory": "Xóa danh mục",
+    "viewProducts": "Xem sản phẩm",
+    "backToCategories": "Quay lại danh sách"
+  },
+  "messages": {
+    "createSuccess": "Tạo danh mục thành công",
+    "createFailed": "Tạo danh mục thất bại",
+    "updateSuccess": "Cập nhật danh mục thành công",
+    "updateFailed": "Cập nhật danh mục thất bại",
+    "deleteSuccess": "Xóa danh mục thành công",
+    "deleteFailed": "Xóa danh mục thất bại",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa danh mục này?",
+    "noCategories": "Không tìm thấy danh mục",
+    "loadingCategories": "Đang tải danh sách danh mục..."
+  },
+  "search": {
+    "placeholder": "Tìm kiếm danh mục..."
+  },
+  "stats": {
+    "totalCategories": "Tổng số danh mục",
+    "activeCategories": "Hoạt động",
+    "totalProducts": "Tổng số sản phẩm"
+  },
+  "dialogs": {
+    "addCategoryTitle": "Thêm danh mục mới",
+    "editCategoryTitle": "Sửa danh mục",
+    "deleteCategoryTitle": "Xóa danh mục"
+  }
+}
+

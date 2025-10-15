@@ -1,0 +1,88 @@
+{
+  "title": "Customers",
+  "createCustomer": "Add Customer",
+  "editCustomer": "Edit Customer",
+  "viewCustomer": "View Customer",
+  "customerDetails": "Customer Details",
+  "fields": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "country": "Country",
+    "zipCode": "Zip Code",
+    "dateOfBirth": "Date of Birth",
+    "idNumber": "ID Number",
+    "notes": "Notes",
+    "tags": "Tags"
+  },
+  "profile": {
+    "title": "Customer Profile",
+    "contact": "Contact Information",
+    "address": "Address Information",
+    "identification": "Identification",
+    "preferences": "Preferences",
+    "notes": "Internal Notes"
+  },
+  "orders": {
+    "title": "Order History",
+    "totalOrders": "Total Orders",
+    "activeOrders": "Active Orders",
+    "completedOrders": "Completed Orders",
+    "totalSpent": "Total Spent",
+    "viewOrders": "View All Orders",
+    "createOrder": "Create Order for Customer",
+    "noOrders": "No orders yet"
+  },
+  "stats": {
+    "title": "Customer Statistics",
+    "memberSince": "Member Since",
+    "lastOrder": "Last Order",
+    "averageOrderValue": "Average Order Value",
+    "lifetimeValue": "Lifetime Value",
+    "paymentStatus": "Payment Status",
+    "currentBalance": "Current Balance"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "blocked": "Blocked",
+    "vip": "VIP"
+  },
+  "actions": {
+    "createOrder": "Create Order",
+    "viewHistory": "View History",
+    "sendMessage": "Send Message",
+    "block": "Block Customer",
+    "unblock": "Unblock Customer",
+    "delete": "Delete Customer"
+  },
+  "messages": {
+    "createSuccess": "Customer created successfully",
+    "createFailed": "Failed to create customer",
+    "updateSuccess": "Customer updated successfully",
+    "updateFailed": "Failed to update customer",
+    "deleteSuccess": "Customer deleted successfully",
+    "deleteFailed": "Failed to delete customer",
+    "confirmDelete": "Are you sure you want to delete this customer?",
+    "noCustomers": "No customers found",
+    "loadingCustomers": "Loading customers..."
+  },
+  "filters": {
+    "all": "All Customers",
+    "active": "Active",
+    "inactive": "Inactive",
+    "vip": "VIP",
+    "hasActiveOrders": "Has Active Orders",
+    "hasOverduePayments": "Has Overdue Payments"
+  },
+  "search": {
+    "placeholder": "Search customers by name, email, or phone...",
+    "noResults": "No customers found matching your search"
+  }
+}
+

@@ -1,0 +1,78 @@
+{
+  "title": "Gói đăng ký",
+  "planDetails": "Chi tiết gói",
+  "currentPlan": "Gói hiện tại",
+  "fields": {
+    "name": "Tên gói",
+    "price": "Giá",
+    "features": "Tính năng",
+    "billingCycle": "Chu kỳ thanh toán",
+    "description": "Mô tả"
+  },
+  "types": {
+    "free": "Miễn phí",
+    "starter": "Khởi đầu",
+    "professional": "Chuyên nghiệp",
+    "enterprise": "Doanh nghiệp"
+  },
+  "billingCycle": {
+    "monthly": "Hàng tháng",
+    "yearly": "Hàng năm",
+    "perMonth": "mỗi tháng",
+    "perYear": "mỗi năm",
+    "billedMonthly": "Thanh toán hàng tháng",
+    "billedYearly": "Thanh toán hàng năm"
+  },
+  "actions": {
+    "subscribe": "Đăng ký",
+    "upgrade": "Nâng cấp gói",
+    "downgrade": "Hạ cấp gói",
+    "cancel": "Hủy đăng ký",
+    "manage": "Quản lý đăng ký",
+    "viewDetails": "Xem chi tiết",
+    "selectPlan": "Chọn gói"
+  },
+  "features": {
+    "outletsLimit": "Cửa hàng",
+    "usersLimit": "Người dùng",
+    "productsLimit": "Sản phẩm",
+    "ordersLimit": "Đơn hàng mỗi tháng",
+    "storage": "Dung lượng lưu trữ",
+    "support": "Hỗ trợ",
+    "analytics": "Phân tích",
+    "customDomain": "Tên miền riêng",
+    "apiAccess": "Truy cập API",
+    "unlimited": "Không giới hạn",
+    "limited": "Giới hạn",
+    "basic": "Cơ bản",
+    "advanced": "Nâng cao",
+    "priority": "Ưu tiên"
+  },
+  "messages": {
+    "subscribeSuccess": "Đăng ký gói thành công",
+    "subscribeFailed": "Đăng ký gói thất bại",
+    "upgradeSuccess": "Nâng cấp gói thành công",
+    "upgradeFailed": "Nâng cấp gói thất bại",
+    "downgradeSuccess": "Hạ cấp gói thành công",
+    "downgradeFailed": "Hạ cấp gói thất bại",
+    "cancelSuccess": "Hủy đăng ký thành công",
+    "cancelFailed": "Hủy đăng ký thất bại",
+    "confirmUpgrade": "Bạn có chắc chắn muốn nâng cấp lên gói này?",
+    "confirmDowngrade": "Bạn có chắc chắn muốn hạ cấp xuống gói này?",
+    "confirmCancel": "Bạn có chắc chắn muốn hủy đăng ký?"
+  },
+  "status": {
+    "active": "Đang hoạt động",
+    "cancelled": "Đã hủy",
+    "expired": "Đã hết hạn",
+    "trial": "Dùng thử",
+    "pending": "Đang chờ"
+  },
+  "buttons": {
+    "choosePlan": "Chọn gói",
+    "currentPlan": "Gói hiện tại",
+    "contactSales": "Liên hệ bán hàng",
+    "getStarted": "Bắt đầu"
+  }
+}
+

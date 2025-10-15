@@ -1,0 +1,88 @@
+{
+  "title": "Khách hàng",
+  "createCustomer": "Thêm khách hàng",
+  "editCustomer": "Sửa khách hàng",
+  "viewCustomer": "Xem khách hàng",
+  "customerDetails": "Chi tiết khách hàng",
+  "fields": {
+    "firstName": "Tên",
+    "lastName": "Họ",
+    "fullName": "Họ và tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "address": "Địa chỉ",
+    "city": "Thành phố",
+    "state": "Tỉnh/Thành",
+    "country": "Quốc gia",
+    "zipCode": "Mã bưu điện",
+    "dateOfBirth": "Ngày sinh",
+    "idNumber": "Số CMND/CCCD",
+    "notes": "Ghi chú",
+    "tags": "Thẻ"
+  },
+  "profile": {
+    "title": "Hồ sơ khách hàng",
+    "contact": "Thông tin liên hệ",
+    "address": "Thông tin địa chỉ",
+    "identification": "Giấy tờ tùy thân",
+    "preferences": "Tùy chọn",
+    "notes": "Ghi chú nội bộ"
+  },
+  "orders": {
+    "title": "Lịch sử đơn hàng",
+    "totalOrders": "Tổng đơn hàng",
+    "activeOrders": "Đơn đang hoạt động",
+    "completedOrders": "Đơn hoàn thành",
+    "totalSpent": "Tổng chi tiêu",
+    "viewOrders": "Xem tất cả đơn hàng",
+    "createOrder": "Tạo đơn hàng cho khách hàng",
+    "noOrders": "Chưa có đơn hàng"
+  },
+  "stats": {
+    "title": "Thống kê khách hàng",
+    "memberSince": "Thành viên từ",
+    "lastOrder": "Đơn hàng cuối",
+    "averageOrderValue": "Giá trị đơn trung bình",
+    "lifetimeValue": "Giá trị trọn đời",
+    "paymentStatus": "Trạng thái thanh toán",
+    "currentBalance": "Số dư hiện tại"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động",
+    "blocked": "Đã khóa",
+    "vip": "VIP"
+  },
+  "actions": {
+    "createOrder": "Tạo đơn hàng",
+    "viewHistory": "Xem lịch sử",
+    "sendMessage": "Gửi tin nhắn",
+    "block": "Khóa khách hàng",
+    "unblock": "Mở khóa khách hàng",
+    "delete": "Xóa khách hàng"
+  },
+  "messages": {
+    "createSuccess": "Tạo khách hàng thành công",
+    "createFailed": "Tạo khách hàng thất bại",
+    "updateSuccess": "Cập nhật khách hàng thành công",
+    "updateFailed": "Cập nhật khách hàng thất bại",
+    "deleteSuccess": "Xóa khách hàng thành công",
+    "deleteFailed": "Xóa khách hàng thất bại",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa khách hàng này?",
+    "noCustomers": "Không tìm thấy khách hàng",
+    "loadingCustomers": "Đang tải khách hàng..."
+  },
+  "filters": {
+    "all": "Tất cả khách hàng",
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động",
+    "vip": "VIP",
+    "hasActiveOrders": "Có đơn đang hoạt động",
+    "hasOverduePayments": "Có thanh toán quá hạn"
+  },
+  "search": {
+    "placeholder": "Tìm kiếm theo tên, email hoặc số điện thoại...",
+    "noResults": "Không tìm thấy khách hàng phù hợp"
+  }
+}
+

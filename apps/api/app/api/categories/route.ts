@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { categoriesQuerySchema, handleApiError } from '@rentalshop/utils';
+import { categoriesQuerySchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -60,11 +60,10 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
     const parsed = categoriesQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Invalid query', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+      return NextResponse.json(
+        ResponseBuilder.validationError(parsed.error.flatten()),
+        { status: 400 }
+      );
     }
 
     const { 
@@ -149,7 +148,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     if (!userScope.merchantId) {
       console.log('❌ User has no merchantId - merchant access required');
       return NextResponse.json(
-        { success: false, message: 'Merchant access required' },
+        ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -163,7 +162,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       console.log('❌ Validation failed - invalid name:', { name, type: typeof name, length: name?.length });
       return NextResponse.json(
-        { success: false, message: 'Category name is required' },
+        ResponseBuilder.error('CATEGORY_NAME_REQUIRED'),
         { status: 400 }
       );
     }
@@ -184,7 +183,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     if (existingCategory) {
       console.log('❌ Category already exists:', existingCategory);
       return NextResponse.json(
-        { success: false, message: 'Category with this name already exists' },
+        ResponseBuilder.error('CATEGORY_NAME_EXISTS'),
         { status: API.STATUS.CONFLICT }
       );
     }
@@ -236,11 +235,10 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     console.log('🔄 Transformed category response:', transformedCategory);
     console.log('🎉 Category creation completed successfully!');
 
-    return NextResponse.json({
-      success: true,
-      data: transformedCategory,
-      message: 'Category created successfully'
-    }, { status: 201 });
+    return NextResponse.json(
+      ResponseBuilder.success('CATEGORY_CREATED_SUCCESS', transformedCategory),
+      { status: 201 }
+    );
 
   } catch (error) {
     console.error('💥 Error creating category:', error);

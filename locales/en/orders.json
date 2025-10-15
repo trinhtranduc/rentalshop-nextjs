@@ -1,0 +1,97 @@
+{
+  "title": "Orders",
+  "createOrder": "Create Order",
+  "editOrder": "Edit Order",
+  "viewOrder": "View Order",
+  "orderDetails": "Order Details",
+  "orderNumber": "Order Number",
+  "orderType": {
+    "label": "Order Type",
+    "RENT": "Rental",
+    "SALE": "Sale"
+  },
+  "status": {
+    "label": "Status",
+    "RESERVED": "Reserved",
+    "PICKUPED": "Picked Up",
+    "RETURNED": "Returned",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "customer": {
+    "label": "Customer",
+    "name": "Customer Name",
+    "phone": "Customer Phone",
+    "email": "Customer Email",
+    "selectCustomer": "Select Customer",
+    "createCustomer": "Create New Customer",
+    "noCustomer": "Walk-in Customer"
+  },
+  "dates": {
+    "pickupDate": "Pickup Date",
+    "returnDate": "Return Date",
+    "createdDate": "Created Date",
+    "completedDate": "Completed Date"
+  },
+  "items": {
+    "title": "Order Items",
+    "product": "Product",
+    "quantity": "Quantity",
+    "price": "Price",
+    "total": "Total",
+    "addItem": "Add Item",
+    "removeItem": "Remove Item",
+    "noItems": "No items in this order"
+  },
+  "payment": {
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "deposit": "Deposit",
+    "tax": "Tax",
+    "total": "Total Amount",
+    "amountPaid": "Amount Paid",
+    "amountDue": "Amount Due",
+    "paymentMethod": "Payment Method",
+    "cash": "Cash",
+    "card": "Card",
+    "transfer": "Transfer",
+    "other": "Other"
+  },
+  "actions": {
+    "markAsPickedUp": "Mark as Picked Up",
+    "markAsReturned": "Mark as Returned",
+    "markAsCompleted": "Mark as Completed",
+    "cancelOrder": "Cancel Order",
+    "printReceipt": "Print Receipt",
+    "sendReceipt": "Send Receipt",
+    "viewHistory": "View History"
+  },
+  "messages": {
+    "createSuccess": "Order created successfully",
+    "createFailed": "Failed to create order",
+    "updateSuccess": "Order updated successfully",
+    "updateFailed": "Failed to update order",
+    "deleteSuccess": "Order deleted successfully",
+    "deleteFailed": "Failed to delete order",
+    "confirmDelete": "Are you sure you want to delete this order?",
+    "confirmCancel": "Are you sure you want to cancel this order?",
+    "noOrders": "No orders found",
+    "loadingOrders": "Loading orders..."
+  },
+  "filters": {
+    "all": "All Orders",
+    "active": "Active",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "overdue": "Overdue",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "dateRange": "Date Range"
+  },
+  "search": {
+    "placeholder": "Search orders by number, customer name, or phone...",
+    "noResults": "No orders found matching your search"
+  }
+}
+

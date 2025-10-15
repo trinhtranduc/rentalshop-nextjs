@@ -1,0 +1,73 @@
+{
+  "title": "Users",
+  "addUser": "Add User",
+  "editUser": "Edit User",
+  "userDetails": "User Details",
+  "fields": {
+    "name": "Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "role": "Role",
+    "outlet": "Outlet",
+    "merchant": "Merchant",
+    "status": "Status",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "roles": {
+    "ADMIN": "System Administrator",
+    "MERCHANT": "Merchant Owner",
+    "OUTLET_ADMIN": "Outlet Manager",
+    "OUTLET_STAFF": "Outlet Staff"
+  },
+  "actions": {
+    "activate": "Activate User",
+    "deactivate": "Deactivate User",
+    "delete": "Delete User",
+    "changePassword": "Change Password",
+    "viewDetails": "View Details",
+    "editUser": "Edit User",
+    "addUser": "Add User",
+    "backToUsers": "Back to Users"
+  },
+  "messages": {
+    "createSuccess": "User created successfully",
+    "createFailed": "Failed to create user",
+    "updateSuccess": "User updated successfully",
+    "updateFailed": "Failed to update user",
+    "deleteSuccess": "User deleted successfully",
+    "deleteFailed": "Failed to delete user",
+    "activateSuccess": "User activated successfully",
+    "deactivateSuccess": "User deactivated successfully",
+    "passwordChangeSuccess": "Password changed successfully",
+    "confirmDelete": "Are you sure you want to delete this user?",
+    "confirmDeactivate": "Are you sure you want to deactivate this user?",
+    "noUsers": "No users found",
+    "loadingUsers": "Loading users..."
+  },
+  "search": {
+    "placeholder": "Search users by name, email, or phone..."
+  },
+  "filters": {
+    "all": "All Users",
+    "byRole": "Filter by Role",
+    "byOutlet": "Filter by Outlet",
+    "active": "Active Users",
+    "inactive": "Inactive Users"
+  },
+  "stats": {
+    "totalUsers": "Total Users",
+    "activeUsers": "Active Users",
+    "adminUsers": "Administrators",
+    "staffUsers": "Staff Members"
+  },
+  "dialogs": {
+    "changePasswordTitle": "Change Password",
+    "changePasswordDescription": "Enter a new password for this user",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password"
+  }
+}
+

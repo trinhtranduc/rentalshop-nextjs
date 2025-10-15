@@ -1,0 +1,97 @@
+{
+  "title": "Đơn hàng",
+  "createOrder": "Tạo đơn hàng",
+  "editOrder": "Sửa đơn hàng",
+  "viewOrder": "Xem đơn hàng",
+  "orderDetails": "Chi tiết đơn hàng",
+  "orderNumber": "Mã đơn hàng",
+  "orderType": {
+    "label": "Loại đơn",
+    "RENT": "Cho thuê",
+    "SALE": "Bán"
+  },
+  "status": {
+    "label": "Trạng thái",
+    "RESERVED": "Đã đặt",
+    "PICKUPED": "Đã lấy hàng",
+    "RETURNED": "Đã trả hàng",
+    "COMPLETED": "Hoàn thành",
+    "CANCELLED": "Đã hủy"
+  },
+  "customer": {
+    "label": "Khách hàng",
+    "name": "Tên khách hàng",
+    "phone": "Số điện thoại",
+    "email": "Email khách hàng",
+    "selectCustomer": "Chọn khách hàng",
+    "createCustomer": "Tạo khách hàng mới",
+    "noCustomer": "Khách vãng lai"
+  },
+  "dates": {
+    "pickupDate": "Ngày lấy hàng",
+    "returnDate": "Ngày trả hàng",
+    "createdDate": "Ngày tạo",
+    "completedDate": "Ngày hoàn thành"
+  },
+  "items": {
+    "title": "Sản phẩm",
+    "product": "Sản phẩm",
+    "quantity": "Số lượng",
+    "price": "Giá",
+    "total": "Tổng",
+    "addItem": "Thêm sản phẩm",
+    "removeItem": "Xóa sản phẩm",
+    "noItems": "Không có sản phẩm trong đơn hàng"
+  },
+  "payment": {
+    "subtotal": "Tạm tính",
+    "discount": "Giảm giá",
+    "deposit": "Đặt cọc",
+    "tax": "Thuế",
+    "total": "Tổng tiền",
+    "amountPaid": "Đã thanh toán",
+    "amountDue": "Còn lại",
+    "paymentMethod": "Phương thức thanh toán",
+    "cash": "Tiền mặt",
+    "card": "Thẻ",
+    "transfer": "Chuyển khoản",
+    "other": "Khác"
+  },
+  "actions": {
+    "markAsPickedUp": "Đánh dấu đã lấy hàng",
+    "markAsReturned": "Đánh dấu đã trả hàng",
+    "markAsCompleted": "Đánh dấu hoàn thành",
+    "cancelOrder": "Hủy đơn hàng",
+    "printReceipt": "In hóa đơn",
+    "sendReceipt": "Gửi hóa đơn",
+    "viewHistory": "Xem lịch sử"
+  },
+  "messages": {
+    "createSuccess": "Tạo đơn hàng thành công",
+    "createFailed": "Tạo đơn hàng thất bại",
+    "updateSuccess": "Cập nhật đơn hàng thành công",
+    "updateFailed": "Cập nhật đơn hàng thất bại",
+    "deleteSuccess": "Xóa đơn hàng thành công",
+    "deleteFailed": "Xóa đơn hàng thất bại",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa đơn hàng này?",
+    "confirmCancel": "Bạn có chắc chắn muốn hủy đơn hàng này?",
+    "noOrders": "Không tìm thấy đơn hàng",
+    "loadingOrders": "Đang tải đơn hàng..."
+  },
+  "filters": {
+    "all": "Tất cả đơn hàng",
+    "active": "Đang hoạt động",
+    "completed": "Hoàn thành",
+    "cancelled": "Đã hủy",
+    "overdue": "Quá hạn",
+    "today": "Hôm nay",
+    "thisWeek": "Tuần này",
+    "thisMonth": "Tháng này",
+    "dateRange": "Khoảng thời gian"
+  },
+  "search": {
+    "placeholder": "Tìm kiếm theo mã đơn, tên hoặc số điện thoại khách hàng...",
+    "noResults": "Không tìm thấy đơn hàng phù hợp"
+  }
+}
+

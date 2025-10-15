@@ -1,0 +1,126 @@
+{
+  "title": "Cài đặt",
+  "tabs": {
+    "profile": "Hồ sơ",
+    "account": "Tài khoản",
+    "merchant": "Doanh nghiệp",
+    "outlet": "Cửa hàng",
+    "security": "Bảo mật",
+    "subscription": "Gói dịch vụ",
+    "currency": "Tiền tệ",
+    "language": "Ngôn ngữ",
+    "notifications": "Thông báo",
+    "preferences": "Tùy chọn"
+  },
+  "profile": {
+    "title": "Cài đặt hồ sơ",
+    "subtitle": "Quản lý thông tin cá nhân của bạn",
+    "name": "Họ và tên",
+    "email": "Địa chỉ Email",
+    "phone": "Số điện thoại",
+    "role": "Vai trò",
+    "avatar": "Ảnh đại diện",
+    "updateButton": "Cập nhật hồ sơ",
+    "uploadAvatar": "Tải ảnh lên",
+    "removeAvatar": "Xóa ảnh"
+  },
+  "account": {
+    "title": "Cài đặt tài khoản",
+    "subtitle": "Quản lý tùy chọn tài khoản",
+    "timezone": "Múi giờ",
+    "dateFormat": "Định dạng ngày",
+    "timeFormat": "Định dạng giờ",
+    "numberFormat": "Định dạng số",
+    "deleteAccount": "Xóa tài khoản",
+    "deleteAccountWarning": "Thao tác này không thể hoàn tác"
+  },
+  "merchant": {
+    "title": "Cài đặt doanh nghiệp",
+    "subtitle": "Quản lý thông tin doanh nghiệp",
+    "name": "Tên doanh nghiệp",
+    "email": "Email doanh nghiệp",
+    "phone": "Số điện thoại doanh nghiệp",
+    "address": "Địa chỉ doanh nghiệp",
+    "taxId": "Mã số thuế",
+    "registrationNumber": "Số đăng ký kinh doanh",
+    "logo": "Logo doanh nghiệp"
+  },
+  "outlet": {
+    "title": "Cài đặt cửa hàng",
+    "subtitle": "Quản lý thông tin cửa hàng",
+    "name": "Tên cửa hàng",
+    "address": "Địa chỉ cửa hàng",
+    "phone": "Số điện thoại cửa hàng",
+    "workingHours": "Giờ làm việc",
+    "contactPerson": "Người liên hệ"
+  },
+  "security": {
+    "title": "Cài đặt bảo mật",
+    "subtitle": "Quản lý mật khẩu và tùy chọn bảo mật",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu mới",
+    "changePassword": "Đổi mật khẩu",
+    "twoFactorAuth": "Xác thực hai yếu tố",
+    "enableTwoFactor": "Bật xác thực hai yếu tố",
+    "disableTwoFactor": "Tắt xác thực hai yếu tố",
+    "activeSessions": "Phiên đăng nhập",
+    "logoutAllDevices": "Đăng xuất khỏi tất cả thiết bị"
+  },
+  "subscription": {
+    "title": "Gói dịch vụ",
+    "subtitle": "Quản lý gói đăng ký của bạn",
+    "currentPlan": "Gói hiện tại",
+    "status": "Trạng thái",
+    "billingCycle": "Chu kỳ thanh toán",
+    "nextBilling": "Ngày thanh toán tiếp theo",
+    "amount": "Số tiền",
+    "paymentMethod": "Phương thức thanh toán",
+    "upgradePlan": "Nâng cấp gói",
+    "downgradePlan": "Hạ cấp gói",
+    "cancelSubscription": "Hủy đăng ký",
+    "viewInvoices": "Xem hóa đơn",
+    "planFeatures": "Tính năng gói",
+    "usageStats": "Thống kê sử dụng"
+  },
+  "currency": {
+    "title": "Cài đặt tiền tệ",
+    "subtitle": "Chọn đơn vị tiền tệ ưa thích",
+    "selectCurrency": "Chọn tiền tệ",
+    "currentCurrency": "Tiền tệ hiện tại",
+    "symbol": "Ký hiệu",
+    "code": "Mã",
+    "exchangeRate": "Tỷ giá",
+    "updateButton": "Cập nhật tiền tệ"
+  },
+  "language": {
+    "title": "Cài đặt ngôn ngữ",
+    "subtitle": "Chọn ngôn ngữ hiển thị",
+    "selectLanguage": "Chọn ngôn ngữ",
+    "currentLanguage": "Ngôn ngữ hiện tại",
+    "english": "English",
+    "vietnamese": "Tiếng Việt",
+    "updateButton": "Cập nhật ngôn ngữ"
+  },
+  "notifications": {
+    "title": "Cài đặt thông báo",
+    "subtitle": "Quản lý tùy chọn thông báo",
+    "emailNotifications": "Thông báo Email",
+    "pushNotifications": "Thông báo đẩy",
+    "smsNotifications": "Thông báo SMS",
+    "orderUpdates": "Cập nhật đơn hàng",
+    "paymentAlerts": "Cảnh báo thanh toán",
+    "systemAlerts": "Cảnh báo hệ thống",
+    "marketingEmails": "Email quảng cáo"
+  },
+  "messages": {
+    "updateSuccess": "Cập nhật cài đặt thành công",
+    "updateFailed": "Cập nhật cài đặt thất bại",
+    "passwordChanged": "Đổi mật khẩu thành công",
+    "passwordChangeFailed": "Đổi mật khẩu thất bại",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa tài khoản?",
+    "deleteSuccess": "Xóa tài khoản thành công",
+    "deleteFailed": "Xóa tài khoản thất bại"
+  }
+}
+
