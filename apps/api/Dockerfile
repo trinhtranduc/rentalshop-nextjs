@@ -70,8 +70,8 @@ RUN yarn build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-# Install OpenSSL for Prisma (required for debian-openssl-3.0.x binary)
-RUN apk add --no-cache openssl
+# Install OpenSSL for Prisma AND postgresql-client for migrations
+RUN apk add --no-cache openssl postgresql-client
 
 ENV NODE_ENV=production
 ENV PORT=3002
