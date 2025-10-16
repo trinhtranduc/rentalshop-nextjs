@@ -19,6 +19,7 @@ import { simplifiedOrderNumbers } from './order-number-generator';
 import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
 import { simplifiedOrderItems } from './order-items';
+import { sessions } from './sessions';
 
 // Optimized order functions (temporarily disabled due to type issues)
 // export { 
@@ -141,7 +142,12 @@ const db = {
   // ============================================================================
   // SUBSCRIPTION ACTIVITY OPERATIONS
   // ============================================================================
-  subscriptionActivities: simplifiedSubscriptionActivities
+  subscriptionActivities: simplifiedSubscriptionActivities,
+
+  // ============================================================================
+  // SESSION OPERATIONS (Single Session Enforcement)
+  // ============================================================================
+  sessions
 };
 
 // ============================================================================
