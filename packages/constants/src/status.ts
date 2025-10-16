@@ -242,79 +242,81 @@ export function getStatusLabel(status: string, type: 'subscription' | 'order' | 
 }
 
 /**
- * Get status color class for UI components
+ * Get status color class for UI components - Ocean Blue Theme
  */
 export function getStatusColor(status: string, type: 'subscription' | 'order' | 'payment' | 'entity' | 'availability'): string {
   switch (type) {
     case 'subscription':
       switch (status) {
         case SUBSCRIPTION_STATUS.TRIAL:
-          return 'text-blue-600 bg-blue-100';
+          return 'text-green-700 bg-green-100';
         case SUBSCRIPTION_STATUS.ACTIVE:
-          return 'text-green-600 bg-green-100';
+          return 'text-emerald-800 bg-emerald-100';
         case SUBSCRIPTION_STATUS.PAST_DUE:
-          return 'text-yellow-600 bg-yellow-100';
+          return 'text-amber-900 bg-amber-100';
         case SUBSCRIPTION_STATUS.CANCELLED:
+          return 'text-red-800 bg-red-100';
         case SUBSCRIPTION_STATUS.EXPIRED:
-          return 'text-red-600 bg-red-100';
+          return 'text-slate-600 bg-slate-100';
         case SUBSCRIPTION_STATUS.PAUSED:
-          return 'text-orange-600 bg-orange-100';
+          return 'text-purple-800 bg-purple-100';
         default:
-          return 'text-gray-600 bg-gray-100';
+          return 'text-slate-600 bg-slate-100';
       }
     case 'order':
       switch (status) {
         case ORDER_STATUS.RESERVED:
-          return 'text-blue-600 bg-blue-100';
+          return 'text-blue-800 bg-blue-100';
         case ORDER_STATUS.PICKUPED:
-          return 'text-purple-600 bg-purple-100';
+          return 'text-amber-900 bg-amber-100';
         case ORDER_STATUS.RETURNED:
+          return 'text-emerald-800 bg-emerald-100';
         case ORDER_STATUS.COMPLETED:
-          return 'text-green-600 bg-green-100';
+          return 'text-indigo-800 bg-indigo-100';
         case ORDER_STATUS.CANCELLED:
-          return 'text-red-600 bg-red-100';
+          return 'text-red-800 bg-red-100';
         default:
-          return 'text-gray-600 bg-gray-100';
+          return 'text-slate-600 bg-slate-100';
       }
     case 'payment':
       switch (status) {
         case PAYMENT_STATUS.PENDING:
-          return 'text-yellow-600 bg-yellow-100';
+          return 'text-amber-900 bg-amber-100';
         case PAYMENT_STATUS.COMPLETED:
-          return 'text-green-600 bg-green-100';
+          return 'text-emerald-800 bg-emerald-100';
         case PAYMENT_STATUS.FAILED:
-          return 'text-red-600 bg-red-100';
+          return 'text-red-800 bg-red-100';
         case PAYMENT_STATUS.REFUNDED:
-          return 'text-blue-600 bg-blue-100';
+          return 'text-blue-800 bg-blue-100';
         case PAYMENT_STATUS.CANCELLED:
-          return 'text-gray-600 bg-gray-100';
+          return 'text-slate-600 bg-slate-100';
         default:
-          return 'text-gray-600 bg-gray-100';
+          return 'text-slate-600 bg-slate-100';
       }
     case 'entity':
       switch (status) {
         case ENTITY_STATUS.ACTIVE:
-          return 'text-green-600 bg-green-100';
+          return 'text-emerald-800 bg-emerald-100';
         case ENTITY_STATUS.INACTIVE:
-          return 'text-red-600 bg-red-100';
+          return 'text-slate-600 bg-slate-100';
         default:
-          return 'text-gray-600 bg-gray-100';
+          return 'text-slate-600 bg-slate-100';
       }
     case 'availability':
       switch (status) {
         case PRODUCT_AVAILABILITY_STATUS.AVAILABLE:
-          return 'text-green-600 bg-green-100';
+          return 'text-emerald-800 bg-emerald-100';
         case PRODUCT_AVAILABILITY_STATUS.OUT_OF_STOCK:
-          return 'text-red-600 bg-red-100';
+          return 'text-red-800 bg-red-100';
         case PRODUCT_AVAILABILITY_STATUS.UNAVAILABLE:
-          return 'text-gray-600 bg-gray-100';
+          return 'text-slate-600 bg-slate-100';
         case PRODUCT_AVAILABILITY_STATUS.DATE_CONFLICT:
-          return 'text-yellow-600 bg-yellow-100';
+          return 'text-amber-900 bg-amber-100';
         default:
-          return 'text-gray-600 bg-gray-100';
+          return 'text-slate-600 bg-slate-100';
       }
     default:
-      return 'text-gray-600 bg-gray-100';
+      return 'text-slate-600 bg-slate-100';
   }
 }
 

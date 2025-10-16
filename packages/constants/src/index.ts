@@ -63,6 +63,28 @@ export type {
   AuditEntityType
 } from './status';
 
+// ============================================================================
+// COLOR SYSTEM EXPORTS
+// ============================================================================
+export * from './colors';
+export {
+  BRAND_COLORS,
+  ACTION_COLORS,
+  TEXT_COLORS,
+  BACKGROUND_COLORS,
+  NAVIGATION_COLORS,
+  BORDER_COLORS,
+  ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE,
+  ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE,
+  SUBSCRIPTION_STATUS_COLORS,
+  PAYMENT_STATUS_COLORS,
+  ENTITY_STATUS_COLORS,
+  PRODUCT_AVAILABILITY_COLORS,
+  BUTTON_COLORS,
+  getOrderStatusClass,
+  getOrderTypeClass
+} from './colors';
+
 // Explicit exports for critical constants
 export { 
   ORDER_STATUS_COLORS,

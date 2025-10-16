@@ -11,52 +11,72 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Brand Colors - Green Theme (Clean & Less Eye-Straining)
+        // Brand Colors - Green Theme
         'brand': {
-          primary: '#4CAF50',    // Primary green - softer, less saturated
-          secondary: '#81C784',  // Secondary green - pastel
+          primary: '#22C55E',    // Green 500 - primary green
+          secondary: '#4ADE80',  // Green 400 - lighter green
+          dark: '#15803D',       // Green 700 - deep green
+          light: '#86EFAC',      // Green 300 - light green
+          lightest: '#DCFCE7',   // Green 100 - very light green background
         },
-        // Action Colors - Reduced Saturation
+        // Action Colors - Green Theme
         'action': {
-          primary: '#4CAF50',    // Main green - same as brand-primary
-          success: '#2E7D32',    // Darker green for success
-          danger: '#E53935',     // Softer red for danger
-          warning: '#FFC107',    // Yellow for warnings
+          primary: '#22C55E',    // Green 500 (same as brand primary)
+          success: '#10B981',    // Emerald green
+          danger: '#EF4444',     // Red
+          warning: '#F59E0B',    // Amber
+          info: '#3B82F6',       // Blue 500
         },
-        // Text Colors - Better Contrast
+        // Text Colors - Ocean Blue Theme
         'text': {
-          primary: '#212121',    // Dark gray for headings
-          secondary: '#757575',  // Medium gray for descriptions
-          tertiary: '#9E9E9E',  // Light gray for tertiary text
+          primary: '#1E293B',    // Slate 800 - main text
+          secondary: '#64748B',  // Slate 500 - secondary text
+          tertiary: '#94A3B8',   // Slate 400 - tertiary text
           inverted: '#FFFFFF',   // White text
+          muted: '#CBD5E1',      // Slate 300 - muted text
         },
-        // Background Colors - Softer, Less Eye-Straining
+        // Background Colors - Ocean Blue Theme
         'bg': {
-          primary: '#F8FAFC',   // Very light blue-gray
-          secondary: '#F1F5F9', // Slightly darker background
-          tertiary: '#E2E8F0',  // Medium background
-          card: '#FFFFFF',      // Pure white for cards
+          primary: '#F8FAFC',    // Slate 50 - main background
+          secondary: '#F1F5F9',  // Slate 100 - secondary background
+          tertiary: '#E2E8F0',   // Slate 200 - tertiary background
+          card: '#FFFFFF',       // White - card background
+          dark: '#0F172A',       // Slate 900 - dark background
         },
-        // Navigation Colors
+        // Navigation Colors - Green Theme
         'nav': {
-          background: '#1E1E1E', // Dark gray for navigation
-          tint: '#FFFFFF',       // White text on nav
+          background: '#0F172A',      // Dark slate
+          backgroundHover: '#1E293B', // Slate 800
+          text: '#FFFFFF',            // White
+          textActive: '#86EFAC',      // Green 300 - light green
+          textHover: '#DCFCE7',       // Green 100 - very light green
+          border: '#334155',          // Slate 700
+          icon: '#94A3B8',            // Slate 400
+          iconActive: '#22C55E',      // Green 500
         },
-        // Border Colors - Softer
+        // Border Colors - Green Theme
         'border': {
-          DEFAULT: '#E2E8F0',   // Light blue-gray borders
+          DEFAULT: '#E2E8F0',    // Slate 200
+          light: '#F1F5F9',      // Slate 100
+          dark: '#CBD5E1',       // Slate 300
+          focus: '#22C55E',      // Green 500
         },
-        // Status Colors - Following Your Suggestions
+        // Status Colors - Green Theme
         'status': {
-          pending: '#FFC107',    // Yellow - pending
-          confirmed: '#4CAF50',  // Green - confirmed
-          'in-progress': '#2196F3', // Blue - in progress
-          completed: '#2E7D32',  // Dark green - completed
-          cancelled: '#F44336',  // Red - cancelled
-          overdue: '#E53935',    // Dark red - overdue
-          refunded: '#9E9E9E',  // Gray - refunded
-          active: '#4CAF50',     // Green - active
-          inactive: '#9E9E9E',   // Gray - inactive
+          // Order statuses
+          reserved: '#3B82F6',   // Blue 500
+          pickuped: '#F59E0B',   // Amber 500
+          returned: '#10B981',   // Emerald 500
+          completed: '#6366F1',  // Indigo 500
+          cancelled: '#EF4444',  // Red 500
+          // General statuses
+          pending: '#F59E0B',    // Amber 500
+          active: '#22C55E',     // Green 500
+          inactive: '#64748B',   // Slate 500
+          success: '#22C55E',    // Green 500
+          warning: '#F59E0B',    // Amber 500
+          error: '#EF4444',      // Red 500
+          info: '#3B82F6',       // Blue 500
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

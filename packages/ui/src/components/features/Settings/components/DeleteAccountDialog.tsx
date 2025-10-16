@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from '@rentalshop/ui';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -24,6 +25,8 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
   onClose,
   onConfirm
 }) => {
+  const t = useSettingsTranslations();
+  
   if (!isOpen) return null;
 
   return (
@@ -36,22 +39,22 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
             </svg>
           </div>
           <div className="ml-3">
-            <h3 className="text-lg font-medium text-gray-900">Delete Account</h3>
+            <h3 className="text-lg font-medium text-gray-900">{t('deleteAccountDialog.title')}</h3>
           </div>
         </div>
         
         <div className="mb-6">
           <p className="text-sm text-gray-600">
-            Are you sure you want to delete your account? This action cannot be undone and will permanently remove:
+            {t('deleteAccountDialog.description')}
           </p>
           <ul className="mt-3 text-sm text-gray-600 list-disc list-inside space-y-1">
-            <li>Your profile and personal information</li>
-            <li>All your orders and transaction history</li>
-            <li>Your product listings and inventory</li>
-            <li>Any saved preferences and settings</li>
+            <li>{t('deleteAccountDialog.profileInfo')}</li>
+            <li>{t('deleteAccountDialog.orderHistory')}</li>
+            <li>{t('deleteAccountDialog.productListings')}</li>
+            <li>{t('deleteAccountDialog.savedPreferences')}</li>
           </ul>
           <p className="mt-3 text-sm text-gray-600">
-            <strong>This action is irreversible.</strong>
+            <strong>{t('deleteAccountDialog.irreversibleWarning')}</strong>
           </p>
         </div>
 
@@ -61,14 +64,14 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
             onClick={onClose}
             disabled={isDeleting}
           >
-            Cancel
+            {t('deleteAccountDialog.cancel')}
           </Button>
           <Button
             variant="destructive"
             onClick={onConfirm}
             disabled={isDeleting}
           >
-            {isDeleting ? 'Deleting...' : 'Delete Account'}
+            {isDeleting ? t('deleteAccountDialog.deleting') : t('deleteAccountDialog.deleteAccount')}
           </Button>
         </div>
       </div>

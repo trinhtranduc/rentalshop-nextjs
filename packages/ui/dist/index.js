@@ -1298,14 +1298,22 @@ var buttonVariants = (0, import_class_variance_authority3.cva)(
   {
     variants: {
       variant: {
-        default: "bg-action-primary text-text-inverted hover:bg-brand-primary",
-        destructive: "bg-action-danger text-text-inverted hover:bg-red-700",
-        outline: "border border-border bg-bg-card text-text-primary hover:bg-bg-secondary",
-        secondary: "bg-bg-secondary text-text-primary hover:bg-bg-tertiary",
-        ghost: "hover:bg-bg-secondary hover:text-text-primary",
-        link: "text-action-primary underline-offset-4 hover:underline",
-        success: "bg-action-success text-text-inverted hover:bg-green-700",
-        warning: "bg-action-warning text-text-inverted hover:bg-orange-700"
+        // Green Theme - Primary button with green
+        default: "bg-green-500 text-white hover:bg-green-600",
+        // Destructive - Red for danger actions
+        destructive: "bg-red-500 text-white hover:bg-red-600",
+        // Outline - Neutral gray border (for table actions, pagination)
+        outline: "border border-slate-300 bg-transparent text-slate-700 hover:bg-slate-50 hover:text-slate-900",
+        // Secondary - Light slate background
+        secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
+        // Ghost - Transparent with hover effect
+        ghost: "hover:bg-slate-100 hover:text-slate-800",
+        // Link - Green text with underline
+        link: "text-green-500 underline-offset-4 hover:underline",
+        // Success - Emerald green
+        success: "bg-emerald-500 text-white hover:bg-emerald-600",
+        // Warning - Amber yellow
+        warning: "bg-amber-500 text-white hover:bg-amber-600"
       },
       size: {
         default: "h-10 px-4 py-2",
@@ -6997,6 +7005,7 @@ var AddCustomerForm = ({
     state: "",
     zipCode: "",
     country: ""
+    // Hidden in UI but sent to API
   });
   const [errors, setErrors] = (0, import_react21.useState)({});
   const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react21.useState)(false);
@@ -7211,19 +7220,6 @@ var AddCustomerForm = ({
         )
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(Label2, { htmlFor: "country", children: t2("fields.country") }),
-      /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
-        Input,
-        {
-          id: "country",
-          type: "text",
-          value: formData.country,
-          onChange: (e2) => handleInputChange("country", e2.target.value),
-          placeholder: t2("placeholders.enterCountry")
-        }
-      )
-    ] }),
     /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)("div", { className: "flex justify-end space-x-3 border-t pt-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
         Button2,
@@ -7238,17 +7234,10 @@ var AddCustomerForm = ({
           ]
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
-        Button2,
-        {
-          type: "submit",
-          disabled: isSubmitting,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(import_lucide_react19.Save, { className: "w-4 h-4 mr-2" }),
-            isSubmitting ? tc("buttons.creating") : t2("createCustomer")
-          ]
-        }
-      )
+      /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(Button2, { type: "submit", disabled: isSubmitting, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(import_lucide_react19.Save, { className: "w-4 h-4 mr-2" }),
+        isSubmitting ? tc("buttons.creating") : t2("createCustomer")
+      ] })
     ] })
   ] }) }) });
 };
@@ -15842,16 +15831,16 @@ var Sidebar = ({
                   },
                   className: (0, import_ui18.cn)(
                     "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group",
-                    shouldHighlight ? "bg-green-100 text-green-700 border-r-2 border-green-600" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                    shouldHighlight ? "bg-green-100 text-green-700 border-r-2 border-green-600" : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
                     // Add click feedback
-                    navigatingTo === item.href && "bg-blue-50 text-blue-700 border-r-2 border-blue-600"
+                    navigatingTo === item.href && "bg-green-50 text-green-700 border-r-2 border-green-600"
                   ),
                   title: isCollapsed ? item.label : void 0,
                   children: [
                     /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { className: "flex items-center space-x-3", children: [
                       /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { className: (0, import_ui18.cn)(
                         "flex-shrink-0 transition-colors duration-150",
-                        shouldHighlight ? "text-green-600" : "text-gray-500"
+                        shouldHighlight ? "text-green-600" : "text-slate-500"
                       ), children: item.icon }),
                       !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { className: (0, import_ui18.cn)(
                         "text-base transition-all duration-150",
@@ -19185,14 +19174,6 @@ var CustomerDetailDialog = ({
             /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("p", { className: "text-gray-900", children: customer.dateOfBirth ? formatDate11(customer.dateOfBirth) : t2("fields.notProvided") })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("fields.status") }),
-            /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("div", { className: `inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`, children: getStatusDisplayName(customer.isActive) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("fields.customerId") }),
-            /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("p", { className: "text-gray-500 text-sm font-mono", children: customer.id })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("stats.memberSince") }),
             /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("p", { className: "text-gray-900", children: formatDate11(customer.createdAt) })
           ] }),
@@ -19227,10 +19208,6 @@ var CustomerDetailDialog = ({
             /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { children: [
               /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("fields.zipCode") }),
               /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("p", { className: "text-gray-900", children: customer.zipCode || t2("fields.notSpecified") })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("fields.country") }),
-              /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("p", { className: "text-gray-900", children: customer.country || t2("fields.notSpecified") })
             ] })
           ] })
         ] })
@@ -19575,35 +19552,17 @@ var import_ui55 = require("@rentalshop/ui");
 var import_ui56 = require("@rentalshop/ui");
 var import_hooks25 = require("@rentalshop/hooks");
 var import_jsx_runtime106 = require("react/jsx-runtime");
-var EditCustomerForm = (0, import_react54.forwardRef)(({
-  customer,
-  onSave,
-  onCancel,
-  isSubmitting: externalIsSubmitting,
-  showActions = true
-}, ref) => {
-  const t2 = (0, import_hooks25.useCustomerTranslations)();
-  const tc = (0, import_hooks25.useCommonTranslations)();
-  const [formData, setFormData] = (0, import_react54.useState)({
-    firstName: customer.firstName,
-    lastName: customer.lastName,
-    email: customer.email,
-    phone: customer.phone,
-    companyName: customer.companyName || "",
-    address: customer.address || "",
-    city: customer.city || "",
-    state: customer.state || "",
-    zipCode: customer.zipCode || "",
-    country: customer.country || "",
-    status: customer.status,
-    membershipLevel: customer.membershipLevel
-  });
-  const [errors, setErrors] = (0, import_react54.useState)({});
-  const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react54.useState)(false);
-  const [errorMessage, setErrorMessage] = (0, import_react54.useState)(null);
-  const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
-  (0, import_react54.useEffect)(() => {
-    setFormData({
+var EditCustomerForm = (0, import_react54.forwardRef)(
+  ({
+    customer,
+    onSave,
+    onCancel,
+    isSubmitting: externalIsSubmitting,
+    showActions = true
+  }, ref) => {
+    const t2 = (0, import_hooks25.useCustomerTranslations)();
+    const tc = (0, import_hooks25.useCommonTranslations)();
+    const [formData, setFormData] = (0, import_react54.useState)({
       firstName: customer.firstName,
       lastName: customer.lastName,
       email: customer.email,
@@ -19614,272 +19573,280 @@ var EditCustomerForm = (0, import_react54.forwardRef)(({
       state: customer.state || "",
       zipCode: customer.zipCode || "",
       country: customer.country || "",
+      // Hidden in UI but sent to API
       status: customer.status,
       membershipLevel: customer.membershipLevel
     });
-  }, [customer]);
-  console.log("\u{1F50D} EditCustomerForm: Component rendered with customer:", customer);
-  const handleInputChange = (field, value) => {
-    console.log("\u{1F50D} EditCustomerForm: Input changed:", { field, value });
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
-  };
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = t2("validation.firstNameRequired");
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = t2("validation.firstNameMinLength");
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = t2("validation.lastNameRequired");
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = t2("validation.lastNameMinLength");
-    }
-    if (formData.email && formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t2("validation.emailInvalid");
-    }
-    if (!formData.phone || !formData.phone.trim()) {
-      newErrors.phone = t2("validation.phoneRequired");
-    } else if (!/^[0-9+\-\s()]+$/.test(formData.phone.trim())) {
-      newErrors.phone = t2("validation.phoneInvalid");
-    } else if (formData.phone.trim().length < 8) {
-      newErrors.phone = t2("validation.phoneMinLength");
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  const handleSubmit = async (e2) => {
-    e2.preventDefault();
-    console.log("\u{1F50D} EditCustomerForm: Form submitted");
-    if (!validateForm()) {
-      console.log("\u274C EditCustomerForm: Validation failed");
-      return;
-    }
-    try {
-      setInternalIsSubmitting(true);
-      setErrorMessage(null);
-      const changedFields = { id: customer.id };
-      Object.keys(formData).forEach((key) => {
-        const field = key;
-        if (formData[field] !== customer[field]) {
-          changedFields[field] = formData[field];
-        }
+    const [errors, setErrors] = (0, import_react54.useState)({});
+    const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react54.useState)(false);
+    const [errorMessage, setErrorMessage] = (0, import_react54.useState)(null);
+    const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
+    (0, import_react54.useEffect)(() => {
+      setFormData({
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        email: customer.email,
+        phone: customer.phone,
+        companyName: customer.companyName || "",
+        address: customer.address || "",
+        city: customer.city || "",
+        state: customer.state || "",
+        zipCode: customer.zipCode || "",
+        country: customer.country || "",
+        // Hidden in UI but sent to API
+        status: customer.status,
+        membershipLevel: customer.membershipLevel
       });
-      if (Object.keys(changedFields).length === 0) {
-        console.log("\u{1F50D} EditCustomerForm: No changes detected");
+    }, [customer]);
+    console.log(
+      "\u{1F50D} EditCustomerForm: Component rendered with customer:",
+      customer
+    );
+    const handleInputChange = (field, value) => {
+      console.log("\u{1F50D} EditCustomerForm: Input changed:", { field, value });
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: "" }));
+      }
+      if (errorMessage) {
+        setErrorMessage(null);
+      }
+    };
+    const validateForm = () => {
+      const newErrors = {};
+      if (!formData.firstName.trim()) {
+        newErrors.firstName = t2("validation.firstNameRequired");
+      } else if (formData.firstName.trim().length < 2) {
+        newErrors.firstName = t2("validation.firstNameMinLength");
+      }
+      if (!formData.lastName.trim()) {
+        newErrors.lastName = t2("validation.lastNameRequired");
+      } else if (formData.lastName.trim().length < 2) {
+        newErrors.lastName = t2("validation.lastNameMinLength");
+      }
+      if (formData.email && formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
+        newErrors.email = t2("validation.emailInvalid");
+      }
+      if (!formData.phone || !formData.phone.trim()) {
+        newErrors.phone = t2("validation.phoneRequired");
+      } else if (!/^[0-9+\-\s()]+$/.test(formData.phone.trim())) {
+        newErrors.phone = t2("validation.phoneInvalid");
+      } else if (formData.phone.trim().length < 8) {
+        newErrors.phone = t2("validation.phoneMinLength");
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
+    const handleSubmit = async (e2) => {
+      e2.preventDefault();
+      console.log("\u{1F50D} EditCustomerForm: Form submitted");
+      if (!validateForm()) {
+        console.log("\u274C EditCustomerForm: Validation failed");
         return;
       }
-      console.log("\u{1F50D} EditCustomerForm: Calling onSave with changed fields:", changedFields);
-      await onSave(changedFields);
-      console.log("\u2705 EditCustomerForm: Customer updated successfully");
-    } catch (error2) {
-      console.error("\u274C EditCustomerForm: Error updating customer:", error2);
-      const errorMessage2 = error2 instanceof Error ? error2.message : "An unexpected error occurred";
-      setErrorMessage(errorMessage2);
-    } finally {
-      setInternalIsSubmitting(false);
-    }
-  };
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    }
-  };
-  (0, import_react54.useImperativeHandle)(ref, () => ({
-    submitForm: () => {
-      const syntheticEvent = {
-        preventDefault: () => {
+      try {
+        setInternalIsSubmitting(true);
+        setErrorMessage(null);
+        const changedFields = { id: customer.id };
+        Object.keys(formData).forEach((key) => {
+          const field = key;
+          if (formData[field] !== customer[field]) {
+            changedFields[field] = formData[field];
+          }
+        });
+        if (Object.keys(changedFields).length === 0) {
+          console.log("\u{1F50D} EditCustomerForm: No changes detected");
+          return;
         }
-      };
-      handleSubmit(syntheticEvent);
-    }
-  }));
-  return /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("form", { onSubmit: handleSubmit, children: /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui56.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(import_ui56.CardContent, { className: "p-6 space-y-4", children: [
-    errorMessage && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("div", { className: "p-4 bg-red-50 border border-red-200 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-800", children: errorMessage }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(import_ui55.Label, { htmlFor: "firstName", children: [
-          t2("fields.firstName"),
-          " *"
+        console.log(
+          "\u{1F50D} EditCustomerForm: Calling onSave with changed fields:",
+          changedFields
+        );
+        await onSave(changedFields);
+        console.log("\u2705 EditCustomerForm: Customer updated successfully");
+      } catch (error2) {
+        console.error("\u274C EditCustomerForm: Error updating customer:", error2);
+        const errorMessage2 = error2 instanceof Error ? error2.message : "An unexpected error occurred";
+        setErrorMessage(errorMessage2);
+      } finally {
+        setInternalIsSubmitting(false);
+      }
+    };
+    const handleCancel = () => {
+      if (onCancel) {
+        onCancel();
+      }
+    };
+    (0, import_react54.useImperativeHandle)(ref, () => ({
+      submitForm: () => {
+        const syntheticEvent = {
+          preventDefault: () => {
+          }
+        };
+        handleSubmit(syntheticEvent);
+      }
+    }));
+    return /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("form", { onSubmit: handleSubmit, children: /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui56.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(import_ui56.CardContent, { className: "p-6 space-y-4", children: [
+      errorMessage && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("div", { className: "p-4 bg-red-50 border border-red-200 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-800", children: errorMessage }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(import_ui55.Label, { htmlFor: "firstName", children: [
+            t2("fields.firstName"),
+            " *"
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
+            import_ui54.Input,
+            {
+              id: "firstName",
+              type: "text",
+              value: formData.firstName,
+              onChange: (e2) => handleInputChange("firstName", e2.target.value),
+              placeholder: t2("placeholders.enterFirstName"),
+              className: errors.firstName ? "border-red-500" : ""
+            }
+          ),
+          errors.firstName && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-600", children: errors.firstName })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
-          import_ui54.Input,
-          {
-            id: "firstName",
-            type: "text",
-            value: formData.firstName,
-            onChange: (e2) => handleInputChange("firstName", e2.target.value),
-            placeholder: t2("placeholders.enterFirstName"),
-            className: errors.firstName ? "border-red-500" : ""
-          }
-        ),
-        errors.firstName && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-600", children: errors.firstName })
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(import_ui55.Label, { htmlFor: "lastName", children: [
+            t2("fields.lastName"),
+            " *"
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
+            import_ui54.Input,
+            {
+              id: "lastName",
+              type: "text",
+              value: formData.lastName,
+              onChange: (e2) => handleInputChange("lastName", e2.target.value),
+              placeholder: t2("placeholders.enterLastName"),
+              className: errors.lastName ? "border-red-500" : ""
+            }
+          ),
+          errors.lastName && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-600", children: errors.lastName })
+        ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(import_ui55.Label, { htmlFor: "lastName", children: [
-          t2("fields.lastName"),
-          " *"
+      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "email", children: t2("fields.email") }),
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
+            import_ui54.Input,
+            {
+              id: "email",
+              type: "email",
+              value: formData.email || "",
+              onChange: (e2) => handleInputChange("email", e2.target.value),
+              placeholder: t2("placeholders.enterEmail"),
+              className: errors.email ? "border-red-500" : ""
+            }
+          ),
+          errors.email && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-600", children: errors.email })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
-          import_ui54.Input,
-          {
-            id: "lastName",
-            type: "text",
-            value: formData.lastName,
-            onChange: (e2) => handleInputChange("lastName", e2.target.value),
-            placeholder: t2("placeholders.enterLastName"),
-            className: errors.lastName ? "border-red-500" : ""
-          }
-        ),
-        errors.lastName && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-600", children: errors.lastName })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "email", children: t2("fields.email") }),
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
-          import_ui54.Input,
-          {
-            id: "email",
-            type: "email",
-            value: formData.email || "",
-            onChange: (e2) => handleInputChange("email", e2.target.value),
-            placeholder: t2("placeholders.enterEmail"),
-            className: errors.email ? "border-red-500" : ""
-          }
-        ),
-        errors.email && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-600", children: errors.email })
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "phone", children: t2("fields.phone") }),
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
+            import_ui54.Input,
+            {
+              id: "phone",
+              type: "tel",
+              value: formData.phone || "",
+              onChange: (e2) => handleInputChange("phone", e2.target.value),
+              placeholder: t2("placeholders.enterPhone"),
+              className: errors.phone ? "border-red-500" : ""
+            }
+          ),
+          errors.phone && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-600", children: errors.phone })
+        ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "phone", children: t2("fields.phone") }),
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "companyName", children: t2("fields.companyName") }),
         /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
           import_ui54.Input,
           {
-            id: "phone",
-            type: "tel",
-            value: formData.phone || "",
-            onChange: (e2) => handleInputChange("phone", e2.target.value),
-            placeholder: t2("placeholders.enterPhone"),
-            className: errors.phone ? "border-red-500" : ""
-          }
-        ),
-        errors.phone && /* @__PURE__ */ (0, import_jsx_runtime106.jsx)("p", { className: "text-sm text-red-600", children: errors.phone })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "companyName", children: t2("fields.companyName") }),
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
-        import_ui54.Input,
-        {
-          id: "companyName",
-          type: "text",
-          value: formData.companyName,
-          onChange: (e2) => handleInputChange("companyName", e2.target.value),
-          placeholder: t2("placeholders.enterCompanyName")
-        }
-      )
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "address", children: t2("fields.streetAddress") }),
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
-        import_ui54.Input,
-        {
-          id: "address",
-          type: "text",
-          value: formData.address,
-          onChange: (e2) => handleInputChange("address", e2.target.value),
-          placeholder: t2("placeholders.enterStreetAddress")
-        }
-      )
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "city", children: t2("fields.city") }),
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
-          import_ui54.Input,
-          {
-            id: "city",
+            id: "companyName",
             type: "text",
-            value: formData.city,
-            onChange: (e2) => handleInputChange("city", e2.target.value),
-            placeholder: t2("placeholders.enterCity")
+            value: formData.companyName,
+            onChange: (e2) => handleInputChange("companyName", e2.target.value),
+            placeholder: t2("placeholders.enterCompanyName")
           }
         )
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "state", children: t2("fields.state") }),
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "address", children: t2("fields.streetAddress") }),
         /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
           import_ui54.Input,
           {
-            id: "state",
+            id: "address",
             type: "text",
-            value: formData.state,
-            onChange: (e2) => handleInputChange("state", e2.target.value),
-            placeholder: t2("placeholders.enterState")
+            value: formData.address,
+            onChange: (e2) => handleInputChange("address", e2.target.value),
+            placeholder: t2("placeholders.enterStreetAddress")
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "zipCode", children: t2("fields.zipCode") }),
-        /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
-          import_ui54.Input,
+      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "city", children: t2("fields.city") }),
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
+            import_ui54.Input,
+            {
+              id: "city",
+              type: "text",
+              value: formData.city,
+              onChange: (e2) => handleInputChange("city", e2.target.value),
+              placeholder: t2("placeholders.enterCity")
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "state", children: t2("fields.state") }),
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
+            import_ui54.Input,
+            {
+              id: "state",
+              type: "text",
+              value: formData.state,
+              onChange: (e2) => handleInputChange("state", e2.target.value),
+              placeholder: t2("placeholders.enterState")
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "zipCode", children: t2("fields.zipCode") }),
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
+            import_ui54.Input,
+            {
+              id: "zipCode",
+              type: "text",
+              value: formData.zipCode,
+              onChange: (e2) => handleInputChange("zipCode", e2.target.value),
+              placeholder: t2("placeholders.enterZipCode")
+            }
+          )
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { className: "flex justify-end space-x-3 border-t pt-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(
+          import_ui53.Button,
           {
-            id: "zipCode",
-            type: "text",
-            value: formData.zipCode,
-            onChange: (e2) => handleInputChange("zipCode", e2.target.value),
-            placeholder: t2("placeholders.enterZipCode")
+            type: "button",
+            variant: "outline",
+            onClick: onCancel,
+            disabled: isSubmitting,
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_lucide_react41.X, { className: "w-4 h-4 mr-2" }),
+              tc("buttons.cancel")
+            ]
           }
-        )
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(import_ui53.Button, { type: "submit", disabled: isSubmitting, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_lucide_react41.Save, { className: "w-4 h-4 mr-2" }),
+          isSubmitting ? t2("updating") : t2("updateCustomer")
+        ] })
       ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_ui55.Label, { htmlFor: "country", children: t2("fields.country") }),
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(
-        import_ui54.Input,
-        {
-          id: "country",
-          type: "text",
-          value: formData.country,
-          onChange: (e2) => handleInputChange("country", e2.target.value),
-          placeholder: t2("placeholders.enterCountry")
-        }
-      )
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)("div", { className: "flex justify-end space-x-3 border-t pt-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(
-        import_ui53.Button,
-        {
-          type: "button",
-          variant: "outline",
-          onClick: onCancel,
-          disabled: isSubmitting,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_lucide_react41.X, { className: "w-4 h-4 mr-2" }),
-            tc("buttons.cancel")
-          ]
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime106.jsxs)(
-        import_ui53.Button,
-        {
-          type: "submit",
-          disabled: isSubmitting,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(import_lucide_react41.Save, { className: "w-4 h-4 mr-2" }),
-            isSubmitting ? t2("updating") : t2("updateCustomer")
-          ]
-        }
-      )
-    ] })
-  ] }) }) });
-});
+    ] }) }) });
+  }
+);
 EditCustomerForm.displayName = "EditCustomerForm";
 
 // src/components/features/Customers/components/CustomerForm.tsx
@@ -38505,7 +38472,7 @@ function OutletDetailLoading() {
 // src/components/features/Settings/Settings.tsx
 var import_react112 = require("react");
 var import_lucide_react129 = require("lucide-react");
-var import_hooks59 = require("@rentalshop/hooks");
+var import_hooks61 = require("@rentalshop/hooks");
 var import_utils47 = require("@rentalshop/utils");
 var import_ui155 = require("@rentalshop/ui");
 
@@ -39013,6 +38980,7 @@ var MerchantSection = ({
 
 // src/components/features/Settings/components/OutletSection.tsx
 var import_ui150 = require("@rentalshop/ui");
+var import_hooks55 = require("@rentalshop/hooks");
 var import_jsx_runtime251 = require("react/jsx-runtime");
 var OutletSection = ({
   user,
@@ -39024,17 +38992,18 @@ var OutletSection = ({
   onCancel,
   onInputChange
 }) => {
+  const t2 = (0, import_hooks55.useSettingsTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)(import_ui150.Card, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)(import_ui150.CardHeader, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("h3", { className: "text-base font-semibold text-gray-900", children: "Outlet Information" }),
-      !isEditing ? /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Button, { onClick: onEdit, size: "sm", children: "Edit" }) : /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Button, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? "Saving..." : "Save" }),
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Button, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: "Cancel" })
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("h3", { className: "text-base font-semibold text-gray-900", children: t2("outlet.outletInformation") }),
+      !isEditing ? /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Button, { onClick: onEdit, size: "sm", children: t2("outlet.edit") }) : /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Button, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("outlet.saving") : t2("outlet.save") }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Button, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("outlet.cancel") })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.CardContent, { className: "p-6 pt-4", children: !user?.outlet ? /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-500", children: "No outlet information available" }) }) : /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.CardContent, { className: "p-6 pt-4", children: !user?.outlet ? /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { className: "text-center py-8", children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-500", children: t2("outlet.noOutletInfo") }) }) : /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
       /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Label, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Name" }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Label, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.name") }),
         isEditing ? /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(
           import_ui150.Input,
           {
@@ -39043,12 +39012,12 @@ var OutletSection = ({
             type: "text",
             value: formData.name,
             onChange: onInputChange,
-            placeholder: "Enter outlet name"
+            placeholder: t2("outlet.enterOutletName")
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.name || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.name || t2("outlet.notProvided") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Label, { htmlFor: "outletPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Phone" }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Label, { htmlFor: "outletPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.phone") }),
         isEditing ? /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(
           import_ui150.Input,
           {
@@ -39057,12 +39026,12 @@ var OutletSection = ({
             type: "tel",
             value: formData.phone,
             onChange: onInputChange,
-            placeholder: "Enter outlet phone"
+            placeholder: t2("outlet.enterOutletPhone")
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.phone || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.phone || t2("outlet.notProvided") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Label, { htmlFor: "outletAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Address" }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Label, { htmlFor: "outletAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.address") }),
         isEditing ? /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(
           import_ui150.Input,
           {
@@ -39071,12 +39040,12 @@ var OutletSection = ({
             type: "text",
             value: formData.address,
             onChange: onInputChange,
-            placeholder: "Enter outlet address"
+            placeholder: t2("outlet.enterOutletAddress")
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.address || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.address || t2("outlet.notProvided") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Label, { htmlFor: "outletDescription", className: "block text-sm font-medium text-gray-700 mb-2", children: "Description" }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(import_ui150.Label, { htmlFor: "outletDescription", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.description") }),
         isEditing ? /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(
           import_ui150.Input,
           {
@@ -39085,9 +39054,9 @@ var OutletSection = ({
             type: "text",
             value: formData.description,
             onChange: onInputChange,
-            placeholder: "Enter outlet description"
+            placeholder: t2("outlet.enterDescription")
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.description || "Not provided" })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.description || t2("outlet.notProvided") })
       ] })
     ] }) })
   ] }) });
@@ -39096,14 +39065,14 @@ var OutletSection = ({
 // src/components/features/Settings/components/SubscriptionSection.tsx
 var import_ui151 = require("@rentalshop/ui");
 var import_lucide_react125 = require("lucide-react");
-var import_hooks55 = require("@rentalshop/hooks");
+var import_hooks56 = require("@rentalshop/hooks");
 var import_jsx_runtime252 = require("react/jsx-runtime");
 var SubscriptionSection = ({
   subscriptionData,
   subscriptionLoading,
   currentUserRole
 }) => {
-  const t2 = (0, import_hooks55.useSettingsTranslations)();
+  const t2 = (0, import_hooks56.useSettingsTranslations)();
   if (subscriptionLoading) {
     return /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(import_ui151.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(import_ui151.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { className: "flex items-center justify-center py-8", children: [
       /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
@@ -39193,7 +39162,7 @@ var SubscriptionSection = ({
 // src/components/features/Settings/components/AccountSection.tsx
 var import_ui152 = require("@rentalshop/ui");
 var import_lucide_react126 = require("lucide-react");
-var import_hooks56 = require("@rentalshop/hooks");
+var import_hooks57 = require("@rentalshop/hooks");
 var import_jsx_runtime253 = require("react/jsx-runtime");
 var AccountSection = ({
   onSignOut,
@@ -39201,7 +39170,7 @@ var AccountSection = ({
   onChangePassword,
   isDeleting
 }) => {
-  const t2 = (0, import_hooks56.useSettingsTranslations)();
+  const t2 = (0, import_hooks57.useSettingsTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_ui152.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_ui152.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "space-y-6", children: [
     /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
       /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex items-center space-x-3", children: [
@@ -39265,14 +39234,14 @@ var AccountSection = ({
 var import_react110 = require("react");
 var import_lucide_react127 = require("lucide-react");
 var import_navigation7 = require("next/navigation");
-var import_hooks57 = require("@rentalshop/hooks");
+var import_hooks58 = require("@rentalshop/hooks");
 var import_jsx_runtime254 = require("react/jsx-runtime");
 var languages = [
   { value: "en", label: "English", flag: "\u{1F1FA}\u{1F1F8}" },
   { value: "vi", label: "Ti\u1EBFng Vi\u1EC7t", flag: "\u{1F1FB}\u{1F1F3}" }
 ];
 function LanguageSection() {
-  const t2 = (0, import_hooks57.useSettingsTranslations)();
+  const t2 = (0, import_hooks58.useSettingsTranslations)();
   const currentLocale = Z();
   const router = (0, import_navigation7.useRouter)();
   const [isPending, startTransition] = (0, import_react110.useTransition)();
@@ -39340,7 +39309,7 @@ function LanguageSection() {
 var import_react111 = require("react");
 var import_ui153 = require("@rentalshop/ui");
 var import_lucide_react128 = require("lucide-react");
-var import_hooks58 = require("@rentalshop/hooks");
+var import_hooks59 = require("@rentalshop/hooks");
 var import_jsx_runtime255 = require("react/jsx-runtime");
 var ChangePasswordDialog2 = ({
   isOpen,
@@ -39350,7 +39319,7 @@ var ChangePasswordDialog2 = ({
   onChange,
   onSubmit
 }) => {
-  const t2 = (0, import_hooks58.useSettingsTranslations)();
+  const t2 = (0, import_hooks59.useSettingsTranslations)();
   const [showCurrentPassword, setShowCurrentPassword] = (0, import_react111.useState)(false);
   const [showNewPassword, setShowNewPassword] = (0, import_react111.useState)(false);
   const [showConfirmPassword, setShowConfirmPassword] = (0, import_react111.useState)(false);
@@ -39474,6 +39443,7 @@ var ChangePasswordDialog2 = ({
 
 // src/components/features/Settings/components/DeleteAccountDialog.tsx
 var import_ui154 = require("@rentalshop/ui");
+var import_hooks60 = require("@rentalshop/hooks");
 var import_jsx_runtime256 = require("react/jsx-runtime");
 var DeleteAccountDialog = ({
   isOpen,
@@ -39481,22 +39451,23 @@ var DeleteAccountDialog = ({
   onClose,
   onConfirm
 }) => {
+  const t2 = (0, import_hooks60.useSettingsTranslations)();
   if (!isOpen)
     return null;
   return /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
     /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex items-center mb-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("svg", { className: "h-6 w-6 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" }) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "ml-3", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: "Delete Account" }) })
+      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "ml-3", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: t2("deleteAccountDialog.title") }) })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "mb-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { className: "text-sm text-gray-600", children: "Are you sure you want to delete your account? This action cannot be undone and will permanently remove:" }),
+      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { className: "text-sm text-gray-600", children: t2("deleteAccountDialog.description") }),
       /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("ul", { className: "mt-3 text-sm text-gray-600 list-disc list-inside space-y-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("li", { children: "Your profile and personal information" }),
-        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("li", { children: "All your orders and transaction history" }),
-        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("li", { children: "Your product listings and inventory" }),
-        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("li", { children: "Any saved preferences and settings" })
+        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("li", { children: t2("deleteAccountDialog.profileInfo") }),
+        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("li", { children: t2("deleteAccountDialog.orderHistory") }),
+        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("li", { children: t2("deleteAccountDialog.productListings") }),
+        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("li", { children: t2("deleteAccountDialog.savedPreferences") })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { className: "mt-3 text-sm text-gray-600", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("strong", { children: "This action is irreversible." }) })
+      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { className: "mt-3 text-sm text-gray-600", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("strong", { children: t2("deleteAccountDialog.irreversibleWarning") }) })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { className: "flex justify-end space-x-3", children: [
       /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(
@@ -39505,7 +39476,7 @@ var DeleteAccountDialog = ({
           variant: "outline",
           onClick: onClose,
           disabled: isDeleting,
-          children: "Cancel"
+          children: t2("deleteAccountDialog.cancel")
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(
@@ -39514,7 +39485,7 @@ var DeleteAccountDialog = ({
           variant: "destructive",
           onClick: onConfirm,
           disabled: isDeleting,
-          children: isDeleting ? "Deleting..." : "Delete Account"
+          children: isDeleting ? t2("deleteAccountDialog.deleting") : t2("deleteAccountDialog.deleteAccount")
         }
       )
     ] })
@@ -39566,8 +39537,8 @@ var createSettingsMenuItems = (t2) => [
   }
 ];
 var SettingsComponent = () => {
-  const t2 = (0, import_hooks59.useSettingsTranslations)();
-  const { user, logout, loading } = (0, import_hooks59.useAuth)();
+  const t2 = (0, import_hooks61.useSettingsTranslations)();
+  const { user, logout, loading } = (0, import_hooks61.useAuth)();
   const { toastSuccess, toastError } = (0, import_ui155.useToast)();
   const { currency, setCurrency } = useCurrency2();
   const [activeSection, setActiveSection] = (0, import_react112.useState)("profile");
@@ -41003,7 +40974,7 @@ var import_react117 = require("react");
 var import_lucide_react134 = require("lucide-react");
 var import_ui158 = require("@rentalshop/ui");
 var import_ui159 = require("@rentalshop/ui");
-var import_hooks60 = require("@rentalshop/hooks");
+var import_hooks62 = require("@rentalshop/hooks");
 var import_jsx_runtime268 = require("react/jsx-runtime");
 var SearchInput = ({
   placeholder = "Search...",
@@ -41020,7 +40991,7 @@ var SearchInput = ({
     handleSearchChange,
     clearSearch,
     cleanup
-  } = (0, import_hooks60.useThrottledSearch)({
+  } = (0, import_hooks62.useThrottledSearch)({
     delay,
     minLength,
     onSearch
@@ -41398,7 +41369,7 @@ var import_link4 = __toESM(require("next/link"));
 var import_navigation9 = require("next/navigation");
 var import_ui163 = require("@rentalshop/ui");
 var import_ui164 = require("@rentalshop/ui");
-var import_hooks61 = require("@rentalshop/hooks");
+var import_hooks63 = require("@rentalshop/hooks");
 var import_lucide_react137 = require("lucide-react");
 var import_jsx_runtime271 = require("react/jsx-runtime");
 var getClientMenuItems = (t2) => [
@@ -41473,7 +41444,7 @@ var ClientSidebar = ({
   const [clickedTab, setClickedTab] = (0, import_react120.useState)(null);
   const [localCurrentPage, setLocalCurrentPage] = (0, import_react120.useState)(currentPath);
   const pathname = (0, import_navigation9.usePathname)();
-  const t2 = (0, import_hooks61.useCommonTranslations)();
+  const t2 = (0, import_hooks63.useCommonTranslations)();
   const filterMenuItemsByRole = (items, userRole) => {
     if (!userRole)
       return items;
@@ -41765,7 +41736,7 @@ function Layout({
 
 // src/components/layout/SubscriptionStatus.tsx
 var import_lucide_react139 = require("lucide-react");
-var import_hooks62 = require("@rentalshop/hooks");
+var import_hooks64 = require("@rentalshop/hooks");
 var import_jsx_runtime273 = require("react/jsx-runtime");
 function SubscriptionStatus({ showDetails = false, className = "", currentUserRole }) {
   const {
@@ -41782,7 +41753,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     error: error2,
     statusMessage
     // Use statusReason from API
-  } = (0, import_hooks62.useSubscriptionStatusInfo)();
+  } = (0, import_hooks64.useSubscriptionStatusInfo)();
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
   }

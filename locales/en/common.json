@@ -57,6 +57,7 @@
     "actions": "Actions",
     "search": "Search",
     "noResults": "No results found",
+    "noData": "No data",
     "loading": "Loading...",
     "success": "Success",
     "error": "Error",
@@ -127,9 +128,25 @@
     "thisWeek": "This Week",
     "thisMonth": "This Month",
     "lastMonth": "Last Month",
+    "thisYear": "This Year",
+    "lastYear": "Last Year",
     "custom": "Custom",
     "from": "From",
-    "to": "To"
+    "to": "To",
+    "year": "Year",
+    "month": "Month",
+    "week": "Week",
+    "day": "Day"
+  },
+  "periods": {
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "dailyOperations": "Daily Operations",
+    "weeklyReport": "Weekly Report",
+    "monthlyReport": "Monthly Report",
+    "yearlyReport": "Yearly Report"
   }
 }
 

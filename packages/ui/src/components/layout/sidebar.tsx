@@ -211,16 +211,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     'w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group',
                     shouldHighlight
                       ? 'bg-green-100 text-green-700 border-r-2 border-green-600'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900',
                     // Add click feedback
-                    navigatingTo === item.href && 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                    navigatingTo === item.href && 'bg-green-50 text-green-700 border-r-2 border-green-600'
                   )}
                   title={isCollapsed ? item.label : undefined}
                 >
                   <div className="flex items-center space-x-3">
                     <span className={cn(
                       'flex-shrink-0 transition-colors duration-150',
-                      shouldHighlight ? 'text-green-600' : 'text-gray-500'
+                      shouldHighlight ? 'text-green-600' : 'text-slate-500'
                     )}>
                       {item.icon}
                     </span>

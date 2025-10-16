@@ -57,6 +57,7 @@
     "actions": "Thao tác",
     "search": "Tìm kiếm",
     "noResults": "Không tìm thấy kết quả",
+    "noData": "Không có dữ liệu",
     "loading": "Đang tải...",
     "success": "Thành công",
     "error": "Lỗi",
@@ -127,9 +128,25 @@
     "thisWeek": "Tuần này",
     "thisMonth": "Tháng này",
     "lastMonth": "Tháng trước",
+    "thisYear": "Năm nay",
+    "lastYear": "Năm trước",
     "custom": "Tùy chỉnh",
     "from": "Từ",
-    "to": "Đến"
+    "to": "Đến",
+    "year": "Năm",
+    "month": "Tháng",
+    "week": "Tuần",
+    "day": "Ngày"
+  },
+  "periods": {
+    "daily": "Hàng ngày",
+    "weekly": "Hàng tuần",
+    "monthly": "Hàng tháng",
+    "yearly": "Hàng năm",
+    "dailyOperations": "Hoạt động hàng ngày",
+    "weeklyReport": "Báo cáo hàng tuần",
+    "monthlyReport": "Báo cáo hàng tháng",
+    "yearlyReport": "Báo cáo hàng năm"
   }
 }
 
