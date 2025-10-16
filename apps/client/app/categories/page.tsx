@@ -15,11 +15,12 @@ import {
   DialogTitle,
   ConfirmationDialog,
   AddCategoryDialog,
+  CategoryFormContent,
   Button
 } from '@rentalshop/ui';
 import { Plus } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useCategoriesWithFilters } from '@rentalshop/hooks';
+import { useAuth, useCategoriesWithFilters, useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { categoriesApi } from '@rentalshop/utils';
 import type { CategoryFilters, Category } from '@rentalshop/types';
 
@@ -32,11 +33,15 @@ export default function CategoriesPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const t = useCommonTranslations();
+  const tc = useCategoriesTranslations();
   
   // Dialog states
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
@@ -119,7 +124,10 @@ export default function CategoriesPage() {
         break;
         
       case 'edit':
-        router.push(`/categories/${categoryId}/edit`);
+        if (category) {
+          setCategoryToEdit(category);
+          setShowEditDialog(true);
+        }
         break;
         
       case 'delete':
@@ -138,15 +146,15 @@ export default function CategoriesPage() {
             });
             if (response.success) {
               toastSuccess(
-                `Category ${action === 'activate' ? 'activated' : 'deactivated'}`, 
-                `Category "${category.name}" has been ${action === 'activate' ? 'activated' : 'deactivated'}`
+                tc(`messages.${action === 'activate' ? 'updateSuccess' : 'updateSuccess'}`), 
+                tc(`messages.${action === 'activate' ? 'updateSuccess' : 'updateSuccess'}`)
               );
               router.refresh();
       } else {
-              toastError(`Failed to ${action} category`, response.error || 'Unknown error occurred');
+              toastError(tc('messages.updateFailed'), response.error || tc('messages.updateFailed'));
             }
           } catch (err) {
-            toastError(`Error ${action}ing category`, 'An unexpected error occurred');
+            toastError(tc('messages.updateFailed'), tc('messages.updateFailed'));
           }
         }
         break;
@@ -162,13 +170,13 @@ export default function CategoriesPage() {
     try {
       const response = await categoriesApi.deleteCategory(categoryToDelete.id);
       if (response.success) {
-        toastSuccess('Category deleted successfully', `Category "${categoryToDelete.name}" has been deleted`);
+        toastSuccess(tc('messages.deleteSuccess'), tc('messages.deleteSuccess'));
         router.refresh();
       } else {
-        toastError('Failed to delete category', response.error || 'Unknown error occurred');
+        toastError(tc('messages.deleteFailed'), response.error || tc('messages.deleteFailed'));
       }
     } catch (err) {
-      toastError('Error deleting category', 'An unexpected error occurred');
+      toastError(tc('messages.deleteFailed'), tc('messages.deleteFailed'));
     } finally {
       setShowDeleteConfirm(false);
       setCategoryToDelete(null);
@@ -200,8 +208,8 @@ export default function CategoriesPage() {
     return (
       <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
         <PageHeader className="flex-shrink-0">
-          <PageTitle>Categories</PageTitle>
-          <p className="text-sm text-gray-600">Manage your product categories</p>
+          <PageTitle>{t('navigation.categories')}</PageTitle>
+          <p className="text-sm text-gray-600">{t('navigation.categories')}</p>
         </PageHeader>
         <CategoriesLoading />
       </PageWrapper>
@@ -213,8 +221,8 @@ export default function CategoriesPage() {
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle subtitle="Manage your product categories">
-              Categories
+            <PageTitle subtitle={tc('title')}>
+              {tc('title')}
             </PageTitle>
           </div>
           <Button 
@@ -223,7 +231,7 @@ export default function CategoriesPage() {
             size="sm"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add Category
+            {t('buttons.add')} {t('labels.category')}
           </Button>
         </div>
       </PageHeader>
@@ -250,31 +258,20 @@ export default function CategoriesPage() {
         <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Category Details</DialogTitle>
+              <DialogTitle>{tc('dialog.viewDetails')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-gray-700">Name</p>
+                <p className="text-sm font-medium text-gray-700">{tc('fields.name')}</p>
                 <p className="mt-1 text-gray-900 font-medium">{selectedCategory.name}</p>
               </div>
               {selectedCategory.description && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Description</p>
+                  <p className="text-sm font-medium text-gray-700">{tc('fields.description')}</p>
                   <p className="mt-1 text-gray-900 whitespace-pre-wrap">{selectedCategory.description}</p>
                 </div>
               )}
-              <div>
-                <p className="text-sm font-medium text-gray-700">Status</p>
-                <p className="mt-1">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    selectedCategory.isActive 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {selectedCategory.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </p>
-              </div>
+              {/* Status field hidden as requested */}
             </div>
           </DialogContent>
         </Dialog>
@@ -293,31 +290,75 @@ export default function CategoriesPage() {
             });
             
             if (response.success) {
-              toastSuccess('Category Created', `Category "${categoryData.name}" has been created successfully`);
+              toastSuccess(tc('messages.createSuccess'), tc('messages.createSuccess'));
               router.refresh();
             } else {
-              throw new Error(response.error || 'Failed to create category');
+              throw new Error(response.error || tc('messages.createFailed'));
             }
           } catch (error) {
             console.error('Error creating category:', error);
-            toastError('Error', error instanceof Error ? error.message : 'Failed to create category');
+            toastError(tc('messages.createFailed'), error instanceof Error ? error.message : tc('messages.createFailed'));
             throw error; // Re-throw to let dialog handle it
           }
         }}
         onError={(error) => {
-          toastError('Error', error);
+          toastError(tc('messages.createFailed'), error);
         }}
       />
+
+      {/* Edit Category Dialog */}
+      {categoryToEdit && (
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>{tc('dialog.edit')}</DialogTitle>
+            </DialogHeader>
+            
+            <div>
+              {/* Use CategoryFormContent */}
+              <CategoryFormContent
+                category={categoryToEdit}
+                mode="edit"
+                onSave={async (categoryData) => {
+                  try {
+                    const response = await categoriesApi.updateCategory(categoryToEdit.id, {
+                      name: categoryData.name,
+                      description: categoryData.description
+                    });
+                    
+                    if (response.success) {
+                      toastSuccess(tc('messages.updateSuccess'), tc('messages.updateSuccess'));
+                      setShowEditDialog(false);
+                      setCategoryToEdit(null);
+                      router.refresh();
+                    } else {
+                      throw new Error(response.error || tc('messages.updateFailed'));
+                    }
+                  } catch (error) {
+                    console.error('Error updating category:', error);
+                    toastError(tc('messages.updateFailed'), error instanceof Error ? error.message : tc('messages.updateFailed'));
+                    throw error;
+                  }
+                }}
+                onCancel={() => {
+                  setShowEditDialog(false);
+                  setCategoryToEdit(null);
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         type="danger"
-        title="Delete Category"
-        description={`Are you sure you want to delete category "${categoryToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Delete Category"
-        cancelText="Cancel"
+        title={tc('actions.deleteCategory')}
+        description={tc('messages.confirmDelete')}
+        confirmText={tc('actions.deleteCategory')}
+        cancelText={t('buttons.cancel')}
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           setShowDeleteConfirm(false);

@@ -264,13 +264,6 @@ export default function CustomerOrdersPage() {
     <PageWrapper>
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
-      
-        {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{customer.firstName} {customer.lastName} - Orders</h1>
-        <p className="text-gray-600 mt-1">View and manage customer orders</p>
-      </div>
-
         {/* Customer Summary Card */}
         <div className="mb-8">
           <CustomerOrdersSummaryCard 

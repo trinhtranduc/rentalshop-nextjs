@@ -34,6 +34,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../../../lib';
+import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { ProductsLoading } from './ProductsLoading';
 import { 
   OrderFilters as OrderFiltersComponent,
@@ -68,6 +69,9 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
   showHeader = true,
   inventoryData
 }) => {
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
+  
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -272,11 +276,11 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
             <div className="text-red-500 mb-4">
               <BarChart3 className="h-12 w-12 mx-auto" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Error Loading Orders</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('messages.errorLoadingOrders')}</h3>
             <p className="text-gray-600 mb-4">{error}</p>
             <Button onClick={() => window.location.reload()}>
               <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
+              {tc('buttons.tryAgain')}
             </Button>
           </CardContent>
         </Card>
@@ -291,22 +295,22 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Orders for {productName}</h1>
-              <p className="text-gray-600">View and manage all orders for this product</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('productOrders.title')}</h1>
+              <p className="text-gray-600">{t('productOrders.description')}</p>
             </div>
             <div className="flex items-center space-x-3">
               <Button variant="outline" onClick={handleExport}>
                 <Download className="h-4 w-4 mr-2" />
-                Export
+                {tc('buttons.export')}
               </Button>
               <Button onClick={handleRefresh}>
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
+                {tc('buttons.refresh')}
               </Button>
               {onClose && (
                 <Button variant="outline" onClick={onClose}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Products
+                  {t('productOrders.backToProducts')}
                 </Button>
               )}
             </div>
@@ -321,7 +325,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                     <ShoppingCart className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Total Orders</p>
+                    <p className="text-sm text-gray-600">{t('stats.totalOrders')}</p>
                     <p className="text-2xl font-bold text-gray-900">{overview.totalOrders}</p>
                   </div>
                 </div>
@@ -335,7 +339,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                     <Package className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Total Quantity</p>
+                    <p className="text-sm text-gray-600">{t('productOrders.totalQuantity')}</p>
                     <p className="text-2xl font-bold text-gray-900">{overview.totalQuantity}</p>
                   </div>
                 </div>
@@ -349,7 +353,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                     <DollarSign className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Total Sales</p>
+                    <p className="text-sm text-gray-600">{t('productOrders.totalSales')}</p>
                     <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.totalSales)}</p>
                   </div>
                 </div>
@@ -363,7 +367,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                     <TrendingUp className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Active Rentals</p>
+                    <p className="text-sm text-gray-600">{t('stats.activeRentals')}</p>
                     <p className="text-2xl font-bold text-gray-900">{overview.activeRentals}</p>
                   </div>
                 </div>
@@ -376,7 +380,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">Total Deposits</p>
+                  <p className="text-sm text-gray-600 mb-1">{t('stats.totalDeposits')}</p>
                   <p className="text-xl font-bold text-green-600">{formatCurrency(overview.totalDeposits)}</p>
                 </div>
               </CardContent>
@@ -385,7 +389,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">Completed Orders</p>
+                  <p className="text-sm text-gray-600 mb-1">{t('stats.completedOrders')}</p>
                   <p className="text-xl font-bold text-blue-600">{overview.completedOrders}</p>
                 </div>
               </CardContent>
@@ -394,7 +398,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                                  <p className="text-sm text-gray-600 mb-1">Reserved Orders</p>
+                                  <p className="text-sm text-gray-600 mb-1">{t('productOrders.reservedOrders')}</p>
                 <p className="text-xl font-bold text-red-600">{overview.pendingOrders}</p>
                 </div>
               </CardContent>
@@ -413,9 +417,9 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                   <Package className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Stock</p>
+                  <p className="text-sm text-gray-600">{t('productOrders.totalStock')}</p>
                   <p className="text-2xl font-bold text-gray-900">{inventoryData.totalStock}</p>
-                  <p className="text-xs text-gray-500">Available inventory</p>
+                  <p className="text-xs text-gray-500">{t('productOrders.availableInventory')}</p>
                 </div>
               </div>
             </CardContent>
@@ -428,9 +432,9 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                   <Package className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Currently Rented</p>
+                  <p className="text-sm text-gray-600">{t('productOrders.currentlyRented')}</p>
                   <p className="text-2xl font-bold text-blue-600">{inventoryData.totalRenting}</p>
-                  <p className="text-xs text-gray-500">Out on rental</p>
+                  <p className="text-xs text-gray-500">{t('productOrders.outOnRental')}</p>
                 </div>
               </div>
             </CardContent>
@@ -443,9 +447,9 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                   <Package className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Available Now</p>
+                  <p className="text-sm text-gray-600">{t('productOrders.availableNow')}</p>
                   <p className="text-2xl font-bold text-green-600">{inventoryData.totalAvailable}</p>
-                  <p className="text-xs text-gray-500">Ready to rent</p>
+                  <p className="text-xs text-gray-500">{t('productOrders.readyToRent')}</p>
                 </div>
               </div>
             </CardContent>
@@ -458,9 +462,9 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                   <DollarSign className="h-5 w-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Revenue</p>
+                  <p className="text-sm text-gray-600">{t('stats.totalRevenue')}</p>
                   <p className="text-2xl font-bold text-orange-600">{formatCurrency(overview.totalSales)}</p>
-                  <p className="text-xs text-gray-500">All time earnings</p>
+                  <p className="text-xs text-gray-500">{t('productOrders.allTimeEarnings')}</p>
                 </div>
               </div>
             </CardContent>
@@ -472,21 +476,36 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
       <div className="space-y-6">
         {/* OrderListHeader hidden as requested */}
         
-        <OrderFiltersComponent 
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onSearchChange={handleSearchChange}
-          onClearFilters={handleClearFilters}
-        />      
+        {/* Filter Card */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <OrderFiltersComponent 
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                onSearchChange={handleSearchChange}
+                onClearFilters={handleClearFilters}
+              />
+            </div>
+          </CardContent>
+        </Card>
         
-        <OrderTable 
-          orders={orderData.orders}
-          onOrderAction={handleOrderAction}
-          sortBy={filters.sortBy}
-          sortOrder={filters.sortOrder}
-          onSort={handleSort}
-        />
+        {/* Order Table Card with Scroll */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <OrderTable 
+                orders={orderData.orders}
+                onOrderAction={handleOrderAction}
+                sortBy={filters.sortBy}
+                sortOrder={filters.sortOrder}
+                onSort={handleSort}
+              />
+            </div>
+          </CardContent>
+        </Card>
         
+        {/* Pagination */}
         {orderData.total > orderData.limit && (
           <Pagination 
             currentPage={orderData.currentPage}

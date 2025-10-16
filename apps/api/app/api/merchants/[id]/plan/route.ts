@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -17,7 +17,7 @@ export async function GET(
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -45,7 +45,7 @@ export async function GET(
     } catch (error) {
       console.error('Error fetching merchant plan:', error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error' },
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -65,7 +65,7 @@ export async function PUT(
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -177,7 +177,7 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: refreshedMerchant,
-        message: 'Plan updated successfully'
+        code: 'PLAN_UPDATED_SUCCESS', message: 'Plan updated successfully'
       });
 
     } catch (error) {

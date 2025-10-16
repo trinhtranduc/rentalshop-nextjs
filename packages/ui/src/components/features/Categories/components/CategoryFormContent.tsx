@@ -7,6 +7,7 @@ import {
   Textarea,
   Label
 } from '../../../ui';
+import { useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Save, Loader2 } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
 
@@ -25,6 +26,9 @@ export const CategoryFormContent: React.FC<CategoryFormContentProps> = ({
   mode,
   isSubmitting: externalIsSubmitting
 }) => {
+  const t = useCategoriesTranslations();
+  const tc = useCommonTranslations();
+  
   const [formData, setFormData] = useState({
     name: '',
     description: ''
@@ -58,15 +62,15 @@ export const CategoryFormContent: React.FC<CategoryFormContentProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Category name is required';
+      newErrors.name = t('validation.nameRequired');
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Category name must be at least 2 characters';
+      newErrors.name = t('validation.nameMinLength');
     } else if (formData.name.trim().length > 50) {
-      newErrors.name = 'Category name must be less than 50 characters';
+      newErrors.name = t('validation.nameMaxLength');
     }
 
     if (formData.description && formData.description.trim().length > 200) {
-      newErrors.description = 'Description must be less than 200 characters';
+      newErrors.description = t('validation.descriptionMaxLength');
     }
 
     setErrors(newErrors);
@@ -112,12 +116,12 @@ export const CategoryFormContent: React.FC<CategoryFormContentProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="name">Category Name *</Label>
+        <Label htmlFor="name">{t('fields.name')} *</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(e) => handleInputChange('name', e.target.value)}
-          placeholder="Enter category name"
+          placeholder={t('fields.name')}
           className={errors.name ? 'border-red-500' : ''}
           disabled={submitting}
           required
@@ -128,12 +132,12 @@ export const CategoryFormContent: React.FC<CategoryFormContentProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t('fields.description')}</Label>
         <Textarea
           id="description"
           value={formData.description}
           onChange={(e) => handleInputChange('description', e.target.value)}
-          placeholder="Enter category description (optional)"
+          placeholder={t('fields.description')}
           rows={3}
           className={errors.description ? 'border-red-500' : ''}
           disabled={submitting}
@@ -142,7 +146,7 @@ export const CategoryFormContent: React.FC<CategoryFormContentProps> = ({
           <p className="text-sm text-red-500 mt-1">{errors.description}</p>
         )}
         <p className="text-xs text-gray-500 mt-1">
-          {formData.description.length}/200 characters
+          {formData.description.length}/200 {t('validation.characters')}
         </p>
       </div>
 
@@ -153,7 +157,7 @@ export const CategoryFormContent: React.FC<CategoryFormContentProps> = ({
           onClick={handleCancel}
           disabled={submitting}
         >
-          Cancel
+          {tc('buttons.cancel')}
         </Button>
         <Button
           type="submit"
@@ -162,12 +166,12 @@ export const CategoryFormContent: React.FC<CategoryFormContentProps> = ({
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
+              {tc('buttons.saving')}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              {mode === 'create' ? 'Create Category' : 'Update Category'}
+              {mode === 'create' ? t('actions.create') : t('actions.update')}
             </>
           )}
         </Button>

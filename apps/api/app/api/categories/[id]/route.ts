@@ -18,7 +18,7 @@ export async function GET(
     const categoryId = parseInt(params.id);
     if (isNaN(categoryId)) {
       return NextResponse.json(
-        { success: false, message: 'Invalid category ID' },
+        ResponseBuilder.error('INVALID_CATEGORY_ID'),
         { status: 400 }
       );
     }
@@ -105,7 +105,7 @@ export async function PUT(
     // Check if user can manage categories
     if (!userScope.merchantId) {
       return NextResponse.json(
-        { success: false, message: 'Merchant access required' },
+        ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -113,7 +113,7 @@ export async function PUT(
     const categoryId = parseInt(params.id);
     if (isNaN(categoryId)) {
       return NextResponse.json(
-        { success: false, message: 'Invalid category ID' },
+        ResponseBuilder.error('INVALID_CATEGORY_ID'),
         { status: 400 }
       );
     }
@@ -139,7 +139,7 @@ export async function PUT(
 
     if (!existingCategory) {
       return NextResponse.json(
-        { success: false, message: 'Category not found' },
+        ResponseBuilder.error('CATEGORY_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -249,7 +249,7 @@ export async function DELETE(
       return NextResponse.json(
         { 
           success: false, 
-          message: `Cannot delete category "${existingCategory.name}" because it has ${productCount} product(s) assigned to it. Please reassign or delete these products first.` 
+          code: "BUSINESS_RULE_VIOLATION", message: `Cannot delete category "${existingCategory.name}" because it has ${productCount} product(s) assigned to it. Please reassign or delete these products first.` 
         },
         { status: API.STATUS.CONFLICT }
       );

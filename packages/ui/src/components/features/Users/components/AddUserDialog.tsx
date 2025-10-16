@@ -9,6 +9,7 @@ import {
 } from '../../../ui';
 import { UserForm } from './UserForm';
 import type { User, UserCreateInput } from '@rentalshop/types';
+import { useUsersTranslations } from '@rentalshop/hooks';
 
 interface AddUserDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ export const AddUserDialog: React.FC<AddUserDialogProps> = ({
   onError,
   currentUser
 }) => {
+  const t = useUsersTranslations();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSave = async (userData: UserCreateInput | any) => {
@@ -60,7 +62,7 @@ export const AddUserDialog: React.FC<AddUserDialogProps> = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 py-4 border-b border-gray-200">
           <DialogTitle className="text-xl font-semibold text-gray-900">
-            Add New User
+            {t('addNewUser')}
           </DialogTitle>
         </DialogHeader>
         

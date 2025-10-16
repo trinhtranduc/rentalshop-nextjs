@@ -1,24 +1,50 @@
 {
   "title": "Khách hàng",
+  "subtitle": "Quản lý khách hàng trong hệ thống",
+  "pageTitle": "Quản lý khách hàng",
   "createCustomer": "Thêm khách hàng",
   "editCustomer": "Sửa khách hàng",
   "viewCustomer": "Xem khách hàng",
   "customerDetails": "Chi tiết khách hàng",
+  "customerInformation": "Thông tin khách hàng",
+  "noDataAvailable": "Không có dữ liệu khách hàng",
+  "viewCustomerInfo": "Xem thông tin và chi tiết khách hàng",
+  "customerOverview": "Tổng quan khách hàng",
+  "personalInformation": "Thông tin cá nhân",
+  "addressInformation": "Thông tin địa chỉ",
+  "updating": "Đang cập nhật...",
+  "updateCustomer": "Cập nhật khách hàng",
+  "deleting": "Đang xóa...",
   "fields": {
+    "id": "ID",
     "firstName": "Tên",
     "lastName": "Họ",
     "fullName": "Họ và tên",
+    "name": "Tên",
     "email": "Email",
     "phone": "Số điện thoại",
+    "contact": "Liên hệ",
     "address": "Địa chỉ",
+    "streetAddress": "Địa chỉ đường",
     "city": "Thành phố",
     "state": "Tỉnh/Thành",
     "country": "Quốc gia",
     "zipCode": "Mã bưu điện",
+    "location": "Vị trí",
     "dateOfBirth": "Ngày sinh",
     "idNumber": "Số CMND/CCCD",
     "notes": "Ghi chú",
-    "tags": "Thẻ"
+    "tags": "Thẻ",
+    "createdAt": "Ngày tạo",
+    "customerId": "Mã khách hàng",
+    "lastUpdated": "Cập nhật lần cuối",
+    "merchant": "Thương hiệu",
+    "companyName": "Tên công ty",
+    "noAddress": "Chưa có địa chỉ",
+    "notProvided": "Chưa cung cấp",
+    "notSpecified": "Chưa xác định",
+    "notAvailable": "Không có",
+    "loading": "Đang tải..."
   },
   "profile": {
     "title": "Hồ sơ khách hàng",
@@ -54,12 +80,21 @@
     "vip": "VIP"
   },
   "actions": {
+    "title": "Thao tác",
+    "view": "Xem chi tiết",
+    "edit": "Sửa",
+    "editCustomer": "Sửa khách hàng",
+    "viewOrders": "Xem đơn hàng",
+    "orders": "Đơn hàng",
     "createOrder": "Tạo đơn hàng",
     "viewHistory": "Xem lịch sử",
     "sendMessage": "Gửi tin nhắn",
     "block": "Khóa khách hàng",
     "unblock": "Mở khóa khách hàng",
-    "delete": "Xóa khách hàng"
+    "delete": "Xóa",
+    "deleteCustomer": "Xóa khách hàng",
+    "activate": "Kích hoạt khách hàng",
+    "deactivate": "Vô hiệu hóa khách hàng"
   },
   "messages": {
     "createSuccess": "Tạo khách hàng thành công",
@@ -69,8 +104,14 @@
     "deleteSuccess": "Xóa khách hàng thành công",
     "deleteFailed": "Xóa khách hàng thất bại",
     "confirmDelete": "Bạn có chắc chắn muốn xóa khách hàng này?",
+    "confirmDeleteDetails": "Bạn có chắc chắn muốn xóa {name}? Hành động này không thể hoàn tác và sẽ xóa vĩnh viễn tất cả dữ liệu khách hàng.",
     "noCustomers": "Không tìm thấy khách hàng",
-    "loadingCustomers": "Đang tải khách hàng..."
+    "noCustomersDescription": "Thử điều chỉnh bộ lọc hoặc thêm khách hàng để bắt đầu.",
+    "tryAdjustingSearch": "Thử điều chỉnh tìm kiếm",
+    "getStarted": "Bắt đầu bằng cách thêm khách hàng đầu tiên",
+    "loadingCustomers": "Đang tải khách hàng...",
+    "na": "Không có",
+    "noChanges": "Không có thay đổi"
   },
   "filters": {
     "all": "Tất cả khách hàng",
@@ -83,6 +124,28 @@
   "search": {
     "placeholder": "Tìm kiếm theo tên, email hoặc số điện thoại...",
     "noResults": "Không tìm thấy khách hàng phù hợp"
+  },
+  "validation": {
+    "firstNameRequired": "Tên là bắt buộc",
+    "firstNameMinLength": "Tên phải có ít nhất 2 ký tự",
+    "lastNameRequired": "Họ là bắt buộc",
+    "lastNameMinLength": "Họ phải có ít nhất 2 ký tự",
+    "emailInvalid": "Email không hợp lệ",
+    "phoneRequired": "Số điện thoại là bắt buộc",
+    "phoneInvalid": "Số điện thoại chứa ký tự không hợp lệ",
+    "phoneMinLength": "Số điện thoại phải có ít nhất 8 chữ số"
+  },
+  "placeholders": {
+    "enterFirstName": "Nhập tên",
+    "enterLastName": "Nhập họ",
+    "enterEmail": "Nhập địa chỉ email (tùy chọn)",
+    "enterPhone": "Nhập số điện thoại (tùy chọn)",
+    "enterCompanyName": "Nhập tên công ty (tùy chọn)",
+    "enterStreetAddress": "Nhập địa chỉ đường (tùy chọn)",
+    "enterCity": "Nhập thành phố (tùy chọn)",
+    "enterState": "Nhập tỉnh/thành (tùy chọn)",
+    "enterZipCode": "Nhập mã bưu điện (tùy chọn)",
+    "enterCountry": "Nhập quốc gia (tùy chọn)"
   }
 }
 

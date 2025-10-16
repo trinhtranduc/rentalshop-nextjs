@@ -8,6 +8,7 @@ import {
   Separator
 } from '@rentalshop/ui';
 import { LogOut, Trash2, Key } from 'lucide-react';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -30,6 +31,8 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
   onChangePassword,
   isDeleting
 }) => {
+  const t = useSettingsTranslations();
+  
   return (
     <div className="space-y-6">
       <Card>
@@ -39,15 +42,15 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
               <div className="flex items-center space-x-3">
                 <Key className="h-5 w-5 text-gray-600" />
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900">Change Password</h3>
-                  <p className="text-sm text-gray-600">Update your account password</p>
+                  <h3 className="text-base font-semibold text-gray-900">{t('account.changePasswordTitle')}</h3>
+                  <p className="text-sm text-gray-600">{t('account.changePasswordDesc')}</p>
                 </div>
               </div>
               <Button 
                 variant="outline" 
                 onClick={onChangePassword}
               >
-                Change Password
+                {t('account.changePasswordButton')}
               </Button>
             </div>
 
@@ -57,8 +60,8 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
               <div className="flex items-center space-x-3">
                 <LogOut className="h-5 w-5 text-gray-600" />
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900">Session Management</h3>
-                  <p className="text-sm text-gray-600">Sign out of your current session</p>
+                  <h3 className="text-base font-semibold text-gray-900">{t('account.sessionTitle')}</h3>
+                  <p className="text-sm text-gray-600">{t('account.sessionDesc')}</p>
                 </div>
               </div>
               <Button 
@@ -66,7 +69,7 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
                 onClick={onSignOut}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
               >
-                Sign Out
+                {t('account.signOut')}
               </Button>
             </div>
 
@@ -76,8 +79,8 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
               <div className="flex items-center space-x-3">
                 <Trash2 className="h-5 w-5 text-red-600" />
                 <div>
-                  <h3 className="text-base font-semibold text-red-900">Delete Account</h3>
-                  <p className="text-sm text-red-700">Permanently delete your account and all data</p>
+                  <h3 className="text-base font-semibold text-red-900">{t('account.deleteAccountTitle')}</h3>
+                  <p className="text-sm text-red-700">{t('account.deleteAccountDesc')}</p>
                 </div>
               </div>
               <Button 
@@ -85,7 +88,7 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
                 onClick={onDeleteAccount}
                 disabled={isDeleting}
               >
-                {isDeleting ? 'Deleting...' : 'Delete Account'}
+                {isDeleting ? t('account.deleting') : t('account.deleteAccount')}
               </Button>
             </div>
           </div>

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useCallback, useMemo, useState } from 'react';
-import { 
+import React, { useCallback, useMemo, useState } from "react";
+import {
   PageWrapper,
   PageHeader,
   PageTitle,
@@ -14,18 +14,29 @@ import {
   DialogHeader,
   DialogTitle,
   ConfirmationDialog,
+  AddOutletDialog,
   Card,
   CardContent,
   Input,
   Label,
   Textarea,
-  Button
-} from '@rentalshop/ui';
-import { Plus, Download } from 'lucide-react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useOutletsWithFilters, useCanExportData } from '@rentalshop/hooks';
-import { outletsApi } from '@rentalshop/utils';
-import type { OutletFilters, Outlet, OutletUpdateInput } from '@rentalshop/types';
+  Button,
+} from "@rentalshop/ui";
+import { Plus, Download } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import {
+  useAuth,
+  useOutletsWithFilters,
+  useCanExportData,
+  useCommonTranslations,
+  useOutletsTranslations,
+} from "@rentalshop/hooks";
+import { outletsApi } from "@rentalshop/utils";
+import type {
+  OutletFilters,
+  Outlet,
+  OutletUpdateInput,
+} from "@rentalshop/types";
 
 interface OutletFormData {
   name: string;
@@ -47,208 +58,255 @@ export default function OutletsPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const t = useCommonTranslations();
+  const to = useOutletsTranslations();
   const canExport = useCanExportData();
-  
+
   // Dialog states
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [outletToDisable, setOutletToDisable] = useState<Outlet | null>(null);
   const [formData, setFormData] = useState<OutletFormData>({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    phone: '',
-    description: ''
+    name: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
+    phone: "",
+    description: "",
   });
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
   // ============================================================================
-  
-  const search = searchParams.get('q') || '';
-  const status = searchParams.get('status') || '';
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '25');
-  const sortBy = searchParams.get('sortBy') || 'createdAt';
-  const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+
+  const search = searchParams.get("q") || "";
+  const status = searchParams.get("status") || "";
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "25");
+  const sortBy = searchParams.get("sortBy") || "createdAt";
+  const sortOrder = (searchParams.get("sortOrder") || "desc") as "asc" | "desc";
 
   const merchantId = user?.merchant?.id || user?.merchantId;
-  
+
   // ============================================================================
   // DATA FETCHING - Clean & Simple
   // ============================================================================
-  
+
   // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
-  const filters: OutletFilters = useMemo(() => ({
-    q: search || undefined,
-    merchantId: merchantId ? Number(merchantId) : undefined,
-    isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
-    page,
-    limit,
-    sortBy,
-    sortOrder
-  }), [search, merchantId, status, page, limit, sortBy, sortOrder]);
+  const filters: OutletFilters = useMemo(
+    () => ({
+      q: search || undefined,
+      merchantId: merchantId ? Number(merchantId) : undefined,
+      isActive:
+        status === "active" ? true : status === "inactive" ? false : undefined,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    }),
+    [search, merchantId, status, page, limit, sortBy, sortOrder]
+  );
 
   const { data, loading, error } = useOutletsWithFilters({ filters });
 
   // ============================================================================
   // URL UPDATE HELPER
   // ============================================================================
-  
-  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value && value !== '' && value !== 'all') {
-        params.set(key, value.toString());
-      } else {
-        params.delete(key);
-      }
-    });
-    
-    const newURL = `${pathname}?${params.toString()}`;
-    router.push(newURL, { scroll: false });
-  }, [pathname, router, searchParams]);
+
+  const updateURL = useCallback(
+    (updates: Record<string, string | number | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value && value !== "" && value !== "all") {
+          params.set(key, value.toString());
+        } else {
+          params.delete(key);
+        }
+      });
+
+      const newURL = `${pathname}?${params.toString()}`;
+      router.push(newURL, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   // ============================================================================
   // HANDLERS
   // ============================================================================
-  
-  const handleSearchChange = useCallback((searchValue: string) => {
-    updateURL({ q: searchValue, page: 1 });
-  }, [updateURL]);
 
-  const handlePageChange = useCallback((newPage: number) => {
-    updateURL({ page: newPage });
-  }, [updateURL]);
+  const handleSearchChange = useCallback(
+    (searchValue: string) => {
+      updateURL({ q: searchValue, page: 1 });
+    },
+    [updateURL]
+  );
 
-  const handleSort = useCallback((column: string) => {
-    const newSortBy = column;
-    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
-  }, [sortBy, sortOrder, updateURL]);
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      updateURL({ page: newPage });
+    },
+    [updateURL]
+  );
 
-  const handleOutletAction = useCallback(async (action: string, outletId: number) => {
-    const outlet = data?.outlets.find((o: Outlet) => o.id === outletId);
-    
-    switch (action) {
-      case 'view':
-        if (outlet) {
-          setSelectedOutlet(outlet);
-          setShowViewDialog(true);
-        }
-        break;
-        
-      case 'edit':
-        // Show edit dialog
-        if (outlet) {
-          setSelectedOutlet(outlet);
-    setFormData({
-      name: outlet.name,
-      address: outlet.address || '',
-      city: (outlet as any).city || '',
-      state: (outlet as any).state || '',
-      zipCode: (outlet as any).zipCode || '',
-      country: (outlet as any).country || '',
-      phone: outlet.phone || '',
-      description: outlet.description || ''
-    });
-          setShowEditDialog(true);
-        }
-        break;
+  const handleSort = useCallback(
+    (column: string) => {
+      const newSortBy = column;
+      const newSortOrder =
+        sortBy === column && sortOrder === "asc" ? "desc" : "asc";
+      updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
+    },
+    [sortBy, sortOrder, updateURL]
+  );
 
-      case 'disable':
-      case 'enable':
-        if (outlet) {
-    if (outlet.isActive) {
-      setOutletToDisable(outlet);
-      setShowDisableConfirm(true);
-          } else {
-    try {
-              const response = await outletsApi.updateOutlet(outletId, { 
-                id: outletId,
-        isActive: true 
-      });
-              if (response.success) {
-        toastSuccess('Outlet enabled successfully', `Outlet "${outlet.name}" has been enabled`);
-                router.refresh();
-      } else {
-                toastError('Failed to enable outlet', response.error || 'Unknown error occurred');
-      }
-    } catch (err) {
-              toastError('Error enabling outlet', 'An unexpected error occurred');
+  const handleOutletAction = useCallback(
+    async (action: string, outletId: number) => {
+      const outlet = data?.outlets.find((o: Outlet) => o.id === outletId);
+
+      switch (action) {
+        case "view":
+          if (outlet) {
+            setSelectedOutlet(outlet);
+            setShowViewDialog(true);
+          }
+          break;
+
+        case "edit":
+          // Show edit dialog
+          if (outlet) {
+            setSelectedOutlet(outlet);
+            setFormData({
+              name: outlet.name,
+              address: outlet.address || "",
+              city: (outlet as any).city || "",
+              state: (outlet as any).state || "",
+              zipCode: (outlet as any).zipCode || "",
+              country: (outlet as any).country || "",
+              phone: outlet.phone || "",
+              description: outlet.description || "",
+            });
+            setShowEditDialog(true);
+          }
+          break;
+
+        case "disable":
+        case "enable":
+          if (outlet) {
+            if (outlet.isActive) {
+              setOutletToDisable(outlet);
+              setShowDisableConfirm(true);
+            } else {
+              try {
+                const response = await outletsApi.updateOutlet(outletId, {
+                  id: outletId,
+                  isActive: true,
+                });
+                if (response.success) {
+                  toastSuccess(
+                    to("messages.enableSuccess"),
+                    `${to("messages.enableSuccess")} - "${outlet.name}"`
+                  );
+                  router.refresh();
+                } else {
+                  toastError(
+                    to("messages.enableFailed"),
+                    response.error || to("messages.enableFailed")
+                  );
+                }
+              } catch (err) {
+                toastError(
+                  to("messages.enableFailed"),
+                  to("messages.enableFailed")
+                );
+              }
             }
           }
-        }
-        break;
-        
-      default:
-        console.log('Unknown action:', action);
-    }
-  }, [data?.outlets, router, toastSuccess, toastError]);
+          break;
+
+        default:
+          console.log("Unknown action:", action);
+      }
+    },
+    [data?.outlets, router, toastSuccess, toastError]
+  );
 
   const handleConfirmDisable = useCallback(async () => {
     if (!outletToDisable) return;
-    
+
     try {
-      const response = await outletsApi.updateOutlet(outletToDisable.id, { 
+      const response = await outletsApi.updateOutlet(outletToDisable.id, {
         id: outletToDisable.id,
-        isActive: false 
+        isActive: false,
       });
       if (response.success) {
-        toastSuccess('Outlet disabled successfully', `Outlet "${outletToDisable.name}" has been disabled`);
+        toastSuccess(
+          to("messages.disableSuccess"),
+          `${to("messages.disableSuccess")} - "${outletToDisable.name}"`
+        );
         router.refresh();
       } else {
-        toastError('Failed to disable outlet', response.error || 'Unknown error occurred');
+        toastError(
+          to("messages.disableFailed"),
+          response.error || to("messages.disableFailed")
+        );
       }
     } catch (err) {
-      toastError('Error disabling outlet', 'An unexpected error occurred');
+      toastError(to("messages.disableFailed"), to("messages.disableFailed"));
     } finally {
       setShowDisableConfirm(false);
       setOutletToDisable(null);
     }
   }, [outletToDisable, router, toastSuccess, toastError]);
-  
+
   // Handle outlet update from edit dialog
-  const handleOutletUpdate = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedOutlet) return;
-    
-    try {
-      const response = await outletsApi.updateOutlet(selectedOutlet.id, {
-        id: selectedOutlet.id,
-        name: formData.name,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zipCode: formData.zipCode,
-        country: formData.country,
-        phone: formData.phone,
-        description: formData.description
-      });
-      
-      if (response.success) {
-        toastSuccess('Outlet updated successfully', `Outlet "${formData.name}" has been updated`);
-        setShowEditDialog(false);
-        setSelectedOutlet(null);
-        router.refresh();
-      } else {
-        toastError('Failed to update outlet', response.error || 'Unknown error occurred');
+  const handleOutletUpdate = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!selectedOutlet) return;
+
+      try {
+        const response = await outletsApi.updateOutlet(selectedOutlet.id, {
+          id: selectedOutlet.id,
+          name: formData.name,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
+          phone: formData.phone,
+          description: formData.description,
+        });
+
+        if (response.success) {
+          toastSuccess(
+            to("messages.updateSuccess"),
+            `${to("messages.updateSuccess")} - "${formData.name}"`
+          );
+          setShowEditDialog(false);
+          setSelectedOutlet(null);
+          router.refresh();
+        } else {
+          toastError(
+            to("messages.updateFailed"),
+            response.error || to("messages.updateFailed")
+          );
+        }
+      } catch (err) {
+        toastError(to("messages.updateFailed"), to("messages.updateFailed"));
       }
-    } catch (err) {
-      toastError('Error updating outlet', 'An unexpected error occurred');
-    }
-  }, [selectedOutlet, formData, router, toastSuccess, toastError]);
+    },
+    [selectedOutlet, formData, router, toastSuccess, toastError]
+  );
 
   // ============================================================================
   // TRANSFORM DATA
   // ============================================================================
-  
+
   const outletData = useMemo(() => {
     if (!data) {
       return {
@@ -257,7 +315,7 @@ export default function OutletsPage() {
         page: 1,
         totalPages: 1,
         limit: 25,
-        hasMore: false
+        hasMore: false,
       };
     }
 
@@ -267,7 +325,7 @@ export default function OutletsPage() {
       page: data.currentPage,
       totalPages: data.totalPages,
       limit: data.limit,
-      hasMore: data.hasMore
+      hasMore: data.hasMore,
     };
   }, [data]);
 
@@ -281,8 +339,10 @@ export default function OutletsPage() {
         <PageContent>
           <Card>
             <CardContent className="p-8 text-center text-gray-600">
-              <div className="mb-4">Merchant ID not found</div>
-              <div className="text-sm text-gray-500">Please log in again to access this page</div>
+              <div className="mb-4">{t("messages.unauthorized")}</div>
+              <div className="text-sm text-gray-500">
+                {t("messages.sessionExpired")}
+              </div>
             </CardContent>
           </Card>
         </PageContent>
@@ -292,10 +352,15 @@ export default function OutletsPage() {
 
   if (loading && !data) {
     return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageWrapper
+        spacing="none"
+        className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0"
+      >
         <PageHeader className="flex-shrink-0">
-          <PageTitle>Outlets</PageTitle>
-          <p className="text-sm text-gray-600">Manage your business outlets</p>
+          <PageTitle>{to("title")}</PageTitle>
+          <p className="text-sm text-gray-600">
+            {to("messages.loadingOutlets")}
+          </p>
         </PageHeader>
         <OutletsLoading />
       </PageWrapper>
@@ -303,12 +368,15 @@ export default function OutletsPage() {
   }
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper
+      spacing="none"
+      className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0"
+    >
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle>Outlets</PageTitle>
-            <p className="text-sm text-gray-600">Manage your business outlets and branches</p>
+            <PageTitle>{to("title")}</PageTitle>
+            <p className="text-sm text-gray-600">{to("title")}</p>
           </div>
           <div className="flex gap-3">
             {/* Export feature - temporarily hidden, will be enabled in the future */}
@@ -321,16 +389,16 @@ export default function OutletsPage() {
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Export
+                {to('actions.export')}
               </Button>
             )} */}
-            <Button 
-              onClick={() => router.push('/outlets/create')}
+            <Button
+              onClick={() => setShowAddDialog(true)}
               variant="success"
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Outlet
+              {to("addOutlet")}
             </Button>
           </div>
         </div>
@@ -352,30 +420,44 @@ export default function OutletsPage() {
         <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Outlet Details</DialogTitle>
+              <DialogTitle>{to("dialogs.outletDetails")}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Outlet Name</p>
-                  <p className="mt-1 text-gray-900 font-medium">{selectedOutlet.name}</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {to("fields.name")}
+                  </p>
+                  <p className="mt-1 text-gray-900 font-medium">
+                    {selectedOutlet.name}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Phone</p>
-                  <p className="mt-1 text-gray-900">{selectedOutlet.phone || 'N/A'}</p>
+                  <p className="text-sm font-medium text-gray-700">{to("fields.phone")}</p>
+                  <p className="mt-1 text-gray-900">
+                    {selectedOutlet.phone || to("fields.notAvailable")}
+                  </p>
                 </div>
                 <div className="md:col-span-2">
-                  <p className="text-sm font-medium text-gray-700">Address</p>
-                  <p className="mt-1 text-gray-900">{selectedOutlet.address || 'N/A'}</p>
+                  <p className="text-sm font-medium text-gray-700">{to("fields.address")}</p>
+                  <p className="mt-1 text-gray-900">
+                    {selectedOutlet.address || to("fields.notAvailable")}
+                  </p>
                 </div>
                 {selectedOutlet.description && (
                   <div className="md:col-span-2">
-                    <p className="text-sm font-medium text-gray-700">Description</p>
-                    <p className="mt-1 text-gray-900 whitespace-pre-wrap">{selectedOutlet.description}</p>
+                    <p className="text-sm font-medium text-gray-700">
+                      {to("fields.description")}
+                    </p>
+                    <p className="mt-1 text-gray-900 whitespace-pre-wrap">
+                      {selectedOutlet.description}
+                    </p>
                   </div>
                 )}
               </div>
-            </div>
+              </CardContent>
+            </Card>
           </DialogContent>
         </Dialog>
       )}
@@ -384,126 +466,203 @@ export default function OutletsPage() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Outlet: {selectedOutlet?.name}</DialogTitle>
+            <DialogTitle>
+              {to("dialogs.editOutletName").replace(
+                "{name}",
+                selectedOutlet?.name || ""
+              )}
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleOutletUpdate} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Outlet Name *</Label>
+          <form onSubmit={handleOutletUpdate}>
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div>
+                  <Label htmlFor="name">{to("fields.name")} *</Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter outlet name"
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder={to("placeholders.enterOutletName")}
                 required
               />
             </div>
-            
+
             {/* Address Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">Address Information</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900">
+                {t("labels.addressInformation")}
+              </h3>
+
               <div>
-                <Label htmlFor="address">Street Address</Label>
+                <Label htmlFor="address">{to("fields.address")}</Label>
                 <Input
                   id="address"
                   value={formData.address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="Enter street address"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      address: e.target.value,
+                    }))
+                  }
+                  placeholder={to("placeholders.enterStreetAddress")}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city">{to("fields.city")}</Label>
                   <Input
                     id="city"
                     value={formData.city}
-                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="Enter city"
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, city: e.target.value }))
+                    }
+                    placeholder={to("placeholders.enterCity")}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="state">State/Province</Label>
+                  <Label htmlFor="state">{to("fields.state")}</Label>
                   <Input
                     id="state"
                     value={formData.state}
-                    onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                    placeholder="Enter state"
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        state: e.target.value,
+                      }))
+                    }
+                    placeholder={to("placeholders.enterState")}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="zipCode">ZIP/Postal Code</Label>
+                  <Label htmlFor="zipCode">{to("fields.zipCode")}</Label>
                   <Input
                     id="zipCode"
                     value={formData.zipCode}
-                    onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value }))}
-                    placeholder="Enter ZIP code"
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        zipCode: e.target.value,
+                      }))
+                    }
+                    placeholder={to("placeholders.enterZipCode")}
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="country">{to("fields.country")}</Label>
                 <Input
                   id="country"
                   value={formData.country}
-                  onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                  placeholder="Enter country"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      country: e.target.value,
+                    }))
+                  }
+                  placeholder={to("placeholders.enterCountry")}
                 />
               </div>
             </div>
-            
+
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">{to("fields.phone")}</Label>
               <Input
                 id="phone"
                 value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="Enter outlet phone number"
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                placeholder={to("placeholders.enterOutletPhone")}
               />
             </div>
-            
+
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{to("fields.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter outlet description"
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder={to("placeholders.enterOutletDescription")}
                 rows={3}
               />
             </div>
-            
-            <div className="flex items-center justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowEditDialog(false);
-                  setSelectedOutlet(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">
-                Update Outlet
-              </Button>
-            </div>
+
+                <div className="flex items-center justify-end gap-3 border-t pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowEditDialog(false);
+                      setSelectedOutlet(null);
+                    }}
+                  >
+                    {t("buttons.cancel")}
+                  </Button>
+                  <Button type="submit">{to("actions.editOutlet")}</Button>
+                </div>
+              </CardContent>
+            </Card>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Add Outlet Dialog */}
+      <AddOutletDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        merchantId={merchantId}
+        onOutletCreated={async (outletData) => {
+          try {
+            const response = await outletsApi.createOutlet({
+              ...outletData,
+              merchantId: merchantId || 0,
+            });
+
+            if (response.success) {
+              toastSuccess(
+                to("messages.createSuccess"),
+                to("messages.createSuccess")
+              );
+              router.refresh();
+            } else {
+              throw new Error(response.error || to("messages.createFailed"));
+            }
+          } catch (error) {
+            console.error("Error creating outlet:", error);
+            toastError(
+              t("labels.error"),
+              error instanceof Error
+                ? error.message
+                : to("messages.createFailed")
+            );
+            throw error;
+          }
+        }}
+        onError={(error) => {
+          toastError(t("labels.error"), error);
+        }}
+      />
 
       {/* Disable Confirmation Dialog */}
       <ConfirmationDialog
         open={showDisableConfirm}
         onOpenChange={setShowDisableConfirm}
         type="warning"
-        title="Disable Outlet"
-        description={`Are you sure you want to disable outlet "${outletToDisable?.name}"? This will stop new orders from being created for this outlet.`}
-        confirmText="Disable Outlet"
-        cancelText="Cancel"
+        title={to("actions.deleteOutlet")}
+        description={to("messages.confirmDelete")}
+        confirmText={to("actions.deleteOutlet")}
+        cancelText={t("buttons.cancel")}
         onConfirm={handleConfirmDisable}
         onCancel={() => {
           setShowDisableConfirm(false);

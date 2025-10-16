@@ -65,7 +65,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           availableStock: 0,
           rentingStock: 0
         },
-        message: 'No data available - user not assigned to merchant/outlet'
+        code: 'NO_DATA_AVAILABLE', message: 'No data available - user not assigned to merchant/outlet'
       });
     }
 
@@ -104,7 +104,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: metrics,
-      message: 'Today metrics retrieved successfully'
+      code: 'TODAY_METRICS_SUCCESS', message: 'Today metrics retrieved successfully'
     });
 
   } catch (error) {

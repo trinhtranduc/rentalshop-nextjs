@@ -6,10 +6,11 @@ import {
   CreditCard, 
   Settings as SettingsIcon, 
   Building2,
-  Store
+  Store,
+  Languages
 } from 'lucide-react';
 import type { CurrencyCode } from '@rentalshop/types';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useSettingsTranslations } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
 import { useToast } from '@rentalshop/ui';
 import { useCurrency } from '../../../contexts/CurrencyContext';
@@ -21,6 +22,7 @@ import { MerchantSection } from './components/MerchantSection';
 import { OutletSection } from './components/OutletSection';
 import { SubscriptionSection } from './components/SubscriptionSection';
 import { AccountSection } from './components/AccountSection';
+import { LanguageSection } from './components/LanguageSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 
@@ -28,39 +30,45 @@ import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 // SETTINGS MENU ITEMS
 // ============================================================================
 
-const settingsMenuItems = [
+const createSettingsMenuItems = (t: any) => [
   {
     id: 'profile',
-    label: 'Profile',
+    label: t('menuItems.profile.label'),
     icon: User,
-    description: 'Manage your personal information'
+    description: t('menuItems.profile.description')
   },
   {
     id: 'merchant',
-    label: 'Business',
+    label: t('menuItems.merchant.label'),
     icon: Building2,
-    description: 'Manage your business information, pricing, and currency',
+    description: t('menuItems.merchant.description'),
     roles: ['MERCHANT']
   },
   {
     id: 'outlet',
-    label: 'Outlet',
+    label: t('menuItems.outlet.label'),
     icon: Store,
-    description: 'Manage your outlet information',
+    description: t('menuItems.outlet.description'),
     roles: ['OUTLET_ADMIN', 'OUTLET_STAFF']
   },
   {
     id: 'subscription',
-    label: 'Subscription',
+    label: t('menuItems.subscription.label'),
     icon: CreditCard,
-    description: 'Manage your subscription and billing',
+    description: t('menuItems.subscription.description'),
     roles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'] // ADMIN, MERCHANT, and OUTLET_ADMIN can access subscription
   },
   {
+    id: 'language',
+    label: t('menuItems.language.label'),
+    icon: Languages,
+    description: t('menuItems.language.description')
+  },
+  {
     id: 'account',
-    label: 'Account',
+    label: t('menuItems.account.label'),
     icon: SettingsIcon,
-    description: 'Account settings, password and preferences'
+    description: t('menuItems.account.description')
   }
 ];
 
@@ -69,6 +77,7 @@ const settingsMenuItems = [
 // ============================================================================
 
 export const SettingsComponent: React.FC = () => {
+  const t = useSettingsTranslations();
   const { user, logout, loading } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const { currency, setCurrency } = useCurrency();
@@ -269,7 +278,8 @@ export const SettingsComponent: React.FC = () => {
     }
   }, [user]);
 
-  // Filter menu items based on user role
+  // Create and filter menu items based on user role
+  const settingsMenuItems = createSettingsMenuItems(t);
   const filteredMenuItems = settingsMenuItems.filter(item => {
     // If item has roles restriction, check if user role is allowed
     if (item.roles) {
@@ -333,12 +343,12 @@ export const SettingsComponent: React.FC = () => {
         }
         
         setIsEditingPersonal(false);
-        toastSuccess('Success', 'Personal profile updated successfully!');
+        toastSuccess('Success', t('messages.personalProfileUpdated'));
       } else {
-        toastError('Error', response.error || 'Failed to update personal profile');
+        toastError('Error', response.error || t('messages.personalProfileUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', 'Failed to update personal profile. Please try again.');
+      toastError('Error', t('messages.personalProfileUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -386,14 +396,14 @@ export const SettingsComponent: React.FC = () => {
         }
         
         setIsEditingMerchant(false);
-        toastSuccess('Success', 'Business information updated successfully!');
+        toastSuccess('Success', t('messages.businessInfoUpdated'));
       } else {
         console.log('❌ API failed:', response.error);
-        toastError('Error', response.error || 'Failed to update business information');
+        toastError('Error', response.error || t('messages.businessInfoUpdateFailed'));
       }
     } catch (error) {
       console.error('❌ Error in handleUpdateMerchantInfo:', error);
-      toastError('Error', 'Failed to update business information. Please try again.');
+      toastError('Error', t('messages.businessInfoUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -407,12 +417,12 @@ export const SettingsComponent: React.FC = () => {
       const response = await settingsApi.updateOutletInfo(outletFormData);
       if (response.success) {
         setIsEditingOutlet(false);
-        toastSuccess('Success', 'Outlet information updated successfully!');
+        toastSuccess('Success', t('messages.outletInfoUpdated'));
       } else {
-        toastError('Error', response.error || 'Failed to update outlet information');
+        toastError('Error', response.error || t('messages.outletInfoUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', 'Failed to update outlet information. Please try again.');
+      toastError('Error', t('messages.outletInfoUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -437,13 +447,13 @@ export const SettingsComponent: React.FC = () => {
       
       const response = await usersApi.deleteUser(user.id);
       if (response.success) {
-        toastSuccess('Account Deleted', 'Your account has been deleted successfully.');
+        toastSuccess('Account Deleted', t('messages.accountDeleted'));
         await logout();
       } else {
-        toastError('Delete Failed', response.message || 'Failed to delete account');
+        toastError('Delete Failed', response.message || t('messages.accountDeleteFailed'));
       }
     } catch (error) {
-      toastError('Delete Failed', 'Failed to delete account. Please try again.');
+      toastError('Delete Failed', t('messages.accountDeleteFailed'));
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -454,21 +464,21 @@ export const SettingsComponent: React.FC = () => {
     try {
       setIsChangingPassword(true);
       if (passwordData.newPassword !== passwordData.confirmPassword) {
-        throw new Error('New passwords do not match');
+        throw new Error(t('messages.passwordMismatch'));
       }
       if (passwordData.newPassword.length < 6) {
-        throw new Error('New password must be at least 6 characters');
+        throw new Error(t('messages.passwordTooShort'));
       }
       const response = await authApi.changePassword(passwordData.currentPassword, passwordData.newPassword);
       if (response.success) {
         setShowChangePassword(false);
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        toastSuccess('Password Changed', 'Your password has been changed successfully!');
+        toastSuccess('Password Changed', t('messages.passwordChanged'));
       } else {
-        throw new Error(response.message || 'Failed to change password');
+        throw new Error(response.message || t('messages.passwordChangeFailed'));
       }
     } catch (error) {
-      toastError('Password Change Failed', error instanceof Error ? error.message : 'Failed to change password');
+      toastError('Password Change Failed', error instanceof Error ? error.message : t('messages.passwordChangeFailed'));
     } finally {
       setIsChangingPassword(false);
     }
@@ -492,12 +502,12 @@ export const SettingsComponent: React.FC = () => {
           }
         }
         
-        toastSuccess('Success', 'Currency updated successfully!');
+        toastSuccess('Success', t('messages.currencyUpdated'));
       } else {
-        toastError('Error', response.error || 'Failed to update currency');
+        toastError('Error', response.error || t('messages.currencyUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', 'Failed to update currency. Please try again.');
+      toastError('Error', t('messages.currencyUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -554,6 +564,8 @@ export const SettingsComponent: React.FC = () => {
             currentUserRole={user?.role}
           />
         );
+      case 'language':
+        return <LanguageSection />;
       case 'account':
         return (
           <AccountSection

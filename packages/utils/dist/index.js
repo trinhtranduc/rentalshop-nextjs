@@ -200,22 +200,6 @@ function isSuccessResponse(response) {
 function isErrorResponse(response) {
   return response.success === false;
 }
-function createErrorResponse(code, message, details, field) {
-  return {
-    success: false,
-    message: message || exports.ERROR_MESSAGES[code],
-    error: code,
-    details,
-    field
-  };
-}
-function createSuccessResponse(data, message) {
-  return {
-    success: true,
-    data,
-    message
-  };
-}
 function handlePrismaError(error) {
   console.error("\u{1F50D} Prisma Error Details:", {
     code: error.code,
@@ -409,16 +393,22 @@ function handleApiError(error) {
   } else {
     apiError = handleBusinessError(error);
   }
-  const response = createErrorResponse(
-    apiError.code,
-    apiError.message,
-    apiError.details,
-    apiError.field
-  );
+  const response = {
+    success: false,
+    code: apiError.code,
+    message: apiError.message,
+    error: apiError.details || apiError.message
+  };
   return {
     response,
     statusCode: apiError.statusCode
   };
+}
+function getErrorTranslationKey(errorCode) {
+  return errorCode;
+}
+function isValidErrorCode(code) {
+  return Object.values(exports.ErrorCode).includes(code);
 }
 var API; exports.ErrorCode = void 0; exports.ERROR_MESSAGES = void 0; exports.ERROR_STATUS_CODES = void 0; exports.ApiError = void 0; exports.ValidationError = void 0; exports.DuplicateError = void 0; exports.NotFoundError = void 0; exports.UnauthorizedError = void 0; exports.ForbiddenError = void 0; exports.PlanLimitError = void 0; exports.isAuthError = void 0; exports.isPermissionError = void 0; var isSubscriptionErrorNew; exports.isNetworkError = void 0; exports.isValidationError = void 0; exports.analyzeError = void 0;
 var init_errors = __esm({
@@ -594,13 +584,12 @@ var init_errors = __esm({
         this.details = details;
         this.field = field;
       }
-      toResponse() {
+      toJSON() {
         return {
           success: false,
+          code: this.code,
           message: this.message,
-          error: this.code,
-          details: this.details,
-          field: this.field
+          error: this.details || this.message
         };
       }
     };
@@ -11234,14 +11223,22 @@ function formatCurrencyAdvanced(amount, options = {}, settings) {
   const locale = "en-US";
   const showSymbol = options.showSymbol ?? currentSettings.showSymbol;
   const showCode = options.showCode ?? currentSettings.showCode;
-  const fractionDigits = options.fractionDigits ?? currency.maxFractionDigits;
   const hasDecimals = amount % 1 !== 0;
-  const minDecimals = hasDecimals ? currency.minFractionDigits : 0;
+  let minDecimals;
+  let maxDecimals;
+  if (currency.code === "VND") {
+    minDecimals = 0;
+    maxDecimals = 0;
+  } else if (hasDecimals) {
+    minDecimals = 0;
+    maxDecimals = 2;
+  } else {
+    minDecimals = 0;
+    maxDecimals = 0;
+  }
   const formattedNumber = new Intl.NumberFormat(locale, {
     minimumFractionDigits: minDecimals,
-    // 0 if whole number, 2 if has decimals
-    maximumFractionDigits: fractionDigits
-    // Allow up to max decimals
+    maximumFractionDigits: maxDecimals
   }).format(amount);
   let result = formattedNumber;
   if (showSymbol) {
@@ -11459,7 +11456,7 @@ var init_order_number_manager = __esm({
     init_src();
   }
 });
-var toDate; exports.formatDate = void 0; exports.formatDateTime = void 0; exports.addDaysToDate = void 0; exports.getDaysDifference = void 0; exports.isDateAfter = void 0; exports.isDateBefore = void 0; exports.getCurrentDate = void 0; exports.getTomorrow = void 0; exports.formatDateLong = void 0; exports.formatDateTimeLong = void 0; exports.formatDateShort = void 0; exports.formatDateTimeShort = void 0;
+var toDate; exports.formatDate = void 0; exports.formatDateTime = void 0; exports.addDaysToDate = void 0; exports.getDaysDifference = void 0; exports.isDateAfter = void 0; exports.isDateBefore = void 0; exports.getCurrentDate = void 0; exports.getTomorrow = void 0; exports.formatDateLong = void 0; exports.formatDateTimeLong = void 0; exports.formatDateShort = void 0; exports.formatDateTimeShort = void 0; exports.formatDateWithLocale = void 0;
 var init_date = __esm({
   "src/core/date.ts"() {
     toDate = (date) => {
@@ -11571,6 +11568,21 @@ var init_date = __esm({
           minute: "2-digit",
           hour12: true
         }).format(dateObj);
+      } catch {
+        return "Invalid Date";
+      }
+    };
+    exports.formatDateWithLocale = (date, locale = "en", options = {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    }) => {
+      const dateObj = toDate(date);
+      if (!dateObj)
+        return "Invalid Date";
+      try {
+        const localeCode = locale === "vi" ? "vi-VN" : "en-US";
+        return new Intl.DateTimeFormat(localeCode, options).format(dateObj);
       } catch {
         return "Invalid Date";
       }
@@ -12137,7 +12149,6 @@ var init_core = __esm({
     init_string_utils();
     init_function_utils();
     init_common();
-    init_errors();
     init_errors();
     init_errors();
     init_pricing_calculator();
@@ -15151,6 +15162,301 @@ var init_upload = __esm({
   }
 });
 
+// src/api/response-builder.ts
+function getDefaultMessage(code) {
+  return ERROR_MESSAGES2[code] || SUCCESS_MESSAGES[code] || code;
+}
+function getErrorCode(error) {
+  if (typeof error === "string")
+    return error;
+  if (error?.code)
+    return error.code;
+  if (error?.name === "ZodError")
+    return "VALIDATION_ERROR";
+  if (error?.message?.includes("not found"))
+    return "NOT_FOUND";
+  if (error?.message?.includes("already exists"))
+    return "DUPLICATE_ENTRY";
+  return "UNKNOWN_ERROR";
+}
+function createErrorResponse(error) {
+  if (error?.name === "ZodError") {
+    return exports.ResponseBuilder.validationError(error.flatten());
+  }
+  if (error?.code) {
+    return exports.ResponseBuilder.error(error.code, error.details);
+  }
+  const code = getErrorCode(error);
+  return exports.ResponseBuilder.error(code, {
+    message: error?.message,
+    stack: process.env.NODE_ENV === "development" ? error?.stack : void 0
+  });
+}
+function getErrorStatusCode(error, defaultCode = 500) {
+  const code = getErrorCode(error);
+  if (error?.name === "ZodError")
+    return 400;
+  if (code === "VALIDATION_ERROR")
+    return 400;
+  if (code === "INVALID_INPUT")
+    return 400;
+  if (code === "INVALID_PAYLOAD")
+    return 400;
+  if (code === "INVALID_QUERY")
+    return 400;
+  if (code?.includes("_REQUIRED"))
+    return 400;
+  if (code?.includes("INVALID_"))
+    return 400;
+  if (code === "UNAUTHORIZED")
+    return 401;
+  if (code === "INVALID_TOKEN")
+    return 401;
+  if (code === "TOKEN_EXPIRED")
+    return 401;
+  if (code === "INVALID_CREDENTIALS")
+    return 401;
+  if (code === "FORBIDDEN")
+    return 403;
+  if (code === "ACCOUNT_DEACTIVATED")
+    return 403;
+  if (code === "INSUFFICIENT_PERMISSIONS")
+    return 403;
+  if (code?.includes("ACCESS_DENIED"))
+    return 403;
+  if (code?.includes("_OUT_OF_SCOPE"))
+    return 403;
+  if (code?.includes("_NOT_FOUND"))
+    return 404;
+  if (code === "NOT_FOUND")
+    return 404;
+  if (code?.includes("_EXISTS"))
+    return 409;
+  if (code?.includes("_DUPLICATE"))
+    return 409;
+  if (code === "DUPLICATE_ENTRY")
+    return 409;
+  if (code === "BUSINESS_RULE_VIOLATION")
+    return 422;
+  if (code?.includes("PRODUCT_NO_STOCK"))
+    return 422;
+  if (code === "PLAN_LIMIT_EXCEEDED")
+    return 422;
+  if (code === "SERVICE_UNAVAILABLE")
+    return 503;
+  return defaultCode;
+}
+var ERROR_MESSAGES2, SUCCESS_MESSAGES; exports.ResponseBuilder = void 0;
+var init_response_builder = __esm({
+  "src/api/response-builder.ts"() {
+    ERROR_MESSAGES2 = {
+      // Authentication & Authorization
+      "INVALID_CREDENTIALS": "Invalid email or password",
+      "ACCOUNT_DEACTIVATED": "Account is deactivated. Please contact support.",
+      "CURRENT_PASSWORD_REQUIRED": "Current password is required",
+      "CURRENT_PASSWORD_INCORRECT": "Current password is incorrect",
+      "PASSWORD_MIN_LENGTH": "New password must be at least 6 characters",
+      "PASSWORD_MISMATCH": "Passwords do not match",
+      "CROSS_MERCHANT_ACCESS_DENIED": "Cannot access data from other merchants",
+      "USER_NOT_ASSIGNED": "User not assigned to merchant/outlet",
+      "MERCHANT_ASSOCIATION_REQUIRED": "User must be associated with a merchant",
+      "NO_MERCHANT_ACCESS": "User does not have merchant access",
+      "NO_OUTLET_ACCESS": "User does not have outlet access",
+      "MERCHANT_ACCESS_REQUIRED": "Merchant access required",
+      "DELETE_USER_OUT_OF_SCOPE": "Cannot delete user outside your scope",
+      "UPDATE_USER_OUT_OF_SCOPE": "Cannot update user outside your scope",
+      "DELETE_OWN_ACCOUNT_ONLY": "You can only delete your own account",
+      // Validation Errors
+      "INVALID_QUERY": "Invalid query parameters",
+      "INVALID_PAYLOAD": "Invalid request payload",
+      "INVALID_USER_DATA": "Invalid user data",
+      "INVALID_UPDATE_DATA": "Invalid update data",
+      "BUSINESS_NAME_REQUIRED": "Business name is required",
+      "CATEGORY_NAME_REQUIRED": "Category name is required",
+      "OUTLET_NAME_ADDRESS_REQUIRED": "Outlet name and address are required",
+      "USER_ID_REQUIRED": "User ID is required",
+      "CUSTOMER_ID_REQUIRED": "Customer ID is required",
+      "ORDER_ID_REQUIRED": "Order ID is required",
+      "PRODUCT_ID_REQUIRED": "Product ID is required",
+      "MERCHANT_ID_REQUIRED": "Merchant ID is required",
+      "OUTLET_ID_REQUIRED": "Outlet ID is required",
+      "PLAN_ID_REQUIRED": "Plan ID is required",
+      "INVALID_AMOUNT": "Amount must be greater than 0",
+      "INVALID_CUSTOMER_ID_FORMAT": "Invalid customer ID format",
+      "INVALID_PRODUCT_ID_FORMAT": "Invalid product ID format",
+      "INVALID_ORDER_ID_FORMAT": "Invalid order ID format",
+      "INVALID_MERCHANT_ID_FORMAT": "Invalid merchant ID format",
+      "INVALID_USER_ID_FORMAT": "Invalid user ID format",
+      "INVALID_PLAN_ID_FORMAT": "Invalid plan ID format",
+      "INVALID_AUDIT_LOG_ID_FORMAT": "Invalid audit log ID format",
+      "INVALID_DATE_FORMAT": "Invalid date format",
+      "INVALID_BUSINESS_TYPE": "Invalid business type",
+      "INVALID_PRICING_TYPE": "Invalid pricing type",
+      "INVALID_PLATFORM": 'Invalid platform. Must be "ios" or "android"',
+      "INVALID_END_DATE": "End date must be in the future",
+      "INVALID_INTERVAL_CONFIG": "Invalid interval configuration",
+      "INVALID_BILLING_CONFIG": "Invalid billing configuration",
+      "ADMIN_OUTLET_ID_REQUIRED": "Admin users need to specify outlet ID for outlet updates",
+      "INVALID_CATEGORY_ID": "Invalid category ID",
+      "INVALID_SUBSCRIPTION_ID": "Invalid subscription ID",
+      // Not Found Errors
+      "USER_NOT_FOUND": "User not found",
+      "MERCHANT_NOT_FOUND": "Merchant not found",
+      "OUTLET_NOT_FOUND": "Outlet not found",
+      "PRODUCT_NOT_FOUND": "Product not found",
+      "ORDER_NOT_FOUND": "Order not found",
+      "CUSTOMER_NOT_FOUND": "Customer not found",
+      "CATEGORY_NOT_FOUND": "Category not found",
+      "PLAN_NOT_FOUND": "Plan not found",
+      "SUBSCRIPTION_NOT_FOUND": "Subscription not found",
+      "PAYMENT_NOT_FOUND": "Payment not found",
+      "AUDIT_LOG_NOT_FOUND": "Audit log not found",
+      "NO_OUTLETS_FOUND": "No outlets found for merchant",
+      "NO_SUBSCRIPTION_FOUND": "No subscription found for this merchant",
+      "NO_DATA_AVAILABLE": "No data available - user not assigned to merchant/outlet",
+      // Conflict Errors
+      "EMAIL_EXISTS": "Email address is already registered",
+      "PHONE_EXISTS": "Phone number is already registered",
+      "CUSTOMER_DUPLICATE": "A customer with this email or phone already exists",
+      "OUTLET_NAME_EXISTS": "An outlet with this name already exists for this merchant",
+      "CATEGORY_NAME_EXISTS": "Category with this name already exists",
+      // Business Rules
+      "PRODUCT_NO_STOCK_ENTRY": "Product must have at least one outlet stock entry",
+      "ACCOUNT_ALREADY_DELETED": "Account is already deleted",
+      "ORDER_PAYMENT_REQUIRED": "Order ID, amount, and method are required",
+      "SUBSCRIPTION_END_DATE_REQUIRED": "Subscription ID, end date, and amount are required",
+      "DEVICE_INFO_REQUIRED": "Missing required fields: deviceId, pushToken, platform",
+      "API_KEY_NAME_REQUIRED": "API key name is required",
+      "VALID_USER_ID_REQUIRED": "Valid user ID is required",
+      // System Errors
+      "INTERNAL_SERVER_ERROR": "Internal server error",
+      "FETCH_MERCHANTS_FAILED": "Failed to fetch merchants",
+      "FETCH_OUTLETS_FAILED": "Failed to fetch outlets",
+      "FETCH_PRODUCTS_FAILED": "Failed to fetch products",
+      "FETCH_ORDERS_FAILED": "Failed to fetch orders",
+      "CREATE_CUSTOMER_FAILED": "Failed to create customer",
+      "UPDATE_USER_FAILED": "Failed to update user",
+      "DELETE_USER_FAILED": "Failed to delete user",
+      "FEATURE_NOT_IMPLEMENTED": "This feature is not yet implemented",
+      // Default
+      "UNKNOWN_ERROR": "An unknown error occurred"
+    };
+    SUCCESS_MESSAGES = {
+      // Authentication
+      "LOGIN_SUCCESS": "Login successful",
+      "LOGOUT_SUCCESS": "Logged out successfully",
+      "PASSWORD_CHANGED_SUCCESS": "Password changed successfully",
+      "PASSWORD_RESET_SUCCESS": "Password has been reset successfully",
+      "PASSWORD_RESET_LINK_SENT": "If an account with that email exists, a password reset link has been sent",
+      // Create Operations
+      "USER_CREATED_SUCCESS": "User created successfully",
+      "CUSTOMER_CREATED_SUCCESS": "Customer created successfully",
+      "PRODUCT_CREATED_SUCCESS": "Product created successfully",
+      "ORDER_CREATED_SUCCESS": "Order created successfully",
+      "CATEGORY_CREATED_SUCCESS": "Category created successfully",
+      "OUTLET_CREATED_SUCCESS": "Outlet created successfully",
+      "PLAN_CREATED_SUCCESS": "Plan created successfully",
+      "MERCHANT_CREATED_SUCCESS": "Merchant created successfully with default outlet",
+      // Update Operations
+      "USER_UPDATED_SUCCESS": "User updated successfully",
+      "CUSTOMER_UPDATED_SUCCESS": "Customer updated successfully",
+      "PRODUCT_UPDATED_SUCCESS": "Product updated successfully",
+      "ORDER_UPDATED_SUCCESS": "Order updated successfully",
+      "CATEGORY_UPDATED_SUCCESS": "Category updated successfully",
+      "OUTLET_UPDATED_SUCCESS": "Outlet updated successfully",
+      "MERCHANT_UPDATED_SUCCESS": "Merchant updated successfully",
+      "PROFILE_UPDATED_SUCCESS": "Profile updated successfully",
+      "MERCHANT_INFO_UPDATED_SUCCESS": "Merchant information updated successfully",
+      "OUTLET_INFO_UPDATED_SUCCESS": "Outlet information updated successfully",
+      "CURRENCY_UPDATED_SUCCESS": "Currency updated successfully",
+      // Delete Operations
+      "USER_DELETED_SUCCESS": "User deleted successfully",
+      "CUSTOMER_DELETED_SUCCESS": "Customer deleted successfully",
+      "PRODUCT_DELETED_SUCCESS": "Product deleted successfully",
+      "CATEGORY_DELETED_SUCCESS": "Category deleted successfully",
+      "OUTLET_DELETED_SUCCESS": "Outlet deleted successfully",
+      "MERCHANT_DELETED_SUCCESS": "Merchant deleted successfully",
+      "USER_DEACTIVATED_SUCCESS": "User deactivated successfully",
+      // Retrieve Operations
+      "USER_RETRIEVED_SUCCESS": "User retrieved successfully",
+      "CUSTOMER_RETRIEVED_SUCCESS": "Customer retrieved successfully",
+      "PRODUCT_RETRIEVED_SUCCESS": "Product retrieved successfully",
+      "ORDER_RETRIEVED_SUCCESS": "Order retrieved successfully",
+      "CATEGORY_RETRIEVED_SUCCESS": "Category retrieved successfully",
+      "MERCHANT_RETRIEVED_SUCCESS": "Merchant retrieved successfully",
+      // Special Operations
+      "DASHBOARD_DATA_SUCCESS": "Enhanced dashboard data retrieved successfully",
+      "GROWTH_METRICS_SUCCESS": "Growth metrics retrieved successfully",
+      "TODAY_METRICS_SUCCESS": "Today metrics retrieved successfully",
+      "MERCHANT_REGISTERED_TRIAL_SUCCESS": "Merchant registered successfully with 14-day free trial",
+      "MERCHANT_ACCOUNT_CREATED_SUCCESS": "Merchant account created successfully with default outlet and trial subscription",
+      "USER_ACCOUNT_CREATED_SUCCESS": "User account created successfully"
+    };
+    exports.ResponseBuilder = class {
+      /**
+       * Build success response
+       * @param code - Success code (e.g., 'USER_CREATED_SUCCESS')
+       * @param data - Response data
+       * @param meta - Optional metadata (pagination, etc.)
+       */
+      static success(code, data, meta) {
+        return {
+          success: true,
+          code,
+          message: getDefaultMessage(code),
+          data,
+          meta
+        };
+      }
+      /**
+       * Build error response
+       * @param code - Error code (e.g., 'INVALID_CREDENTIALS')
+       * @param error - Optional error details
+       */
+      static error(code, error) {
+        return {
+          success: false,
+          code,
+          message: getDefaultMessage(code),
+          error
+        };
+      }
+      /**
+       * Build paginated success response
+       * @param code - Success code
+       * @param data - Array of items
+       * @param pagination - Pagination info
+       */
+      static paginated(code, data, pagination) {
+        return {
+          success: true,
+          code,
+          message: getDefaultMessage(code),
+          data,
+          meta: {
+            page: pagination.page,
+            limit: pagination.limit,
+            total: pagination.total,
+            hasMore: pagination.page * pagination.limit < pagination.total
+          }
+        };
+      }
+      /**
+       * Build validation error response
+       * @param validationErrors - Zod validation errors
+       */
+      static validationError(validationErrors) {
+        return {
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Input validation failed",
+          error: validationErrors
+        };
+      }
+    };
+  }
+});
+
 // src/api/index.ts
 var init_api2 = __esm({
   "src/api/index.ts"() {
@@ -15174,6 +15480,7 @@ var init_api2 = __esm({
     init_system();
     init_calendar();
     init_upload();
+    init_response_builder();
   }
 });
 
@@ -15280,6 +15587,29 @@ var init_config = __esm({
     init_api();
     init_database();
     init_environment();
+  }
+});
+
+// src/core/error-display.ts
+function getDisplayErrorKey(error) {
+  if (error?.error && typeof error.error === "string") {
+    return error.error;
+  }
+  if (error?.code && isValidErrorCode(error.code)) {
+    return error.code;
+  }
+  return "UNKNOWN_ERROR";
+}
+function hasTranslatableError(error) {
+  const errorKey = getDisplayErrorKey(error);
+  return errorKey !== "UNKNOWN_ERROR";
+}
+function getErrorDetails(error) {
+  return error?.details || error?.message;
+}
+var init_error_display = __esm({
+  "src/core/error-display.ts"() {
+    init_errors();
   }
 });
 
@@ -15673,6 +16003,7 @@ var init_src2 = __esm({
     init_config();
     init_core();
     init_errors();
+    init_error_display();
     init_breadcrumbs();
     init_performance();
   }
@@ -15701,7 +16032,6 @@ exports.convertCurrency = convertCurrency;
 exports.createAuditHelper = createAuditHelper;
 exports.createErrorResponse = createErrorResponse;
 exports.createPaymentGatewayManager = createPaymentGatewayManager;
-exports.createSuccessResponse = createSuccessResponse;
 exports.createUploadController = createUploadController;
 exports.exportAuditLogs = exportAuditLogs;
 exports.fileToBase64 = fileToBase64;
@@ -15717,6 +16047,11 @@ exports.getCurrencyDisplay = getCurrencyDisplay;
 exports.getCurrentCurrency = getCurrentCurrency;
 exports.getCurrentEntityCounts = getCurrentEntityCounts;
 exports.getDatabaseConfig = getDatabaseConfig;
+exports.getDisplayErrorKey = getDisplayErrorKey;
+exports.getErrorCode = getErrorCode;
+exports.getErrorDetails = getErrorDetails;
+exports.getErrorStatusCode = getErrorStatusCode;
+exports.getErrorTranslationKey = getErrorTranslationKey;
 exports.getExchangeRate = getExchangeRate;
 exports.getFormatRecommendations = getFormatRecommendations;
 exports.getImageDimensions = getImageDimensions;
@@ -15726,12 +16061,14 @@ exports.handleApiError = handleApiError;
 exports.handleBusinessError = handleBusinessError;
 exports.handlePrismaError = handlePrismaError;
 exports.handleValidationError = handleValidationError;
+exports.hasTranslatableError = hasTranslatableError;
 exports.isDevelopmentEnvironment = isDevelopmentEnvironment;
 exports.isErrorResponse = isErrorResponse;
 exports.isLocalEnvironment = isLocalEnvironment;
 exports.isProductionEnvironment = isProductionEnvironment;
 exports.isSuccessResponse = isSuccessResponse;
 exports.isValidCurrencyCode = isValidCurrencyCode;
+exports.isValidErrorCode = isValidErrorCode;
 exports.migrateOrderNumbers = migrateOrderNumbers;
 exports.parseCurrency = parseCurrency;
 exports.quickAuditLog = quickAuditLog;

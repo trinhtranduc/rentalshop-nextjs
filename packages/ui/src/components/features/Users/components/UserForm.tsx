@@ -8,6 +8,7 @@ import { FormField, RoleSelect, MerchantSelect, OutletSelect } from './UserFormF
 import { validateUserCreateInput, validateUserUpdateInput } from './UserFormValidation';
 import type { User, UserCreateInput, UserUpdateInput, UserRole } from '@rentalshop/types';
 import { merchantsApi, outletsApi } from '@rentalshop/utils';
+import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPE-SAFE FORM DATA INTERFACES
@@ -54,6 +55,8 @@ export const UserForm: React.FC<UserFormProps> = ({
   isSubmitting: externalIsSubmitting,
   currentUser
 }) => {
+  const t = useUsersTranslations();
+  const tc = useCommonTranslations();
   const isEditMode = mode === 'edit';
   
   // Form data - different structure for create vs edit
@@ -355,73 +358,73 @@ export const UserForm: React.FC<UserFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Personal Information */}
+    <form onSubmit={handleSubmit}>
       <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-            {isEditMode ? 'Basic Information' : 'Personal Information'}
-          </h3>
+        <CardContent className="p-6 space-y-6">
+          {/* Personal Information */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 mb-4">
+              {isEditMode ? t('fields.basicInformation') : t('fields.personalInformation')}
+            </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {isEditMode ? (
               <>
                 <FormField
                   id="firstName"
-                  label="First Name"
+                  label={t('fields.firstName')}
                   value={(formData as any).firstName}
                   onChange={(value) => handleInputChange('firstName', value)}
                   error={errors.firstName}
                   disabled={isSubmitting}
                   required
-                  placeholder="Enter first name"
+                  placeholder={t('placeholders.enterFirstName')}
                 />
 
                 <FormField
                   id="lastName"
-                  label="Last Name"
+                  label={t('fields.lastName')}
                   value={(formData as any).lastName}
                   onChange={(value) => handleInputChange('lastName', value)}
                   error={errors.lastName}
                   disabled={isSubmitting}
                   required
-                  placeholder="Enter last name"
+                  placeholder={t('placeholders.enterLastName')}
                 />
               </>
             ) : (
               <FormField
                 id="name"
-                label="Full Name"
+                label={t('fields.fullName')}
                 value={(formData as any).name}
                 onChange={(value) => handleInputChange('name', value)}
                 error={errors.name}
                 disabled={isSubmitting}
                 required
-                placeholder="Enter full name"
+                placeholder={t('placeholders.enterFullName')}
               />
             )}
 
             <FormField
               id="email"
-              label="Email"
+              label={t('fields.email')}
               value={(formData as any).email}
               onChange={(value) => handleInputChange('email', value)}
               error={errors.email}
               disabled={isSubmitting}
               required
               type="email"
-              placeholder="Enter email address"
+              placeholder={t('placeholders.enterEmail')}
             />
 
             <FormField
               id="phone"
-              label="Phone"
+              label={t('fields.phone')}
               value={(formData as any).phone}
               onChange={(value) => handleInputChange('phone', value)}
               error={errors.phone}
               disabled={isSubmitting}
               required
-              placeholder="Enter phone number (numbers only)"
+              placeholder={t('placeholders.enterPhone')}
             />
 
             {console.log('🔍 UserForm: RoleSelect value:', (formData as any).role, 'FormData:', formData)}
@@ -436,17 +439,14 @@ export const UserForm: React.FC<UserFormProps> = ({
               currentUserRole={currentUser?.role}
             />
           </div>
-        </CardContent>
-      </Card>
+          </div>
 
-      {/* Organization Assignment */}
-      {(showMerchantField || showOutletField) && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-              Organization Assignment
-            </h3>
+          {/* Organization Assignment */}
+          {(showMerchantField || showOutletField) && (
+            <div className="border-t pt-6">
+              <h3 className="text-sm font-medium text-gray-900 mb-4">
+                {t('organizationAssignment')}
+              </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {showMerchantField && (
                 <MerchantSelect
@@ -476,136 +476,99 @@ export const UserForm: React.FC<UserFormProps> = ({
                 />
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+          )}
 
-      {/* Password Section (Create mode only) */}
-      {!isEditMode && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              Password Settings
-            </h3>
+          {/* Password Section (Create mode only) */}
+          {!isEditMode && (
+            <div className="border-t pt-6">
+              <h3 className="text-sm font-medium text-gray-900 mb-4">
+                {t('passwordSettings')}
+              </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 id="password"
-                label="Password"
+                label={t('fields.password')}
                 value={(formData as any).password}
                 onChange={(value) => handleInputChange('password', value)}
                 error={errors.password}
                 disabled={isSubmitting}
                 required
                 type="password"
-                placeholder="Enter password"
+                placeholder={t('placeholders.enterPassword')}
                 showPasswordToggle={true}
               />
 
               <FormField
                 id="confirmPassword"
-                label="Confirm Password"
+                label={t('fields.confirmPassword')}
                 value={(formData as any).confirmPassword}
                 onChange={(value) => handleInputChange('confirmPassword', value)}
                 error={errors.confirmPassword}
                 disabled={isSubmitting}
                 type="password"
-                placeholder="Confirm password"
+                placeholder={t('placeholders.confirmPassword')}
                 showPasswordToggle={true}
               />
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Account Settings (Create mode only) */}
-      {!isEditMode && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-              Account Settings
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={(formData as any).isActive}
-                  onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  disabled={isSubmitting}
-                />
-                <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                  Active Account
-                </label>
-              </div>
-              <p className="text-sm text-gray-600">
-                Active users can log in and access the system. Inactive users are suspended.
-              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {/* User Information (Edit mode only) */}
-      {isEditMode && user && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-              Current User Information
-            </h3>
+          {/* User Information (Edit mode only) */}
+          {isEditMode && user && (
+            <div className="border-t pt-6">
+              <h3 className="text-sm font-medium text-gray-900 mb-4">
+                {t('currentUserInformation')}
+              </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium text-gray-700">Role:</span>
+                <span className="font-medium text-gray-700">{t('fields.role')}:</span>
                 <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  {user.role}
+                  {t(`roles.${user.role}` as any)}
                 </span>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Status:</span>
+                <span className="font-medium text-gray-700">{t('fields.status')}:</span>
                 <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
                   user.isActive 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {user.isActive ? 'Active' : 'Inactive'}
+                  {user.isActive ? t('fields.active') : t('fields.inactive')}
                 </span>
               </div>
               {user.merchant && (
                 <div>
-                  <span className="font-medium text-gray-700">Merchant:</span>
+                  <span className="font-medium text-gray-700">{t('fields.merchant')}:</span>
                   <span className="ml-2 text-gray-600">{user.merchant.name}</span>
                 </div>
               )}
               {user.outlet && (
                 <div>
-                  <span className="font-medium text-gray-700">Outlet:</span>
+                  <span className="font-medium text-gray-700">{t('fields.outlet')}:</span>
                   <span className="ml-2 text-gray-600">{user.outlet.name}</span>
                 </div>
               )}
               <div>
-                <span className="font-medium text-gray-700">Created:</span>
+                <span className="font-medium text-gray-700">{t('created')}:</span>
                 <span className="ml-2 text-gray-600">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </span>
               </div>
               {user.lastLoginAt && (
                 <div>
-                  <span className="font-medium text-gray-700">Last Login:</span>
+                  <span className="font-medium text-gray-700">{t('fields.lastLogin')}:</span>
                   <span className="ml-2 text-gray-600">
                     {new Date(user.lastLoginAt).toLocaleDateString()}
                   </span>
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+          )}
 
-      {/* Validation Status */}
-      {Object.keys(errors).length > 0 && (
+          {/* Validation Status */}
+          {Object.keys(errors).length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
           <div className="flex items-start">
             <div className="flex-shrink-0">
@@ -613,7 +576,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                Please fix the following validation errors:
+                {t('messages.validationErrors')}
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
                 <ul className="list-disc list-inside space-y-1">
@@ -627,10 +590,10 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
           </div>
         </div>
-      )}
+          )}
 
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-3 pt-4">
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3 border-t pt-6">
         <Button
           type="button"
           variant="outline"
@@ -638,7 +601,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           disabled={isSubmitting}
         >
           <X className="w-4 h-4 mr-2" />
-          Cancel
+          {tc('buttons.cancel')}
         </Button>
         <Button 
           type="submit"
@@ -646,11 +609,13 @@ export const UserForm: React.FC<UserFormProps> = ({
         >
           <Save className="w-4 h-4 mr-2" />
           {isSubmitting 
-            ? (isEditMode ? 'Updating...' : 'Creating...') 
-            : (isEditMode ? 'Update User' : 'Create User')
+            ? (isEditMode ? t('actions.updating') : t('actions.creating')) 
+            : (isEditMode ? t('actions.updateUser') : t('actions.createUser'))
           }
         </Button>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </form>
   );
 };

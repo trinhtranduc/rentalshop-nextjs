@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -30,7 +30,7 @@ async function handleExtendSubscription(
     // Validate required fields
     if (!subscriptionId || !newEndDate || amount === undefined) {
       return NextResponse.json(
-        { success: false, message: 'Subscription ID, end date, and amount are required' },
+        ResponseBuilder.error('SUBSCRIPTION_END_DATE_REQUIRED'),
         { status: 400 }
       );
     }
@@ -39,14 +39,14 @@ async function handleExtendSubscription(
     const endDate = new Date(newEndDate);
     if (isNaN(endDate.getTime())) {
       return NextResponse.json(
-        { success: false, message: 'Invalid end date format' },
+        ResponseBuilder.error('INVALID_DATE_FORMAT'),
         { status: 400 }
       );
     }
 
     if (endDate <= new Date()) {
       return NextResponse.json(
-        { success: false, message: 'End date must be in the future' },
+        ResponseBuilder.error('INVALID_END_DATE'),
         { status: 400 }
       );
     }
@@ -54,7 +54,7 @@ async function handleExtendSubscription(
     // Validate amount
     if (amount <= 0) {
       return NextResponse.json(
-        { success: false, message: 'Amount must be greater than 0' },
+        ResponseBuilder.error('INVALID_AMOUNT'),
         { status: 400 }
       );
     }
@@ -64,7 +64,7 @@ async function handleExtendSubscription(
     
     if (!subscription) {
       return NextResponse.json(
-        { success: false, message: 'Subscription not found' },
+        ResponseBuilder.error('SUBSCRIPTION_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -77,7 +77,7 @@ async function handleExtendSubscription(
     return NextResponse.json({
       success: true,
       data: extendedSubscription,
-      message: `Subscription extended until ${endDate.toISOString().split('T')[0]}`
+      code: 'SUBSCRIPTION_EXTENDED_SUCCESS', message: `Subscription extended until ${endDate.toISOString().split('T')[0]}`
     });
   } catch (error) {
     console.error('Error extending subscription:', error);

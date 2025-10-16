@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
+import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 import crypto from 'crypto';
@@ -29,7 +29,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid query', 
+        code: 'INVALID_QUERY', message: 'Invalid query', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -63,7 +63,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Access denied: Cannot view customers from other merchants' 
+          code: 'CROSS_MERCHANT_ACCESS_DENIED', message: 'Access denied: Cannot view customers from other merchants' 
         },
         { status: 403 }
       );
@@ -145,7 +145,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -161,6 +161,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       return NextResponse.json(
         { 
           success: false, 
+          code: 'MERCHANT_ID_REQUIRED',
           message: user.role === 'ADMIN' 
             ? 'MerchantId is required for ADMIN users when creating customers' 
             : 'User is not associated with any merchant'
@@ -180,7 +181,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       return NextResponse.json(
         { 
           success: false, 
-          message: error.message || 'Plan limit exceeded for customers',
+          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for customers',
           error: 'PLAN_LIMIT_EXCEEDED'
         },
         { status: 403 }
@@ -209,7 +210,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     return NextResponse.json({
       success: true,
       data: customer,
-      message: 'Customer created successfully'
+      code: 'CUSTOMER_CREATED_SUCCESS', message: 'Customer created successfully'
     });
 
   } catch (error: any) {
@@ -244,7 +245,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -286,7 +287,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: updatedCustomer,
-      message: 'Customer updated successfully'
+      code: 'CUSTOMER_UPDATED_SUCCESS', message: 'Customer updated successfully'
     });
 
   } catch (error: any) {

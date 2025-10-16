@@ -10,6 +10,7 @@ import {
 } from '@rentalshop/ui';
 import { Customer } from '@rentalshop/types';
 import { Eye, Edit, Trash2, ShoppingBag, MoreVertical } from 'lucide-react';
+import { useCustomerTranslations } from '@rentalshop/hooks';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -26,6 +27,7 @@ export function CustomerTable({
   sortOrder = 'desc',
   onSort
 }: CustomerTableProps) {
+  const t = useCustomerTranslations();
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
   
   if (customers.length === 0) {
@@ -34,9 +36,11 @@ export function CustomerTable({
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <div className="text-4xl mb-4">👥</div>
-            <h3 className="text-lg font-medium mb-2">No customers found</h3>
+            <h3 className="text-lg font-medium mb-2">
+              {t('messages.noCustomers')}
+            </h3>
             <p className="text-sm">
-              Try adjusting your filters or add some customers to get started.
+              {t('messages.noCustomersDescription')}
             </p>
           </div>
         </CardContent>
@@ -45,7 +49,7 @@ export function CustomerTable({
   }
 
   const formatDate = (dateString: string | Date | undefined) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return t('messages.na');
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -72,7 +76,7 @@ export function CustomerTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  ID
+                  {t('fields.id')}
                   {sortBy === 'id' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -83,31 +87,31 @@ export function CustomerTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Name
+                  {t('fields.name')}
                   {sortBy === 'name' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Contact
+                {t('fields.contact')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Location
+                {t('fields.location')}
               </th>
               <th 
                 onClick={() => handleSort('createdAt')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Created
+                  {t('fields.createdAt')}
                   {sortBy === 'createdAt' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
+                {t('actions.title')}
               </th>
             </tr>
           </thead>
@@ -186,21 +190,21 @@ export function CustomerTable({
                         setOpenDropdownId(null);
                       }}>
                         <Eye className="h-4 w-4 mr-2" />
-                        View Details
+                        {t('actions.view')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         onCustomerAction('edit', customer.id);
                         setOpenDropdownId(null);
                       }}>
                         <Edit className="h-4 w-4 mr-2" />
-                        Edit Customer
+                        {t('actions.editCustomer')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         onCustomerAction('viewOrders', customer.id);
                         setOpenDropdownId(null);
                       }}>
                         <ShoppingBag className="h-4 w-4 mr-2" />
-                        View Orders
+                        {t('actions.viewOrders')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
@@ -211,7 +215,7 @@ export function CustomerTable({
                         className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Customer
+                        {t('actions.deleteCustomer')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

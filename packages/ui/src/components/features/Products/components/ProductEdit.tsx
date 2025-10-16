@@ -9,6 +9,7 @@ import {
   Button
 } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
+import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
 import type { ProductInput, ProductWithStock, Outlet, Category } from '@rentalshop/types';
@@ -34,6 +35,8 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError } = useToast();
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
 
   // Debug: Log product data structure
   useEffect(() => {
@@ -136,7 +139,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       {/* Action Buttons */}
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
-          Cancel
+          {tc('buttons.cancel')}
         </Button>
         <Button 
           type="submit" 
@@ -147,12 +150,12 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Updating...
+              {t('messages.updating')}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              Update Product
+              {t('messages.updateProduct')}
             </>
           )}
         </Button>

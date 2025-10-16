@@ -162,6 +162,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       data: updatedOrder,
+      code: 'ORDER_STATUS_UPDATED_SUCCESS',
       message: responseMessage
     });
 

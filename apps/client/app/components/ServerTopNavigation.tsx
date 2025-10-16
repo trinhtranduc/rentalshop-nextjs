@@ -17,6 +17,7 @@ import {
   Menu
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
+import { useCommonTranslations } from '@rentalshop/hooks';
 
 export interface ServerTopNavigationProps {
   currentPage: string;
@@ -25,27 +26,28 @@ export interface ServerTopNavigationProps {
 
 export default function ServerTopNavigation({ currentPage, userRole }: ServerTopNavigationProps) {
   const { navigateTo, prefetchRoute } = useNavigation();
+  const t = useCommonTranslations();
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPage);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const allNavItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/orders', label: 'Orders', icon: ShoppingCart },
+    { href: '/dashboard', label: t('navigation.dashboard'), icon: Home },
+    { href: '/orders', label: t('navigation.orders'), icon: ShoppingCart },
     { 
       href: '/products', 
-      label: 'Products', 
+      label: t('navigation.products'), 
       icon: Package,
       submenu: [
-        { href: '/products', label: 'All Products', icon: Package },
-        { href: '/categories', label: 'Categories', icon: Tag },
+        { href: '/products', label: t('navigation.products'), icon: Package },
+        { href: '/categories', label: t('navigation.categories'), icon: Tag },
       ]
     },
-    { href: '/customers', label: 'Customers', icon: Users },
-    { href: '/users', label: 'Users', icon: User },
-    { href: '/outlets', label: 'Outlets', icon: Building2 },
-    { href: '/calendar', label: 'Calendar', icon: Calendar },
+    { href: '/customers', label: t('navigation.customers'), icon: Users },
+    { href: '/users', label: t('navigation.users'), icon: User },
+    { href: '/outlets', label: t('navigation.outlets'), icon: Building2 },
+    { href: '/calendar', label: t('navigation.calendar'), icon: Calendar },
   ];
 
   // Filter nav items based on user role
@@ -236,7 +238,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
               } ${clickedTab === '/settings' ? 'scale-95 bg-red-100 shadow-md' : ''}`}
             >
               <Settings className="w-4 h-4" />
-              Settings
+              {t('navigation.settings')}
             </Button>
           </div>
 
@@ -284,7 +286,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
               } ${clickedTab === '/settings' ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
             >
               <Settings className="w-5 h-5" />
-              Settings
+              {t('navigation.settings')}
             </Button>
           </div>
         </div>

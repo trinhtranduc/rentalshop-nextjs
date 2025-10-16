@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserRole } from './unified-auth.mjs';
 export { AuthContext, AuthOptions, AuthWrapper, AuthenticatedHandler, withAnyAuth, withAuthRoles, withManagementAuth, withMerchantAuth } from './unified-auth.mjs';
+import './i18n-jtAXDQUT.mjs';
 export { getCurrentUserClient, isAuthenticatedWithVerification as isAuthenticatedWithVerificationClient, loginUserClient, logoutUserClient, verifyTokenWithServer as verifyTokenWithServerClient } from './client.mjs';
 export { isAuthenticatedWithVerification as isAuthenticatedWithVerificationAdmin, verifyTokenWithServer as verifyTokenWithServerAdmin } from './admin.mjs';
 export { AuthResponse, isAuthenticated as isAuthenticatedAdmin, isAuthenticated as isAuthenticatedClient } from '@rentalshop/utils';
-import './user-CTt2xktn.mjs';
 
 interface LoginCredentials {
     email: string;

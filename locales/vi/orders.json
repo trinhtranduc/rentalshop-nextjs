@@ -30,6 +30,7 @@
   "dates": {
     "pickupDate": "Ngày lấy hàng",
     "returnDate": "Ngày trả hàng",
+    "returnLabel": "Trả hàng",
     "createdDate": "Ngày tạo",
     "completedDate": "Ngày hoàn thành"
   },
@@ -42,6 +43,12 @@
     "addItem": "Thêm sản phẩm",
     "removeItem": "Xóa sản phẩm",
     "noItems": "Không có sản phẩm trong đơn hàng"
+  },
+  "amount": {
+    "total": "Tổng tiền",
+    "deposit": "Đặt cọc",
+    "subtotal": "Tạm tính",
+    "grandTotal": "Tổng cộng"
   },
   "payment": {
     "subtotal": "Tạm tính",
@@ -58,6 +65,9 @@
     "other": "Khác"
   },
   "actions": {
+    "label": "Hành động",
+    "view": "Xem",
+    "edit": "Sửa",
     "markAsPickedUp": "Đánh dấu đã lấy hàng",
     "markAsReturned": "Đánh dấu đã trả hàng",
     "markAsCompleted": "Đánh dấu hoàn thành",
@@ -76,10 +86,39 @@
     "confirmDelete": "Bạn có chắc chắn muốn xóa đơn hàng này?",
     "confirmCancel": "Bạn có chắc chắn muốn hủy đơn hàng này?",
     "noOrders": "Không tìm thấy đơn hàng",
-    "loadingOrders": "Đang tải đơn hàng..."
+    "loadingOrders": "Đang tải đơn hàng...",
+    "viewingAllOrders": "Đang xem tất cả",
+    "mayBeSlow": "đơn hàng có thể chậm",
+    "cannotEditOrder": "Chỉ có thể sửa đơn hàng ở trạng thái RESERVED",
+    "errorLoadingOrders": "Lỗi khi tải đơn hàng"
+  },
+  "productOrders": {
+    "title": "Đơn hàng sản phẩm",
+    "description": "Xem và quản lý tất cả đơn hàng cho sản phẩm này",
+    "backToProducts": "Quay lại Sản phẩm",
+    "totalQuantity": "Tổng số lượng",
+    "totalSales": "Tổng doanh thu",
+    "reservedOrders": "Đơn hàng đã đặt",
+    "totalStock": "Tổng tồn kho",
+    "availableInventory": "Hàng tồn kho có sẵn",
+    "currentlyRented": "Đang cho thuê",
+    "outOnRental": "Đang cho thuê ngoài",
+    "availableNow": "Có sẵn ngay",
+    "readyToRent": "Sẵn sàng cho thuê",
+    "allTimeEarnings": "Doanh thu tích lũy"
   },
   "filters": {
     "all": "Tất cả đơn hàng",
+    "allStatus": "Tất cả trạng thái",
+    "allTypes": "Tất cả loại",
+    "allOutlets": "Tất cả cửa hàng",
+    "statusLabel": "Trạng thái",
+    "typeLabel": "Loại",
+    "outletLabel": "Cửa hàng",
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "noOutlets": "Không có cửa hàng",
+    "clear": "Xóa",
     "active": "Đang hoạt động",
     "completed": "Hoàn thành",
     "cancelled": "Đã hủy",
@@ -92,6 +131,20 @@
   "search": {
     "placeholder": "Tìm kiếm theo mã đơn, tên hoặc số điện thoại khách hàng...",
     "noResults": "Không tìm thấy đơn hàng phù hợp"
+  },
+  "stats": {
+    "totalOrders": "Tổng đơn hàng",
+    "allTimeOrders": "Tất cả đơn hàng",
+    "activeRentals": "Đơn thuê đang hoạt động",
+    "currentlyPickuped": "Đang được thuê",
+    "totalRevenue": "Tổng doanh thu",
+    "lifetimeRevenue": "Doanh thu toàn bộ",
+    "completedOrders": "Đơn hàng hoàn thành",
+    "avgOrder": "trung bình",
+    "totalDeposits": "Tổng tiền đặt cọc",
+    "averageOrderValue": "Giá trị đơn hàng trung bình",
+    "overdueRentals": "Đơn thuê quá hạn",
+    "revenueMetrics": "Chỉ số doanh thu"
   }
 }
 

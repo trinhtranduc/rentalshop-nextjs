@@ -15,6 +15,9 @@
   "profile": {
     "title": "Cài đặt hồ sơ",
     "subtitle": "Quản lý thông tin cá nhân của bạn",
+    "personalInformation": "Thông tin cá nhân",
+    "firstName": "Tên",
+    "lastName": "Họ",
     "name": "Họ và tên",
     "email": "Địa chỉ Email",
     "phone": "Số điện thoại",
@@ -22,7 +25,15 @@
     "avatar": "Ảnh đại diện",
     "updateButton": "Cập nhật hồ sơ",
     "uploadAvatar": "Tải ảnh lên",
-    "removeAvatar": "Xóa ảnh"
+    "removeAvatar": "Xóa ảnh",
+    "edit": "Chỉnh sửa",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "saving": "Đang lưu...",
+    "notProvided": "Chưa cung cấp",
+    "enterFirstName": "Nhập tên của bạn",
+    "enterLastName": "Nhập họ của bạn",
+    "enterPhone": "Nhập số điện thoại"
   },
   "account": {
     "title": "Cài đặt tài khoản",
@@ -31,28 +42,76 @@
     "dateFormat": "Định dạng ngày",
     "timeFormat": "Định dạng giờ",
     "numberFormat": "Định dạng số",
+    "changePasswordTitle": "Đổi mật khẩu",
+    "changePasswordDesc": "Cập nhật mật khẩu tài khoản",
+    "changePasswordButton": "Đổi mật khẩu",
+    "sessionTitle": "Quản lý phiên đăng nhập",
+    "sessionDesc": "Đăng xuất khỏi phiên hiện tại",
+    "signOut": "Đăng xuất",
+    "deleteAccountTitle": "Xóa tài khoản",
+    "deleteAccountDesc": "Xóa vĩnh viễn tài khoản và tất cả dữ liệu",
     "deleteAccount": "Xóa tài khoản",
+    "deleting": "Đang xóa...",
     "deleteAccountWarning": "Thao tác này không thể hoàn tác"
   },
   "merchant": {
     "title": "Cài đặt doanh nghiệp",
     "subtitle": "Quản lý thông tin doanh nghiệp",
+    "businessInformation": "Thông tin doanh nghiệp",
     "name": "Tên doanh nghiệp",
     "email": "Email doanh nghiệp",
     "phone": "Số điện thoại doanh nghiệp",
     "address": "Địa chỉ doanh nghiệp",
+    "city": "Thành phố",
+    "state": "Tỉnh/Thành",
+    "zipCode": "Mã bưu điện",
+    "country": "Quốc gia",
     "taxId": "Mã số thuế",
+    "businessType": "Loại hình kinh doanh",
+    "pricingType": "Loại giá",
     "registrationNumber": "Số đăng ký kinh doanh",
-    "logo": "Logo doanh nghiệp"
+    "logo": "Logo doanh nghiệp",
+    "edit": "Chỉnh sửa",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "saving": "Đang lưu...",
+    "notProvided": "Chưa cung cấp",
+    "enterBusinessName": "Nhập tên doanh nghiệp",
+    "enterTaxId": "Nhập mã số thuế",
+    "enterPhone": "Nhập số điện thoại",
+    "enterAddress": "Nhập địa chỉ",
+    "enterCity": "Nhập thành phố",
+    "enterState": "Nhập tỉnh/thành",
+    "enterZipCode": "Nhập mã bưu điện",
+    "selectCountry": "Chọn quốc gia",
+    "currencySettings": "Cài đặt tiền tệ",
+    "currencyDesc": "Chọn đơn vị tiền tệ ưa thích cho giá cả và giao dịch",
+    "usDollar": "Đô la Mỹ",
+    "vietnameseDong": "Đồng Việt Nam",
+    "selected": "Đã chọn",
+    "selectCurrency": "Chọn tiền tệ",
+    "savingCurrency": "Đang cập nhật tiền tệ..."
   },
   "outlet": {
     "title": "Cài đặt cửa hàng",
     "subtitle": "Quản lý thông tin cửa hàng",
+    "outletInformation": "Thông tin cửa hàng",
     "name": "Tên cửa hàng",
     "address": "Địa chỉ cửa hàng",
     "phone": "Số điện thoại cửa hàng",
+    "description": "Mô tả",
     "workingHours": "Giờ làm việc",
-    "contactPerson": "Người liên hệ"
+    "contactPerson": "Người liên hệ",
+    "edit": "Chỉnh sửa",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "saving": "Đang lưu...",
+    "notProvided": "Chưa cung cấp",
+    "noOutletInfo": "Không có thông tin cửa hàng",
+    "enterOutletName": "Nhập tên cửa hàng",
+    "enterOutletPhone": "Nhập số điện thoại cửa hàng",
+    "enterOutletAddress": "Nhập địa chỉ cửa hàng",
+    "enterDescription": "Nhập mô tả cửa hàng"
   },
   "security": {
     "title": "Cài đặt bảo mật",
@@ -73,7 +132,7 @@
     "currentPlan": "Gói hiện tại",
     "status": "Trạng thái",
     "billingCycle": "Chu kỳ thanh toán",
-    "nextBilling": "Ngày thanh toán tiếp theo",
+    "nextBilling": "Thanh toán tiếp theo",
     "amount": "Số tiền",
     "paymentMethod": "Phương thức thanh toán",
     "upgradePlan": "Nâng cấp gói",
@@ -81,7 +140,21 @@
     "cancelSubscription": "Hủy đăng ký",
     "viewInvoices": "Xem hóa đơn",
     "planFeatures": "Tính năng gói",
-    "usageStats": "Thống kê sử dụng"
+    "usageStats": "Thống kê sử dụng",
+    "loading": "Đang tải dữ liệu gói dịch vụ...",
+    "active": "Đang hoạt động",
+    "expired": "Đã hết hạn",
+    "expiringSoon": "Sắp hết hạn",
+    "daysRemaining": "ngày còn lại",
+    "cancelsAtPeriodEnd": "Hủy vào cuối kỳ",
+    "autoRenewalEnabled": "Tự động gia hạn",
+    "expiresIn": "Gói dịch vụ của bạn sẽ hết hạn trong",
+    "considerRenewing": "Hãy xem xét gia hạn để tránh gián đoạn dịch vụ.",
+    "contactMerchant": "Liên hệ quản trị viên doanh nghiệp để quản lý cài đặt gói dịch vụ.",
+    "comingSoon": "Tính năng quản lý gói dịch vụ sẽ sớm ra mắt.",
+    "noSubscription": "Chưa có gói dịch vụ",
+    "noSubscriptionDesc": "Bạn chưa có gói đăng ký nào.",
+    "contactAdmin": "Vui lòng liên hệ quản trị viên hệ thống để kích hoạt gói dịch vụ."
   },
   "currency": {
     "title": "Cài đặt tiền tệ",
@@ -95,12 +168,15 @@
   },
   "language": {
     "title": "Cài đặt ngôn ngữ",
-    "subtitle": "Chọn ngôn ngữ hiển thị",
+    "subtitle": "Chọn ngôn ngữ hiển thị ưa thích cho giao diện",
     "selectLanguage": "Chọn ngôn ngữ",
     "currentLanguage": "Ngôn ngữ hiện tại",
     "english": "English",
     "vietnamese": "Tiếng Việt",
-    "updateButton": "Cập nhật ngôn ngữ"
+    "updateButton": "Cập nhật ngôn ngữ",
+    "selectALanguage": "Chọn một ngôn ngữ",
+    "applyingChanges": "Đang áp dụng thay đổi ngôn ngữ...",
+    "languagePreferenceSaved": "Tùy chọn ngôn ngữ của bạn được lưu tự động và sẽ được sử dụng trong tất cả các phiên làm việc."
   },
   "notifications": {
     "title": "Cài đặt thông báo",
@@ -113,6 +189,69 @@
     "systemAlerts": "Cảnh báo hệ thống",
     "marketingEmails": "Email quảng cáo"
   },
+  "billing": {
+    "title": "Cấu hình thanh toán",
+    "subtitle": "Cấu hình chu kỳ thanh toán và tỷ lệ chiết khấu",
+    "modernSubscription": "Thanh toán đăng ký hiện đại",
+    "modernSubscriptionDesc": "Cấu hình chu kỳ thanh toán và tỷ lệ chiết khấu theo thực hành đăng ký hiện đại của Stripe. Cam kết dài hạn thường nhận được chiết khấu cao hơn để khuyến khích giữ chân khách hàng.",
+    "intervals": {
+      "title": "Chu kỳ thanh toán",
+      "addInterval": "Thêm chu kỳ",
+      "editInterval": "Chỉnh sửa chu kỳ thanh toán",
+      "addNewInterval": "Thêm chu kỳ thanh toán mới",
+      "name": "Tên",
+      "months": "Tháng",
+      "discount": "Chiết khấu",
+      "status": "Trạng thái",
+      "actions": "Hành động",
+      "active": "Kích hoạt",
+      "namePlaceholder": "ví dụ: Hàng tháng, Hàng quý",
+      "update": "Cập nhật",
+      "add": "Thêm",
+      "cancel": "Hủy",
+      "saveConfiguration": "Lưu cấu hình",
+      "saving": "Đang lưu..."
+    },
+    "examples": {
+      "monthly": "Hàng tháng",
+      "quarterly": "Hàng quý",
+      "yearly": "Hàng năm",
+      "monthlyDesc": "0% chiết khấu - Giá tiêu chuẩn",
+      "quarterlyDesc": "5% chiết khấu - Tốt cho việc giữ chân khách hàng",
+      "yearlyDesc": "20% chiết khấu - Giá trị tốt nhất"
+    },
+    "messages": {
+      "saveSuccess": "Cấu hình thanh toán đã được lưu thành công!",
+      "saveFailed": "Không thể lưu cấu hình thanh toán",
+      "saveError": "Lỗi khi lưu cấu hình thanh toán. Vui lòng thử lại."
+    }
+  },
+  "menuItems": {
+    "profile": {
+      "label": "Hồ sơ",
+      "description": "Quản lý thông tin cá nhân của bạn"
+    },
+    "merchant": {
+      "label": "Doanh nghiệp",
+      "description": "Quản lý thông tin doanh nghiệp, giá cả và tiền tệ"
+    },
+    "outlet": {
+      "label": "Cửa hàng",
+      "description": "Quản lý thông tin cửa hàng"
+    },
+    "subscription": {
+      "label": "Gói dịch vụ",
+      "description": "Quản lý gói đăng ký và thanh toán"
+    },
+    "language": {
+      "label": "Ngôn ngữ",
+      "description": "Chọn ngôn ngữ hiển thị ưa thích"
+    },
+    "account": {
+      "label": "Tài khoản",
+      "description": "Cài đặt tài khoản, mật khẩu và tùy chọn"
+    }
+  },
   "messages": {
     "updateSuccess": "Cập nhật cài đặt thành công",
     "updateFailed": "Cập nhật cài đặt thất bại",
@@ -120,7 +259,31 @@
     "passwordChangeFailed": "Đổi mật khẩu thất bại",
     "confirmDelete": "Bạn có chắc chắn muốn xóa tài khoản?",
     "deleteSuccess": "Xóa tài khoản thành công",
-    "deleteFailed": "Xóa tài khoản thất bại"
+    "deleteFailed": "Xóa tài khoản thất bại",
+    "personalProfileUpdated": "Cập nhật hồ sơ cá nhân thành công!",
+    "personalProfileUpdateFailed": "Không thể cập nhật hồ sơ cá nhân",
+    "businessInfoUpdated": "Cập nhật thông tin doanh nghiệp thành công!",
+    "businessInfoUpdateFailed": "Không thể cập nhật thông tin doanh nghiệp",
+    "outletInfoUpdated": "Cập nhật thông tin cửa hàng thành công!",
+    "outletInfoUpdateFailed": "Không thể cập nhật thông tin cửa hàng",
+    "currencyUpdated": "Cập nhật tiền tệ thành công!",
+    "currencyUpdateFailed": "Không thể cập nhật tiền tệ",
+    "accountDeleted": "Tài khoản của bạn đã được xóa thành công.",
+    "accountDeleteFailed": "Không thể xóa tài khoản. Vui lòng thử lại.",
+    "passwordMismatch": "Mật khẩu mới không khớp",
+    "passwordTooShort": "Mật khẩu mới phải có ít nhất 6 ký tự"
+  },
+  "changePassword": {
+    "title": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu mới",
+    "currentPasswordPlaceholder": "Nhập mật khẩu hiện tại",
+    "newPasswordPlaceholder": "Nhập mật khẩu mới",
+    "confirmPasswordPlaceholder": "Xác nhận mật khẩu mới",
+    "cancel": "Hủy",
+    "changePassword": "Đổi mật khẩu",
+    "changing": "Đang đổi..."
   }
 }
 

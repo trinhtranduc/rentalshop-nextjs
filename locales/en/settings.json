@@ -15,6 +15,9 @@
   "profile": {
     "title": "Profile Settings",
     "subtitle": "Manage your personal information",
+    "personalInformation": "Personal Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
     "name": "Full Name",
     "email": "Email Address",
     "phone": "Phone Number",
@@ -22,7 +25,15 @@
     "avatar": "Profile Picture",
     "updateButton": "Update Profile",
     "uploadAvatar": "Upload Photo",
-    "removeAvatar": "Remove Photo"
+    "removeAvatar": "Remove Photo",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "notProvided": "Not provided",
+    "enterFirstName": "Enter your first name",
+    "enterLastName": "Enter your last name",
+    "enterPhone": "Enter your phone number"
   },
   "account": {
     "title": "Account Settings",
@@ -31,28 +42,76 @@
     "dateFormat": "Date Format",
     "timeFormat": "Time Format",
     "numberFormat": "Number Format",
+    "changePasswordTitle": "Change Password",
+    "changePasswordDesc": "Update your account password",
+    "changePasswordButton": "Change Password",
+    "sessionTitle": "Session Management",
+    "sessionDesc": "Sign out of your current session",
+    "signOut": "Sign Out",
+    "deleteAccountTitle": "Delete Account",
+    "deleteAccountDesc": "Permanently delete your account and all data",
     "deleteAccount": "Delete Account",
+    "deleting": "Deleting...",
     "deleteAccountWarning": "This action cannot be undone"
   },
   "merchant": {
     "title": "Business Settings",
     "subtitle": "Manage your business information",
+    "businessInformation": "Business Information",
     "name": "Business Name",
     "email": "Business Email",
     "phone": "Business Phone",
     "address": "Business Address",
+    "city": "City",
+    "state": "State",
+    "zipCode": "ZIP Code",
+    "country": "Country",
     "taxId": "Tax ID",
+    "businessType": "Business Type",
+    "pricingType": "Pricing Type",
     "registrationNumber": "Registration Number",
-    "logo": "Business Logo"
+    "logo": "Business Logo",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "notProvided": "Not provided",
+    "enterBusinessName": "Enter business name",
+    "enterTaxId": "Enter tax ID",
+    "enterPhone": "Enter phone number",
+    "enterAddress": "Enter address",
+    "enterCity": "Enter city",
+    "enterState": "Enter state",
+    "enterZipCode": "Enter ZIP code",
+    "selectCountry": "Select country",
+    "currencySettings": "Currency Settings",
+    "currencyDesc": "Select your preferred currency for pricing and transactions",
+    "usDollar": "US Dollar",
+    "vietnameseDong": "Vietnamese Dong",
+    "selected": "Selected",
+    "selectCurrency": "Select Currency",
+    "savingCurrency": "Updating currency..."
   },
   "outlet": {
     "title": "Outlet Settings",
     "subtitle": "Manage your outlet information",
+    "outletInformation": "Outlet Information",
     "name": "Outlet Name",
     "address": "Outlet Address",
     "phone": "Outlet Phone",
+    "description": "Description",
     "workingHours": "Working Hours",
-    "contactPerson": "Contact Person"
+    "contactPerson": "Contact Person",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "notProvided": "Not provided",
+    "noOutletInfo": "No outlet information available",
+    "enterOutletName": "Enter outlet name",
+    "enterOutletPhone": "Enter outlet phone",
+    "enterOutletAddress": "Enter outlet address",
+    "enterDescription": "Enter outlet description"
   },
   "security": {
     "title": "Security Settings",
@@ -73,7 +132,7 @@
     "currentPlan": "Current Plan",
     "status": "Status",
     "billingCycle": "Billing Cycle",
-    "nextBilling": "Next Billing Date",
+    "nextBilling": "Next Billing",
     "amount": "Amount",
     "paymentMethod": "Payment Method",
     "upgradePlan": "Upgrade Plan",
@@ -81,7 +140,21 @@
     "cancelSubscription": "Cancel Subscription",
     "viewInvoices": "View Invoices",
     "planFeatures": "Plan Features",
-    "usageStats": "Usage Statistics"
+    "usageStats": "Usage Statistics",
+    "loading": "Loading subscription data...",
+    "active": "Active",
+    "expired": "Expired",
+    "expiringSoon": "Expiring Soon",
+    "daysRemaining": "days remaining",
+    "cancelsAtPeriodEnd": "Cancels at period end",
+    "autoRenewalEnabled": "Auto-renewal enabled",
+    "expiresIn": "Your subscription expires in",
+    "considerRenewing": "Consider renewing to avoid service interruption.",
+    "contactMerchant": "Contact your merchant administrator to manage subscription settings.",
+    "comingSoon": "Subscription management features coming soon.",
+    "noSubscription": "No Active Subscription",
+    "noSubscriptionDesc": "You don't have an active subscription plan.",
+    "contactAdmin": "Please contact your system administrator to activate a subscription plan."
   },
   "currency": {
     "title": "Currency Settings",
@@ -95,12 +168,15 @@
   },
   "language": {
     "title": "Language Settings",
-    "subtitle": "Select your preferred language",
+    "subtitle": "Select your preferred language for the interface",
     "selectLanguage": "Select Language",
     "currentLanguage": "Current Language",
     "english": "English",
     "vietnamese": "Tiếng Việt",
-    "updateButton": "Update Language"
+    "updateButton": "Update Language",
+    "selectALanguage": "Select a language",
+    "applyingChanges": "Applying language changes...",
+    "languagePreferenceSaved": "Your language preference is saved automatically and will be used across all your sessions."
   },
   "notifications": {
     "title": "Notification Settings",
@@ -113,6 +189,69 @@
     "systemAlerts": "System Alerts",
     "marketingEmails": "Marketing Emails"
   },
+  "billing": {
+    "title": "Billing Configuration",
+    "subtitle": "Configure billing intervals and discount percentages",
+    "modernSubscription": "Modern Subscription Billing",
+    "modernSubscriptionDesc": "Configure billing intervals and discount percentages following Stripe's modern subscription practices. Longer commitments typically receive higher discounts to encourage customer retention.",
+    "intervals": {
+      "title": "Billing Intervals",
+      "addInterval": "Add Interval",
+      "editInterval": "Edit Billing Interval",
+      "addNewInterval": "Add Billing Interval",
+      "name": "Name",
+      "months": "Months",
+      "discount": "Discount",
+      "status": "Status",
+      "actions": "Actions",
+      "active": "Active",
+      "namePlaceholder": "e.g., Monthly, Quarterly",
+      "update": "Update",
+      "add": "Add",
+      "cancel": "Cancel",
+      "saveConfiguration": "Save Configuration",
+      "saving": "Saving..."
+    },
+    "examples": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly", 
+      "yearly": "Yearly",
+      "monthlyDesc": "0% discount - Standard pricing",
+      "quarterlyDesc": "5% discount - Good for retention",
+      "yearlyDesc": "20% discount - Best value"
+    },
+    "messages": {
+      "saveSuccess": "Billing configuration saved successfully!",
+      "saveFailed": "Failed to save billing configuration",
+      "saveError": "Error saving billing configuration. Please try again."
+    }
+  },
+  "menuItems": {
+    "profile": {
+      "label": "Profile",
+      "description": "Manage your personal information"
+    },
+    "merchant": {
+      "label": "Business", 
+      "description": "Manage your business information, pricing, and currency"
+    },
+    "outlet": {
+      "label": "Outlet",
+      "description": "Manage your outlet information"
+    },
+    "subscription": {
+      "label": "Subscription",
+      "description": "Manage your subscription and billing"
+    },
+    "language": {
+      "label": "Language",
+      "description": "Select your preferred language"
+    },
+    "account": {
+      "label": "Account",
+      "description": "Account settings, password and preferences"
+    }
+  },
   "messages": {
     "updateSuccess": "Settings updated successfully",
     "updateFailed": "Failed to update settings",
@@ -120,7 +259,31 @@
     "passwordChangeFailed": "Failed to change password",
     "confirmDelete": "Are you sure you want to delete your account?",
     "deleteSuccess": "Account deleted successfully",
-    "deleteFailed": "Failed to delete account"
+    "deleteFailed": "Failed to delete account",
+    "personalProfileUpdated": "Personal profile updated successfully!",
+    "personalProfileUpdateFailed": "Failed to update personal profile",
+    "businessInfoUpdated": "Business information updated successfully!",
+    "businessInfoUpdateFailed": "Failed to update business information",
+    "outletInfoUpdated": "Outlet information updated successfully!",
+    "outletInfoUpdateFailed": "Failed to update outlet information",
+    "currencyUpdated": "Currency updated successfully!",
+    "currencyUpdateFailed": "Failed to update currency",
+    "accountDeleted": "Your account has been deleted successfully.",
+    "accountDeleteFailed": "Failed to delete account. Please try again.",
+    "passwordMismatch": "New passwords do not match",
+    "passwordTooShort": "New password must be at least 6 characters"
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "currentPasswordPlaceholder": "Enter your current password",
+    "newPasswordPlaceholder": "Enter your new password",
+    "confirmPasswordPlaceholder": "Confirm your new password",
+    "cancel": "Cancel",
+    "changePassword": "Change Password",
+    "changing": "Changing..."
   }
 }
 

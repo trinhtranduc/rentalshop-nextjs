@@ -1,3 +1,9 @@
+// Import next-intl plugin for proper i18n configuration
+const createNextIntlPlugin = require('next-intl/plugin');
+
+// Create the plugin with the path to i18n config
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // CRITICAL for Railway deployment - reduces bundle size by 90%
@@ -125,4 +131,5 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig; 
+// Export config wrapped with next-intl plugin
+module.exports = withNextIntl(nextConfig); 

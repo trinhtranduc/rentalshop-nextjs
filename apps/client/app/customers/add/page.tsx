@@ -4,7 +4,7 @@ import { useToast, Button } from '@rentalshop/ui';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { customersApi } from "@rentalshop/utils";
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useCommonTranslations } from '@rentalshop/hooks';
 import type { CustomerInput, CustomerCreateInput } from '@rentalshop/types';
 
 export default function AddCustomerPage() {
@@ -19,7 +19,7 @@ export default function AddCustomerPage() {
   const handleSave = async (customerData: CustomerCreateInput) => {
     try {
       if (!merchantId) {
-        throw new Error('Merchant ID not found. Please log in again.');
+        throw new Error(tc('messages.sessionExpired'));
       }
 
       setIsSubmitting(true);
@@ -95,7 +95,7 @@ export default function AddCustomerPage() {
               variant="link"
               className="mt-4"
             >
-              Back to Customers
+              {tc('buttons.back')}
             </Button>
           </div>
         </PageContent>
@@ -110,7 +110,7 @@ export default function AddCustomerPage() {
           title="Add New Customer"
           subtitle="Create a new customer account with basic information"
           onBack={handleCancel}
-          backText="Back to Customers"
+          backText={tc('buttons.back')}
         />
       </PageHeader>
 

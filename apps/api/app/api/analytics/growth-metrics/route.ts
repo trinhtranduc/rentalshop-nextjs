@@ -86,7 +86,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           orders: { current: 0, previous: 0, growth: 0 },
           revenue: { current: 0, previous: 0, growth: 0 }
         },
-        message: 'No data available - user not assigned to merchant/outlet'
+        code: 'NO_DATA_AVAILABLE', message: 'No data available - user not assigned to merchant/outlet'
       });
     }
 
@@ -139,7 +139,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: growthMetrics,
-      message: 'Growth metrics retrieved successfully'
+      code: 'GROWTH_METRICS_SUCCESS', message: 'Growth metrics retrieved successfully'
     });
 
   } catch (error) {

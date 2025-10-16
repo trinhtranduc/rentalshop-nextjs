@@ -641,14 +641,14 @@ function createAuthMiddleware(config = {}) {
           return await next();
         }
         return import_server2.NextResponse.json(
-          { success: false, message: "Access token required" },
+          { success: false, code: "ACCESS_TOKEN_REQUIRED", message: "Access token required" },
           { status: 401 }
         );
       }
       const user = await (0, import_auth3.verifyTokenSimple)(token);
       if (!user) {
         return import_server2.NextResponse.json(
-          { success: false, message: "Invalid or expired token" },
+          { success: false, code: "INVALID_TOKEN", message: "Invalid or expired token" },
           { status: 401 }
         );
       }
@@ -657,14 +657,14 @@ function createAuthMiddleware(config = {}) {
           (0, import_auth3.assertAnyRole)(user, requiredRoles);
         } catch {
           return import_server2.NextResponse.json(
-            { success: false, message: "Insufficient permissions" },
+            { success: false, code: "INSUFFICIENT_PERMISSIONS", message: "Insufficient permissions" },
             { status: API.STATUS.FORBIDDEN }
           );
         }
       }
       if (customAuth && !customAuth(user, request)) {
         return import_server2.NextResponse.json(
-          { success: false, message: "Access denied" },
+          { success: false, code: "ACCESS_DENIED", message: "Access denied" },
           { status: API.STATUS.FORBIDDEN }
         );
       }
@@ -678,7 +678,7 @@ function createAuthMiddleware(config = {}) {
     } catch (error) {
       console.error("Auth middleware error:", error);
       return import_server2.NextResponse.json(
-        { success: false, message: "Authentication failed" },
+        { success: false, code: "AUTHENTICATION_FAILED", message: "Authentication failed" },
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -1101,7 +1101,7 @@ function withSubscriptionValidation2(handler) {
     const userRole = request.headers.get("x-user-role");
     if (!userId || !userEmail || !userRole) {
       return import_server4.NextResponse.json(
-        { success: false, message: "User information not found in request" },
+        { success: false, code: "USER_INFO_NOT_FOUND", message: "User information not found in request" },
         { status: API.STATUS.UNAUTHORIZED }
       );
     }

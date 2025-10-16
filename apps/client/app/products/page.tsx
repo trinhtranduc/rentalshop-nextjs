@@ -20,7 +20,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useProductsData, useCanExportData } from '@rentalshop/hooks';
+import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import type { ProductFilters, Product, ProductWithDetails, ProductUpdateInput, Category, Outlet } from '@rentalshop/types';
 
@@ -56,6 +56,8 @@ export default function ProductsPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
   const canExport = useCanExportData();
   
   // Dialog states
@@ -209,10 +211,10 @@ export default function ProductsPage() {
             setSelectedProduct(response.data as ProductWithDetails);
             setShowDetailDialog(true);
           } else {
-            toastError('Error', 'Failed to fetch product details');
+            toastError(tc('labels.error'), t('messages.updateFailed'));
           }
         } catch (error) {
-          toastError('Error', (error as Error).message);
+            toastError(tc('labels.error'), (error as Error).message);
         }
         break;
         
@@ -224,10 +226,10 @@ export default function ProductsPage() {
             setSelectedProduct(response.data as ProductWithDetails);
             setShowEditDialog(true);
           } else {
-            toastError('Error', 'Failed to fetch product details');
+            toastError(tc('labels.error'), t('messages.updateFailed'));
           }
         } catch (error) {
-          toastError('Error', (error as Error).message);
+            toastError(tc('labels.error'), (error as Error).message);
         }
         break;
         
@@ -245,15 +247,15 @@ export default function ProductsPage() {
             });
             if (response.success) {
               toastSuccess(
-                'Product Updated', 
-                `Product status changed to ${!product.isActive ? 'active' : 'inactive'}`
+                t('messages.updateSuccess'), 
+                t('messages.updateSuccess')
               );
               router.refresh();
             } else {
-              throw new Error(response.error || 'Failed to update product');
+              throw new Error(response.error || t('messages.updateFailed'));
             }
           } catch (error) {
-            toastError('Update Failed', (error as Error).message);
+            toastError(t('messages.updateFailed'), (error as Error).message);
           }
         }
         break;
@@ -278,15 +280,15 @@ export default function ProductsPage() {
     try {
       const response = await productsApi.updateProduct(selectedProduct.id, productData);
       if (response.success) {
-        toastSuccess('Product Updated', 'Product has been updated successfully');
+        toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
         setShowEditDialog(false);
         setSelectedProduct(null);
         router.refresh();
       } else {
-        throw new Error(response.error || 'Failed to update product');
+        throw new Error(response.error || t('messages.updateFailed'));
       }
     } catch (error) {
-      toastError('Update Failed', (error as Error).message);
+      toastError(t('messages.updateFailed'), (error as Error).message);
       throw error;
     }
   }, [selectedProduct, router, toastSuccess, toastError]);
@@ -298,15 +300,15 @@ export default function ProductsPage() {
     try {
       const response = await productsApi.deleteProduct(productToDelete.id);
       if (response.success) {
-        toastSuccess('Product Deleted', `Product "${productToDelete.name}" has been deleted successfully`);
+        toastSuccess(t('messages.deleteSuccess'), t('messages.deleteSuccess'));
         setShowDeleteConfirm(false);
         setProductToDelete(null);
         router.refresh();
       } else {
-        throw new Error(response.error || 'Failed to delete product');
+        throw new Error(response.error || t('messages.deleteFailed'));
       }
     } catch (error) {
-      toastError('Delete Failed', (error as Error).message);
+        toastError(t('messages.deleteFailed'), (error as Error).message);
     }
   }, [productToDelete, router, toastSuccess, toastError]);
 
@@ -346,8 +348,8 @@ export default function ProductsPage() {
     return (
       <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
         <PageHeader className="flex-shrink-0">
-          <PageTitle>Products</PageTitle>
-          <p className="text-sm text-gray-600">Manage your product catalog with outlet stock allocation</p>
+          <PageTitle>{t('title')}</PageTitle>
+          <p className="text-sm text-gray-600">{t('title')}</p>
         </PageHeader>
         <ProductsLoading />
       </PageWrapper>
@@ -359,21 +361,21 @@ export default function ProductsPage() {
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle>Products</PageTitle>
-            <p className="text-sm text-gray-600">Manage your product catalog with outlet stock allocation</p>
+            <PageTitle>{t('title')}</PageTitle>
+            <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
             {/* Export feature - temporarily hidden, will be enabled in the future */}
             {/* {canExport && (
               <Button
                 onClick={() => {
-                  toastSuccess('Export Feature', 'Export functionality coming soon!');
+                  toastSuccess(tc('labels.info'), tc('messages.comingSoon'));
                 }}
                 variant="default"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Export
+                {tc('buttons.export')}
               </Button>
             )} */}
             <Button 
@@ -382,7 +384,7 @@ export default function ProductsPage() {
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Product
+              {t('createProduct')}
             </Button>
           </div>
         </div>
@@ -406,7 +408,7 @@ export default function ProductsPage() {
         <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Product Details</DialogTitle>
+              <DialogTitle>{t('productDetails')}</DialogTitle>
             </DialogHeader>
             <ProductDetail
               product={selectedProduct}
@@ -433,19 +435,19 @@ export default function ProductsPage() {
             const response = await productsApi.createProduct(productData);
             
             if (response.success) {
-              toastSuccess('Product Created', `Product "${productData.name}" has been created successfully`);
+              toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
               router.refresh();
             } else {
-              throw new Error(response.error || 'Failed to create product');
+              throw new Error(response.error || t('messages.createFailed'));
             }
           } catch (error) {
             console.error('Error creating product:', error);
-            toastError('Error', error instanceof Error ? error.message : 'Failed to create product');
+            toastError(tc('labels.error'), error instanceof Error ? error.message : t('messages.createFailed'));
             throw error; // Re-throw to let dialog handle it
           }
         }}
         onError={(error) => {
-          toastError('Error', error);
+          toastError(tc('labels.error'), error);
         }}
       />
 
@@ -454,7 +456,7 @@ export default function ProductsPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Edit Product: {selectedProduct?.name}
+              {t('editProduct')}: {selectedProduct?.name}
             </DialogTitle>
           </DialogHeader>
           {selectedProduct && (
@@ -493,10 +495,10 @@ export default function ProductsPage() {
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         type="danger"
-        title="Delete Product"
-        description={`Are you sure you want to delete product "${productToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Delete Product"
-        cancelText="Cancel"
+        title={t('actions.delete')}
+        description={t('messages.confirmDelete')}
+        confirmText={t('actions.delete')}
+        cancelText={tc('buttons.cancel')}
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           setShowDeleteConfirm(false);

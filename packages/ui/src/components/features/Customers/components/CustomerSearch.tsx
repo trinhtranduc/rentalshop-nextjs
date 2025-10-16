@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { Input, Button } from '@rentalshop/ui';
 import { CustomerFilters } from '@rentalshop/types';
+import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface CustomerSearchProps {
   filters: CustomerFilters;
@@ -16,6 +17,9 @@ interface CustomerSearchProps {
  * - No labels, clean inline
  */
 export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onClearFilters }: CustomerSearchProps) {
+  const t = useCustomerTranslations();
+  const tc = useCommonTranslations();
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearchChange(e.target.value);
   };
@@ -26,7 +30,7 @@ export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onCle
       <div className="flex-1 min-w-[280px]">
         <div className="relative">
           <Input
-            placeholder="Search customers..."
+            placeholder={t('search.placeholder')}
             value={filters.search || ''}
             onChange={handleInputChange}
             className="pl-9 h-10"
@@ -55,7 +59,7 @@ export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onCle
           onClick={onClearFilters}
           className="h-10"
         >
-          Clear
+          {tc('buttons.clear')}
         </Button>
       )}
     </>

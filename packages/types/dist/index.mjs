@@ -33,6 +33,10 @@ function calculatePricing(basePrice, period) {
   };
 }
 
-export { PRICING_CONFIG, calculatePricing };
+// src/i18n.ts
+var defaultLocale = "en";
+var locales = ["en", "vi"];
+
+export { PRICING_CONFIG, calculatePricing, defaultLocale, locales };
 //# sourceMappingURL=out.js.map
 //# sourceMappingURL=index.mjs.map

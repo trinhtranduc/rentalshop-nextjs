@@ -5,6 +5,8 @@ import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input } from "@rentalshop/ui";
+import { useAuthTranslations } from "@rentalshop/hooks";
+import { LanguageSwitcher } from "../layout/LanguageSwitcher";
 
 // Types for the login form
 interface LoginFormData {
@@ -30,15 +32,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onInputChange,
 }) => {
   const [viewPass, setViewPass] = useState(false);
+  const t = useAuthTranslations();
 
   // Validation schema
   const validationSchema = Yup.object({
     email: Yup.string()
-      .email("Please enter a valid email")
-      .required("Please enter your email"),
+      .email(t('login.invalidEmail'))
+      .required(t('login.invalidEmail')),
     password: Yup.string()
-      .min(6, "Password must be at least 6 characters")
-      .required("Please enter your password"),
+      .min(6, t('login.invalidPassword'))
+      .required(t('login.invalidPassword')),
   });
 
   const validation = useFormik<LoginFormData>({
@@ -72,7 +75,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative">
+      {/* Language Switcher - Top Right */}
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher variant="compact" />
+      </div>
+
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-6">
@@ -82,10 +90,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
             </div>
           </div>
           <h1 className="mt-4 text-2xl font-bold text-gray-800">
-            {isAdmin ? "Admin Login" : "Welcome back"}
+            {isAdmin ? "Admin Login" : t('login.title')}
           </h1>
           <p className="mt-2 text-sm text-gray-600">
-            {isAdmin ? "Sign in to admin panel" : "Sign in to continue to RentalShop"}
+            {isAdmin ? "Sign in to admin panel" : t('login.subtitle')}
           </p>
         </div>
 
@@ -93,10 +101,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
         <Card className="shadow-lg">
           <CardHeader className="text-center border-b border-gray-200 bg-gray-50 rounded-t-lg">
             <CardTitle className="text-xl font-semibold text-gray-800">
-              {isAdmin ? "Admin Sign In" : "Sign in to your account"}
+              {isAdmin ? "Admin Sign In" : t('login.title')}
             </CardTitle>
             <CardDescription className="text-sm text-gray-600 mt-1">
-              Enter your credentials below
+              {t('login.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
@@ -112,13 +120,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 {/* Email Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
+                    {t('login.email')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={t('login.email')}
                       className="pl-10"
                       onChange={(e) => {
                         validation.handleChange(e);
@@ -139,13 +147,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 {/* Password Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password
+                    {t('login.password')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       type={viewPass ? "text" : "password"}
-                      placeholder="Enter your password"
+                      placeholder={t('login.password')}
                       className="pl-10 pr-10"
                       onChange={(e) => {
                         validation.handleChange(e);
@@ -184,7 +192,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
                   />
                   <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
-                    Remember me
+                    {t('login.rememberMe')}
                   </label>
                 </div>
 
@@ -197,10 +205,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
                   {loading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Signing in...
+                      {t('login.loginButton')}...
                     </div>
                   ) : (
-                    "Sign in"
+                    t('login.loginButton')
                   )}
                 </Button>
               </div>
@@ -212,13 +220,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
         <div className="mt-6 text-center space-y-2">
           {!isAdmin && (
             <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
+              {t('login.noAccount')}{" "}
               <Button
                 variant="link"
                 onClick={() => onNavigate?.("/register")}
                 className="font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto"
               >
-                Sign up now
+                {t('login.signUp')}
               </Button>
             </p>
           )}
@@ -229,7 +237,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               onClick={() => onNavigate?.("/forget-password")}
               className="font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto"
             >
-              Forgot your password?
+              {t('login.forgotPassword')}
             </Button>
           </p>
         </div>

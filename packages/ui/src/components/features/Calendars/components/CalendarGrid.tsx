@@ -1,5 +1,6 @@
 import React from 'react';
 import { CalendarDay, PickupOrder } from '@rentalshop/types';
+import { useCalendarTranslations } from '@rentalshop/hooks';
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -16,6 +17,7 @@ export function CalendarGrid({
   onDateClick,
   className = ''
 }: CalendarGridProps) {
+  const t = useCalendarTranslations();
   // Generate calendar days for the current month
   const calendarDays = React.useMemo(() => {
     
@@ -94,7 +96,10 @@ export function CalendarGrid({
   }, [currentDate, orders, selectedDate]);
 
   // Weekday headers
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekdays = [
+    t('days.sunday'), t('days.monday'), t('days.tuesday'), t('days.wednesday'), 
+    t('days.thursday'), t('days.friday'), t('days.saturday')
+  ];
 
   return (
     <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${className}`}>
@@ -145,7 +150,7 @@ export function CalendarGrid({
                   {/* Pickup Count */}
                   {(day as any).pickupCount > 0 && (
                     <div className="flex items-center justify-between px-2 py-1 bg-green-50 border border-green-200 rounded text-xs">
-                      <span className="text-green-700 font-medium">Pickup</span>
+                      <span className="text-green-700 font-medium">{t('labels.pickup')}</span>
                       <span className="text-green-800 font-bold">{(day as any).pickupCount}</span>
                     </div>
                   )}
@@ -153,14 +158,14 @@ export function CalendarGrid({
                   {/* Return Count */}
                   {(day as any).returnCount > 0 && (
                     <div className="flex items-center justify-between px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs">
-                      <span className="text-blue-700 font-medium">Return</span>
+                      <span className="text-blue-700 font-medium">{t('labels.return')}</span>
                       <span className="text-blue-800 font-bold">{(day as any).returnCount}</span>
                     </div>
                   )}
                   
                   {/* More indicator */}
                   <div className="text-xs text-gray-400 text-left">
-                    More...
+                    {t('labels.more')}
                   </div>
                 </div>
               )}
@@ -168,7 +173,7 @@ export function CalendarGrid({
               {/* No events message */}
               {!(day as any).hasEvents && day.isCurrentMonth && (
                 <div className="text-xs text-gray-400 text-center py-2">
-                  No orders
+                  {t('labels.noOrders')}
                 </div>
               )}
             </div>

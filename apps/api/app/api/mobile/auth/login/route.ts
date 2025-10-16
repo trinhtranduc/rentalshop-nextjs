@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     // Mobile-specific response with refresh token and device info
     return NextResponse.json({
       success: true,
-      message: 'Mobile login successful',
+      code: 'MOBILE_LOGIN_SUCCESS', message: 'Mobile login successful',
       data: {
         ...result,
         refreshToken: 'mobile-refresh-token-' + Date.now(), // Generate refresh token

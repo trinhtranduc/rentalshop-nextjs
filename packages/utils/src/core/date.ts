@@ -140,4 +140,31 @@ export const formatDateTimeShort = (date: Date | string | null | undefined): str
   } catch {
     return 'Invalid Date';
   }
+};
+
+/**
+ * Format date with locale support
+ * @param date - Date object or date string
+ * @param locale - Locale code ('en' or 'vi')
+ * @param options - Intl.DateTimeFormatOptions
+ * @returns Formatted date string
+ */
+export const formatDateWithLocale = (
+  date: Date | string | null | undefined,
+  locale: 'en' | 'vi' = 'en',
+  options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }
+): string => {
+  const dateObj = toDate(date);
+  if (!dateObj) return 'Invalid Date';
+  
+  try {
+    const localeCode = locale === 'vi' ? 'vi-VN' : 'en-US';
+    return new Intl.DateTimeFormat(localeCode, options).format(dateObj);
+  } catch {
+    return 'Invalid Date';
+  }
 }; 

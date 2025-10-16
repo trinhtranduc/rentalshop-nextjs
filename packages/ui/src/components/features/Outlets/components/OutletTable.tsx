@@ -11,6 +11,7 @@ import {
 } from '../../../ui/dropdown-menu';
 import { Outlet } from '@rentalshop/types';
 import { Eye, Edit, XCircle, CheckCircle, MoreVertical, Building2 } from 'lucide-react';
+import { useOutletsTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface OutletTableProps {
   outlets: Outlet[];
@@ -27,6 +28,8 @@ export function OutletTable({
   sortOrder = 'desc',
   onSort 
 }: OutletTableProps) {
+  const t = useOutletsTranslations();
+  const tc = useCommonTranslations();
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
   
   if (outlets.length === 0) {
@@ -35,9 +38,9 @@ export function OutletTable({
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium mb-2">No outlets found</h3>
+            <h3 className="text-lg font-medium mb-2">{t('messages.noOutlets')}</h3>
             <p className="text-sm">
-              Try adjusting your search or add outlets to get started.
+              {t('messages.tryAdjustingSearch')}
             </p>
           </div>
         </CardContent>
@@ -46,7 +49,7 @@ export function OutletTable({
   }
 
   const formatDate = (dateString: string | Date | undefined) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return t('fields.notAvailable');
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -58,11 +61,11 @@ export function OutletTable({
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-        Active
+        {tc('labels.active')}
       </Badge>
     ) : (
       <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-        Inactive
+        {tc('labels.inactive')}
       </Badge>
     );
   };
@@ -96,34 +99,34 @@ export function OutletTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Name
+                  {tc('labels.name')}
                   {sortBy === 'name' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Address
+                {tc('labels.address')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Contact
+                {t('fields.phone')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Status
+                {tc('labels.status')}
               </th>
               <th 
                 onClick={() => handleSort('createdAt')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Created
+                  {tc('labels.createdAt')}
                   {sortBy === 'createdAt' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
+                {tc('labels.actions')}
               </th>
             </tr>
           </thead>
@@ -151,14 +154,14 @@ export function OutletTable({
                 {/* Address */}
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900 dark:text-white">
-                    {outlet.address || 'N/A'}
+                    {outlet.address || t('fields.notAvailable')}
                   </div>
                 </td>
                 
                 {/* Contact */}
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900 dark:text-white">
-                    {outlet.phone || 'N/A'}
+                    {outlet.phone || t('fields.notAvailable')}
                   </div>
                 </td>
                 
@@ -197,14 +200,14 @@ export function OutletTable({
                         setOpenDropdownId(null);
                       }}>
                         <Eye className="h-4 w-4 mr-2" />
-                        View Details
+                        {t('actions.viewDetails')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         onOutletAction('edit', outlet.id);
                         setOpenDropdownId(null);
                       }}>
                         <Edit className="h-4 w-4 mr-2" />
-                        Edit Outlet
+                        {t('actions.editOutlet')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => {
@@ -212,7 +215,7 @@ export function OutletTable({
                         setOpenDropdownId(null);
                       }}>
                         {outlet.isActive ? <XCircle className="h-4 w-4 mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                        {outlet.isActive ? 'Disable Outlet' : 'Enable Outlet'}
+                        {outlet.isActive ? t('actions.disableOutlet') : t('actions.enableOutlet')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

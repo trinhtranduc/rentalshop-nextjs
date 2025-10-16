@@ -11,12 +11,23 @@
     "active": "Hoạt động",
     "inactive": "Không hoạt động"
   },
+  "status": {
+    "active": "Hoạt động",
+    "inactive": "Ngừng hoạt động"
+  },
   "filters": {
     "all": "Tất cả danh mục",
     "active": "Hoạt động",
     "inactive": "Không hoạt động"
   },
   "actions": {
+    "viewDetails": "Xem chi tiết",
+    "edit": "Sửa danh mục",
+    "activate": "Kích hoạt",
+    "deactivate": "Vô hiệu hóa",
+    "delete": "Xóa",
+    "create": "Tạo danh mục",
+    "update": "Cập nhật danh mục",
     "addCategory": "Thêm danh mục",
     "editCategory": "Sửa danh mục",
     "deleteCategory": "Xóa danh mục",
@@ -32,6 +43,7 @@
     "deleteFailed": "Xóa danh mục thất bại",
     "confirmDelete": "Bạn có chắc chắn muốn xóa danh mục này?",
     "noCategories": "Không tìm thấy danh mục",
+    "noCategoriesDescription": "Thử điều chỉnh tìm kiếm hoặc thêm danh mục để bắt đầu.",
     "loadingCategories": "Đang tải danh sách danh mục..."
   },
   "search": {
@@ -46,6 +58,23 @@
     "addCategoryTitle": "Thêm danh mục mới",
     "editCategoryTitle": "Sửa danh mục",
     "deleteCategoryTitle": "Xóa danh mục"
+  },
+  "dialog": {
+    "addNew": "Thêm danh mục mới",
+    "edit": "Sửa danh mục",
+    "viewDetails": "Chi tiết danh mục",
+    "viewDescription": "Xem thông tin và chi tiết danh mục",
+    "deleteTitle": "Xóa danh mục",
+    "deleteConfirmation": "Bạn có chắc chắn muốn xóa danh mục",
+    "deleteWarning": "Hành động này không thể hoàn tác. Tất cả sản phẩm trong danh mục này sẽ bị ảnh hưởng.",
+    "neverUpdated": "Chưa cập nhật"
+  },
+  "validation": {
+    "nameRequired": "Tên danh mục là bắt buộc",
+    "nameMinLength": "Tên danh mục phải có ít nhất 2 ký tự",
+    "nameMaxLength": "Tên danh mục phải ít hơn 50 ký tự",
+    "descriptionMaxLength": "Mô tả phải ít hơn 200 ký tự",
+    "characters": "ký tự"
   }
 }
 

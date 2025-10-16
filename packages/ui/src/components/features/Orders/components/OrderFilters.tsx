@@ -7,6 +7,7 @@ import { Card, CardContent } from '@rentalshop/ui';
 import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
 import { outletsApi } from '@rentalshop/utils';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
+import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface OrderFiltersProps {
   filters: OrderFiltersType;
@@ -33,6 +34,10 @@ export const OrderFilters = React.memo(function OrderFilters({
   onSearchChange, 
   onClearFilters 
 }: OrderFiltersProps) {
+  // Get translations
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
+  
   // ============================================================================
   // LOCAL STATE - Only for UI optimization
   // ============================================================================
@@ -116,7 +121,7 @@ export const OrderFilters = React.memo(function OrderFilters({
           <div className="flex-1 min-w-[280px]">
             <div className="relative">
               <Input
-                placeholder="Search orders..."
+                placeholder={t('search.placeholder')}
                 value={localSearch}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 className="pl-9 h-10"
@@ -143,15 +148,15 @@ export const OrderFilters = React.memo(function OrderFilters({
             onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
           >
             <SelectTrigger className="w-[160px] h-10">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('filters.statusLabel')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value={ORDER_STATUS.RESERVED}>Reserved</SelectItem>
-              <SelectItem value={ORDER_STATUS.PICKUPED}>Picked Up</SelectItem>
-              <SelectItem value={ORDER_STATUS.RETURNED}>Returned</SelectItem>
-              <SelectItem value={ORDER_STATUS.COMPLETED}>Completed</SelectItem>
-              <SelectItem value={ORDER_STATUS.CANCELLED}>Cancelled</SelectItem>
+              <SelectItem value="all">{t('filters.allStatus')}</SelectItem>
+              <SelectItem value={ORDER_STATUS.RESERVED}>{t('status.RESERVED')}</SelectItem>
+              <SelectItem value={ORDER_STATUS.PICKUPED}>{t('status.PICKUPED')}</SelectItem>
+              <SelectItem value={ORDER_STATUS.RETURNED}>{t('status.RETURNED')}</SelectItem>
+              <SelectItem value={ORDER_STATUS.COMPLETED}>{t('status.COMPLETED')}</SelectItem>
+              <SelectItem value={ORDER_STATUS.CANCELLED}>{t('status.CANCELLED')}</SelectItem>
             </SelectContent>
           </Select>
           
@@ -161,12 +166,12 @@ export const OrderFilters = React.memo(function OrderFilters({
             onValueChange={(value) => handleFilterChange('orderType', value === 'all' ? undefined : value)}
           >
             <SelectTrigger className="w-[130px] h-10">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t('filters.typeLabel')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value={ORDER_TYPE.RENT}>Rental</SelectItem>
-              <SelectItem value={ORDER_TYPE.SALE}>Sale</SelectItem>
+              <SelectItem value="all">{t('filters.allTypes')}</SelectItem>
+              <SelectItem value={ORDER_TYPE.RENT}>{t('orderType.RENT')}</SelectItem>
+              <SelectItem value={ORDER_TYPE.SALE}>{t('orderType.SALE')}</SelectItem>
             </SelectContent>
           </Select>
           
@@ -179,16 +184,16 @@ export const OrderFilters = React.memo(function OrderFilters({
             }}
           >
             <SelectTrigger className="w-[160px] h-10">
-              <SelectValue placeholder="Outlet" />
+              <SelectValue placeholder={t('filters.outletLabel')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Outlets</SelectItem>
+              <SelectItem value="all">{t('filters.allOutlets')}</SelectItem>
               {loadingOutlets ? (
-                <SelectItem value="loading" disabled>Loading...</SelectItem>
+                <SelectItem value="loading" disabled>{t('filters.loading')}</SelectItem>
               ) : outletError ? (
-                <SelectItem value="error" disabled>Error</SelectItem>
+                <SelectItem value="error" disabled>{t('filters.error')}</SelectItem>
               ) : outlets.length === 0 ? (
-                <SelectItem value="empty" disabled>No outlets</SelectItem>
+                <SelectItem value="empty" disabled>{t('filters.noOutlets')}</SelectItem>
               ) : (
                 outlets.map((outlet) => (
                   <SelectItem key={outlet.id} value={outlet.id.toString()}>
@@ -207,7 +212,7 @@ export const OrderFilters = React.memo(function OrderFilters({
           onClick={onClearFilters}
           className="h-10"
         >
-          Clear
+          {t('filters.clear')}
         </Button>
       )}
     </>

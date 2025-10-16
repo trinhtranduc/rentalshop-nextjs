@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -17,18 +17,18 @@ export async function GET(
       const planId = parseInt(params.id);
       
       if (isNaN(planId)) {
-        return NextResponse.json({ success: false, message: 'Invalid plan ID' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'), { status: 400 });
       }
 
       // TODO: Implement plan variants functionality when model is added to schema
       return NextResponse.json(
-        { success: false, message: 'Plan variants functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
     } catch (error) {
       console.error('Error fetching plan variants:', error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error' },
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -48,12 +48,12 @@ export async function POST(
       const planId = parseInt(params.id);
       
       if (isNaN(planId)) {
-        return NextResponse.json({ success: false, message: 'Invalid plan ID' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'), { status: 400 });
       }
 
       // TODO: Implement plan variants functionality when model is added to schema
       return NextResponse.json(
-        { success: false, message: 'Plan variants functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
     } catch (error) {

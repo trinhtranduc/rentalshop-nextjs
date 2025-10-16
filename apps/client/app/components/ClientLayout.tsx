@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { ClientSidebar, LoadingIndicator, CurrencyProvider } from '@rentalshop/ui';
+import { ClientSidebar, LoadingIndicator, CurrencyProvider, LanguageSwitcher } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useCommonTranslations } from '@rentalshop/hooks';
 import type { CurrencyCode } from '@rentalshop/types';
 
 interface ClientLayoutProps {
@@ -23,6 +23,7 @@ export default function ClientLayout({
   onSearch
 }: ClientLayoutProps) {
   const { user, logout, loading } = useAuth();
+  const t = useCommonTranslations();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { navigateTo, prefetchRoute } = useNavigation();
@@ -38,7 +39,7 @@ export default function ClientLayout({
             <LoadingIndicator 
               variant="circular" 
               size="lg"
-              message="Authenticating..."
+              message={`${t('labels.loading')}...`}
             />
           </div>
         );

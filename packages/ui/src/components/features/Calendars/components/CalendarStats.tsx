@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package, ArrowUpRight } from 'lucide-react';
+import { useCalendarTranslations } from '@rentalshop/hooks';
 
 interface CalendarStatsProps {
   totalPickups: number;
@@ -14,9 +15,12 @@ export function CalendarStats({
   currentYear,
   className = ''
 }: CalendarStatsProps) {
+  const t = useCalendarTranslations();
+  
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    t('months.january'), t('months.february'), t('months.march'), t('months.april'), 
+    t('months.may'), t('months.june'), t('months.july'), t('months.august'), 
+    t('months.september'), t('months.october'), t('months.november'), t('months.december')
   ];
 
   return (
@@ -28,7 +32,7 @@ export function CalendarStats({
             <ArrowUpRight className="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600">Pickup Orders</p>
+            <p className="text-sm font-medium text-gray-600">{t('labels.pickupOrders')}</p>
             <p className="text-2xl font-bold text-gray-900">{totalPickups}</p>
           </div>
         </div>
@@ -41,7 +45,7 @@ export function CalendarStats({
             <Package className="w-5 h-5 text-purple-600" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600">Month</p>
+            <p className="text-sm font-medium text-gray-600">{t('labels.month')}</p>
             <p className="text-lg font-semibold text-gray-900">
               {monthNames[currentMonth]} {currentYear}
             </p>

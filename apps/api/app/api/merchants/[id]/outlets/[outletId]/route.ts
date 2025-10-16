@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -18,24 +18,24 @@ export async function GET(
       const outletPublicId = parseInt(params.outletId);
       
       if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
-        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
-        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       const outlet = await db.outlets.findById(outletPublicId);
       if (!outlet) {
-        return NextResponse.json({ success: false, message: 'Outlet not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       return NextResponse.json({ success: true, data: outlet });
     } catch (error) {
       console.error('Error fetching outlet:', error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error' },
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -56,17 +56,17 @@ export async function PUT(
       const outletPublicId = parseInt(params.outletId);
       
       if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
-        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
-        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       const existing = await db.outlets.findById(outletPublicId);
       if (!existing) {
-        return NextResponse.json({ success: false, message: 'Outlet not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       const body = await request.json();
@@ -92,7 +92,7 @@ export async function PUT(
 
       if (!updatedOutlet) {
         return NextResponse.json(
-          { success: false, message: 'Outlet not found' },
+          ResponseBuilder.error('OUTLET_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -101,7 +101,7 @@ export async function PUT(
     } catch (error) {
       console.error('Error updating outlet:', error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error' },
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -122,17 +122,17 @@ export async function DELETE(
       const outletPublicId = parseInt(params.outletId);
       
       if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
-        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
-        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       const existing = await db.outlets.findById(outletPublicId);
       if (!existing) {
-        return NextResponse.json({ success: false, message: 'Outlet not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       // Soft delete by setting isActive to false

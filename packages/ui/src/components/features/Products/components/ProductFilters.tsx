@@ -5,7 +5,7 @@ import { Input } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType } from '@rentalshop/types';
-import { useOutletsData, useCategoriesData } from '@rentalshop/hooks';
+import { useOutletsData, useCategoriesData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Search } from 'lucide-react';
 
 interface ProductFiltersProps {
@@ -29,9 +29,22 @@ interface ProductFiltersProps {
  * - Responsive grid layout
  */
 export function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: ProductFiltersProps) {
+  // Get translations
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
+  
   // ✅ MODERN: Use deduplicated hooks for filter data
   const { outlets, loading: loadingOutlets } = useOutletsData();
   const { categories, loading: loadingCategories } = useCategoriesData();
+
+  // Debug logging
+  console.log('🔍 ProductFilters: Categories data:', {
+    categories,
+    isArray: Array.isArray(categories),
+    count: categories?.length || 0,
+    loading: loadingCategories,
+    firstCategory: categories?.[0]?.name || 'none'
+  });
 
   // ============================================================================
   // FILTER HANDLERS
@@ -66,7 +79,7 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
         <div className="relative">
           <Input
             type="text"
-            placeholder="Search products..."
+            placeholder={t('search.placeholder')}
             value={filters.search || ''}
             onChange={handleSearchChange}
             className="pl-9 h-10"
@@ -94,10 +107,10 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
         disabled={loadingOutlets}
       >
         <SelectTrigger className="w-[160px] h-10">
-          <SelectValue placeholder="Outlet" />
+          <SelectValue placeholder={t('filters.outletLabel')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Outlets</SelectItem>
+          <SelectItem value="all">{t('filters.allOutlets')}</SelectItem>
           {outlets.map((outlet) => (
             <SelectItem key={outlet.id} value={outlet.id.toString()}>
               {outlet.name}
@@ -113,10 +126,10 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
         disabled={loadingCategories}
       >
         <SelectTrigger className="w-[160px] h-10">
-          <SelectValue placeholder="Category" />
+          <SelectValue placeholder={t('filters.categoryLabel')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Categories</SelectItem>
+          <SelectItem value="all">{t('filters.allCategories')}</SelectItem>
           {categories.map((category) => (
             <SelectItem key={category.id} value={category.id.toString()}>
               {category.name}
@@ -133,7 +146,7 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
           onClick={onClearFilters}
           className="h-10"
         >
-          Clear
+          {t('filters.clear')}
         </Button>
       )}
     </>

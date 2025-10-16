@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, handleApiError } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
 
@@ -24,7 +24,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json(
       { 
         success: false, 
-        message: 'User must be associated with a merchant',
+        code: 'MERCHANT_ASSOCIATION_REQUIRED', message: 'User must be associated with a merchant',
         debug: {
           role: user.role,
           merchantId: userScope.merchantId,
@@ -46,7 +46,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid query', 
+        code: 'INVALID_QUERY', message: 'Invalid query', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -137,7 +137,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         hasMore: result.hasMore || false,
         totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
-      message: `Found ${result.total || 0} orders`
+      code: "ORDERS_FOUND", message: `Found ${result.total || 0} orders`
     });
 
   } catch (error) {
@@ -163,7 +163,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -195,7 +195,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       return NextResponse.json(
         { 
           success: false, 
-          message: error.message || 'Plan limit exceeded for orders',
+          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for orders',
           error: 'PLAN_LIMIT_EXCEEDED'
         },
         { status: 403 }
@@ -286,7 +286,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     return NextResponse.json({
       success: true,
       data: order,
-      message: 'Order created successfully'
+      code: 'ORDER_CREATED_SUCCESS', message: 'Order created successfully'
     });
 
   } catch (error: any) {
@@ -312,7 +312,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -360,7 +360,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     return NextResponse.json({
       success: true,
       data: updatedOrder,
-      message: 'Order updated successfully'
+      code: 'ORDER_UPDATED_SUCCESS', message: 'Order updated successfully'
     });
 
   } catch (error: any) {

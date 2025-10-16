@@ -161,7 +161,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             end: endDate.toISOString().split('T')[0]
           }
         },
-        message: `Calendar data for ${year}-${String(month).padStart(2, '0')}`
+        code: 'CALENDAR_DATA_SUCCESS', message: `Calendar data for ${year}-${String(month).padStart(2, '0')}`
       });
     }
 
@@ -182,7 +182,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           end: endDate.toISOString().split('T')[0]
         }
       },
-      message: `No calendar data for ${year}-${String(month).padStart(2, '0')}`
+      code: 'NO_CALENDAR_DATA', message: `No calendar data for ${year}-${String(month).padStart(2, '0')}`
     });
 
   } catch (error) {

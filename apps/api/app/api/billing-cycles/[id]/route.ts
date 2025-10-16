@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -19,7 +19,7 @@ export async function GET(
 
       // TODO: Implement billing cycle functionality when model is added to schema
       return NextResponse.json(
-        { success: false, message: 'Billing cycle functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
 
@@ -52,7 +52,7 @@ export async function PUT(
 
       // TODO: Implement billing cycle functionality when model is added to schema
       return NextResponse.json(
-        { success: false, message: 'Billing cycle functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
 
@@ -85,7 +85,7 @@ export async function DELETE(
 
       // TODO: Implement billing cycle functionality when model is added to schema
       return NextResponse.json(
-        { success: false, message: 'Billing cycle functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
 

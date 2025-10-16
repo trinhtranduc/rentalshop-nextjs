@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({
         success: false,
-        message: 'User ID is required'
+        code: 'USER_ID_REQUIRED', message: 'User ID is required'
       }, { status: 400 });
     }
     
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Sync check completed',
+      code: 'SYNC_CHECK_SUCCESS', message: 'Sync check completed',
       data: {
         needsSync,
         lastServerUpdate: currentTime,
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       success: false,
-      message: 'Sync check failed',
+      code: 'SYNC_CHECK_FAILED', message: 'Sync check failed',
       error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }

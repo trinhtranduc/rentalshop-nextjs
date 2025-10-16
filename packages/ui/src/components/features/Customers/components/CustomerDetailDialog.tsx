@@ -11,9 +11,9 @@ import {
 } from '../../../ui/dialog';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
-import { Badge } from '../../../ui/badge';
-import { User, UserX, Building, Calendar, Phone, Mail, Home, FileText, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import type { Customer, Merchant } from '@rentalshop/types';
+import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface CustomerDetailDialogProps {
   open: boolean;
@@ -28,6 +28,8 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   customer,
   onDelete
 }) => {
+  const t = useCustomerTranslations();
+  const tc = useCommonTranslations();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -72,7 +74,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   if (!customer) return null;
 
   const formatDate = (date: Date | string) => {
-    if (!date) return 'N/A';
+    if (!date) return t('messages.na');
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -90,7 +92,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   };
 
   const getStatusDisplayName = (isActive: boolean) => {
-    return isActive ? 'Active' : 'Inactive';
+    return isActive ? t('status.active') : t('status.inactive');
   };
 
   const handleDelete = async () => {
@@ -116,120 +118,109 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
           <DialogHeader>
             <div>
               <DialogTitle className="text-xl font-semibold">
-                Customer Details
+                {t('customerDetails')}
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-600 mt-1">
-                View customer information and details
+                {t('viewCustomerInfo')}
               </DialogDescription>
             </div>
           </DialogHeader>
 
-          <div className="mt-6 space-y-6">
-            {/* Customer Overview */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                  Customer Overview
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                    <p className="text-gray-900 text-base font-medium">{`${customer.firstName} ${customer.lastName}`}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <p className="text-gray-900 text-base">{customer.email}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                    <p className="text-gray-900 text-base">{customer.phone}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-                    <p className="text-gray-900 text-base">
-                      {customer.dateOfBirth ? formatDate(customer.dateOfBirth) : 'Not provided'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`}>
-                      {getStatusDisplayName(customer.isActive)}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Customer ID</label>
-                    <p className="text-gray-500 text-sm font-mono">{customer.id}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
-                    <p className="text-gray-900 text-base">{formatDate(customer.createdAt)}</p>
-                  </div>
-                                  <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
-                  <p className="text-gray-900 text-base">{formatDate(customer.updatedAt)}</p>
+          <Card>
+            <CardContent className="p-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.fullName')}</label>
+                <p className="text-gray-900 font-medium">{`${customer.firstName} ${customer.lastName}`}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.email')}</label>
+                <p className="text-gray-900">{customer.email}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.phone')}</label>
+                <p className="text-gray-900">{customer.phone}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.dateOfBirth')}</label>
+                <p className="text-gray-900">
+                  {customer.dateOfBirth ? formatDate(customer.dateOfBirth) : t('fields.notProvided')}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.status')}</label>
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`}>
+                  {getStatusDisplayName(customer.isActive)}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.customerId')}</label>
+                <p className="text-gray-500 text-sm font-mono">{customer.id}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('stats.memberSince')}</label>
+                <p className="text-gray-900">{formatDate(customer.createdAt)}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.lastUpdated')}</label>
+                <p className="text-gray-900">{formatDate(customer.updatedAt)}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.merchant')}</label>
+                <p className="text-gray-900">
+                  {isLoadingMerchant ? (
+                    <span className="text-gray-500">{t('fields.loading')}</span>
+                  ) : merchant ? (
+                    merchant.name
+                  ) : (
+                    <span className="text-gray-500">
+                      {t('fields.notAvailable')} {customer.merchantId ? `(ID: ${customer.merchantId})` : '(No merchant ID)'}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Address Information */}
+            <div className="border-t mt-6 pt-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-4">{t('addressInformation')}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.streetAddress')}</label>
+                  <p className="text-gray-900">
+                    {customer.address || t('fields.noAddress')}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Merchant</label>
-                  <p className="text-gray-900 text-base">
-                    {isLoadingMerchant ? (
-                      <span className="text-gray-500">Loading...</span>
-                    ) : merchant ? (
-                      merchant.name
-                    ) : (
-                      <span className="text-gray-500">
-                        Not available {customer.merchantId ? `(ID: ${customer.merchantId})` : '(No merchant ID)'}
-                      </span>
-                    )}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.city')}</label>
+                  <p className="text-gray-900">
+                    {customer.city || t('fields.notSpecified')}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.state')}</label>
+                  <p className="text-gray-900">
+                    {customer.state || t('fields.notSpecified')}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.zipCode')}</label>
+                  <p className="text-gray-900">
+                    {customer.zipCode || t('fields.notSpecified')}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.country')}</label>
+                  <p className="text-gray-900">
+                    {customer.country || t('fields.notSpecified')}
                   </p>
                 </div>
               </div>
+            </div>
             </CardContent>
           </Card>
 
-            {/* Address Information */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  Address Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
-                    <p className="text-gray-900 text-base">
-                      {customer.address || 'No address provided'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                    <p className="text-gray-900 text-base">
-                      {customer.city || 'Not specified'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">State/Province</label>
-                    <p className="text-gray-900 text-base">
-                      {customer.state || 'Not specified'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">ZIP/Postal Code</label>
-                    <p className="text-gray-900 text-base">
-                      {customer.zipCode || 'Not specified'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                    <p className="text-gray-900 text-base">
-                      {customer.country || 'Not specified'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-          </div>
           <DialogFooter className="flex justify-between">
             <div>
               {onDelete && (
@@ -240,7 +231,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                   className="flex items-center space-x-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>Delete Customer</span>
+                  <span>{t('actions.deleteCustomer')}</span>
                 </Button>
               )}
             </div>
@@ -249,7 +240,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                Close
+                {tc('buttons.close')}
               </Button>
             </div>
           </DialogFooter>
@@ -261,11 +252,10 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-red-600">
-              Delete Customer
+              {t('actions.deleteCustomer')}
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-600">
-              Are you sure you want to delete <strong>{customer?.firstName} {customer?.lastName}</strong>? 
-              This action cannot be undone and will permanently remove all customer data.
+              {t('messages.confirmDeleteDetails').replace('{name}', `${customer?.firstName} ${customer?.lastName}`)}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex justify-end space-x-2">
@@ -274,7 +264,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
               onClick={() => setShowDeleteConfirm(false)}
               disabled={isDeleting}
             >
-              Cancel
+              {tc('buttons.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -283,7 +273,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
               className="flex items-center space-x-2"
             >
               <Trash2 className="w-4 h-4" />
-              <span>{isDeleting ? 'Deleting...' : 'Delete Customer'}</span>
+              <span>{isDeleting ? t('deleting') : t('actions.deleteCustomer')}</span>
             </Button>
           </DialogFooter>
         </DialogContent>

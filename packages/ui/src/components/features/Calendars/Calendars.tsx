@@ -81,7 +81,7 @@ export function Calendars({
   if (loading) {
     return (
       <div className={className}>
-        <CalendarHeader title="Pickup Calendar" />
+        <CalendarHeader />
         <CalendarLoading />
       </div>
     );
@@ -90,7 +90,7 @@ export function Calendars({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Calendar Header */}
-      <CalendarHeader title="Pickup Calendar">
+      <CalendarHeader>
         <CalendarNavigation
           currentDate={currentDate}
           onPreviousMonth={goToPreviousMonth}

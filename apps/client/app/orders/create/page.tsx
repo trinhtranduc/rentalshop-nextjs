@@ -20,11 +20,13 @@ import {
   outletsApi, 
   ordersApi 
 } from '@rentalshop/utils';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 export default function CreateOrderPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
 
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -69,7 +71,7 @@ export default function CreateOrderPage() {
           console.log('✅ Loaded customers:', customersRes.data?.customers?.length || 0);
         } else {
           console.error('Failed to fetch customers:', customersRes.error);
-          toastError('Load Error', 'Failed to load customers');
+          toastError(tc('labels.error'), tc('messages.errorLoadingData'));
         }
 
         if (productsRes.success) {
@@ -78,7 +80,7 @@ export default function CreateOrderPage() {
           console.log('✅ Loaded products:', productsRes.data?.products?.length || 0);
         } else {
           console.error('Failed to fetch products:', productsRes.error);
-          toastError('Load Error', 'Failed to load products');
+          toastError(tc('labels.error'), tc('messages.errorLoadingData'));
         }
 
         if (outletsRes.success) {
@@ -130,7 +132,7 @@ export default function CreateOrderPage() {
       const result = await ordersApi.createOrder(orderData);
       if (result.success) {
         // Show success message
-        toastSuccess('Order created successfully!');
+        toastSuccess(t('messages.createSuccess'));
         // Navigate back to orders list after successful creation
         router.push('/orders');
       } else {
@@ -138,7 +140,7 @@ export default function CreateOrderPage() {
       }
     } catch (err) {
       console.error('Create order failed:', err);
-      toastError('Create order failed', (err as Error).message || 'Create order failed');
+      toastError(t('messages.createFailed'), (err as Error).message || t('messages.createFailed'));
     } finally{
       setSubmitting(false);
     }
@@ -154,8 +156,8 @@ export default function CreateOrderPage() {
 
   // Breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Orders', href: '/orders' },
-    { label: 'Create New Order' }
+    { label: t('title'), href: '/orders' },
+    { label: t('createOrder') }
   ];
 
   if (!merchantId) {
@@ -164,8 +166,8 @@ export default function CreateOrderPage() {
         <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
         <Card>
           <CardContent className="p-8 text-center text-gray-600">
-            <div className="mb-4">Merchant ID not found</div>
-            <div className="text-sm text-gray-500">Please log in again to access this page</div>
+            <div className="mb-4">{tc('labels.error')}</div>
+            <div className="text-sm text-gray-500">{tc('messages.sessionExpired')}</div>
           </CardContent>
         </Card>
       </PageWrapper>

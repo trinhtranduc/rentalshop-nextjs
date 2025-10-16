@@ -46,7 +46,7 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
     return NextResponse.json({
       success: true,
         code: 'ACCOUNT_DELETED_SUCCESS',
-        message: 'Account deleted successfully',
+        code: 'ACCOUNT_DELETED_SUCCESS', message: 'Account deleted successfully',
       data: {
         id: deletedUser.id,
         email: deletedUser.email,
@@ -73,9 +73,9 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
       );
     }
 
-    return NextResponse.json(
-      { success: false, message: 'Failed to delete account', error: error.message },
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+      return NextResponse.json(
+        ResponseBuilder.error('DELETE_ACCOUNT_FAILED', { error: error.message }),
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
   }
 });

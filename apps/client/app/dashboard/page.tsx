@@ -28,7 +28,7 @@ import {
   ArrowDownRight,
   Minus
 } from 'lucide-react';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi } from '@rentalshop/utils';
 
 // ============================================================================
@@ -158,6 +158,8 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toastError, toastSuccess } = useToast();
+  const t = useDashboardTranslations();
+  const tc = useCommonTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -581,14 +583,14 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold mb-2 text-gray-800">
-                  Welcome back, {user?.name || 'Owner'}! 👋
+                  {t('welcome')}, {user?.name || tc('roles.owner')}! 👋
                 </h1>
                 <p className="text-gray-600">
                   {timePeriod === 'today' 
-                    ? "Here's what's happening with your rental business today"
+                    ? t('overview')
                     : timePeriod === 'month'
-                    ? `Monthly overview of your rental business performance for ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
-                    : `Annual performance and strategic insights for ${new Date().getFullYear()}`
+                    ? `${t('overview')} - ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                    : `${t('overview')} - ${new Date().getFullYear()}`
                   }
                 </p>
                 <div className="mt-2">
@@ -599,7 +601,7 @@ export default function DashboardPage() {
                       ? 'bg-green-100 text-green-800'
                       : 'bg-purple-100 text-purple-800'
                   }`}>
-                    {timePeriod === 'today' ? '📊 Daily Operations' : timePeriod === 'month' ? '📈 Monthly Analytics' : '🎯 Annual Strategy'}
+                    {timePeriod === 'today' ? `📊 ${tc('periods.dailyOperations')}` : timePeriod === 'month' ? `📈 ${tc('periods.monthlyAnalytics')}` : `🎯 ${tc('periods.annualStrategy')}`}
                   </span>
                 </div>
               </div>
@@ -608,9 +610,9 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
                   {[
-                    { id: 'today', label: 'Today', description: 'Operations' },
-                    { id: 'month', label: 'Month', description: 'Statistics' },
-                    { id: 'year', label: 'Year', description: 'Analytics' }
+                    { id: 'today', label: tc('time.today'), description: 'Operations' },
+                    { id: 'month', label: tc('time.thisMonth'), description: 'Statistics' },
+                    { id: 'year', label: tc('time.year'), description: tc('periods.annualStrategy') }
                   ].map(period => (
                     <Button
                       key={period.id}
@@ -638,11 +640,11 @@ export default function DashboardPage() {
               {/* Revenue Card - Hidden for OUTLET_STAFF */}
               {user?.role !== 'OUTLET_STAFF' && (
                 <StatCard
-                  title="Today's Revenue"
+                  title={t('stats.todayRevenue')}
                   value={currentStats.todayRevenue}
-                  change="Real-time data"
-                  description="Cash in hand"
-                  tooltip="Total revenue collected from completed rentals and payments today"
+                  change={tc('labels.loading')}
+                  description={tc('time.today')}
+                  tooltip={t('stats.todayRevenue')}
                   color="text-green-600"
                   trend="neutral"
                   activeTooltip={activeTooltip}
@@ -650,33 +652,33 @@ export default function DashboardPage() {
                 />
               )}
               <StatCard
-                title="New Rentals"
+                title={t('stats.activeRentals')}
                 value={currentStats.todayRentals}
-                change="Real-time data"
-                description="Orders created today"
-                tooltip="Number of new rental orders created today"
+                change={tc('labels.loading')}
+                description={tc('time.today')}
+                tooltip={t('stats.activeRentals')}
                 color="text-blue-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
-                title="Pickup Orders"
+                title={t('stats.activeRentals')}
                 value={currentStats.activeRentals}
-                change="Real-time data"
-                description="Currently rented"
-                tooltip="Total number of items currently being rented out"
+                change={tc('labels.loading')}
+                description={tc('time.today')}
+                tooltip={t('stats.activeRentals')}
                 color="text-purple-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
-                title="Overdue Items"
+                title={t('stats.overdueReturns')}
                 value={currentStats.overdueItems}
-                change="Real-time data"
-                description="Need attention"
-                tooltip="Number of items that are overdue for return"
+                change={tc('labels.loading')}
+                description={tc('time.today')}
+                tooltip={t('stats.overdueReturns')}
                 color="text-red-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
@@ -689,7 +691,7 @@ export default function DashboardPage() {
               {/* New Orders */}
               <CardClean size="md">
                 <CardHeaderClean>
-                  <CardTitleClean size="md">New Orders</CardTitleClean>
+                  <CardTitleClean size="md">{t('recentActivity.title')}</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
                   {loadingCharts ? (
@@ -735,7 +737,7 @@ export default function DashboardPage() {
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>No new orders today</p>
+                      <p>{tc('labels.noData')}</p>
                     </div>
                   )}
                 </CardContentClean>
@@ -744,23 +746,23 @@ export default function DashboardPage() {
               {/* Rental Status */}
               <CardClean size="md">
                 <CardHeaderClean>
-                  <CardTitleClean size="md">Rental Status</CardTitleClean>
+                  <CardTitleClean size="md">{tc('labels.status')}</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
                   <div className="space-y-4">
                     {[
-                      { status: 'Reserved', count: orderStatusCounts.reserved || 0, color: 'bg-blue-500' },
-                      { status: 'Pickup', count: orderStatusCounts.pickup || 0, color: 'bg-green-500' },
-                      { status: 'Return', count: orderStatusCounts.returned || 0, color: 'bg-yellow-500' },
-                      { status: 'Completed', count: orderStatusCounts.completed || 0, color: 'bg-gray-500' },
-                      { status: 'Cancelled', count: orderStatusCounts.cancelled || 0, color: 'bg-red-500' }
+                      { statusKey: 'reserved', count: orderStatusCounts.reserved || 0, color: 'bg-blue-500' },
+                      { statusKey: 'pickup', count: orderStatusCounts.pickup || 0, color: 'bg-green-500' },
+                      { statusKey: 'return', count: orderStatusCounts.returned || 0, color: 'bg-yellow-500' },
+                      { statusKey: 'completed', count: orderStatusCounts.completed || 0, color: 'bg-gray-500' },
+                      { statusKey: 'cancelled', count: orderStatusCounts.cancelled || 0, color: 'bg-red-500' }
                     ].map((item, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-lg ${item.color.replace('bg-', 'bg-').replace('-500', '-100')}`}>
-                            <span className="text-sm font-medium capitalize">{item.status}</span>
+                            <span className="text-sm font-medium capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
                           </div>
-                          <span className="text-sm text-gray-600">{item.count} orders</span>
+                          <span className="text-sm text-gray-600">{item.count} {t('orderStatuses.ordersCount')}</span>
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-gray-800">{item.count}</div>
@@ -784,11 +786,11 @@ export default function DashboardPage() {
               {/* Revenue Card - Hidden for OUTLET_STAFF */}
               {user?.role !== 'OUTLET_STAFF' && (
                 <StatCard
-                  title="Total Revenue"
+                  title={t('stats.totalRevenue')}
                   value={currentStats.totalRevenue}
-                  change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}% growth` : 'No growth data'}
-                  description={timePeriod === 'month' ? 'This month' : 'This year'}
-                  tooltip="Total revenue from all completed rentals and payments"
+                  change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}%` : tc('labels.noData')}
+                  description={timePeriod === 'month' ? tc('time.thisMonth') : tc('time.custom')}
+                  tooltip={t('stats.totalRevenue')}
                   color="text-green-600"
                   trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
                   activeTooltip={activeTooltip}
@@ -796,22 +798,22 @@ export default function DashboardPage() {
                 />
               )}
               <StatCard
-                title="Total Rentals"
+                title={t('stats.totalOrders')}
                 value={currentStats.totalRentals}
-                change="Real-time data"
-                description="All rentals"
-                tooltip="Total number of rental orders created"
+                change={tc('labels.loading')}
+                description={tc('time.today')}
+                tooltip={t('stats.totalOrders')}
                 color="text-blue-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
               />
               <StatCard
-                title="Completed Rentals"
+                title={t('stats.completedOrders')}
                 value={currentStats.completedRentals}
-                change="Real-time data"
-                description="Successfully completed"
-                tooltip="Number of rentals that have been successfully completed"
+                change={tc('labels.loading')}
+                description={tc('time.today')}
+                tooltip={t('stats.completedOrders')}
                 color="text-purple-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
@@ -820,11 +822,11 @@ export default function DashboardPage() {
               {/* Future Revenue Card - Hidden for OUTLET_STAFF */}
               {user?.role !== 'OUTLET_STAFF' && (
                 <StatCard
-                  title="Future Revenue"
+                  title={t('stats.futureRevenue')}
                   value={currentStats.futureRevenue}
-                  change="Real-time data"
-                  description="Booked revenue"
-                  tooltip="Expected revenue from upcoming and ongoing rentals"
+                  change={t('stats.realTimeData')}
+                  description={t('stats.bookedRevenue')}
+                  tooltip={t('stats.expectedRevenue')}
                   color="text-orange-600"
                   trend="neutral"
                   activeTooltip={activeTooltip}
@@ -840,8 +842,8 @@ export default function DashboardPage() {
                   <CardHeaderClean>
                     <CardTitleClean size="md">
                       {timePeriod === 'month' 
-                        ? `${new Date(currentDateRange.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Revenue`
-                        : `${new Date(currentDateRange.startDate).getFullYear()} Revenue`
+                        ? `${new Date(currentDateRange.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} ${t('chartTitles.monthlyRevenue')}`
+                        : `${new Date(currentDateRange.startDate).getFullYear()} ${t('chartTitles.yearlyRevenue')}`
                       }
                     </CardTitleClean>
                   </CardHeaderClean>
@@ -854,8 +856,8 @@ export default function DashboardPage() {
                 <CardHeaderClean>
                   <CardTitleClean size="md">
                     {timePeriod === 'month' 
-                      ? `${new Date(currentDateRange.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Rentals`
-                      : `${new Date(currentDateRange.startDate).getFullYear()} Rentals`
+                      ? `${new Date(currentDateRange.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} ${t('chartTitles.monthlyRentals')}`
+                      : `${new Date(currentDateRange.startDate).getFullYear()} ${t('chartTitles.yearlyRentals')}`
                     }
                   </CardTitleClean>
                 </CardHeaderClean>
@@ -873,7 +875,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               <CardClean size="md">
                 <CardHeaderClean>
-                  <CardTitleClean size="md">Top Products</CardTitleClean>
+                  <CardTitleClean size="md">{t('charts.topProducts')}</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
                   {loadingCharts ? (
@@ -911,7 +913,7 @@ export default function DashboardPage() {
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>No products data available</p>
+                      <p>{tc('labels.noData')}</p>
                     </div>
                   )}
                 </CardContentClean>
@@ -919,7 +921,7 @@ export default function DashboardPage() {
               
               <CardClean size="md">
                 <CardHeaderClean>
-                  <CardTitleClean size="md">Top Customers</CardTitleClean>
+                  <CardTitleClean size="md">{t('charts.customerActivity')}</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
                   {loadingCharts ? (
@@ -960,7 +962,7 @@ export default function DashboardPage() {
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>No customers data available</p>
+                      <p>{tc('labels.noData')}</p>
                     </div>
                   )}
                 </CardContentClean>
@@ -971,7 +973,7 @@ export default function DashboardPage() {
 
         {/* Admin Quick Actions */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Quick Actions</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">{t('quickActions.title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button
               variant="ghost"
@@ -980,8 +982,8 @@ export default function DashboardPage() {
             >
               <Package className="w-6 h-6 text-blue-600" />
               <div className="text-left">
-                <p className="font-medium text-blue-900">Create Order</p>
-                <p className="text-sm text-blue-700">New rental order</p>
+                <p className="font-medium text-blue-900">{t('quickActions.createOrder')}</p>
+                <p className="text-sm text-blue-700">{tc('labels.create')}</p>
               </div>
             </Button>
             
@@ -992,8 +994,8 @@ export default function DashboardPage() {
             >
               <Users className="w-6 h-6 text-green-600" />
               <div className="text-left">
-                <p className="font-medium text-green-900">Add Customer</p>
-                <p className="text-sm text-green-700">New customer</p>
+                <p className="font-medium text-green-900">{t('quickActions.addCustomer')}</p>
+                <p className="text-sm text-green-700">{tc('buttons.add')}</p>
               </div>
             </Button>
             
@@ -1004,8 +1006,8 @@ export default function DashboardPage() {
             >
               <PackageCheck className="w-6 h-6 text-purple-600" />
               <div className="text-left">
-                <p className="font-medium text-purple-900">Add Product</p>
-                <p className="text-sm text-purple-700">New product</p>
+                <p className="font-medium text-purple-900">{t('quickActions.addProduct')}</p>
+                <p className="text-sm text-purple-700">{tc('buttons.add')}</p>
               </div>
             </Button>
             
@@ -1016,8 +1018,8 @@ export default function DashboardPage() {
             >
               <TrendingUp className="w-6 h-6 text-orange-600" />
               <div className="text-left">
-                <p className="font-medium text-orange-900">View Reports</p>
-                <p className="text-sm text-orange-700">Analytics</p>
+                <p className="font-medium text-orange-900">{t('quickActions.viewReports')}</p>
+                <p className="text-sm text-orange-700">{tc('navigation.analytics')}</p>
               </div>
             </Button>
           </div>

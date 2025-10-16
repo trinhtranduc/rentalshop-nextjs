@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
 import { X } from 'lucide-react';
-import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
+import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
@@ -11,6 +11,9 @@ export default function CalendarPage() {
   const { user, loading: authLoading } = useAuth();
   const authenticated = !!user;
   const { handleError } = useSimpleErrorHandler();
+  const t = useCommonTranslations();
+  const tcal = useCalendarTranslations();
+  const to = useOrderTranslations();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -186,7 +189,7 @@ export default function CalendarPage() {
       {calendarMeta && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Monthly Statistics - {calendarMeta.year}/{String(calendarMeta.month).padStart(2, '0')}
+            {tcal('stats.monthlyStatistics')} - {calendarMeta.year}/{String(calendarMeta.month).padStart(2, '0')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 rounded-lg p-4">
@@ -197,7 +200,7 @@ export default function CalendarPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-blue-600">Pickup Orders</p>
+                  <p className="text-sm font-medium text-blue-600">{tcal('labels.pickupOrders')}</p>
                   <p className="text-2xl font-bold text-blue-900">{calendarMeta.stats.totalPickups}</p>
                 </div>
               </div>
@@ -211,7 +214,7 @@ export default function CalendarPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-green-600">Return Orders</p>
+                  <p className="text-sm font-medium text-green-600">{tcal('labels.returnOrders')}</p>
                   <p className="text-2xl font-bold text-green-900">0</p>
                 </div>
               </div>
@@ -225,7 +228,7 @@ export default function CalendarPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-purple-600">Total Orders</p>
+                  <p className="text-sm font-medium text-purple-600">{tcal('labels.totalOrders')}</p>
                   <p className="text-2xl font-bold text-purple-900">{calendarMeta.stats.totalOrders}</p>
                 </div>
               </div>
@@ -233,8 +236,8 @@ export default function CalendarPage() {
           </div>
           
           <div className="mt-4 text-sm text-gray-600">
-            <p>Active days: {calendarMeta.totalDays} days with scheduled orders</p>
-            <p>Date range: {calendarMeta.dateRange.start} to {calendarMeta.dateRange.end}</p>
+            <p>{tcal('stats.activeDays')}: {calendarMeta.totalDays} {tcal('stats.daysWithScheduledOrders')}</p>
+            <p>{tcal('stats.dateRange')}: {calendarMeta.dateRange.start} {tcal('stats.to')} {calendarMeta.dateRange.end}</p>
           </div>
         </div>
       )}
@@ -266,15 +269,15 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h3 className="text-xl font-semibold text-gray-900">
-                  Orders for {selectedDate.toLocaleDateString('en-US', { 
+                  {tcal('modal.ordersFor').replace('{date}', selectedDate.toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric' 
-                  })}
+                  }))}
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  {dailyOrders.length} order{dailyOrders.length !== 1 ? 's' : ''} found
+                  {dailyOrders.length} {dailyOrders.length === 1 ? tcal('modal.ordersFound') : tcal('modal.ordersFoundPlural')}
                 </p>
               </div>
               <Button
@@ -296,20 +299,20 @@ export default function CalendarPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Orders</h4>
-                  <p className="text-gray-600">No pickup or return orders scheduled for this date.</p>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">{tcal('modal.noOrders')}</h4>
+                  <p className="text-gray-600">{tcal('modal.noPickupReturnOrders')}</p>
                 </div>
                  ) : (
                    <div className="overflow-x-auto">
                      <table className="min-w-full divide-y divide-gray-200">
                        <thead className="bg-gray-50">
                          <tr>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.order')}</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.customer')}</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.product')}</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.type')}</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.status')}</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.amount')}</th>
                          </tr>
                        </thead>
                        <tbody className="bg-white divide-y divide-gray-200">
@@ -330,7 +333,7 @@ export default function CalendarPage() {
                              <td className="px-6 py-4">
                                <div className="text-sm font-medium text-gray-900">{order.productName}</div>
                                {(order.productCount && order.productCount > 1) && (
-                                 <div className="text-sm text-gray-500">{order.productCount} items</div>
+                                 <div className="text-sm text-gray-500">{order.productCount} {tcal('modal.items')}</div>
                                )}
                              </td>
                              <td className="px-6 py-4 whitespace-nowrap">
@@ -339,7 +342,7 @@ export default function CalendarPage() {
                                  order.type === 'return' ? 'bg-blue-100 text-blue-800' :
                                  'bg-gray-100 text-gray-800'
                                }`}>
-                                 {order.type === 'pickup' ? 'Pickup' : 'Return'}
+                                 {order.type === 'pickup' ? tcal('labels.pickup') : tcal('labels.return')}
                                </span>
                              </td>
                              <td className="px-6 py-4 whitespace-nowrap">
@@ -350,11 +353,11 @@ export default function CalendarPage() {
                                    order.status === 'RETURNED' ? 'bg-blue-100 text-blue-800' :
                                    'bg-gray-100 text-gray-800'
                                  }`}>
-                                   {order.status}
+                                   {to(`status.${order.status}`)}
                                  </span>
                                  {order.isOverdue && (
                                    <span className="px-2 py-1 text-xs rounded-full font-medium bg-orange-100 text-orange-800">
-                                     Overdue
+                                     {tcal('labels.overdue')}
                                    </span>
                                  )}
                                </div>

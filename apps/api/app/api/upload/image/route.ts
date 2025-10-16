@@ -4,6 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { ResponseBuilder } from '@rentalshop/utils';
 
 // Configure Cloudinary
 const isCloudinaryConfigured = () => {
@@ -152,7 +153,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     
     if (!file) {
       return NextResponse.json(
-        { success: false, message: 'No image file provided' },
+        ResponseBuilder.error('NO_IMAGE_FILE'),
         { status: 400 }
       );
     }
@@ -161,7 +162,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const validation = validateImage(file);
     if (!validation.isValid) {
       return NextResponse.json(
-        { success: false, message: validation.error },
+        ResponseBuilder.error('VALIDATION_ERROR', { details: validation.error }),
         { status: 400 }
       );
     }
@@ -247,7 +248,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
         size: result.bytes || file.size,
         uploadMethod // Include upload method in response for debugging
       },
-      message: `Image uploaded successfully via ${uploadMethod}`
+      code: 'IMAGE_UPLOADED_SUCCESS', message: `Image uploaded successfully via ${uploadMethod}`
     });
 
   } catch (error) {
@@ -255,6 +256,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     return NextResponse.json(
       { 
         success: false, 
+        code: 'UPLOAD_IMAGE_FAILED',
         message: error instanceof Error ? error.message : 'Failed to upload image',
         error: error instanceof Error ? error.message : 'Unknown error'
       },

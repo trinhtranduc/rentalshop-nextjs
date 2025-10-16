@@ -8,7 +8,7 @@ const resetPasswordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(1, 'Password confirmation is required'),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  code: 'PASSWORD_MISMATCH', message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Password has been reset successfully'
+      code: 'PASSWORD_RESET_SUCCESS', message: 'Password has been reset successfully'
     });
     
   } catch (error: any) {

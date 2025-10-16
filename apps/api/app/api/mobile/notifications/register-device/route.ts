@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     if (!body.deviceId || !body.pushToken || !body.platform) {
       return NextResponse.json({
         success: false,
-        message: 'Missing required fields: deviceId, pushToken, platform'
+        code: 'DEVICE_INFO_REQUIRED', message: 'Missing required fields: deviceId, pushToken, platform'
       }, { status: 400 });
     }
     
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     if (!['ios', 'android'].includes(body.platform)) {
       return NextResponse.json({
         success: false,
-        message: 'Invalid platform. Must be "ios" or "android"'
+        code: 'INVALID_PLATFORM', message: 'Invalid platform. Must be "ios" or "android"'
       }, { status: 400 });
     }
     
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Device registered successfully',
+      code: 'DEVICE_REGISTERED_SUCCESS', message: 'Device registered successfully',
       data: {
         deviceId: body.deviceId,
         platform: body.platform,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: false,
-      message: 'Device registration failed',
+      code: 'DEVICE_REGISTRATION_FAILED', message: 'Device registration failed',
       error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }

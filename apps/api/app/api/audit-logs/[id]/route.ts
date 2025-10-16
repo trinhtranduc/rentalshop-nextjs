@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid audit log ID format' },
+          ResponseBuilder.error('INVALID_AUDIT_LOG_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -33,7 +33,7 @@ export async function GET(
       if (!auditLog) {
         console.log('❌ Audit log not found in database for auditLogId:', auditLogId);
         return NextResponse.json(
-          { success: false, message: 'Audit log not found' },
+          ResponseBuilder.error('AUDIT_LOG_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -43,7 +43,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: auditLog,
-        message: 'Audit log retrieved successfully'
+        code: 'AUDIT_LOG_RETRIEVED_SUCCESS', message: 'Audit log retrieved successfully'
       });
 
     } catch (error) {

@@ -53,7 +53,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             cancelledOrders: 0,
             returnedOrders: 0
           },
-          message: 'No outlets found for merchant'
+          code: 'NO_OUTLETS_FOUND', message: 'No outlets found for merchant'
         });
       }
     } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
@@ -91,7 +91,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           cancelledOrders: 0,
           returnedOrders: 0
         },
-        message: 'No data available - user not assigned to merchant/outlet'
+        code: 'NO_DATA_AVAILABLE', message: 'No data available - user not assigned to merchant/outlet'
       });
     }
 

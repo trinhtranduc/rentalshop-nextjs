@@ -5,6 +5,7 @@ import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input } from "@rentalshop/ui";
+import { useAuthTranslations } from "@rentalshop/hooks";
 
 // Types for the forget password form
 interface ForgetPasswordFormData {
@@ -27,12 +28,13 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
   success = false,
 }) => {
   const [emailSent, setEmailSent] = useState(false);
+  const t = useAuthTranslations();
 
   // Validation schema
   const validationSchema = Yup.object({
     email: Yup.string()
-      .email("Please enter a valid email")
-      .required("Please enter your email"),
+      .email(t('login.invalidEmail'))
+      .required(t('login.invalidEmail')),
   });
 
   const validation = useFormik<ForgetPasswordFormData>({
@@ -74,10 +76,10 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
               </div>
             </div>
             <h1 className="mt-4 text-2xl font-bold text-gray-800">
-              Check your email
+              {t('forgotPassword.checkEmail')}
             </h1>
             <p className="mt-2 text-sm text-gray-600">
-              We've sent you a password reset link
+              {t('forgotPassword.checkEmail')}
             </p>
           </div>
 
@@ -88,14 +90,14 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Email sent successfully!
+                {t('forgotPassword.success')}
               </h3>
               <p className="text-sm text-gray-600 mb-6">
-                We've sent a password reset link to{" "}
+                {t('forgotPassword.checkEmail')}{" "}
                 <span className="font-medium">{validation.values.email}</span>
               </p>
               <p className="text-xs text-gray-500 mb-6">
-                Didn't receive the email? Check your spam folder or try again.
+                {t('forgotPassword.checkEmail')}
               </p>
               
               <div className="space-y-3">
@@ -106,14 +108,14 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
                   }}
                   className="w-full"
                 >
-                  Send another email
+                  {t('forgotPassword.sendButton')}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => onNavigate?.("/login")}
                   className="w-full"
                 >
-                  Back to login
+                  {t('forgotPassword.backToLogin')}
                 </Button>
               </div>
             </CardContent>
@@ -142,10 +144,10 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
             </div>
           </div>
           <h1 className="mt-4 text-2xl font-bold text-gray-800">
-            Forgot your password?
+            {t('forgotPassword.title')}
           </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Enter your email to receive a reset link
+            {t('forgotPassword.subtitle')}
           </p>
         </div>
 
@@ -153,10 +155,10 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
         <Card className="shadow-lg">
           <CardHeader className="text-center border-b border-gray-200 bg-gray-50 rounded-t-lg">
             <CardTitle className="text-xl font-semibold text-gray-800">
-              Reset your password
+              {t('forgotPassword.title')}
             </CardTitle>
             <CardDescription className="text-sm text-gray-600 mt-1">
-              We'll send you a link to reset your password
+              {t('forgotPassword.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
@@ -172,13 +174,13 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
                 {/* Email Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email address
+                    {t('forgotPassword.email')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={t('forgotPassword.email')}
                       className="pl-10"
                       onChange={validation.handleChange}
                       onBlur={validation.handleBlur}
@@ -202,10 +204,10 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
                   {loading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Sending reset link...
+                      {t('forgotPassword.sendButton')}...
                     </div>
                   ) : (
-                    "Send reset link"
+                    t('forgotPassword.sendButton')
                   )}
                 </Button>
               </div>
@@ -221,7 +223,7 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
             className="inline-flex items-center text-sm"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to login
+            {t('forgotPassword.backToLogin')}
           </Button>
         </div>
 

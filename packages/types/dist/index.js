@@ -35,7 +35,13 @@ function calculatePricing(basePrice, period) {
   };
 }
 
+// src/i18n.ts
+var defaultLocale = "en";
+var locales = ["en", "vi"];
+
 exports.PRICING_CONFIG = PRICING_CONFIG;
 exports.calculatePricing = calculatePricing;
+exports.defaultLocale = defaultLocale;
+exports.locales = locales;
 //# sourceMappingURL=out.js.map
 //# sourceMappingURL=index.js.map

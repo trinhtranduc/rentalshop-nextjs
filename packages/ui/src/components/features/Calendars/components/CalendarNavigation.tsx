@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '../../../ui/button';
+import { useCalendarTranslations } from '@rentalshop/hooks';
 
 interface CalendarNavigationProps {
   currentDate: Date;
@@ -17,9 +18,12 @@ export function CalendarNavigation({
   onToday,
   className = ''
 }: CalendarNavigationProps) {
+  const t = useCalendarTranslations();
+  
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    t('months.january'), t('months.february'), t('months.march'), t('months.april'), 
+    t('months.may'), t('months.june'), t('months.july'), t('months.august'), 
+    t('months.september'), t('months.october'), t('months.november'), t('months.december')
   ];
 
   const currentMonth = monthNames[currentDate.getMonth()];
@@ -51,7 +55,7 @@ export function CalendarNavigation({
           onClick={onToday}
           className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100"
         >
-          Today
+          {t('navigation.today')}
         </Button>
 
         <Button

@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable standalone output for proper Prisma binary handling
-  output: 'standalone',
+  // Only use standalone in production (Railway/Docker)
+  output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   
   // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
+    // Point to monorepo root for file tracing
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines', 'prisma'],
   },
   
   transpilePackages: [
