@@ -11,6 +11,7 @@ import {
 } from '../../../ui/dropdown-menu';
 import { User } from '@rentalshop/types';
 import { Eye, Edit, Trash2, MoreVertical, UserCheck, UserX } from 'lucide-react';
+import { useUsersTranslations } from '@rentalshop/hooks';
 
 interface UserTableProps {
   users: User[];
@@ -27,6 +28,7 @@ export function UserTable({
   sortOrder = 'desc',
   onSort 
 }: UserTableProps) {
+  const t = useUsersTranslations();
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
   
   if (users.length === 0) {
@@ -35,9 +37,9 @@ export function UserTable({
         <CardContent className="text-center py-12">
           <div className="text-text-tertiary">
             <div className="text-4xl mb-4">👥</div>
-            <h3 className="text-lg font-medium mb-2">No users found</h3>
+            <h3 className="text-lg font-medium mb-2">{t('messages.noUsers')}</h3>
             <p className="text-sm">
-              Try adjusting your filters or add some users to get started.
+              {t('messages.loadingUsers')}
             </p>
           </div>
         </CardContent>
@@ -46,7 +48,7 @@ export function UserTable({
   }
 
   const formatDate = (dateString: string | Date | undefined) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return t('messages.na');
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -63,9 +65,10 @@ export function UserTable({
       OUTLET_STAFF: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
     };
     
+    const roleKey = role as keyof typeof t.roles;
     return (
       <Badge className={variants[role] || variants.OUTLET_STAFF}>
-        {role.replace('_', ' ')}
+        {t(`roles.${roleKey}` as any) || role.replace('_', ' ')}
       </Badge>
     );
   };
@@ -73,11 +76,11 @@ export function UserTable({
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-        Active
+        {t('fields.active')}
       </Badge>
     ) : (
       <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-        Inactive
+        {t('fields.inactive')}
       </Badge>
     );
   };
@@ -98,22 +101,22 @@ export function UserTable({
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  User
+                  {t('fields.name')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Role
+                  {t('fields.role')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Outlet / Merchant
+                  {t('fields.outlet')} / {t('fields.merchant')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Status
+                  {t('fields.status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Created At
+                  {t('fields.createdAt')}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Actions
+                  {t('fields.actions')}
                 </th>
               </tr>
             </thead>
@@ -147,7 +150,7 @@ export function UserTable({
                   {/* Outlet / Merchant */}
                   <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
-                      {user.outlet?.name || user.merchant?.name || 'N/A'}
+                      {user.outlet?.name || user.merchant?.name || t('messages.na')}
                     </div>
                   </td>
                   
@@ -186,21 +189,21 @@ export function UserTable({
                           setOpenDropdownId(null);
                         }}>
                           <Eye className="h-4 w-4 mr-2" />
-                          View Details
+                          {t('actions.viewDetails')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => {
                           onUserAction('edit', user.id);
                           setOpenDropdownId(null);
                         }}>
                           <Edit className="h-4 w-4 mr-2" />
-                          Edit User
+                          {t('actions.editUser')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => {
                           onUserAction(user.isActive ? 'deactivate' : 'activate', user.id);
                           setOpenDropdownId(null);
                         }}>
                           {user.isActive ? <UserX className="h-4 w-4 mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
-                          {user.isActive ? 'Deactivate' : 'Activate'}
+                          {user.isActive ? t('actions.deactivate') : t('actions.activate')}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
@@ -211,7 +214,7 @@ export function UserTable({
                           className="text-action-danger focus:text-action-danger"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete User
+                          {t('actions.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

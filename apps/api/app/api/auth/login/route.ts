@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { comparePassword, generateToken } from '@rentalshop/auth';
-import { loginSchema } from '@rentalshop/utils';
+import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await comparePassword(validatedData.password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
+        ResponseBuilder.error('INVALID_CREDENTIALS'),
         { status: 401 }
       );
     }
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     const result = {
       success: true,
-      message: 'Login successful',
+      code: 'LOGIN_SUCCESS', message: 'Login successful',
       data: {
         user: {
           id: user.id,

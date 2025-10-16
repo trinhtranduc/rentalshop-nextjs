@@ -10,6 +10,9 @@ import {
   Button,
   Label
 } from '../../../ui';
+import { useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useLocale } from 'next-intl';
+import { formatDateWithLocale } from '@rentalshop/utils';
 import { Edit, Trash2, AlertTriangle } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
 
@@ -26,6 +29,9 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
   onEdit,
   onDelete
 }) => {
+  const t = useCategoriesTranslations();
+  const tc = useCommonTranslations();
+  const locale = useLocale();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!category) return null;
@@ -56,10 +62,10 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
           <DialogHeader>
             <div>
               <DialogTitle className="text-xl font-semibold">
-                Category Details
+                {t('dialog.viewDetails')}
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-600 mt-1">
-                View category information and details
+                {t('dialog.viewDescription')}
               </DialogDescription>
             </div>
           </DialogHeader>
@@ -67,7 +73,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
             <div className="mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Category Name</Label>
+                  <Label className="text-sm font-medium text-gray-700">{t('fields.name')}</Label>
                   <div className="mt-1 p-3 bg-gray-50 rounded-md border">
                     <p className="text-gray-900 font-medium">{category.name}</p>
                   </div>
@@ -75,7 +81,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
                 
                 {category.description && (
                   <div className="md:col-span-2">
-                    <Label className="text-sm font-medium text-gray-700">Description</Label>
+                    <Label className="text-sm font-medium text-gray-700">{t('fields.description')}</Label>
                     <div className="mt-1 p-3 bg-gray-50 rounded-md border">
                       <p className="text-gray-900 whitespace-pre-wrap">{category.description}</p>
                     </div>
@@ -83,32 +89,24 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
                 )}
                 
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Created</Label>
+                  <Label className="text-sm font-medium text-gray-700">{tc('labels.createdAt')}</Label>
                   <div className="mt-1 p-3 bg-gray-50 rounded-md border">
                     <p className="text-gray-900">
                       {category.createdAt 
-                        ? new Date(category.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
-                        : 'Unknown'
+                        ? formatDateWithLocale(category.createdAt, locale as 'en' | 'vi')
+                        : tc('labels.unknown')
                       }
                     </p>
                   </div>
                 </div>
                 
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Last Updated</Label>
+                  <Label className="text-sm font-medium text-gray-700">{tc('labels.updatedAt')}</Label>
                   <div className="mt-1 p-3 bg-gray-50 rounded-md border">
                     <p className="text-gray-900">
                       {category.updatedAt && category.updatedAt !== category.createdAt
-                        ? new Date(category.updatedAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
-                        : 'Never updated'
+                        ? formatDateWithLocale(category.updatedAt, locale as 'en' | 'vi')
+                        : t('dialog.neverUpdated')
                       }
                     </p>
                   </div>
@@ -121,13 +119,13 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
                   variant="outline"
                   onClick={onClose}
                 >
-                  Close
+                  {tc('buttons.close')}
                 </Button>
                 <Button
                   type="button"
                   onClick={handleEdit}
                 >
-                  Edit Category
+                  {t('actions.edit')}
                 </Button>
               </div>
             </div>
@@ -139,14 +137,14 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
+            <DialogTitle>{t('dialog.deleteTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-gray-600">
-              Are you sure you want to delete the category <strong>"{category?.name}"</strong>?
+              {t('dialog.deleteConfirmation')} <strong>"{category?.name}"</strong>?
             </p>
             <p className="text-sm text-gray-500">
-              This action cannot be undone. All products in this category will be affected.
+              {t('dialog.deleteWarning')}
             </p>
             <div className="flex items-center justify-end gap-3 pt-4">
               <Button
@@ -154,14 +152,14 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
                 variant="outline"
                 onClick={handleCancelDelete}
               >
-                Cancel
+                {tc('buttons.cancel')}
               </Button>
               <Button
                 type="button"
                 variant="destructive"
                 onClick={handleConfirmDelete}
               >
-                Delete Category
+                {t('actions.delete')}
               </Button>
             </div>
           </div>

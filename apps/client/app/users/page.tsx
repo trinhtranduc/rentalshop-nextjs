@@ -20,7 +20,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useUsersData, useCanExportData } from '@rentalshop/hooks';
+import { useAuth, useUsersData, useCanExportData, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
 import { usersApi } from '@rentalshop/utils';
 import type { UserFilters, User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 
@@ -42,6 +42,8 @@ export default function UsersPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const t = useCommonTranslations();
+  const tu = useUsersTranslations();
   const canExport = useCanExportData();
   
   // Dialog states
@@ -50,7 +52,11 @@ export default function UsersPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showActivateConfirm, setShowActivateConfirm] = useState(false);
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [userToActivate, setUserToActivate] = useState<User | null>(null);
+  const [userToDeactivate, setUserToDeactivate] = useState<User | null>(null);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -181,26 +187,18 @@ export default function UsersPage() {
         break;
         
       case 'activate':
-      case 'deactivate':
-        // Toggle user active status
+        // Show activate confirmation dialog
         if (userItem) {
-          try {
-            const response = await usersApi.updateUser(userId, {
-              id: userId,
-              isActive: !userItem.isActive
-            });
-            if (response.success) {
-              toastSuccess(
-                'User Updated',
-                `User ${!userItem.isActive ? 'activated' : 'deactivated'} successfully`
-              );
-              router.refresh();
-            } else {
-              throw new Error(response.error || 'Failed to update user');
-            }
-          } catch (error) {
-            toastError('Update Failed', (error as Error).message);
-          }
+          setUserToActivate(userItem);
+          setShowActivateConfirm(true);
+        }
+        break;
+        
+      case 'deactivate':
+        // Show deactivate confirmation dialog
+        if (userItem) {
+          setUserToDeactivate(userItem);
+          setShowDeactivateConfirm(true);
         }
         break;
         
@@ -224,15 +222,15 @@ export default function UsersPage() {
     try {
       const response = await usersApi.updateUser(selectedUser.id, userData as UserUpdateInput);
       if (response.success) {
-        toastSuccess('User Updated', 'User has been updated successfully');
+        toastSuccess(tu('messages.updateSuccess'), tu('messages.updateSuccess'));
         setShowEditDialog(false);
         setSelectedUser(null);
         router.refresh();
       } else {
-        throw new Error(response.error || 'Failed to update user');
+        throw new Error(response.error || tu('messages.updateFailed'));
       }
     } catch (error) {
-      toastError('Update Failed', (error as Error).message);
+      toastError(tu('messages.updateFailed'), (error as Error).message);
       throw error;
     }
   }, [selectedUser, router, toastSuccess, toastError]);
@@ -244,17 +242,61 @@ export default function UsersPage() {
     try {
       const response = await usersApi.deleteUser(userToDelete.id);
       if (response.success) {
-        toastSuccess('User Deleted', `User "${userToDelete.firstName} ${userToDelete.lastName}" has been deleted successfully`);
+        toastSuccess(tu('messages.deleteSuccess'), `${tu('messages.deleteSuccess')} - "${userToDelete.firstName} ${userToDelete.lastName}"`);
         setShowDeleteConfirm(false);
         setUserToDelete(null);
         router.refresh();
       } else {
-        throw new Error(response.error || 'Failed to delete user');
+        throw new Error(response.error || tu('messages.deleteFailed'));
       }
     } catch (error) {
-      toastError('Delete Failed', (error as Error).message);
+      toastError(tu('messages.deleteFailed'), (error as Error).message);
     }
   }, [userToDelete, router, toastSuccess, toastError]);
+  
+  // Handle activate confirmation
+  const handleConfirmActivate = useCallback(async () => {
+    if (!userToActivate) return;
+    
+    try {
+      const response = await usersApi.updateUser(userToActivate.id, {
+        id: userToActivate.id,
+        isActive: true
+      });
+      if (response.success) {
+        toastSuccess(tu('messages.activateSuccess'), `${tu('messages.activateSuccess')} - "${userToActivate.firstName} ${userToActivate.lastName}"`);
+        setShowActivateConfirm(false);
+        setUserToActivate(null);
+        router.refresh();
+      } else {
+        throw new Error(response.error || tu('messages.activateFailed'));
+      }
+    } catch (error) {
+      toastError(tu('messages.activateFailed'), (error as Error).message);
+    }
+  }, [userToActivate, router, toastSuccess, toastError, tu]);
+  
+  // Handle deactivate confirmation
+  const handleConfirmDeactivate = useCallback(async () => {
+    if (!userToDeactivate) return;
+    
+    try {
+      const response = await usersApi.updateUser(userToDeactivate.id, {
+        id: userToDeactivate.id,
+        isActive: false
+      });
+      if (response.success) {
+        toastSuccess(tu('messages.deactivateSuccess'), `${tu('messages.deactivateSuccess')} - "${userToDeactivate.firstName} ${userToDeactivate.lastName}"`);
+        setShowDeactivateConfirm(false);
+        setUserToDeactivate(null);
+        router.refresh();
+      } else {
+        throw new Error(response.error || tu('messages.deactivateFailed'));
+      }
+    } catch (error) {
+      toastError(tu('messages.deactivateFailed'), (error as Error).message);
+    }
+  }, [userToDeactivate, router, toastSuccess, toastError, tu]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -292,8 +334,8 @@ export default function UsersPage() {
     return (
       <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
         <PageHeader className="flex-shrink-0">
-          <PageTitle>Users</PageTitle>
-          <p className="text-sm text-gray-600">Manage users in the system</p>
+          <PageTitle>{tu('title')}</PageTitle>
+          <p className="text-sm text-gray-600">{tu('messages.loadingUsers')}</p>
         </PageHeader>
         <UsersLoading />
       </PageWrapper>
@@ -305,21 +347,21 @@ export default function UsersPage() {
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle>Users</PageTitle>
-            <p className="text-sm text-gray-600">Manage users in the system</p>
+            <PageTitle>{tu('title')}</PageTitle>
+            <p className="text-sm text-gray-600">{tu('title')}</p>
           </div>
           <div className="flex gap-3">
             {/* Export feature - temporarily hidden, will be enabled in the future */}
             {/* {canExport && (
               <Button
                 onClick={() => {
-                  toastSuccess('Export Feature', 'Export functionality coming soon!');
+                  toastSuccess(t('labels.info'), tc('messages.comingSoon'));
                 }}
                 variant="default"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Export
+                {t('buttons.export')}
               </Button>
             )} */}
             <Button 
@@ -328,7 +370,7 @@ export default function UsersPage() {
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add User
+              {tu('addUser')}
             </Button>
           </div>
         </div>
@@ -366,19 +408,19 @@ export default function UsersPage() {
             const response = await usersApi.createUser(userData);
             
             if (response.success) {
-              toastSuccess('User Created', `User "${userData.firstName} ${userData.lastName}" has been created successfully`);
+              toastSuccess(tu('messages.createSuccess'), `${tu('messages.createSuccess')} - "${userData.firstName} ${userData.lastName}"`);
               router.refresh();
             } else {
-              throw new Error(response.error || 'Failed to create user');
+              throw new Error(response.error || tu('messages.createFailed'));
             }
           } catch (error) {
             console.error('Error creating user:', error);
-            toastError('Error', error instanceof Error ? error.message : 'Failed to create user');
+            toastError(t('labels.error'), error instanceof Error ? error.message : tu('messages.createFailed'));
             throw error; // Re-throw to let dialog handle it
           }
         }}
         onError={(error) => {
-          toastError('Error', error);
+          toastError(t('labels.error'), error);
         }}
       />
 
@@ -387,7 +429,7 @@ export default function UsersPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Edit User: {selectedUser?.firstName} {selectedUser?.lastName}
+              {tu('editUser')}: {selectedUser?.firstName} {selectedUser?.lastName}
             </DialogTitle>
           </DialogHeader>
           {selectedUser && (
@@ -409,14 +451,46 @@ export default function UsersPage() {
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         type="danger"
-        title="Delete User"
-        description={`Are you sure you want to delete user "${userToDelete?.firstName} ${userToDelete?.lastName}"? This action cannot be undone.`}
-        confirmText="Delete User"
-        cancelText="Cancel"
+        title={tu('actions.delete')}
+        description={tu('messages.confirmDelete')}
+        confirmText={tu('actions.delete')}
+        cancelText={t('buttons.cancel')}
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           setShowDeleteConfirm(false);
           setUserToDelete(null);
+        }}
+      />
+
+      {/* Activate User Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showActivateConfirm}
+        onOpenChange={setShowActivateConfirm}
+        type="info"
+        title={tu('messages.confirmActivateAccount')}
+        description={userToActivate ? `${tu('messages.confirmActivate')} "${userToActivate.firstName} ${userToActivate.lastName}"? ${tu('messages.confirmActivateDetails')}` : ''}
+        confirmText={tu('actions.activateAccount')}
+        cancelText={t('buttons.cancel')}
+        onConfirm={handleConfirmActivate}
+        onCancel={() => {
+          setShowActivateConfirm(false);
+          setUserToActivate(null);
+        }}
+      />
+
+      {/* Deactivate User Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeactivateConfirm}
+        onOpenChange={setShowDeactivateConfirm}
+        type="warning"
+        title={tu('messages.confirmDeactivateAccount')}
+        description={userToDeactivate ? `${tu('messages.confirmDeactivate')} "${userToDeactivate.firstName} ${userToDeactivate.lastName}"? ${tu('messages.confirmDeactivateDetails')}` : ''}
+        confirmText={tu('actions.deactivateAccount')}
+        cancelText={t('buttons.cancel')}
+        onConfirm={handleConfirmDeactivate}
+        onCancel={() => {
+          setShowDeactivateConfirm(false);
+          setUserToDeactivate(null);
         }}
       />
     </PageWrapper>

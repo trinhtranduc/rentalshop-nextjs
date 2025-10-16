@@ -2308,6 +2308,1380 @@ interface SecurityUpdate {
     newPassword: string;
 }
 
+var required = "This field is required";
+var email = "Please enter a valid email address";
+var phone = "Please enter a valid phone number";
+var min = "Minimum value is {min}";
+var max = "Maximum value is {max}";
+var minLength = "Minimum length is {min} characters";
+var maxLength = "Maximum length is {max} characters";
+var pattern = "Invalid format";
+var url = "Please enter a valid URL";
+var number = "Please enter a valid number";
+var integer = "Please enter a whole number";
+var positive = "Please enter a positive number";
+var negative = "Please enter a negative number";
+var date = "Please enter a valid date";
+var dateRange = "Invalid date range";
+var time$1 = "Please enter a valid time";
+var password = {
+	minLength: "Password must be at least {min} characters",
+	uppercase: "Password must contain at least one uppercase letter",
+	lowercase: "Password must contain at least one lowercase letter",
+	number: "Password must contain at least one number",
+	special: "Password must contain at least one special character",
+	match: "Passwords do not match"
+};
+var file = {
+	size: "File size must be less than {max}",
+	type: "Invalid file type. Allowed types: {types}",
+	required: "Please select a file"
+};
+var unique = "This value already exists";
+var exists = "This value does not exist";
+var custom = {
+	invalidBarcode: "Invalid barcode format",
+	invalidSKU: "Invalid SKU format",
+	stockNotAvailable: "Not enough stock available",
+	invalidDateRange: "End date must be after start date",
+	priceGreaterThanZero: "Price must be greater than zero",
+	quantityGreaterThanZero: "Quantity must be greater than zero"
+};
+var validation$1 = {
+	required: required,
+	email: email,
+	phone: phone,
+	min: min,
+	max: max,
+	minLength: minLength,
+	maxLength: maxLength,
+	pattern: pattern,
+	url: url,
+	number: number,
+	integer: integer,
+	positive: positive,
+	negative: negative,
+	date: date,
+	dateRange: dateRange,
+	time: time$1,
+	password: password,
+	file: file,
+	unique: unique,
+	exists: exists,
+	custom: custom
+};
+
+declare const _________locales_en_validation_json_custom: typeof custom;
+declare const _________locales_en_validation_json_date: typeof date;
+declare const _________locales_en_validation_json_dateRange: typeof dateRange;
+declare const _________locales_en_validation_json_email: typeof email;
+declare const _________locales_en_validation_json_exists: typeof exists;
+declare const _________locales_en_validation_json_file: typeof file;
+declare const _________locales_en_validation_json_integer: typeof integer;
+declare const _________locales_en_validation_json_max: typeof max;
+declare const _________locales_en_validation_json_maxLength: typeof maxLength;
+declare const _________locales_en_validation_json_min: typeof min;
+declare const _________locales_en_validation_json_minLength: typeof minLength;
+declare const _________locales_en_validation_json_negative: typeof negative;
+declare const _________locales_en_validation_json_number: typeof number;
+declare const _________locales_en_validation_json_password: typeof password;
+declare const _________locales_en_validation_json_pattern: typeof pattern;
+declare const _________locales_en_validation_json_phone: typeof phone;
+declare const _________locales_en_validation_json_positive: typeof positive;
+declare const _________locales_en_validation_json_required: typeof required;
+declare const _________locales_en_validation_json_unique: typeof unique;
+declare const _________locales_en_validation_json_url: typeof url;
+declare namespace _________locales_en_validation_json {
+  export { _________locales_en_validation_json_custom as custom, _________locales_en_validation_json_date as date, _________locales_en_validation_json_dateRange as dateRange, validation$1 as default, _________locales_en_validation_json_email as email, _________locales_en_validation_json_exists as exists, _________locales_en_validation_json_file as file, _________locales_en_validation_json_integer as integer, _________locales_en_validation_json_max as max, _________locales_en_validation_json_maxLength as maxLength, _________locales_en_validation_json_min as min, _________locales_en_validation_json_minLength as minLength, _________locales_en_validation_json_negative as negative, _________locales_en_validation_json_number as number, _________locales_en_validation_json_password as password, _________locales_en_validation_json_pattern as pattern, _________locales_en_validation_json_phone as phone, _________locales_en_validation_json_positive as positive, _________locales_en_validation_json_required as required, time$1 as time, _________locales_en_validation_json_unique as unique, _________locales_en_validation_json_url as url };
+}
+
+var title$4 = "Settings";
+var tabs = {
+	profile: "Profile",
+	account: "Account",
+	merchant: "Business",
+	outlet: "Outlet",
+	security: "Security",
+	subscription: "Subscription",
+	currency: "Currency",
+	language: "Language",
+	notifications: "Notifications",
+	preferences: "Preferences"
+};
+var profile$1 = {
+	title: "Profile Settings",
+	subtitle: "Manage your personal information",
+	personalInformation: "Personal Information",
+	firstName: "First Name",
+	lastName: "Last Name",
+	name: "Full Name",
+	email: "Email Address",
+	phone: "Phone Number",
+	role: "Role",
+	avatar: "Profile Picture",
+	updateButton: "Update Profile",
+	uploadAvatar: "Upload Photo",
+	removeAvatar: "Remove Photo",
+	edit: "Edit",
+	save: "Save",
+	cancel: "Cancel",
+	saving: "Saving...",
+	notProvided: "Not provided",
+	enterFirstName: "Enter your first name",
+	enterLastName: "Enter your last name",
+	enterPhone: "Enter your phone number"
+};
+var account = {
+	title: "Account Settings",
+	subtitle: "Manage your account preferences",
+	timezone: "Timezone",
+	dateFormat: "Date Format",
+	timeFormat: "Time Format",
+	numberFormat: "Number Format",
+	changePasswordTitle: "Change Password",
+	changePasswordDesc: "Update your account password",
+	changePasswordButton: "Change Password",
+	sessionTitle: "Session Management",
+	sessionDesc: "Sign out of your current session",
+	signOut: "Sign Out",
+	deleteAccountTitle: "Delete Account",
+	deleteAccountDesc: "Permanently delete your account and all data",
+	deleteAccount: "Delete Account",
+	deleting: "Deleting...",
+	deleteAccountWarning: "This action cannot be undone"
+};
+var merchant = {
+	title: "Business Settings",
+	subtitle: "Manage your business information",
+	businessInformation: "Business Information",
+	name: "Business Name",
+	email: "Business Email",
+	phone: "Business Phone",
+	address: "Business Address",
+	city: "City",
+	state: "State",
+	zipCode: "ZIP Code",
+	country: "Country",
+	taxId: "Tax ID",
+	businessType: "Business Type",
+	pricingType: "Pricing Type",
+	registrationNumber: "Registration Number",
+	logo: "Business Logo",
+	edit: "Edit",
+	save: "Save",
+	cancel: "Cancel",
+	saving: "Saving...",
+	notProvided: "Not provided",
+	enterBusinessName: "Enter business name",
+	enterTaxId: "Enter tax ID",
+	enterPhone: "Enter phone number",
+	enterAddress: "Enter address",
+	enterCity: "Enter city",
+	enterState: "Enter state",
+	enterZipCode: "Enter ZIP code",
+	selectCountry: "Select country",
+	currencySettings: "Currency Settings",
+	currencyDesc: "Select your preferred currency for pricing and transactions",
+	usDollar: "US Dollar",
+	vietnameseDong: "Vietnamese Dong",
+	selected: "Selected",
+	selectCurrency: "Select Currency",
+	savingCurrency: "Updating currency..."
+};
+var outlet = {
+	title: "Outlet Settings",
+	subtitle: "Manage your outlet information",
+	outletInformation: "Outlet Information",
+	name: "Outlet Name",
+	address: "Outlet Address",
+	phone: "Outlet Phone",
+	description: "Description",
+	workingHours: "Working Hours",
+	contactPerson: "Contact Person",
+	edit: "Edit",
+	save: "Save",
+	cancel: "Cancel",
+	saving: "Saving...",
+	notProvided: "Not provided",
+	noOutletInfo: "No outlet information available",
+	enterOutletName: "Enter outlet name",
+	enterOutletPhone: "Enter outlet phone",
+	enterOutletAddress: "Enter outlet address",
+	enterDescription: "Enter outlet description"
+};
+var security = {
+	title: "Security Settings",
+	subtitle: "Manage your password and security preferences",
+	currentPassword: "Current Password",
+	newPassword: "New Password",
+	confirmPassword: "Confirm New Password",
+	changePassword: "Change Password",
+	twoFactorAuth: "Two-Factor Authentication",
+	enableTwoFactor: "Enable 2FA",
+	disableTwoFactor: "Disable 2FA",
+	activeSessions: "Active Sessions",
+	logoutAllDevices: "Logout from all devices"
+};
+var subscription = {
+	title: "Subscription",
+	subtitle: "Manage your subscription plan",
+	currentPlan: "Current Plan",
+	status: "Status",
+	billingCycle: "Billing Cycle",
+	nextBilling: "Next Billing",
+	amount: "Amount",
+	paymentMethod: "Payment Method",
+	upgradePlan: "Upgrade Plan",
+	downgradePlan: "Downgrade Plan",
+	cancelSubscription: "Cancel Subscription",
+	viewInvoices: "View Invoices",
+	planFeatures: "Plan Features",
+	usageStats: "Usage Statistics",
+	loading: "Loading subscription data...",
+	active: "Active",
+	expired: "Expired",
+	expiringSoon: "Expiring Soon",
+	daysRemaining: "days remaining",
+	cancelsAtPeriodEnd: "Cancels at period end",
+	autoRenewalEnabled: "Auto-renewal enabled",
+	expiresIn: "Your subscription expires in",
+	considerRenewing: "Consider renewing to avoid service interruption.",
+	contactMerchant: "Contact your merchant administrator to manage subscription settings.",
+	comingSoon: "Subscription management features coming soon.",
+	noSubscription: "No Active Subscription",
+	noSubscriptionDesc: "You don't have an active subscription plan.",
+	contactAdmin: "Please contact your system administrator to activate a subscription plan."
+};
+var currency = {
+	title: "Currency Settings",
+	subtitle: "Select your preferred currency",
+	selectCurrency: "Select Currency",
+	currentCurrency: "Current Currency",
+	symbol: "Symbol",
+	code: "Code",
+	exchangeRate: "Exchange Rate",
+	updateButton: "Update Currency"
+};
+var language = {
+	title: "Language Settings",
+	subtitle: "Select your preferred language for the interface",
+	selectLanguage: "Select Language",
+	currentLanguage: "Current Language",
+	english: "English",
+	vietnamese: "Tiếng Việt",
+	updateButton: "Update Language",
+	selectALanguage: "Select a language",
+	applyingChanges: "Applying language changes...",
+	languagePreferenceSaved: "Your language preference is saved automatically and will be used across all your sessions."
+};
+var notifications = {
+	title: "Notification Settings",
+	subtitle: "Manage your notification preferences",
+	emailNotifications: "Email Notifications",
+	pushNotifications: "Push Notifications",
+	smsNotifications: "SMS Notifications",
+	orderUpdates: "Order Updates",
+	paymentAlerts: "Payment Alerts",
+	systemAlerts: "System Alerts",
+	marketingEmails: "Marketing Emails"
+};
+var billing = {
+	title: "Billing Configuration",
+	subtitle: "Configure billing intervals and discount percentages",
+	modernSubscription: "Modern Subscription Billing",
+	modernSubscriptionDesc: "Configure billing intervals and discount percentages following Stripe's modern subscription practices. Longer commitments typically receive higher discounts to encourage customer retention.",
+	intervals: {
+		title: "Billing Intervals",
+		addInterval: "Add Interval",
+		editInterval: "Edit Billing Interval",
+		addNewInterval: "Add Billing Interval",
+		name: "Name",
+		months: "Months",
+		discount: "Discount",
+		status: "Status",
+		actions: "Actions",
+		active: "Active",
+		namePlaceholder: "e.g., Monthly, Quarterly",
+		update: "Update",
+		add: "Add",
+		cancel: "Cancel",
+		saveConfiguration: "Save Configuration",
+		saving: "Saving..."
+	},
+	examples: {
+		monthly: "Monthly",
+		quarterly: "Quarterly",
+		yearly: "Yearly",
+		monthlyDesc: "0% discount - Standard pricing",
+		quarterlyDesc: "5% discount - Good for retention",
+		yearlyDesc: "20% discount - Best value"
+	},
+	messages: {
+		saveSuccess: "Billing configuration saved successfully!",
+		saveFailed: "Failed to save billing configuration",
+		saveError: "Error saving billing configuration. Please try again."
+	}
+};
+var menuItems = {
+	profile: {
+		label: "Profile",
+		description: "Manage your personal information"
+	},
+	merchant: {
+		label: "Business",
+		description: "Manage your business information, pricing, and currency"
+	},
+	outlet: {
+		label: "Outlet",
+		description: "Manage your outlet information"
+	},
+	subscription: {
+		label: "Subscription",
+		description: "Manage your subscription and billing"
+	},
+	language: {
+		label: "Language",
+		description: "Select your preferred language"
+	},
+	account: {
+		label: "Account",
+		description: "Account settings, password and preferences"
+	}
+};
+var messages$4 = {
+	updateSuccess: "Settings updated successfully",
+	updateFailed: "Failed to update settings",
+	passwordChanged: "Password changed successfully",
+	passwordChangeFailed: "Failed to change password",
+	confirmDelete: "Are you sure you want to delete your account?",
+	deleteSuccess: "Account deleted successfully",
+	deleteFailed: "Failed to delete account",
+	personalProfileUpdated: "Personal profile updated successfully!",
+	personalProfileUpdateFailed: "Failed to update personal profile",
+	businessInfoUpdated: "Business information updated successfully!",
+	businessInfoUpdateFailed: "Failed to update business information",
+	outletInfoUpdated: "Outlet information updated successfully!",
+	outletInfoUpdateFailed: "Failed to update outlet information",
+	currencyUpdated: "Currency updated successfully!",
+	currencyUpdateFailed: "Failed to update currency",
+	accountDeleted: "Your account has been deleted successfully.",
+	accountDeleteFailed: "Failed to delete account. Please try again.",
+	passwordMismatch: "New passwords do not match",
+	passwordTooShort: "New password must be at least 6 characters"
+};
+var changePassword$1 = {
+	title: "Change Password",
+	currentPassword: "Current Password",
+	newPassword: "New Password",
+	confirmPassword: "Confirm New Password",
+	currentPasswordPlaceholder: "Enter your current password",
+	newPasswordPlaceholder: "Enter your new password",
+	confirmPasswordPlaceholder: "Confirm your new password",
+	cancel: "Cancel",
+	changePassword: "Change Password",
+	changing: "Changing..."
+};
+var settings = {
+	title: title$4,
+	tabs: tabs,
+	profile: profile$1,
+	account: account,
+	merchant: merchant,
+	outlet: outlet,
+	security: security,
+	subscription: subscription,
+	currency: currency,
+	language: language,
+	notifications: notifications,
+	billing: billing,
+	menuItems: menuItems,
+	messages: messages$4,
+	changePassword: changePassword$1
+};
+
+declare const _________locales_en_settings_json_account: typeof account;
+declare const _________locales_en_settings_json_billing: typeof billing;
+declare const _________locales_en_settings_json_currency: typeof currency;
+declare const _________locales_en_settings_json_language: typeof language;
+declare const _________locales_en_settings_json_menuItems: typeof menuItems;
+declare const _________locales_en_settings_json_merchant: typeof merchant;
+declare const _________locales_en_settings_json_notifications: typeof notifications;
+declare const _________locales_en_settings_json_outlet: typeof outlet;
+declare const _________locales_en_settings_json_security: typeof security;
+declare const _________locales_en_settings_json_subscription: typeof subscription;
+declare const _________locales_en_settings_json_tabs: typeof tabs;
+declare namespace _________locales_en_settings_json {
+  export { _________locales_en_settings_json_account as account, _________locales_en_settings_json_billing as billing, changePassword$1 as changePassword, _________locales_en_settings_json_currency as currency, settings as default, _________locales_en_settings_json_language as language, _________locales_en_settings_json_menuItems as menuItems, _________locales_en_settings_json_merchant as merchant, messages$4 as messages, _________locales_en_settings_json_notifications as notifications, _________locales_en_settings_json_outlet as outlet, profile$1 as profile, _________locales_en_settings_json_security as security, _________locales_en_settings_json_subscription as subscription, _________locales_en_settings_json_tabs as tabs, title$4 as title };
+}
+
+var title$3 = "Customers";
+var subtitle = "Manage customers in the system";
+var pageTitle = "Customer Management";
+var createCustomer = "Add Customer";
+var editCustomer = "Edit Customer";
+var viewCustomer = "View Customer";
+var customerDetails = "Customer Details";
+var customerInformation = "Customer Information";
+var noDataAvailable = "No customer data available";
+var viewCustomerInfo = "View customer information and details";
+var customerOverview = "Customer Overview";
+var personalInformation = "Personal Information";
+var addressInformation = "Address Information";
+var updating = "Updating...";
+var updateCustomer = "Update Customer";
+var deleting = "Deleting...";
+var fields$1 = {
+	id: "ID",
+	firstName: "First Name",
+	lastName: "Last Name",
+	fullName: "Full Name",
+	name: "Name",
+	email: "Email",
+	phone: "Phone Number",
+	contact: "Contact",
+	address: "Address",
+	streetAddress: "Street Address",
+	city: "City",
+	state: "State/Province",
+	country: "Country",
+	zipCode: "ZIP/Postal Code",
+	location: "Location",
+	dateOfBirth: "Date of Birth",
+	idNumber: "ID Number",
+	notes: "Notes",
+	tags: "Tags",
+	createdAt: "Created",
+	customerId: "Customer ID",
+	lastUpdated: "Last Updated",
+	merchant: "Merchant",
+	companyName: "Company Name",
+	noAddress: "No address provided",
+	notProvided: "Not provided",
+	notSpecified: "Not specified",
+	notAvailable: "Not available",
+	loading: "Loading..."
+};
+var profile = {
+	title: "Customer Profile",
+	contact: "Contact Information",
+	address: "Address Information",
+	identification: "Identification",
+	preferences: "Preferences",
+	notes: "Internal Notes"
+};
+var orders$1 = {
+	title: "Order History",
+	totalOrders: "Total Orders",
+	activeOrders: "Active Orders",
+	completedOrders: "Completed Orders",
+	totalSpent: "Total Spent",
+	viewOrders: "View All Orders",
+	createOrder: "Create Order for Customer",
+	noOrders: "No orders yet"
+};
+var stats$3 = {
+	title: "Customer Statistics",
+	memberSince: "Member Since",
+	lastOrder: "Last Order",
+	averageOrderValue: "Average Order Value",
+	lifetimeValue: "Lifetime Value",
+	paymentStatus: "Payment Status",
+	currentBalance: "Current Balance"
+};
+var status$2 = {
+	active: "Active",
+	inactive: "Inactive",
+	blocked: "Blocked",
+	vip: "VIP"
+};
+var actions$2 = {
+	title: "Actions",
+	view: "View Details",
+	edit: "Edit",
+	editCustomer: "Edit Customer",
+	viewOrders: "View Orders",
+	orders: "Orders",
+	createOrder: "Create Order",
+	viewHistory: "View History",
+	sendMessage: "Send Message",
+	block: "Block Customer",
+	unblock: "Unblock Customer",
+	"delete": "Delete",
+	deleteCustomer: "Delete Customer",
+	activate: "Activate Customer",
+	deactivate: "Deactivate Customer"
+};
+var messages$3 = {
+	createSuccess: "Customer created successfully",
+	createFailed: "Failed to create customer",
+	updateSuccess: "Customer updated successfully",
+	updateFailed: "Failed to update customer",
+	deleteSuccess: "Customer deleted successfully",
+	deleteFailed: "Failed to delete customer",
+	confirmDelete: "Are you sure you want to delete this customer?",
+	confirmDeleteDetails: "Are you sure you want to delete {name}? This action cannot be undone and will permanently remove all customer data.",
+	noCustomers: "No customers found",
+	noCustomersDescription: "Try adjusting your filters or add some customers to get started.",
+	tryAdjustingSearch: "Try adjusting your search",
+	getStarted: "Get started by adding your first customer",
+	loadingCustomers: "Loading customers...",
+	na: "N/A",
+	noChanges: "No changes detected"
+};
+var filters$2 = {
+	all: "All Customers",
+	active: "Active",
+	inactive: "Inactive",
+	vip: "VIP",
+	hasActiveOrders: "Has Active Orders",
+	hasOverduePayments: "Has Overdue Payments"
+};
+var search$2 = {
+	placeholder: "Search customers by name, email, or phone...",
+	noResults: "No customers found matching your search"
+};
+var validation = {
+	firstNameRequired: "First name is required",
+	firstNameMinLength: "First name must be at least 2 characters",
+	lastNameRequired: "Last name is required",
+	lastNameMinLength: "Last name must be at least 2 characters",
+	emailInvalid: "Email is invalid",
+	phoneRequired: "Phone number is required",
+	phoneInvalid: "Phone number contains invalid characters",
+	phoneMinLength: "Phone number must be at least 8 digits"
+};
+var placeholders = {
+	enterFirstName: "Enter first name",
+	enterLastName: "Enter last name",
+	enterEmail: "Enter email address (optional)",
+	enterPhone: "Enter phone number (optional)",
+	enterCompanyName: "Enter company name (optional)",
+	enterStreetAddress: "Enter street address (optional)",
+	enterCity: "Enter city (optional)",
+	enterState: "Enter state (optional)",
+	enterZipCode: "Enter ZIP code (optional)",
+	enterCountry: "Enter country (optional)"
+};
+var customers = {
+	title: title$3,
+	subtitle: subtitle,
+	pageTitle: pageTitle,
+	createCustomer: createCustomer,
+	editCustomer: editCustomer,
+	viewCustomer: viewCustomer,
+	customerDetails: customerDetails,
+	customerInformation: customerInformation,
+	noDataAvailable: noDataAvailable,
+	viewCustomerInfo: viewCustomerInfo,
+	customerOverview: customerOverview,
+	personalInformation: personalInformation,
+	addressInformation: addressInformation,
+	updating: updating,
+	updateCustomer: updateCustomer,
+	deleting: deleting,
+	fields: fields$1,
+	profile: profile,
+	orders: orders$1,
+	stats: stats$3,
+	status: status$2,
+	actions: actions$2,
+	messages: messages$3,
+	filters: filters$2,
+	search: search$2,
+	validation: validation,
+	placeholders: placeholders
+};
+
+declare const _________locales_en_customers_json_addressInformation: typeof addressInformation;
+declare const _________locales_en_customers_json_createCustomer: typeof createCustomer;
+declare const _________locales_en_customers_json_customerDetails: typeof customerDetails;
+declare const _________locales_en_customers_json_customerInformation: typeof customerInformation;
+declare const _________locales_en_customers_json_customerOverview: typeof customerOverview;
+declare const _________locales_en_customers_json_deleting: typeof deleting;
+declare const _________locales_en_customers_json_editCustomer: typeof editCustomer;
+declare const _________locales_en_customers_json_noDataAvailable: typeof noDataAvailable;
+declare const _________locales_en_customers_json_pageTitle: typeof pageTitle;
+declare const _________locales_en_customers_json_personalInformation: typeof personalInformation;
+declare const _________locales_en_customers_json_placeholders: typeof placeholders;
+declare const _________locales_en_customers_json_profile: typeof profile;
+declare const _________locales_en_customers_json_subtitle: typeof subtitle;
+declare const _________locales_en_customers_json_updateCustomer: typeof updateCustomer;
+declare const _________locales_en_customers_json_updating: typeof updating;
+declare const _________locales_en_customers_json_validation: typeof validation;
+declare const _________locales_en_customers_json_viewCustomer: typeof viewCustomer;
+declare const _________locales_en_customers_json_viewCustomerInfo: typeof viewCustomerInfo;
+declare namespace _________locales_en_customers_json {
+  export { actions$2 as actions, _________locales_en_customers_json_addressInformation as addressInformation, _________locales_en_customers_json_createCustomer as createCustomer, _________locales_en_customers_json_customerDetails as customerDetails, _________locales_en_customers_json_customerInformation as customerInformation, _________locales_en_customers_json_customerOverview as customerOverview, customers as default, _________locales_en_customers_json_deleting as deleting, _________locales_en_customers_json_editCustomer as editCustomer, fields$1 as fields, filters$2 as filters, messages$3 as messages, _________locales_en_customers_json_noDataAvailable as noDataAvailable, orders$1 as orders, _________locales_en_customers_json_pageTitle as pageTitle, _________locales_en_customers_json_personalInformation as personalInformation, _________locales_en_customers_json_placeholders as placeholders, _________locales_en_customers_json_profile as profile, search$2 as search, stats$3 as stats, status$2 as status, _________locales_en_customers_json_subtitle as subtitle, title$3 as title, _________locales_en_customers_json_updateCustomer as updateCustomer, _________locales_en_customers_json_updating as updating, _________locales_en_customers_json_validation as validation, _________locales_en_customers_json_viewCustomer as viewCustomer, _________locales_en_customers_json_viewCustomerInfo as viewCustomerInfo };
+}
+
+var title$2 = "Products";
+var productName = "Product Name";
+var createProduct = "Add Product";
+var editProduct = "Edit Product";
+var viewProduct = "View Product";
+var productDetails = "Product Details";
+var fields = {
+	name: "Product Name",
+	category: "Category",
+	barcode: "Barcode",
+	sku: "SKU",
+	description: "Description",
+	price: "Price",
+	rentPrice: "Rental Price",
+	salePrice: "Sale Price",
+	deposit: "Deposit",
+	stock: "Stock",
+	available: "Available",
+	renting: "Currently Renting",
+	minRentalPeriod: "Minimum Rental Period",
+	maxRentalPeriod: "Maximum Rental Period",
+	images: "Product Images",
+	specifications: "Specifications",
+	notes: "Notes"
+};
+var stock = {
+	label: "Stock",
+	renting: "Renting"
+};
+var price = {
+	sale: "Sale"
+};
+var status$1 = {
+	active: "Active",
+	inactive: "Inactive",
+	inStock: "In Stock",
+	outOfStock: "Out of Stock",
+	lowStock: "Low Stock"
+};
+var inventory = {
+	title: "Inventory",
+	inStock: "In Stock",
+	outOfStock: "Out of Stock",
+	lowStock: "Low Stock",
+	totalStock: "Total Stock",
+	availableStock: "Available",
+	rentedOut: "Rented Out",
+	reserved: "Reserved",
+	updateStock: "Update Stock",
+	stockHistory: "Stock History",
+	outletStockDistribution: "Outlet Stock Distribution",
+	stockAllocation: "Stock allocation across different outlets",
+	noOutletStock: "No outlet stock information available",
+	notAssignedToOutlets: "This product may not be assigned to any outlets yet.",
+	totalOutlets: "Total outlets",
+	stockEntries: "Outlet stock entries",
+	stockRequired: "Stock values are required",
+	noOutletsAvailable: "No Outlets Available",
+	needOutletMessage: "You need to create at least one outlet before you can add products. Products must be assigned to specific outlets for inventory management.",
+	contactAdmin: "Please contact your administrator to set up outlets for your merchant."
+};
+var availability = {
+	title: "Availability",
+	available: "Available",
+	notAvailable: "Not Available",
+	partiallyAvailable: "Partially Available",
+	checkAvailability: "Check Availability",
+	availableFrom: "Available from",
+	availableUntil: "Available until"
+};
+var pricing = {
+	title: "Pricing",
+	hourly: "Hourly Rate",
+	daily: "Daily Rate",
+	weekly: "Weekly Rate",
+	monthly: "Monthly Rate",
+	custom: "Custom Rate",
+	depositRequired: "Deposit Required"
+};
+var actions$1 = {
+	viewDetails: "View Details",
+	edit: "Edit Product",
+	viewOrders: "View Orders",
+	activate: "Activate",
+	deactivate: "Deactivate",
+	"delete": "Delete Product",
+	viewHistory: "View History",
+	duplicate: "Duplicate Product",
+	archive: "Archive Product",
+	restore: "Restore Product"
+};
+var messages$2 = {
+	createSuccess: "Product created successfully",
+	createFailed: "Failed to create product",
+	updateSuccess: "Product updated successfully",
+	updateFailed: "Failed to update product",
+	updateProduct: "Update Product",
+	updating: "Updating...",
+	deleteSuccess: "Product deleted successfully",
+	deleteFailed: "Failed to delete product",
+	confirmDelete: "Are you sure you want to delete this product?",
+	noProducts: "No products found",
+	noProductsDescription: "Try adjusting your filters or add some products to get started.",
+	loadingProducts: "Loading products...",
+	generateBarcode: "Generate new barcode",
+	maxImagesReached: "Maximum images reached",
+	dragDropImages: "Drag and drop images here",
+	imageFormats: "Supports JPG, PNG, WebP, GIF up to 5MB each (max 3 images, optional)",
+	imagesUploaded: "images uploaded (optional)",
+	clearAllImages: "Clear All Images",
+	uploadFailed: "Upload Failed",
+	preparing: "Preparing...",
+	uploading: "Uploading",
+	processing: "Processing...",
+	complete: "Complete!",
+	removeImage: "Remove image"
+};
+var filters$1 = {
+	all: "All Products",
+	available: "Available",
+	rented: "Currently Rented",
+	outOfStock: "Out of Stock",
+	outletLabel: "Outlet",
+	allOutlets: "All Outlets",
+	categoryLabel: "Category",
+	allCategories: "All Categories",
+	priceRange: "Price Range",
+	clear: "Clear"
+};
+var search$1 = {
+	placeholder: "Search products by name, barcode, or SKU...",
+	noResults: "No products found matching your search"
+};
+var stats$2 = {
+	totalProducts: "Total Products",
+	availableProducts: "Available",
+	rentedProducts: "Rented",
+	totalValue: "Total Inventory Value"
+};
+var products = {
+	title: title$2,
+	productName: productName,
+	createProduct: createProduct,
+	editProduct: editProduct,
+	viewProduct: viewProduct,
+	productDetails: productDetails,
+	fields: fields,
+	stock: stock,
+	price: price,
+	status: status$1,
+	inventory: inventory,
+	availability: availability,
+	pricing: pricing,
+	actions: actions$1,
+	messages: messages$2,
+	filters: filters$1,
+	search: search$1,
+	stats: stats$2
+};
+
+declare const _________locales_en_products_json_availability: typeof availability;
+declare const _________locales_en_products_json_createProduct: typeof createProduct;
+declare const _________locales_en_products_json_editProduct: typeof editProduct;
+declare const _________locales_en_products_json_fields: typeof fields;
+declare const _________locales_en_products_json_inventory: typeof inventory;
+declare const _________locales_en_products_json_price: typeof price;
+declare const _________locales_en_products_json_pricing: typeof pricing;
+declare const _________locales_en_products_json_productDetails: typeof productDetails;
+declare const _________locales_en_products_json_productName: typeof productName;
+declare const _________locales_en_products_json_stock: typeof stock;
+declare const _________locales_en_products_json_viewProduct: typeof viewProduct;
+declare namespace _________locales_en_products_json {
+  export { actions$1 as actions, _________locales_en_products_json_availability as availability, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productName as productName, search$1 as search, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, title$2 as title, _________locales_en_products_json_viewProduct as viewProduct };
+}
+
+var title$1 = "Orders";
+var createOrder = "Create Order";
+var editOrder = "Edit Order";
+var viewOrder = "View Order";
+var orderDetails = "Order Details";
+var orderNumber = "Order Number";
+var orderType = {
+	label: "Order Type",
+	RENT: "Rental",
+	SALE: "Sale"
+};
+var status = {
+	label: "Status",
+	RESERVED: "Reserved",
+	PICKUPED: "Picked Up",
+	RETURNED: "Returned",
+	COMPLETED: "Completed",
+	CANCELLED: "Cancelled"
+};
+var customer = {
+	label: "Customer",
+	name: "Customer Name",
+	phone: "Customer Phone",
+	email: "Customer Email",
+	selectCustomer: "Select Customer",
+	createCustomer: "Create New Customer",
+	noCustomer: "Walk-in Customer"
+};
+var dates = {
+	pickupDate: "Pickup Date",
+	returnDate: "Return Date",
+	returnLabel: "Return",
+	createdDate: "Created Date",
+	completedDate: "Completed Date"
+};
+var items = {
+	title: "Order Items",
+	product: "Product",
+	quantity: "Quantity",
+	price: "Price",
+	total: "Total",
+	addItem: "Add Item",
+	removeItem: "Remove Item",
+	noItems: "No items in this order"
+};
+var amount = {
+	total: "Total",
+	deposit: "Deposit",
+	subtotal: "Subtotal",
+	grandTotal: "Grand Total"
+};
+var payment = {
+	subtotal: "Subtotal",
+	discount: "Discount",
+	deposit: "Deposit",
+	tax: "Tax",
+	total: "Total Amount",
+	amountPaid: "Amount Paid",
+	amountDue: "Amount Due",
+	paymentMethod: "Payment Method",
+	cash: "Cash",
+	card: "Card",
+	transfer: "Transfer",
+	other: "Other"
+};
+var actions = {
+	label: "Actions",
+	view: "View",
+	edit: "Edit",
+	markAsPickedUp: "Mark as Picked Up",
+	markAsReturned: "Mark as Returned",
+	markAsCompleted: "Mark as Completed",
+	cancelOrder: "Cancel Order",
+	printReceipt: "Print Receipt",
+	sendReceipt: "Send Receipt",
+	viewHistory: "View History"
+};
+var messages$1 = {
+	createSuccess: "Order created successfully",
+	createFailed: "Failed to create order",
+	updateSuccess: "Order updated successfully",
+	updateFailed: "Failed to update order",
+	deleteSuccess: "Order deleted successfully",
+	deleteFailed: "Failed to delete order",
+	confirmDelete: "Are you sure you want to delete this order?",
+	confirmCancel: "Are you sure you want to cancel this order?",
+	noOrders: "No orders found",
+	loadingOrders: "Loading orders...",
+	viewingAllOrders: "Viewing all",
+	mayBeSlow: "orders may be slow",
+	cannotEditOrder: "Only RESERVED orders can be edited",
+	errorLoadingOrders: "Error Loading Orders"
+};
+var productOrders = {
+	title: "Product Orders",
+	description: "View and manage all orders for this product",
+	backToProducts: "Back to Products",
+	totalQuantity: "Total Quantity",
+	totalSales: "Total Sales",
+	reservedOrders: "Reserved Orders",
+	totalStock: "Total Stock",
+	availableInventory: "Available inventory",
+	currentlyRented: "Currently Rented",
+	outOnRental: "Out on rental",
+	availableNow: "Available Now",
+	readyToRent: "Ready to rent",
+	allTimeEarnings: "All time earnings"
+};
+var filters = {
+	all: "All Orders",
+	allStatus: "All Status",
+	allTypes: "All Types",
+	allOutlets: "All Outlets",
+	statusLabel: "Status",
+	typeLabel: "Type",
+	outletLabel: "Outlet",
+	loading: "Loading...",
+	error: "Error",
+	noOutlets: "No outlets",
+	clear: "Clear",
+	active: "Active",
+	completed: "Completed",
+	cancelled: "Cancelled",
+	overdue: "Overdue",
+	today: "Today",
+	thisWeek: "This Week",
+	thisMonth: "This Month",
+	dateRange: "Date Range"
+};
+var search = {
+	placeholder: "Search orders by number, customer name, or phone...",
+	noResults: "No orders found matching your search"
+};
+var stats$1 = {
+	totalOrders: "Total Orders",
+	allTimeOrders: "All time orders",
+	activeRentals: "Active Rentals",
+	currentlyPickuped: "Currently pickuped",
+	totalRevenue: "Total Revenue",
+	lifetimeRevenue: "Lifetime revenue",
+	completedOrders: "Completed Orders",
+	avgOrder: "avg order",
+	totalDeposits: "Total Deposits",
+	averageOrderValue: "Average Order Value",
+	overdueRentals: "Overdue Rentals",
+	revenueMetrics: "Revenue Metrics"
+};
+var orders = {
+	title: title$1,
+	createOrder: createOrder,
+	editOrder: editOrder,
+	viewOrder: viewOrder,
+	orderDetails: orderDetails,
+	orderNumber: orderNumber,
+	orderType: orderType,
+	status: status,
+	customer: customer,
+	dates: dates,
+	items: items,
+	amount: amount,
+	payment: payment,
+	actions: actions,
+	messages: messages$1,
+	productOrders: productOrders,
+	filters: filters,
+	search: search,
+	stats: stats$1
+};
+
+declare const _________locales_en_orders_json_actions: typeof actions;
+declare const _________locales_en_orders_json_amount: typeof amount;
+declare const _________locales_en_orders_json_createOrder: typeof createOrder;
+declare const _________locales_en_orders_json_customer: typeof customer;
+declare const _________locales_en_orders_json_dates: typeof dates;
+declare const _________locales_en_orders_json_editOrder: typeof editOrder;
+declare const _________locales_en_orders_json_filters: typeof filters;
+declare const _________locales_en_orders_json_items: typeof items;
+declare const _________locales_en_orders_json_orderDetails: typeof orderDetails;
+declare const _________locales_en_orders_json_orderNumber: typeof orderNumber;
+declare const _________locales_en_orders_json_orderType: typeof orderType;
+declare const _________locales_en_orders_json_payment: typeof payment;
+declare const _________locales_en_orders_json_productOrders: typeof productOrders;
+declare const _________locales_en_orders_json_search: typeof search;
+declare const _________locales_en_orders_json_status: typeof status;
+declare const _________locales_en_orders_json_viewOrder: typeof viewOrder;
+declare namespace _________locales_en_orders_json {
+  export { _________locales_en_orders_json_actions as actions, _________locales_en_orders_json_amount as amount, _________locales_en_orders_json_createOrder as createOrder, _________locales_en_orders_json_customer as customer, _________locales_en_orders_json_dates as dates, orders as default, _________locales_en_orders_json_editOrder as editOrder, _________locales_en_orders_json_filters as filters, _________locales_en_orders_json_items as items, messages$1 as messages, _________locales_en_orders_json_orderDetails as orderDetails, _________locales_en_orders_json_orderNumber as orderNumber, _________locales_en_orders_json_orderType as orderType, _________locales_en_orders_json_payment as payment, _________locales_en_orders_json_productOrders as productOrders, _________locales_en_orders_json_search as search, stats$1 as stats, _________locales_en_orders_json_status as status, title$1 as title, _________locales_en_orders_json_viewOrder as viewOrder };
+}
+
+var title = "Dashboard";
+var welcome = "Welcome back";
+var overview = "Overview";
+var stats = {
+	totalOrders: "Total Orders",
+	activeRentals: "Active Rentals",
+	totalRevenue: "Total Revenue",
+	totalCustomers: "Total Customers",
+	totalProducts: "Total Products",
+	availableProducts: "Available Products",
+	pendingOrders: "Pending Orders",
+	completedOrders: "Completed Orders",
+	overdueReturns: "Overdue Returns",
+	todayRevenue: "Today's Revenue",
+	thisWeekRevenue: "This Week's Revenue",
+	thisMonthRevenue: "This Month's Revenue",
+	futureRevenue: "Future Revenue",
+	realTimeData: "Real-time data",
+	bookedRevenue: "Booked revenue",
+	expectedRevenue: "Expected revenue from upcoming and ongoing rentals",
+	todayPickups: "Today's Pickups",
+	todayReturns: "Today's Returns",
+	productUtilization: "Product Utilization",
+	revenueGrowth: "Revenue Growth",
+	customerGrowth: "Customer Growth"
+};
+var charts = {
+	revenueOverTime: "Revenue Over Time",
+	ordersByStatus: "Orders by Status",
+	topProducts: "Top Products",
+	customerActivity: "Customer Activity",
+	rentalTrends: "Rental Trends",
+	noData: "No data available for this period"
+};
+var recentActivity = {
+	title: "Recent Activity",
+	newOrder: "New order created",
+	orderPickedUp: "Order picked up",
+	orderReturned: "Order returned",
+	newCustomer: "New customer registered",
+	productAdded: "New product added",
+	viewAll: "View all activities"
+};
+var quickActions = {
+	title: "Quick Actions",
+	createOrder: "Create Order",
+	addProduct: "Add Product",
+	addCustomer: "Add Customer",
+	viewCalendar: "View Calendar",
+	viewReports: "View Reports"
+};
+var upcomingReturns = {
+	title: "Upcoming Returns",
+	dueToday: "Due Today",
+	dueTomorrow: "Due Tomorrow",
+	dueThisWeek: "Due This Week",
+	overdue: "Overdue",
+	noReturns: "No upcoming returns"
+};
+var orderStatuses = {
+	reserved: "Reserved",
+	pickup: "Pickup",
+	"return": "Return",
+	completed: "Completed",
+	cancelled: "Cancelled",
+	ordersCount: "orders"
+};
+var chartTitles = {
+	monthlyRevenue: "Revenue",
+	yearlyRevenue: "Revenue",
+	monthlyRentals: "Rentals",
+	yearlyRentals: "Rentals"
+};
+var dashboard = {
+	title: title,
+	welcome: welcome,
+	overview: overview,
+	stats: stats,
+	charts: charts,
+	recentActivity: recentActivity,
+	quickActions: quickActions,
+	upcomingReturns: upcomingReturns,
+	orderStatuses: orderStatuses,
+	chartTitles: chartTitles
+};
+
+declare const _________locales_en_dashboard_json_chartTitles: typeof chartTitles;
+declare const _________locales_en_dashboard_json_charts: typeof charts;
+declare const _________locales_en_dashboard_json_orderStatuses: typeof orderStatuses;
+declare const _________locales_en_dashboard_json_overview: typeof overview;
+declare const _________locales_en_dashboard_json_quickActions: typeof quickActions;
+declare const _________locales_en_dashboard_json_recentActivity: typeof recentActivity;
+declare const _________locales_en_dashboard_json_stats: typeof stats;
+declare const _________locales_en_dashboard_json_title: typeof title;
+declare const _________locales_en_dashboard_json_upcomingReturns: typeof upcomingReturns;
+declare const _________locales_en_dashboard_json_welcome: typeof welcome;
+declare namespace _________locales_en_dashboard_json {
+  export { _________locales_en_dashboard_json_chartTitles as chartTitles, _________locales_en_dashboard_json_charts as charts, dashboard as default, _________locales_en_dashboard_json_orderStatuses as orderStatuses, _________locales_en_dashboard_json_overview as overview, _________locales_en_dashboard_json_quickActions as quickActions, _________locales_en_dashboard_json_recentActivity as recentActivity, _________locales_en_dashboard_json_stats as stats, _________locales_en_dashboard_json_title as title, _________locales_en_dashboard_json_upcomingReturns as upcomingReturns, _________locales_en_dashboard_json_welcome as welcome };
+}
+
+var login = {
+	title: "Login",
+	subtitle: "Sign in to your account",
+	email: "Email Address",
+	password: "Password",
+	rememberMe: "Remember me",
+	forgotPassword: "Forgot password?",
+	loginButton: "Sign In",
+	noAccount: "Don't have an account?",
+	signUp: "Sign up",
+	success: "Logged in successfully",
+	failed: "Login failed. Please check your credentials.",
+	invalidEmail: "Please enter a valid email address",
+	invalidPassword: "Password must be at least 6 characters"
+};
+var register = {
+	title: "Create Account",
+	subtitle: "Register a new account",
+	name: "Full Name",
+	email: "Email Address",
+	phone: "Phone Number",
+	password: "Password",
+	confirmPassword: "Confirm Password",
+	merchantName: "Business Name",
+	registerButton: "Create Account",
+	hasAccount: "Already have an account?",
+	signIn: "Sign in",
+	success: "Account created successfully",
+	failed: "Registration failed. Please try again.",
+	passwordMismatch: "Passwords do not match",
+	emailExists: "Email already exists",
+	termsAndConditions: "I agree to the Terms and Conditions",
+	agreeToTerms: "You must agree to the terms and conditions",
+	createMerchantAccount: "Create Merchant Account",
+	step1: "Step 1: Create your account",
+	step2: "Step 2: Business information",
+	account: "Account",
+	business: "Business",
+	firstName: "First Name",
+	lastName: "Last Name",
+	businessName: "Business Name",
+	businessType: "Business Type",
+	pricingType: "Pricing Type",
+	address: "Business Address",
+	city: "City",
+	state: "State",
+	zipCode: "ZIP Code",
+	country: "Country",
+	enterYourEmail: "Enter your email",
+	createPassword: "Create a password",
+	confirmYourPassword: "Confirm your password",
+	enterFirstName: "Enter your first name",
+	enterLastName: "Enter your last name",
+	enterPhoneNumber: "Enter your phone number",
+	enterBusinessName: "Enter your business name",
+	selectBusinessType: "Select business type",
+	selectPricingType: "Select pricing type",
+	enterBusinessAddress: "Enter your business address",
+	selectCountry: "Select country",
+	validating: "Validating...",
+	continueToBusinessInfo: "Continue to Business Info",
+	back: "Back",
+	creatingAccount: "Creating Account...",
+	importantNotice: "Important Notice",
+	cannotBeChanged: "Business Type and Pricing Type cannot be changed after registration. Please choose carefully as these settings will be locked permanently.",
+	freeTrialIncludes: "Free Trial Includes:",
+	fullAccessToAllFeatures: "Full access to all features",
+	defaultOutlet: "Default outlet",
+	mobileAppAccess: "Mobile app access",
+	noCreditCardRequired: "No credit card required",
+	termsOfService: "Terms of Service",
+	privacyPolicy: "Privacy Policy",
+	iAgreeToThe: "I agree to the",
+	and: "and",
+	registrationComplete: "Registration Complete!",
+	accountCreatedSuccessfully: "Account created successfully.",
+	registrationFailed: "Registration Failed",
+	somethingWentWrong: "Something went wrong. Please try again.",
+	passwordMinLength: "Your password must be at least 6 characters",
+	passwordMaxLength: "Your password must be at most 25 characters",
+	firstNameRequired: "First name is required",
+	lastNameRequired: "Last name is required",
+	phoneNumberInvalid: "Please enter a valid phone number",
+	phoneNumberMinLength: "Phone number must be at least 10 digits",
+	businessNameMinLength: "Business name must be at least 2 characters",
+	businessTypeRequired: "Please select your business type",
+	pricingTypeRequired: "Please select your pricing type",
+	addressMinLength: "Address must be at least 5 characters",
+	cityMinLength: "City must be at least 2 characters",
+	stateMinLength: "State must be at least 2 characters",
+	zipCodeInvalid: "Please enter a valid ZIP code",
+	countryMinLength: "Country must be at least 2 characters",
+	mustAcceptTerms: "You must accept the Terms of Service and Privacy Policy"
+};
+var forgotPassword = {
+	title: "Forgot Password",
+	subtitle: "Enter your email to reset your password",
+	email: "Email Address",
+	sendButton: "Send Reset Link",
+	backToLogin: "Back to login",
+	success: "Password reset link sent to your email",
+	failed: "Failed to send reset link",
+	emailNotFound: "Email not found",
+	checkEmail: "Check your email for the reset link"
+};
+var changePassword = {
+	title: "Change Password",
+	currentPassword: "Current Password",
+	newPassword: "New Password",
+	confirmPassword: "Confirm New Password",
+	changeButton: "Change Password",
+	success: "Password changed successfully",
+	failed: "Failed to change password",
+	incorrectPassword: "Current password is incorrect",
+	passwordMismatch: "Passwords do not match"
+};
+var logout = {
+	title: "Logout",
+	message: "Are you sure you want to logout?",
+	confirm: "Yes, Logout",
+	cancel: "Cancel",
+	success: "Logged out successfully"
+};
+var auth = {
+	login: login,
+	register: register,
+	forgotPassword: forgotPassword,
+	changePassword: changePassword,
+	logout: logout
+};
+
+declare const _________locales_en_auth_json_changePassword: typeof changePassword;
+declare const _________locales_en_auth_json_forgotPassword: typeof forgotPassword;
+declare const _________locales_en_auth_json_login: typeof login;
+declare const _________locales_en_auth_json_logout: typeof logout;
+declare const _________locales_en_auth_json_register: typeof register;
+declare namespace _________locales_en_auth_json {
+  export { _________locales_en_auth_json_changePassword as changePassword, auth as default, _________locales_en_auth_json_forgotPassword as forgotPassword, _________locales_en_auth_json_login as login, _________locales_en_auth_json_logout as logout, _________locales_en_auth_json_register as register };
+}
+
+var buttons = {
+	save: "Save",
+	cancel: "Cancel",
+	"delete": "Delete",
+	edit: "Edit",
+	add: "Add",
+	search: "Search",
+	filter: "Filter",
+	"export": "Export",
+	"import": "Import",
+	refresh: "Refresh",
+	submit: "Submit",
+	confirm: "Confirm",
+	close: "Close",
+	back: "Back",
+	next: "Next",
+	previous: "Previous",
+	create: "Create",
+	update: "Update",
+	view: "View",
+	download: "Download",
+	upload: "Upload",
+	reset: "Reset",
+	clear: "Clear",
+	apply: "Apply",
+	browse: "Browse Files",
+	saving: "Saving...",
+	tryAgain: "Try Again"
+};
+var labels = {
+	name: "Name",
+	email: "Email",
+	phone: "Phone",
+	address: "Address",
+	addressInformation: "Address Information",
+	city: "City",
+	state: "State",
+	country: "Country",
+	zipCode: "Zip Code",
+	description: "Description",
+	notes: "Notes",
+	status: "Status",
+	type: "Type",
+	category: "Category",
+	merchant: "Merchant",
+	price: "Price",
+	quantity: "Quantity",
+	total: "Total",
+	subtotal: "Subtotal",
+	discount: "Discount",
+	tax: "Tax",
+	date: "Date",
+	time: "Time",
+	createdAt: "Created At",
+	updatedAt: "Updated At",
+	actions: "Actions",
+	search: "Search",
+	noResults: "No results found",
+	loading: "Loading...",
+	success: "Success",
+	error: "Error",
+	warning: "Warning",
+	info: "Information",
+	pickup: "Pickup",
+	"return": "Return",
+	active: "Active",
+	inactive: "Inactive",
+	create: "Create",
+	unknown: "Unknown"
+};
+var messages = {
+	saveSuccess: "Saved successfully",
+	saveFailed: "Failed to save",
+	deleteSuccess: "Deleted successfully",
+	deleteFailed: "Failed to delete",
+	updateSuccess: "Updated successfully",
+	updateFailed: "Failed to update",
+	createSuccess: "Created successfully",
+	createFailed: "Failed to create",
+	confirmDelete: "Are you sure you want to delete this item?",
+	confirmAction: "Are you sure you want to proceed?",
+	noData: "No data available",
+	loadingData: "Loading data...",
+	errorLoadingData: "Error loading data",
+	invalidInput: "Invalid input",
+	requiredField: "This field is required",
+	sessionExpired: "Your session has expired. Please login again.",
+	unauthorized: "You are not authorized to perform this action",
+	serverError: "Server error. Please try again later.",
+	networkError: "Network error. Please check your connection.",
+	comingSoon: "Feature coming soon!",
+	notFound: "The item you're looking for doesn't exist or has been removed."
+};
+var navigation = {
+	home: "Home",
+	dashboard: "Dashboard",
+	orders: "Orders",
+	products: "Products",
+	allProducts: "All Products",
+	customers: "Customers",
+	settings: "Settings",
+	logout: "Logout",
+	profile: "Profile",
+	calendar: "Calendar",
+	users: "Users",
+	outlets: "Outlets",
+	categories: "Categories",
+	reports: "Reports",
+	analytics: "Analytics"
+};
+var pagination = {
+	showing: "Showing",
+	to: "to",
+	of: "of",
+	results: "results",
+	page: "Page",
+	rowsPerPage: "Rows per page",
+	first: "First",
+	last: "Last",
+	noData: "No data to display"
+};
+var time = {
+	today: "Today",
+	yesterday: "Yesterday",
+	tomorrow: "Tomorrow",
+	thisWeek: "This Week",
+	thisMonth: "This Month",
+	lastMonth: "Last Month",
+	custom: "Custom",
+	from: "From",
+	to: "To"
+};
+var common = {
+	buttons: buttons,
+	labels: labels,
+	messages: messages,
+	navigation: navigation,
+	pagination: pagination,
+	time: time
+};
+
+declare const _________locales_en_common_json_buttons: typeof buttons;
+declare const _________locales_en_common_json_labels: typeof labels;
+declare const _________locales_en_common_json_messages: typeof messages;
+declare const _________locales_en_common_json_navigation: typeof navigation;
+declare const _________locales_en_common_json_pagination: typeof pagination;
+declare const _________locales_en_common_json_time: typeof time;
+declare namespace _________locales_en_common_json {
+  export { _________locales_en_common_json_buttons as buttons, common as default, _________locales_en_common_json_labels as labels, _________locales_en_common_json_messages as messages, _________locales_en_common_json_navigation as navigation, _________locales_en_common_json_pagination as pagination, _________locales_en_common_json_time as time };
+}
+
+/**
+ * i18n Type Definitions
+ *
+ * Type-safe translations with autocomplete support
+ */
+type Messages = typeof _________locales_en_common_json & typeof _________locales_en_auth_json & typeof _________locales_en_dashboard_json & typeof _________locales_en_orders_json & typeof _________locales_en_products_json & typeof _________locales_en_customers_json & typeof _________locales_en_settings_json & typeof _________locales_en_validation_json;
+declare global {
+    type IntlMessages = Messages;
+}
+type Locale = 'en' | 'vi';
+declare const defaultLocale: Locale;
+declare const locales: readonly Locale[];
+
 /**
  * Dashboard types for analytics and reporting
  */
@@ -2572,4 +3946,4 @@ interface RequestWithPlatform extends Request {
     platformInfo?: PlatformInfo;
 }
 
-export { type Address, type ApiErrorResponse, type ApiResponse, type AuthUser, type BaseEntity, type BaseEntityWithMerchant, type BaseEntityWithOutlet, type BaseFormInput, type BaseSearchParams, type BaseSearchResult, type BaseUpdateInput, type BillingCycle, type BillingCycleOption, type BillingPeriod, type BusinessType, type CalendarData, type CalendarDay, type CalendarEvent, type CalendarEventFormData, type CalendarFilters, type CalendarFiltersProps, type CalendarGridProps, type CalendarNavigationProps, type CalendarSidebarProps, type CalendarViewMode, type CalendarViewProps, type Category, type CategoryAction, type CategoryActionItem, type CategoryActionsProps, type CategoryCardProps, type CategoryCreateInput, type CategoryData, type CategoryFilters, type CategoryFiltersProps, type CategoryFormData, type CategoryFormErrors, type CategoryFormProps, type CategoryGridProps, type CategoryPaginationProps, type CategoryPerformance, type CategoryReference, type CategorySearchParams, type CategorySearchResponse, type CategorySearchResult, type CategoryStats, type CategoryTableProps, type CategoryUpdateInput, type ChangePassword, type ClientPlatform, type ContactInfo, type Currency, type CurrencyCode, type CurrencyFormatOptions, type CurrencySettings, type CurrentSubscription, type Customer, type CustomerAction, type CustomerCreateInput, type CustomerData, type CustomerFilters, type CustomerInput, type CustomerManagement, type CustomerPerformance, type CustomerReference, type CustomerSearchFilter, type CustomerSearchParams, type CustomerSearchResponse, type CustomerSearchResult, type CustomerStats, type CustomerUpdateInput, type CustomerWithMerchant, type DashboardData, type DashboardOrderStats, type DashboardPeriod, type DashboardStats, type DeviceType, type EntityAction, type EntityStatus, type IncomeData, type IncomeDataPoint, type LoginCredentials, type Merchant, type MerchantAction, type MerchantCreateInput, type MerchantDetailData, type MerchantDetailStats, type MerchantFilters, type MerchantInfoUpdate, type MerchantPricingConfig, type MerchantReference, type MerchantSearchParams, type MerchantSearchResult, type MerchantStats, type MerchantUpdateInput, type Order, type OrderAction, type OrderCreateInput, type OrderData, type OrderDataPoint, type OrderDetailData, type OrderExportData, type OrderFilters, type OrderHistoryInput, type OrderInput, type OrderItem, type OrderItemData, type OrderItemInput, type OrderItemWithProduct, type OrderListData, type OrderSearchFilter, type OrderSearchParams, type OrderSearchResponse, type OrderSearchResult, type OrderStats, type OrderStatsByPeriod, type OrderStatus, type OrderType, type OrderUpdateInput, type OrderWithDetails, type OrdersData, type Outlet, type OutletAction, type OutletCreateInput, type OutletData, type OutletFilters, type OutletInfoUpdate, type OutletInventorySummary, type OutletPerformance, type OutletReference, type OutletSearchFilter, type OutletSearchParams, type OutletSearchResponse, type OutletSearchResult, type OutletStats, type OutletStock, type OutletStockInput, type OutletStockLevel, type OutletUpdateInput, PRICING_CONFIG, type PaginatedResult, type PaginationMeta, type PaginationParams, type PasswordReset, type Payment, type PaymentInput, type PaymentUpdateInput, type Permission, type PermissionAction, type PermissionCheck, type PermissionResource, type PermissionResult, type PersonalProfileUpdate, type PickupOrder, type Plan, type PlanComparison, type PlanCreateInput, type PlanDetails, type PlanFeature, type PlanFilters, type PlanLimits, type PlanPricing, type PlanUpdateInput, type PlanVariant, type PlanVariantCreateInput, type PlanVariantFilters, type PlanVariantUpdateInput, type PlatformHeaders, type PlatformInfo, type PricingBusinessRules, type PricingCalculation, type PricingDurationLimits, type PricingType, type Product, type ProductAction, type ProductCreateInput, type ProductFilters, type ProductInput, type ProductInventorySummary, type ProductPerformance, type ProductReference, type ProductSearchFilter, type ProductSearchParams, type ProductSearchResponse, type ProductSearchResult, type ProductUpdateInput, type ProductWithDetails, type ProductWithStock, type ProfileUpdateInput, type RegisterData, type RequestWithPlatform, type SearchFilters, type SearchParams, type SearchResult, type SecurityUpdate, type SoftDelete, type Subscription, type SubscriptionAction, type SubscriptionCreateInput, type SubscriptionFilters, type SubscriptionPeriod, type SubscriptionUpdateInput, type SubscriptionsResponse, type Timestamp, type TodaysFocus, type TopCategory, type TopCustomer, type TopProduct, type User, type UserAction, type UserCreateInput, type UserData, type UserFilters, type UserPermissions, type UserReference, type UserRole$1 as UserRole, type UserSearchFilter, type UserSearchParams, type UserSearchResult, type UserSession, type UserStats, type UserUpdateInput, type ValidationError, type ValidationResult, calculatePricing };
+export { type Address, type ApiErrorResponse, type ApiResponse, type AuthUser, type BaseEntity, type BaseEntityWithMerchant, type BaseEntityWithOutlet, type BaseFormInput, type BaseSearchParams, type BaseSearchResult, type BaseUpdateInput, type BillingCycle, type BillingCycleOption, type BillingPeriod, type BusinessType, type CalendarData, type CalendarDay, type CalendarEvent, type CalendarEventFormData, type CalendarFilters, type CalendarFiltersProps, type CalendarGridProps, type CalendarNavigationProps, type CalendarSidebarProps, type CalendarViewMode, type CalendarViewProps, type Category, type CategoryAction, type CategoryActionItem, type CategoryActionsProps, type CategoryCardProps, type CategoryCreateInput, type CategoryData, type CategoryFilters, type CategoryFiltersProps, type CategoryFormData, type CategoryFormErrors, type CategoryFormProps, type CategoryGridProps, type CategoryPaginationProps, type CategoryPerformance, type CategoryReference, type CategorySearchParams, type CategorySearchResponse, type CategorySearchResult, type CategoryStats, type CategoryTableProps, type CategoryUpdateInput, type ChangePassword, type ClientPlatform, type ContactInfo, type Currency, type CurrencyCode, type CurrencyFormatOptions, type CurrencySettings, type CurrentSubscription, type Customer, type CustomerAction, type CustomerCreateInput, type CustomerData, type CustomerFilters, type CustomerInput, type CustomerManagement, type CustomerPerformance, type CustomerReference, type CustomerSearchFilter, type CustomerSearchParams, type CustomerSearchResponse, type CustomerSearchResult, type CustomerStats, type CustomerUpdateInput, type CustomerWithMerchant, type DashboardData, type DashboardOrderStats, type DashboardPeriod, type DashboardStats, type DeviceType, type EntityAction, type EntityStatus, type IncomeData, type IncomeDataPoint, type Locale, type LoginCredentials, type Merchant, type MerchantAction, type MerchantCreateInput, type MerchantDetailData, type MerchantDetailStats, type MerchantFilters, type MerchantInfoUpdate, type MerchantPricingConfig, type MerchantReference, type MerchantSearchParams, type MerchantSearchResult, type MerchantStats, type MerchantUpdateInput, type Order, type OrderAction, type OrderCreateInput, type OrderData, type OrderDataPoint, type OrderDetailData, type OrderExportData, type OrderFilters, type OrderHistoryInput, type OrderInput, type OrderItem, type OrderItemData, type OrderItemInput, type OrderItemWithProduct, type OrderListData, type OrderSearchFilter, type OrderSearchParams, type OrderSearchResponse, type OrderSearchResult, type OrderStats, type OrderStatsByPeriod, type OrderStatus, type OrderType, type OrderUpdateInput, type OrderWithDetails, type OrdersData, type Outlet, type OutletAction, type OutletCreateInput, type OutletData, type OutletFilters, type OutletInfoUpdate, type OutletInventorySummary, type OutletPerformance, type OutletReference, type OutletSearchFilter, type OutletSearchParams, type OutletSearchResponse, type OutletSearchResult, type OutletStats, type OutletStock, type OutletStockInput, type OutletStockLevel, type OutletUpdateInput, PRICING_CONFIG, type PaginatedResult, type PaginationMeta, type PaginationParams, type PasswordReset, type Payment, type PaymentInput, type PaymentUpdateInput, type Permission, type PermissionAction, type PermissionCheck, type PermissionResource, type PermissionResult, type PersonalProfileUpdate, type PickupOrder, type Plan, type PlanComparison, type PlanCreateInput, type PlanDetails, type PlanFeature, type PlanFilters, type PlanLimits, type PlanPricing, type PlanUpdateInput, type PlanVariant, type PlanVariantCreateInput, type PlanVariantFilters, type PlanVariantUpdateInput, type PlatformHeaders, type PlatformInfo, type PricingBusinessRules, type PricingCalculation, type PricingDurationLimits, type PricingType, type Product, type ProductAction, type ProductCreateInput, type ProductFilters, type ProductInput, type ProductInventorySummary, type ProductPerformance, type ProductReference, type ProductSearchFilter, type ProductSearchParams, type ProductSearchResponse, type ProductSearchResult, type ProductUpdateInput, type ProductWithDetails, type ProductWithStock, type ProfileUpdateInput, type RegisterData, type RequestWithPlatform, type SearchFilters, type SearchParams, type SearchResult, type SecurityUpdate, type SoftDelete, type Subscription, type SubscriptionAction, type SubscriptionCreateInput, type SubscriptionFilters, type SubscriptionPeriod, type SubscriptionUpdateInput, type SubscriptionsResponse, type Timestamp, type TodaysFocus, type TopCategory, type TopCustomer, type TopProduct, type User, type UserAction, type UserCreateInput, type UserData, type UserFilters, type UserPermissions, type UserReference, type UserRole$1 as UserRole, type UserSearchFilter, type UserSearchParams, type UserSearchResult, type UserSession, type UserStats, type UserUpdateInput, type ValidationError, type ValidationResult, calculatePricing, defaultLocale, locales };

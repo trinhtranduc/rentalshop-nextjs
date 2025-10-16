@@ -12,7 +12,22 @@ import {
   getDefaultCountry,
   formatCountryDisplay
 } from "@rentalshop/constants";
-import { Button } from "../ui/button";
+import { 
+  Button, 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent, 
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  useToast
+} from "@rentalshop/ui";
+import { useAuthTranslations } from "@rentalshop/hooks";
 
 // Types for the registration form
 interface RegisterFormData {
@@ -55,60 +70,61 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [accountData, setAccountData] = useState<Partial<RegisterFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError, removeToast } = useToast();
+  const t = useAuthTranslations();
 
   // Step 1 validation schema (Account Information)
   const step1ValidationSchema = Yup.object({
     login: Yup.string()
-      .email("Please enter a valid email")
-      .required("Please Enter Your Email"),
+      .email(t('login.invalidEmail'))
+      .required(t('register.emailRequired')),
     password: Yup.string()
-      .min(6, "Your password must be at least 6 characters")
-      .max(25, "Your password must be at most 25 characters")
-      .required("Please enter user password"),
+      .min(6, t('register.passwordMinLength'))
+      .max(25, t('register.passwordMaxLength'))
+      .required(t('register.passwordRequired')),
     confirmPassword: Yup.string()
-      .oneOf([Yup.ref("password")], "Password does not match")
-      .required("Please confirm your password"),
+      .oneOf([Yup.ref("password")], t('register.passwordMismatch'))
+      .required(t('register.confirmPasswordRequired')),
     firstName: Yup.string()
-      .min(1, "First name is required")
-      .required("Please Enter Your First Name"),
+      .min(1, t('register.firstNameRequired'))
+      .required(t('register.firstNameRequired')),
     lastName: Yup.string()
-      .min(1, "Last name is required")
-      .required("Please Enter Your Last Name"),
+      .min(1, t('register.lastNameRequired'))
+      .required(t('register.lastNameRequired')),
     phone: Yup.string()
-      .matches(/^[0-9+\-\s()]+$/, "Please enter a valid phone number")
-      .min(10, "Phone number must be at least 10 digits")
-      .required("Please Enter Phone Number"),
+      .matches(/^[0-9+\-\s()]+$/, t('register.phoneInvalid'))
+      .min(10, t('register.phoneMinLength'))
+      .required(t('register.phoneRequired')),
   });
 
   // Step 2 validation schema (Business Information)
   const step2ValidationSchema = Yup.object({
     businessName: Yup.string()
-      .min(2, "Business name must be at least 2 characters")
-      .required("Please Enter Business Name"),
+      .min(2, t('register.businessNameMinLength'))
+      .required(t('register.businessNameRequired')),
     businessType: Yup.string()
-      .oneOf(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL'], 'Please select a valid business type')
-      .required("Please select your business type"),
+      .oneOf(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL'], t('register.businessTypeRequired'))
+      .required(t('register.businessTypeRequired')),
     pricingType: Yup.string()
-      .oneOf(['FIXED', 'HOURLY', 'DAILY', 'WEEKLY'], 'Please select a valid pricing type')
-      .required("Please select your pricing type"),
+      .oneOf(['FIXED', 'HOURLY', 'DAILY', 'WEEKLY'], t('register.pricingTypeRequired'))
+      .required(t('register.pricingTypeRequired')),
     address: Yup.string()
-      .min(5, "Address must be at least 5 characters")
-      .required("Please Enter Business Address"),
+      .min(5, t('register.addressMinLength'))
+      .required(t('register.addressRequired')),
     city: Yup.string()
-      .min(2, "City must be at least 2 characters")
-      .required("Please Enter City"),
+      .min(2, t('register.cityMinLength'))
+      .required(t('register.cityRequired')),
     state: Yup.string()
-      .min(2, "State must be at least 2 characters")
-      .required("Please Enter State"),
+      .min(2, t('register.stateMinLength'))
+      .required(t('register.stateRequired')),
     zipCode: Yup.string()
-      .matches(/^[0-9]{5}(-[0-9]{4})?$/, "Please enter a valid ZIP code")
-      .required("Please Enter ZIP Code"),
+      .matches(/^[0-9]{5}(-[0-9]{4})?$/, t('register.zipCodeInvalid'))
+      .required(t('register.zipCodeRequired')),
     country: Yup.string()
-      .min(2, "Country must be at least 2 characters")
-      .required("Please Enter Country"),
+      .min(2, t('register.countryMinLength'))
+      .required(t('register.countryRequired')),
     acceptTermsAndPrivacy: Yup.boolean()
-      .oneOf([true], "You must accept the Terms of Service and Privacy Policy")
-      .required("You must accept the Terms of Service and Privacy Policy"),
+      .oneOf([true], t('register.agreeToTerms'))
+      .required(t('register.agreeToTerms')),
   });
 
   const formik = useFormik<RegisterFormData>({
@@ -166,6 +182,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         // Use centralized API directly
         
         const registrationData = {
+          name: `${completeData.firstName} ${completeData.lastName}`,
           email: completeData.login!,
           password: completeData.password!,
           firstName: completeData.firstName!,
@@ -195,7 +212,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           storeAuthData(result.data.token, result.data.user);
         }
         
-        toastSuccess("Registration Complete!", "Account created successfully.");
+        toastSuccess(t('register.registrationComplete'), t('register.accountCreatedSuccessfully'));
         
         // Reset form
         formik.resetForm();
@@ -208,8 +225,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         }, 2000);
       } catch (error: any) {
         toastError(
-          "Registration Failed",
-          error.message || "Something went wrong. Please try again."
+          t('register.registrationFailed'),
+          error.message || t('register.somethingWentWrong')
         );
       } finally {
         clearTimeout(timeoutId);
@@ -223,12 +240,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       <Card className="shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Create Merchant Account
+            {t('register.createMerchantAccount')}
           </CardTitle>
           <CardDescription className="text-gray-600">
             {currentStep === 1 
-              ? "Step 1: Create your account" 
-              : "Step 2: Business information"
+              ? t('register.step1')
+              : t('register.step2')
             }
           </CardDescription>
           
@@ -240,7 +257,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               }`}>
                 1
               </div>
-              <span className="ml-2 text-sm font-medium">Account</span>
+              <span className="ml-2 text-sm font-medium">{t('register.account')}</span>
             </div>
             <div className={`w-8 h-0.5 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
             <div className={`flex items-center ${currentStep >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
@@ -249,7 +266,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               }`}>
                 2
               </div>
-              <span className="ml-2 text-sm font-medium">Business</span>
+              <span className="ml-2 text-sm font-medium">{t('register.business')}</span>
             </div>
           </div>
         </CardHeader>
@@ -265,7 +282,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {/* Email Field */}
                 <div className="space-y-2">
                   <label htmlFor="login" className="text-sm font-medium text-gray-700">
-                    Email Address
+                    {t('register.email')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -273,7 +290,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       id="login"
                       name="login"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={t('register.enterYourEmail')}
                       value={formik.values.login}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -288,7 +305,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {/* Password Field */}
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium text-gray-700">
-                    Password
+                    {t('register.password')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -296,7 +313,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       id="password"
                       name="password"
                       type={viewPass ? "text" : "password"}
-                      placeholder="Create a password"
+                      placeholder={t('register.createPassword')}
                       value={formik.values.password}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -320,7 +337,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {/* Confirm Password Field */}
                 <div className="space-y-2">
                   <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                    Confirm Password
+                    {t('register.confirmPassword')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -328,7 +345,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       id="confirmPassword"
                       name="confirmPassword"
                       type={viewConfirmPass ? "text" : "password"}
-                      placeholder="Confirm your password"
+                      placeholder={t('register.confirmYourPassword')}
                       value={formik.values.confirmPassword}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -354,7 +371,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   {/* First Name Field */}
                   <div className="space-y-2">
                     <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-                      First Name
+                      {t('register.firstName')}
                     </label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -362,7 +379,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         id="firstName"
                         name="firstName"
                         type="text"
-                        placeholder="Enter your first name"
+                        placeholder={t('register.enterFirstName')}
                         value={formik.values.firstName}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
@@ -377,7 +394,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   {/* Last Name Field */}
                   <div className="space-y-2">
                     <label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-                      Last Name
+                      {t('register.lastName')}
                     </label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -385,7 +402,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         id="lastName"
                         name="lastName"
                         type="text"
-                        placeholder="Enter your last name"
+                        placeholder={t('register.enterLastName')}
                         value={formik.values.lastName}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
@@ -401,7 +418,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {/* Phone Field */}
                 <div className="space-y-2">
                   <label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                    Phone Number
+                    {t('register.phone')}
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -409,7 +426,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       id="phone"
                       name="phone"
                       type="tel"
-                      placeholder="Enter your phone number"
+                      placeholder={t('register.enterPhoneNumber')}
                       value={formik.values.phone}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -427,7 +444,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Validating...' : 'Continue to Business Info'}
+                  {isSubmitting ? t('register.validating') : t('register.continueToBusinessInfo')}
                 </Button>
               </>
             )}
@@ -438,7 +455,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {/* Business Name Field */}
                 <div className="space-y-2">
                   <label htmlFor="businessName" className="text-sm font-medium text-gray-700">
-                    Business Name
+                    {t('register.businessName')}
                   </label>
                   <div className="relative">
                     <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -446,7 +463,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       id="businessName"
                       name="businessName"
                       type="text"
-                      placeholder="Enter your business name"
+                      placeholder={t('register.enterBusinessName')}
                       value={formik.values.businessName}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -471,10 +488,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       </div>
                       <div className="ml-3">
                         <h3 className="text-sm font-medium text-amber-800">
-                          Important Notice
+                          {t('register.importantNotice')}
                         </h3>
                         <div className="mt-1 text-sm text-amber-700">
-                          <p>Business Type and Pricing Type <strong>cannot be changed</strong> after registration. Please choose carefully as these settings will be locked permanently.</p>
+                          <p>{t('register.cannotBeChanged')}</p>
                         </div>
                       </div>
                     </div>
@@ -484,14 +501,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     {/* Business Type Field */}
                     <div className="space-y-2">
                       <label htmlFor="businessType" className="text-sm font-medium text-gray-700">
-                        Business Type *
+                        {t('register.businessType')} *
                       </label>
                       <Select
                         value={formik.values.businessType}
                         onValueChange={(value) => formik.setFieldValue('businessType', value)}
                       >
                         <SelectTrigger className={`w-full ${formik.errors.businessType && formik.touched.businessType ? 'border-red-500' : ''}`}>
-                          <SelectValue placeholder="Select business type" />
+                          <SelectValue placeholder={t('register.selectBusinessType')} />
                         </SelectTrigger>
                         <SelectContent>
                           {BUSINESS_TYPE_OPTIONS.map((option) => (
@@ -512,14 +529,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     {/* Pricing Type Field */}
                     <div className="space-y-2">
                       <label htmlFor="pricingType" className="text-sm font-medium text-gray-700">
-                        Pricing Type *
+                        {t('register.pricingType')} *
                       </label>
                       <Select
                         value={formik.values.pricingType}
                         onValueChange={(value) => formik.setFieldValue('pricingType', value)}
                       >
                         <SelectTrigger className={`w-full ${formik.errors.pricingType && formik.touched.pricingType ? 'border-red-500' : ''}`}>
-                          <SelectValue placeholder="Select pricing type" />
+                          <SelectValue placeholder={t('register.selectPricingType')} />
                         </SelectTrigger>
                         <SelectContent>
                           {PRICING_TYPE_OPTIONS.map((option) => (
@@ -542,7 +559,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {/* Address Field */}
                 <div className="space-y-2">
                   <label htmlFor="address" className="text-sm font-medium text-gray-700">
-                    Business Address
+                    {t('register.address')}
                   </label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -550,7 +567,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       id="address"
                       name="address"
                       type="text"
-                      placeholder="Enter your business address"
+                      placeholder={t('register.enterBusinessAddress')}
                       value={formik.values.address}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -566,13 +583,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="city" className="text-sm font-medium text-gray-700">
-                      City
+                      {t('register.city')}
                     </label>
                     <Input
                       id="city"
                       name="city"
                       type="text"
-                      placeholder="City"
+                      placeholder={t('register.city')}
                       value={formik.values.city}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -584,13 +601,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="state" className="text-sm font-medium text-gray-700">
-                      State
+                      {t('register.state')}
                     </label>
                     <Input
                       id="state"
                       name="state"
                       type="text"
-                      placeholder="State"
+                      placeholder={t('register.state')}
                       value={formik.values.state}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -606,13 +623,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="zipCode" className="text-sm font-medium text-gray-700">
-                      ZIP Code
+                      {t('register.zipCode')}
                     </label>
                     <Input
                       id="zipCode"
                       name="zipCode"
                       type="text"
-                      placeholder="12345"
+                      placeholder={t('register.zipCode')}
                       value={formik.values.zipCode}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -624,14 +641,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="country" className="text-sm font-medium text-gray-700">
-                      Country *
+                      {t('register.country')} *
                     </label>
                     <Select
                       value={formik.values.country}
                       onValueChange={(value) => formik.setFieldValue('country', value)}
                     >
                       <SelectTrigger className={`w-full ${formik.errors.country && formik.touched.country ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder="Select country" />
+                        <SelectValue placeholder={t('register.selectCountry')} />
                       </SelectTrigger>
                       <SelectContent>
                         {COUNTRIES.map((country: any) => (
@@ -662,13 +679,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <span className="text-sm text-gray-700">
-                      I agree to the{' '}
+                      {t('register.iAgreeToThe')}{' '}
                       <a href="/terms" className="text-blue-600 hover:text-blue-500 underline">
-                        Terms of Service
+                        {t('register.termsOfService')}
                       </a>{' '}
-                      and{' '}
+                      {t('register.and')}{' '}
                       <a href="/privacy" className="text-blue-600 hover:text-blue-500 underline">
-                        Privacy Policy
+                        {t('register.privacyPolicy')}
                       </a>
                     </span>
                   </label>
@@ -679,23 +696,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 
                 {/* Trial Benefits */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-blue-900 mb-2">Free Trial Includes:</h3>
+                  <h3 className="text-sm font-medium text-blue-900 mb-2">{t('register.freeTrialIncludes')}</h3>
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
-                      Full access to all features
+                      {t('register.fullAccessToAllFeatures')}
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
-                      Default outlet: "{formik.values.businessName || 'Your Business'}"
+                      {t('register.defaultOutlet')}: "{formik.values.businessName || 'Your Business'}"
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
-                      Mobile app access
+                      {t('register.mobileAppAccess')}
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
-                      No credit card required
+                      {t('register.noCreditCardRequired')}
                     </li>
                   </ul>
                 </div>
@@ -707,14 +724,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     onClick={() => setCurrentStep(1)}
                     className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
                   >
-                    Back
+                    {t('register.back')}
                   </Button>
                   <Button
                     type="submit"
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Creating Account...' : 'Create Merchant Account'}
+                    {isSubmitting ? t('register.creatingAccount') : t('register.registerButton')}
                   </Button>
                 </div>
               </>
@@ -730,14 +747,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             {/* Login Link */}
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Already have an account?{' '}
+                {t('register.hasAccount')}{' '}
                 <Button
                   variant="link"
                   type="button"
                   onClick={() => onNavigate?.('/login')}
                   className="text-blue-600 hover:text-blue-500 font-medium p-0 h-auto"
                 >
-                  Sign in
+                  {t('register.signIn')}
                 </Button>
               </p>
             </div>

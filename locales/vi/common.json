@@ -23,13 +23,17 @@
     "upload": "Tải lên",
     "reset": "Đặt lại",
     "clear": "Xóa",
-    "apply": "Áp dụng"
+    "apply": "Áp dụng",
+    "browse": "Chọn tệp",
+    "saving": "Đang lưu...",
+    "tryAgain": "Thử lại"
   },
   "labels": {
     "name": "Tên",
     "email": "Email",
     "phone": "Số điện thoại",
     "address": "Địa chỉ",
+    "addressInformation": "Thông tin địa chỉ",
     "city": "Thành phố",
     "state": "Tỉnh/Thành",
     "country": "Quốc gia",
@@ -39,6 +43,7 @@
     "status": "Trạng thái",
     "type": "Loại",
     "category": "Danh mục",
+    "merchant": "Doanh nghiệp",
     "price": "Giá",
     "quantity": "Số lượng",
     "total": "Tổng cộng",
@@ -61,7 +66,8 @@
     "return": "Trả hàng",
     "active": "Hoạt động",
     "inactive": "Không hoạt động",
-    "create": "Tạo"
+    "create": "Tạo",
+    "unknown": "Không xác định"
   },
   "messages": {
     "saveSuccess": "Lưu thành công",
@@ -82,13 +88,16 @@
     "sessionExpired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
     "unauthorized": "Bạn không có quyền thực hiện thao tác này",
     "serverError": "Lỗi máy chủ. Vui lòng thử lại sau.",
-    "networkError": "Lỗi kết nối. Vui lòng kiểm tra kết nối mạng."
+    "networkError": "Lỗi kết nối. Vui lòng kiểm tra kết nối mạng.",
+    "comingSoon": "Tính năng sắp ra mắt!",
+    "notFound": "Mục bạn tìm kiếm không tồn tại hoặc đã bị xóa."
   },
   "navigation": {
     "home": "Trang chủ",
     "dashboard": "Bảng điều khiển",
     "orders": "Đơn hàng",
     "products": "Sản phẩm",
+    "allProducts": "Tất cả sản phẩm",
     "customers": "Khách hàng",
     "settings": "Cài đặt",
     "logout": "Đăng xuất",
@@ -102,6 +111,7 @@
   },
   "pagination": {
     "showing": "Hiển thị",
+    "to": "đến",
     "of": "trên",
     "results": "kết quả",
     "page": "Trang",

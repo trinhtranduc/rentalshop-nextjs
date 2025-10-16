@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
 import { Category } from '@rentalshop/types';
+import { useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Eye, Edit, Trash2, CheckCircle, XCircle, MoreVertical, FolderOpen } from 'lucide-react';
 
 interface CategoryTableProps {
@@ -28,6 +29,8 @@ export function CategoryTable({
   onSort 
 }: CategoryTableProps) {
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+  const t = useCategoriesTranslations();
+  const tc = useCommonTranslations();
   
   if (categories.length === 0) {
     return (
@@ -35,9 +38,9 @@ export function CategoryTable({
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <FolderOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium mb-2">No categories found</h3>
+            <h3 className="text-lg font-medium mb-2">{t('messages.noCategories')}</h3>
             <p className="text-sm">
-              Try adjusting your search or add categories to get started.
+              {t('messages.noCategoriesDescription')}
             </p>
           </div>
         </CardContent>
@@ -58,11 +61,11 @@ export function CategoryTable({
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-        Active
+        {t('status.active')}
       </Badge>
     ) : (
       <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-        Inactive
+        {t('status.inactive')}
       </Badge>
     );
   };
@@ -96,31 +99,32 @@ export function CategoryTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Name
+                  {tc('labels.name')}
                   {sortBy === 'name' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Description
+                {tc('labels.description')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
+              {/* Status column hidden as requested */}
+              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {tc('labels.status')}
+              </th> */}
               <th 
                 onClick={() => handleSort('createdAt')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Created
+                  {tc('labels.createdAt')}
                   {sortBy === 'createdAt' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
+                {tc('labels.actions')}
               </th>
             </tr>
           </thead>
@@ -145,9 +149,10 @@ export function CategoryTable({
                     {category.description || 'N/A'}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                {/* Status cell hidden as requested */}
+                {/* <td className="px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(category.isActive)}
-                </td>
+                </td> */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(category.createdAt)}
                 </td>
@@ -176,7 +181,7 @@ export function CategoryTable({
                         className="cursor-pointer"
                       >
                         <Eye className="mr-2 h-4 w-4" />
-                        View Details
+                        {t('actions.viewDetails')}
                       </DropdownMenuItem>
                       
                       <DropdownMenuItem
@@ -187,10 +192,11 @@ export function CategoryTable({
                         className="cursor-pointer"
                       >
                         <Edit className="mr-2 h-4 w-4" />
-                        Edit Category
+                        {t('actions.edit')}
                       </DropdownMenuItem>
                       
-                      <DropdownMenuSeparator />
+                      {/* Activate/Deactivate hidden as requested */}
+                      {/* <DropdownMenuSeparator />
                       
                       <DropdownMenuItem
                         onClick={() => {
@@ -202,15 +208,15 @@ export function CategoryTable({
                         {category.isActive ? (
                           <>
                             <XCircle className="mr-2 h-4 w-4" />
-                            Deactivate
+                            {t('actions.deactivate')}
                           </>
                         ) : (
                           <>
                             <CheckCircle className="mr-2 h-4 w-4" />
-                            Activate
+                            {t('actions.activate')}
                           </>
                         )}
-                      </DropdownMenuItem>
+                      </DropdownMenuItem> */}
                       
                       <DropdownMenuSeparator />
                       
@@ -222,7 +228,7 @@ export function CategoryTable({
                         className="cursor-pointer text-red-600 dark:text-red-400"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {t('actions.delete')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

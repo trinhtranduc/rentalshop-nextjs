@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useCommonTranslations } from '@rentalshop/hooks';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -45,56 +47,57 @@ interface MenuItem {
   subItems?: MenuItem[];
 }
 
-const clientMenuItems: MenuItem[] = [
+// Function to get menu items with translations
+const getClientMenuItems = (t: any): MenuItem[] => [
   {
-    label: 'Dashboard',
+    label: t('navigation.dashboard'),
     href: '/dashboard',
     icon: Home,
   },
   {
-    label: 'Orders',
+    label: t('navigation.orders'),
     href: '/orders',
     icon: ShoppingCart,
   },
   {
-    label: 'Products',
+    label: t('navigation.products'),
     href: '/products',
     icon: Package,
     subItems: [
       { 
-        label: 'All Products', 
+        label: t('navigation.allProducts'), 
         href: '/products', 
         icon: Package 
       },
       { 
-        label: 'Categories', 
+        label: t('navigation.categories'), 
         href: '/categories', 
         icon: Tag 
       }
     ]
   },
   {
-    label: 'Customers',
+    label: t('navigation.customers'),
     href: '/customers',
     icon: Users,
   },
   {
-    label: 'Users',
+    label: t('navigation.users'),
     href: '/users',
     icon: User,
   },
   {
-    label: 'Outlets',
+    label: t('navigation.outlets'),
     href: '/outlets',
     icon: Building2,
   },
   {
-    label: 'Calendar',
+    label: t('navigation.calendar'),
     href: '/calendar',
     icon: Calendar,
   },
   {
-    label: 'Settings',
+    label: t('navigation.settings'),
     href: '/settings',
     icon: Settings,
   }
@@ -118,6 +121,9 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPath);
   const pathname = usePathname();
+  
+  // Get translations
+  const t = useCommonTranslations();
 
   // Filter menu items based on user role
   const filterMenuItemsByRole = (items: MenuItem[], userRole?: string) => {
@@ -146,7 +152,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
     return items;
   };
 
-  const menuItems = filterMenuItemsByRole(clientMenuItems, user?.role);
+  const menuItems = filterMenuItemsByRole(getClientMenuItems(t), user?.role);
 
   // Update local state when prop changes
   useEffect(() => {
@@ -458,7 +464,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             )}
           >
             <LogOut className="w-4 h-4" />
-            {!isCollapsed && <span className="ml-2">Logout</span>}
+            {!isCollapsed && <span className="ml-2">{t('navigation.logout')}</span>}
           </Button>
         )}
       </div>

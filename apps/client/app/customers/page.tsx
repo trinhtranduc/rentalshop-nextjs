@@ -20,7 +20,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useCustomersData, useCanExportData } from '@rentalshop/hooks';
+import { useAuth, useCustomersData, useCanExportData, useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { customersApi } from '@rentalshop/utils';
 import type { CustomerFilters, Customer, CustomerUpdateInput } from '@rentalshop/types';
 
@@ -42,6 +42,8 @@ export default function CustomersPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const t = useCustomerTranslations();
+  const tc = useCommonTranslations();
   const canExport = useCanExportData();
   
   // Dialog states
@@ -198,15 +200,15 @@ export default function CustomersPage() {
     try {
       const response = await customersApi.updateCustomer(selectedCustomer.id, customerData);
       if (response.success) {
-        toastSuccess('Customer Updated', 'Customer has been updated successfully');
+        toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
         setShowEditDialog(false);
         setSelectedCustomer(null);
         router.refresh();
       } else {
-        throw new Error(response.error || 'Failed to update customer');
+        throw new Error(response.error || t('messages.updateFailed'));
       }
     } catch (error) {
-      toastError('Update Failed', (error as Error).message);
+        toastError(t('messages.updateFailed'), (error as Error).message);
       throw error;
     }
   }, [selectedCustomer, router, toastSuccess, toastError]);
@@ -218,15 +220,15 @@ export default function CustomersPage() {
     try {
       const response = await customersApi.deleteCustomer(customerToDelete.id);
       if (response.success) {
-        toastSuccess('Customer Deleted', `Customer "${customerToDelete.firstName} ${customerToDelete.lastName}" has been deleted successfully`);
+        toastSuccess(t('messages.deleteSuccess'), t('messages.deleteSuccess'));
         setShowDeleteConfirm(false);
         setCustomerToDelete(null);
         router.refresh();
       } else {
-        throw new Error(response.error || 'Failed to delete customer');
+        throw new Error(response.error || t('messages.deleteFailed'));
       }
     } catch (error) {
-      toastError('Delete Failed', (error as Error).message);
+        toastError(t('messages.deleteFailed'), (error as Error).message);
     }
   }, [customerToDelete, router, toastSuccess, toastError]);
 
@@ -280,8 +282,8 @@ export default function CustomersPage() {
     return (
       <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
         <PageHeader className="flex-shrink-0">
-          <PageTitle>Customers</PageTitle>
-          <p className="text-sm text-gray-600">Manage your customer database</p>
+          <PageTitle>{t('title')}</PageTitle>
+          <p className="text-sm text-gray-600">{t('title')}</p>
         </PageHeader>
         <CustomersLoading />
       </PageWrapper>
@@ -293,21 +295,21 @@ export default function CustomersPage() {
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle>Customers</PageTitle>
-            <p className="text-sm text-gray-600">Manage customers in the system</p>
+            <PageTitle>{t('title')}</PageTitle>
+            <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
             {/* Export feature - temporarily hidden, will be enabled in the future */}
             {/* {canExport && (
               <Button
                 onClick={() => {
-                  toastSuccess('Export Feature', 'Export functionality coming soon!');
+                  toastSuccess(tc('labels.info'), tc('messages.comingSoon'));
                 }}
                 variant="default"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Export
+                {tc('buttons.export')}
               </Button>
             )} */}
             <Button 
@@ -316,7 +318,7 @@ export default function CustomersPage() {
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Customer
+              {t('createCustomer')}
             </Button>
           </div>
         </div>
@@ -357,19 +359,19 @@ export default function CustomersPage() {
             });
             
             if (response.success) {
-              toastSuccess('Customer Created', `Customer "${customerData.firstName} ${customerData.lastName}" has been created successfully`);
+              toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
               router.refresh();
             } else {
-              throw new Error(response.error || 'Failed to create customer');
+              throw new Error(response.error || t('messages.createFailed'));
             }
           } catch (error) {
             console.error('Error creating customer:', error);
-            toastError('Error', error instanceof Error ? error.message : 'Failed to create customer');
+            toastError(tc('labels.error'), error instanceof Error ? error.message : t('messages.createFailed'));
             throw error; // Re-throw to let dialog handle it
           }
         }}
         onError={(error) => {
-          toastError('Error', error);
+          toastError(tc('labels.error'), error);
         }}
       />
 
@@ -378,7 +380,7 @@ export default function CustomersPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Edit Customer: {selectedCustomer?.firstName} {selectedCustomer?.lastName}
+              {t('editCustomer')}: {selectedCustomer?.firstName} {selectedCustomer?.lastName}
             </DialogTitle>
           </DialogHeader>
           {selectedCustomer && (
@@ -399,10 +401,10 @@ export default function CustomersPage() {
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         type="danger"
-        title="Delete Customer"
-        description={`Are you sure you want to delete customer "${customerToDelete?.firstName} ${customerToDelete?.lastName}"? This action cannot be undone.`}
-        confirmText="Delete Customer"
-        cancelText="Cancel"
+        title={t('actions.delete')}
+        description={t('messages.confirmDelete')}
+        confirmText={t('actions.delete')}
+        cancelText={tc('buttons.cancel')}
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           setShowDeleteConfirm(false);

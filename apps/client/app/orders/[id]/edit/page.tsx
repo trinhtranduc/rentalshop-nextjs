@@ -25,7 +25,7 @@ import {
   outletsApi, 
   categoriesApi 
 } from '@rentalshop/utils';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category, Customer, Product } from '@rentalshop/types';
 import type { OrderInput } from '@rentalshop/types';
 
@@ -33,6 +33,8 @@ export default function EditOrderPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
   const [order, setOrder] = useState<OrderWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -284,7 +286,7 @@ export default function EditOrderPage() {
 
       if (result.success) {
         // Show success message
-        toastSuccess('Order updated successfully!');
+        toastSuccess(t('messages.updateSuccess'));
         // Navigate back to orders list after successful update
         router.push('/orders');
       } else {

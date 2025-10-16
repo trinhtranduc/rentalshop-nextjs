@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from './button';
+import { useCommonTranslations } from '@rentalshop/hooks';
 
 interface PaginationProps {
   currentPage: number;
@@ -18,6 +19,7 @@ export function Pagination({
   onPageChange,
   itemName = "items"
 }: PaginationProps) {
+  const t = useCommonTranslations();
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
@@ -63,7 +65,7 @@ export function Pagination({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
       <div className="text-sm text-gray-700 dark:text-gray-300">
-        Showing {startItem} to {endItem} of {total} {itemName}
+        {t('pagination.showing')} {startItem} {t('pagination.to')} {endItem} {t('pagination.of')} {total} {itemName}
       </div>
       
       <div className="flex items-center space-x-2">
@@ -73,7 +75,7 @@ export function Pagination({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          Previous
+          {t('buttons.previous')}
         </Button>
         
         <div className="flex items-center space-x-1">
@@ -101,7 +103,7 @@ export function Pagination({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          Next
+          {t('buttons.next')}
         </Button>
       </div>
     </div>

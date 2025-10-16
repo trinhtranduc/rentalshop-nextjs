@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input, Button } from '@rentalshop/ui';
+import { useOutletsTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface OutletSearchProps {
   value: string;
@@ -11,6 +12,9 @@ interface OutletSearchProps {
  * ✅ COMPACT OUTLET SEARCH (Following Orders pattern)
  */
 export function OutletSearch({ value, onChange, onClear }: OutletSearchProps) {
+  const t = useOutletsTranslations();
+  const tc = useCommonTranslations();
+  
   return (
     <>
       {/* Search Field */}
@@ -18,7 +22,7 @@ export function OutletSearch({ value, onChange, onClear }: OutletSearchProps) {
         <div className="relative">
           <Input
             type="text"
-            placeholder="Search outlets..."
+            placeholder={t('search.placeholder')}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="pl-9 h-10"
@@ -47,7 +51,7 @@ export function OutletSearch({ value, onChange, onClear }: OutletSearchProps) {
           size="sm"
           className="h-10"
         >
-          Clear
+          {tc('buttons.clear')}
         </Button>
       )}
     </>

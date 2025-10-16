@@ -3,6 +3,7 @@ import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
 import { useFormatCurrency } from '@rentalshop/ui';
+import { useOrderTranslations } from '@rentalshop/hooks';
 import { Eye, Edit } from 'lucide-react';
 
 // Local interface matching what OrderTable actually uses
@@ -38,6 +39,7 @@ export const OrderTable = React.memo(function OrderTable({
 }: OrderTableProps) {
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
+  const t = useOrderTranslations();
   
   // Debug: Log order statuses
   React.useEffect(() => {
@@ -134,35 +136,35 @@ export const OrderTable = React.memo(function OrderTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Order Number
+                  {t('orderNumber')}
                   {sortBy === 'orderNumber' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Type
+                {t('orderType.label')}
               </th>
               <th 
                 onClick={() => handleSort('status')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Status
+                  {t('status.label')}
                   {sortBy === 'status' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Customer
+                {t('customer.label')}
               </th>
               <th 
                 onClick={() => handleSort('totalAmount')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Amount
+                  {t('amount.total')}
                   {sortBy === 'totalAmount' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -173,7 +175,7 @@ export const OrderTable = React.memo(function OrderTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Pickup Date
+                  {t('dates.pickupDate')}
                   {sortBy === 'pickupPlanAt' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -184,14 +186,14 @@ export const OrderTable = React.memo(function OrderTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
-                  Created
+                  {t('dates.createdDate')}
                   {sortBy === 'createdAt' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </div>
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
+                {t('actions.label')}
               </th>
             </tr>
           </thead>
@@ -231,7 +233,7 @@ export const OrderTable = React.memo(function OrderTable({
                     <div className="font-medium text-gray-900 dark:text-white">{formatMoney(order.totalAmount)}</div>
                     {order.depositAmount > 0 && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        Deposit: {formatMoney(order.depositAmount)}
+                        {t('amount.deposit')}: {formatMoney(order.depositAmount)}
                       </div>
                     )}
                   </div>
@@ -244,7 +246,7 @@ export const OrderTable = React.memo(function OrderTable({
                   </div>
                   {order.returnPlanAt && (
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      Return: {formatDate(order.returnPlanAt)}
+                      {t('dates.returnLabel')}: {formatDate(order.returnPlanAt)}
                     </div>
                   )}
                 </td>
@@ -264,21 +266,21 @@ export const OrderTable = React.memo(function OrderTable({
                       className="h-8 px-3"
                     >
                       <Eye className="h-4 w-4 mr-1" />
-                      View
+                      {t('actions.view')}
                     </Button>
                     
-                    {/* Only show Edit button for RESERVED status */}
-                    {order.status === 'RESERVED' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onOrderAction('edit', order.orderNumber)}
-                        className="h-8 px-3"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                    )}
+                    {/* Always show Edit button, but disable if not RESERVED */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onOrderAction('edit', order.orderNumber)}
+                      disabled={order.status !== 'RESERVED'}
+                      className="h-8 px-3"
+                      title={order.status !== 'RESERVED' ? t('messages.cannotEditOrder') : undefined}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      {t('actions.edit')}
+                    </Button>
                   </div>
                 </td>
               </tr>

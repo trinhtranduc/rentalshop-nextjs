@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '../../../ui';
+import { useCategoriesTranslations } from '@rentalshop/hooks';
 import { CategoryFormContent } from './CategoryFormContent';
 import type { Category } from '@rentalshop/types';
 
@@ -28,12 +29,14 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   onCancel,
   mode
 }) => {
+  const t = useCategoriesTranslations();
+  
   return (
     <Dialog open={true} onOpenChange={onCancel}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'create' ? 'Add New Category' : 'Edit Category'}
+            {mode === 'create' ? t('dialog.addNew') : t('dialog.edit')}
           </DialogTitle>
         </DialogHeader>
         

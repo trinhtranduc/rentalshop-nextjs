@@ -22,7 +22,7 @@ import {
 } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi,
@@ -34,6 +34,8 @@ export default function ProductOrdersPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
   
   const [product, setProduct] = useState<ProductWithStock | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,9 @@ export default function ProductOrdersPage() {
 
         // Fetch product details
         const productResponse = await productsApi.getProductById(parseInt(productId));
-        setProduct(productResponse.data || null);
+        if (productResponse.success && productResponse.data) {
+          setProduct(productResponse.data);
+        }
 
       } catch (err) {
         console.error('Error fetching product:', err);
@@ -93,7 +97,7 @@ export default function ProductOrdersPage() {
               variant="default"
               size="sm"
             >
-              Back to Products
+              {tc('buttons.back')}
             </Button>
           </div>
         </PageContent>
@@ -116,15 +120,6 @@ export default function ProductOrdersPage() {
     <PageWrapper>
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
-      
-      <PageHeader>
-        <div>
-          <PageTitle>Orders for {product.name}</PageTitle>
-          <p className="text-sm text-gray-600 mt-1">
-            View and manage all orders for this product
-          </p>
-        </div>
-      </PageHeader>
       <PageContent>
         <ProductOrdersView
           productId={product.id.toString()}

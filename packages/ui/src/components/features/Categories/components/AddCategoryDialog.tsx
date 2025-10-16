@@ -7,6 +7,7 @@ import {
   DialogHeader, 
   DialogTitle
 } from '../../../ui';
+import { useCategoriesTranslations } from '@rentalshop/hooks';
 import { CategoryFormContent } from './CategoryFormContent';
 import type { Category } from '@rentalshop/types';
 
@@ -23,6 +24,7 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   onCategoryCreated,
   onError
 }) => {
+  const t = useCategoriesTranslations();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSave = async (categoryData: Category) => {
@@ -57,7 +59,7 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
+          <DialogTitle>{t('dialog.addNew')}</DialogTitle>
         </DialogHeader>
         
         <CategoryFormContent

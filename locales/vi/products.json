@@ -1,5 +1,6 @@
 {
   "title": "Sản phẩm",
+  "productName": "Tên sản phẩm",
   "createProduct": "Thêm sản phẩm",
   "editProduct": "Sửa sản phẩm",
   "viewProduct": "Xem sản phẩm",
@@ -23,6 +24,20 @@
     "specifications": "Thông số kỹ thuật",
     "notes": "Ghi chú"
   },
+  "stock": {
+    "label": "Tồn kho",
+    "renting": "Đang thuê"
+  },
+  "price": {
+    "sale": "Bán"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "inactive": "Ngừng hoạt động",
+    "inStock": "Còn hàng",
+    "outOfStock": "Hết hàng",
+    "lowStock": "Sắp hết"
+  },
   "inventory": {
     "title": "Kho hàng",
     "inStock": "Còn hàng",
@@ -33,7 +48,17 @@
     "rentedOut": "Đã cho thuê",
     "reserved": "Đã đặt",
     "updateStock": "Cập nhật tồn kho",
-    "stockHistory": "Lịch sử tồn kho"
+    "stockHistory": "Lịch sử tồn kho",
+    "outletStockDistribution": "Phân bổ kho theo cửa hàng",
+    "stockAllocation": "Phân bổ kho hàng qua các cửa hàng khác nhau",
+    "noOutletStock": "Không có thông tin kho theo cửa hàng",
+    "notAssignedToOutlets": "Sản phẩm này có thể chưa được phân bổ cho cửa hàng nào.",
+    "totalOutlets": "Tổng số cửa hàng",
+    "stockEntries": "Số lượng phân bổ",
+    "stockRequired": "Giá trị tồn kho bắt buộc",
+    "noOutletsAvailable": "Chưa có cửa hàng",
+    "needOutletMessage": "Bạn cần tạo ít nhất một cửa hàng trước khi có thể thêm sản phẩm. Sản phẩm phải được phân bổ cho các cửa hàng cụ thể để quản lý tồn kho.",
+    "contactAdmin": "Vui lòng liên hệ quản trị viên để thiết lập cửa hàng cho doanh nghiệp của bạn."
   },
   "availability": {
     "title": "Tình trạng",
@@ -54,31 +79,54 @@
     "depositRequired": "Yêu cầu đặt cọc"
   },
   "actions": {
+    "viewDetails": "Xem chi tiết",
+    "edit": "Sửa sản phẩm",
     "viewOrders": "Xem đơn hàng",
+    "activate": "Kích hoạt",
+    "deactivate": "Vô hiệu hóa",
+    "delete": "Xóa sản phẩm",
     "viewHistory": "Xem lịch sử",
     "duplicate": "Nhân bản sản phẩm",
     "archive": "Lưu trữ sản phẩm",
-    "restore": "Khôi phục sản phẩm",
-    "delete": "Xóa sản phẩm"
+    "restore": "Khôi phục sản phẩm"
   },
   "messages": {
     "createSuccess": "Tạo sản phẩm thành công",
     "createFailed": "Tạo sản phẩm thất bại",
     "updateSuccess": "Cập nhật sản phẩm thành công",
     "updateFailed": "Cập nhật sản phẩm thất bại",
+    "updateProduct": "Cập nhật sản phẩm",
+    "updating": "Đang cập nhật...",
     "deleteSuccess": "Xóa sản phẩm thành công",
     "deleteFailed": "Xóa sản phẩm thất bại",
     "confirmDelete": "Bạn có chắc chắn muốn xóa sản phẩm này?",
     "noProducts": "Không tìm thấy sản phẩm",
-    "loadingProducts": "Đang tải sản phẩm..."
+    "noProductsDescription": "Thử điều chỉnh bộ lọc hoặc thêm sản phẩm để bắt đầu.",
+    "loadingProducts": "Đang tải sản phẩm...",
+    "generateBarcode": "Tạo mã vạch mới",
+    "maxImagesReached": "Đã đạt giới hạn ảnh",
+    "dragDropImages": "Kéo thả ảnh vào đây",
+    "imageFormats": "Hỗ trợ JPG, PNG, WebP, GIF tối đa 5MB mỗi ảnh (tối đa 3 ảnh, không bắt buộc)",
+    "imagesUploaded": "ảnh đã tải lên (không bắt buộc)",
+    "clearAllImages": "Xóa tất cả ảnh",
+    "uploadFailed": "Tải lên thất bại",
+    "preparing": "Đang chuẩn bị...",
+    "uploading": "Đang tải lên",
+    "processing": "Đang xử lý...",
+    "complete": "Hoàn thành!",
+    "removeImage": "Xóa ảnh"
   },
   "filters": {
     "all": "Tất cả sản phẩm",
     "available": "Có sẵn",
     "rented": "Đang cho thuê",
     "outOfStock": "Hết hàng",
-    "category": "Danh mục",
-    "priceRange": "Khoảng giá"
+    "outletLabel": "Cửa hàng",
+    "allOutlets": "Tất cả cửa hàng",
+    "categoryLabel": "Danh mục",
+    "allCategories": "Tất cả danh mục",
+    "priceRange": "Khoảng giá",
+    "clear": "Xóa"
   },
   "search": {
     "placeholder": "Tìm kiếm theo tên, mã vạch hoặc SKU...",

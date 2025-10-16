@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       if (existingMerchant) {
         return NextResponse.json({
           success: false,
-          message: 'Merchant with this email already exists'
+          code: 'EMAIL_EXISTS', message: 'Merchant with this email already exists'
         }, { status: 400 });
       }
 
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Merchant account created successfully with default outlet and trial subscription',
+        code: 'MERCHANT_ACCOUNT_CREATED_SUCCESS', message: 'Merchant account created successfully with default outlet and trial subscription',
         data: {
           user: {
             id: user.id,
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'User account created successfully',
+        code: 'USER_ACCOUNT_CREATED_SUCCESS', message: 'User account created successfully',
         data: {
           user: {
             id: user.id,

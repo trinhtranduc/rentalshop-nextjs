@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -43,7 +43,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: merchant,
-        message: 'Merchant retrieved successfully'
+        code: 'MERCHANT_RETRIEVED_SUCCESS', message: 'Merchant retrieved successfully'
       });
 
     } catch (error) {
@@ -102,7 +102,7 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedMerchant,
-        message: 'Merchant updated successfully'
+        code: 'MERCHANT_UPDATED_SUCCESS', message: 'Merchant updated successfully'
       });
 
     } catch (error) {
@@ -157,7 +157,7 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedMerchant,
-        message: 'Merchant deleted successfully'
+        code: 'MERCHANT_DELETED_SUCCESS', message: 'Merchant deleted successfully'
       });
 
     } catch (error) {

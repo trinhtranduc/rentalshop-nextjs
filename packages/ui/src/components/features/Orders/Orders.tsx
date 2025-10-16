@@ -12,6 +12,7 @@ import {
 import { Pagination, Card, CardContent } from '@rentalshop/ui';
 import { AlertCircle } from 'lucide-react';
 import type { OrdersData, OrderFilters } from '@rentalshop/types';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface OrdersProps {
   data: OrdersData;
@@ -46,6 +47,8 @@ export const Orders = React.memo(function Orders({
   showQuickFilters = true,
   filterStyle = 'dropdown' // ⭐ Default to dropdown (modern pattern)
 }: OrdersProps) {
+  const t = useOrderTranslations();
+  
   // Debug: Log when Orders component receives new data
   React.useEffect(() => {
     console.log('📊 Orders Component: received new data', {
@@ -111,7 +114,7 @@ export const Orders = React.memo(function Orders({
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-warning-bg border border-warning-border">
             <AlertCircle className="w-4 h-4 text-warning-text flex-shrink-0" />
             <span className="text-sm text-warning-text font-medium">
-              Viewing all {data.total.toLocaleString()} orders may be slow
+              {t('messages.viewingAllOrders')} {data.total.toLocaleString()} {t('messages.mayBeSlow')}
             </span>
           </div>
         )}

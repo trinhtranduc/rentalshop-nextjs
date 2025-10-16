@@ -13,7 +13,8 @@
     "phone": "Phone Number",
     "description": "Description",
     "status": "Status",
-    "manager": "Manager"
+    "manager": "Manager",
+    "notAvailable": "N/A"
   },
   "actions": {
     "export": "Export Outlets",
@@ -21,18 +22,9 @@
     "editOutlet": "Edit Outlet",
     "deleteOutlet": "Delete Outlet",
     "addOutlet": "Add Outlet",
-    "backToOutlets": "Back to Outlets"
-  },
-  "messages": {
-    "createSuccess": "Outlet created successfully",
-    "createFailed": "Failed to create outlet",
-    "updateSuccess": "Outlet updated successfully",
-    "updateFailed": "Failed to update outlet",
-    "deleteSuccess": "Outlet deleted successfully",
-    "deleteFailed": "Failed to delete outlet",
-    "confirmDelete": "Are you sure you want to delete this outlet?",
-    "noOutlets": "No outlets found",
-    "loadingOutlets": "Loading outlets..."
+    "backToOutlets": "Back to Outlets",
+    "disableOutlet": "Disable Outlet",
+    "enableOutlet": "Enable Outlet"
   },
   "stats": {
     "totalOutlets": "Total Outlets",
@@ -46,7 +38,36 @@
   "dialogs": {
     "addOutletTitle": "Add New Outlet",
     "editOutletTitle": "Edit Outlet",
-    "deleteOutletTitle": "Delete Outlet"
+    "deleteOutletTitle": "Delete Outlet",
+    "outletDetails": "Outlet Details",
+    "editOutletName": "Edit Outlet: {name}"
+  },
+  "messages": {
+    "createSuccess": "Outlet created successfully",
+    "createFailed": "Failed to create outlet",
+    "updateSuccess": "Outlet updated successfully",
+    "updateFailed": "Failed to update outlet",
+    "deleteSuccess": "Outlet deleted successfully",
+    "deleteFailed": "Failed to delete outlet",
+    "enableSuccess": "Outlet enabled successfully",
+    "enableFailed": "Failed to enable outlet",
+    "disableSuccess": "Outlet disabled successfully",
+    "disableFailed": "Failed to disable outlet",
+    "confirmDelete": "Are you sure you want to delete this outlet?",
+    "noOutlets": "No outlets found",
+    "tryAdjustingSearch": "Try adjusting your search",
+    "getStarted": "Get started by adding your first outlet",
+    "loadingOutlets": "Loading outlets..."
+  },
+  "placeholders": {
+    "enterOutletName": "Enter outlet name",
+    "enterStreetAddress": "Enter street address",
+    "enterCity": "Enter city",
+    "enterState": "Enter state",
+    "enterZipCode": "Enter ZIP code",
+    "enterCountry": "Enter country",
+    "enterOutletPhone": "Enter outlet phone number",
+    "enterOutletDescription": "Enter outlet description"
   }
 }
 

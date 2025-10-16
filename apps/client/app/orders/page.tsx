@@ -13,7 +13,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useOrdersData, useCanExportData } from '@rentalshop/hooks';
+import { useAuth, useOrdersData, useCanExportData, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { ordersApi } from '@rentalshop/utils';
 import type { OrderFilters } from '@rentalshop/types';
 
@@ -49,6 +49,8 @@ export default function OrdersPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError, toastWarning } = useToast();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
   const canExport = useCanExportData();
 
   // ============================================================================
@@ -277,11 +279,11 @@ export default function OrdersPage() {
           try {
             const response = await ordersApi.pickupOrder(orderForPickup.id);
             if (response.success) {
-              toastSuccess('Order Confirmed', 'Order has been confirmed successfully!');
+              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
               // ✅ Force re-fetch by updating URL (trigger data refresh)
               router.refresh();
             } else {
-              throw new Error(response.error || 'Failed to pickup order');
+              throw new Error(response.error || t('messages.updateFailed'));
             }
           } catch (error) {
             toastError('Update Failed', (error as Error).message);
@@ -295,11 +297,11 @@ export default function OrdersPage() {
           try {
             const response = await ordersApi.returnOrder(orderForReturn.id);
             if (response.success) {
-              toastSuccess('Order Returned', 'Order has been returned successfully!');
+              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
               // ✅ Force re-fetch by updating URL (trigger data refresh)
               router.refresh();
             } else {
-              throw new Error(response.error || 'Failed to return order');
+              throw new Error(response.error || t('messages.updateFailed'));
             }
           } catch (error) {
             toastError('Update Failed', (error as Error).message);
@@ -310,18 +312,18 @@ export default function OrdersPage() {
       case 'cancel':
         const orderForCancel = data?.orders.find(o => o.orderNumber === orderNumber);
         if (orderForCancel) {
-          if (!confirm('Are you sure you want to cancel this order?')) return;
+          if (!confirm(t('messages.confirmCancel'))) return;
           try {
             const response = await ordersApi.cancelOrder(orderForCancel.id);
             if (response.success) {
-              toastSuccess('Order Cancelled', 'Order has been cancelled successfully!');
+              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
               // ✅ Force re-fetch by updating URL (trigger data refresh)
               router.refresh();
             } else {
-              throw new Error(response.error || 'Failed to cancel order');
+              throw new Error(response.error || t('messages.updateFailed'));
             }
           } catch (error) {
-            toastError('Cancellation Failed', (error as Error).message);
+            toastError(t('messages.updateFailed'), (error as Error).message);
           }
         }
         break;
@@ -432,8 +434,8 @@ export default function OrdersPage() {
     return (
       <PageWrapper spacing="none">
         <PageHeader>
-          <PageTitle>Order Management</PageTitle>
-          <p className="text-sm text-gray-600">Manage orders and rental/sale transactions</p>
+          <PageTitle>{t('title')}</PageTitle>
+          <p className="text-sm text-gray-600">{t('title')}</p>
         </PageHeader>
         <OrdersLoading />
       </PageWrapper>
@@ -445,21 +447,21 @@ export default function OrdersPage() {
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle>Order Management</PageTitle>
-            <p className="text-sm text-gray-600">Manage orders and rental/sale transactions</p>
+            <PageTitle>{t('title')}</PageTitle>
+            <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
             {/* Export feature - temporarily hidden, will be enabled in the future */}
             {/* {canExport && (
               <Button
                 onClick={() => {
-                  toastSuccess('Export Feature', 'Export functionality coming soon!');
+                  toastSuccess(tc('labels.info'), tc('messages.comingSoon'));
                 }}
                 variant="default"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Export
+                {tc('buttons.export')}
               </Button>
             )} */}
             <Button 
@@ -468,7 +470,7 @@ export default function OrdersPage() {
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create Order
+              {t('createOrder')}
             </Button>
           </div>
         </div>

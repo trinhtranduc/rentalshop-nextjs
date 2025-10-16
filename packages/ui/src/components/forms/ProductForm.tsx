@@ -25,6 +25,7 @@ import {
 } from '../ui';
 import { formatCurrency } from '../../lib';
 import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
+import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { 
   Package, 
   DollarSign, 
@@ -101,6 +102,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   hideSubmitButton = false,
   formId
 }) => {
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
+  
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
@@ -600,40 +604,40 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="w-5 h-5" />
-              Product Information
+              {t('productDetails')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Product Name *</label>
+                <label className="text-sm font-medium text-text-primary">{t('fields.name')} *</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter product name"
+                  placeholder={t('fields.name')}
                   className={errors.name ? 'border-red-500' : ''}
                 />
                 {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">SKU</label>
+                <label className="text-sm font-medium text-text-primary">{t('fields.sku')}</label>
                 <Input
                   value={formData.sku}
                   onChange={(e) => handleInputChange('sku', e.target.value)}
-                  placeholder="Enter SKU (optional)"
+                  placeholder={t('fields.sku')}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Barcode</label>
+                <label className="text-sm font-medium text-text-primary">{t('fields.barcode')}</label>
                 <div className="flex gap-2">
                   <Input
                     value={formData.barcode}
                     onChange={(e) => handleInputChange('barcode', e.target.value)}
-                    placeholder="Enter barcode (optional)"
+                    placeholder={t('fields.barcode')}
                     className="flex-1"
                   />
                   <Button
@@ -641,7 +645,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => handleInputChange('barcode', generateBarcode())}
-                    title="Generate new barcode"
+                    title={t('messages.generateBarcode')}
                   >
                     <RefreshCw className="w-4 h-4" />
                   </Button>
@@ -649,7 +653,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Category *</label>
+                <label className="text-sm font-medium text-text-primary">{t('fields.category')} *</label>
                 <Select
                   value={formData.categoryId.toString()}
                   onValueChange={(value) => {
@@ -657,7 +661,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   }}
                 >
                   <SelectTrigger className={errors.categoryId ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder={t('fields.category')} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
@@ -672,11 +676,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Description</label>
+              <label className="text-sm font-medium text-text-primary">{t('fields.description')}</label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Enter product description (optional)"
+                placeholder={t('fields.description')}
                 rows={3}
               />
             </div>
@@ -688,14 +692,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="w-5 h-5" />
-              Pricing & Stock
+              {t('pricing.title')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <NumericInput
-                  label="Rent Price"
+                  label={t('fields.rentPrice')}
                   value={formData.rentPrice}
                   onChange={(value) => handleInputChange('rentPrice', value)}
                   placeholder="0.00"
@@ -709,7 +713,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
               <div className="space-y-2">
                 <NumericInput
-                  label="Sale Price"
+                  label={t('fields.salePrice')}
                   value={formData.salePrice}
                   onChange={(value) => handleInputChange('salePrice', value)}
                   placeholder="0.00"
@@ -723,7 +727,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
               <div className="space-y-2">
                 <NumericInput
-                  label="Deposit"
+                  label={t('fields.deposit')}
                   value={formData.deposit}
                   onChange={(value) => handleInputChange('deposit', value)}
                   placeholder="0.00"
@@ -739,7 +743,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <NumericInput
-                  label="Total Stock"
+                  label={t('fields.stock')}
                   value={formData.totalStock}
                   onChange={(value) => handleInputChange('totalStock', value)}
                   placeholder="0"
@@ -761,25 +765,25 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Warehouse className="w-5 h-5" />
-              Outlet Stock Distribution *
+              {t('inventory.outletStockDistribution')} *
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
-                Total outlets: {outlets.length} | Outlet stock entries: {formData.outletStock.length} | <span className="text-red-500">*</span> Stock values are required
+                {t('inventory.totalOutlets')}: {outlets.length} | {t('inventory.stockEntries')}: {formData.outletStock.length} | <span className="text-red-500">*</span> {t('inventory.stockRequired')}
               </p>
             </div>
             
             {outlets.length === 0 ? (
               <div className="text-center py-8">
                 <Warehouse className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Outlets Available</h3>
+                <h3 className="text-lg font-semibold mb-2">{t('inventory.noOutletsAvailable')}</h3>
                 <p className="text-muted-foreground mb-4">
-                  You need to create at least one outlet before you can add products. Products must be assigned to specific outlets for inventory management.
+                  {t('inventory.needOutletMessage')}
                 </p>
                 <p className="text-sm text-red-500">
-                  Please contact your administrator to set up outlets for your merchant.
+                  {t('inventory.contactAdmin')}
                 </p>
               </div>
             ) : (
@@ -787,8 +791,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Outlet</TableHead>
-                      <TableHead>Stock</TableHead>
+                      <TableHead>{t('filters.outletLabel')}</TableHead>
+                      <TableHead>{t('stock.label')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -839,7 +843,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ImageIcon className="w-5 h-5" />
-              Product Images
+              {t('fields.images')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -859,10 +863,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             >
               <Upload className={`w-8 h-8 mx-auto mb-2 ${formData.images.length >= 3 ? 'text-gray-400' : 'text-text-secondary'}`} />
               <p className="text-text-primary font-medium mb-1">
-                {formData.images.length >= 3 ? 'Maximum images reached' : 'Drag and drop images here'}
+                {formData.images.length >= 3 ? t('messages.maxImagesReached') : t('messages.dragDropImages')}
               </p>
               <p className="text-text-secondary text-sm mb-3">
-                Supports JPG, PNG, WebP, GIF up to 5MB each (max 3 images, optional)
+                {t('messages.imageFormats')}
               </p>
               
               {/* File Input */}
@@ -885,14 +889,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={formData.images.length >= 3}
               >
-                {formData.images.length >= 3 ? 'Max Images Reached' : 'Browse Files'}
+                {formData.images.length >= 3 ? t('messages.maxImagesReached') : tc('buttons.browse')}
               </Button>
             </div>
 
             {/* Image Counter and Preview Grid */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-text-secondary">
-                {formData.images.length}/3 images uploaded (optional)
+                {formData.images.length}/3 {t('messages.imagesUploaded')}
               </p>
               {formData.images.length > 0 && (
                 <Button
@@ -901,7 +905,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   size="sm"
                   onClick={() => setFormData(prev => ({ ...prev, images: [] }))}
                 >
-                  Clear All Images
+                  {t('messages.clearAllImages')}
                 </Button>
               )}
             </div>
@@ -913,7 +917,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   <div key={fileId} className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm text-red-700 font-medium">Upload Failed</p>
+                      <p className="text-sm text-red-700 font-medium">{t('messages.uploadFailed')}</p>
                       <p className="text-xs text-red-600 mt-1">{error}</p>
                     </div>
                     <Button
@@ -959,10 +963,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                                 </div>
                               </div>
                               <p className="text-xs text-text-secondary">
-                                {progress.stage === 'preparing' && 'Preparing...'}
-                                {progress.stage === 'uploading' && `Uploading ${progress.percentage}%`}
-                                {progress.stage === 'processing' && 'Processing...'}
-                                {progress.stage === 'complete' && 'Complete!'}
+                                {progress.stage === 'preparing' && t('messages.preparing')}
+                                {progress.stage === 'uploading' && `${t('messages.uploading')} ${progress.percentage}%`}
+                                {progress.stage === 'processing' && t('messages.processing')}
+                                {progress.stage === 'complete' && t('messages.complete')}
                               </p>
                             </>
                           )}
@@ -972,7 +976,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         <>
                           <img
                             src={image}
-                            alt={`Product ${index + 1}`}
+                            alt={`${t('fields.name')} ${index + 1}`}
                             className="w-full h-24 object-cover rounded-lg border"
                           />
                           <Button
@@ -981,7 +985,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                             type="button"
                             onClick={() => removeImage(index)}
                             className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 h-6 w-6"
-                            title="Remove image"
+                            title={t('messages.removeImage')}
                           >
                             <XCircle className="w-4 h-4" />
                           </Button>

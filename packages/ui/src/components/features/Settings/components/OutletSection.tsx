@@ -9,6 +9,7 @@ import {
   Input,
   Label
 } from '@rentalshop/ui';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES

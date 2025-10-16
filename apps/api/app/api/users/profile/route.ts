@@ -243,6 +243,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   } catch (error) {
     console.error('❌ Error updating user profile:', error);
     console.error('Error details:', {
+      code: 'INTERNAL_SERVER_ERROR',
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });

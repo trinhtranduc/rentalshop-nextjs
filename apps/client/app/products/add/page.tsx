@@ -10,7 +10,7 @@ import {
   ProductsLoading,
   Button
 } from '@rentalshop/ui';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi,
@@ -22,6 +22,8 @@ import { ProductAddForm } from '@rentalshop/ui';
 export default function ProductAddPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [outlets, setOutlets] = useState<Outlet[]>([]);
@@ -135,7 +137,7 @@ export default function ProductAddPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Add New Product</PageTitle>
+          <PageTitle>{t('createProduct')}</PageTitle>
         </PageHeader>
         <PageContent>
           <ProductsLoading />
@@ -148,7 +150,7 @@ export default function ProductAddPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Add New Product</PageTitle>
+          <PageTitle>{t('createProduct')}</PageTitle>
         </PageHeader>
         <PageContent>
           <ProductsLoading />
@@ -161,7 +163,7 @@ export default function ProductAddPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Add New Product</PageTitle>
+          <PageTitle>{t('createProduct')}</PageTitle>
         </PageHeader>
         <PageContent>
           <div className="text-center py-12">
@@ -190,7 +192,7 @@ export default function ProductAddPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Add New Product</PageTitle>
+          <PageTitle>{t('createProduct')}</PageTitle>
         </PageHeader>
         <PageContent>
           <div className="text-center py-12">
@@ -221,7 +223,7 @@ export default function ProductAddPage() {
                 onClick={() => router.push('/products')} 
                 variant="link"
               >
-                Back to Products
+                {tc('buttons.back')}
               </Button>
             </div>
           </div>

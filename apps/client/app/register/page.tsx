@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { RegisterForm } from '@rentalshop/ui';
+import { RegisterForm, LanguageSwitcher } from '@rentalshop/ui';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,9 +18,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <RegisterForm 
-      onNavigate={handleNavigate}
-      onRegister={handleRegister}
-    />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative">
+      {/* Language Switcher - Top Right */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher variant="compact" />
+      </div>
+
+      <RegisterForm 
+        onNavigate={handleNavigate}
+        onRegister={handleRegister}
+      />
+    </div>
   );
 } 

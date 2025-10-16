@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
 import { useFormatCurrency } from '@rentalshop/ui';
+import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
 import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
 
@@ -32,6 +33,8 @@ export function ProductTable({
   
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
   
   // Debug: Log products received
   console.log('🔍 ProductTable: Received products:', {
@@ -46,9 +49,9 @@ export function ProductTable({
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <div className="text-4xl mb-4">📦</div>
-            <h3 className="text-lg font-medium mb-2">No products found</h3>
+            <h3 className="text-lg font-medium mb-2">{t('messages.noProducts')}</h3>
             <p className="text-sm">
-              Try adjusting your filters or add some products to get started.
+              {t('messages.noProductsDescription')}
             </p>
           </div>
         </CardContent>
@@ -67,23 +70,23 @@ export function ProductTable({
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-        Active
+        {t('status.active')}
       </Badge>
     ) : (
       <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-        Inactive
+        {t('status.inactive')}
       </Badge>
     );
   };
 
   const getAvailabilityBadge = (available: number, stock: number) => {
     if (available === 0) {
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Out of Stock</Badge>;
+      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">{t('status.outOfStock')}</Badge>;
     }
     if (available < 5) {
-      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Low Stock</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{t('status.lowStock')}</Badge>;
     }
-    return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">In Stock</Badge>;
+    return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('status.inStock')}</Badge>;
   };
 
   const handleSort = (column: string) => {
@@ -105,7 +108,7 @@ export function ProductTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="flex items-center gap-1">
-                  Product Name
+                  {t('productName')}
                   {sortBy === 'name' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -114,23 +117,23 @@ export function ProductTable({
               
               {/* Category */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Category
+                {tc('labels.category')}
               </th>
               
               {/* Price */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Price
+                {tc('labels.price')}
               </th>
               
               {/* Stock */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Stock
+                {t('stock.label')}
               </th>
               
-              {/* Status */}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
+              {/* Status column hidden as requested */}
+              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {tc('labels.status')}
+              </th> */}
               
               {/* Created Date - Sortable */}
               <th 
@@ -138,7 +141,7 @@ export function ProductTable({
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="flex items-center gap-1">
-                  Created
+                  {tc('labels.createdAt')}
                   {sortBy === 'createdAt' && (
                     <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -147,7 +150,7 @@ export function ProductTable({
               
               {/* Actions */}
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
+                {tc('labels.actions')}
               </th>
             </tr>
           </thead>
@@ -205,7 +208,7 @@ export function ProductTable({
                     </div>
                     {product.salePrice && product.salePrice > 0 && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        Sale: {formatMoney(product.salePrice)}
+                        {t('price.sale')}: {formatMoney(product.salePrice)}
                       </div>
                     )}
                   </div>
@@ -219,7 +222,7 @@ export function ProductTable({
                     </div>
                     {product.renting > 0 && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        Renting: {product.renting}
+                        {t('stock.renting')}: {product.renting}
                       </div>
                     )}
                     <div className="mt-1">
@@ -228,10 +231,10 @@ export function ProductTable({
                   </div>
                 </td>
                 
-                {/* Status */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                {/* Status cell hidden as requested */}
+                {/* <td className="px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(product.isActive)}
-                </td>
+                </td> */}
                 
                 {/* Created Date */}
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -267,29 +270,30 @@ export function ProductTable({
                         setOpenDropdownId(null);
                       }}>
                         <Eye className="h-4 w-4 mr-2" />
-                        View Details
+                        {t('actions.viewDetails')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         onProductAction('edit', product.id);
                         setOpenDropdownId(null);
                       }}>
                         <Edit className="h-4 w-4 mr-2" />
-                        Edit Product
+                        {t('actions.edit')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         onProductAction('view-orders', product.id);
                         setOpenDropdownId(null);
                       }}>
                         <ShoppingCart className="h-4 w-4 mr-2" />
-                        View Orders
+                        {t('actions.viewOrders')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
+                      {/* Activate/Deactivate hidden as requested */}
+                      {/* <DropdownMenuItem onClick={() => {
                         onProductAction('toggle-status', product.id);
                         setOpenDropdownId(null);
                       }}>
                         <Package className="h-4 w-4 mr-2" />
-                        {product.isActive ? 'Deactivate' : 'Activate'}
-                      </DropdownMenuItem>
+                        {product.isActive ? t('actions.deactivate') : t('actions.activate')}
+                      </DropdownMenuItem> */}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
                         onClick={() => {
@@ -299,7 +303,7 @@ export function ProductTable({
                         className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Product
+                        {t('actions.delete')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { customerUpdateSchema, handleApiError } from '@rentalshop/utils';
+import { customerUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -53,7 +53,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: customer,
-        message: 'Customer retrieved successfully'
+        code: 'CUSTOMER_RETRIEVED_SUCCESS', message: 'Customer retrieved successfully'
       });
 
     } catch (error) {
@@ -118,7 +118,7 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedCustomer,
-        message: 'Customer updated successfully'
+        code: 'CUSTOMER_UPDATED_SUCCESS', message: 'Customer updated successfully'
       });
 
     } catch (error) {
@@ -179,7 +179,7 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedCustomer,
-        message: 'Customer deleted successfully'
+        code: 'CUSTOMER_DELETED_SUCCESS', message: 'Customer deleted successfully'
       });
 
     } catch (error) {

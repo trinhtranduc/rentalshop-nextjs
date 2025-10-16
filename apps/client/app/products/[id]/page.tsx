@@ -17,7 +17,7 @@ import { productBreadcrumbs } from '@rentalshop/utils';
 import { ProductDetail } from '@rentalshop/ui';
 
 import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { canManageProducts } from '@rentalshop/auth';
 import { 
   productsApi, 
@@ -31,6 +31,8 @@ export default function ProductViewPage() {
   const params = useParams();
   const { user } = useAuth();
   const { toastSuccess, toastError, removeToast } = useToast();
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
   
   const [product, setProduct] = useState<ProductWithStock | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -92,11 +94,11 @@ export default function ProductViewPage() {
     setIsDeleting(true);
     try {
       await productsApi.deleteProduct(productId);
-      toastSuccess('Success', 'Product deleted successfully!');
+      toastSuccess(tc('messages.deleteSuccess'), t('messages.deleteSuccess'));
       router.push('/products');
     } catch (err) {
       console.error('Error deleting product:', err);
-      toastError('Error', 'Failed to delete product. Please try again.');
+      toastError(tc('labels.error'), t('messages.deleteFailed'));
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -116,7 +118,7 @@ export default function ProductViewPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Product Details</PageTitle>
+          <PageTitle>{t('productDetails')}</PageTitle>
         </PageHeader>
         <PageContent>
           <ProductsLoading />
@@ -129,20 +131,20 @@ export default function ProductViewPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Product Details</PageTitle>
+          <PageTitle>{t('productDetails')}</PageTitle>
         </PageHeader>
         <PageContent>
           <Card>
             <div className="p-6 text-center">
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Product Not Found</h3>
+              <h3 className="text-lg font-semibold mb-2">{t('messages.noProducts')}</h3>
               <p className="text-muted-foreground mb-4">
-                {error || 'The product you are looking for could not be found.'}
+                {error || t('messages.noProducts')}
               </p>
               <div className="flex justify-center space-x-2">
                 <Button variant="outline" onClick={handleBack}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Products
+                  {tc('buttons.back')}
                 </Button>
               </div>
             </div>
@@ -154,7 +156,7 @@ export default function ProductViewPage() {
 
   // Breadcrumb items - inline
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Products', href: '/products' },
+    { label: t('title'), href: '/products' },
     { label: product.name }
   ];
 
@@ -169,11 +171,11 @@ export default function ProductViewPage() {
           <div className="flex items-center space-x-2">
             <Button variant="outline" onClick={handleViewOrders}>
               <BarChart3 className="h-4 w-4 mr-2" />
-              View Product Statistics
+              {t('actions.viewOrders')}
             </Button>
             <Button onClick={handleEdit}>
               <Edit className="h-4 w-4 mr-2" />
-              Edit Product
+              {t('editProduct')}
             </Button>
             {user && canManageProducts(user) && (
               <Button 
@@ -189,7 +191,7 @@ export default function ProductViewPage() {
                 ) : (
                   <>
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Product
+                    {t('actions.delete')}
                   </>
                 )}
               </Button>
@@ -212,9 +214,9 @@ export default function ProductViewPage() {
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         type="danger"
-        title="Delete Product"
-        description={`Are you sure you want to delete "${product?.name}"? This action cannot be undone and will remove all associated data including inventory and order history.`}
-        confirmText="Delete Product"
+        title={t('actions.delete')}
+        description={t('messages.confirmDelete')}
+        confirmText={t('actions.delete')}
         cancelText="Cancel"
         onConfirm={confirmDelete}
         isLoading={isDeleting}

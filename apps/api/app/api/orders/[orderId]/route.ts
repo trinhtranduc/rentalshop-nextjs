@@ -52,7 +52,7 @@ export const GET = async (
       return NextResponse.json({
         success: true,
         data: order,
-        message: 'Order retrieved successfully'
+        code: 'ORDER_RETRIEVED_SUCCESS', message: 'Order retrieved successfully'
       });
 
     } catch (error) {
@@ -122,7 +122,7 @@ export const PUT = async (
       return NextResponse.json({
         success: true,
         data: updatedOrder,
-        message: 'Order updated successfully'
+        code: 'ORDER_UPDATED_SUCCESS', message: 'Order updated successfully'
       });
 
     } catch (error) {

@@ -11,12 +11,23 @@
     "active": "Active",
     "inactive": "Inactive"
   },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
   "filters": {
     "all": "All Categories",
     "active": "Active",
     "inactive": "Inactive"
   },
   "actions": {
+    "viewDetails": "View Details",
+    "edit": "Edit Category",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "delete": "Delete",
+    "create": "Create Category",
+    "update": "Update Category",
     "addCategory": "Add Category",
     "editCategory": "Edit Category",
     "deleteCategory": "Delete Category",
@@ -32,6 +43,7 @@
     "deleteFailed": "Failed to delete category",
     "confirmDelete": "Are you sure you want to delete this category?",
     "noCategories": "No categories found",
+    "noCategoriesDescription": "Try adjusting your search or add categories to get started.",
     "loadingCategories": "Loading categories..."
   },
   "search": {
@@ -46,6 +58,23 @@
     "addCategoryTitle": "Add New Category",
     "editCategoryTitle": "Edit Category",
     "deleteCategoryTitle": "Delete Category"
+  },
+  "dialog": {
+    "addNew": "Add New Category",
+    "edit": "Edit Category",
+    "viewDetails": "Category Details",
+    "viewDescription": "View category information and details",
+    "deleteTitle": "Delete Category",
+    "deleteConfirmation": "Are you sure you want to delete the category",
+    "deleteWarning": "This action cannot be undone. All products in this category will be affected.",
+    "neverUpdated": "Never updated"
+  },
+  "validation": {
+    "nameRequired": "Category name is required",
+    "nameMinLength": "Category name must be at least 2 characters",
+    "nameMaxLength": "Category name must be less than 50 characters",
+    "descriptionMaxLength": "Description must be less than 200 characters",
+    "characters": "characters"
   }
 }
 

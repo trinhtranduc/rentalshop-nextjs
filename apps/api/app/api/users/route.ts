@@ -40,7 +40,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid query', 
+        code: 'INVALID_QUERY', message: 'Invalid query', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -80,7 +80,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     console.error('❌ GET /api/users error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Failed to retrieve users'
+      code: 'RETRIEVE_USERS_FAILED', message: 'Failed to retrieve users'
     }, { status: 500 });
   }
 });
@@ -101,7 +101,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     if (!parsed.success) {
       return NextResponse.json({
         success: false,
-        message: 'Invalid user data',
+        code: 'INVALID_USER_DATA', message: 'Invalid user data',
         error: parsed.error.flatten()
       }, { status: 400 });
     }
@@ -143,7 +143,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
         return NextResponse.json(
           { 
             success: false, 
-            message: error.message || 'Plan limit exceeded for users',
+            code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for users',
             error: 'PLAN_LIMIT_EXCEEDED'
           },
           { status: 403 }
@@ -158,7 +158,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     return NextResponse.json({
       success: true,
       data: newUser,
-      message: 'User created successfully'
+      code: 'USER_CREATED_SUCCESS', message: 'User created successfully'
     }, { status: 201 });
 
   } catch (error: any) {
@@ -185,7 +185,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     if (!parsed.success) {
       return NextResponse.json({
         success: false,
-        message: 'Invalid update data',
+        code: 'INVALID_UPDATE_DATA', message: 'Invalid update data',
         error: parsed.error.flatten()
       }, { status: 400 });
     }
@@ -197,7 +197,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     if (!id) {
       return NextResponse.json({
         success: false,
-        message: 'User ID is required in request body'
+        code: 'USER_ID_REQUIRED', message: 'User ID is required in request body'
       }, { status: 400 });
     }
 
@@ -206,7 +206,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     if (!existingUser) {
       return NextResponse.json({
         success: false,
-        message: 'User not found'
+        code: 'USER_NOT_FOUND', message: 'User not found'
       }, { status: 404 });
     }
 
@@ -214,7 +214,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
       return NextResponse.json({
         success: false,
-        message: 'Cannot update user outside your scope'
+        code: 'UPDATE_USER_OUT_OF_SCOPE', message: 'Cannot update user outside your scope'
       }, { status: 403 });
     }
 
@@ -225,14 +225,14 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     return NextResponse.json({
       success: true,
       data: updatedUser,
-      message: 'User updated successfully'
+      code: 'USER_UPDATED_SUCCESS', message: 'User updated successfully'
     });
 
   } catch (error) {
     console.error('❌ PUT /api/users error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Failed to update user'
+      code: 'UPDATE_USER_FAILED', message: 'Failed to update user'
     }, { status: 500 });
   }
 });
@@ -252,7 +252,7 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async
     if (!userId) {
       return NextResponse.json({
         success: false,
-        message: 'User ID is required'
+        code: 'USER_ID_REQUIRED', message: 'User ID is required'
       }, { status: 400 });
     }
 
@@ -261,7 +261,7 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async
     if (!existingUser) {
       return NextResponse.json({
         success: false,
-        message: 'User not found'
+        code: 'USER_NOT_FOUND', message: 'User not found'
       }, { status: 404 });
     }
 
@@ -269,7 +269,7 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async
     if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
       return NextResponse.json({
         success: false,
-        message: 'Cannot delete user outside your scope'
+        code: 'DELETE_USER_OUT_OF_SCOPE', message: 'Cannot delete user outside your scope'
       }, { status: 403 });
     }
 
@@ -280,14 +280,14 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async
 
     return NextResponse.json({
       success: true,
-      message: 'User deactivated successfully'
+      code: 'USER_DEACTIVATED_SUCCESS', message: 'User deactivated successfully'
     });
 
   } catch (error) {
     console.error('❌ DELETE /api/users error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Failed to delete user'
+      code: 'DELETE_USER_FAILED', message: 'Failed to delete user'
     }, { status: 500 });
   }
 });

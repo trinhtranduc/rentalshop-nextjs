@@ -11,21 +11,43 @@
     "returns": "Returns",
     "totalOrders": "Total Orders",
     "pickupOrders": "Pickup Orders",
-    "returnOrders": "Return Orders"
+    "returnOrders": "Return Orders",
+    "pickup": "Pickup",
+    "return": "Return",
+    "order": "Order",
+    "customer": "Customer",
+    "product": "Product",
+    "type": "Type",
+    "status": "Status",
+    "amount": "Amount",
+    "overdue": "Overdue",
+    "month": "Month",
+    "noOrders": "No orders",
+    "more": "More..."
   },
   "stats": {
     "ordersToday": "Orders Today",
     "ordersThisWeek": "Orders This Week",
     "ordersThisMonth": "Orders This Month",
     "pickupsToday": "Pickups Today",
-    "returnsToday": "Returns Today"
+    "returnsToday": "Returns Today",
+    "monthlyStatistics": "Monthly Statistics",
+    "activeDays": "Active days",
+    "daysWithScheduledOrders": "days with scheduled orders",
+    "dateRange": "Date range",
+    "to": "to"
   },
   "modal": {
     "ordersFor": "Orders for {date}",
     "pickupOrders": "Pickup Orders",
     "returnOrders": "Return Orders",
     "viewDetails": "View Details",
-    "close": "Close"
+    "close": "Close",
+    "ordersFound": "order found",
+    "ordersFoundPlural": "orders found",
+    "noOrders": "No Orders",
+    "noPickupReturnOrders": "No pickup or return orders scheduled for this date.",
+    "items": "items"
   },
   "empty": {
     "noOrders": "No orders scheduled",

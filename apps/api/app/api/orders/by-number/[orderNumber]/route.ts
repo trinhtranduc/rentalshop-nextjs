@@ -35,7 +35,7 @@ export async function GET(
       if (!order) {
         console.log('❌ Order not found in database for orderNumber:', orderNumber);
         return NextResponse.json(
-          { success: false, message: 'Order not found' },
+          ResponseBuilder.error('ORDER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -46,7 +46,7 @@ export async function GET(
         success: true,
         data: order,
         code: 'ORDER_RETRIEVED_SUCCESS',
-        message: 'Order retrieved successfully'
+        code: 'ORDER_RETRIEVED_SUCCESS', message: 'Order retrieved successfully'
       });
 
     } catch (error) {

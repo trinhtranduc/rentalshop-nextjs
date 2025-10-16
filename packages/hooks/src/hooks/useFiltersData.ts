@@ -107,12 +107,10 @@ export function useCategoriesData() {
       const response = await categoriesApi.getCategories();
       
       if (response.success && response.data) {
-        // Handle both array and object responses
-        const categoriesData = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data as any).categories || [];
+        // response.data is already an array from API
+        const categoriesData = response.data;
         
-        console.log('✅ useCategoriesData: Transformed data:', {
+        console.log('✅ useCategoriesData: API response data:', {
           isArray: Array.isArray(categoriesData),
           count: categoriesData.length
         });
@@ -129,8 +127,18 @@ export function useCategoriesData() {
     refetchOnWindowFocus: false
   });
 
+  console.log('🔍 useCategoriesData return:', {
+    data,
+    isArray: Array.isArray(data),
+    type: typeof data,
+    length: data?.length
+  });
+
+  // Ensure we always return an array
+  const categories = Array.isArray(data) ? data : [];
+  
   return {
-    categories: Array.isArray(data) ? data : [],
+    categories,
     loading,
     error
   };

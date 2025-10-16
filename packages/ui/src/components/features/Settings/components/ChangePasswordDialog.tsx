@@ -7,6 +7,7 @@ import {
   Label
 } from '@rentalshop/ui';
 import { Eye, EyeOff } from 'lucide-react';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -37,6 +38,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   onChange,
   onSubmit
 }) => {
+  const t = useSettingsTranslations();
   // State for show/hide password
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -48,7 +50,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Change Password</h3>
+          <h3 className="text-lg font-medium text-gray-900">{t('changePassword.title')}</h3>
           <Button
             variant="ghost"
             size="icon"
@@ -64,7 +66,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         <div className="space-y-4">
           <div>
             <Label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Current Password
+              {t('changePassword.currentPassword')}
             </Label>
             <div className="relative">
               <Input
@@ -73,7 +75,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                 type={showCurrentPassword ? "text" : "password"}
                 value={passwordData.currentPassword}
                 onChange={onChange}
-                placeholder="Enter your current password"
+                placeholder={t('changePassword.currentPasswordPlaceholder')}
                 className="pr-10"
               />
               <button
@@ -92,7 +94,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
           <div>
             <Label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              New Password
+              {t('changePassword.newPassword')}
             </Label>
             <div className="relative">
               <Input
@@ -101,7 +103,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                 type={showNewPassword ? "text" : "password"}
                 value={passwordData.newPassword}
                 onChange={onChange}
-                placeholder="Enter your new password"
+                placeholder={t('changePassword.newPasswordPlaceholder')}
                 className="pr-10"
               />
               <button
@@ -120,7 +122,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
           <div>
             <Label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm New Password
+              {t('changePassword.confirmPassword')}
             </Label>
             <div className="relative">
               <Input
@@ -129,7 +131,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                 type={showConfirmPassword ? "text" : "password"}
                 value={passwordData.confirmPassword}
                 onChange={onChange}
-                placeholder="Confirm your new password"
+                placeholder={t('changePassword.confirmPasswordPlaceholder')}
                 className="pr-10"
               />
               <button
@@ -153,13 +155,13 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             onClick={onClose}
             disabled={isChanging}
           >
-            Cancel
+            {t('changePassword.cancel')}
           </Button>
           <Button
             onClick={onSubmit}
             disabled={isChanging}
           >
-            {isChanging ? 'Changing...' : 'Change Password'}
+            {isChanging ? t('changePassword.changing') : t('changePassword.changePassword')}
           </Button>
         </div>
       </div>

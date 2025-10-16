@@ -27,7 +27,7 @@ import {
   X
 } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
-import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
+import { useAuth, useSimpleErrorHandler, useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { Customer } from '@rentalshop/types';
 import type { EditCustomerFormRef } from '@rentalshop/ui';
 export default function CustomerPage() {
@@ -36,6 +36,8 @@ export default function CustomerPage() {
   const { user } = useAuth();
   const { handleError } = useSimpleErrorHandler();
   const { toastError, toastSuccess } = useToast();
+  const t = useCustomerTranslations();
+  const tc = useCommonTranslations();
   const customerId = params.id as string;
   
   console.log('🔍 CustomerPage: Component rendered with params:', params);
@@ -82,13 +84,13 @@ export default function CustomerPage() {
           setCustomer(response.data);
         } else {
           console.error('❌ CustomerPage: API showError:', response.error);
-          throw new Error(response.error || 'Failed to fetch customer');
+          throw new Error(response.error || t('messages.loadingCustomers'));
         }
         
       } catch (error) {
         console.error('❌ CustomerPage: Error fetching customer:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch customer details';
-        toastError('Error', errorMessage);
+        toastError(tc('labels.error'), errorMessage);
         // Show error state
         setCustomer(null);
       } finally {
@@ -142,12 +144,12 @@ export default function CustomerPage() {
         router.push('/customers');
       } else {
         console.error('❌ CustomerPage: API showError:', response.error);
-        throw new Error(response.error || 'Failed to delete customer');
+        throw new Error(response.error || t('messages.deleteFailed'));
       }
       
     } catch (error) {
       console.error('❌ CustomerPage: Error deleting customer:', error);
-      toastError('Delete Failed', 'Failed to delete customer: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toastError(t('messages.deleteFailed'), (error instanceof Error ? error.message : tc('labels.error')));
     } finally {
       setIsUpdating(false);
       setShowDeleteConfirm(false);
@@ -175,10 +177,10 @@ export default function CustomerPage() {
         setShowEditSection(false);
         
         // Show success toast
-        toastSuccess('Customer Updated', 'Customer information has been updated successfully!');
+        toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         console.error('❌ CustomerPage: API showError:', response.error);
-        throw new Error(response.error || 'Failed to update customer');
+        throw new Error(response.error || t('messages.updateFailed'));
       }
       
     } catch (error) {
@@ -214,15 +216,15 @@ export default function CustomerPage() {
         setShowDeactivateConfirm(false);
         
         // Show success message
-        toastSuccess('Status Updated', `Customer ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+        toastSuccess(tc('messages.updateSuccess'), tc('messages.updateSuccess'));
       } else {
         console.error('❌ CustomerPage: API showError:', response.error);
-        throw new Error(response.error || 'Failed to update customer status');
+        throw new Error(response.error || t('messages.updateFailed'));
       }
       
     } catch (error) {
       console.error('❌ CustomerPage: Error updating customer status:', error);
-      toastError('Status Update Failed', 'Failed to update customer status: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toastError(t('messages.updateFailed'), t('messages.updateFailed') + ': ' + (error instanceof Error ? error.message : tc('labels.error')));
     } finally {
       setIsUpdating(false);
     }
@@ -263,11 +265,11 @@ export default function CustomerPage() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Customer Not Found</h1>
-            <p className="text-gray-600 mb-6">The customer you're looking for doesn't exist or has been removed.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('messages.noCustomers')}</h1>
+            <p className="text-gray-600 mb-6">{tc('messages.notFound')}</p>
             <Button onClick={() => router.push('/customers')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Customers
+              {tc('buttons.back')}
             </Button>
           </div>
         </div>
@@ -277,7 +279,7 @@ export default function CustomerPage() {
 
   // Breadcrumb items - inline
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Customers', href: '/customers' },
+    { label: t('title'), href: '/customers' },
     { label: `${customer.firstName} ${customer.lastName}` }
   ];
 
@@ -287,7 +289,7 @@ export default function CustomerPage() {
       <PageHeader>
         <CustomerPageHeader
           title={`${customer.firstName} ${customer.lastName}`}
-          subtitle={showEditSection ? "Edit Customer Information" : "Customer Information & Management"}
+          subtitle={showEditSection ? t('editCustomer') : t('customerDetails')}
         >
           {/* Header buttons - show different buttons based on edit mode */}
           {showEditSection ? (
@@ -299,7 +301,7 @@ export default function CustomerPage() {
                 className="flex items-center space-x-2"
               >
                 <X className="w-4 h-4" />
-                <span>Cancel Edit</span>
+                <span>{tc('buttons.cancel')}</span>
               </Button>
             </div>
           ) : (
@@ -311,7 +313,7 @@ export default function CustomerPage() {
                 className="flex items-center space-x-2"
               >
                 <Edit className="w-4 h-4" />
-                <span>Edit Customer</span>
+                <span>{t('editCustomer')}</span>
               </Button>
               <Button
                 onClick={() => router.push(`/customers/${customerId}/orders`)}
@@ -319,7 +321,7 @@ export default function CustomerPage() {
                 className="flex items-center space-x-2"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>View Orders</span>
+                <span>{t('orders.viewOrders')}</span>
               </Button>
               <Button
                 onClick={() => setShowDeleteConfirm(true)}
@@ -327,7 +329,7 @@ export default function CustomerPage() {
                 className="flex items-center space-x-2"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>Delete Customer</span>
+                <span>{t('actions.delete')}</span>
               </Button>
             </div>
           )}
@@ -360,9 +362,9 @@ export default function CustomerPage() {
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         type="danger"
-        title="Delete Customer"
-        description={`Are you sure you want to delete ${customer.firstName} ${customer.lastName}? This action cannot be undone.`}
-        confirmText="Delete Customer"
+        title={t('actions.delete')}
+        description={t('messages.confirmDelete')}
+        confirmText={t('actions.delete')}
         onConfirm={handleDeleteCustomer}
       />
 
@@ -370,9 +372,9 @@ export default function CustomerPage() {
         open={showDeactivateConfirm}
         onOpenChange={setShowDeactivateConfirm}
         type={customer.isActive ? 'warning' : 'info'}
-        title={customer.isActive ? 'Deactivate Customer' : 'Activate Customer'}
-        description={`Are you sure you want to ${customer.isActive ? 'deactivate' : 'activate'} ${customer.firstName} ${customer.lastName}?`}
-        confirmText={customer.isActive ? 'Deactivate' : 'Activate'}
+        title={customer.isActive ? t('actions.deactivate') : t('actions.activate')}
+        description={tc('messages.confirmAction')}
+        confirmText={customer.isActive ? t('actions.deactivate') : t('actions.activate')}
         onConfirm={handleToggleCustomerStatus}
       />
     </PageWrapper>

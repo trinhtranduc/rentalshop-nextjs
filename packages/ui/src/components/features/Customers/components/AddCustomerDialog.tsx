@@ -9,6 +9,7 @@ import {
 } from '../../../ui';
 import { AddCustomerForm } from './AddCustomerForm';
 import type { Customer, CustomerCreateInput } from '@rentalshop/types';
+import { useCustomerTranslations } from '@rentalshop/hooks';
 
 interface AddCustomerDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ export const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
   onCustomerCreated,
   onError
 }) => {
+  const t = useCustomerTranslations();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSave = async (customerData: CustomerCreateInput) => {
@@ -58,7 +60,7 @@ export const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 py-4 border-b border-gray-200">
           <DialogTitle className="text-xl font-semibold text-gray-900">
-            Add New Customer
+            {t('createCustomer')}
           </DialogTitle>
         </DialogHeader>
         

@@ -1,4 +1,4 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
@@ -201,7 +201,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
   } catch (error) {
     console.error('Error fetching system analytics:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch system analytics' },
+      ResponseBuilder.error('FETCH_SYSTEM_ANALYTICS_FAILED'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }

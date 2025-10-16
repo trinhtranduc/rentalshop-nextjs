@@ -80,7 +80,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         hasMore: result.hasMore || false,
         totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
-      message: `Found ${result.total || 0} outlets`
+      code: "OUTLETS_FOUND", message: `Found ${result.total || 0} outlets`
     });
 
   } catch (error) {
@@ -106,7 +106,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -144,7 +144,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       return NextResponse.json(
         { 
           success: false, 
-          message: error.message || 'Plan limit exceeded for outlets',
+          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for outlets',
           error: 'PLAN_LIMIT_EXCEEDED'
         },
         { status: 403 }

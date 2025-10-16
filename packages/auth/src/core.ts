@@ -294,7 +294,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       return {
         success: false,
         response: NextResponse.json(
-          { success: false, message: 'Access token required' },
+          { success: false, code: 'ACCESS_TOKEN_REQUIRED', message: 'Access token required' },
           { status: 401 }
         )
       };
@@ -324,7 +324,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       return {
         success: false,
         response: NextResponse.json(
-          { success: false, message: 'Invalid token' },
+          { success: false, code: 'INVALID_TOKEN', message: 'Invalid token' },
           { status: 401 }
         )
       };
@@ -334,7 +334,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       return {
         success: false,
         response: NextResponse.json(
-          { success: false, message: 'Invalid token' },
+          { success: false, code: 'INVALID_TOKEN', message: 'Invalid token' },
           { status: 401 }
         )
       };
@@ -395,7 +395,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     return {
       success: false,
       response: NextResponse.json(
-        { success: false, message: 'Authentication failed' },
+        { success: false, code: 'AUTHENTICATION_FAILED', message: 'Authentication failed' },
         { status: 401 }
       )
     };

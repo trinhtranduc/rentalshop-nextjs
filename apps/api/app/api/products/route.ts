@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 
@@ -28,7 +28,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid query', 
+        code: 'INVALID_QUERY', message: 'Invalid query', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -83,7 +83,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         hasMore: result.hasMore || false,
         totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
-      message: `Found ${result.total || 0} products`
+      code: "PRODUCTS_FOUND", message: `Found ${result.total || 0} products`
     });
 
   } catch (error) {
@@ -110,7 +110,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -146,6 +146,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       return NextResponse.json(
         { 
           success: false, 
+          code: 'MERCHANT_ID_REQUIRED',
           message: user.role === 'ADMIN' 
             ? 'MerchantId is required for ADMIN users when creating products' 
             : 'User is not associated with any merchant'
@@ -165,7 +166,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       return NextResponse.json(
         { 
           success: false, 
-          message: error.message || 'Plan limit exceeded for products',
+          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for products',
           error: 'PLAN_LIMIT_EXCEEDED'
         },
         { status: 403 }
@@ -179,7 +180,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       return NextResponse.json(
         { 
           success: false, 
-          message: `Merchant with ID ${merchantId} not found`
+          code: 'MERCHANT_NOT_FOUND', message: `Merchant with ID ${merchantId} not found`
         },
         { status: 404 }
       );
@@ -225,7 +226,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     return NextResponse.json({
       success: true,
       data: product,
-      message: 'Product created successfully'
+      code: 'PRODUCT_CREATED_SUCCESS', message: 'Product created successfully'
     });
 
   } catch (error: any) {

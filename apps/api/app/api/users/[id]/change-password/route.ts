@@ -98,7 +98,7 @@ export async function PATCH(
         { 
           success: false, 
             code: 'INSUFFICIENT_PERMISSIONS',
-            message: 'Insufficient permissions to change password for this user',
+            code: 'INSUFFICIENT_PERMISSIONS', message: 'Insufficient permissions to change password for this user',
           required: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'],
           current: currentUser.role
         },
@@ -121,7 +121,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
         code: 'PASSWORD_CHANGED_SUCCESS',
-        message: 'Password changed successfully'
+        code: 'PASSWORD_CHANGED_SUCCESS', message: 'Password changed successfully'
     });
 
   } catch (error) {
@@ -130,7 +130,7 @@ export async function PATCH(
         { 
           success: false, 
           code: 'CHANGE_PASSWORD_FAILED',
-          message: 'Failed to change password' 
+          code: 'CHANGE_PASSWORD_FAILED', message: 'Failed to change password' 
         },
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );

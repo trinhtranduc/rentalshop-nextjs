@@ -50,7 +50,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       return NextResponse.json({
         success: true,
         data: [],
-        message: 'No data available - user not assigned to merchant/outlet'
+        code: 'NO_DATA_AVAILABLE', message: 'No data available - user not assigned to merchant/outlet'
       });
     }
 
@@ -92,7 +92,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: analyticsData,
-      message: 'Order analytics retrieved successfully'
+      code: 'ORDER_ANALYTICS_SUCCESS', message: 'Order analytics retrieved successfully'
     });
 
   } catch (error) {

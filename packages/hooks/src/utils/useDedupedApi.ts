@@ -25,6 +25,7 @@ interface UseDedupedApiOptions<TFilters, TData> {
   staleTime?: number; // Cache duration in ms (default: 30s)
   cacheTime?: number; // Keep in cache after unmount (default: 5min)
   refetchOnWindowFocus?: boolean;
+  refetchOnMount?: boolean; // Refetch on component mount (default: true)
 }
 
 interface UseDedupedApiReturn<TData> {
@@ -55,7 +56,8 @@ export function useDedupedApi<TFilters, TData>(
     enabled = true,
     staleTime = 30000, // 30 seconds
     cacheTime = 300000, // 5 minutes
-    refetchOnWindowFocus = false
+    refetchOnWindowFocus = false,
+    refetchOnMount = true // Default to true for backwards compatibility
   } = options;
 
   // ============================================================================
@@ -116,13 +118,24 @@ export function useDedupedApi<TFilters, TData>(
       const isCacheStale = (now - cached.timestamp) > cached.staleTime;
       
       if (!isCacheStale) {
-        // Cache is fresh - use it immediately
-        console.log(`✅ Fetch #${currentFetchId}: Cache HIT (fresh)`);
-        setData(cached.data);
-        setLoading(false);
-        setError(null);
-        setIsStale(false);
-        return;
+        // Cache is fresh
+        if (refetchOnMount) {
+          // refetchOnMount: true - Always fetch new data, but show cache first
+          console.log(`✅ Fetch #${currentFetchId}: Cache HIT (fresh) - but refetchOnMount=true, showing cache and fetching new data`);
+          setData(cached.data);
+          setLoading(false);
+          setError(null);
+          setIsStale(false);
+          // Continue to fetch new data below
+        } else {
+          // refetchOnMount: false - Use cache and skip fetch
+          console.log(`✅ Fetch #${currentFetchId}: Cache HIT (fresh) - refetchOnMount=false, using cache`);
+          setData(cached.data);
+          setLoading(false);
+          setError(null);
+          setIsStale(false);
+          return; // Skip fetch
+        }
       } else {
         // Cache is stale - show it while fetching new data (stale-while-revalidate)
         console.log(`⏰ Fetch #${currentFetchId}: Cache HIT (stale) - showing stale data`);

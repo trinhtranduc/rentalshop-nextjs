@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid plan ID format' },
+          ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -33,7 +33,7 @@ export async function GET(
       if (!plan) {
         console.log('❌ Plan not found in database for planId:', planId);
         return NextResponse.json(
-          { success: false, message: 'Plan not found' },
+          ResponseBuilder.error('PLAN_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -43,7 +43,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: plan,
-        message: 'Plan retrieved successfully'
+        code: 'PLAN_RETRIEVED_SUCCESS', message: 'Plan retrieved successfully'
       });
 
     } catch (error) {
@@ -75,7 +75,7 @@ export async function PUT(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid plan ID format' },
+          ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -90,7 +90,7 @@ export async function PUT(
       const existingPlan = await db.plans.findById(planId);
       if (!existingPlan) {
         return NextResponse.json(
-          { success: false, message: 'Plan not found' },
+          ResponseBuilder.error('PLAN_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -102,7 +102,7 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedPlan,
-        message: 'Plan updated successfully'
+        code: 'PLAN_UPDATED_SUCCESS', message: 'Plan updated successfully'
       });
 
     } catch (error) {
@@ -134,7 +134,7 @@ export async function DELETE(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid plan ID format' },
+          ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -145,7 +145,7 @@ export async function DELETE(
       const existingPlan = await db.plans.findById(planId);
       if (!existingPlan) {
         return NextResponse.json(
-          { success: false, message: 'Plan not found' },
+          ResponseBuilder.error('PLAN_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -157,7 +157,7 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedPlan,
-        message: 'Plan deleted successfully'
+        code: 'PLAN_DELETED_SUCCESS', message: 'Plan deleted successfully'
       });
 
     } catch (error) {
