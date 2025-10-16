@@ -58,6 +58,7 @@ interface JWTPayload {
     merchantId?: number | null;
     outletId?: number | null;
     planName?: string;
+    sessionId?: string;
 }
 declare const generateToken: (payload: JWTPayload) => string;
 declare const verifyToken: (token: string) => JWTPayload;
@@ -68,6 +69,7 @@ declare const verifyTokenSimple: (token: string) => Promise<{
     merchantId: number | null;
     outletId: number | null;
     planName: string | undefined;
+    sessionId: string | undefined;
 } | null>;
 
 type Role = UserRole;

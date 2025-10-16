@@ -83,7 +83,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate token with plan name for platform access control
+    // ✅ Create new session and invalidate all previous sessions (single session enforcement)
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined;
+    const userAgent = request.headers.get('user-agent') || undefined;
+    
+    const session = await db.sessions.createUserSession(
+      user.id,
+      ipAddress,
+      userAgent
+    );
+
+    // Generate token with plan name and sessionId for platform access control
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -91,6 +101,7 @@ export async function POST(request: NextRequest) {
       merchantId: user.merchantId,
       outletId: user.outletId,
       planName, // ✅ Include plan name in JWT
+      sessionId: session.sessionId, // ✅ Include session ID for single session enforcement
     } as any);
 
     const result = {

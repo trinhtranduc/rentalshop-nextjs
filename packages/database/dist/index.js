@@ -2377,15 +2377,15 @@ async function generateHybridNumber(outletIdStr, prefix, sequenceLength, generat
 }
 function generateRandomString(length, numericOnly = false) {
   const chars = numericOnly ? "0123456789" : "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const randomBytes = new Uint8Array(length);
+  const randomBytes2 = new Uint8Array(length);
   if (typeof window !== "undefined" && window.crypto) {
-    window.crypto.getRandomValues(randomBytes);
+    window.crypto.getRandomValues(randomBytes2);
   } else {
     const crypto = require("crypto");
     const randomBytesNode = crypto.randomBytes(length);
-    randomBytes.set(randomBytesNode);
+    randomBytes2.set(randomBytesNode);
   }
-  return Array.from(randomBytes, (byte) => chars[byte % chars.length]).join("");
+  return Array.from(randomBytes2, (byte) => chars[byte % chars.length]).join("");
 }
 function validateOrderNumber(orderNumber) {
   const patterns = [
@@ -2786,6 +2786,127 @@ var simplifiedOrderItems = {
   delete: deleteOrderItem,
   getStats: getStats4,
   groupBy
+};
+
+// src/sessions.ts
+var import_crypto = require("crypto");
+function generateSessionId() {
+  return (0, import_crypto.randomBytes)(32).toString("hex");
+}
+async function createUserSession(userId, ipAddress, userAgent) {
+  const sessionId = generateSessionId();
+  const expiresAt = /* @__PURE__ */ new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+  return await prisma.$transaction(async (tx) => {
+    await tx.userSession.updateMany({
+      where: {
+        userId,
+        isActive: true
+      },
+      data: {
+        isActive: false,
+        invalidatedAt: /* @__PURE__ */ new Date()
+      }
+    });
+    const session = await tx.userSession.create({
+      data: {
+        userId,
+        sessionId,
+        ipAddress,
+        userAgent,
+        expiresAt,
+        isActive: true
+      }
+    });
+    return session;
+  });
+}
+async function validateSession(sessionId) {
+  if (!sessionId) {
+    return false;
+  }
+  const session = await prisma.userSession.findUnique({
+    where: { sessionId }
+  });
+  if (!session) {
+    return false;
+  }
+  if (!session.isActive) {
+    return false;
+  }
+  if (session.expiresAt < /* @__PURE__ */ new Date()) {
+    await prisma.userSession.update({
+      where: { id: session.id },
+      data: {
+        isActive: false,
+        invalidatedAt: /* @__PURE__ */ new Date()
+      }
+    });
+    return false;
+  }
+  return true;
+}
+async function invalidateSession(sessionId) {
+  await prisma.userSession.updateMany({
+    where: {
+      sessionId,
+      isActive: true
+    },
+    data: {
+      isActive: false,
+      invalidatedAt: /* @__PURE__ */ new Date()
+    }
+  });
+}
+async function invalidateAllUserSessions(userId) {
+  await prisma.userSession.updateMany({
+    where: {
+      userId,
+      isActive: true
+    },
+    data: {
+      isActive: false,
+      invalidatedAt: /* @__PURE__ */ new Date()
+    }
+  });
+}
+async function getUserActiveSessions(userId) {
+  return await prisma.userSession.findMany({
+    where: {
+      userId,
+      isActive: true,
+      expiresAt: {
+        gt: /* @__PURE__ */ new Date()
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+}
+async function cleanupExpiredSessions() {
+  const result = await prisma.userSession.updateMany({
+    where: {
+      isActive: true,
+      expiresAt: {
+        lt: /* @__PURE__ */ new Date()
+      }
+    },
+    data: {
+      isActive: false,
+      invalidatedAt: /* @__PURE__ */ new Date()
+    }
+  });
+  return result.count;
+}
+var sessions = {
+  generateSessionId,
+  createUserSession,
+  validateSession,
+  invalidateSession,
+  invalidateAllUserSessions,
+  getUserActiveSessions,
+  cleanupExpiredSessions
 };
 
 // src/audit.ts
@@ -3521,7 +3642,11 @@ var db = {
   // ============================================================================
   // SUBSCRIPTION ACTIVITY OPERATIONS
   // ============================================================================
-  subscriptionActivities: simplifiedSubscriptionActivities
+  subscriptionActivities: simplifiedSubscriptionActivities,
+  // ============================================================================
+  // SESSION OPERATIONS (Single Session Enforcement)
+  // ============================================================================
+  sessions
 };
 var checkDatabaseConnection = async () => {
   try {

@@ -25,6 +25,7 @@ model User {
   auditLogs              AuditLog[]
   createdOrders          Order[]
   subscriptionActivities SubscriptionActivity[]
+  sessions               UserSession[]
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
 
@@ -34,6 +35,23 @@ model User {
   @@index([merchantId])
   @@index([outletId])
   @@index([deletedAt])
+}
+
+model UserSession {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  sessionId   String    @unique
+  ipAddress   String?
+  userAgent   String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  invalidatedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([sessionId])
+  @@index([expiresAt])
 }
 
 model Merchant {

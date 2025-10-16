@@ -341,6 +341,27 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     }
 
     // ============================================================================
+    // SESSION VALIDATION (Single Session Enforcement)
+    // ============================================================================
+    // Check if session is still valid (not invalidated by a newer login)
+    if (user.sessionId) {
+      const isSessionValid = await db.sessions.validateSession(user.sessionId);
+      if (!isSessionValid) {
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
+              code: 'SESSION_EXPIRED', 
+              message: 'Your session has expired. Please login again.' 
+            },
+            { status: 401 }
+          )
+        };
+      }
+    }
+
+    // ============================================================================
     // SUBSCRIPTION STATUS CHECK
     // ============================================================================
     // Check if merchant has active subscription (skip for ADMIN users)
