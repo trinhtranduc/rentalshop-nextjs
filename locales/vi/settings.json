@@ -273,6 +273,18 @@
     "passwordMismatch": "Mật khẩu mới không khớp",
     "passwordTooShort": "Mật khẩu mới phải có ít nhất 6 ký tự"
   },
+  "deleteAccountDialog": {
+    "title": "Xóa tài khoản",
+    "description": "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác và sẽ xóa vĩnh viễn:",
+    "profileInfo": "Hồ sơ và thông tin cá nhân của bạn",
+    "orderHistory": "Tất cả đơn hàng và lịch sử giao dịch",
+    "productListings": "Danh sách sản phẩm và hàng tồn kho",
+    "savedPreferences": "Mọi tùy chọn và cài đặt đã lưu",
+    "irreversibleWarning": "Hành động này không thể hoàn tác.",
+    "cancel": "Hủy",
+    "deleteAccount": "Xóa tài khoản",
+    "deleting": "Đang xóa..."
+  },
   "changePassword": {
     "title": "Đổi mật khẩu",
     "currentPassword": "Mật khẩu hiện tại",

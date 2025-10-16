@@ -273,6 +273,18 @@
     "passwordMismatch": "New passwords do not match",
     "passwordTooShort": "New password must be at least 6 characters"
   },
+  "deleteAccountDialog": {
+    "title": "Delete Account",
+    "description": "Are you sure you want to delete your account? This action cannot be undone and will permanently remove:",
+    "profileInfo": "Your profile and personal information",
+    "orderHistory": "All your orders and transaction history",
+    "productListings": "Your product listings and inventory",
+    "savedPreferences": "Any saved preferences and settings",
+    "irreversibleWarning": "This action is irreversible.",
+    "cancel": "Cancel",
+    "deleteAccount": "Delete Account",
+    "deleting": "Deleting..."
+  },
   "changePassword": {
     "title": "Change Password",
     "currentPassword": "Current Password",

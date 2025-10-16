@@ -922,14 +922,22 @@ var buttonVariants = cva3(
   {
     variants: {
       variant: {
-        default: "bg-action-primary text-text-inverted hover:bg-brand-primary",
-        destructive: "bg-action-danger text-text-inverted hover:bg-red-700",
-        outline: "border border-border bg-bg-card text-text-primary hover:bg-bg-secondary",
-        secondary: "bg-bg-secondary text-text-primary hover:bg-bg-tertiary",
-        ghost: "hover:bg-bg-secondary hover:text-text-primary",
-        link: "text-action-primary underline-offset-4 hover:underline",
-        success: "bg-action-success text-text-inverted hover:bg-green-700",
-        warning: "bg-action-warning text-text-inverted hover:bg-orange-700"
+        // Green Theme - Primary button with green
+        default: "bg-green-500 text-white hover:bg-green-600",
+        // Destructive - Red for danger actions
+        destructive: "bg-red-500 text-white hover:bg-red-600",
+        // Outline - Neutral gray border (for table actions, pagination)
+        outline: "border border-slate-300 bg-transparent text-slate-700 hover:bg-slate-50 hover:text-slate-900",
+        // Secondary - Light slate background
+        secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
+        // Ghost - Transparent with hover effect
+        ghost: "hover:bg-slate-100 hover:text-slate-800",
+        // Link - Green text with underline
+        link: "text-green-500 underline-offset-4 hover:underline",
+        // Success - Emerald green
+        success: "bg-emerald-500 text-white hover:bg-emerald-600",
+        // Warning - Amber yellow
+        warning: "bg-amber-500 text-white hover:bg-amber-600"
       },
       size: {
         default: "h-10 px-4 py-2",
@@ -6677,7 +6685,10 @@ import {
 // src/components/features/Customers/components/AddCustomerForm.tsx
 import { useState as useState17 } from "react";
 import { Save, X as X5 } from "lucide-react";
-import { useCustomerTranslations, useCommonTranslations as useCommonTranslations3 } from "@rentalshop/hooks";
+import {
+  useCustomerTranslations,
+  useCommonTranslations as useCommonTranslations3
+} from "@rentalshop/hooks";
 import { jsx as jsx44, jsxs as jsxs30 } from "react/jsx-runtime";
 var AddCustomerForm = ({
   onSave,
@@ -6697,6 +6708,7 @@ var AddCustomerForm = ({
     state: "",
     zipCode: "",
     country: ""
+    // Hidden in UI but sent to API
   });
   const [errors, setErrors] = useState17({});
   const [internalIsSubmitting, setInternalIsSubmitting] = useState17(false);
@@ -6911,19 +6923,6 @@ var AddCustomerForm = ({
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsxs30("div", { children: [
-      /* @__PURE__ */ jsx44(Label2, { htmlFor: "country", children: t2("fields.country") }),
-      /* @__PURE__ */ jsx44(
-        Input,
-        {
-          id: "country",
-          type: "text",
-          value: formData.country,
-          onChange: (e2) => handleInputChange("country", e2.target.value),
-          placeholder: t2("placeholders.enterCountry")
-        }
-      )
-    ] }),
     /* @__PURE__ */ jsxs30("div", { className: "flex justify-end space-x-3 border-t pt-4", children: [
       /* @__PURE__ */ jsxs30(
         Button2,
@@ -6938,17 +6937,10 @@ var AddCustomerForm = ({
           ]
         }
       ),
-      /* @__PURE__ */ jsxs30(
-        Button2,
-        {
-          type: "submit",
-          disabled: isSubmitting,
-          children: [
-            /* @__PURE__ */ jsx44(Save, { className: "w-4 h-4 mr-2" }),
-            isSubmitting ? tc("buttons.creating") : t2("createCustomer")
-          ]
-        }
-      )
+      /* @__PURE__ */ jsxs30(Button2, { type: "submit", disabled: isSubmitting, children: [
+        /* @__PURE__ */ jsx44(Save, { className: "w-4 h-4 mr-2" }),
+        isSubmitting ? tc("buttons.creating") : t2("createCustomer")
+      ] })
     ] })
   ] }) }) });
 };
@@ -15640,16 +15632,16 @@ var Sidebar = ({
                   },
                   className: cn3(
                     "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group",
-                    shouldHighlight ? "bg-green-100 text-green-700 border-r-2 border-green-600" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                    shouldHighlight ? "bg-green-100 text-green-700 border-r-2 border-green-600" : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
                     // Add click feedback
-                    navigatingTo === item.href && "bg-blue-50 text-blue-700 border-r-2 border-blue-600"
+                    navigatingTo === item.href && "bg-green-50 text-green-700 border-r-2 border-green-600"
                   ),
                   title: isCollapsed ? item.label : void 0,
                   children: [
                     /* @__PURE__ */ jsxs57("div", { className: "flex items-center space-x-3", children: [
                       /* @__PURE__ */ jsx71("span", { className: cn3(
                         "flex-shrink-0 transition-colors duration-150",
-                        shouldHighlight ? "text-green-600" : "text-gray-500"
+                        shouldHighlight ? "text-green-600" : "text-slate-500"
                       ), children: item.icon }),
                       !isCollapsed && /* @__PURE__ */ jsx71("span", { className: cn3(
                         "text-base transition-all duration-150",
@@ -19040,14 +19032,6 @@ var CustomerDetailDialog = ({
             /* @__PURE__ */ jsx100("p", { className: "text-gray-900", children: customer.dateOfBirth ? formatDate11(customer.dateOfBirth) : t2("fields.notProvided") })
           ] }),
           /* @__PURE__ */ jsxs84("div", { children: [
-            /* @__PURE__ */ jsx100("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("fields.status") }),
-            /* @__PURE__ */ jsx100("div", { className: `inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`, children: getStatusDisplayName(customer.isActive) })
-          ] }),
-          /* @__PURE__ */ jsxs84("div", { children: [
-            /* @__PURE__ */ jsx100("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("fields.customerId") }),
-            /* @__PURE__ */ jsx100("p", { className: "text-gray-500 text-sm font-mono", children: customer.id })
-          ] }),
-          /* @__PURE__ */ jsxs84("div", { children: [
             /* @__PURE__ */ jsx100("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("stats.memberSince") }),
             /* @__PURE__ */ jsx100("p", { className: "text-gray-900", children: formatDate11(customer.createdAt) })
           ] }),
@@ -19082,10 +19066,6 @@ var CustomerDetailDialog = ({
             /* @__PURE__ */ jsxs84("div", { children: [
               /* @__PURE__ */ jsx100("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("fields.zipCode") }),
               /* @__PURE__ */ jsx100("p", { className: "text-gray-900", children: customer.zipCode || t2("fields.notSpecified") })
-            ] }),
-            /* @__PURE__ */ jsxs84("div", { children: [
-              /* @__PURE__ */ jsx100("label", { className: "block text-sm font-medium text-gray-700 mb-1", children: t2("fields.country") }),
-              /* @__PURE__ */ jsx100("p", { className: "text-gray-900", children: customer.country || t2("fields.notSpecified") })
             ] })
           ] })
         ] })
@@ -19426,43 +19406,33 @@ var AddCustomerDialog = ({
 };
 
 // src/components/features/Customers/components/EditCustomerForm.tsx
-import { useState as useState40, useEffect as useEffect21, forwardRef as forwardRef13, useImperativeHandle as useImperativeHandle2 } from "react";
+import {
+  useState as useState40,
+  useEffect as useEffect21,
+  forwardRef as forwardRef13,
+  useImperativeHandle as useImperativeHandle2
+} from "react";
 import { Save as Save3, X as X8 } from "lucide-react";
 import { Button as Button22 } from "@rentalshop/ui";
 import { Input as Input11 } from "@rentalshop/ui";
 import { Label as Label3 } from "@rentalshop/ui";
 import { Card as Card22, CardContent as CardContent21 } from "@rentalshop/ui";
-import { useCustomerTranslations as useCustomerTranslations6, useCommonTranslations as useCommonTranslations11 } from "@rentalshop/hooks";
+import {
+  useCustomerTranslations as useCustomerTranslations6,
+  useCommonTranslations as useCommonTranslations11
+} from "@rentalshop/hooks";
 import { jsx as jsx105, jsxs as jsxs89 } from "react/jsx-runtime";
-var EditCustomerForm = forwardRef13(({
-  customer,
-  onSave,
-  onCancel,
-  isSubmitting: externalIsSubmitting,
-  showActions = true
-}, ref) => {
-  const t2 = useCustomerTranslations6();
-  const tc = useCommonTranslations11();
-  const [formData, setFormData] = useState40({
-    firstName: customer.firstName,
-    lastName: customer.lastName,
-    email: customer.email,
-    phone: customer.phone,
-    companyName: customer.companyName || "",
-    address: customer.address || "",
-    city: customer.city || "",
-    state: customer.state || "",
-    zipCode: customer.zipCode || "",
-    country: customer.country || "",
-    status: customer.status,
-    membershipLevel: customer.membershipLevel
-  });
-  const [errors, setErrors] = useState40({});
-  const [internalIsSubmitting, setInternalIsSubmitting] = useState40(false);
-  const [errorMessage, setErrorMessage] = useState40(null);
-  const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
-  useEffect21(() => {
-    setFormData({
+var EditCustomerForm = forwardRef13(
+  ({
+    customer,
+    onSave,
+    onCancel,
+    isSubmitting: externalIsSubmitting,
+    showActions = true
+  }, ref) => {
+    const t2 = useCustomerTranslations6();
+    const tc = useCommonTranslations11();
+    const [formData, setFormData] = useState40({
       firstName: customer.firstName,
       lastName: customer.lastName,
       email: customer.email,
@@ -19473,272 +19443,280 @@ var EditCustomerForm = forwardRef13(({
       state: customer.state || "",
       zipCode: customer.zipCode || "",
       country: customer.country || "",
+      // Hidden in UI but sent to API
       status: customer.status,
       membershipLevel: customer.membershipLevel
     });
-  }, [customer]);
-  console.log("\u{1F50D} EditCustomerForm: Component rendered with customer:", customer);
-  const handleInputChange = (field, value) => {
-    console.log("\u{1F50D} EditCustomerForm: Input changed:", { field, value });
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
-  };
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = t2("validation.firstNameRequired");
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = t2("validation.firstNameMinLength");
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = t2("validation.lastNameRequired");
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = t2("validation.lastNameMinLength");
-    }
-    if (formData.email && formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t2("validation.emailInvalid");
-    }
-    if (!formData.phone || !formData.phone.trim()) {
-      newErrors.phone = t2("validation.phoneRequired");
-    } else if (!/^[0-9+\-\s()]+$/.test(formData.phone.trim())) {
-      newErrors.phone = t2("validation.phoneInvalid");
-    } else if (formData.phone.trim().length < 8) {
-      newErrors.phone = t2("validation.phoneMinLength");
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  const handleSubmit = async (e2) => {
-    e2.preventDefault();
-    console.log("\u{1F50D} EditCustomerForm: Form submitted");
-    if (!validateForm()) {
-      console.log("\u274C EditCustomerForm: Validation failed");
-      return;
-    }
-    try {
-      setInternalIsSubmitting(true);
-      setErrorMessage(null);
-      const changedFields = { id: customer.id };
-      Object.keys(formData).forEach((key) => {
-        const field = key;
-        if (formData[field] !== customer[field]) {
-          changedFields[field] = formData[field];
-        }
+    const [errors, setErrors] = useState40({});
+    const [internalIsSubmitting, setInternalIsSubmitting] = useState40(false);
+    const [errorMessage, setErrorMessage] = useState40(null);
+    const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
+    useEffect21(() => {
+      setFormData({
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        email: customer.email,
+        phone: customer.phone,
+        companyName: customer.companyName || "",
+        address: customer.address || "",
+        city: customer.city || "",
+        state: customer.state || "",
+        zipCode: customer.zipCode || "",
+        country: customer.country || "",
+        // Hidden in UI but sent to API
+        status: customer.status,
+        membershipLevel: customer.membershipLevel
       });
-      if (Object.keys(changedFields).length === 0) {
-        console.log("\u{1F50D} EditCustomerForm: No changes detected");
+    }, [customer]);
+    console.log(
+      "\u{1F50D} EditCustomerForm: Component rendered with customer:",
+      customer
+    );
+    const handleInputChange = (field, value) => {
+      console.log("\u{1F50D} EditCustomerForm: Input changed:", { field, value });
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: "" }));
+      }
+      if (errorMessage) {
+        setErrorMessage(null);
+      }
+    };
+    const validateForm = () => {
+      const newErrors = {};
+      if (!formData.firstName.trim()) {
+        newErrors.firstName = t2("validation.firstNameRequired");
+      } else if (formData.firstName.trim().length < 2) {
+        newErrors.firstName = t2("validation.firstNameMinLength");
+      }
+      if (!formData.lastName.trim()) {
+        newErrors.lastName = t2("validation.lastNameRequired");
+      } else if (formData.lastName.trim().length < 2) {
+        newErrors.lastName = t2("validation.lastNameMinLength");
+      }
+      if (formData.email && formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
+        newErrors.email = t2("validation.emailInvalid");
+      }
+      if (!formData.phone || !formData.phone.trim()) {
+        newErrors.phone = t2("validation.phoneRequired");
+      } else if (!/^[0-9+\-\s()]+$/.test(formData.phone.trim())) {
+        newErrors.phone = t2("validation.phoneInvalid");
+      } else if (formData.phone.trim().length < 8) {
+        newErrors.phone = t2("validation.phoneMinLength");
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
+    const handleSubmit = async (e2) => {
+      e2.preventDefault();
+      console.log("\u{1F50D} EditCustomerForm: Form submitted");
+      if (!validateForm()) {
+        console.log("\u274C EditCustomerForm: Validation failed");
         return;
       }
-      console.log("\u{1F50D} EditCustomerForm: Calling onSave with changed fields:", changedFields);
-      await onSave(changedFields);
-      console.log("\u2705 EditCustomerForm: Customer updated successfully");
-    } catch (error2) {
-      console.error("\u274C EditCustomerForm: Error updating customer:", error2);
-      const errorMessage2 = error2 instanceof Error ? error2.message : "An unexpected error occurred";
-      setErrorMessage(errorMessage2);
-    } finally {
-      setInternalIsSubmitting(false);
-    }
-  };
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    }
-  };
-  useImperativeHandle2(ref, () => ({
-    submitForm: () => {
-      const syntheticEvent = {
-        preventDefault: () => {
+      try {
+        setInternalIsSubmitting(true);
+        setErrorMessage(null);
+        const changedFields = { id: customer.id };
+        Object.keys(formData).forEach((key) => {
+          const field = key;
+          if (formData[field] !== customer[field]) {
+            changedFields[field] = formData[field];
+          }
+        });
+        if (Object.keys(changedFields).length === 0) {
+          console.log("\u{1F50D} EditCustomerForm: No changes detected");
+          return;
         }
-      };
-      handleSubmit(syntheticEvent);
-    }
-  }));
-  return /* @__PURE__ */ jsx105("form", { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx105(Card22, { children: /* @__PURE__ */ jsxs89(CardContent21, { className: "p-6 space-y-4", children: [
-    errorMessage && /* @__PURE__ */ jsx105("div", { className: "p-4 bg-red-50 border border-red-200 rounded-lg", children: /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-800", children: errorMessage }) }),
-    /* @__PURE__ */ jsxs89("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-      /* @__PURE__ */ jsxs89("div", { children: [
-        /* @__PURE__ */ jsxs89(Label3, { htmlFor: "firstName", children: [
-          t2("fields.firstName"),
-          " *"
+        console.log(
+          "\u{1F50D} EditCustomerForm: Calling onSave with changed fields:",
+          changedFields
+        );
+        await onSave(changedFields);
+        console.log("\u2705 EditCustomerForm: Customer updated successfully");
+      } catch (error2) {
+        console.error("\u274C EditCustomerForm: Error updating customer:", error2);
+        const errorMessage2 = error2 instanceof Error ? error2.message : "An unexpected error occurred";
+        setErrorMessage(errorMessage2);
+      } finally {
+        setInternalIsSubmitting(false);
+      }
+    };
+    const handleCancel = () => {
+      if (onCancel) {
+        onCancel();
+      }
+    };
+    useImperativeHandle2(ref, () => ({
+      submitForm: () => {
+        const syntheticEvent = {
+          preventDefault: () => {
+          }
+        };
+        handleSubmit(syntheticEvent);
+      }
+    }));
+    return /* @__PURE__ */ jsx105("form", { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx105(Card22, { children: /* @__PURE__ */ jsxs89(CardContent21, { className: "p-6 space-y-4", children: [
+      errorMessage && /* @__PURE__ */ jsx105("div", { className: "p-4 bg-red-50 border border-red-200 rounded-lg", children: /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-800", children: errorMessage }) }),
+      /* @__PURE__ */ jsxs89("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ jsxs89("div", { children: [
+          /* @__PURE__ */ jsxs89(Label3, { htmlFor: "firstName", children: [
+            t2("fields.firstName"),
+            " *"
+          ] }),
+          /* @__PURE__ */ jsx105(
+            Input11,
+            {
+              id: "firstName",
+              type: "text",
+              value: formData.firstName,
+              onChange: (e2) => handleInputChange("firstName", e2.target.value),
+              placeholder: t2("placeholders.enterFirstName"),
+              className: errors.firstName ? "border-red-500" : ""
+            }
+          ),
+          errors.firstName && /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-600", children: errors.firstName })
         ] }),
-        /* @__PURE__ */ jsx105(
-          Input11,
-          {
-            id: "firstName",
-            type: "text",
-            value: formData.firstName,
-            onChange: (e2) => handleInputChange("firstName", e2.target.value),
-            placeholder: t2("placeholders.enterFirstName"),
-            className: errors.firstName ? "border-red-500" : ""
-          }
-        ),
-        errors.firstName && /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-600", children: errors.firstName })
+        /* @__PURE__ */ jsxs89("div", { children: [
+          /* @__PURE__ */ jsxs89(Label3, { htmlFor: "lastName", children: [
+            t2("fields.lastName"),
+            " *"
+          ] }),
+          /* @__PURE__ */ jsx105(
+            Input11,
+            {
+              id: "lastName",
+              type: "text",
+              value: formData.lastName,
+              onChange: (e2) => handleInputChange("lastName", e2.target.value),
+              placeholder: t2("placeholders.enterLastName"),
+              className: errors.lastName ? "border-red-500" : ""
+            }
+          ),
+          errors.lastName && /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-600", children: errors.lastName })
+        ] })
       ] }),
-      /* @__PURE__ */ jsxs89("div", { children: [
-        /* @__PURE__ */ jsxs89(Label3, { htmlFor: "lastName", children: [
-          t2("fields.lastName"),
-          " *"
+      /* @__PURE__ */ jsxs89("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ jsxs89("div", { children: [
+          /* @__PURE__ */ jsx105(Label3, { htmlFor: "email", children: t2("fields.email") }),
+          /* @__PURE__ */ jsx105(
+            Input11,
+            {
+              id: "email",
+              type: "email",
+              value: formData.email || "",
+              onChange: (e2) => handleInputChange("email", e2.target.value),
+              placeholder: t2("placeholders.enterEmail"),
+              className: errors.email ? "border-red-500" : ""
+            }
+          ),
+          errors.email && /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-600", children: errors.email })
         ] }),
-        /* @__PURE__ */ jsx105(
-          Input11,
-          {
-            id: "lastName",
-            type: "text",
-            value: formData.lastName,
-            onChange: (e2) => handleInputChange("lastName", e2.target.value),
-            placeholder: t2("placeholders.enterLastName"),
-            className: errors.lastName ? "border-red-500" : ""
-          }
-        ),
-        errors.lastName && /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-600", children: errors.lastName })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs89("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-      /* @__PURE__ */ jsxs89("div", { children: [
-        /* @__PURE__ */ jsx105(Label3, { htmlFor: "email", children: t2("fields.email") }),
-        /* @__PURE__ */ jsx105(
-          Input11,
-          {
-            id: "email",
-            type: "email",
-            value: formData.email || "",
-            onChange: (e2) => handleInputChange("email", e2.target.value),
-            placeholder: t2("placeholders.enterEmail"),
-            className: errors.email ? "border-red-500" : ""
-          }
-        ),
-        errors.email && /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-600", children: errors.email })
+        /* @__PURE__ */ jsxs89("div", { children: [
+          /* @__PURE__ */ jsx105(Label3, { htmlFor: "phone", children: t2("fields.phone") }),
+          /* @__PURE__ */ jsx105(
+            Input11,
+            {
+              id: "phone",
+              type: "tel",
+              value: formData.phone || "",
+              onChange: (e2) => handleInputChange("phone", e2.target.value),
+              placeholder: t2("placeholders.enterPhone"),
+              className: errors.phone ? "border-red-500" : ""
+            }
+          ),
+          errors.phone && /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-600", children: errors.phone })
+        ] })
       ] }),
       /* @__PURE__ */ jsxs89("div", { children: [
-        /* @__PURE__ */ jsx105(Label3, { htmlFor: "phone", children: t2("fields.phone") }),
+        /* @__PURE__ */ jsx105(Label3, { htmlFor: "companyName", children: t2("fields.companyName") }),
         /* @__PURE__ */ jsx105(
           Input11,
           {
-            id: "phone",
-            type: "tel",
-            value: formData.phone || "",
-            onChange: (e2) => handleInputChange("phone", e2.target.value),
-            placeholder: t2("placeholders.enterPhone"),
-            className: errors.phone ? "border-red-500" : ""
-          }
-        ),
-        errors.phone && /* @__PURE__ */ jsx105("p", { className: "text-sm text-red-600", children: errors.phone })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs89("div", { children: [
-      /* @__PURE__ */ jsx105(Label3, { htmlFor: "companyName", children: t2("fields.companyName") }),
-      /* @__PURE__ */ jsx105(
-        Input11,
-        {
-          id: "companyName",
-          type: "text",
-          value: formData.companyName,
-          onChange: (e2) => handleInputChange("companyName", e2.target.value),
-          placeholder: t2("placeholders.enterCompanyName")
-        }
-      )
-    ] }),
-    /* @__PURE__ */ jsxs89("div", { children: [
-      /* @__PURE__ */ jsx105(Label3, { htmlFor: "address", children: t2("fields.streetAddress") }),
-      /* @__PURE__ */ jsx105(
-        Input11,
-        {
-          id: "address",
-          type: "text",
-          value: formData.address,
-          onChange: (e2) => handleInputChange("address", e2.target.value),
-          placeholder: t2("placeholders.enterStreetAddress")
-        }
-      )
-    ] }),
-    /* @__PURE__ */ jsxs89("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
-      /* @__PURE__ */ jsxs89("div", { children: [
-        /* @__PURE__ */ jsx105(Label3, { htmlFor: "city", children: t2("fields.city") }),
-        /* @__PURE__ */ jsx105(
-          Input11,
-          {
-            id: "city",
+            id: "companyName",
             type: "text",
-            value: formData.city,
-            onChange: (e2) => handleInputChange("city", e2.target.value),
-            placeholder: t2("placeholders.enterCity")
+            value: formData.companyName,
+            onChange: (e2) => handleInputChange("companyName", e2.target.value),
+            placeholder: t2("placeholders.enterCompanyName")
           }
         )
       ] }),
       /* @__PURE__ */ jsxs89("div", { children: [
-        /* @__PURE__ */ jsx105(Label3, { htmlFor: "state", children: t2("fields.state") }),
+        /* @__PURE__ */ jsx105(Label3, { htmlFor: "address", children: t2("fields.streetAddress") }),
         /* @__PURE__ */ jsx105(
           Input11,
           {
-            id: "state",
+            id: "address",
             type: "text",
-            value: formData.state,
-            onChange: (e2) => handleInputChange("state", e2.target.value),
-            placeholder: t2("placeholders.enterState")
+            value: formData.address,
+            onChange: (e2) => handleInputChange("address", e2.target.value),
+            placeholder: t2("placeholders.enterStreetAddress")
           }
         )
       ] }),
-      /* @__PURE__ */ jsxs89("div", { children: [
-        /* @__PURE__ */ jsx105(Label3, { htmlFor: "zipCode", children: t2("fields.zipCode") }),
-        /* @__PURE__ */ jsx105(
-          Input11,
+      /* @__PURE__ */ jsxs89("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+        /* @__PURE__ */ jsxs89("div", { children: [
+          /* @__PURE__ */ jsx105(Label3, { htmlFor: "city", children: t2("fields.city") }),
+          /* @__PURE__ */ jsx105(
+            Input11,
+            {
+              id: "city",
+              type: "text",
+              value: formData.city,
+              onChange: (e2) => handleInputChange("city", e2.target.value),
+              placeholder: t2("placeholders.enterCity")
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxs89("div", { children: [
+          /* @__PURE__ */ jsx105(Label3, { htmlFor: "state", children: t2("fields.state") }),
+          /* @__PURE__ */ jsx105(
+            Input11,
+            {
+              id: "state",
+              type: "text",
+              value: formData.state,
+              onChange: (e2) => handleInputChange("state", e2.target.value),
+              placeholder: t2("placeholders.enterState")
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxs89("div", { children: [
+          /* @__PURE__ */ jsx105(Label3, { htmlFor: "zipCode", children: t2("fields.zipCode") }),
+          /* @__PURE__ */ jsx105(
+            Input11,
+            {
+              id: "zipCode",
+              type: "text",
+              value: formData.zipCode,
+              onChange: (e2) => handleInputChange("zipCode", e2.target.value),
+              placeholder: t2("placeholders.enterZipCode")
+            }
+          )
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs89("div", { className: "flex justify-end space-x-3 border-t pt-4", children: [
+        /* @__PURE__ */ jsxs89(
+          Button22,
           {
-            id: "zipCode",
-            type: "text",
-            value: formData.zipCode,
-            onChange: (e2) => handleInputChange("zipCode", e2.target.value),
-            placeholder: t2("placeholders.enterZipCode")
+            type: "button",
+            variant: "outline",
+            onClick: onCancel,
+            disabled: isSubmitting,
+            children: [
+              /* @__PURE__ */ jsx105(X8, { className: "w-4 h-4 mr-2" }),
+              tc("buttons.cancel")
+            ]
           }
-        )
+        ),
+        /* @__PURE__ */ jsxs89(Button22, { type: "submit", disabled: isSubmitting, children: [
+          /* @__PURE__ */ jsx105(Save3, { className: "w-4 h-4 mr-2" }),
+          isSubmitting ? t2("updating") : t2("updateCustomer")
+        ] })
       ] })
-    ] }),
-    /* @__PURE__ */ jsxs89("div", { children: [
-      /* @__PURE__ */ jsx105(Label3, { htmlFor: "country", children: t2("fields.country") }),
-      /* @__PURE__ */ jsx105(
-        Input11,
-        {
-          id: "country",
-          type: "text",
-          value: formData.country,
-          onChange: (e2) => handleInputChange("country", e2.target.value),
-          placeholder: t2("placeholders.enterCountry")
-        }
-      )
-    ] }),
-    /* @__PURE__ */ jsxs89("div", { className: "flex justify-end space-x-3 border-t pt-4", children: [
-      /* @__PURE__ */ jsxs89(
-        Button22,
-        {
-          type: "button",
-          variant: "outline",
-          onClick: onCancel,
-          disabled: isSubmitting,
-          children: [
-            /* @__PURE__ */ jsx105(X8, { className: "w-4 h-4 mr-2" }),
-            tc("buttons.cancel")
-          ]
-        }
-      ),
-      /* @__PURE__ */ jsxs89(
-        Button22,
-        {
-          type: "submit",
-          disabled: isSubmitting,
-          children: [
-            /* @__PURE__ */ jsx105(Save3, { className: "w-4 h-4 mr-2" }),
-            isSubmitting ? t2("updating") : t2("updateCustomer")
-          ]
-        }
-      )
-    ] })
-  ] }) }) });
-});
+    ] }) }) });
+  }
+);
 EditCustomerForm.displayName = "EditCustomerForm";
 
 // src/components/features/Customers/components/CustomerForm.tsx
@@ -38985,7 +38963,7 @@ import {
   Store as Store6,
   Languages as Languages2
 } from "lucide-react";
-import { useAuth as useAuth2, useSettingsTranslations as useSettingsTranslations7 } from "@rentalshop/hooks";
+import { useAuth as useAuth2, useSettingsTranslations as useSettingsTranslations9 } from "@rentalshop/hooks";
 import { usersApi as usersApi2, authApi as authApi2, settingsApi, subscriptionsApi as subscriptionsApi2 } from "@rentalshop/utils";
 import { useToast as useToast10 } from "@rentalshop/ui";
 
@@ -39528,6 +39506,7 @@ import {
   Input as Input32,
   Label as Label18
 } from "@rentalshop/ui";
+import { useSettingsTranslations as useSettingsTranslations3 } from "@rentalshop/hooks";
 import { jsx as jsx250, jsxs as jsxs225 } from "react/jsx-runtime";
 var OutletSection = ({
   user,
@@ -39539,17 +39518,18 @@ var OutletSection = ({
   onCancel,
   onInputChange
 }) => {
+  const t2 = useSettingsTranslations3();
   return /* @__PURE__ */ jsx250("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs225(Card62, { children: [
     /* @__PURE__ */ jsxs225(CardHeader43, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
-      /* @__PURE__ */ jsx250("h3", { className: "text-base font-semibold text-gray-900", children: "Outlet Information" }),
-      !isEditing ? /* @__PURE__ */ jsx250(Button67, { onClick: onEdit, size: "sm", children: "Edit" }) : /* @__PURE__ */ jsxs225("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ jsx250(Button67, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? "Saving..." : "Save" }),
-        /* @__PURE__ */ jsx250(Button67, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: "Cancel" })
+      /* @__PURE__ */ jsx250("h3", { className: "text-base font-semibold text-gray-900", children: t2("outlet.outletInformation") }),
+      !isEditing ? /* @__PURE__ */ jsx250(Button67, { onClick: onEdit, size: "sm", children: t2("outlet.edit") }) : /* @__PURE__ */ jsxs225("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ jsx250(Button67, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("outlet.saving") : t2("outlet.save") }),
+        /* @__PURE__ */ jsx250(Button67, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("outlet.cancel") })
       ] })
     ] }),
-    /* @__PURE__ */ jsx250(CardContent61, { className: "p-6 pt-4", children: !user?.outlet ? /* @__PURE__ */ jsx250("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx250("p", { className: "text-gray-500", children: "No outlet information available" }) }) : /* @__PURE__ */ jsxs225("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    /* @__PURE__ */ jsx250(CardContent61, { className: "p-6 pt-4", children: !user?.outlet ? /* @__PURE__ */ jsx250("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx250("p", { className: "text-gray-500", children: t2("outlet.noOutletInfo") }) }) : /* @__PURE__ */ jsxs225("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
       /* @__PURE__ */ jsxs225("div", { children: [
-        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Name" }),
+        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.name") }),
         isEditing ? /* @__PURE__ */ jsx250(
           Input32,
           {
@@ -39558,12 +39538,12 @@ var OutletSection = ({
             type: "text",
             value: formData.name,
             onChange: onInputChange,
-            placeholder: "Enter outlet name"
+            placeholder: t2("outlet.enterOutletName")
           }
-        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.name || "Not provided" })
+        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.name || t2("outlet.notProvided") })
       ] }),
       /* @__PURE__ */ jsxs225("div", { children: [
-        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Phone" }),
+        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.phone") }),
         isEditing ? /* @__PURE__ */ jsx250(
           Input32,
           {
@@ -39572,12 +39552,12 @@ var OutletSection = ({
             type: "tel",
             value: formData.phone,
             onChange: onInputChange,
-            placeholder: "Enter outlet phone"
+            placeholder: t2("outlet.enterOutletPhone")
           }
-        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.phone || "Not provided" })
+        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.phone || t2("outlet.notProvided") })
       ] }),
       /* @__PURE__ */ jsxs225("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: "Outlet Address" }),
+        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.address") }),
         isEditing ? /* @__PURE__ */ jsx250(
           Input32,
           {
@@ -39586,12 +39566,12 @@ var OutletSection = ({
             type: "text",
             value: formData.address,
             onChange: onInputChange,
-            placeholder: "Enter outlet address"
+            placeholder: t2("outlet.enterOutletAddress")
           }
-        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.address || "Not provided" })
+        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.address || t2("outlet.notProvided") })
       ] }),
       /* @__PURE__ */ jsxs225("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletDescription", className: "block text-sm font-medium text-gray-700 mb-2", children: "Description" }),
+        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletDescription", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.description") }),
         isEditing ? /* @__PURE__ */ jsx250(
           Input32,
           {
@@ -39600,9 +39580,9 @@ var OutletSection = ({
             type: "text",
             value: formData.description,
             onChange: onInputChange,
-            placeholder: "Enter outlet description"
+            placeholder: t2("outlet.enterDescription")
           }
-        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.description || "Not provided" })
+        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.description || t2("outlet.notProvided") })
       ] })
     ] }) })
   ] }) });
@@ -39622,14 +39602,14 @@ import {
   Calendar as Calendar32,
   DollarSign as DollarSign23
 } from "lucide-react";
-import { useSettingsTranslations as useSettingsTranslations3 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations4 } from "@rentalshop/hooks";
 import { jsx as jsx251, jsxs as jsxs226 } from "react/jsx-runtime";
 var SubscriptionSection = ({
   subscriptionData,
   subscriptionLoading,
   currentUserRole
 }) => {
-  const t2 = useSettingsTranslations3();
+  const t2 = useSettingsTranslations4();
   if (subscriptionLoading) {
     return /* @__PURE__ */ jsx251("div", { className: "space-y-6", children: /* @__PURE__ */ jsx251(Card63, { children: /* @__PURE__ */ jsx251(CardContent62, { className: "p-6", children: /* @__PURE__ */ jsxs226("div", { className: "flex items-center justify-center py-8", children: [
       /* @__PURE__ */ jsx251("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
@@ -39724,7 +39704,7 @@ import {
   Separator as Separator6
 } from "@rentalshop/ui";
 import { LogOut, Trash2 as Trash218, Key as Key2 } from "lucide-react";
-import { useSettingsTranslations as useSettingsTranslations4 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations5 } from "@rentalshop/hooks";
 import { jsx as jsx252, jsxs as jsxs227 } from "react/jsx-runtime";
 var AccountSection = ({
   onSignOut,
@@ -39732,7 +39712,7 @@ var AccountSection = ({
   onChangePassword,
   isDeleting
 }) => {
-  const t2 = useSettingsTranslations4();
+  const t2 = useSettingsTranslations5();
   return /* @__PURE__ */ jsx252("div", { className: "space-y-6", children: /* @__PURE__ */ jsx252(Card64, { children: /* @__PURE__ */ jsx252(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs227("div", { className: "space-y-6", children: [
     /* @__PURE__ */ jsxs227("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
       /* @__PURE__ */ jsxs227("div", { className: "flex items-center space-x-3", children: [
@@ -39796,14 +39776,14 @@ var AccountSection = ({
 import { useState as useState85, useTransition as useTransition2 } from "react";
 import { Languages, Check as Check8 } from "lucide-react";
 import { useRouter as useRouter7 } from "next/navigation";
-import { useSettingsTranslations as useSettingsTranslations5 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx253, jsxs as jsxs228 } from "react/jsx-runtime";
 var languages = [
   { value: "en", label: "English", flag: "\u{1F1FA}\u{1F1F8}" },
   { value: "vi", label: "Ti\u1EBFng Vi\u1EC7t", flag: "\u{1F1FB}\u{1F1F3}" }
 ];
 function LanguageSection() {
-  const t2 = useSettingsTranslations5();
+  const t2 = useSettingsTranslations6();
   const currentLocale = Z();
   const router = useRouter7();
   const [isPending, startTransition] = useTransition2();
@@ -39875,7 +39855,7 @@ import {
   Label as Label19
 } from "@rentalshop/ui";
 import { Eye as Eye30, EyeOff as EyeOff9 } from "lucide-react";
-import { useSettingsTranslations as useSettingsTranslations6 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations7 } from "@rentalshop/hooks";
 import { jsx as jsx254, jsxs as jsxs229 } from "react/jsx-runtime";
 var ChangePasswordDialog2 = ({
   isOpen,
@@ -39885,7 +39865,7 @@ var ChangePasswordDialog2 = ({
   onChange,
   onSubmit
 }) => {
-  const t2 = useSettingsTranslations6();
+  const t2 = useSettingsTranslations7();
   const [showCurrentPassword, setShowCurrentPassword] = useState86(false);
   const [showNewPassword, setShowNewPassword] = useState86(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState86(false);
@@ -40009,6 +39989,7 @@ var ChangePasswordDialog2 = ({
 
 // src/components/features/Settings/components/DeleteAccountDialog.tsx
 import { Button as Button71 } from "@rentalshop/ui";
+import { useSettingsTranslations as useSettingsTranslations8 } from "@rentalshop/hooks";
 import { jsx as jsx255, jsxs as jsxs230 } from "react/jsx-runtime";
 var DeleteAccountDialog = ({
   isOpen,
@@ -40016,22 +39997,23 @@ var DeleteAccountDialog = ({
   onClose,
   onConfirm
 }) => {
+  const t2 = useSettingsTranslations8();
   if (!isOpen)
     return null;
   return /* @__PURE__ */ jsx255("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ jsxs230("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
     /* @__PURE__ */ jsxs230("div", { className: "flex items-center mb-4", children: [
       /* @__PURE__ */ jsx255("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx255("svg", { className: "h-6 w-6 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx255("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" }) }) }),
-      /* @__PURE__ */ jsx255("div", { className: "ml-3", children: /* @__PURE__ */ jsx255("h3", { className: "text-lg font-medium text-gray-900", children: "Delete Account" }) })
+      /* @__PURE__ */ jsx255("div", { className: "ml-3", children: /* @__PURE__ */ jsx255("h3", { className: "text-lg font-medium text-gray-900", children: t2("deleteAccountDialog.title") }) })
     ] }),
     /* @__PURE__ */ jsxs230("div", { className: "mb-6", children: [
-      /* @__PURE__ */ jsx255("p", { className: "text-sm text-gray-600", children: "Are you sure you want to delete your account? This action cannot be undone and will permanently remove:" }),
+      /* @__PURE__ */ jsx255("p", { className: "text-sm text-gray-600", children: t2("deleteAccountDialog.description") }),
       /* @__PURE__ */ jsxs230("ul", { className: "mt-3 text-sm text-gray-600 list-disc list-inside space-y-1", children: [
-        /* @__PURE__ */ jsx255("li", { children: "Your profile and personal information" }),
-        /* @__PURE__ */ jsx255("li", { children: "All your orders and transaction history" }),
-        /* @__PURE__ */ jsx255("li", { children: "Your product listings and inventory" }),
-        /* @__PURE__ */ jsx255("li", { children: "Any saved preferences and settings" })
+        /* @__PURE__ */ jsx255("li", { children: t2("deleteAccountDialog.profileInfo") }),
+        /* @__PURE__ */ jsx255("li", { children: t2("deleteAccountDialog.orderHistory") }),
+        /* @__PURE__ */ jsx255("li", { children: t2("deleteAccountDialog.productListings") }),
+        /* @__PURE__ */ jsx255("li", { children: t2("deleteAccountDialog.savedPreferences") })
       ] }),
-      /* @__PURE__ */ jsx255("p", { className: "mt-3 text-sm text-gray-600", children: /* @__PURE__ */ jsx255("strong", { children: "This action is irreversible." }) })
+      /* @__PURE__ */ jsx255("p", { className: "mt-3 text-sm text-gray-600", children: /* @__PURE__ */ jsx255("strong", { children: t2("deleteAccountDialog.irreversibleWarning") }) })
     ] }),
     /* @__PURE__ */ jsxs230("div", { className: "flex justify-end space-x-3", children: [
       /* @__PURE__ */ jsx255(
@@ -40040,7 +40022,7 @@ var DeleteAccountDialog = ({
           variant: "outline",
           onClick: onClose,
           disabled: isDeleting,
-          children: "Cancel"
+          children: t2("deleteAccountDialog.cancel")
         }
       ),
       /* @__PURE__ */ jsx255(
@@ -40049,7 +40031,7 @@ var DeleteAccountDialog = ({
           variant: "destructive",
           onClick: onConfirm,
           disabled: isDeleting,
-          children: isDeleting ? "Deleting..." : "Delete Account"
+          children: isDeleting ? t2("deleteAccountDialog.deleting") : t2("deleteAccountDialog.deleteAccount")
         }
       )
     ] })
@@ -40101,7 +40083,7 @@ var createSettingsMenuItems = (t2) => [
   }
 ];
 var SettingsComponent = () => {
-  const t2 = useSettingsTranslations7();
+  const t2 = useSettingsTranslations9();
   const { user, logout, loading } = useAuth2();
   const { toastSuccess, toastError } = useToast10();
   const { currency, setCurrency } = useCurrency2();

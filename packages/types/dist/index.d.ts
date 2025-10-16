@@ -2669,6 +2669,18 @@ var messages$4 = {
 	passwordMismatch: "New passwords do not match",
 	passwordTooShort: "New password must be at least 6 characters"
 };
+var deleteAccountDialog = {
+	title: "Delete Account",
+	description: "Are you sure you want to delete your account? This action cannot be undone and will permanently remove:",
+	profileInfo: "Your profile and personal information",
+	orderHistory: "All your orders and transaction history",
+	productListings: "Your product listings and inventory",
+	savedPreferences: "Any saved preferences and settings",
+	irreversibleWarning: "This action is irreversible.",
+	cancel: "Cancel",
+	deleteAccount: "Delete Account",
+	deleting: "Deleting..."
+};
 var changePassword$1 = {
 	title: "Change Password",
 	currentPassword: "Current Password",
@@ -2696,12 +2708,14 @@ var settings = {
 	billing: billing,
 	menuItems: menuItems,
 	messages: messages$4,
+	deleteAccountDialog: deleteAccountDialog,
 	changePassword: changePassword$1
 };
 
 declare const _________locales_en_settings_json_account: typeof account;
 declare const _________locales_en_settings_json_billing: typeof billing;
 declare const _________locales_en_settings_json_currency: typeof currency;
+declare const _________locales_en_settings_json_deleteAccountDialog: typeof deleteAccountDialog;
 declare const _________locales_en_settings_json_language: typeof language;
 declare const _________locales_en_settings_json_menuItems: typeof menuItems;
 declare const _________locales_en_settings_json_merchant: typeof merchant;
@@ -2711,7 +2725,7 @@ declare const _________locales_en_settings_json_security: typeof security;
 declare const _________locales_en_settings_json_subscription: typeof subscription;
 declare const _________locales_en_settings_json_tabs: typeof tabs;
 declare namespace _________locales_en_settings_json {
-  export { _________locales_en_settings_json_account as account, _________locales_en_settings_json_billing as billing, changePassword$1 as changePassword, _________locales_en_settings_json_currency as currency, settings as default, _________locales_en_settings_json_language as language, _________locales_en_settings_json_menuItems as menuItems, _________locales_en_settings_json_merchant as merchant, messages$4 as messages, _________locales_en_settings_json_notifications as notifications, _________locales_en_settings_json_outlet as outlet, profile$1 as profile, _________locales_en_settings_json_security as security, _________locales_en_settings_json_subscription as subscription, _________locales_en_settings_json_tabs as tabs, title$4 as title };
+  export { _________locales_en_settings_json_account as account, _________locales_en_settings_json_billing as billing, changePassword$1 as changePassword, _________locales_en_settings_json_currency as currency, settings as default, _________locales_en_settings_json_deleteAccountDialog as deleteAccountDialog, _________locales_en_settings_json_language as language, _________locales_en_settings_json_menuItems as menuItems, _________locales_en_settings_json_merchant as merchant, messages$4 as messages, _________locales_en_settings_json_notifications as notifications, _________locales_en_settings_json_outlet as outlet, profile$1 as profile, _________locales_en_settings_json_security as security, _________locales_en_settings_json_subscription as subscription, _________locales_en_settings_json_tabs as tabs, title$4 as title };
 }
 
 var title$3 = "Customers";
@@ -3576,6 +3590,7 @@ var labels = {
 	actions: "Actions",
 	search: "Search",
 	noResults: "No results found",
+	noData: "No data",
 	loading: "Loading...",
 	success: "Success",
 	error: "Error",
@@ -3646,9 +3661,25 @@ var time = {
 	thisWeek: "This Week",
 	thisMonth: "This Month",
 	lastMonth: "Last Month",
+	thisYear: "This Year",
+	lastYear: "Last Year",
 	custom: "Custom",
 	from: "From",
-	to: "To"
+	to: "To",
+	year: "Year",
+	month: "Month",
+	week: "Week",
+	day: "Day"
+};
+var periods = {
+	daily: "Daily",
+	weekly: "Weekly",
+	monthly: "Monthly",
+	yearly: "Yearly",
+	dailyOperations: "Daily Operations",
+	weeklyReport: "Weekly Report",
+	monthlyReport: "Monthly Report",
+	yearlyReport: "Yearly Report"
 };
 var common = {
 	buttons: buttons,
@@ -3656,7 +3687,8 @@ var common = {
 	messages: messages,
 	navigation: navigation,
 	pagination: pagination,
-	time: time
+	time: time,
+	periods: periods
 };
 
 declare const _________locales_en_common_json_buttons: typeof buttons;
@@ -3664,9 +3696,10 @@ declare const _________locales_en_common_json_labels: typeof labels;
 declare const _________locales_en_common_json_messages: typeof messages;
 declare const _________locales_en_common_json_navigation: typeof navigation;
 declare const _________locales_en_common_json_pagination: typeof pagination;
+declare const _________locales_en_common_json_periods: typeof periods;
 declare const _________locales_en_common_json_time: typeof time;
 declare namespace _________locales_en_common_json {
-  export { _________locales_en_common_json_buttons as buttons, common as default, _________locales_en_common_json_labels as labels, _________locales_en_common_json_messages as messages, _________locales_en_common_json_navigation as navigation, _________locales_en_common_json_pagination as pagination, _________locales_en_common_json_time as time };
+  export { _________locales_en_common_json_buttons as buttons, common as default, _________locales_en_common_json_labels as labels, _________locales_en_common_json_messages as messages, _________locales_en_common_json_navigation as navigation, _________locales_en_common_json_pagination as pagination, _________locales_en_common_json_periods as periods, _________locales_en_common_json_time as time };
 }
 
 /**

@@ -148,16 +148,18 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                   {customer.dateOfBirth ? formatDate(customer.dateOfBirth) : t('fields.notProvided')}
                 </p>
               </div>
-              <div>
+              {/* Hidden: Status field */}
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.status')}</label>
                 <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`}>
                   {getStatusDisplayName(customer.isActive)}
                 </div>
-              </div>
-              <div>
+              </div> */}
+              {/* Hidden: Customer ID field */}
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.customerId')}</label>
                 <p className="text-gray-500 text-sm font-mono">{customer.id}</p>
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('stats.memberSince')}</label>
                 <p className="text-gray-900">{formatDate(customer.createdAt)}</p>
@@ -208,12 +210,6 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.zipCode')}</label>
                   <p className="text-gray-900">
                     {customer.zipCode || t('fields.notSpecified')}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.country')}</label>
-                  <p className="text-gray-900">
-                    {customer.country || t('fields.notSpecified')}
                   </p>
                 </div>
               </div>

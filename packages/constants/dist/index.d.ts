@@ -126,7 +126,7 @@ declare function isEntityActive(status: EntityStatus): boolean;
  */
 declare function getStatusLabel(status: string, type: 'subscription' | 'order' | 'payment' | 'entity' | 'availability'): string;
 /**
- * Get status color class for UI components
+ * Get status color class for UI components - Ocean Blue Theme
  */
 declare function getStatusColor(status: string, type: 'subscription' | 'order' | 'payment' | 'entity' | 'availability'): string;
 /**
@@ -190,16 +190,76 @@ declare const ORDER_TYPES: {
     readonly SALE: "SALE";
 };
 type OrderType = typeof ORDER_TYPES[keyof typeof ORDER_TYPES];
-declare const ORDER_STATUS_COLORS: {
-    readonly RESERVED: "bg-red-100 text-red-800";
-    readonly PICKUPED: "bg-[#f19920] text-white";
-    readonly RETURNED: "bg-[#0F9347] text-white";
-    readonly COMPLETED: "bg-gray-100 text-gray-800";
-    readonly CANCELLED: "bg-[#b22222] text-white";
+declare const ORDER_STATUS_COLORS$1: {
+    readonly RESERVED: "bg-blue-100 text-blue-800";
+    readonly PICKUPED: "bg-amber-100 text-amber-900";
+    readonly RETURNED: "bg-emerald-100 text-emerald-800";
+    readonly COMPLETED: "bg-indigo-100 text-indigo-800";
+    readonly CANCELLED: "bg-red-100 text-red-800";
 };
-declare const ORDER_TYPE_COLORS: {
+declare const ORDER_TYPE_COLORS$1: {
     readonly RENT: "bg-blue-100 text-blue-800";
-    readonly SALE: "bg-green-100 text-green-800";
+    readonly SALE: "bg-emerald-100 text-emerald-800";
+};
+declare const ORDER_STATUS_BUTTON_COLORS: {
+    readonly RESERVED: {
+        readonly bg: "#DBEAFE";
+        readonly text: "#1E40AF";
+        readonly hex: "#3B82F6";
+        readonly buttonBg: "#3B82F6";
+        readonly buttonHover: "#2563EB";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly PICKUPED: {
+        readonly bg: "#FEF3C7";
+        readonly text: "#92400E";
+        readonly hex: "#F59E0B";
+        readonly buttonBg: "#F59E0B";
+        readonly buttonHover: "#D97706";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly RETURNED: {
+        readonly bg: "#D1FAE5";
+        readonly text: "#065F46";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly COMPLETED: {
+        readonly bg: "#E0E7FF";
+        readonly text: "#3730A3";
+        readonly hex: "#6366F1";
+        readonly buttonBg: "#6366F1";
+        readonly buttonHover: "#4F46E5";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly CANCELLED: {
+        readonly bg: "#FEE2E2";
+        readonly text: "#991B1B";
+        readonly hex: "#EF4444";
+        readonly buttonBg: "#EF4444";
+        readonly buttonHover: "#DC2626";
+        readonly buttonText: "#FFFFFF";
+    };
+};
+declare const ORDER_TYPE_BUTTON_COLORS: {
+    readonly RENT: {
+        readonly bg: "#DBEAFE";
+        readonly text: "#1E40AF";
+        readonly hex: "#3B82F6";
+        readonly buttonBg: "#3B82F6";
+        readonly buttonHover: "#2563EB";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly SALE: {
+        readonly bg: "#D1FAE5";
+        readonly text: "#065F46";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
+        readonly buttonText: "#FFFFFF";
+    };
 };
 declare const ORDER_STATUS_ICONS: {
     readonly RESERVED: "📋";
@@ -224,17 +284,17 @@ declare const ORDER_TYPE_LABELS: {
     readonly SALE: "Bán";
 };
 
-declare const ORDERS_ORDER_STATUS_COLORS: typeof ORDER_STATUS_COLORS;
+declare const ORDERS_ORDER_STATUS_BUTTON_COLORS: typeof ORDER_STATUS_BUTTON_COLORS;
 declare const ORDERS_ORDER_STATUS_ICONS: typeof ORDER_STATUS_ICONS;
 declare const ORDERS_ORDER_STATUS_LABELS: typeof ORDER_STATUS_LABELS;
 declare const ORDERS_ORDER_TYPES: typeof ORDER_TYPES;
-declare const ORDERS_ORDER_TYPE_COLORS: typeof ORDER_TYPE_COLORS;
+declare const ORDERS_ORDER_TYPE_BUTTON_COLORS: typeof ORDER_TYPE_BUTTON_COLORS;
 declare const ORDERS_ORDER_TYPE_ICONS: typeof ORDER_TYPE_ICONS;
 declare const ORDERS_ORDER_TYPE_LABELS: typeof ORDER_TYPE_LABELS;
 type ORDERS_OrderStatus = OrderStatus;
 type ORDERS_OrderType = OrderType;
 declare namespace ORDERS {
-  export { ORDER_STATUS as ORDER_STATUSES, ORDERS_ORDER_STATUS_COLORS as ORDER_STATUS_COLORS, ORDERS_ORDER_STATUS_ICONS as ORDER_STATUS_ICONS, ORDERS_ORDER_STATUS_LABELS as ORDER_STATUS_LABELS, ORDERS_ORDER_TYPES as ORDER_TYPES, ORDERS_ORDER_TYPE_COLORS as ORDER_TYPE_COLORS, ORDERS_ORDER_TYPE_ICONS as ORDER_TYPE_ICONS, ORDERS_ORDER_TYPE_LABELS as ORDER_TYPE_LABELS, type ORDERS_OrderStatus as OrderStatus, type ORDERS_OrderType as OrderType };
+  export { ORDER_STATUS as ORDER_STATUSES, ORDERS_ORDER_STATUS_BUTTON_COLORS as ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDERS_ORDER_STATUS_ICONS as ORDER_STATUS_ICONS, ORDERS_ORDER_STATUS_LABELS as ORDER_STATUS_LABELS, ORDERS_ORDER_TYPES as ORDER_TYPES, ORDERS_ORDER_TYPE_BUTTON_COLORS as ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDERS_ORDER_TYPE_ICONS as ORDER_TYPE_ICONS, ORDERS_ORDER_TYPE_LABELS as ORDER_TYPE_LABELS, type ORDERS_OrderStatus as OrderStatus, type ORDERS_OrderType as OrderType };
 }
 
 /**
@@ -877,6 +937,308 @@ declare const DEFAULT_CURRENCY_SETTINGS: {
     showCode: boolean;
 };
 
+declare const BRAND_COLORS: {
+    readonly primary: "#22C55E";
+    readonly secondary: "#4ADE80";
+    readonly dark: "#15803D";
+    readonly light: "#86EFAC";
+    readonly lightest: "#DCFCE7";
+};
+declare const ACTION_COLORS: {
+    readonly primary: "#22C55E";
+    readonly success: "#10B981";
+    readonly danger: "#EF4444";
+    readonly warning: "#F59E0B";
+    readonly info: "#3B82F6";
+};
+declare const TEXT_COLORS: {
+    readonly primary: "#1E293B";
+    readonly secondary: "#64748B";
+    readonly tertiary: "#94A3B8";
+    readonly inverted: "#FFFFFF";
+    readonly muted: "#CBD5E1";
+};
+declare const BACKGROUND_COLORS: {
+    readonly primary: "#F8FAFC";
+    readonly secondary: "#F1F5F9";
+    readonly tertiary: "#E2E8F0";
+    readonly card: "#FFFFFF";
+    readonly dark: "#0F172A";
+};
+declare const NAVIGATION_COLORS: {
+    readonly background: "#0F172A";
+    readonly backgroundHover: "#1E293B";
+    readonly text: "#FFFFFF";
+    readonly textActive: "#86EFAC";
+    readonly textHover: "#DCFCE7";
+    readonly border: "#334155";
+    readonly icon: "#94A3B8";
+    readonly iconActive: "#22C55E";
+};
+declare const BORDER_COLORS: {
+    readonly default: "#E2E8F0";
+    readonly light: "#F1F5F9";
+    readonly dark: "#CBD5E1";
+    readonly focus: "#22C55E";
+};
+declare const ORDER_STATUS_COLORS: {
+    readonly RESERVED: {
+        readonly bg: "#DBEAFE";
+        readonly text: "#1E40AF";
+        readonly hex: "#3B82F6";
+        readonly buttonBg: "#3B82F6";
+        readonly buttonHover: "#2563EB";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly PICKUPED: {
+        readonly bg: "#FEF3C7";
+        readonly text: "#92400E";
+        readonly hex: "#F59E0B";
+        readonly buttonBg: "#F59E0B";
+        readonly buttonHover: "#D97706";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly RETURNED: {
+        readonly bg: "#D1FAE5";
+        readonly text: "#065F46";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly COMPLETED: {
+        readonly bg: "#E0E7FF";
+        readonly text: "#3730A3";
+        readonly hex: "#6366F1";
+        readonly buttonBg: "#6366F1";
+        readonly buttonHover: "#4F46E5";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly CANCELLED: {
+        readonly bg: "#FEE2E2";
+        readonly text: "#991B1B";
+        readonly hex: "#EF4444";
+        readonly buttonBg: "#EF4444";
+        readonly buttonHover: "#DC2626";
+        readonly buttonText: "#FFFFFF";
+    };
+};
+declare const ORDER_TYPE_COLORS: {
+    readonly RENT: {
+        readonly bg: "#DBEAFE";
+        readonly text: "#1E40AF";
+        readonly hex: "#3B82F6";
+        readonly buttonBg: "#3B82F6";
+        readonly buttonHover: "#2563EB";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly SALE: {
+        readonly bg: "#D1FAE5";
+        readonly text: "#065F46";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
+        readonly buttonText: "#FFFFFF";
+    };
+};
+declare const SUBSCRIPTION_STATUS_COLORS: {
+    readonly TRIAL: {
+        readonly bg: "#DCFCE7";
+        readonly text: "#15803D";
+        readonly hex: "#22C55E";
+        readonly buttonBg: "#22C55E";
+        readonly buttonHover: "#16A34A";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly ACTIVE: {
+        readonly bg: "#D1FAE5";
+        readonly text: "#065F46";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly PAST_DUE: {
+        readonly bg: "#FEF3C7";
+        readonly text: "#92400E";
+        readonly hex: "#F59E0B";
+        readonly buttonBg: "#F59E0B";
+        readonly buttonHover: "#D97706";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly CANCELLED: {
+        readonly bg: "#FEE2E2";
+        readonly text: "#991B1B";
+        readonly hex: "#EF4444";
+        readonly buttonBg: "#EF4444";
+        readonly buttonHover: "#DC2626";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly PAUSED: {
+        readonly bg: "#F3E8FF";
+        readonly text: "#6B21A8";
+        readonly hex: "#A855F7";
+        readonly buttonBg: "#A855F7";
+        readonly buttonHover: "#9333EA";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly EXPIRED: {
+        readonly bg: "#F1F5F9";
+        readonly text: "#475569";
+        readonly hex: "#64748B";
+        readonly buttonBg: "#64748B";
+        readonly buttonHover: "#475569";
+        readonly buttonText: "#FFFFFF";
+    };
+};
+declare const PAYMENT_STATUS_COLORS: {
+    readonly PENDING: {
+        readonly bg: "#FEF3C7";
+        readonly text: "#92400E";
+        readonly hex: "#F59E0B";
+        readonly buttonBg: "#F59E0B";
+        readonly buttonHover: "#D97706";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly COMPLETED: {
+        readonly bg: "#D1FAE5";
+        readonly text: "#065F46";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly FAILED: {
+        readonly bg: "#FEE2E2";
+        readonly text: "#991B1B";
+        readonly hex: "#EF4444";
+        readonly buttonBg: "#EF4444";
+        readonly buttonHover: "#DC2626";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly REFUNDED: {
+        readonly bg: "#DBEAFE";
+        readonly text: "#1E40AF";
+        readonly hex: "#3B82F6";
+        readonly buttonBg: "#3B82F6";
+        readonly buttonHover: "#2563EB";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly CANCELLED: {
+        readonly bg: "#F1F5F9";
+        readonly text: "#475569";
+        readonly hex: "#64748B";
+        readonly buttonBg: "#64748B";
+        readonly buttonHover: "#475569";
+        readonly buttonText: "#FFFFFF";
+    };
+};
+declare const ENTITY_STATUS_COLORS: {
+    readonly ACTIVE: {
+        readonly bg: "#D1FAE5";
+        readonly text: "#065F46";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly INACTIVE: {
+        readonly bg: "#F1F5F9";
+        readonly text: "#475569";
+        readonly hex: "#64748B";
+        readonly buttonBg: "#64748B";
+        readonly buttonHover: "#475569";
+        readonly buttonText: "#FFFFFF";
+    };
+};
+declare const PRODUCT_AVAILABILITY_COLORS: {
+    readonly AVAILABLE: {
+        readonly bg: "#D1FAE5";
+        readonly text: "#065F46";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly OUT_OF_STOCK: {
+        readonly bg: "#FEE2E2";
+        readonly text: "#991B1B";
+        readonly hex: "#EF4444";
+        readonly buttonBg: "#EF4444";
+        readonly buttonHover: "#DC2626";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly UNAVAILABLE: {
+        readonly bg: "#F1F5F9";
+        readonly text: "#475569";
+        readonly hex: "#64748B";
+        readonly buttonBg: "#64748B";
+        readonly buttonHover: "#475569";
+        readonly buttonText: "#FFFFFF";
+    };
+    readonly DATE_CONFLICT: {
+        readonly bg: "#FEF3C7";
+        readonly text: "#92400E";
+        readonly hex: "#F59E0B";
+        readonly buttonBg: "#F59E0B";
+        readonly buttonHover: "#D97706";
+        readonly buttonText: "#FFFFFF";
+    };
+};
+declare const BUTTON_COLORS: {
+    readonly primary: {
+        readonly bg: "#22C55E";
+        readonly bgHover: "#16A34A";
+        readonly text: "#FFFFFF";
+    };
+    readonly secondary: {
+        readonly bg: "#F1F5F9";
+        readonly bgHover: "#E2E8F0";
+        readonly text: "#1E293B";
+    };
+    readonly success: {
+        readonly bg: "#10B981";
+        readonly bgHover: "#059669";
+        readonly text: "#FFFFFF";
+    };
+    readonly danger: {
+        readonly bg: "#EF4444";
+        readonly bgHover: "#DC2626";
+        readonly text: "#FFFFFF";
+    };
+    readonly warning: {
+        readonly bg: "#F59E0B";
+        readonly bgHover: "#D97706";
+        readonly text: "#FFFFFF";
+    };
+    readonly outline: {
+        readonly bg: "transparent";
+        readonly bgHover: "#F8FAFC";
+        readonly text: "#334155";
+        readonly border: "#CBD5E1";
+    };
+    readonly ghost: {
+        readonly bg: "transparent";
+        readonly bgHover: "#F1F5F9";
+        readonly text: "#1E293B";
+    };
+};
+/**
+ * Get Tailwind class string for order status
+ */
+declare function getOrderStatusClass(status: keyof typeof ORDER_STATUS_COLORS): string;
+/**
+ * Get Tailwind class string for order type
+ */
+declare function getOrderTypeClass(type: keyof typeof ORDER_TYPE_COLORS): string;
+type BrandColor = keyof typeof BRAND_COLORS;
+type ActionColor = keyof typeof ACTION_COLORS;
+type TextColor = keyof typeof TEXT_COLORS;
+type BackgroundColor = keyof typeof BACKGROUND_COLORS;
+type NavigationColor = keyof typeof NAVIGATION_COLORS;
+type BorderColor = keyof typeof BORDER_COLORS;
+type ButtonVariant = keyof typeof BUTTON_COLORS;
+
 /**
  * Centralized Constants for Rental Shop Monorepo
  *
@@ -1098,4 +1460,4 @@ declare const CONSTANTS: {
     readonly STATUS: typeof STATUS;
 };
 
-export { API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ApiValue, type AuditAction, type AuditEntityType, BILLING_CYCLES, BILLING_INTERVAL, BUSINESS, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, type BillingInterval, type BusinessType, type BusinessTypeOption, type BusinessValue, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, type MerchantPricingConfig, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_COLORS, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_COLORS, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUPPORTED_CURRENCIES, type SearchValue, type SubscriptionStatus, TRIAL_CONFIG, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, formatCountryDisplay, getActivePlans, getAllPlans, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, isValidCurrency, requiresRentalDates, validatePlanConfig };
+export { ACTION_COLORS, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BorderColor, type BrandColor, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, type MerchantPricingConfig, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, formatCountryDisplay, getActivePlans, getAllPlans, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderTypeClass, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, isValidCurrency, requiresRentalDates, validatePlanConfig };

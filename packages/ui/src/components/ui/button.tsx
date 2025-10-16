@@ -8,14 +8,22 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-action-primary text-text-inverted hover:bg-brand-primary",
-        destructive: "bg-action-danger text-text-inverted hover:bg-red-700",
-        outline: "border border-border bg-bg-card text-text-primary hover:bg-bg-secondary",
-        secondary: "bg-bg-secondary text-text-primary hover:bg-bg-tertiary",
-        ghost: "hover:bg-bg-secondary hover:text-text-primary",
-        link: "text-action-primary underline-offset-4 hover:underline",
-        success: "bg-action-success text-text-inverted hover:bg-green-700",
-        warning: "bg-action-warning text-text-inverted hover:bg-orange-700",
+        // Green Theme - Primary button with green
+        default: "bg-green-500 text-white hover:bg-green-600",
+        // Destructive - Red for danger actions
+        destructive: "bg-red-500 text-white hover:bg-red-600",
+        // Outline - Neutral gray border (for table actions, pagination)
+        outline: "border border-slate-300 bg-transparent text-slate-700 hover:bg-slate-50 hover:text-slate-900",
+        // Secondary - Light slate background
+        secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
+        // Ghost - Transparent with hover effect
+        ghost: "hover:bg-slate-100 hover:text-slate-800",
+        // Link - Green text with underline
+        link: "text-green-500 underline-offset-4 hover:underline",
+        // Success - Emerald green
+        success: "bg-emerald-500 text-white hover:bg-emerald-600",
+        // Warning - Amber yellow
+        warning: "bg-amber-500 text-white hover:bg-amber-600",
       },
       size: {
         default: "h-10 px-4 py-2",
