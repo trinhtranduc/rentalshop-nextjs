@@ -4,6 +4,8 @@ import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
+import { useFormattedFullDate } from '@rentalshop/utils';
+import { ORDER_STATUS_COLORS, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit } from 'lucide-react';
 
 // Local interface matching what OrderTable actually uses
@@ -69,43 +71,25 @@ export const OrderTable = React.memo(function OrderTable({
   }
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      RESERVED: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      PICKUPED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      RETURNED: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      COMPLETED: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-      CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-    };
-    
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants]}>
-        {status}
+      <Badge variant="outline" className={ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS]}>
+        {t(`status.${status}`)}
       </Badge>
     );
   };
 
   const getOrderTypeBadge = (type: string) => {
-    const variants = {
-      RENT: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      SALE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      RENT_TO_OWN: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-    };
-    
     return (
-      <Badge variant="outline" className={variants[type as keyof typeof variants]}>
-        {type.replace('_', ' ')}
+      <Badge variant="outline" className={ORDER_TYPE_COLORS[type as keyof typeof ORDER_TYPE_COLORS]}>
+        {t(`orderType.${type}`)}
       </Badge>
     );
   };
 
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return 'N/A';
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    // Use the new date utility for consistent formatting
+    return useFormattedFullDate(dateString);
   };
 
   const getOrderIcon = () => {

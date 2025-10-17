@@ -8,6 +8,12 @@ export interface PageWrapperProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '7xl' | 'full';
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   spacing?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  /**
+   * Scroll behavior:
+   * - 'page': Full page scrolls (default) - for detail pages, long content
+   * - 'content': Fixed page with scrollable content inside - for tables, lists
+   */
+  scrollMode?: 'page' | 'content';
 }
 
 const maxWidthClasses = {
@@ -42,11 +48,32 @@ export function PageWrapper({
   container = true,
   maxWidth = '7xl',
   padding = 'sm',
-  spacing = 'sm'
+  spacing = 'sm',
+  scrollMode = 'page'
 }: PageWrapperProps) {
-  // Extract height-related classes from className to apply to wrapper
-  const hasHeightClass = className?.includes('h-full') || className?.includes('h-screen');
+  // For 'content' scroll mode, we need a fixed height container with overflow
+  if (scrollMode === 'content') {
+    return (
+      <div className="h-screen overflow-y-auto">
+        <div className={cn(
+          // Base container
+          container && 'mx-auto',
+          // Max width
+          maxWidth !== 'full' && maxWidthClasses[maxWidth],
+          // Padding
+          padding !== 'none' && paddingClasses[padding],
+          // Spacing between children
+          spacing !== 'none' && spacingClasses[spacing],
+          // Custom classes
+          className
+        )}>
+          {children}
+        </div>
+      </div>
+    );
+  }
   
+  // For 'page' scroll mode (default), just return normal container
   return (
     <div className={cn(
       // Base container

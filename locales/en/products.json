@@ -137,6 +137,10 @@
     "availableProducts": "Available",
     "rentedProducts": "Rented",
     "totalValue": "Total Inventory Value"
-  }
+  },
+  "selectedProducts": "Selected Products",
+  "noProductsSelected": "No Products Selected",
+  "productInformationNotAvailable": "Product information not available",
+  "productId": "Product ID"
 }
 

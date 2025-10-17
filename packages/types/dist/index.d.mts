@@ -3067,6 +3067,10 @@ var stats$2 = {
 	rentedProducts: "Rented",
 	totalValue: "Total Inventory Value"
 };
+var selectedProducts = "Selected Products";
+var noProductsSelected = "No Products Selected";
+var productInformationNotAvailable = "Product information not available";
+var productId = "Product ID";
 var products = {
 	title: title$2,
 	productName: productName,
@@ -3085,7 +3089,11 @@ var products = {
 	messages: messages$2,
 	filters: filters$1,
 	search: search$1,
-	stats: stats$2
+	stats: stats$2,
+	selectedProducts: selectedProducts,
+	noProductsSelected: noProductsSelected,
+	productInformationNotAvailable: productInformationNotAvailable,
+	productId: productId
 };
 
 declare const _________locales_en_products_json_availability: typeof availability;
@@ -3093,14 +3101,18 @@ declare const _________locales_en_products_json_createProduct: typeof createProd
 declare const _________locales_en_products_json_editProduct: typeof editProduct;
 declare const _________locales_en_products_json_fields: typeof fields;
 declare const _________locales_en_products_json_inventory: typeof inventory;
+declare const _________locales_en_products_json_noProductsSelected: typeof noProductsSelected;
 declare const _________locales_en_products_json_price: typeof price;
 declare const _________locales_en_products_json_pricing: typeof pricing;
 declare const _________locales_en_products_json_productDetails: typeof productDetails;
+declare const _________locales_en_products_json_productId: typeof productId;
+declare const _________locales_en_products_json_productInformationNotAvailable: typeof productInformationNotAvailable;
 declare const _________locales_en_products_json_productName: typeof productName;
+declare const _________locales_en_products_json_selectedProducts: typeof selectedProducts;
 declare const _________locales_en_products_json_stock: typeof stock;
 declare const _________locales_en_products_json_viewProduct: typeof viewProduct;
 declare namespace _________locales_en_products_json {
-  export { actions$1 as actions, _________locales_en_products_json_availability as availability, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productName as productName, search$1 as search, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, title$2 as title, _________locales_en_products_json_viewProduct as viewProduct };
+  export { actions$1 as actions, _________locales_en_products_json_availability as availability, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_noProductsSelected as noProductsSelected, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productId as productId, _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable, _________locales_en_products_json_productName as productName, search$1 as search, _________locales_en_products_json_selectedProducts as selectedProducts, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, title$2 as title, _________locales_en_products_json_viewProduct as viewProduct };
 }
 
 var title$1 = "Orders";
@@ -3111,16 +3123,16 @@ var orderDetails = "Order Details";
 var orderNumber = "Order Number";
 var orderType = {
 	label: "Order Type",
-	RENT: "Rental",
-	SALE: "Sale"
+	RENT: "RENT",
+	SALE: "SALE"
 };
 var status = {
 	label: "Status",
-	RESERVED: "Reserved",
-	PICKUPED: "Picked Up",
-	RETURNED: "Returned",
-	COMPLETED: "Completed",
-	CANCELLED: "Cancelled"
+	RESERVED: "RESERVED",
+	PICKUPED: "PICKED UP",
+	RETURNED: "RETURNED",
+	COMPLETED: "COMPLETED",
+	CANCELLED: "CANCELLED"
 };
 var customer = {
 	label: "Customer",
@@ -3152,7 +3164,53 @@ var amount = {
 	total: "Total",
 	deposit: "Deposit",
 	subtotal: "Subtotal",
-	grandTotal: "Grand Total"
+	grandTotal: "Grand Total",
+	securityDeposit: "Security Deposit",
+	damageFee: "Damage Fee",
+	collateralType: "Collateral Type",
+	collateralDetails: "Collateral Details"
+};
+var detail = {
+	orderInformation: "Order Information",
+	customerInformation: "Customer Information",
+	products: "Products",
+	orderSummary: "Order Summary",
+	orderSettings: "Order Settings",
+	orderActions: "Order Actions",
+	viewAndManage: "View and manage order information",
+	seller: "Seller",
+	orderDate: "Order Date",
+	editSettings: "Edit Settings",
+	saveChanges: "Save Changes",
+	saving: "Saving...",
+	cancel: "Cancel",
+	notes: "Notes",
+	noNotes: "No notes",
+	noDetails: "No details",
+	collateralOther: "Other",
+	editOrder: "Edit Order",
+	settingsSaved: "Settings Saved",
+	settingsSavedMessage: "Order settings have been updated successfully",
+	saveFailed: "Save Failed",
+	saveFailedMessage: "Failed to save settings. Please try again.",
+	cancelOrderTitle: "Cancel Order",
+	cancelOrderMessage: "Are you sure you want to cancel this order? This action cannot be undone.",
+	keepOrder: "Keep Order",
+	cancelling: "Cancelling...",
+	cancelSuccess: "Cancellation Successful",
+	cancelSuccessMessage: "Order has been cancelled.",
+	cancelFailed: "Cancellation Failed",
+	cancelFailedMessage: "Failed to cancel order. Please try again.",
+	editFailed: "Edit Failed",
+	editFailedMessage: "Failed to enter edit mode. Please try again.",
+	editingRules: "Editing Rules",
+	rentOrderRule: "RENT orders: Can only be edited when status is",
+	saleOrderRule: "SALE orders: Can only be edited when status is",
+	status: "Status",
+	collectionAmount: "Collection Amount",
+	collateral: "Collateral",
+	alreadyCollected: "Already collected",
+	noCollectionNeeded: "No collection needed"
 };
 var payment = {
 	subtotal: "Subtotal",
@@ -3173,12 +3231,19 @@ var actions = {
 	view: "View",
 	edit: "Edit",
 	markAsPickedUp: "Mark as Picked Up",
+	pickingUp: "Picking up...",
 	markAsReturned: "Mark as Returned",
+	returning: "Returning...",
 	markAsCompleted: "Mark as Completed",
 	cancelOrder: "Cancel Order",
 	printReceipt: "Print Receipt",
 	sendReceipt: "Send Receipt",
-	viewHistory: "View History"
+	viewHistory: "View History",
+	updateOrder: "Update Order",
+	confirmCreate: "Confirm & Create Order",
+	backToEdit: "Back to Edit",
+	orderPreview: "Order Preview",
+	reviewBeforeConfirm: "Review your order details before confirming"
 };
 var messages$1 = {
 	createSuccess: "Order created successfully",
@@ -3194,7 +3259,56 @@ var messages$1 = {
 	viewingAllOrders: "Viewing all",
 	mayBeSlow: "orders may be slow",
 	cannotEditOrder: "Only RESERVED orders can be edited",
-	errorLoadingOrders: "Error Loading Orders"
+	errorLoadingOrders: "Error Loading Orders",
+	errorLoadingOrder: "Error Loading Order",
+	orderNotFound: "Order Not Found",
+	orderNotFoundMessage: "The order you're looking for could not be found.",
+	goBack: "Go Back",
+	viewAllOrders: "View All Orders",
+	retryLoading: "Retry Loading",
+	failedToUpdateOrder: "Failed to update order",
+	failedToFetchOrder: "Failed to fetch order details",
+	errorFetchingOrder: "An error occurred while fetching order details",
+	orderIdNotFound: "Order id not found",
+	unknownError: "Unknown error",
+	orders: "Orders",
+	edit: "Edit",
+	noBarcode: "No Barcode",
+	noCategory: "No Category",
+	outOfStock: "Out of Stock",
+	lowStock: "Low Stock",
+	inStock: "In Stock",
+	error: "Error",
+	duplicateCustomer: "Duplicate Customer",
+	customerCreated: "Customer Created",
+	customerCreatedMessage: "has been created and selected.",
+	failedToCreateCustomer: "Failed to create customer",
+	processing: "Processing...",
+	updateOrder: "Update Order",
+	preview: "Preview",
+	cancel: "Cancel",
+	resetSelection: "Reset Selection",
+	removeProduct: "Remove product",
+	deposit: "Deposit",
+	product: "Product",
+	unknownProduct: "Unknown Product",
+	clearSelectedCustomer: "Clear selected customer",
+	useAddNewCustomerButton: "Use the \"Add New Customer\" button above to create one",
+	rentalPeriod: "Rental Period",
+	selectRentalPeriod: "Select rental period",
+	editOrder: "Edit Order",
+	createNewOrder: "Create New Order",
+	confirmOrder: "Confirm Order",
+	orderPreview: "Order Preview",
+	reviewOrderDetails: "Review your order details before confirming",
+	customerInformationMissing: "Customer information is missing",
+	noOrderItemsAdded: "No order items added",
+	rentalDatesNotSet: "Rental dates are not set",
+	orderTotalAmountInvalid: "Order total amount is invalid",
+	notSet: "Not set",
+	notSelected: "Not selected",
+	totalPrice: "Total Price",
+	additionalInformation: "Additional Information"
 };
 var productOrders = {
 	title: "Product Orders",
@@ -3263,6 +3377,7 @@ var orders = {
 	dates: dates,
 	items: items,
 	amount: amount,
+	detail: detail,
 	payment: payment,
 	actions: actions,
 	messages: messages$1,
@@ -3277,6 +3392,7 @@ declare const _________locales_en_orders_json_amount: typeof amount;
 declare const _________locales_en_orders_json_createOrder: typeof createOrder;
 declare const _________locales_en_orders_json_customer: typeof customer;
 declare const _________locales_en_orders_json_dates: typeof dates;
+declare const _________locales_en_orders_json_detail: typeof detail;
 declare const _________locales_en_orders_json_editOrder: typeof editOrder;
 declare const _________locales_en_orders_json_filters: typeof filters;
 declare const _________locales_en_orders_json_items: typeof items;
@@ -3289,7 +3405,7 @@ declare const _________locales_en_orders_json_search: typeof search;
 declare const _________locales_en_orders_json_status: typeof status;
 declare const _________locales_en_orders_json_viewOrder: typeof viewOrder;
 declare namespace _________locales_en_orders_json {
-  export { _________locales_en_orders_json_actions as actions, _________locales_en_orders_json_amount as amount, _________locales_en_orders_json_createOrder as createOrder, _________locales_en_orders_json_customer as customer, _________locales_en_orders_json_dates as dates, orders as default, _________locales_en_orders_json_editOrder as editOrder, _________locales_en_orders_json_filters as filters, _________locales_en_orders_json_items as items, messages$1 as messages, _________locales_en_orders_json_orderDetails as orderDetails, _________locales_en_orders_json_orderNumber as orderNumber, _________locales_en_orders_json_orderType as orderType, _________locales_en_orders_json_payment as payment, _________locales_en_orders_json_productOrders as productOrders, _________locales_en_orders_json_search as search, stats$1 as stats, _________locales_en_orders_json_status as status, title$1 as title, _________locales_en_orders_json_viewOrder as viewOrder };
+  export { _________locales_en_orders_json_actions as actions, _________locales_en_orders_json_amount as amount, _________locales_en_orders_json_createOrder as createOrder, _________locales_en_orders_json_customer as customer, _________locales_en_orders_json_dates as dates, orders as default, _________locales_en_orders_json_detail as detail, _________locales_en_orders_json_editOrder as editOrder, _________locales_en_orders_json_filters as filters, _________locales_en_orders_json_items as items, messages$1 as messages, _________locales_en_orders_json_orderDetails as orderDetails, _________locales_en_orders_json_orderNumber as orderNumber, _________locales_en_orders_json_orderType as orderType, _________locales_en_orders_json_payment as payment, _________locales_en_orders_json_productOrders as productOrders, _________locales_en_orders_json_search as search, stats$1 as stats, _________locales_en_orders_json_status as status, title$1 as title, _________locales_en_orders_json_viewOrder as viewOrder };
 }
 
 var title = "Dashboard";
@@ -3297,6 +3413,7 @@ var welcome = "Welcome back";
 var overview = "Overview";
 var stats = {
 	totalOrders: "Total Orders",
+	todayRentals: "Today's Rentals",
 	activeRentals: "Active Rentals",
 	totalRevenue: "Total Revenue",
 	totalCustomers: "Total Customers",
@@ -3318,13 +3435,44 @@ var stats = {
 	revenueGrowth: "Revenue Growth",
 	customerGrowth: "Customer Growth"
 };
+var tooltips = {
+	todayRevenue: "Total actual revenue from orders created today. Includes both rental and sales orders.",
+	todayRentals: "Number of new rental orders created today. Only counts orders with RESERVED, PICKUPED, or RETURNED status.",
+	activeRentals: "Total number of currently active rental orders. Includes all orders with PICKUPED status (currently being rented) and not yet returned.",
+	overdueReturns: "Number of rental orders that are overdue for return. Orders where the planned return date has passed but items haven't been returned yet.",
+	totalRevenue: "Total revenue from all orders in the system. Includes both rental and sales orders from the beginning until now.",
+	totalOrders: "Total number of orders created in the system. Includes all types of orders: rental, sales, and rent-to-own.",
+	totalCustomers: "Total number of customers registered in the system. Includes both individual and business customers.",
+	totalProducts: "Total number of products in inventory. Includes all products that have been added to the system.",
+	availableProducts: "Number of products currently available for rental. Excludes products that are currently being rented or have been sold.",
+	pendingOrders: "Number of orders waiting to be processed. Orders with RESERVED status that haven't been picked up yet.",
+	completedOrders: "Number of completed orders. Rental orders that have been returned or sales orders that have been delivered.",
+	futureRevenue: "Expected revenue from upcoming orders. Includes ongoing rentals and pre-booked orders.",
+	thisWeekRevenue: "Total revenue for this week. Calculated from Monday to Sunday of the current week.",
+	thisMonthRevenue: "Total revenue for this month. Calculated from the 1st to the end of the current month.",
+	thisYearRevenue: "Total revenue for this year. Calculated from January 1st to the present.",
+	customerGrowth: "Growth rate of new customers. Compared to the previous period.",
+	revenueGrowth: "Revenue growth rate. Compared to the previous period to assess business performance.",
+	productUtilization: "Product utilization rate. Percentage of products currently being rented compared to total available products."
+};
 var charts = {
 	revenueOverTime: "Revenue Over Time",
 	ordersByStatus: "Orders by Status",
 	topProducts: "Top Products",
 	customerActivity: "Customer Activity",
 	rentalTrends: "Rental Trends",
-	noData: "No data available for this period"
+	noData: "No data available for this period",
+	actualRevenue: "Actual Revenue",
+	projectedRevenue: "Projected Revenue",
+	rentalOrders: "Rental Orders",
+	ordersCount: "orders"
+};
+var chartTitles = {
+	dailyRevenue: "Daily Revenue",
+	monthlyRevenue: "Monthly Revenue",
+	yearlyRevenue: "Yearly Revenue",
+	monthlyRentals: "Monthly Rentals",
+	yearlyRentals: "Yearly Rentals"
 };
 var recentActivity = {
 	title: "Recent Activity",
@@ -3359,23 +3507,18 @@ var orderStatuses = {
 	cancelled: "Cancelled",
 	ordersCount: "orders"
 };
-var chartTitles = {
-	monthlyRevenue: "Revenue",
-	yearlyRevenue: "Revenue",
-	monthlyRentals: "Rentals",
-	yearlyRentals: "Rentals"
-};
 var dashboard = {
 	title: title,
 	welcome: welcome,
 	overview: overview,
 	stats: stats,
+	tooltips: tooltips,
 	charts: charts,
+	chartTitles: chartTitles,
 	recentActivity: recentActivity,
 	quickActions: quickActions,
 	upcomingReturns: upcomingReturns,
-	orderStatuses: orderStatuses,
-	chartTitles: chartTitles
+	orderStatuses: orderStatuses
 };
 
 declare const _________locales_en_dashboard_json_chartTitles: typeof chartTitles;
@@ -3386,10 +3529,11 @@ declare const _________locales_en_dashboard_json_quickActions: typeof quickActio
 declare const _________locales_en_dashboard_json_recentActivity: typeof recentActivity;
 declare const _________locales_en_dashboard_json_stats: typeof stats;
 declare const _________locales_en_dashboard_json_title: typeof title;
+declare const _________locales_en_dashboard_json_tooltips: typeof tooltips;
 declare const _________locales_en_dashboard_json_upcomingReturns: typeof upcomingReturns;
 declare const _________locales_en_dashboard_json_welcome: typeof welcome;
 declare namespace _________locales_en_dashboard_json {
-  export { _________locales_en_dashboard_json_chartTitles as chartTitles, _________locales_en_dashboard_json_charts as charts, dashboard as default, _________locales_en_dashboard_json_orderStatuses as orderStatuses, _________locales_en_dashboard_json_overview as overview, _________locales_en_dashboard_json_quickActions as quickActions, _________locales_en_dashboard_json_recentActivity as recentActivity, _________locales_en_dashboard_json_stats as stats, _________locales_en_dashboard_json_title as title, _________locales_en_dashboard_json_upcomingReturns as upcomingReturns, _________locales_en_dashboard_json_welcome as welcome };
+  export { _________locales_en_dashboard_json_chartTitles as chartTitles, _________locales_en_dashboard_json_charts as charts, dashboard as default, _________locales_en_dashboard_json_orderStatuses as orderStatuses, _________locales_en_dashboard_json_overview as overview, _________locales_en_dashboard_json_quickActions as quickActions, _________locales_en_dashboard_json_recentActivity as recentActivity, _________locales_en_dashboard_json_stats as stats, _________locales_en_dashboard_json_title as title, _________locales_en_dashboard_json_tooltips as tooltips, _________locales_en_dashboard_json_upcomingReturns as upcomingReturns, _________locales_en_dashboard_json_welcome as welcome };
 }
 
 var login = {
@@ -3676,6 +3820,8 @@ var periods = {
 	weekly: "Weekly",
 	monthly: "Monthly",
 	yearly: "Yearly",
+	monthlyAnalytics: "Monthly Analytics",
+	annualStrategy: "Annual Strategy",
 	dailyOperations: "Daily Operations",
 	weeklyReport: "Weekly Report",
 	monthlyReport: "Monthly Report",

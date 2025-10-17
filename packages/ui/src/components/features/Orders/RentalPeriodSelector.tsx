@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Badge, Alert, AlertDescription, DateRangePicker } from '@rentalshop/ui';
 import { PricingResolver, PricingValidator, formatCurrency } from '@rentalshop/utils';
+import { useOrderTranslations } from '@rentalshop/hooks';
 import type { Product, Merchant } from '@rentalshop/types';
 import type { PricingType } from '@rentalshop/constants';
 
@@ -23,6 +24,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
   initialStartDate,
   initialEndDate
 }) => {
+  const t = useOrderTranslations();
   // Initialize with formData values if available
   const [rentalStartAt, setRentalStartAt] = useState<Date | null>(() => 
     initialStartDate ? new Date(initialStartDate) : null
@@ -319,23 +321,14 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
 
   // Daily pricing - calendar with daily quick buttons
   const renderDailyPricing = () => renderCalendarUI(
-    'Rental Period (Daily)',
-    [
-      { value: 1, unit: 'day', label: '1 Day' },
-      { value: 3, unit: 'day', label: '3 Days' },
-      { value: 7, unit: 'day', label: '1 Week' },
-      { value: 14, unit: 'day', label: '2 Weeks' },
-    ]
+    t('messages.rentalPeriodDaily'),
+    [] // Bỏ suggest dates theo yêu cầu
   );
 
   // Weekly pricing - calendar with weekly quick buttons
   const renderWeeklyPricing = () => renderCalendarUI(
-    'Rental Period (Weekly)',
-    [
-      { value: 1, unit: 'week', label: '1 Week' },
-      { value: 2, unit: 'week', label: '2 Weeks' },
-      { value: 4, unit: 'week', label: '1 Month' },
-    ]
+    t('messages.rentalPeriodWeekly'),
+    [] // Bỏ suggest dates theo yêu cầu
   );
 
   // Render pricing UI directly based on merchant's pricing type

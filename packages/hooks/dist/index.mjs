@@ -5086,6 +5086,9 @@ function p(e3) {
     return d3 || E2 || !h2 || (E2 = true, g3(new a(s.ENVIRONMENT_FALLBACK, void 0))), o(() => E({ cache: n3, formatters: s2, getMessageFallback: c2, messages: w2, namespace: p2, onError: g3, formats: a2, locale: u2, timeZone: d3 }), [n3, s2, c2, w2, p2, g3, a2, u2, d3]);
   }({ "!": v().messages }, e3 ? `!.${e3}` : "!", "!");
 }
+function Z() {
+  return v().locale;
+}
 function I2() {
   const { formats: e3, formatters: r3, locale: t3, now: n3, onError: a2, timeZone: s2 } = v();
   return o(() => d({ formats: e3, locale: t3, now: n3, onError: a2, timeZone: s2, _formatters: r3 }), [e3, r3, n3, t3, a2, s2]);
@@ -5149,6 +5152,27 @@ function useSubscriptionTranslations() {
 }
 function useErrorTranslations() {
   return e2("errors");
+}
+
+// src/hooks/useLocale.ts
+import { useRouter, usePathname } from "next/navigation";
+import { useTransition } from "react";
+function useLocale() {
+  const locale = Z();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+  const setLocale = (newLocale) => {
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
+    startTransition(() => {
+      router.refresh();
+    });
+  };
+  return {
+    locale,
+    setLocale,
+    isPending
+  };
 }
 
 // src/hooks/useUserRole.ts
@@ -5263,10 +5287,10 @@ function useUsersData(options) {
 }
 
 // src/hooks/useOptimisticNavigation.ts
-import { useRouter } from "next/navigation";
+import { useRouter as useRouter2 } from "next/navigation";
 import { useState as useState9, useCallback as useCallback12, useRef as useRef3, useEffect as useEffect6 } from "react";
 function useOptimisticNavigation(options = {}) {
-  const router = useRouter();
+  const router = useRouter2();
   const [navigatingTo, setNavigatingTo] = useState9(null);
   const rafRef = useRef3(null);
   const timeoutRef = useRef3(null);
@@ -5567,6 +5591,7 @@ export {
   useDedupedApi,
   useErrorHandler,
   useErrorTranslations,
+  useLocale,
   useMerchantsData,
   useOptimisticNavigation,
   useOrderTranslations,

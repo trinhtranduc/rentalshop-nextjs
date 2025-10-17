@@ -143,6 +143,8 @@
     "weekly": "Weekly",
     "monthly": "Monthly",
     "yearly": "Yearly",
+    "monthlyAnalytics": "Monthly Analytics",
+    "annualStrategy": "Annual Strategy",
     "dailyOperations": "Daily Operations",
     "weeklyReport": "Weekly Report",
     "monthlyReport": "Monthly Report",

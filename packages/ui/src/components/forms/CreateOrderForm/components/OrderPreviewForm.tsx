@@ -45,6 +45,7 @@ import {
   Skeleton
 } from '@rentalshop/ui';
 import { formatCurrency } from '@rentalshop/utils';
+import { useOrderTranslations } from '@rentalshop/hooks';
 import { 
   ShoppingCart, 
   Info, 
@@ -139,6 +140,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
   subtitle = 'Review your order details before confirming',
   className = ''
 }) => {
+  const t = useOrderTranslations();
   // Calculate rental duration for rental orders
   const getRentalDuration = () => {
     if (orderData.orderType === 'RENT' && orderData.pickupPlanAt && orderData.returnPlanAt) {
@@ -157,19 +159,19 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
     const warnings = [];
     
     if (!orderData.customerId && !orderData.customerName) {
-      warnings.push('Customer information is missing');
+      warnings.push(t('messages.customerInformationMissing'));
     }
     
     if (orderData.orderItems.length === 0) {
-      warnings.push('No order items added');
+      warnings.push(t('messages.noOrderItemsAdded'));
     }
     
     if (orderData.orderType === 'RENT' && (!orderData.pickupPlanAt || !orderData.returnPlanAt)) {
-      warnings.push('Rental dates are not set');
+      warnings.push(t('messages.rentalDatesNotSet'));
     }
     
     if (orderData.totalAmount <= 0) {
-      warnings.push('Order total amount is invalid');
+      warnings.push(t('messages.orderTotalAmountInvalid'));
     }
     
     return warnings;
@@ -223,14 +225,14 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
                     <Calendar className="w-4 h-4 text-gray-500" />
                     <span className="text-sm font-medium">Pickup:</span>
                     <span className="text-sm text-gray-600">
-                      {orderData.pickupPlanAt ? new Date(orderData.pickupPlanAt).toLocaleDateString() : 'Not set'}
+                      {orderData.pickupPlanAt ? new Date(orderData.pickupPlanAt).toLocaleDateString() : t('messages.notSet')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-gray-500" />
                     <span className="text-sm font-medium">Return:</span>
                     <span className="text-sm text-gray-600">
-                      {orderData.returnPlanAt ? new Date(orderData.returnPlanAt).toLocaleDateString() : 'Not set'}
+                      {orderData.returnPlanAt ? new Date(orderData.returnPlanAt).toLocaleDateString() : t('messages.notSet')}
                     </span>
                   </div>
                   {rentalDuration > 0 && (
@@ -249,7 +251,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
                 <User className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium">Customer:</span>
                 <span className="text-sm text-gray-600">
-                  {orderData.customerName || 'Not selected'}
+                  {orderData.customerName || t('messages.notSelected')}
                 </span>
               </div>
               
@@ -301,7 +303,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
                       <TableHead>Product</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Unit Price</TableHead>
-                      <TableHead>Total Price</TableHead>
+                      <TableHead>{t('messages.totalPrice')}</TableHead>
                       {orderData.orderType === 'RENT' && <TableHead>Deposit</TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -422,7 +424,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
           <CardHeader>
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-purple-600" />
-              Additional Information
+              {t('messages.additionalInformation')}
             </CardTitle>
           </CardHeader>
           <CardContent>

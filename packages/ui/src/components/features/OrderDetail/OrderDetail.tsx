@@ -19,6 +19,7 @@ import {
   SelectValue,
   ConfirmationDialog
 } from '@rentalshop/ui';
+import { useFormattedFullDate } from '@rentalshop/utils';
 import { 
   Info, 
   Package, 
@@ -37,9 +38,18 @@ import {
   Edit,
   Calculator
 } from 'lucide-react';
-import { useFormatCurrency } from '@rentalshop/ui';
-import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
+import { useFormatCurrency, useToast } from '@rentalshop/ui';
+import { ORDER_STATUS_COLORS, ORDER_TYPE_COLORS, ORDER_TYPES, ORDER_STATUSES } from '@rentalshop/constants';
+import { useOrderTranslations } from '@rentalshop/hooks';
 import type { OrderWithDetails } from '@rentalshop/types';
+import { CollectionReturnModal } from './components/CollectionReturnModal';
+import { OrderInformation } from './components/OrderInformation';
+import { OrderProductsList } from './components/OrderProductsList';
+import { OrderSummaryCard } from './components/OrderSummaryCard';
+import { OrderSettingsCard } from './components/OrderSettingsCard';
+import { OrderActionsSection } from './components/OrderActionsSection';
+import { calculateCollectionTotal } from './utils';
+import { ordersApi } from '@rentalshop/utils';
 
 // Define OrderDetailProps interface locally
 interface OrderDetailProps {
@@ -62,11 +72,6 @@ interface SettingsForm {
   collateralDetails: string;
   notes: string;
 }
-import { useToast } from '@rentalshop/ui';
-import { ToastContainer } from '@rentalshop/ui';
-import { CollectionReturnModal } from './components/CollectionReturnModal';
-import { calculateCollectionTotal } from './utils';
-import { ordersApi } from '@rentalshop/utils';
 
 // Skeleton component for OrderDetail
 const OrderDetailSkeleton: React.FC = () => {
@@ -93,8 +98,8 @@ const OrderDetailSkeleton: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column Skeleton */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Order Information Card Skeleton - Sticky */}
-            <div className="lg:sticky lg:top-4 lg:z-10 lg:self-start">
+            {/* Order Information Card Skeleton */}
+            <div>
               <Card className="flex flex-col">
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -236,6 +241,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
   const { toastSuccess, toastError, toastInfo, removeToast } = useToast();
+  const t = useOrderTranslations();
   
   // Predefined collateral types
   const COLLATERAL_TYPES = [
@@ -422,11 +428,11 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
       
       try {
         await onSaveSettings(tempSettings);
-        toastSuccess('Settings Saved', 'Order settings have been updated successfully');
+        toastSuccess(t('detail.settingsSaved'), t('detail.settingsSavedMessage'));
         setSettingsForm(tempSettings);
         setIsEditingSettings(false);
       } catch (error) {
-        toastError('Save Failed', 'Failed to save settings. Please try again.');
+        toastError(t('detail.saveFailed'), t('detail.saveFailedMessage'));
       } finally {
         setIsSavingSettings(false);
       }
@@ -563,32 +569,29 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Order Details #{order.orderNumber}
+                {t('orderDetails')} #{order.orderNumber}
               </h1>
               <p className="text-sm text-gray-600">
-                View and manage order information
+                {t('detail.viewAndManage')}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Order Type Badge */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Order Type:</span>
+                <span className="text-sm text-gray-600">{t('orderType.label')}:</span>
                 <Badge 
-                  className={order.orderType === 'RENT' 
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                  }
+                  className={ORDER_TYPE_COLORS[order.orderType as keyof typeof ORDER_TYPE_COLORS]}
                 >
-                  {order.orderType}
+                  {t(`orderType.${order.orderType}`)}
                 </Badge>
               </div>
               {/* Order Status */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Status:</span>
+                <span className="text-sm text-gray-600">{t('status.label')}:</span>
                 <Badge 
                   className={ORDER_STATUS_COLORS[order.status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800'}
                 >
-                  {order.status}
+                  {t(`status.${order.status}`)}
                 </Badge>
               </div>
             </div>
@@ -599,506 +602,63 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-screen">
           {/* Left Column - Order Information & Products (2/3 width) */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Order Information Card - Sticky */}
-            <div className="lg:sticky lg:top-4 lg:z-10 lg:self-start">
-              <Card className="flex flex-col">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Info className="w-5 h-5" />
-                  Order Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Left Column */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Order ID:</span>
-                      <span className="text-sm font-medium">{order.orderNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Customer Name:</span>
-                      <span className="text-sm font-medium">
-                        {order.customer?.firstName} {order.customer?.lastName}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Phone:</span>
-                      <span className="text-sm font-medium">{order.customer?.phone || 'N/A'}</span>
-                    </div>
-                    {order.createdBy && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Created By:</span>
-                        <span className="text-sm font-medium">
-                          {order.createdBy?.firstName && order.createdBy?.lastName 
-                            ? `${order.createdBy.firstName} ${order.createdBy.lastName}` 
-                            : order.createdBy?.email || 'Unknown'}
-                        </span>
-                      </div>
-                    )}
-                    
-                  </div>
+            {/* Order Information Card - Using new component with translations */}
+            <OrderInformation order={order} />
 
-                  {/* Right Column */}
-                  <div className="space-y-3">
-                    {order.orderType === 'RENT' && (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Pickup Date:</span>
-                          <span className="text-sm font-medium">
-                            {order.pickupPlanAt ? new Date(order.pickupPlanAt).toLocaleDateString() : 'N/A'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Return Date:</span>
-                          <span className="text-sm font-medium">
-                            {order.returnPlanAt ? new Date(order.returnPlanAt).toLocaleDateString() : 'N/A'}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Seller:</span>
-                      <span className="text-sm font-medium">{order.outlet?.name || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Order Date:</span>
-                      <span className="text-sm font-medium">
-                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Spacer to fill remaining height */}
-                <div className="flex-1"></div>
-              </CardContent>
-              </Card>
-            </div>
-
-            {/* Products Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Products
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {order.orderItems.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500">
-                    <Package className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No products in this order</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {order.orderItems.map((item, index) => (
-                      <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="flex items-start gap-3">
-                          {/* Product Image */}
-                          <div className="flex-shrink-0">
-                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                              <Package className="w-6 h-6 text-gray-400" />
-                            </div>
-                          </div>
-                          
-                          {/* Product Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900 text-sm">
-                              {item.product?.name || 'Unknown Product'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {item.product?.name ? `Product: ${item.product.name}` : 'Unknown Product'}
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              {formatMoney(item.unitPrice)} x {item.quantity}
-                            </div>
-                            {(item as any).notes && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                Notes: {(item as any).notes || 'No notes'}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Products List - Using new component with translations */}
+            <OrderProductsList order={order} />
           </div>
 
                     {/* Right Column - Order Summary & Settings */}
-          <div className="space-y-6 lg:sticky lg:top-4 lg:self-start">
-            {/* Order Summary Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Order Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {/* Subtotal */}
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">{formatMoney(order.totalAmount || 0)}</span>
-                </div>
+          <div className="space-y-6">
+            {/* Order Summary Card - Using new component with translations */}
+            <OrderSummaryCard 
+              order={order} 
+              tempSettings={tempSettings}
+              calculateCollectionTotal={calculateCollectionTotal}
+            />
 
-                {/* Discount Display */}
-                {(order as any).discountAmount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>
-                      Discount {(order as any).discountType === 'percentage' && (order as any).discountValue 
-                        ? `(${(order as any).discountValue}%)` 
-                        : '(amount)'}:
-                    </span>
-                    <span className="font-medium">-{formatMoney((order as any).discountAmount)}</span>
-                  </div>
-                )}
-
-                {/* Deposit */}
-                {order.orderType === 'RENT' && order.depositAmount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Deposit:</span>
-                    <span className="font-medium">{formatMoney(order.depositAmount)}</span>
-                  </div>
-                )}
-
-                {/* Grand Total */}
-                <div className="flex justify-between text-lg font-bold text-green-700 pt-2 border-t border-gray-200">
-                  <span>Grand Total:</span>
-                  <span>{formatMoney(order.totalAmount || 0)}</span>
-                </div>
-
-                {/* Collection Amount - Single field for RENT orders */}
-                {order.orderType === 'RENT' && (
-                  <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
-                    <span className="text-gray-600">Collection Amount:</span>
-                    <span className={`font-medium ${
-                      order.status === 'RESERVED' ? 'text-yellow-700' : 
-                      order.status === 'PICKUPED' ? 'text-blue-700' : 
-                      'text-gray-500'
-                    }`}>
-                      {order.status === 'RESERVED' ? (
-                        <span className="flex items-center gap-2">
-                          <span>{formatMoney(calculateCollectionTotal(order, tempSettings))}</span>
-                          {tempSettings.collateralType && tempSettings.collateralType !== 'Other' && (
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                              + {tempSettings.collateralType}
-                            </span>
-                          )}
-                          {tempSettings.collateralType === 'Other' && tempSettings.collateralDetails && (
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                              + {tempSettings.collateralDetails}
-                            </span>
-                          )}
-                          {tempSettings.collateralType === 'Other' && !tempSettings.collateralDetails && (
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                              + Collateral
-                            </span>
-                          )}
-                        </span>
-                      ) : 
-                       order.status === 'PICKUPED' ? 'Already collected' : 
-                       'No collection needed'}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Order Settings Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
-                  Order Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isEditingSettings ? (
-                  <>
-                    {/* Damage Fee - Conditionally enabled based on order type and status */}
-                    <div>
-                      <Label htmlFor="damageFee" className="text-sm font-medium text-gray-700">
-                        Damage Fee
-                        {!isDamageFeeEnabled() && (
-                          <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
-                        )}
-                      </Label>
-                      <Input
-                        id="damageFee"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={tempSettings.damageFee || 0}
-                        onChange={(e) => handleSettingsChange({ damageFee: parseFloat(e.target.value) || 0 })}
-                        className="mt-1"
-                        placeholder="0"
-                        disabled={!isDamageFeeEnabled()}
+            {/* Order Settings Card - Using new component with translations */}
+            <OrderSettingsCard
+              order={order}
+              settingsForm={settingsForm}
+              tempSettings={tempSettings}
+              isEditingSettings={isEditingSettings}
+              isSavingSettings={isSavingSettings}
+              loading={loading}
+              isDamageFeeEnabled={isDamageFeeEnabled}
+              isSecurityDepositEnabled={isSecurityDepositEnabled}
+              isCollateralTypeEnabled={isCollateralTypeEnabled}
+              isCollateralDetailsEnabled={isCollateralDetailsEnabled}
+              onSettingsChange={handleSettingsChange}
+              onSaveSettings={handleSaveSettings}
+              onCancelEdit={handleCancelEdit}
+              onStartEdit={() => setIsEditingSettings(true)}
+              collateralTypes={COLLATERAL_TYPES}
                       />
                     </div>
-
-                    {/* Security Deposit - Conditionally enabled based on order type and status */}
-                    <div>
-                      <Label htmlFor="securityDeposit" className="text-sm font-medium text-gray-700">
-                        Security Deposit
-                        {!isSecurityDepositEnabled() && (
-                          <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
-                        )}
-                      </Label>
-                      <Input
-                        id="securityDeposit"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={tempSettings.securityDeposit || 0}
-                        onChange={(e) => handleSettingsChange({ securityDeposit: parseFloat(e.target.value) || 0 })}
-                        className="mt-1"
-                        placeholder="0"
-                        disabled={!isSecurityDepositEnabled()}
-                      />
                     </div>
 
-                    {/* Collateral Type - Conditionally enabled based on order type and status */}
-                    <div>
-                      <Label htmlFor="collateralType" className="text-sm font-medium text-gray-700">
-                        Collateral Type
-                        {!isCollateralTypeEnabled() && (
-                          <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
-                        )}
-                      </Label>
-                      <Select onValueChange={(value) => handleSettingsChange({ collateralType: value })} value={tempSettings.collateralType || ''} onOpenChange={() => setIsEditingSettings(true)}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select collateral type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {COLLATERAL_TYPES.map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Collateral Details - Conditionally enabled based on order type and status */}
-                    <div>
-                      <Label htmlFor="collateralDetails" className="text-sm font-medium text-gray-700">
-                        Collateral Details
-                        {!isCollateralDetailsEnabled() && (
-                          <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
-                        )}
-                      </Label>
-                      <Input
-                        id="collateralDetails"
-                        type="text"
-                        value={tempSettings.collateralDetails || ''}
-                        onChange={(e) => handleSettingsChange({ collateralDetails: e.target.value })}
-                        className="mt-1"
-                        placeholder="Enter collateral details"
-                        disabled={!isCollateralDetailsEnabled()}
-                      />
-                    </div>
-
-                    {/* Order Notes */}
-                    <div>
-                      <Label htmlFor="notes" className="text-sm font-medium text-gray-700">
-                        Order Notes
-                      </Label>
-                      <Textarea
-                        id="notes"
-                        value={tempSettings.notes || ''}
-                        onChange={(e) => handleSettingsChange({ notes: e.target.value })}
-                        rows={3}
-                        className="mt-1"
-                        placeholder="Enter order notes"
-                      />
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={handleSaveSettings}
-                        disabled={loading || isSavingSettings}
-                        className="flex-1 flex items-center gap-2"
-                      >
-                        <Save className="w-4 h-4" />
-                        {isSavingSettings ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleCancelEdit}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Display Mode */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Damage Fee:</span>
-                        <span className="text-sm font-medium">
-                          {isDamageFeeEnabled() 
-                            ? formatMoney(settingsForm.damageFee || 0)
-                            : <span className="text-gray-400 italic">Disabled</span>
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Security Deposit:</span>
-                        <span className="text-sm font-medium">
-                          {isSecurityDepositEnabled() 
-                            ? formatMoney(settingsForm.securityDeposit || 0)
-                            : <span className="text-gray-400 italic">Disabled</span>
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Collateral Type:</span>
-                        <span className="text-sm font-medium">
-                          {isCollateralTypeEnabled() 
-                            ? (settingsForm.collateralType || 'Not specified')
-                            : <span className="text-gray-400 italic">Disabled</span>
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Collateral Details:</span>
-                        <span className="text-sm font-medium">
-                          {isCollateralDetailsEnabled() 
-                            ? (settingsForm.collateralDetails || 'No details')
-                            : <span className="text-gray-400 italic">Disabled</span>
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Notes:</span>
-                        <span className="text-sm font-medium">{settingsForm.notes || 'No notes'}</span>
-                      </div>
-                    </div>
-
-                    {/* Edit Button */}
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsEditingSettings(true);
-                        // No toast for entering edit mode - this is just a UI state change
-                      }}
-                      className="w-full flex items-center gap-2 mt-4"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit Settings
-                    </Button>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Action Buttons - Bottom */}
+        {/* Action Buttons - Using new component with translations */}
         {showActions && (
-          <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">Order Actions</h3>
-              
-              {/* Actions Layout: Cancel on left, others on right */}
-              <div className="flex justify-between items-center">
-                {/* Left side - Cancel button */}
-                <div>
-                  {canCancel && (
-                    <Button
-                      variant="destructive"
-                      onClick={handleCancelOrderClick}
-                      className="px-6"
-                      disabled={isCancelLoading}
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      {isCancelLoading ? 'Cancelling...' : 'Cancel Order'}
-                    </Button>
-                  )}
-                </div>
-
-                {/* Right side - Other action buttons */}
-                <div className="flex gap-3">
-                  {/* Edit Order */}
-                  {onEdit && (
-                    <Button
-                      variant="outline"
-                      onClick={handleEditOrderWithSettings}
-                      className="px-4"
-                      disabled={!canEdit}
-                      title={
-                        !canEdit 
-                          ? isRentOrder 
-                            ? 'RENT orders can only be edited when status is RESERVED'
-                            : 'SALE orders can only be edited when status is COMPLETED'
-                          : 'Edit Order'
-                      }
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Order
-                    </Button>
-                  )}
-
-                  {/* Pickup Order - Only for RENT orders with RESERVED status */}
-                  {canPickup && (
-                    <Button
-                      variant="default"
-                      onClick={handlePickupClick}
-                      className="px-6"
-                      disabled={isPickupLoading}
-                    >
-                      <Package className="w-4 h-4 mr-2" />
-                      {isPickupLoading ? 'Picking up...' : 'Pickup Order'}
-                    </Button>
-                  )}
-
-                  {/* Return Order - Only for RENT orders with PICKUPED status */}
-                  {canReturn && (
-                    <Button
-                      variant="default"
-                      onClick={handleReturnClick}
-                      className="px-4"
-                      disabled={isReturnLoading}
-                    >
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      {isReturnLoading ? 'Returning...' : 'Return Order'}
-                    </Button>
-                  )}
-
-                  {/* Print Order - Always visible */}
-                  {canPrint && (
-                    <Button
-                      variant="outline"
-                      onClick={handlePrintOrder}
-                      className="px-4"
-                    >
-                      <Printer className="w-4 h-4 mr-2" />
-                      Print Order
-                    </Button>
-                  )}
-                </div>
-              </div>
-              
-              {/* Edit Rules Information */}
-              <div className="mt-3 text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div className="flex items-start gap-2">
-                  <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-700 mb-1">Editing Rules:</p>
-                    <ul className="space-y-1 text-gray-600">
-                      <li>• <strong>RENT orders</strong>: Can only be edited when status is <span className="font-mono bg-blue-100 px-1 rounded">RESERVED</span></li>
-                      <li>• <strong>SALE orders</strong>: Can only be edited when status is <span className="font-mono bg-green-100 px-1 rounded">COMPLETED</span></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <OrderActionsSection
+            order={order}
+            canEdit={canEdit}
+            canCancel={canCancel}
+            canPickup={canPickup}
+            canReturn={canReturn}
+            canPrint={canPrint}
+            isRentOrder={isRentOrder}
+            isSaleOrder={isSaleOrder}
+            isPickupLoading={isPickupLoading}
+            isReturnLoading={isReturnLoading}
+            isCancelLoading={isCancelLoading}
+            onEdit={handleEditOrderWithSettings}
+            onCancel={handleCancelOrderClick}
+            onPickup={handlePickupClick}
+            onReturn={handleReturnClick}
+            onPrint={handlePrintOrder}
+          />
         )}
       
       {/* Collection Modal */}
@@ -1126,10 +686,10 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         open={showCancelConfirmDialog}
         onOpenChange={setShowCancelConfirmDialog}
         type="danger"
-        title="Cancel Order"
-        description={`Are you sure you want to cancel order #${order.orderNumber}? This action cannot be undone.`}
-        confirmText="Cancel Order"
-        cancelText="Keep Order"
+        title={t('detail.cancelOrderTitle')}
+        description={t('detail.cancelOrderMessage')}
+        confirmText={t('actions.cancelOrder')}
+        cancelText={t('detail.keepOrder')}
         onConfirm={handleCancelOrder}
         onCancel={() => setShowCancelConfirmDialog(false)}
         isLoading={isCancelLoading}

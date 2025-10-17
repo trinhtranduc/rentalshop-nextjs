@@ -21,6 +21,7 @@ export * from './hooks/useSubscriptionStatusInfo';
 export * from './hooks/useThrottledSearch';
 export * from './hooks/useToast';
 export * from './hooks/useTranslation';
+export * from './hooks/useLocale';
 export * from './hooks/useUserRole';
 export * from './hooks/useUsersData';
 export * from './hooks/useOptimisticNavigation';

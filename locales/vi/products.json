@@ -137,6 +137,10 @@
     "availableProducts": "Có sẵn",
     "rentedProducts": "Đang thuê",
     "totalValue": "Tổng giá trị kho"
-  }
+  },
+  "selectedProducts": "Sản phẩm đã chọn",
+  "noProductsSelected": "Chưa chọn sản phẩm nào",
+  "productInformationNotAvailable": "Thông tin sản phẩm không có sẵn",
+  "productId": "ID sản phẩm"
 }
 
