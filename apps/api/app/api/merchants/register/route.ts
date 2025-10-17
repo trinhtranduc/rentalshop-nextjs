@@ -38,43 +38,56 @@ export async function POST(request: NextRequest) {
     // Get default pricing config based on business type
     const pricingConfig = getDefaultPricingConfig(validatedData.businessType as BusinessType);
     
-    // Register merchant with complete setup
-    const merchant = await db.merchants.create({
-      name: validatedData.merchantName,
-      email: validatedData.merchantEmail,
-      phone: validatedData.merchantPhone,
-      description: validatedData.merchantDescription,
-      currency: validatedData.currency,
-      businessType: validatedData.businessType,
-      pricingType: validatedData.pricingType,
-      pricingConfig: JSON.stringify(pricingConfig),
-      address: validatedData.outletAddress || 'Address to be updated',
-      city: 'City to be updated',
-      state: 'State to be updated',
-      zipCode: '00000',
-      country: 'US'
+    // Use transaction for atomic creation
+    const result = await db.prisma.$transaction(async (tx) => {
+      // Register merchant with complete setup
+      const merchant = await tx.merchant.create({
+        data: {
+          name: validatedData.merchantName,
+          email: validatedData.merchantEmail,
+          phone: validatedData.merchantPhone,
+          description: validatedData.merchantDescription,
+          currency: validatedData.currency,
+          businessType: validatedData.businessType,
+          pricingType: validatedData.pricingType,
+          pricingConfig: JSON.stringify(pricingConfig),
+          address: validatedData.outletAddress || 'Address to be updated',
+          city: 'City to be updated',
+          state: 'State to be updated',
+          zipCode: '00000',
+          country: 'US'
+        }
+      });
+
+      // Create merchant owner user
+      const user = await tx.user.create({
+        data: {
+          email: validatedData.userEmail,
+          password: validatedData.userPassword,
+          firstName: validatedData.userFirstName,
+          lastName: validatedData.userLastName,
+          phone: validatedData.userPhone,
+          role: 'MERCHANT',
+          merchantId: merchant.id
+        }
+      });
+
+      // Create default outlet
+      const outlet = await tx.outlet.create({
+        data: {
+          name: validatedData.outletName || `${merchant.name} - Main Store`,
+          address: validatedData.outletAddress || merchant.address || 'Address to be updated',
+          phone: validatedData.userPhone || merchant.phone,
+          description: 'Default outlet created during merchant setup',
+          merchantId: merchant.id,
+          isDefault: true
+        }
+      });
+
+      return { merchant, user, outlet };
     });
 
-    // Create merchant owner user
-    const user = await db.users.create({
-      email: validatedData.userEmail,
-      password: validatedData.userPassword,
-      firstName: validatedData.userFirstName,
-      lastName: validatedData.userLastName,
-      phone: validatedData.userPhone,
-      role: 'MERCHANT',
-      merchantId: merchant.id
-    });
-
-    // Create default outlet
-    const outlet = await db.outlets.create({
-      name: validatedData.outletName || `${merchant.name} - Main Store`,
-      address: validatedData.outletAddress || merchant.address || 'Address to be updated',
-      phone: validatedData.userPhone || merchant.phone,
-      description: 'Default outlet created during merchant setup',
-      merchantId: merchant.id,
-      isDefault: true
-    });
+    const { merchant, user, outlet } = result;
 
     // Get free trial plan
     const trialPlan = await db.plans.findById(1); // Assuming plan ID 1 is free trial
