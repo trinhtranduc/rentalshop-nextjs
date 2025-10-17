@@ -142,7 +142,8 @@ describe('PricingResolver', () => {
       expect(result.rentalDays).toBe(3);
     });
 
-    it('should calculate weekly pricing correctly', () => {
+    // WEEKLY pricing has been removed - test skipped
+    it.skip('should calculate weekly pricing correctly', () => {
       const weeklyMerchant = {
         ...mockMerchant,
         pricingConfig: {

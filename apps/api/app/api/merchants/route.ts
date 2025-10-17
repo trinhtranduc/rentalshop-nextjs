@@ -239,13 +239,35 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
       );
     }
 
-    // Check if email already exists
-    const existingMerchant = await db.merchants.findByEmail(email);
+    // Check for duplicate email or phone
+    const duplicateConditions = [];
+    
+    if (email) {
+      duplicateConditions.push({ email: email });
+    }
+    
+    if (phone) {
+      duplicateConditions.push({ phone: phone });
+    }
+
+    const existingMerchant = await db.merchants.findFirst({
+      where: {
+        OR: duplicateConditions
+      }
+    });
 
     if (existingMerchant) {
+      const duplicateField = existingMerchant.email === email ? 'email' : 'phone number';
+      const duplicateValue = existingMerchant.email === email ? email : phone;
+      
+      console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_EXISTS'),
-        { status: 400 }
+        {
+          success: false,
+          code: 'MERCHANT_DUPLICATE',
+          message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+        },
+        { status: 409 }
       );
     }
 

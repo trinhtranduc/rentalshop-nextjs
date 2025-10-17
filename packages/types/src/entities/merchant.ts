@@ -31,7 +31,7 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   email: string;
   description?: string;
   businessType?: string;
-  pricingType?: string; // FIXED, HOURLY, DAILY, WEEKLY
+  pricingType?: string; // FIXED, HOURLY, DAILY
   taxId?: string;
   currency: string; // Currency code (USD, VND)
   isActive: boolean;
@@ -124,6 +124,8 @@ export interface MerchantCreateInput extends BaseFormInput {
   phone?: string;
   description?: string;
   currency?: string; // Currency code (USD, VND), defaults to USD
+  businessType?: string; // Business type (CLOTHING, VEHICLE, EQUIPMENT, GENERAL)
+  pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
   planId?: number;
   isActive?: boolean;
 }
@@ -141,7 +143,8 @@ export interface MerchantUpdateInput extends BaseUpdateInput {
   state?: string;
   zipCode?: string;
   country?: string;
-  businessType?: string;
+  businessType?: string; // Business type (CLOTHING, VEHICLE, EQUIPMENT, GENERAL)
+  pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
   taxId?: number;
   currency?: string; // Currency code (USD, VND)
   isActive?: boolean;
@@ -260,40 +263,8 @@ export interface MerchantFilters {
 // ============================================================================
 // PRICING CONFIGURATION TYPES
 // ============================================================================
+// Import types from constants package to avoid duplication
+import type { BusinessType, PricingType, PricingBusinessRules, PricingDurationLimits, MerchantPricingConfig } from '@rentalshop/constants';
 
-/**
- * Pricing type enumeration
- */
-export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
-
-/**
- * Business type enumeration
- */
-export type BusinessType = 'CLOTHING'| 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-
-/**
- * Business rules for pricing
- */
-export interface PricingBusinessRules {
-  requireRentalDates: boolean;      // Bắt buộc chọn dates cho time-based pricing
-  showPricingOptions: boolean;      // Hiển thị pricing options cho customer
-}
-
-/**
- * Duration limits for time-based pricing
- */
-export interface PricingDurationLimits {
-  minDuration: number;              // Thời gian thuê tối thiểu
-  maxDuration: number;              // Thời gian thuê tối đa
-  defaultDuration: number;          // Thời gian mặc định
-}
-
-/**
- * Merchant pricing configuration
- */
-export interface MerchantPricingConfig {
-  businessType: BusinessType;       // Loại hình kinh doanh
-  defaultPricingType: PricingType;  // Pricing type mặc định
-  businessRules: PricingBusinessRules;
-  durationLimits: PricingDurationLimits;
-}
+// Re-export for backward compatibility
+export type { BusinessType, PricingType, PricingBusinessRules, PricingDurationLimits, MerchantPricingConfig };

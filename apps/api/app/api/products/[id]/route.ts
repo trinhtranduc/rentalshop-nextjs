@@ -142,6 +142,30 @@ export async function PUT(
         throw new Error('Product not found');
       }
 
+      // Check for duplicate product name if name is being updated
+      if (validatedData.name && validatedData.name !== existingProduct.name) {
+        const duplicateProduct = await db.products.findFirst({
+          where: {
+            name: validatedData.name,
+            merchantId: userMerchantId,
+            isActive: true,
+            id: { not: productId }
+          }
+        });
+
+        if (duplicateProduct) {
+          console.log('❌ Product name already exists:', validatedData.name);
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'PRODUCT_NAME_EXISTS',
+              message: `A product with the name "${validatedData.name}" already exists. Please choose a different name.`
+            },
+            { status: 409 }
+          );
+        }
+      }
+
       // Update the product using the simplified database API
       const updatedProduct = await db.products.update(productId, validatedData);
       console.log('✅ Product updated successfully:', updatedProduct);

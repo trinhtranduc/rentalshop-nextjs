@@ -702,7 +702,7 @@ declare function validatePlanConfig(plan: PlanConfig): {
 };
 
 type BusinessType = 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
+type PricingType = 'FIXED' | 'HOURLY' | 'DAILY';
 interface BusinessTypeOption {
     value: BusinessType;
     label: string;
@@ -743,7 +743,6 @@ declare const PRICING_TYPE_LABELS: {
     readonly FIXED: "Fixed Price";
     readonly HOURLY: "Hourly";
     readonly DAILY: "Daily";
-    readonly WEEKLY: "Weekly";
 };
 /**
  * Human-readable labels for business types
@@ -761,7 +760,6 @@ declare const PRICING_TYPE_DESCRIPTIONS: {
     readonly FIXED: "One price per rental (e.g., equipment rental)";
     readonly HOURLY: "Price per hour (e.g., vehicles, tools)";
     readonly DAILY: "Price per day (e.g., construction equipment)";
-    readonly WEEKLY: "Price per week (e.g., long-term rentals)";
 };
 /**
  * Descriptions for business types

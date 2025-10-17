@@ -172,6 +172,41 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
 
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
+    // Check for duplicate phone or email within the same merchant
+    if (parsed.data.phone || parsed.data.email) {
+      const duplicateConditions = [];
+      
+      if (parsed.data.phone) {
+        duplicateConditions.push({ phone: parsed.data.phone });
+      }
+      
+      if (parsed.data.email) {
+        duplicateConditions.push({ email: parsed.data.email });
+      }
+
+      const duplicateCustomer = await db.customers.findFirst({
+        where: {
+          merchantId: merchantId,
+          OR: duplicateConditions
+        }
+      });
+
+      if (duplicateCustomer) {
+        const duplicateField = duplicateCustomer.phone === parsed.data.phone ? 'phone number' : 'email';
+        const duplicateValue = duplicateCustomer.phone === parsed.data.phone ? parsed.data.phone : parsed.data.email;
+        
+        console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'CUSTOMER_DUPLICATE',
+            message: `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Check plan limits before creating customer
     try {
       await assertPlanLimit(merchantId, 'customers');
@@ -276,6 +311,44 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         ResponseBuilder.error('FORBIDDEN'),
         { status: 403 }
       );
+    }
+
+    // Check for duplicate phone or email if being updated
+    if (parsed.data.phone || parsed.data.email) {
+      const duplicateConditions = [];
+      
+      if (parsed.data.phone && parsed.data.phone !== existingCustomer.phone) {
+        duplicateConditions.push({ phone: parsed.data.phone });
+      }
+      
+      if (parsed.data.email && parsed.data.email !== existingCustomer.email) {
+        duplicateConditions.push({ email: parsed.data.email });
+      }
+
+      if (duplicateConditions.length > 0) {
+        const duplicateCustomer = await db.customers.findFirst({
+          where: {
+            merchantId: existingCustomer.merchantId,
+            OR: duplicateConditions,
+            id: { not: id }
+          }
+        });
+
+        if (duplicateCustomer) {
+          const duplicateField = duplicateCustomer.phone === parsed.data.phone ? 'phone number' : 'email';
+          const duplicateValue = duplicateCustomer.phone === parsed.data.phone ? parsed.data.phone : parsed.data.email;
+          
+          console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'CUSTOMER_DUPLICATE',
+              message: `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+            },
+            { status: 409 }
+          );
+        }
+      }
     }
 
     console.log('🔍 Updating customer with data:', { id, ...parsed.data });

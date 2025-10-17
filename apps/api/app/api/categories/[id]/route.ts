@@ -240,6 +240,19 @@ export async function DELETE(
       );
     }
 
+    // Prevent deleting default category
+    if (existingCategory.name === 'General') {
+      console.log('❌ Cannot delete default category:', existingCategory.name);
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'CANNOT_DELETE_DEFAULT_CATEGORY',
+          message: 'Cannot delete the default "General" category. This category was created during registration and must remain active.'
+        },
+        { status: 400 }
+      );
+    }
+
     // Check if category has products (simplified check)
     const productCount = await db.products.getStats({
       where: { categoryId: categoryId }

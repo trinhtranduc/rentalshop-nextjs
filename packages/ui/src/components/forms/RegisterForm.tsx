@@ -40,7 +40,7 @@ interface RegisterFormData {
   businessName: string;
   // Business configuration (locked after registration)
   businessType: 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-  pricingType: 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
+  pricingType: 'FIXED' | 'HOURLY' | 'DAILY';
   address: string;
   city: string;
   state: string;
@@ -105,7 +105,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       .oneOf(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL'], t('register.businessTypeRequired'))
       .required(t('register.businessTypeRequired')),
     pricingType: Yup.string()
-      .oneOf(['FIXED', 'HOURLY', 'DAILY', 'WEEKLY'], t('register.pricingTypeRequired'))
+      .oneOf(['FIXED', 'HOURLY', 'DAILY'], t('register.pricingTypeRequired'))
       .required(t('register.pricingTypeRequired')),
     address: Yup.string()
       .min(5, t('register.addressMinLength'))
@@ -236,8 +236,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   });
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <Card className="shadow-lg">
+    <div className="w-full max-w-md mx-auto relative z-10">
+      <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-gray-900">
             {t('register.createMerchantAccount')}
@@ -514,8 +514,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                           {BUSINESS_TYPE_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               <div className="flex flex-col items-start">
-                                <span className="font-medium">{option.label}</span>
-                                <span className="text-xs text-gray-500">{option.description}</span>
+                                <span className="font-medium">
+                                  {t(`register.businessTypes.${option.value.toLowerCase()}.label`)}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {t(`register.businessTypes.${option.value.toLowerCase()}.description`)}
+                                </span>
                               </div>
                             </SelectItem>
                           ))}
@@ -542,8 +546,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                           {PRICING_TYPE_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               <div className="flex flex-col items-start">
-                                <span className="font-medium">{option.label}</span>
-                                <span className="text-xs text-gray-500">{option.description}</span>
+                                <span className="font-medium">
+                                  {t(`register.pricingTypes.${option.value.toLowerCase()}.label`)}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {t(`register.pricingTypes.${option.value.toLowerCase()}.description`)}
+                                </span>
                               </div>
                             </SelectItem>
                           ))}
