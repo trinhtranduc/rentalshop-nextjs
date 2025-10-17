@@ -23,6 +23,7 @@ export const findById = async (id: number) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -40,6 +41,7 @@ export const findFirst = async (where: any) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -59,6 +61,7 @@ export const findMany = async (options: any = {}) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true,
       ...select
@@ -80,6 +83,7 @@ export const create = async (data: any) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -98,6 +102,7 @@ export const update = async (id: number, data: any) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -116,6 +121,7 @@ export const deleteCategory = async (id: number) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -169,6 +175,7 @@ export const search = async (filters: any) => {
         name: true,
         description: true,
         isActive: true,
+        isDefault: true,
         createdAt: true,
         updatedAt: true,
         _count: {
