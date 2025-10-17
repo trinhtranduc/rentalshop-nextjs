@@ -185,10 +185,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       }
 
       const duplicateCustomer = await db.customers.findFirst({
-        where: {
-          merchantId: merchantId,
-          OR: duplicateConditions
-        }
+        merchantId: merchantId,
+        OR: duplicateConditions
       });
 
       if (duplicateCustomer) {
@@ -327,11 +325,9 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
       if (duplicateConditions.length > 0) {
         const duplicateCustomer = await db.customers.findFirst({
-          where: {
-            merchantId: existingCustomer.merchantId,
-            OR: duplicateConditions,
-            id: { not: id }
-          }
+          merchantId: existingCustomer.merchantId,
+          OR: duplicateConditions,
+          id: { not: id }
         });
 
         if (duplicateCustomer) {

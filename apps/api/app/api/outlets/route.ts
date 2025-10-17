@@ -137,11 +137,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
 
     // Check for duplicate outlet name within the same merchant
     const existingOutlet = await db.outlets.findFirst({
-      where: {
-        name: parsed.data.name,
-        merchantId: merchantId,
-        isActive: true
-      }
+      name: parsed.data.name,
+      merchantId: merchantId,
+      isActive: true
     });
 
     if (existingOutlet) {
@@ -271,12 +269,10 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
     // Check for duplicate outlet name if name is being updated
     if (parsed.data.name && parsed.data.name !== existingOutlet.name) {
       const duplicateOutlet = await db.outlets.findFirst({
-        where: {
-          name: parsed.data.name,
-          merchantId: existingOutlet.merchantId,
-          isActive: true,
-          id: { not: id }
-        }
+        name: parsed.data.name,
+        merchantId: existingOutlet.merchantId,
+        isActive: true,
+        id: { not: id }
       });
 
       if (duplicateOutlet) {

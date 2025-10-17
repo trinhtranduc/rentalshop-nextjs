@@ -137,11 +137,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
 
     // Check for duplicate product name within the same merchant
     const existingProduct = await db.products.findFirst({
-      where: {
-        name: parsed.data.name,
-        merchantId: userScope.merchantId,
-        isActive: true
-      }
+      name: parsed.data.name,
+      merchantId: userScope.merchantId,
+      isActive: true
     });
 
     if (existingProduct) {
