@@ -144,6 +144,14 @@ export async function PUT(
       );
     }
 
+    // Check if trying to deactivate default category
+    if (isActive === false && existingCategory.isDefault) {
+      return NextResponse.json(
+        ResponseBuilder.error('CANNOT_DELETE_DEFAULT_CATEGORY'),
+        { status: API.STATUS.CONFLICT }
+      );
+    }
+
     // Check if new name conflicts with existing category (excluding current one)
     const nameConflict = await db.categories.findFirst({
       where: {
@@ -165,6 +173,12 @@ export async function PUT(
       name: name.trim(),
       isActive: isActive !== undefined ? isActive : existingCategory.isActive
     };
+
+    // Only update isActive if it's not the default category
+    if (existingCategory.isDefault && 'isActive' in updateData) {
+      delete updateData.isActive;
+      console.log('🔍 Removed isActive from update data for default category');
+    }
 
     // Only update description if it has a value
     if (description && description.trim()) {
@@ -241,13 +255,13 @@ export async function DELETE(
     }
 
     // Prevent deleting default category
-    if (existingCategory.name === 'General') {
+    if (existingCategory.isDefault) {
       console.log('❌ Cannot delete default category:', existingCategory.name);
       return NextResponse.json(
         {
           success: false,
           code: 'CANNOT_DELETE_DEFAULT_CATEGORY',
-          message: 'Cannot delete the default "General" category. This category was created during registration and must remain active.'
+          message: 'Cannot delete the default category. This category was created during registration and must remain active.'
         },
         { status: 400 }
       );
