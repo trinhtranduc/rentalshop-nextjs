@@ -240,7 +240,7 @@ jspm_packages/
 .vscode-test
 
 # Prisma
-prisma/migrations/
+# prisma/migrations/  ← REMOVED: We need to track migrations!
 prisma/dev.db
 prisma/dev.db-journal
 
