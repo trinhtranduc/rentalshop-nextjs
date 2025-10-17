@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       }
 
       // ALL CHECKS PASSED - Start transaction for atomic creation
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await db.prisma.$transaction(async (tx) => {
         // 3. Create merchant with business configuration
         console.log('Creating merchant with data:', {
           name: validatedData.businessName,
