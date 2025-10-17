@@ -504,7 +504,7 @@ var require_react_is_development = __commonJS({
         var ContextProvider = REACT_PROVIDER_TYPE;
         var Element2 = REACT_ELEMENT_TYPE2;
         var ForwardRef = REACT_FORWARD_REF_TYPE;
-        var Fragment52 = REACT_FRAGMENT_TYPE;
+        var Fragment53 = REACT_FRAGMENT_TYPE;
         var Lazy = REACT_LAZY_TYPE;
         var Memo = REACT_MEMO_TYPE;
         var Portal3 = REACT_PORTAL_TYPE;
@@ -563,7 +563,7 @@ var require_react_is_development = __commonJS({
         exports2.ContextProvider = ContextProvider;
         exports2.Element = Element2;
         exports2.ForwardRef = ForwardRef;
-        exports2.Fragment = Fragment52;
+        exports2.Fragment = Fragment53;
         exports2.Lazy = Lazy;
         exports2.Memo = Memo;
         exports2.Portal = Portal3;
@@ -30631,7 +30631,10 @@ function CategoryTable({
             "#",
             category.id
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("div", { className: "text-sm font-medium text-gray-900 dark:text-gray-100", children: category.name }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("div", { className: "text-sm", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("div", { className: "font-medium text-gray-900 dark:text-gray-100", children: category.name }),
+            category.isDefault && /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(Badge, { className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs", children: t2("labels.default") })
+          ] }) }) }),
           /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("td", { className: "px-6 py-4 text-sm text-gray-500 dark:text-gray-400", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("div", { className: "max-w-xs truncate", children: category.description || "N/A" }) }),
           /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400", children: formatDate11(category.createdAt) }),
           /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(DropdownMenu, { children: [
@@ -30680,21 +30683,23 @@ function CategoryTable({
                       ]
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(DropdownMenuSeparator, {}),
-                  /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(
-                    DropdownMenuItem,
-                    {
-                      onClick: () => {
-                        onCategoryAction("delete", category.id);
-                        setOpenDropdownId(null);
-                      },
-                      className: "cursor-pointer text-red-600 dark:text-red-400",
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react89.Trash2, { className: "mr-2 h-4 w-4" }),
-                        t2("actions.delete")
-                      ]
-                    }
-                  )
+                  !category.isDefault && /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(import_jsx_runtime180.Fragment, { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(DropdownMenuSeparator, {}),
+                    /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(
+                      DropdownMenuItem,
+                      {
+                        onClick: () => {
+                          onCategoryAction("delete", category.id);
+                          setOpenDropdownId(null);
+                        },
+                        className: "cursor-pointer text-red-600 dark:text-red-400",
+                        children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(import_lucide_react89.Trash2, { className: "mr-2 h-4 w-4" }),
+                          t2("actions.delete")
+                        ]
+                      }
+                    )
+                  ] })
                 ]
               }
             )

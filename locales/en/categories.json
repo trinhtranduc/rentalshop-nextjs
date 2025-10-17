@@ -11,6 +11,9 @@
     "active": "Active",
     "inactive": "Inactive"
   },
+  "labels": {
+    "default": "Default"
+  },
   "status": {
     "active": "Active",
     "inactive": "Inactive"

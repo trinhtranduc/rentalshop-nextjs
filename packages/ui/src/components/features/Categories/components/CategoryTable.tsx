@@ -140,8 +140,17 @@ export function CategoryTable({
                   #{category.id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {category.name}
+                  <div className="text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {category.name}
+                      </div>
+                      {category.isDefault && (
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                          {t('labels.default')}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -218,18 +227,22 @@ export function CategoryTable({
                         )}
                       </DropdownMenuItem> */}
                       
-                      <DropdownMenuSeparator />
-                      
-                      <DropdownMenuItem
-                        onClick={() => {
-                          onCategoryAction('delete', category.id);
-                          setOpenDropdownId(null);
-                        }}
-                        className="cursor-pointer text-red-600 dark:text-red-400"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t('actions.delete')}
-                      </DropdownMenuItem>
+                      {/* Only show delete for non-default categories */}
+                      {!category.isDefault && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              onCategoryAction('delete', category.id);
+                              setOpenDropdownId(null);
+                            }}
+                            className="cursor-pointer text-red-600 dark:text-red-400"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {t('actions.delete')}
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>
