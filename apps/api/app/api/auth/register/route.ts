@@ -128,16 +128,17 @@ export async function POST(request: NextRequest) {
 
         console.log('✅ Step 2 Complete: Outlet created:', { id: outlet.id, name: outlet.name });
 
-        // 5. Create default category
-        console.log('📝 Step 3: Creating default category...');
-        
-        const category = await tx.category.create({
-          data: {
-            name: 'General',
-            description: 'Default category for general products',
-            merchantId: merchant.id
-          }
-        });
+               // 5. Create default category
+               console.log('📝 Step 3: Creating default category...');
+               
+               const category = await tx.category.create({
+                 data: {
+                   name: 'General',
+                   description: 'Default category for general products',
+                   merchantId: merchant.id,
+                   isDefault: true
+                 }
+               });
 
         console.log('✅ Step 3 Complete: Category created:', { id: category.id, name: category.name });
 
