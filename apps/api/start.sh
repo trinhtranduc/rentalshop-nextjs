@@ -85,6 +85,10 @@ echo "✅ Currency columns setup completed"
 echo "🔄 Ensuring Prisma Client is generated..."
 npx prisma generate --schema=../../prisma/schema.prisma
 
+# ✨ Run database migrations (apply all pending migrations)
+echo "📦 Running database migrations..."
+npx prisma migrate deploy --schema=../../prisma/schema.prisma || echo "⚠️ Migration failed or already applied"
+
 # Start Next.js server
 echo "🌐 Starting Next.js server on port 3002..."
 exec ../../node_modules/.bin/next start -p 3002
