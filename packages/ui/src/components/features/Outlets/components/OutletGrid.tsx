@@ -113,6 +113,17 @@ export function OutletGrid({
                 <Edit className="w-4 h-4 mr-1" />
                 Edit
               </Button>
+              {/* Only show disable/enable for non-default outlets */}
+              {!outlet.isDefault && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id)}
+                  className="flex-1"
+                >
+                  {outlet.isActive ? 'Disable' : 'Enable'}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

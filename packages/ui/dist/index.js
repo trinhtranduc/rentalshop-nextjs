@@ -504,7 +504,7 @@ var require_react_is_development = __commonJS({
         var ContextProvider = REACT_PROVIDER_TYPE;
         var Element2 = REACT_ELEMENT_TYPE2;
         var ForwardRef = REACT_FORWARD_REF_TYPE;
-        var Fragment51 = REACT_FRAGMENT_TYPE;
+        var Fragment52 = REACT_FRAGMENT_TYPE;
         var Lazy = REACT_LAZY_TYPE;
         var Memo = REACT_MEMO_TYPE;
         var Portal3 = REACT_PORTAL_TYPE;
@@ -563,7 +563,7 @@ var require_react_is_development = __commonJS({
         exports2.ContextProvider = ContextProvider;
         exports2.Element = Element2;
         exports2.ForwardRef = ForwardRef;
-        exports2.Fragment = Fragment51;
+        exports2.Fragment = Fragment52;
         exports2.Lazy = Lazy;
         exports2.Memo = Memo;
         exports2.Portal = Portal3;
@@ -29568,6 +29568,16 @@ function OutletGrid({
               "Edit"
             ]
           }
+        ),
+        !outlet.isDefault && /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(
+          import_ui110.Button,
+          {
+            variant: "outline",
+            size: "sm",
+            onClick: () => onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id),
+            className: "flex-1",
+            children: outlet.isActive ? "Disable" : "Enable"
+          }
         )
       ] })
     ] })
@@ -29659,7 +29669,10 @@ function OutletTable({
         "#",
         outlet.id
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("div", { className: "text-sm", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: outlet.name }) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("div", { className: "text-sm", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: outlet.name }),
+        outlet.isDefault && /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(Badge, { className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs", children: t2("labels.default") })
+      ] }) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: outlet.address || t2("fields.notAvailable") }) }),
       /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: outlet.phone || t2("fields.notAvailable") }) }),
       /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: getStatusBadge(outlet.isActive) }),
@@ -29696,13 +29709,15 @@ function OutletTable({
                 /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.Edit, { className: "h-4 w-4 mr-2" }),
                 t2("actions.editOutlet")
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(DropdownMenuSeparator, {}),
-              /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(DropdownMenuItem, { onClick: () => {
-                onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id);
-                setOpenDropdownId(null);
-              }, children: [
-                outlet.isActive ? /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.XCircle, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.CheckCircle, { className: "h-4 w-4 mr-2" }),
-                outlet.isActive ? t2("actions.disableOutlet") : t2("actions.enableOutlet")
+              !outlet.isDefault && /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(import_jsx_runtime168.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(DropdownMenuSeparator, {}),
+                /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(DropdownMenuItem, { onClick: () => {
+                  onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id);
+                  setOpenDropdownId(null);
+                }, children: [
+                  outlet.isActive ? /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.XCircle, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.CheckCircle, { className: "h-4 w-4 mr-2" }),
+                  outlet.isActive ? t2("actions.disableOutlet") : t2("actions.enableOutlet")
+                ] })
               ] })
             ]
           }

@@ -145,8 +145,15 @@ export function OutletTable({
                 {/* Name */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {outlet.name}
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {outlet.name}
+                      </div>
+                      {outlet.isDefault && (
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                          {t('labels.default')}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -209,14 +216,20 @@ export function OutletTable({
                         <Edit className="h-4 w-4 mr-2" />
                         {t('actions.editOutlet')}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => {
-                        onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        {outlet.isActive ? <XCircle className="h-4 w-4 mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                        {outlet.isActive ? t('actions.disableOutlet') : t('actions.enableOutlet')}
-                      </DropdownMenuItem>
+                      
+                      {/* Only show enable/disable for non-default outlets */}
+                      {!outlet.isDefault && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => {
+                            onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id);
+                            setOpenDropdownId(null);
+                          }}>
+                            {outlet.isActive ? <XCircle className="h-4 w-4 mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                            {outlet.isActive ? t('actions.disableOutlet') : t('actions.enableOutlet')}
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>

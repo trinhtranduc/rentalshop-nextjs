@@ -498,7 +498,7 @@ var require_react_is_development = __commonJS({
         var ContextProvider = REACT_PROVIDER_TYPE;
         var Element2 = REACT_ELEMENT_TYPE2;
         var ForwardRef = REACT_FORWARD_REF_TYPE;
-        var Fragment51 = REACT_FRAGMENT_TYPE;
+        var Fragment52 = REACT_FRAGMENT_TYPE;
         var Lazy = REACT_LAZY_TYPE;
         var Memo = REACT_MEMO_TYPE;
         var Portal3 = REACT_PORTAL_TYPE;
@@ -557,7 +557,7 @@ var require_react_is_development = __commonJS({
         exports2.ContextProvider = ContextProvider;
         exports2.Element = Element2;
         exports2.ForwardRef = ForwardRef;
-        exports2.Fragment = Fragment51;
+        exports2.Fragment = Fragment52;
         exports2.Lazy = Lazy;
         exports2.Memo = Memo;
         exports2.Portal = Portal3;
@@ -29736,6 +29736,16 @@ function OutletGrid({
               "Edit"
             ]
           }
+        ),
+        !outlet.isDefault && /* @__PURE__ */ jsx166(
+          Button45,
+          {
+            variant: "outline",
+            size: "sm",
+            onClick: () => onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id),
+            className: "flex-1",
+            children: outlet.isActive ? "Disable" : "Enable"
+          }
         )
       ] })
     ] })
@@ -29746,7 +29756,7 @@ function OutletGrid({
 import React93 from "react";
 import { Eye as Eye16, Edit as Edit12, XCircle as XCircle13, CheckCircle as CheckCircle18, MoreVertical as MoreVertical6, Building2 as Building211 } from "lucide-react";
 import { useOutletsTranslations as useOutletsTranslations2, useCommonTranslations as useCommonTranslations17 } from "@rentalshop/hooks";
-import { jsx as jsx167, jsxs as jsxs150 } from "react/jsx-runtime";
+import { Fragment as Fragment36, jsx as jsx167, jsxs as jsxs150 } from "react/jsx-runtime";
 function OutletTable({
   outlets,
   onOutletAction,
@@ -29827,7 +29837,10 @@ function OutletTable({
         "#",
         outlet.id
       ] }) }),
-      /* @__PURE__ */ jsx167("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ jsx167("div", { className: "text-sm", children: /* @__PURE__ */ jsx167("div", { className: "font-medium text-gray-900 dark:text-white", children: outlet.name }) }) }),
+      /* @__PURE__ */ jsx167("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ jsx167("div", { className: "text-sm", children: /* @__PURE__ */ jsxs150("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx167("div", { className: "font-medium text-gray-900 dark:text-white", children: outlet.name }),
+        outlet.isDefault && /* @__PURE__ */ jsx167(Badge, { className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs", children: t2("labels.default") })
+      ] }) }) }),
       /* @__PURE__ */ jsx167("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx167("div", { className: "text-sm text-gray-900 dark:text-white", children: outlet.address || t2("fields.notAvailable") }) }),
       /* @__PURE__ */ jsx167("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx167("div", { className: "text-sm text-gray-900 dark:text-white", children: outlet.phone || t2("fields.notAvailable") }) }),
       /* @__PURE__ */ jsx167("td", { className: "px-6 py-4 whitespace-nowrap", children: getStatusBadge(outlet.isActive) }),
@@ -29864,13 +29877,15 @@ function OutletTable({
                 /* @__PURE__ */ jsx167(Edit12, { className: "h-4 w-4 mr-2" }),
                 t2("actions.editOutlet")
               ] }),
-              /* @__PURE__ */ jsx167(DropdownMenuSeparator, {}),
-              /* @__PURE__ */ jsxs150(DropdownMenuItem, { onClick: () => {
-                onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id);
-                setOpenDropdownId(null);
-              }, children: [
-                outlet.isActive ? /* @__PURE__ */ jsx167(XCircle13, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ jsx167(CheckCircle18, { className: "h-4 w-4 mr-2" }),
-                outlet.isActive ? t2("actions.disableOutlet") : t2("actions.enableOutlet")
+              !outlet.isDefault && /* @__PURE__ */ jsxs150(Fragment36, { children: [
+                /* @__PURE__ */ jsx167(DropdownMenuSeparator, {}),
+                /* @__PURE__ */ jsxs150(DropdownMenuItem, { onClick: () => {
+                  onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id);
+                  setOpenDropdownId(null);
+                }, children: [
+                  outlet.isActive ? /* @__PURE__ */ jsx167(XCircle13, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ jsx167(CheckCircle18, { className: "h-4 w-4 mr-2" }),
+                  outlet.isActive ? t2("actions.disableOutlet") : t2("actions.enableOutlet")
+                ] })
               ] })
             ]
           }
@@ -29883,11 +29898,11 @@ function OutletTable({
 // src/components/features/Outlets/components/OutletSearch.tsx
 import { Input as Input21, Button as Button46 } from "@rentalshop/ui";
 import { useOutletsTranslations as useOutletsTranslations3, useCommonTranslations as useCommonTranslations18 } from "@rentalshop/hooks";
-import { Fragment as Fragment36, jsx as jsx168, jsxs as jsxs151 } from "react/jsx-runtime";
+import { Fragment as Fragment37, jsx as jsx168, jsxs as jsxs151 } from "react/jsx-runtime";
 function OutletSearch({ value, onChange, onClear }) {
   const t2 = useOutletsTranslations3();
   const tc = useCommonTranslations18();
-  return /* @__PURE__ */ jsxs151(Fragment36, { children: [
+  return /* @__PURE__ */ jsxs151(Fragment37, { children: [
     /* @__PURE__ */ jsx168("div", { className: "flex-1 min-w-[280px]", children: /* @__PURE__ */ jsxs151("div", { className: "relative", children: [
       /* @__PURE__ */ jsx168(
         Input21,
@@ -30296,7 +30311,7 @@ import { useCategoriesTranslations as useCategoriesTranslations2 } from "@rental
 import { useState as useState68, useEffect as useEffect38 } from "react";
 import { useCategoriesTranslations, useCommonTranslations as useCommonTranslations20 } from "@rentalshop/hooks";
 import { Save as Save7, Loader2 as Loader26 } from "lucide-react";
-import { Fragment as Fragment37, jsx as jsx174, jsxs as jsxs156 } from "react/jsx-runtime";
+import { Fragment as Fragment38, jsx as jsx174, jsxs as jsxs156 } from "react/jsx-runtime";
 var CategoryFormContent = ({
   category,
   onSave,
@@ -30426,10 +30441,10 @@ var CategoryFormContent = ({
         {
           type: "submit",
           disabled: submitting,
-          children: submitting ? /* @__PURE__ */ jsxs156(Fragment37, { children: [
+          children: submitting ? /* @__PURE__ */ jsxs156(Fragment38, { children: [
             /* @__PURE__ */ jsx174(Loader26, { className: "h-4 w-4 mr-2 animate-spin" }),
             tc("buttons.saving")
-          ] }) : /* @__PURE__ */ jsxs156(Fragment37, { children: [
+          ] }) : /* @__PURE__ */ jsxs156(Fragment38, { children: [
             /* @__PURE__ */ jsx174(Save7, { className: "h-4 w-4 mr-2" }),
             mode === "create" ? t2("actions.create") : t2("actions.update")
           ] })
@@ -30486,7 +30501,7 @@ var AddCategoryDialog = ({
 };
 
 // src/components/features/Categories/components/CategoryActions.tsx
-import { Fragment as Fragment38, jsx as jsx176, jsxs as jsxs158 } from "react/jsx-runtime";
+import { Fragment as Fragment39, jsx as jsx176, jsxs as jsxs158 } from "react/jsx-runtime";
 var CategoryActions = ({
   onAddCategory,
   onImportCategories,
@@ -30542,7 +30557,7 @@ var CategoryActions = ({
   const actions = allActions.filter(
     (action) => !action.roles || action.roles.length > 0
   ).map(({ roles, ...action }) => action);
-  return /* @__PURE__ */ jsxs158(Fragment38, { children: [
+  return /* @__PURE__ */ jsxs158(Fragment39, { children: [
     /* @__PURE__ */ jsx176(Card, { children: /* @__PURE__ */ jsx176(CardContent, { className: "p-4", children: /* @__PURE__ */ jsx176("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3", children: actions.map((action) => /* @__PURE__ */ jsx176(
       Button2,
       {
@@ -30885,7 +30900,7 @@ var CategoryForm = ({
 import { useState as useState71 } from "react";
 import { useCategoriesTranslations as useCategoriesTranslations5, useCommonTranslations as useCommonTranslations22 } from "@rentalshop/hooks";
 import { formatDateWithLocale } from "@rentalshop/utils";
-import { Fragment as Fragment39, jsx as jsx181, jsxs as jsxs163 } from "react/jsx-runtime";
+import { Fragment as Fragment40, jsx as jsx181, jsxs as jsxs163 } from "react/jsx-runtime";
 var CategoryView = ({
   category,
   onClose,
@@ -30913,7 +30928,7 @@ var CategoryView = ({
   const handleCancelDelete = () => {
     setShowDeleteConfirm(false);
   };
-  return /* @__PURE__ */ jsxs163(Fragment39, { children: [
+  return /* @__PURE__ */ jsxs163(Fragment40, { children: [
     /* @__PURE__ */ jsx181(Dialog, { open: !!category, onOpenChange: onClose, children: /* @__PURE__ */ jsxs163(DialogContent, { className: "sm:max-w-[600px]", children: [
       /* @__PURE__ */ jsx181(DialogHeader, { children: /* @__PURE__ */ jsxs163("div", { children: [
         /* @__PURE__ */ jsx181(DialogTitle, { className: "text-xl font-semibold", children: t2("dialog.viewDetails") }),
@@ -31000,13 +31015,13 @@ var CategoryView = ({
 
 // src/components/features/Categories/components/CategoryFilters.tsx
 import { Input as Input23, Button as Button49 } from "@rentalshop/ui";
-import { Fragment as Fragment40, jsx as jsx182, jsxs as jsxs164 } from "react/jsx-runtime";
+import { Fragment as Fragment41, jsx as jsx182, jsxs as jsxs164 } from "react/jsx-runtime";
 var CategoryFilters = ({
   filters,
   onSearchChange,
   onClearFilters
 }) => {
-  return /* @__PURE__ */ jsxs164(Fragment40, { children: [
+  return /* @__PURE__ */ jsxs164(Fragment41, { children: [
     /* @__PURE__ */ jsx182("div", { className: "flex-1 min-w-[280px]", children: /* @__PURE__ */ jsxs164("div", { className: "relative", children: [
       /* @__PURE__ */ jsx182(
         Input23,
@@ -31052,9 +31067,9 @@ var CategoryFilters = ({
 
 // src/components/features/Categories/components/CategorySearch.tsx
 import { Input as Input24, Button as Button50 } from "@rentalshop/ui";
-import { Fragment as Fragment41, jsx as jsx183, jsxs as jsxs165 } from "react/jsx-runtime";
+import { Fragment as Fragment42, jsx as jsx183, jsxs as jsxs165 } from "react/jsx-runtime";
 function CategorySearch({ value, onChange, onClear }) {
-  return /* @__PURE__ */ jsxs165(Fragment41, { children: [
+  return /* @__PURE__ */ jsxs165(Fragment42, { children: [
     /* @__PURE__ */ jsx183("div", { className: "flex-1 min-w-[280px]", children: /* @__PURE__ */ jsxs165("div", { className: "relative", children: [
       /* @__PURE__ */ jsx183(
         Input24,
@@ -31849,7 +31864,7 @@ import {
   Trash2 as Trash213,
   MoreVertical as MoreVertical8
 } from "lucide-react";
-import { Fragment as Fragment42, jsx as jsx190, jsxs as jsxs172 } from "react/jsx-runtime";
+import { Fragment as Fragment43, jsx as jsx190, jsxs as jsxs172 } from "react/jsx-runtime";
 var PlanTable = ({
   plans,
   onView,
@@ -32007,7 +32022,7 @@ var PlanTable = ({
                   ]
                 }
               ),
-              onDelete && /* @__PURE__ */ jsxs172(Fragment42, { children: [
+              onDelete && /* @__PURE__ */ jsxs172(Fragment43, { children: [
                 /* @__PURE__ */ jsx190(DropdownMenuSeparator4, {}),
                 /* @__PURE__ */ jsxs172(
                   DropdownMenuItem4,
@@ -32042,7 +32057,7 @@ import {
   SelectValue as SelectValue15,
   Button as Button55
 } from "@rentalshop/ui";
-import { Fragment as Fragment43, jsx as jsx191, jsxs as jsxs173 } from "react/jsx-runtime";
+import { Fragment as Fragment44, jsx as jsx191, jsxs as jsxs173 } from "react/jsx-runtime";
 var PlanFilters = ({
   searchTerm,
   statusFilter,
@@ -32052,7 +32067,7 @@ var PlanFilters = ({
   showClearButton = true
 }) => {
   const hasActiveFilters = searchTerm || statusFilter !== "all";
-  return /* @__PURE__ */ jsxs173(Fragment43, { children: [
+  return /* @__PURE__ */ jsxs173(Fragment44, { children: [
     /* @__PURE__ */ jsx191("div", { className: "flex-1 min-w-[280px]", children: /* @__PURE__ */ jsxs173("div", { className: "relative", children: [
       /* @__PURE__ */ jsx191(
         Input25,
@@ -32785,7 +32800,7 @@ import {
   DollarSign as DollarSign15,
   Trash2 as Trash215
 } from "lucide-react";
-import { Fragment as Fragment44, jsx as jsx196, jsxs as jsxs178 } from "react/jsx-runtime";
+import { Fragment as Fragment45, jsx as jsx196, jsxs as jsxs178 } from "react/jsx-runtime";
 var BillingCycleDetailDialog = ({
   open,
   onOpenChange,
@@ -32933,7 +32948,7 @@ var BillingCycleDetailDialog = ({
             /* @__PURE__ */ jsx196(Label13, { className: "text-sm font-medium text-text-secondary", children: "Current Status" }),
             /* @__PURE__ */ jsx196("div", { className: "mt-1", children: /* @__PURE__ */ jsx196(StatusBadge5, { status: billingCycle.isActive ? "active" : "inactive" }) })
           ] }),
-          onToggleStatus && /* @__PURE__ */ jsx196("div", { className: "flex items-center gap-4", children: isEditing ? /* @__PURE__ */ jsxs178(Fragment44, { children: [
+          onToggleStatus && /* @__PURE__ */ jsx196("div", { className: "flex items-center gap-4", children: isEditing ? /* @__PURE__ */ jsxs178(Fragment45, { children: [
             /* @__PURE__ */ jsxs178("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx196(
                 Switch3,
@@ -33708,7 +33723,7 @@ import {
   MoreVertical as MoreVertical9,
   RefreshCcw
 } from "lucide-react";
-import { Fragment as Fragment45, jsx as jsx199, jsxs as jsxs181 } from "react/jsx-runtime";
+import { Fragment as Fragment46, jsx as jsx199, jsxs as jsxs181 } from "react/jsx-runtime";
 function PaymentTable({
   payments,
   onView,
@@ -33827,7 +33842,7 @@ function PaymentTable({
                   ]
                 }
               ),
-              onRefund && payment.status === "completed" && /* @__PURE__ */ jsxs181(Fragment45, { children: [
+              onRefund && payment.status === "completed" && /* @__PURE__ */ jsxs181(Fragment46, { children: [
                 /* @__PURE__ */ jsx199(DropdownMenuSeparator, {}),
                 /* @__PURE__ */ jsxs181(
                   DropdownMenuItem,
@@ -36789,7 +36804,7 @@ import {
   Eye as Eye28,
   EyeOff as EyeOff8
 } from "lucide-react";
-import { Fragment as Fragment46, jsx as jsx239, jsxs as jsxs214 } from "react/jsx-runtime";
+import { Fragment as Fragment47, jsx as jsx239, jsxs as jsxs214 } from "react/jsx-runtime";
 function SeverityBadge({ severity }) {
   const getSeverityStyle = (severity2) => {
     switch (severity2) {
@@ -36996,7 +37011,7 @@ function AuditLogDetail({ log, isOpen, onClose }) {
                 /* @__PURE__ */ jsx239(User20, { className: "w-4 h-4" }),
                 "User Information"
               ] }) }),
-              /* @__PURE__ */ jsx239(CardContent55, { className: "space-y-2", children: log.user ? /* @__PURE__ */ jsxs214(Fragment46, { children: [
+              /* @__PURE__ */ jsx239(CardContent55, { className: "space-y-2", children: log.user ? /* @__PURE__ */ jsxs214(Fragment47, { children: [
                 /* @__PURE__ */ jsxs214("div", { children: [
                   /* @__PURE__ */ jsx239("div", { className: "text-xs text-text-secondary", children: "Name" }),
                   /* @__PURE__ */ jsx239("div", { className: "text-sm font-medium", children: log.user.name })
@@ -37805,7 +37820,7 @@ var CollectionReturnModal = ({
 import { Info as Info14 } from "lucide-react";
 import { useOrderTranslations as useOrderTranslations12 } from "@rentalshop/hooks";
 import { useFormattedFullDate as useFormattedFullDate2 } from "@rentalshop/utils";
-import { Fragment as Fragment47, jsx as jsx242, jsxs as jsxs217 } from "react/jsx-runtime";
+import { Fragment as Fragment48, jsx as jsx242, jsxs as jsxs217 } from "react/jsx-runtime";
 var OrderInformation = ({ order }) => {
   const t2 = useOrderTranslations12();
   return /* @__PURE__ */ jsxs217(Card, { className: "flex flex-col", children: [
@@ -37839,7 +37854,7 @@ var OrderInformation = ({ order }) => {
           ] })
         ] }),
         /* @__PURE__ */ jsxs217("div", { className: "space-y-3", children: [
-          order.orderType === "RENT" && /* @__PURE__ */ jsxs217(Fragment47, { children: [
+          order.orderType === "RENT" && /* @__PURE__ */ jsxs217(Fragment48, { children: [
             /* @__PURE__ */ jsxs217("div", { className: "flex justify-between", children: [
               /* @__PURE__ */ jsxs217("span", { className: "text-sm text-gray-600", children: [
                 t2("dates.pickupDate"),
@@ -38000,7 +38015,7 @@ import {
 import { Settings as Settings9, Save as Save9, Edit as Edit21 } from "lucide-react";
 import { useOrderTranslations as useOrderTranslations15 } from "@rentalshop/hooks";
 import { useFormatCurrency as useFormatCurrency8 } from "@rentalshop/ui";
-import { Fragment as Fragment48, jsx as jsx245, jsxs as jsxs220 } from "react/jsx-runtime";
+import { Fragment as Fragment49, jsx as jsx245, jsxs as jsxs220 } from "react/jsx-runtime";
 var OrderSettingsCard = ({
   order,
   settingsForm,
@@ -38025,7 +38040,7 @@ var OrderSettingsCard = ({
       /* @__PURE__ */ jsx245(Settings9, { className: "w-5 h-5" }),
       t2("detail.orderSettings")
     ] }) }),
-    /* @__PURE__ */ jsx245(CardContent57, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ jsxs220(Fragment48, { children: [
+    /* @__PURE__ */ jsx245(CardContent57, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ jsxs220(Fragment49, { children: [
       /* @__PURE__ */ jsxs220("div", { children: [
         /* @__PURE__ */ jsxs220(Label15, { htmlFor: "damageFee", className: "text-sm font-medium text-gray-700", children: [
           t2("amount.damageFee"),
@@ -38139,7 +38154,7 @@ var OrderSettingsCard = ({
           }
         )
       ] })
-    ] }) : /* @__PURE__ */ jsxs220(Fragment48, { children: [
+    ] }) : /* @__PURE__ */ jsxs220(Fragment49, { children: [
       /* @__PURE__ */ jsxs220("div", { className: "space-y-3", children: [
         /* @__PURE__ */ jsxs220("div", { className: "flex justify-between", children: [
           /* @__PURE__ */ jsxs220("span", { className: "text-sm text-gray-600", children: [
@@ -39133,7 +39148,7 @@ import {
   COUNTRIES as COUNTRIES2
 } from "@rentalshop/constants";
 import { useSettingsTranslations as useSettingsTranslations3 } from "@rentalshop/hooks";
-import { Fragment as Fragment49, jsx as jsx253, jsxs as jsxs228 } from "react/jsx-runtime";
+import { Fragment as Fragment50, jsx as jsx253, jsxs as jsxs228 } from "react/jsx-runtime";
 var MerchantSection = ({
   user,
   isEditing,
@@ -39405,7 +39420,7 @@ var MerchantSection = ({
               placeholder: "Type to search countries...",
               emptyMessage: "No countries found"
             }
-          ) : /* @__PURE__ */ jsx253("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex items-center gap-2", children: merchant?.country ? /* @__PURE__ */ jsxs228(Fragment49, { children: [
+          ) : /* @__PURE__ */ jsx253("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex items-center gap-2", children: merchant?.country ? /* @__PURE__ */ jsxs228(Fragment50, { children: [
             COUNTRIES2.find((c) => c.name === merchant.country)?.flag || "",
             merchant.country
           ] }) : t2("merchant.notProvided") })
@@ -40008,7 +40023,7 @@ var DeleteAccountDialog = ({
 };
 
 // src/components/features/Settings/Settings.tsx
-import { Fragment as Fragment50, jsx as jsx260, jsxs as jsxs235 } from "react/jsx-runtime";
+import { Fragment as Fragment51, jsx as jsx260, jsxs as jsxs235 } from "react/jsx-runtime";
 var createSettingsMenuItems = (t2) => [
   {
     id: "profile",
@@ -40494,7 +40509,7 @@ var SettingsComponent = () => {
         );
     }
   };
-  return /* @__PURE__ */ jsxs235(Fragment50, { children: [
+  return /* @__PURE__ */ jsxs235(Fragment51, { children: [
     /* @__PURE__ */ jsx260(
       SettingsLayout2,
       {
