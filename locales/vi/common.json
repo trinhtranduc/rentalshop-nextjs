@@ -67,6 +67,7 @@
     "return": "Trả hàng",
     "active": "Hoạt động",
     "inactive": "Không hoạt động",
+    "default": "Mặc định",
     "create": "Tạo",
     "unknown": "Không xác định"
   },

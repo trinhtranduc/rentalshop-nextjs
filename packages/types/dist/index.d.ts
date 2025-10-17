@@ -3770,6 +3770,7 @@ var labels = {
 	"return": "Return",
 	active: "Active",
 	inactive: "Inactive",
+	"default": "Default",
 	create: "Create",
 	unknown: "Unknown"
 };
