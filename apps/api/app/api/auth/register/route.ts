@@ -50,6 +50,12 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Create merchant with business configuration
+      console.log('Creating merchant with data:', {
+        name: validatedData.businessName,
+        email: validatedData.email,
+        phone: validatedData.phone
+      });
+      
       const merchant = await db.merchants.create({
         name: validatedData.businessName!,
         email: validatedData.email,
@@ -81,7 +87,11 @@ export async function POST(request: NextRequest) {
         )
       });
 
+      console.log('✅ Merchant created:', { id: merchant.id, name: merchant.name });
+
       // 3. Create default outlet
+      console.log('Creating outlet with merchantId:', merchant.id);
+      
       const outlet = await db.outlets.create({
         name: `${merchant.name} - Main Store`,
         address: merchant.address || validatedData.address || 'Address to be updated',
@@ -111,7 +121,18 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // 5. Create merchant user
+      // 5. Check if user email already exists
+      const existingUser = await db.users.findByEmail(validatedData.email);
+      if (existingUser) {
+        console.log('❌ User email already exists:', validatedData.email);
+        return NextResponse.json({
+          success: false,
+          code: 'EMAIL_EXISTS',
+          message: `A user with email ${validatedData.email} already exists. Please use a different email.`
+        }, { status: 409 });
+      }
+
+      // 6. Create merchant user
       const hashedPassword = await hashPassword(validatedData.password);
       const user = await db.users.create({
         email: validatedData.email,
