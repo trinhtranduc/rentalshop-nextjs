@@ -29575,7 +29575,7 @@ function OutletGrid({
             variant: "outline",
             size: "sm",
             onClick: () => onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id),
-            className: "flex-1",
+            className: `flex-1 ${outlet.isActive ? "text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 dark:text-red-400 dark:border-red-600 dark:hover:bg-red-900/20" : "text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 dark:text-green-400 dark:border-green-600 dark:hover:bg-green-900/20"}`,
             children: outlet.isActive ? "Disable" : "Enable"
           }
         )
@@ -29711,13 +29711,20 @@ function OutletTable({
               ] }),
               !outlet.isDefault && /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(import_jsx_runtime168.Fragment, { children: [
                 /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(DropdownMenuSeparator, {}),
-                /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(DropdownMenuItem, { onClick: () => {
-                  onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id);
-                  setOpenDropdownId(null);
-                }, children: [
-                  outlet.isActive ? /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.XCircle, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.CheckCircle, { className: "h-4 w-4 mr-2" }),
-                  outlet.isActive ? t2("actions.disableOutlet") : t2("actions.enableOutlet")
-                ] })
+                /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(
+                  DropdownMenuItem,
+                  {
+                    onClick: () => {
+                      onOutletAction(outlet.isActive ? "disable" : "enable", outlet.id);
+                      setOpenDropdownId(null);
+                    },
+                    className: outlet.isActive ? "text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300" : "text-green-600 dark:text-green-400 focus:text-green-700 dark:focus:text-green-300",
+                    children: [
+                      outlet.isActive ? /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.XCircle, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react83.CheckCircle, { className: "h-4 w-4 mr-2" }),
+                      outlet.isActive ? t2("actions.disableOutlet") : t2("actions.enableOutlet")
+                    ]
+                  }
+                )
               ] })
             ]
           }

@@ -16,6 +16,9 @@
     "manager": "Quản lý",
     "notAvailable": "Không có"
   },
+  "labels": {
+    "default": "Mặc định"
+  },
   "actions": {
     "export": "Xuất danh sách",
     "viewDetails": "Xem chi tiết",

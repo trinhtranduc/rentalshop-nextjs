@@ -16,6 +16,9 @@
     "manager": "Manager",
     "notAvailable": "N/A"
   },
+  "labels": {
+    "default": "Default"
+  },
   "actions": {
     "export": "Export Outlets",
     "viewDetails": "View Details",

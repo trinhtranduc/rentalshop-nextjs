@@ -221,10 +221,13 @@ export function OutletTable({
                       {!outlet.isDefault && (
                         <>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => {
-                            onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id);
-                            setOpenDropdownId(null);
-                          }}>
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id);
+                              setOpenDropdownId(null);
+                            }}
+                            className={outlet.isActive ? "text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300" : "text-green-600 dark:text-green-400 focus:text-green-700 dark:focus:text-green-300"}
+                          >
                             {outlet.isActive ? <XCircle className="h-4 w-4 mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                             {outlet.isActive ? t('actions.disableOutlet') : t('actions.enableOutlet')}
                           </DropdownMenuItem>
