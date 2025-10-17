@@ -518,6 +518,123 @@ var API = {
   }
 };
 
+// ../constants/src/colors.ts
+var ORDER_STATUS_COLORS = {
+  RESERVED: {
+    bg: "#DBEAFE",
+    // Blue 100 - badge background
+    text: "#1E40AF",
+    // Blue 800 - badge text
+    hex: "#3B82F6",
+    // Blue 500 - primary color
+    buttonBg: "#3B82F6",
+    // Blue 500 - button background
+    buttonHover: "#2563EB",
+    // Blue 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  PICKUPED: {
+    bg: "#FEF3C7",
+    // Amber 100 - badge background
+    text: "#92400E",
+    // Amber 900 - badge text
+    hex: "#F59E0B",
+    // Amber 500 - primary color
+    buttonBg: "#F59E0B",
+    // Amber 500 - button background
+    buttonHover: "#D97706",
+    // Amber 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  RETURNED: {
+    bg: "#D1FAE5",
+    // Emerald 100 - badge background
+    text: "#065F46",
+    // Emerald 800 - badge text
+    hex: "#10B981",
+    // Emerald 500 - primary color
+    buttonBg: "#10B981",
+    // Emerald 500 - button background
+    buttonHover: "#059669",
+    // Emerald 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  COMPLETED: {
+    bg: "#E0E7FF",
+    // Indigo 100 - badge background
+    text: "#3730A3",
+    // Indigo 800 - badge text
+    hex: "#6366F1",
+    // Indigo 500 - primary color
+    buttonBg: "#6366F1",
+    // Indigo 500 - button background
+    buttonHover: "#4F46E5",
+    // Indigo 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  CANCELLED: {
+    bg: "#FEE2E2",
+    // Red 100 - badge background
+    text: "#991B1B",
+    // Red 800 - badge text
+    hex: "#EF4444",
+    // Red 500 - primary color
+    buttonBg: "#EF4444",
+    // Red 500 - button background
+    buttonHover: "#DC2626",
+    // Red 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  }
+};
+var ORDER_TYPE_COLORS = {
+  RENT: {
+    bg: "#DBEAFE",
+    // Blue 100 - badge background
+    text: "#1E40AF",
+    // Blue 800 - badge text
+    hex: "#3B82F6",
+    // Blue 500 - primary color
+    buttonBg: "#3B82F6",
+    // Blue 500 - button background
+    buttonHover: "#2563EB",
+    // Blue 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  SALE: {
+    bg: "#D1FAE5",
+    // Emerald 100 - badge background
+    text: "#065F46",
+    // Emerald 800 - badge text
+    hex: "#10B981",
+    // Emerald 500 - primary color
+    buttonBg: "#10B981",
+    // Emerald 500 - button background
+    buttonHover: "#059669",
+    // Emerald 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  }
+};
+
+// ../constants/src/orders.ts
+var ORDER_STATUS_BUTTON_COLORS = {
+  RESERVED: ORDER_STATUS_COLORS.RESERVED,
+  PICKUPED: ORDER_STATUS_COLORS.PICKUPED,
+  RETURNED: ORDER_STATUS_COLORS.RETURNED,
+  COMPLETED: ORDER_STATUS_COLORS.COMPLETED,
+  CANCELLED: ORDER_STATUS_COLORS.CANCELLED
+};
+var ORDER_TYPE_BUTTON_COLORS = {
+  RENT: ORDER_TYPE_COLORS.RENT,
+  SALE: ORDER_TYPE_COLORS.SALE
+};
+
 // ../constants/src/currency.ts
 var SUPPORTED_CURRENCIES = ["USD", "VND"];
 var CURRENCY_SYMBOLS = {
