@@ -95,12 +95,21 @@ export async function POST(request: NextRequest) {
         isDefault: true
       });
 
-      // 4. Create default category
-      await db.categories.create({
-        name: 'General',
-        description: 'Default category for general products',
-        merchantId: merchant.id
+      // 4. Create default category (check if exists first)
+      const existingCategory = await db.categories.findFirst({
+        where: {
+          merchantId: merchant.id,
+          name: 'General'
+        }
       });
+
+      if (!existingCategory) {
+        await db.categories.create({
+          name: 'General',
+          description: 'Default category for general products',
+          merchantId: merchant.id
+        });
+      }
 
       // 5. Create merchant user
       const hashedPassword = await hashPassword(validatedData.password);
