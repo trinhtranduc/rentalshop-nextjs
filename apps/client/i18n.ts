@@ -9,7 +9,7 @@ import { getRequestConfig } from 'next-intl/server';
 
 // Supported locales
 export const locales = ['en', 'vi'] as const;
-export const defaultLocale = 'en' as const;
+export const defaultLocale = 'vi' as const; // ✅ Vietnamese as default (Vietnam market)
 export type Locale = typeof locales[number];
 
 // Validate if locale is supported

@@ -2396,6 +2396,8 @@ declare namespace _________locales_en_validation_json {
 }
 
 var title$4 = "Settings";
+var subtitle$1 = "Manage your account settings and preferences";
+var loading = "Loading settings...";
 var tabs = {
 	profile: "Profile",
 	account: "Account",
@@ -2695,6 +2697,8 @@ var changePassword$1 = {
 };
 var settings = {
 	title: title$4,
+	subtitle: subtitle$1,
+	loading: loading,
 	tabs: tabs,
 	profile: profile$1,
 	account: account,
@@ -2717,6 +2721,7 @@ declare const _________locales_en_settings_json_billing: typeof billing;
 declare const _________locales_en_settings_json_currency: typeof currency;
 declare const _________locales_en_settings_json_deleteAccountDialog: typeof deleteAccountDialog;
 declare const _________locales_en_settings_json_language: typeof language;
+declare const _________locales_en_settings_json_loading: typeof loading;
 declare const _________locales_en_settings_json_menuItems: typeof menuItems;
 declare const _________locales_en_settings_json_merchant: typeof merchant;
 declare const _________locales_en_settings_json_notifications: typeof notifications;
@@ -2725,7 +2730,7 @@ declare const _________locales_en_settings_json_security: typeof security;
 declare const _________locales_en_settings_json_subscription: typeof subscription;
 declare const _________locales_en_settings_json_tabs: typeof tabs;
 declare namespace _________locales_en_settings_json {
-  export { _________locales_en_settings_json_account as account, _________locales_en_settings_json_billing as billing, changePassword$1 as changePassword, _________locales_en_settings_json_currency as currency, settings as default, _________locales_en_settings_json_deleteAccountDialog as deleteAccountDialog, _________locales_en_settings_json_language as language, _________locales_en_settings_json_menuItems as menuItems, _________locales_en_settings_json_merchant as merchant, messages$4 as messages, _________locales_en_settings_json_notifications as notifications, _________locales_en_settings_json_outlet as outlet, profile$1 as profile, _________locales_en_settings_json_security as security, _________locales_en_settings_json_subscription as subscription, _________locales_en_settings_json_tabs as tabs, title$4 as title };
+  export { _________locales_en_settings_json_account as account, _________locales_en_settings_json_billing as billing, changePassword$1 as changePassword, _________locales_en_settings_json_currency as currency, settings as default, _________locales_en_settings_json_deleteAccountDialog as deleteAccountDialog, _________locales_en_settings_json_language as language, _________locales_en_settings_json_loading as loading, _________locales_en_settings_json_menuItems as menuItems, _________locales_en_settings_json_merchant as merchant, messages$4 as messages, _________locales_en_settings_json_notifications as notifications, _________locales_en_settings_json_outlet as outlet, profile$1 as profile, _________locales_en_settings_json_security as security, _________locales_en_settings_json_subscription as subscription, subtitle$1 as subtitle, _________locales_en_settings_json_tabs as tabs, title$4 as title };
 }
 
 var title$3 = "Customers";

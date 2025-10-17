@@ -1,5 +1,7 @@
 {
   "title": "Cài đặt",
+  "subtitle": "Quản lý cài đặt tài khoản và tùy chọn của bạn",
+  "loading": "Đang tải cài đặt...",
   "tabs": {
     "profile": "Hồ sơ",
     "account": "Tài khoản",

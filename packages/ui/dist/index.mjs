@@ -39215,7 +39215,7 @@ import {
   Store as Store6,
   Languages as Languages2
 } from "lucide-react";
-import { useAuth as useAuth2, useSettingsTranslations as useSettingsTranslations9 } from "@rentalshop/hooks";
+import { useAuth as useAuth2, useSettingsTranslations as useSettingsTranslations10 } from "@rentalshop/hooks";
 import { usersApi as usersApi2, authApi as authApi2, settingsApi, subscriptionsApi as subscriptionsApi2 } from "@rentalshop/utils";
 import { useToast as useToast10 } from "@rentalshop/ui";
 
@@ -39231,6 +39231,7 @@ import {
   Button as Button65
 } from "@rentalshop/ui";
 import { ChevronRight as ChevronRight5 } from "lucide-react";
+import { useSettingsTranslations } from "@rentalshop/hooks";
 import { jsx as jsx252, jsxs as jsxs227 } from "react/jsx-runtime";
 var SettingsLayout2 = ({
   user,
@@ -39241,22 +39242,23 @@ var SettingsLayout2 = ({
   onSectionChange
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState83(false);
+  const t2 = useSettingsTranslations();
   if (loading) {
     return /* @__PURE__ */ jsxs227(PageWrapper5, { children: [
       /* @__PURE__ */ jsxs227(PageHeader2, { children: [
-        /* @__PURE__ */ jsx252(PageTitle2, { children: "Settings" }),
-        /* @__PURE__ */ jsx252("p", { children: "Manage your account settings and preferences" })
+        /* @__PURE__ */ jsx252(PageTitle2, { children: t2("title") }),
+        /* @__PURE__ */ jsx252("p", { children: t2("subtitle") })
       ] }),
       /* @__PURE__ */ jsx252("div", { className: "flex justify-center items-center py-12", children: /* @__PURE__ */ jsxs227("div", { className: "text-center", children: [
         /* @__PURE__ */ jsx252("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" }),
-        /* @__PURE__ */ jsx252("p", { className: "text-gray-600", children: "Loading settings..." })
+        /* @__PURE__ */ jsx252("p", { className: "text-gray-600", children: t2("loading") || "Loading settings..." })
       ] }) })
     ] });
   }
   return /* @__PURE__ */ jsxs227(PageWrapper5, { children: [
     /* @__PURE__ */ jsxs227(PageHeader2, { children: [
-      /* @__PURE__ */ jsx252(PageTitle2, { children: "Settings" }),
-      /* @__PURE__ */ jsx252("p", { children: "Manage your account settings and preferences" })
+      /* @__PURE__ */ jsx252(PageTitle2, { children: t2("title") }),
+      /* @__PURE__ */ jsx252("p", { children: t2("subtitle") })
     ] }),
     /* @__PURE__ */ jsxs227("div", { className: "flex flex-col lg:flex-row gap-6", children: [
       /* @__PURE__ */ jsx252("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ jsx252(Card60, { children: /* @__PURE__ */ jsx252(CardContent59, { className: "p-0", children: /* @__PURE__ */ jsx252("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
@@ -39300,7 +39302,7 @@ import {
   Input as Input31,
   Label as Label17
 } from "@rentalshop/ui";
-import { useSettingsTranslations } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations2 } from "@rentalshop/hooks";
 import { jsx as jsx253, jsxs as jsxs228 } from "react/jsx-runtime";
 var ProfileSection = ({
   user,
@@ -39312,7 +39314,7 @@ var ProfileSection = ({
   onCancel,
   onInputChange
 }) => {
-  const t2 = useSettingsTranslations();
+  const t2 = useSettingsTranslations2();
   console.log("\u{1F50D} ProfileSection render - user:", user);
   console.log("\u{1F50D} ProfileSection render - user details:", {
     "user.id": user?.id,
@@ -39415,7 +39417,7 @@ import {
   getPricingTypeDescription,
   COUNTRIES as COUNTRIES2
 } from "@rentalshop/constants";
-import { useSettingsTranslations as useSettingsTranslations2 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations3 } from "@rentalshop/hooks";
 import { Fragment as Fragment50, jsx as jsx254, jsxs as jsxs229 } from "react/jsx-runtime";
 var MerchantSection = ({
   user,
@@ -39429,7 +39431,7 @@ var MerchantSection = ({
   onInputChange,
   onCurrencyChange
 }) => {
-  const t2 = useSettingsTranslations2();
+  const t2 = useSettingsTranslations3();
   const [merchantData, setMerchantData] = useState84(null);
   const [loadingMerchant, setLoadingMerchant] = useState84(false);
   const [selectedCurrency, setSelectedCurrency] = useState84(currentCurrency);
@@ -39758,7 +39760,7 @@ import {
   Input as Input33,
   Label as Label19
 } from "@rentalshop/ui";
-import { useSettingsTranslations as useSettingsTranslations3 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations4 } from "@rentalshop/hooks";
 import { jsx as jsx255, jsxs as jsxs230 } from "react/jsx-runtime";
 var OutletSection = ({
   user,
@@ -39770,7 +39772,7 @@ var OutletSection = ({
   onCancel,
   onInputChange
 }) => {
-  const t2 = useSettingsTranslations3();
+  const t2 = useSettingsTranslations4();
   return /* @__PURE__ */ jsx255("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs230(Card63, { children: [
     /* @__PURE__ */ jsxs230(CardHeader44, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
       /* @__PURE__ */ jsx255("h3", { className: "text-base font-semibold text-gray-900", children: t2("outlet.outletInformation") }),
@@ -39854,14 +39856,14 @@ import {
   Calendar as Calendar31,
   DollarSign as DollarSign23
 } from "lucide-react";
-import { useSettingsTranslations as useSettingsTranslations4 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations5 } from "@rentalshop/hooks";
 import { jsx as jsx256, jsxs as jsxs231 } from "react/jsx-runtime";
 var SubscriptionSection = ({
   subscriptionData,
   subscriptionLoading,
   currentUserRole
 }) => {
-  const t2 = useSettingsTranslations4();
+  const t2 = useSettingsTranslations5();
   if (subscriptionLoading) {
     return /* @__PURE__ */ jsx256("div", { className: "space-y-6", children: /* @__PURE__ */ jsx256(Card64, { children: /* @__PURE__ */ jsx256(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs231("div", { className: "flex items-center justify-center py-8", children: [
       /* @__PURE__ */ jsx256("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
@@ -39956,7 +39958,7 @@ import {
   Separator as Separator6
 } from "@rentalshop/ui";
 import { LogOut, Trash2 as Trash218, Key as Key2 } from "lucide-react";
-import { useSettingsTranslations as useSettingsTranslations5 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx257, jsxs as jsxs232 } from "react/jsx-runtime";
 var AccountSection = ({
   onSignOut,
@@ -39964,7 +39966,7 @@ var AccountSection = ({
   onChangePassword,
   isDeleting
 }) => {
-  const t2 = useSettingsTranslations5();
+  const t2 = useSettingsTranslations6();
   return /* @__PURE__ */ jsx257("div", { className: "space-y-6", children: /* @__PURE__ */ jsx257(Card65, { children: /* @__PURE__ */ jsx257(CardContent64, { className: "p-6", children: /* @__PURE__ */ jsxs232("div", { className: "space-y-6", children: [
     /* @__PURE__ */ jsxs232("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
       /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-3", children: [
@@ -40028,14 +40030,14 @@ var AccountSection = ({
 import { useState as useState85, useTransition as useTransition2 } from "react";
 import { Languages, Check as Check8 } from "lucide-react";
 import { useRouter as useRouter7 } from "next/navigation";
-import { useSettingsTranslations as useSettingsTranslations6 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations7 } from "@rentalshop/hooks";
 import { jsx as jsx258, jsxs as jsxs233 } from "react/jsx-runtime";
 var languages = [
   { value: "en", label: "English", flag: "\u{1F1FA}\u{1F1F8}" },
   { value: "vi", label: "Ti\u1EBFng Vi\u1EC7t", flag: "\u{1F1FB}\u{1F1F3}" }
 ];
 function LanguageSection() {
-  const t2 = useSettingsTranslations6();
+  const t2 = useSettingsTranslations7();
   const currentLocale = Z();
   const router = useRouter7();
   const [isPending, startTransition] = useTransition2();
@@ -40107,7 +40109,7 @@ import {
   Label as Label20
 } from "@rentalshop/ui";
 import { Eye as Eye30, EyeOff as EyeOff9 } from "lucide-react";
-import { useSettingsTranslations as useSettingsTranslations7 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations8 } from "@rentalshop/hooks";
 import { jsx as jsx259, jsxs as jsxs234 } from "react/jsx-runtime";
 var ChangePasswordDialog2 = ({
   isOpen,
@@ -40117,7 +40119,7 @@ var ChangePasswordDialog2 = ({
   onChange,
   onSubmit
 }) => {
-  const t2 = useSettingsTranslations7();
+  const t2 = useSettingsTranslations8();
   const [showCurrentPassword, setShowCurrentPassword] = useState86(false);
   const [showNewPassword, setShowNewPassword] = useState86(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState86(false);
@@ -40241,7 +40243,7 @@ var ChangePasswordDialog2 = ({
 
 // src/components/features/Settings/components/DeleteAccountDialog.tsx
 import { Button as Button72 } from "@rentalshop/ui";
-import { useSettingsTranslations as useSettingsTranslations8 } from "@rentalshop/hooks";
+import { useSettingsTranslations as useSettingsTranslations9 } from "@rentalshop/hooks";
 import { jsx as jsx260, jsxs as jsxs235 } from "react/jsx-runtime";
 var DeleteAccountDialog = ({
   isOpen,
@@ -40249,7 +40251,7 @@ var DeleteAccountDialog = ({
   onClose,
   onConfirm
 }) => {
-  const t2 = useSettingsTranslations8();
+  const t2 = useSettingsTranslations9();
   if (!isOpen)
     return null;
   return /* @__PURE__ */ jsx260("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ jsxs235("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
@@ -40335,7 +40337,7 @@ var createSettingsMenuItems = (t2) => [
   }
 ];
 var SettingsComponent = () => {
-  const t2 = useSettingsTranslations9();
+  const t2 = useSettingsTranslations10();
   const { user, logout, loading } = useAuth2();
   const { toastSuccess, toastError } = useToast10();
   const { currency, setCurrency } = useCurrency2();

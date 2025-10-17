@@ -4,11 +4,12 @@ const LOCALE_STORAGE_KEY = 'user_language_preference';
 
 /**
  * Get the user's preferred locale from localStorage
- * Falls back to default locale if not set or invalid
+ * Falls back to default locale (Vietnamese) if not set or invalid
+ * ✅ Vietnamese as default for Vietnam market
  */
 export function getUserLocale(): Locale {
   if (typeof window === 'undefined') {
-    return defaultLocale;
+    return defaultLocale; // 'vi' for Vietnam market
   }
 
   try {
@@ -20,7 +21,7 @@ export function getUserLocale(): Locale {
     console.error('Error reading locale from localStorage:', error);
   }
 
-  return defaultLocale;
+  return defaultLocale; // 'vi' for Vietnam market
 }
 
 /**
