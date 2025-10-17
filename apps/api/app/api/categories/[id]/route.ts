@@ -261,7 +261,7 @@ export async function DELETE(
 
     // Check if category has products (simplified check)
     const productCount = await db.products.getStats({
-      where: { categoryId: categoryId }
+      categoryId: categoryId
     });
     
     if (productCount > 0) {

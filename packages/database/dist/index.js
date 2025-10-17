@@ -571,7 +571,8 @@ var simplifiedProducts = {
   /**
    * Get product statistics (simplified API)
    */
-  getStats: async (where = {}) => {
+  getStats: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
     return await prisma.product.count({ where });
   },
   /**
@@ -2664,7 +2665,8 @@ var search2 = async (filters) => {
     totalPages: Math.ceil(total / limit)
   };
 };
-var getStats2 = async (where = {}) => {
+var getStats2 = async (whereClause) => {
+  const where = whereClause?.where || whereClause || {};
   return await prisma.category.count({ where });
 };
 var simplifiedCategories = {
@@ -2699,7 +2701,8 @@ var findMany2 = async (options = {}) => {
     skip
   });
 };
-var getStats3 = async (where = {}) => {
+var getStats3 = async (whereClause) => {
+  const where = whereClause?.where || whereClause || {};
   return await prisma.auditLog.count({ where });
 };
 var findFirst2 = async (where) => {
@@ -2769,7 +2772,8 @@ var groupBy = async (options) => {
   }
   return await prisma.orderItem.groupBy(groupByOptions);
 };
-var getStats4 = async (where = {}) => {
+var getStats4 = async (whereClause) => {
+  const where = whereClause?.where || whereClause || {};
   return await prisma.orderItem.count({ where });
 };
 var findFirst3 = async (where) => {

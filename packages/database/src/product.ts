@@ -822,7 +822,9 @@ export const simplifiedProducts = {
   /**
    * Get product statistics (simplified API)
    */
-  getStats: async (where: any = {}) => {
+  getStats: async (whereClause?: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
     return await prisma.product.count({ where });
   },
 

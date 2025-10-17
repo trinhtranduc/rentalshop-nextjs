@@ -206,7 +206,9 @@ export const search = async (filters: any) => {
 /**
  * Get category statistics (simplified API)
  */
-export const getStats = async (where: any = {}) => {
+export const getStats = async (whereClause?: any) => {
+  // Handle both direct where clause and object with where property
+  const where = whereClause?.where || whereClause || {};
   return await prisma.category.count({ where });
 };
 
