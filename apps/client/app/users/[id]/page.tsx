@@ -313,7 +313,7 @@ export default function UserPage() {
             <Button 
               onClick={handleEdit} 
               variant={showEditSection ? "outline" : "default"}
-              className={showEditSection ? "" : "bg-blue-600 hover:bg-blue-700 text-white"}
+              className={showEditSection ? "" : "bg-blue-700 hover:bg-blue-700 text-white"}
             >
               <Edit className="w-4 h-4 mr-2" />
               {showEditSection ? t('buttons.cancel') : tu('editUser')}

@@ -49,7 +49,7 @@ const getTypeConfig = (type: ConfirmationType) => {
         icon: Info,
         iconColor: 'text-blue-500',
         buttonVariant: 'outline' as const,
-        buttonColor: 'border-blue-300 text-blue-600 hover:bg-blue-50'
+        buttonColor: 'border-blue-300 text-blue-700 hover:bg-blue-50'
       };
     case 'success':
       return {

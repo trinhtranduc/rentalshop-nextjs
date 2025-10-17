@@ -738,7 +738,7 @@ export default function AdminDashboard() {
         period: getPeriodLabel() 
       },
       icon: Building2,
-      color: 'text-blue-600',
+      color: 'text-blue-700',
       bgColor: 'bg-blue-100'
     },
     // Platform Revenue - Hidden for OUTLET_STAFF
@@ -806,7 +806,7 @@ export default function AdminDashboard() {
             </Button>
           </div>
           <Button
-            variant="success"
+            variant="default"
             onClick={fetchSystemMetrics}
             className="px-4 py-2 text-sm"
           >
@@ -844,10 +844,10 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Trial Subscriptions</CardTitle>
-              <Clock className="h-4 w-4 text-blue-600" />
+              <Clock className="h-4 w-4 text-blue-700" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{subscriptionStats.trial}</div>
+              <div className="text-2xl font-bold text-blue-700">{subscriptionStats.trial}</div>
               <p className="text-xs text-gray-500">In trial period</p>
             </CardContent>
           </Card>
@@ -909,7 +909,7 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Store className="w-5 h-5 text-blue-600" />
+                  <Store className="w-5 h-5 text-blue-700" />
                   New Merchants
                 </CardTitle>
               </CardHeader>
@@ -919,7 +919,7 @@ export default function AdminDashboard() {
                     {newMerchants.map((merchant, index) => (
                       <div key={merchant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => window.location.href = `/merchants/${merchant.id}`}>
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white font-bold text-sm">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 text-white font-bold text-sm">
                             {index + 1}
                           </div>
                           <div>

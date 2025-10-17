@@ -107,7 +107,7 @@ export function SubscriptionPeriodCard({
         {period.isTrial && period.endDate && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-600" />
+              <Clock className="w-4 h-4 text-blue-700" />
               <div>
                 <div className="text-sm font-medium text-blue-900">
                   Trial Period

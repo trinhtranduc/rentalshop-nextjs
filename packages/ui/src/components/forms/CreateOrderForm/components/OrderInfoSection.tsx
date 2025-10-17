@@ -381,7 +381,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                       <span>{t('messages.addNewCustomer')}</span>
                     </div>
                     {searchQuery.trim() && (
-                      <div className="text-xs text-blue-600 mt-1">
+                      <div className="text-xs text-blue-700 mt-1">
                         Create customer: "{searchQuery}"
                       </div>
                     )}

@@ -59,7 +59,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         </PageHeader>
         <div className="flex justify-center items-center py-12">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto mb-4"></div>
             <p className="text-gray-600">{t('loading') || 'Loading settings...'}</p>
           </div>
         </div>
@@ -105,7 +105,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                         onClick={() => onSectionChange(item.id)}
                         className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
                             : 'text-gray-700 hover:bg-gray-50'
                         }`}
                       >

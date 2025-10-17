@@ -71,7 +71,7 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
           {/* Logo */}
           <div className="text-center mb-6">
             <div className="inline-block">
-              <div className="h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">R</span>
               </div>
             </div>
@@ -139,7 +139,7 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
         {/* Logo */}
         <div className="text-center mb-6">
           <div className="inline-block">
-            <div className="h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">R</span>
             </div>
           </div>

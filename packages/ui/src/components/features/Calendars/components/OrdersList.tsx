@@ -58,7 +58,7 @@ export function OrdersList({
             {/* Customer Information */}
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-blue-600" />
+                <User className="w-4 h-4 text-blue-700" />
               </div>
               <div>
                 <p className="font-medium text-gray-900">

@@ -331,7 +331,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                             "h-8 w-8 text-sm rounded-lg transition-colors relative p-0",
                             isDisabled && "text-gray-300 cursor-not-allowed",
                             !isDisabled && "hover:bg-gray-100",
-                            isSelected && "bg-blue-600 text-white hover:bg-blue-700",
+                            isSelected && "bg-blue-700 text-white hover:bg-blue-700",
                             isInRange && !isSelected && "bg-blue-100 text-blue-900",
                             isHovered && !isSelected && "bg-blue-50"
                           )}

@@ -196,12 +196,12 @@ export default function CalendarPage() {
             <div className="bg-blue-50 rounded-lg p-4">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-blue-600">{tcal('labels.pickupOrders')}</p>
+                  <p className="text-sm font-medium text-blue-700">{tcal('labels.pickupOrders')}</p>
                   <p className="text-2xl font-bold text-blue-900">{calendarMeta.stats.totalPickups}</p>
                 </div>
               </div>

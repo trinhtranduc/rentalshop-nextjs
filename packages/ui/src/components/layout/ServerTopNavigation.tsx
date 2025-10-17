@@ -69,7 +69,7 @@ export function ServerTopNavigation({
           {/* Left: Logo + Brand */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
                 <Store className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -94,7 +94,7 @@ export function ServerTopNavigation({
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-700' : 'text-gray-500'}`} />
                   {item.label}
                 </a>
               )
@@ -220,7 +220,7 @@ export function ServerTopNavigation({
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-700' : 'text-gray-500'}`} />
                 {item.label}
               </a>
             )

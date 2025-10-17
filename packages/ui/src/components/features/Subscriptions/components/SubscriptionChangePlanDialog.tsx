@@ -82,7 +82,7 @@ export function SubscriptionChangePlanDialog({
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ArrowRight className="h-5 w-5 text-blue-600" />
+            <ArrowRight className="h-5 w-5 text-blue-700" />
             Change Subscription Plan
           </DialogTitle>
           <DialogDescription>
@@ -151,7 +151,7 @@ export function SubscriptionChangePlanDialog({
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">{plan.name}</CardTitle>
                         {selectedPlanId === plan.id && (
-                          <Check className="h-5 w-5 text-blue-600" />
+                          <Check className="h-5 w-5 text-blue-700" />
                         )}
                       </div>
                       <p className="text-sm text-gray-600">{plan.description}</p>

@@ -272,7 +272,7 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
       <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Eye className="w-5 h-5 text-blue-600" />
+            <Eye className="w-5 h-5 text-blue-700" />
             <div>
               <h3 className="font-semibold text-blue-900">🆕 Preview Mode - New Design</h3>
               <p className="text-sm text-blue-700">
@@ -319,7 +319,7 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
           
           {subscription.status === 'trial' && (
             <Button
-              variant="success"
+              variant="default"
               onClick={() => setShowUpgradeModal(true)}
             >
               <TrendingUp className="w-4 h-4 mr-2" />
@@ -413,7 +413,7 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
               variant="ghost"
               className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'payments' 
-                  ? 'border-b-2 border-blue-500 text-blue-600' 
+                  ? 'border-b-2 border-blue-500 text-blue-700' 
                   : 'text-gray-600 hover:text-gray-900'
               }`}
               onClick={() => setActiveTab('payments')}
@@ -424,7 +424,7 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
               variant="ghost"
               className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'activity' 
-                  ? 'border-b-2 border-blue-500 text-blue-600' 
+                  ? 'border-b-2 border-blue-500 text-blue-700' 
                   : 'text-gray-600 hover:text-gray-900'
               }`}
               onClick={() => setActiveTab('activity')}
@@ -435,7 +435,7 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
               variant="ghost"
               className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'details' 
-                  ? 'border-b-2 border-blue-500 text-blue-600' 
+                  ? 'border-b-2 border-blue-500 text-blue-700' 
                   : 'text-gray-600 hover:text-gray-900'
               }`}
               onClick={() => setActiveTab('details')}

@@ -720,7 +720,7 @@ var alertVariants = cva(
         destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
         warning: "border-yellow-500/50 text-yellow-700 dark:border-yellow-500 dark:text-yellow-300 [&>svg]:text-yellow-600",
         success: "border-green-500/50 text-green-700 dark:border-green-500 dark:text-green-300 [&>svg]:text-green-600",
-        info: "border-blue-500/50 text-blue-700 dark:border-blue-500 dark:text-blue-300 [&>svg]:text-blue-600"
+        info: "border-blue-500/50 text-blue-700 dark:border-blue-500 dark:text-blue-300 [&>svg]:text-blue-700"
       }
     },
     defaultVariants: {
@@ -922,8 +922,8 @@ var buttonVariants = cva3(
   {
     variants: {
       variant: {
-        // Green Theme - Primary button with green
-        default: "bg-green-500 text-white hover:bg-green-600",
+        // Blue-700 Theme - Primary button with blue-700
+        default: "bg-blue-700 text-white hover:bg-blue-800",
         // Destructive - Red for danger actions
         destructive: "bg-red-500 text-white hover:bg-red-600",
         // Outline - Neutral gray border (for table actions, pagination)
@@ -932,9 +932,9 @@ var buttonVariants = cva3(
         secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
         // Ghost - Transparent with hover effect
         ghost: "hover:bg-slate-100 hover:text-slate-800",
-        // Link - Green text with underline
-        link: "text-green-500 underline-offset-4 hover:underline",
-        // Success - Emerald green
+        // Link - Blue-700 text with underline
+        link: "text-blue-700 underline-offset-4 hover:underline",
+        // Success - Emerald green (keep for success states)
         success: "bg-emerald-500 text-white hover:bg-emerald-600",
         // Warning - Amber yellow
         warning: "bg-amber-500 text-white hover:bg-amber-600"
@@ -1517,7 +1517,7 @@ var getTypeConfig = (type) => {
         icon: Info,
         iconColor: "text-blue-500",
         buttonVariant: "outline",
-        buttonColor: "border-blue-300 text-blue-600 hover:bg-blue-50"
+        buttonColor: "border-blue-300 text-blue-700 hover:bg-blue-50"
       };
     case "success":
       return {
@@ -1665,7 +1665,7 @@ var getTypeConfig2 = (type) => {
         icon: Info2,
         iconColor: "text-blue-500",
         buttonVariant: "outline",
-        buttonColor: "border-blue-300 text-blue-600 hover:bg-blue-50"
+        buttonColor: "border-blue-300 text-blue-700 hover:bg-blue-50"
       };
     case "success":
       return {
@@ -1826,7 +1826,7 @@ function LoadingIndicator({
       /* @__PURE__ */ jsx19(
         "path",
         {
-          className: "text-blue-600 animate-circular-progress",
+          className: "text-blue-700 animate-circular-progress",
           stroke: "currentColor",
           strokeWidth: "3",
           strokeLinecap: "round",
@@ -2861,7 +2861,7 @@ var DateRangePicker = ({
                   "h-8 w-8 text-sm rounded-lg transition-colors relative p-0",
                   isDisabled && "text-gray-300 cursor-not-allowed",
                   !isDisabled && "hover:bg-gray-100",
-                  isSelected && "bg-blue-600 text-white hover:bg-blue-700",
+                  isSelected && "bg-blue-700 text-white hover:bg-blue-700",
                   isInRange && !isSelected && "bg-blue-100 text-blue-900",
                   isHovered && !isSelected && "bg-blue-50"
                 ),
@@ -3356,7 +3356,7 @@ var ProductAvailabilityWarning = ({
       case "warning":
         return /* @__PURE__ */ jsx35(AlertTriangle4, { className: "w-5 h-5 text-orange-600" });
       default:
-        return /* @__PURE__ */ jsx35(CheckCircle4, { className: "w-5 h-5 text-blue-600" });
+        return /* @__PURE__ */ jsx35(CheckCircle4, { className: "w-5 h-5 text-blue-700" });
     }
   };
   const getWarningClass = () => {
@@ -3685,7 +3685,7 @@ var SearchableSelect = ({
                   opt.description && /* @__PURE__ */ jsx36("div", { className: "text-sm text-gray-600 whitespace-pre-line", children: opt.description })
                 ] })
               ) }),
-              value === parseInt(opt.value) && /* @__PURE__ */ jsx36("div", { className: "flex-shrink-0 w-5 h-5 text-blue-600", children: /* @__PURE__ */ jsx36("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx36("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
+              value === parseInt(opt.value) && /* @__PURE__ */ jsx36("div", { className: "flex-shrink-0 w-5 h-5 text-blue-700", children: /* @__PURE__ */ jsx36("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx36("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
             ]
           },
           opt.value
@@ -3829,7 +3829,7 @@ var SearchableCountrySelect = ({
             /* @__PURE__ */ jsx37("div", { className: "font-medium text-gray-900 truncate", children: country.name }),
             /* @__PURE__ */ jsx37("div", { className: "text-xs text-gray-500", children: country.code })
           ] }),
-          value === country.name && /* @__PURE__ */ jsx37("div", { className: "flex-shrink-0 w-5 h-5 text-blue-600", children: /* @__PURE__ */ jsx37("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx37("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
+          value === country.name && /* @__PURE__ */ jsx37("div", { className: "flex-shrink-0 w-5 h-5 text-blue-700", children: /* @__PURE__ */ jsx37("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx37("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
         ]
       },
       country.code
@@ -5116,7 +5116,7 @@ var OrderForm = ({
         ] }),
         /* @__PURE__ */ jsxs26("div", { className: "flex justify-between text-lg font-semibold", children: [
           /* @__PURE__ */ jsx40("span", { children: "Ti\u1EC1n c\u1ECDc:" }),
-          /* @__PURE__ */ jsx40("span", { className: "text-blue-600", children: formatCurrency2(formData.depositAmount || 0) })
+          /* @__PURE__ */ jsx40("span", { className: "text-blue-700", children: formatCurrency2(formData.depositAmount || 0) })
         ] })
       ] })
     ] }) })
@@ -6455,7 +6455,7 @@ var OrderInfoSection = ({
                       /* @__PURE__ */ jsx42(Plus2, { className: "w-4 h-4" }),
                       /* @__PURE__ */ jsx42("span", { children: t2("messages.addNewCustomer") })
                     ] }),
-                    searchQuery.trim() && /* @__PURE__ */ jsxs28("div", { className: "text-xs text-blue-600 mt-1", children: [
+                    searchQuery.trim() && /* @__PURE__ */ jsxs28("div", { className: "text-xs text-blue-700 mt-1", children: [
                       'Create customer: "',
                       searchQuery,
                       '"'
@@ -7126,14 +7126,14 @@ var OrderPreviewForm = ({
   return /* @__PURE__ */ jsxs32("div", { className: `space-y-6 ${className}`, children: [
     /* @__PURE__ */ jsxs32("div", { className: "text-center space-y-2", children: [
       /* @__PURE__ */ jsxs32("h2", { className: "text-2xl font-bold text-gray-900 flex items-center justify-center gap-2", children: [
-        /* @__PURE__ */ jsx46(ShoppingCart, { className: "w-6 h-6 text-blue-600" }),
+        /* @__PURE__ */ jsx46(ShoppingCart, { className: "w-6 h-6 text-blue-700" }),
         title
       ] }),
       subtitle && /* @__PURE__ */ jsx46("p", { className: "text-gray-600", children: subtitle })
     ] }),
     /* @__PURE__ */ jsxs32(Card6, { children: [
       /* @__PURE__ */ jsx46(CardHeader6, { children: /* @__PURE__ */ jsxs32(CardTitle6, { className: "text-lg font-semibold flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx46(Info5, { className: "w-5 h-5 text-blue-600" }),
+        /* @__PURE__ */ jsx46(Info5, { className: "w-5 h-5 text-blue-700" }),
         "Order Summary"
       ] }) }),
       /* @__PURE__ */ jsx46(CardContent6, { children: /* @__PURE__ */ jsxs32("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
@@ -7272,7 +7272,7 @@ var OrderPreviewForm = ({
         /* @__PURE__ */ jsx46(Separator3, {}),
         /* @__PURE__ */ jsxs32("div", { className: "flex justify-between items-center text-lg font-bold", children: [
           /* @__PURE__ */ jsx46("span", { children: "Total Amount:" }),
-          /* @__PURE__ */ jsx46("span", { className: "font-mono text-blue-600", children: formatCurrency4(orderData.totalAmount) })
+          /* @__PURE__ */ jsx46("span", { className: "font-mono text-blue-700", children: formatCurrency4(orderData.totalAmount) })
         ] }),
         orderData.depositAmount && orderData.depositAmount > 0 && /* @__PURE__ */ jsxs32(Fragment6, { children: [
           /* @__PURE__ */ jsxs32("div", { className: "flex justify-between items-center", children: [
@@ -7349,7 +7349,7 @@ var OrderPreviewForm = ({
         {
           onClick: onConfirm,
           disabled: loading || warnings.length > 0,
-          className: "flex items-center gap-2 bg-blue-600 hover:bg-blue-700",
+          className: "flex items-center gap-2 bg-blue-700 hover:bg-blue-700",
           children: loading ? /* @__PURE__ */ jsxs32(Fragment6, { children: [
             /* @__PURE__ */ jsx46("div", { className: "w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" }),
             "Processing..."
@@ -7381,7 +7381,7 @@ var OrderPreviewDialog = ({
 }) => {
   return /* @__PURE__ */ jsx47(Dialog3, { open, onOpenChange, children: /* @__PURE__ */ jsxs33(DialogContent3, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
     /* @__PURE__ */ jsx47(DialogHeader3, { children: /* @__PURE__ */ jsxs33(DialogTitle3, { className: "text-2xl font-bold flex items-center gap-2", children: [
-      /* @__PURE__ */ jsx47(ShoppingCart2, { className: "w-6 h-6 text-blue-600" }),
+      /* @__PURE__ */ jsx47(ShoppingCart2, { className: "w-6 h-6 text-blue-700" }),
       title
     ] }) }),
     /* @__PURE__ */ jsx47(
@@ -13440,7 +13440,7 @@ var LoginForm = ({
     /* @__PURE__ */ jsx51("div", { className: "absolute top-4 right-4", children: /* @__PURE__ */ jsx51(LanguageSwitcher, { variant: "compact" }) }),
     /* @__PURE__ */ jsxs37("div", { className: "w-full max-w-md", children: [
       /* @__PURE__ */ jsxs37("div", { className: "text-center mb-6", children: [
-        /* @__PURE__ */ jsx51("div", { className: "inline-block", children: /* @__PURE__ */ jsx51("div", { className: "h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx51("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
+        /* @__PURE__ */ jsx51("div", { className: "inline-block", children: /* @__PURE__ */ jsx51("div", { className: "h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx51("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
         /* @__PURE__ */ jsx51("h1", { className: "mt-4 text-2xl font-bold text-gray-800", children: isAdmin ? "Admin Login" : t2("login.title") }),
         /* @__PURE__ */ jsx51("p", { className: "mt-2 text-sm text-gray-600", children: isAdmin ? "Sign in to admin panel" : t2("login.subtitle") })
       ] }),
@@ -13516,7 +13516,7 @@ var LoginForm = ({
                 {
                   type: "checkbox",
                   id: "remember",
-                  className: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
+                  className: "h-4 w-4 text-blue-700 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
                 }
               ),
               /* @__PURE__ */ jsx51("label", { htmlFor: "remember", className: "ml-2 text-sm text-gray-600", children: t2("login.rememberMe") })
@@ -13546,7 +13546,7 @@ var LoginForm = ({
             {
               variant: "link",
               onClick: () => onNavigate?.("/register"),
-              className: "font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto",
+              className: "font-medium text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto",
               children: t2("login.signUp")
             }
           )
@@ -13556,7 +13556,7 @@ var LoginForm = ({
           {
             variant: "link",
             onClick: () => onNavigate?.("/forget-password"),
-            className: "font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto",
+            className: "font-medium text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto",
             children: t2("login.forgotPassword")
           }
         ) })
@@ -13727,13 +13727,13 @@ var RegisterForm = ({
         /* @__PURE__ */ jsx52(CardTitle8, { className: "text-2xl font-bold text-gray-900", children: t2("register.createMerchantAccount") }),
         /* @__PURE__ */ jsx52(CardDescription3, { className: "text-gray-600", children: currentStep === 1 ? t2("register.step1") : t2("register.step2") }),
         /* @__PURE__ */ jsxs38("div", { className: "flex items-center justify-center space-x-4 mt-4", children: [
-          /* @__PURE__ */ jsxs38("div", { className: `flex items-center ${currentStep >= 1 ? "text-blue-600" : "text-gray-400"}`, children: [
-            /* @__PURE__ */ jsx52("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= 1 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"}`, children: "1" }),
+          /* @__PURE__ */ jsxs38("div", { className: `flex items-center ${currentStep >= 1 ? "text-blue-700" : "text-gray-400"}`, children: [
+            /* @__PURE__ */ jsx52("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= 1 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-500"}`, children: "1" }),
             /* @__PURE__ */ jsx52("span", { className: "ml-2 text-sm font-medium", children: t2("register.account") })
           ] }),
-          /* @__PURE__ */ jsx52("div", { className: `w-8 h-0.5 ${currentStep >= 2 ? "bg-blue-600" : "bg-gray-200"}` }),
-          /* @__PURE__ */ jsxs38("div", { className: `flex items-center ${currentStep >= 2 ? "text-blue-600" : "text-gray-400"}`, children: [
-            /* @__PURE__ */ jsx52("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= 2 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"}`, children: "2" }),
+          /* @__PURE__ */ jsx52("div", { className: `w-8 h-0.5 ${currentStep >= 2 ? "bg-blue-700" : "bg-gray-200"}` }),
+          /* @__PURE__ */ jsxs38("div", { className: `flex items-center ${currentStep >= 2 ? "text-blue-700" : "text-gray-400"}`, children: [
+            /* @__PURE__ */ jsx52("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= 2 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-500"}`, children: "2" }),
             /* @__PURE__ */ jsx52("span", { className: "ml-2 text-sm font-medium", children: t2("register.business") })
           ] })
         ] })
@@ -13891,7 +13891,7 @@ var RegisterForm = ({
             Button10,
             {
               type: "submit",
-              className: "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
+              className: "w-full bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
               disabled: isSubmitting,
               children: isSubmitting ? t2("register.validating") : t2("register.continueToBusinessInfo")
             }
@@ -14077,17 +14077,17 @@ var RegisterForm = ({
                   checked: formik.values.acceptTermsAndPrivacy,
                   onChange: formik.handleChange,
                   onBlur: formik.handleBlur,
-                  className: "mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className: "mt-1 h-4 w-4 text-blue-700 focus:ring-blue-500 border-gray-300 rounded"
                 }
               ),
               /* @__PURE__ */ jsxs38("span", { className: "text-sm text-gray-700", children: [
                 t2("register.iAgreeToThe"),
                 " ",
-                /* @__PURE__ */ jsx52("a", { href: "/terms", className: "text-blue-600 hover:text-blue-500 underline", children: t2("register.termsOfService") }),
+                /* @__PURE__ */ jsx52("a", { href: "/terms", className: "text-blue-700 hover:text-blue-500 underline", children: t2("register.termsOfService") }),
                 " ",
                 t2("register.and"),
                 " ",
-                /* @__PURE__ */ jsx52("a", { href: "/privacy", className: "text-blue-600 hover:text-blue-500 underline", children: t2("register.privacyPolicy") })
+                /* @__PURE__ */ jsx52("a", { href: "/privacy", className: "text-blue-700 hover:text-blue-500 underline", children: t2("register.privacyPolicy") })
               ] })
             ] }),
             formik.errors.acceptTermsAndPrivacy && formik.touched.acceptTermsAndPrivacy && /* @__PURE__ */ jsx52("p", { className: "text-red-500 text-sm", children: formik.errors.acceptTermsAndPrivacy })
@@ -14096,22 +14096,22 @@ var RegisterForm = ({
             /* @__PURE__ */ jsx52("h3", { className: "text-sm font-medium text-blue-900 mb-2", children: t2("register.freeTrialIncludes") }),
             /* @__PURE__ */ jsxs38("ul", { className: "text-sm text-blue-800 space-y-1", children: [
               /* @__PURE__ */ jsxs38("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ jsx52(CheckCircle10, { className: "h-4 w-4 text-blue-600 mr-2" }),
+                /* @__PURE__ */ jsx52(CheckCircle10, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.fullAccessToAllFeatures")
               ] }),
               /* @__PURE__ */ jsxs38("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ jsx52(CheckCircle10, { className: "h-4 w-4 text-blue-600 mr-2" }),
+                /* @__PURE__ */ jsx52(CheckCircle10, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.defaultOutlet"),
                 ': "',
                 formik.values.businessName || "Your Business",
                 '"'
               ] }),
               /* @__PURE__ */ jsxs38("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ jsx52(CheckCircle10, { className: "h-4 w-4 text-blue-600 mr-2" }),
+                /* @__PURE__ */ jsx52(CheckCircle10, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.mobileAppAccess")
               ] }),
               /* @__PURE__ */ jsxs38("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ jsx52(CheckCircle10, { className: "h-4 w-4 text-blue-600 mr-2" }),
+                /* @__PURE__ */ jsx52(CheckCircle10, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.noCreditCardRequired")
               ] })
             ] })
@@ -14130,7 +14130,7 @@ var RegisterForm = ({
               Button10,
               {
                 type: "submit",
-                className: "flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
+                className: "flex-1 bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
                 disabled: isSubmitting,
                 children: isSubmitting ? t2("register.creatingAccount") : t2("register.registerButton")
               }
@@ -14147,7 +14147,7 @@ var RegisterForm = ({
               variant: "link",
               type: "button",
               onClick: () => onNavigate?.("/login"),
-              className: "text-blue-600 hover:text-blue-500 font-medium p-0 h-auto",
+              className: "text-blue-700 hover:text-blue-500 font-medium p-0 h-auto",
               children: t2("register.signIn")
             }
           )
@@ -14204,7 +14204,7 @@ var ForgetPasswordForm = ({
   if (emailSent || success) {
     return /* @__PURE__ */ jsx53("div", { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4", children: /* @__PURE__ */ jsxs39("div", { className: "w-full max-w-md", children: [
       /* @__PURE__ */ jsxs39("div", { className: "text-center mb-6", children: [
-        /* @__PURE__ */ jsx53("div", { className: "inline-block", children: /* @__PURE__ */ jsx53("div", { className: "h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx53("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
+        /* @__PURE__ */ jsx53("div", { className: "inline-block", children: /* @__PURE__ */ jsx53("div", { className: "h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx53("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
         /* @__PURE__ */ jsx53("h1", { className: "mt-4 text-2xl font-bold text-gray-800", children: t2("forgotPassword.checkEmail") }),
         /* @__PURE__ */ jsx53("p", { className: "mt-2 text-sm text-gray-600", children: t2("forgotPassword.checkEmail") })
       ] }),
@@ -14252,7 +14252,7 @@ var ForgetPasswordForm = ({
   }
   return /* @__PURE__ */ jsx53("div", { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4", children: /* @__PURE__ */ jsxs39("div", { className: "w-full max-w-md", children: [
     /* @__PURE__ */ jsxs39("div", { className: "text-center mb-6", children: [
-      /* @__PURE__ */ jsx53("div", { className: "inline-block", children: /* @__PURE__ */ jsx53("div", { className: "h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx53("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
+      /* @__PURE__ */ jsx53("div", { className: "inline-block", children: /* @__PURE__ */ jsx53("div", { className: "h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx53("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
       /* @__PURE__ */ jsx53("h1", { className: "mt-4 text-2xl font-bold text-gray-800", children: t2("forgotPassword.title") }),
       /* @__PURE__ */ jsx53("p", { className: "mt-2 text-sm text-gray-600", children: t2("forgotPassword.subtitle") })
     ] }),
@@ -14983,9 +14983,9 @@ var PieChart = ({ data, title, loading = false }) => {
 import { jsx as jsx61, jsxs as jsxs47 } from "react/jsx-runtime";
 var getColorScheme = (index) => {
   const colors = [
-    "from-blue-500 to-blue-600",
+    "from-blue-500 to-blue-700",
     "from-purple-500 to-purple-600",
-    "from-green-500 to-green-600",
+    "from-blue-600 to-blue-700",
     "from-orange-500 to-orange-600",
     "from-pink-500 to-pink-600",
     "from-indigo-500 to-indigo-600",
@@ -15053,7 +15053,7 @@ var ColorfulList = ({
         /* @__PURE__ */ jsxs47("div", { className: "flex items-center space-x-4", children: [
           /* @__PURE__ */ jsx61("div", { className: `w-12 h-12 rounded-xl bg-gradient-to-br ${getColorScheme(index)} flex items-center justify-center text-white font-bold text-lg shadow-lg`, children: index + 1 }),
           /* @__PURE__ */ jsxs47("div", { children: [
-            /* @__PURE__ */ jsx61("p", { className: "font-bold text-gray-900 text-lg group-hover:text-blue-600 transition-colors", children: item.title }),
+            /* @__PURE__ */ jsx61("p", { className: "font-bold text-gray-900 text-lg group-hover:text-blue-700 transition-colors", children: item.title }),
             item.subtitle && /* @__PURE__ */ jsx61("p", { className: "text-gray-600 font-medium", children: item.subtitle })
           ] })
         ] }),
@@ -15114,7 +15114,7 @@ var SimpleList = ({
       ] }),
       /* @__PURE__ */ jsxs48("div", { className: "text-right", children: [
         item.value && /* @__PURE__ */ jsx62("p", { className: "font-medium text-gray-900 text-sm", children: item.value }),
-        item.status && /* @__PURE__ */ jsx62("span", { className: `text-xs px-1.5 py-0.5 rounded ${item.status === "active" ? "bg-blue-50 text-blue-600" : item.status === "overdue" ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"}`, children: item.status })
+        item.status && /* @__PURE__ */ jsx62("span", { className: `text-xs px-1.5 py-0.5 rounded ${item.status === "active" ? "bg-blue-50 text-blue-700" : item.status === "overdue" ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"}`, children: item.status })
       ] })
     ] }, item.id)) }) })
   ] });
@@ -15147,7 +15147,7 @@ var TopCustomers = ({ data, loading = false }) => {
       /* @__PURE__ */ jsx63("p", { className: "text-sm text-gray-600", children: "Highest spending customers in the last 30 days" })
     ] }),
     /* @__PURE__ */ jsx63(CardContent, { children: /* @__PURE__ */ jsx63("div", { className: "space-y-4", children: data.slice(0, 10).map((customer, index) => /* @__PURE__ */ jsxs49("div", { className: "flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors", children: [
-      /* @__PURE__ */ jsx63("div", { className: "flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm", children: index + 1 }),
+      /* @__PURE__ */ jsx63("div", { className: "flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-700 flex items-center justify-center text-white font-bold text-sm", children: index + 1 }),
       /* @__PURE__ */ jsx63("div", { className: "flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 flex items-center justify-center text-white font-medium", children: customer.name.split(" ").map((n2) => n2[0]).join("").toUpperCase() }),
       /* @__PURE__ */ jsxs49("div", { className: "flex-1 min-w-0", children: [
         /* @__PURE__ */ jsxs49("div", { className: "flex items-center space-x-2", children: [
@@ -15160,7 +15160,7 @@ var TopCustomers = ({ data, loading = false }) => {
         /* @__PURE__ */ jsxs49("div", { className: "flex items-center space-x-4 mt-1 text-xs text-gray-500", children: [
           /* @__PURE__ */ jsx63("span", { className: "truncate", children: customer.email }),
           /* @__PURE__ */ jsx63("span", { className: "truncate", children: customer.phone }),
-          /* @__PURE__ */ jsxs49("span", { className: "font-medium text-blue-600", children: [
+          /* @__PURE__ */ jsxs49("span", { className: "font-medium text-blue-700", children: [
             "$",
             customer.totalSpent.toLocaleString()
           ] })
@@ -15317,7 +15317,7 @@ var RecentOrders = ({ data, loading = false }) => {
             ] }),
             /* @__PURE__ */ jsx65("span", { children: formatDate11(order.createdAt) })
           ] }),
-          order.pickupPlanAt && /* @__PURE__ */ jsxs51("div", { className: "text-xs text-blue-600", children: [
+          order.pickupPlanAt && /* @__PURE__ */ jsxs51("div", { className: "text-xs text-blue-700", children: [
             "Pickup: ",
             formatDate11(order.pickupPlanAt)
           ] })
@@ -16123,7 +16123,7 @@ var ProductCard = ({
       /* @__PURE__ */ jsxs63("div", { className: "mb-4 space-y-1", children: [
         /* @__PURE__ */ jsxs63("div", { className: "flex justify-between items-center", children: [
           /* @__PURE__ */ jsx77("span", { className: "text-sm text-gray-600", children: "Rent Price:" }),
-          /* @__PURE__ */ jsxs63("span", { className: "font-semibold text-lg text-blue-600", children: [
+          /* @__PURE__ */ jsxs63("span", { className: "font-semibold text-lg text-blue-700", children: [
             "$",
             rentPrice.toFixed(2),
             "/day"
@@ -16928,8 +16928,8 @@ var ProductDetailList = ({
             /* @__PURE__ */ jsx84("div", { className: "text-xs text-gray-600", children: tc("labels.total") })
           ] }),
           /* @__PURE__ */ jsxs70("div", { className: "text-center min-w-[60px]", children: [
-            /* @__PURE__ */ jsx84("div", { className: "text-lg font-bold text-blue-600", children: outletStock.available }),
-            /* @__PURE__ */ jsx84("div", { className: "text-xs text-blue-600", children: t2("fields.available") })
+            /* @__PURE__ */ jsx84("div", { className: "text-lg font-bold text-blue-700", children: outletStock.available }),
+            /* @__PURE__ */ jsx84("div", { className: "text-xs text-blue-700", children: t2("fields.available") })
           ] }),
           /* @__PURE__ */ jsxs70("div", { className: "text-center min-w-[60px]", children: [
             /* @__PURE__ */ jsx84("div", { className: "text-lg font-bold text-green-600", children: outletStock.renting }),
@@ -17194,7 +17194,7 @@ var OrderHeader = React50.memo(function OrderHeader2({ totalOrders, stats, showS
     /* @__PURE__ */ jsxs72(Card14, { children: [
       /* @__PURE__ */ jsx87(CardHeader13, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx87(CardTitle13, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.activeRentals") }) }),
       /* @__PURE__ */ jsxs72(CardContent13, { children: [
-        /* @__PURE__ */ jsx87("div", { className: "text-2xl font-bold text-blue-600 dark:text-blue-400", children: (safeStats.activeRentals || 0).toLocaleString() }),
+        /* @__PURE__ */ jsx87("div", { className: "text-2xl font-bold text-blue-700 dark:text-blue-400", children: (safeStats.activeRentals || 0).toLocaleString() }),
         /* @__PURE__ */ jsx87("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: t2("stats.currentlyPickuped") })
       ] })
     ] }),
@@ -17741,7 +17741,7 @@ var OrderTable = React53.memo(function OrderTable2({
     return useFormattedFullDate(dateString);
   };
   const getOrderIcon = () => {
-    return /* @__PURE__ */ jsx91("div", { className: "w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx91("svg", { className: "w-8 h-8 text-blue-600 dark:text-blue-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx91("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }) }) });
+    return /* @__PURE__ */ jsx91("div", { className: "w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx91("svg", { className: "w-8 h-8 text-blue-700 dark:text-blue-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx91("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }) }) });
   };
   const handleSort = (column) => {
     if (onSort) {
@@ -17999,7 +17999,7 @@ function OrderStats({ stats }) {
           ] }),
           /* @__PURE__ */ jsxs78("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx93("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Total Deposits" }),
-            /* @__PURE__ */ jsx93("span", { className: "font-medium text-blue-600 dark:text-blue-400", children: formatCurrency22(stats.totalDeposits) })
+            /* @__PURE__ */ jsx93("span", { className: "font-medium text-blue-700 dark:text-blue-400", children: formatCurrency22(stats.totalDeposits) })
           ] }),
           /* @__PURE__ */ jsxs78("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx93("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Average Order Value" }),
@@ -18348,7 +18348,7 @@ var ProductOrdersView = ({
       ] }),
       /* @__PURE__ */ jsxs80("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
         /* @__PURE__ */ jsx96(Card, { children: /* @__PURE__ */ jsx96(CardContent, { className: "p-4", children: /* @__PURE__ */ jsxs80("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ jsx96("div", { className: "p-2 bg-blue-100 rounded-lg", children: /* @__PURE__ */ jsx96(ShoppingCart5, { className: "h-5 w-5 text-blue-600" }) }),
+          /* @__PURE__ */ jsx96("div", { className: "p-2 bg-blue-100 rounded-lg", children: /* @__PURE__ */ jsx96(ShoppingCart5, { className: "h-5 w-5 text-blue-700" }) }),
           /* @__PURE__ */ jsxs80("div", { children: [
             /* @__PURE__ */ jsx96("p", { className: "text-sm text-gray-600", children: t2("stats.totalOrders") }),
             /* @__PURE__ */ jsx96("p", { className: "text-2xl font-bold text-gray-900", children: overview.totalOrders })
@@ -18383,7 +18383,7 @@ var ProductOrdersView = ({
         ] }) }) }),
         /* @__PURE__ */ jsx96(Card, { children: /* @__PURE__ */ jsx96(CardContent, { className: "p-4", children: /* @__PURE__ */ jsxs80("div", { className: "text-center", children: [
           /* @__PURE__ */ jsx96("p", { className: "text-sm text-gray-600 mb-1", children: t2("stats.completedOrders") }),
-          /* @__PURE__ */ jsx96("p", { className: "text-xl font-bold text-blue-600", children: overview.completedOrders })
+          /* @__PURE__ */ jsx96("p", { className: "text-xl font-bold text-blue-700", children: overview.completedOrders })
         ] }) }) }),
         /* @__PURE__ */ jsx96(Card, { children: /* @__PURE__ */ jsx96(CardContent, { className: "p-4", children: /* @__PURE__ */ jsxs80("div", { className: "text-center", children: [
           /* @__PURE__ */ jsx96("p", { className: "text-sm text-gray-600 mb-1", children: t2("productOrders.reservedOrders") }),
@@ -18401,10 +18401,10 @@ var ProductOrdersView = ({
         ] })
       ] }) }) }),
       /* @__PURE__ */ jsx96(Card, { children: /* @__PURE__ */ jsx96(CardContent, { className: "p-4", children: /* @__PURE__ */ jsxs80("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx96("div", { className: "p-2 bg-blue-100 rounded-lg", children: /* @__PURE__ */ jsx96(Package8, { className: "h-5 w-5 text-blue-600" }) }),
+        /* @__PURE__ */ jsx96("div", { className: "p-2 bg-blue-100 rounded-lg", children: /* @__PURE__ */ jsx96(Package8, { className: "h-5 w-5 text-blue-700" }) }),
         /* @__PURE__ */ jsxs80("div", { children: [
           /* @__PURE__ */ jsx96("p", { className: "text-sm text-gray-600", children: t2("productOrders.currentlyRented") }),
-          /* @__PURE__ */ jsx96("p", { className: "text-2xl font-bold text-blue-600", children: inventoryData.totalRenting }),
+          /* @__PURE__ */ jsx96("p", { className: "text-2xl font-bold text-blue-700", children: inventoryData.totalRenting }),
           /* @__PURE__ */ jsx96("p", { className: "text-xs text-gray-500", children: t2("productOrders.outOnRental") })
         ] })
       ] }) }) }),
@@ -20266,7 +20266,7 @@ function CustomerHeader({ totalCustomers, stats }) {
     /* @__PURE__ */ jsxs92(Card24, { children: [
       /* @__PURE__ */ jsx108(CardHeader19, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx108(CardTitle19, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "New This Month" }) }),
       /* @__PURE__ */ jsxs92(CardContent23, { children: [
-        /* @__PURE__ */ jsx108("div", { className: "text-2xl font-bold text-blue-600 dark:text-blue-400", children: stats.newCustomersThisMonth.toLocaleString() }),
+        /* @__PURE__ */ jsx108("div", { className: "text-2xl font-bold text-blue-700 dark:text-blue-400", children: stats.newCustomersThisMonth.toLocaleString() }),
         /* @__PURE__ */ jsx108("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "Recent signups" })
       ] })
     ] }),
@@ -20424,7 +20424,7 @@ function CustomerStats({ stats }) {
               /* @__PURE__ */ jsx110("div", { className: "w-20 bg-blue-200 dark:bg-blue-700 rounded-full h-2", children: /* @__PURE__ */ jsx110(
                 "div",
                 {
-                  className: "bg-blue-600 h-2 rounded-full",
+                  className: "bg-blue-700 h-2 rounded-full",
                   style: { width: `${stats.newCustomersThisMonth / stats.totalCustomers * 100}%` }
                 }
               ) }),
@@ -21265,7 +21265,7 @@ function MerchantHeader({ merchant, stats }) {
       /* @__PURE__ */ jsx116("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: merchant.email })
     ] }) }) }),
     /* @__PURE__ */ jsx116(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx116(CardContent, { className: "p-6", children: /* @__PURE__ */ jsxs100("div", { className: "text-center", children: [
-      /* @__PURE__ */ jsx116(Building23, { className: "w-6 h-6 text-blue-600 mx-auto mb-2" }),
+      /* @__PURE__ */ jsx116(Building23, { className: "w-6 h-6 text-blue-700 mx-auto mb-2" }),
       /* @__PURE__ */ jsx116("p", { className: "text-xs font-medium text-gray-600 dark:text-gray-400", children: "Total Outlets" }),
       /* @__PURE__ */ jsx116("p", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: stats.totalOutlets }),
       /* @__PURE__ */ jsx116("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "Business locations" })
@@ -21913,7 +21913,7 @@ function SubscriptionExtendDialog({
   return /* @__PURE__ */ jsx121(Dialog7, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ jsxs105(DialogContent7, { className: "max-w-2xl", children: [
     /* @__PURE__ */ jsxs105(DialogHeader7, { children: [
       /* @__PURE__ */ jsxs105(DialogTitle7, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx121(Calendar9, { className: "h-5 w-5 text-blue-600" }),
+        /* @__PURE__ */ jsx121(Calendar9, { className: "h-5 w-5 text-blue-700" }),
         "Extend Subscription"
       ] }),
       /* @__PURE__ */ jsxs105(DialogDescription5, { children: [
@@ -22126,7 +22126,7 @@ function SubscriptionChangePlanDialog({
   return /* @__PURE__ */ jsx122(Dialog8, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ jsxs106(DialogContent8, { className: "max-w-4xl", children: [
     /* @__PURE__ */ jsxs106(DialogHeader8, { children: [
       /* @__PURE__ */ jsxs106(DialogTitle8, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx122(ArrowRight2, { className: "h-5 w-5 text-blue-600" }),
+        /* @__PURE__ */ jsx122(ArrowRight2, { className: "h-5 w-5 text-blue-700" }),
         "Change Subscription Plan"
       ] }),
       /* @__PURE__ */ jsxs106(DialogDescription6, { children: [
@@ -22175,7 +22175,7 @@ function SubscriptionChangePlanDialog({
                 /* @__PURE__ */ jsxs106(CardHeader25, { children: [
                   /* @__PURE__ */ jsxs106("div", { className: "flex items-center justify-between", children: [
                     /* @__PURE__ */ jsx122(CardTitle25, { className: "text-lg", children: plan.name }),
-                    selectedPlanId === plan.id && /* @__PURE__ */ jsx122(Check3, { className: "h-5 w-5 text-blue-600" })
+                    selectedPlanId === plan.id && /* @__PURE__ */ jsx122(Check3, { className: "h-5 w-5 text-blue-700" })
                   ] }),
                   /* @__PURE__ */ jsx122("p", { className: "text-sm text-gray-600", children: plan.description })
                 ] }),
@@ -22986,7 +22986,7 @@ function SubscriptionList({
     /* @__PURE__ */ jsxs109(Card, { className: "shadow-sm border-border flex flex-col h-full", children: [
       /* @__PURE__ */ jsx125(CardHeader, { className: "flex-shrink-0", children: /* @__PURE__ */ jsx125(CardTitle, { children: "Subscriptions" }) }),
       loading ? /* @__PURE__ */ jsx125("div", { className: "flex items-center justify-center py-12", children: /* @__PURE__ */ jsxs109("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ jsx125("div", { className: "animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" }),
+        /* @__PURE__ */ jsx125("div", { className: "animate-spin rounded-full h-6 w-6 border-b-2 border-blue-700" }),
         /* @__PURE__ */ jsx125("span", { children: "Loading subscriptions..." })
       ] }) }) : filteredSubscriptions.length === 0 ? /* @__PURE__ */ jsx125("div", { className: "text-center py-12", children: /* @__PURE__ */ jsxs109("div", { className: "text-text-tertiary", children: [
         /* @__PURE__ */ jsx125("div", { className: "text-4xl mb-4", children: "\u{1F4B3}" }),
@@ -23793,7 +23793,7 @@ var SubscriptionPreviewPage = ({
   };
   if (loading) {
     return /* @__PURE__ */ jsx127("div", { className: "min-h-screen bg-gray-50 py-12", children: /* @__PURE__ */ jsx127("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsxs111("div", { className: "text-center", children: [
-      /* @__PURE__ */ jsx127("div", { className: "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" }),
+      /* @__PURE__ */ jsx127("div", { className: "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto" }),
       /* @__PURE__ */ jsx127("p", { className: "mt-4 text-gray-600", children: "Loading subscription plans..." })
     ] }) }) });
   }
@@ -23852,7 +23852,7 @@ var SubscriptionPreviewPage = ({
           onClick: () => setSelectedDuration(duration),
           className: cn5(
             "px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 relative",
-            isSelected ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+            isSelected ? "bg-blue-700 text-white shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           ),
           children: [
             /* @__PURE__ */ jsxs111("div", { className: "text-center", children: [
@@ -23882,7 +23882,7 @@ var SubscriptionPreviewPage = ({
             plan.isPopular ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
           ),
           children: [
-            plan.isPopular && /* @__PURE__ */ jsx127("div", { className: "absolute -top-3 left-1/2 transform -translate-x-1/2", children: /* @__PURE__ */ jsx127(Badge16, { className: "bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium", children: "Most Popular" }) }),
+            plan.isPopular && /* @__PURE__ */ jsx127("div", { className: "absolute -top-3 left-1/2 transform -translate-x-1/2", children: /* @__PURE__ */ jsx127(Badge16, { className: "bg-blue-700 text-white px-4 py-1 rounded-full text-sm font-medium", children: "Most Popular" }) }),
             /* @__PURE__ */ jsxs111(CardHeader27, { className: "text-center pb-4 pt-8", children: [
               /* @__PURE__ */ jsx127(CardTitle27, { className: "text-2xl font-bold text-gray-900 mb-2", children: plan.name }),
               /* @__PURE__ */ jsx127("p", { className: "text-gray-600 text-sm mb-4", children: plan.description }),
@@ -24240,7 +24240,7 @@ var PlanSelectionModal = ({
                   /* @__PURE__ */ jsx128(CardTitle28, { className: "text-lg", children: plan.name }),
                   plan.isPopular && /* @__PURE__ */ jsx128(Badge17, { className: "bg-blue-500", children: "Most Popular" })
                 ] }),
-                /* @__PURE__ */ jsxs112("div", { className: "text-2xl font-bold text-blue-600", children: [
+                /* @__PURE__ */ jsxs112("div", { className: "text-2xl font-bold text-blue-700", children: [
                   formatPrice(plan.price, plan.currency),
                   /* @__PURE__ */ jsxs112("span", { className: "text-sm font-normal text-gray-500", children: [
                     "/",
@@ -24321,7 +24321,7 @@ var PlanSelectionModal = ({
         /* @__PURE__ */ jsx128(Separator5, {}),
         /* @__PURE__ */ jsxs112("div", { className: "flex justify-between items-center text-lg font-bold", children: [
           /* @__PURE__ */ jsx128("span", { children: "Total:" }),
-          /* @__PURE__ */ jsx128("span", { className: "text-blue-600", children: formatPrice(calculatedPrice, selectedPlan.currency) })
+          /* @__PURE__ */ jsx128("span", { className: "text-blue-700", children: formatPrice(calculatedPrice, selectedPlan.currency) })
         ] })
       ] }) }) }),
       /* @__PURE__ */ jsxs112("div", { className: "flex justify-end gap-3", children: [
@@ -24331,7 +24331,7 @@ var PlanSelectionModal = ({
           {
             onClick: handleConfirm,
             disabled: !selectedPlan || loading,
-            className: "bg-blue-600 hover:bg-blue-700",
+            className: "bg-blue-700 hover:bg-blue-700",
             children: loading ? "Processing..." : "Continue with Payment"
           }
         )
@@ -24609,7 +24609,7 @@ function SubscriptionPeriodCard({
         ] })
       ] }),
       period.isTrial && period.endDate && /* @__PURE__ */ jsx130("div", { className: "bg-blue-50 border border-blue-200 rounded-lg p-3", children: /* @__PURE__ */ jsxs114("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx130(Clock11, { className: "w-4 h-4 text-blue-600" }),
+        /* @__PURE__ */ jsx130(Clock11, { className: "w-4 h-4 text-blue-700" }),
         /* @__PURE__ */ jsxs114("div", { children: [
           /* @__PURE__ */ jsx130("div", { className: "text-sm font-medium text-blue-900", children: "Trial Period" }),
           /* @__PURE__ */ jsxs114("div", { className: "text-xs text-blue-700", children: [
@@ -25235,7 +25235,7 @@ function UpgradeTrialModal({
                   " products"
                 ] })
               ] }),
-              selectedPlan?.id === plan.id && /* @__PURE__ */ jsxs118("div", { className: "flex items-center gap-1 text-blue-600 font-medium", children: [
+              selectedPlan?.id === plan.id && /* @__PURE__ */ jsxs118("div", { className: "flex items-center gap-1 text-blue-700 font-medium", children: [
                 /* @__PURE__ */ jsx134(Check6, { className: "w-4 h-4" }),
                 "Selected"
               ] })
@@ -25512,7 +25512,7 @@ function SubscriptionActivityTimeline({
       case "PLAN_CHANGED":
       case "PLAN_UPGRADED":
       case "PLAN_DOWNGRADED":
-        return "text-blue-600 bg-blue-100";
+        return "text-blue-700 bg-blue-100";
       case "SUBSCRIPTION_ACTIVATED":
       case "BILLING_CYCLE_RENEWED":
       case "RENEWAL":
@@ -25536,7 +25536,7 @@ function SubscriptionActivityTimeline({
       case "PAYMENT_FAILED":
         return "text-red-600 bg-red-100";
       case "TRIAL_STARTED":
-        return "text-blue-600 bg-blue-100";
+        return "text-blue-700 bg-blue-100";
       case "TRIAL_ENDED":
         return "text-yellow-600 bg-yellow-100";
       case "DISCOUNT_APPLIED":
@@ -25546,7 +25546,7 @@ function SubscriptionActivityTimeline({
       case "INVOICE_GENERATED":
         return "text-indigo-600 bg-indigo-100";
       case "REMINDER_SENT":
-        return "text-blue-600 bg-blue-100";
+        return "text-blue-700 bg-blue-100";
       case "DUNNING_STARTED":
         return "text-red-600 bg-red-100";
       case "SUBSCRIPTION_EXPIRED":
@@ -26092,7 +26092,7 @@ function MerchantPlanManagement({
               variant: "default",
               size: "sm",
               onClick: handleOpenChangeDialog,
-              className: "flex items-center gap-2 bg-blue-600 hover:bg-blue-700",
+              className: "flex items-center gap-2 bg-blue-700 hover:bg-blue-700",
               children: [
                 /* @__PURE__ */ jsx137(ArrowRight3, { className: "h-4 w-4" }),
                 "Upgrade to Paid Plan"
@@ -26844,7 +26844,7 @@ function MerchantDetail({
       /* @__PURE__ */ jsxs123(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: [
         /* @__PURE__ */ jsxs123(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
           /* @__PURE__ */ jsx140(CardTitle, { className: "text-sm font-medium", children: "Manage Outlets" }),
-          /* @__PURE__ */ jsx140(Building26, { className: "w-5 h-5 text-blue-600" })
+          /* @__PURE__ */ jsx140(Building26, { className: "w-5 h-5 text-blue-700" })
         ] }),
         /* @__PURE__ */ jsx140(CardContent, { children: /* @__PURE__ */ jsx140(
           Button2,
@@ -26920,7 +26920,7 @@ function CalendarHeader({
   const t2 = useCalendarTranslations();
   return /* @__PURE__ */ jsxs124("div", { className: "flex items-center justify-between mb-6", children: [
     /* @__PURE__ */ jsxs124("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ jsx141("div", { className: "w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx141(Calendar16, { className: "w-6 h-6 text-blue-600" }) }),
+      /* @__PURE__ */ jsx141("div", { className: "w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx141(Calendar16, { className: "w-6 h-6 text-blue-700" }) }),
       /* @__PURE__ */ jsxs124("div", { children: [
         /* @__PURE__ */ jsx141("h1", { className: "text-2xl font-bold text-gray-900", children: title || t2("title") }),
         subtitle && /* @__PURE__ */ jsx141("p", { className: "text-sm text-gray-600", children: subtitle })
@@ -26960,7 +26960,7 @@ function CalendarNavigation({
   const currentYear = currentDate.getFullYear();
   return /* @__PURE__ */ jsxs125("div", { className: `flex items-center justify-between ${className}`, children: [
     /* @__PURE__ */ jsxs125("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ jsx142(CalendarIcon, { className: "w-5 h-5 text-blue-600" }),
+      /* @__PURE__ */ jsx142(CalendarIcon, { className: "w-5 h-5 text-blue-700" }),
       /* @__PURE__ */ jsxs125("h2", { className: "text-xl font-semibold text-gray-900", children: [
         currentMonth,
         " ",
@@ -26983,7 +26983,7 @@ function CalendarNavigation({
         {
           variant: "outline",
           onClick: onToday,
-          className: "px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100",
+          className: "px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100",
           children: t2("navigation.today")
         }
       ),
@@ -27147,7 +27147,7 @@ function CalendarGrid({
               className: `
                   text-sm font-medium
                   ${day.isCurrentMonth ? "text-gray-900" : "text-gray-400"}
-                  ${day.isToday ? "text-blue-600 font-bold" : ""}
+                  ${day.isToday ? "text-blue-700 font-bold" : ""}
                 `,
               children: day.dayOfMonth
             }
@@ -27357,7 +27357,7 @@ function OrdersList({
             /* @__PURE__ */ jsx147("span", { className: `px-2 py-1 text-xs rounded-full font-medium ${order.status === "RESERVED" ? "bg-red-100 text-red-800" : order.status === "PICKUPED" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`, children: order.status })
           ] }),
           /* @__PURE__ */ jsxs130("div", { className: "flex items-center space-x-3 mb-3", children: [
-            /* @__PURE__ */ jsx147("div", { className: "w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx147(User10, { className: "w-4 h-4 text-blue-600" }) }),
+            /* @__PURE__ */ jsx147("div", { className: "w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx147(User10, { className: "w-4 h-4 text-blue-700" }) }),
             /* @__PURE__ */ jsxs130("div", { children: [
               /* @__PURE__ */ jsx147("p", { className: "font-medium text-gray-900", children: order.customerName }),
               /* @__PURE__ */ jsx147("p", { className: "text-sm text-gray-500", children: order.customerPhone || "No phone" })
@@ -27396,7 +27396,7 @@ function UserHeader({ viewMode, onViewModeChange, onAddUser }) {
       Button2,
       {
         onClick: onAddUser,
-        className: "bg-blue-600 hover:bg-blue-700 text-white",
+        className: "bg-blue-700 hover:bg-blue-700 text-white",
         children: [
           /* @__PURE__ */ jsx148(Plus7, { className: "w-4 h-4 mr-2" }),
           "Add User"
@@ -27551,7 +27551,7 @@ function UserCard({ user, onUserAction }) {
   return /* @__PURE__ */ jsx150(Card39, { className: "overflow-hidden hover:shadow-lg transition-shadow", children: /* @__PURE__ */ jsxs133("div", { className: "p-6", children: [
     /* @__PURE__ */ jsxs133("div", { className: "flex items-start justify-between mb-4", children: [
       /* @__PURE__ */ jsxs133("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ jsx150("div", { className: "w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx150(UserIcon2, { className: "w-6 h-6 text-blue-600" }) }),
+        /* @__PURE__ */ jsx150("div", { className: "w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx150(UserIcon2, { className: "w-6 h-6 text-blue-700" }) }),
         /* @__PURE__ */ jsxs133("div", { children: [
           /* @__PURE__ */ jsx150("h3", { className: "font-semibold text-lg text-gray-900", children: user.name }),
           /* @__PURE__ */ jsx150(Badge21, { variant: getRoleBadgeVariant(user.role), children: getRoleDisplayName(user.role) })
@@ -28052,7 +28052,7 @@ var ChangePasswordDialog = ({
           {
             type: "submit",
             disabled: isLoading,
-            className: "bg-blue-600 hover:bg-blue-700",
+            className: "bg-blue-700 hover:bg-blue-700",
             children: isLoading ? "Changing..." : "Change Password"
           }
         )
@@ -30906,7 +30906,7 @@ var CategoryCard = ({
             variant: "outline",
             size: "sm",
             onClick: handleEdit,
-            className: "h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300",
+            className: "h-8 px-3 text-blue-700 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300",
             children: [
               /* @__PURE__ */ jsx178(Edit13, { className: "h-4 w-4 mr-1" }),
               "Edit"
@@ -32607,7 +32607,7 @@ var PlanDetailModal = ({
           Button2,
           {
             onClick: () => handleSubscribe(plan.billingCycle),
-            className: "bg-blue-600 hover:bg-blue-700",
+            className: "bg-blue-700 hover:bg-blue-700",
             children: [
               "Subscribe to ",
               plan.name,
@@ -33576,7 +33576,7 @@ var PaymentForm = ({
       formData.amount > 0 && /* @__PURE__ */ jsxs180("div", { className: "p-4 bg-blue-50 rounded-lg", children: [
         /* @__PURE__ */ jsxs180("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsx198("span", { className: "font-medium", children: "Total Amount:" }),
-          /* @__PURE__ */ jsxs180("span", { className: "text-xl font-bold text-blue-600", children: [
+          /* @__PURE__ */ jsxs180("span", { className: "text-xl font-bold text-blue-700", children: [
             "$",
             formData.amount,
             " ",
@@ -34560,7 +34560,7 @@ function SystemStatus({ statusItems, className = "" }) {
       case "error":
         return "text-red-600";
       default:
-        return "text-blue-600";
+        return "text-blue-700";
     }
   };
   const getStatusBgColor = (status) => {
@@ -34936,7 +34936,7 @@ function ActivityFeed({
       case "error":
         return "text-red-600 bg-red-100";
       case "info":
-        return "text-blue-600 bg-blue-100";
+        return "text-blue-700 bg-blue-100";
       default:
         return "text-gray-600 bg-gray-100";
     }
@@ -38019,7 +38019,7 @@ var CollectionReturnModal = ({
     if (isCollectionMode) {
       return /* @__PURE__ */ jsx242(Package20, { className: "w-5 h-5 text-green-600" });
     }
-    return /* @__PURE__ */ jsx242(RotateCcw3, { className: "w-5 h-5 text-blue-600" });
+    return /* @__PURE__ */ jsx242(RotateCcw3, { className: "w-5 h-5 text-blue-700" });
   };
   const getActionButtonText = () => {
     if (isCollectionMode) {
@@ -38068,11 +38068,11 @@ var CollectionReturnModal = ({
         /* @__PURE__ */ jsx242("h3", { className: "text-lg font-semibold text-gray-900 mb-2", children: isCollectionMode ? "Collect from Customer" : "Return to Customer" }),
         details.calculation && details.calculation.length > 0 && /* @__PURE__ */ jsxs217("div", { className: "text-xl font-bold text-green-700 bg-green-50 rounded-lg p-4 border border-green-200", children: [
           /* @__PURE__ */ jsx242("span", { children: details.calculation.find((item) => item.isTotal)?.value !== void 0 ? formatCurrency18(details.calculation.find((item) => item.isTotal)?.value || 0) : "0.00" }),
-          settingsForm.collateralType && settingsForm.collateralType !== "Other" && settingsForm.collateralType.trim() !== "" && /* @__PURE__ */ jsxs217("span", { className: "ml-2 text-lg font-normal text-blue-600", children: [
+          settingsForm.collateralType && settingsForm.collateralType !== "Other" && settingsForm.collateralType.trim() !== "" && /* @__PURE__ */ jsxs217("span", { className: "ml-2 text-lg font-normal text-blue-700", children: [
             "+ ",
             settingsForm.collateralType
           ] }),
-          settingsForm.collateralType === "Other" && settingsForm.collateralDetails && settingsForm.collateralDetails.trim() !== "" && /* @__PURE__ */ jsxs217("span", { className: "ml-2 text-lg font-normal text-blue-600", children: [
+          settingsForm.collateralType === "Other" && settingsForm.collateralDetails && settingsForm.collateralDetails.trim() !== "" && /* @__PURE__ */ jsxs217("span", { className: "ml-2 text-lg font-normal text-blue-700", children: [
             "+ ",
             settingsForm.collateralDetails
           ] })
@@ -39250,7 +39250,7 @@ var SettingsLayout2 = ({
         /* @__PURE__ */ jsx252("p", { children: t2("subtitle") })
       ] }),
       /* @__PURE__ */ jsx252("div", { className: "flex justify-center items-center py-12", children: /* @__PURE__ */ jsxs227("div", { className: "text-center", children: [
-        /* @__PURE__ */ jsx252("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" }),
+        /* @__PURE__ */ jsx252("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto mb-4" }),
         /* @__PURE__ */ jsx252("p", { className: "text-gray-600", children: t2("loading") || "Loading settings..." })
       ] }) })
     ] });
@@ -39275,7 +39275,7 @@ var SettingsLayout2 = ({
           {
             variant: "ghost",
             onClick: () => onSectionChange(item.id),
-            className: `w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${isActive ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600" : "text-gray-700 hover:bg-gray-50"}`,
+            className: `w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${isActive ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700" : "text-gray-700 hover:bg-gray-50"}`,
             children: [
               /* @__PURE__ */ jsx252(Icon2, { className: "h-5 w-5" }),
               /* @__PURE__ */ jsxs227("div", { className: "flex-1 min-w-0", children: [
@@ -39699,7 +39699,7 @@ var MerchantSection = ({
     ] }),
     /* @__PURE__ */ jsx254(Card62, { children: /* @__PURE__ */ jsxs229(CardContent61, { className: "p-6", children: [
       /* @__PURE__ */ jsxs229("div", { className: "flex items-center gap-2 mb-4", children: [
-        /* @__PURE__ */ jsx254(DollarSign22, { className: "h-5 w-5 text-blue-600" }),
+        /* @__PURE__ */ jsx254(DollarSign22, { className: "h-5 w-5 text-blue-700" }),
         /* @__PURE__ */ jsx254("h3", { className: "text-lg font-semibold text-gray-900", children: t2("merchant.currencySettings") })
       ] }),
       /* @__PURE__ */ jsx254("p", { className: "text-sm text-gray-600 mb-4", children: t2("merchant.currencyDesc") }),
@@ -39746,7 +39746,7 @@ var MerchantSection = ({
           option.value
         );
       }) }),
-      isSavingCurrency && /* @__PURE__ */ jsx254("p", { className: "text-sm text-blue-600 mt-3", children: t2("merchant.savingCurrency") })
+      isSavingCurrency && /* @__PURE__ */ jsx254("p", { className: "text-sm text-blue-700 mt-3", children: t2("merchant.savingCurrency") })
     ] }) })
   ] });
 };
@@ -39866,7 +39866,7 @@ var SubscriptionSection = ({
   const t2 = useSettingsTranslations5();
   if (subscriptionLoading) {
     return /* @__PURE__ */ jsx256("div", { className: "space-y-6", children: /* @__PURE__ */ jsx256(Card64, { children: /* @__PURE__ */ jsx256(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs231("div", { className: "flex items-center justify-center py-8", children: [
-      /* @__PURE__ */ jsx256("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
+      /* @__PURE__ */ jsx256("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700" }),
       /* @__PURE__ */ jsx256("span", { className: "ml-2 text-gray-600", children: t2("subscription.loading") })
     ] }) }) }) });
   }
@@ -39874,7 +39874,7 @@ var SubscriptionSection = ({
     return /* @__PURE__ */ jsx256("div", { className: "space-y-6", children: /* @__PURE__ */ jsx256(Card64, { children: /* @__PURE__ */ jsxs231(CardContent63, { className: "p-6", children: [
       /* @__PURE__ */ jsxs231("div", { className: "flex items-center justify-between mb-4", children: [
         /* @__PURE__ */ jsxs231("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ jsx256(CreditCard21, { className: "h-6 w-6 text-blue-600" }),
+          /* @__PURE__ */ jsx256(CreditCard21, { className: "h-6 w-6 text-blue-700" }),
           /* @__PURE__ */ jsxs231("div", { children: [
             /* @__PURE__ */ jsx256("h3", { className: "text-base font-semibold text-gray-900", children: t2("subscription.currentPlan") }),
             /* @__PURE__ */ jsx256("p", { className: "text-sm text-gray-600", children: subscriptionData.subscription.plan?.name || "Professional Plan" })
@@ -40898,7 +40898,7 @@ var CurrencySection = ({
   return /* @__PURE__ */ jsxs238("div", { className: "space-y-6", children: [
     /* @__PURE__ */ jsxs238("div", { children: [
       /* @__PURE__ */ jsxs238("h2", { className: "text-2xl font-bold text-gray-900 flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx263(DollarSign24, { className: "h-6 w-6 text-blue-600" }),
+        /* @__PURE__ */ jsx263(DollarSign24, { className: "h-6 w-6 text-blue-700" }),
         "Currency Settings"
       ] }),
       /* @__PURE__ */ jsx263("p", { className: "text-gray-600 mt-1", children: "Choose your preferred currency for displaying prices across your rental shop." })
@@ -40960,7 +40960,7 @@ var CurrencySection = ({
                     /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-600", children: option.value })
                   ] })
                 ] }),
-                isSelected && /* @__PURE__ */ jsx263(CheckCircle211, { className: "h-5 w-5 text-blue-600" })
+                isSelected && /* @__PURE__ */ jsx263(CheckCircle211, { className: "h-5 w-5 text-blue-700" })
               ] }),
               /* @__PURE__ */ jsxs238("div", { className: "mt-3 pt-3 border-t border-gray-200", children: [
                 /* @__PURE__ */ jsx263("div", { className: "text-xs text-gray-500 mb-1", children: "Preview:" }),
@@ -41126,7 +41126,7 @@ function TopNavigation({
   return /* @__PURE__ */ jsxs239("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
     /* @__PURE__ */ jsx264("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsxs239("div", { className: "flex items-center justify-between h-16", children: [
       /* @__PURE__ */ jsxs239("div", { className: "flex items-center", children: [
-        /* @__PURE__ */ jsx264("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx264("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ jsx264(Store7, { className: "w-6 h-6 text-white" }) }) }),
+        /* @__PURE__ */ jsx264("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx264("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ jsx264(Store7, { className: "w-6 h-6 text-white" }) }) }),
         /* @__PURE__ */ jsxs239("div", { className: "ml-3", children: [
           /* @__PURE__ */ jsx264("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
           /* @__PURE__ */ jsx264("p", { className: "text-xs text-gray-500 capitalize", children: variant })
@@ -41144,7 +41144,7 @@ function TopNavigation({
                 href: item.href,
                 className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
                 children: [
-                  /* @__PURE__ */ jsx264(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+                  /* @__PURE__ */ jsx264(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
                   item.label,
                   /* @__PURE__ */ jsx264(ChevronDown8, { className: "w-3 h-3" })
                 ]
@@ -41159,7 +41159,7 @@ function TopNavigation({
                   href: subItem.href,
                   className: `flex items-center gap-2 px-4 py-2 text-sm transition-colors ${isSubActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
                   children: [
-                    /* @__PURE__ */ jsx264(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
+                    /* @__PURE__ */ jsx264(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-700" : "text-gray-500"}` }),
                     subItem.label
                   ]
                 },
@@ -41174,7 +41174,7 @@ function TopNavigation({
             href: item.href,
             className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
             children: [
-              /* @__PURE__ */ jsx264(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+              /* @__PURE__ */ jsx264(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
               item.label
             ]
           },
@@ -41255,7 +41255,7 @@ function TopNavigation({
             className: `flex px-3 py-2 rounded-lg text-base font-medium items-center gap-3 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
             onClick: () => setIsMobileMenuOpen(false),
             children: [
-              /* @__PURE__ */ jsx264(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+              /* @__PURE__ */ jsx264(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
               item.label
             ]
           }
@@ -41270,7 +41270,7 @@ function TopNavigation({
               className: `flex px-3 py-2 rounded-lg text-sm font-medium items-center gap-3 ${isSubActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
               onClick: () => setIsMobileMenuOpen(false),
               children: [
-                /* @__PURE__ */ jsx264(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
+                /* @__PURE__ */ jsx264(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-700" : "text-gray-500"}` }),
                 subItem.label
               ]
             },
@@ -41332,7 +41332,7 @@ function ServerTopNavigation({
     /* @__PURE__ */ jsxs240("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: [
       /* @__PURE__ */ jsxs240("div", { className: "flex items-center justify-between h-16", children: [
         /* @__PURE__ */ jsxs240("div", { className: "flex items-center", children: [
-          /* @__PURE__ */ jsx265("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx265("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ jsx265(Store8, { className: "w-6 h-6 text-white" }) }) }),
+          /* @__PURE__ */ jsx265("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx265("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ jsx265(Store8, { className: "w-6 h-6 text-white" }) }) }),
           /* @__PURE__ */ jsxs240("div", { className: "ml-3", children: [
             /* @__PURE__ */ jsx265("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
             /* @__PURE__ */ jsx265("p", { className: "text-xs text-gray-500 capitalize", children: variant })
@@ -41347,7 +41347,7 @@ function ServerTopNavigation({
               href: item.href,
               className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
               children: [
-                /* @__PURE__ */ jsx265(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+                /* @__PURE__ */ jsx265(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
                 item.label
               ]
             },
@@ -41451,7 +41451,7 @@ function ServerTopNavigation({
           href: item.href,
           className: `block px-3 py-2 rounded-lg text-base font-medium flex items-center gap-3 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
           children: [
-            /* @__PURE__ */ jsx265(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+            /* @__PURE__ */ jsx265(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
             item.label
           ]
         },
@@ -41627,7 +41627,7 @@ var QuickActionCard = ({
   /* @__PURE__ */ jsx269(CardContent, { className: "p-6", children: /* @__PURE__ */ jsx269("a", { href, className: "block", children: /* @__PURE__ */ jsxs244("div", { className: "flex items-center space-x-4", children: [
     /* @__PURE__ */ jsx269("div", { className: `w-16 h-16 rounded-xl bg-gradient-to-br ${color} text-white text-3xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`, children: icon }),
     /* @__PURE__ */ jsxs244("div", { className: "flex-1", children: [
-      /* @__PURE__ */ jsx269("h3", { className: "font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors", children: title }),
+      /* @__PURE__ */ jsx269("h3", { className: "font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-700 transition-colors", children: title }),
       /* @__PURE__ */ jsx269("p", { className: "text-gray-600 font-medium", children: description })
     ] }),
     /* @__PURE__ */ jsx269("div", { className: "text-gray-400 group-hover:text-blue-500 transition-colors", children: /* @__PURE__ */ jsx269("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx269("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
@@ -41640,14 +41640,14 @@ var ColorfulQuickActions = () => {
       description: "Create rental order",
       icon: "\u{1F4E6}",
       href: "/orders/new",
-      color: "from-blue-500 to-blue-600"
+      color: "from-blue-500 to-blue-700"
     },
     {
       title: "Return Item",
       description: "Process returns",
       icon: "\u{1F504}",
       href: "/orders/returns",
-      color: "from-green-500 to-green-600"
+      color: "from-blue-600 to-blue-700"
     },
     {
       title: "Add Product",
@@ -41679,16 +41679,16 @@ var ColorfulTodaysFocus = ({ data }) => {
       description: "Items to be picked up",
       icon: "\u{1F4E6}",
       value: data.todayPickups,
-      color: "from-blue-500 to-blue-600",
+      color: "from-blue-500 to-blue-700",
       bgColor: "bg-blue-50",
-      textColor: "text-blue-600"
+      textColor: "text-blue-700"
     },
     {
       title: "Returns Today",
       description: "Items to be returned",
       icon: "\u{1F504}",
       value: data.todayReturns,
-      color: "from-green-500 to-green-600",
+      color: "from-blue-600 to-blue-700",
       bgColor: "bg-green-50",
       textColor: "text-green-600"
     },
@@ -41716,13 +41716,13 @@ var ColorfulTodaysFocus = ({ data }) => {
       title: "Process Pickup",
       description: "Mark items as picked up",
       icon: "\u{1F4E6}",
-      color: "from-blue-500 to-blue-600"
+      color: "from-blue-500 to-blue-700"
     },
     {
       title: "Process Return",
       description: "Mark items as returned",
       icon: "\u{1F504}",
-      color: "from-green-500 to-green-600"
+      color: "from-blue-600 to-blue-700"
     },
     {
       title: "Handle Overdue",
@@ -41895,7 +41895,7 @@ var SearchInput = ({
         }
       )
     ] }),
-    isSearching && /* @__PURE__ */ jsx272("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2", children: /* @__PURE__ */ jsx272("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" }) })
+    isSearching && /* @__PURE__ */ jsx272("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2", children: /* @__PURE__ */ jsx272("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700" }) })
   ] });
 };
 
@@ -42143,13 +42143,13 @@ var AdminSidebar = ({
           onClick: () => toggleExpanded(item.href),
           className: cn7(
             "flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out h-auto",
-            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
+            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary"
           ),
           children: [
             /* @__PURE__ */ jsxs249("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx274(Icon2, { className: cn7(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-text-secondary"
+                active ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ jsx274("span", { children: item.label })
             ] }),
@@ -42165,13 +42165,13 @@ var AdminSidebar = ({
           href: item.href,
           className: cn7(
             "flex items-center justify-between px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out",
-            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
+            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary"
           ),
           children: [
             /* @__PURE__ */ jsxs249("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx274(Icon2, { className: cn7(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-text-secondary"
+                active ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ jsx274("span", { children: item.label })
             ] }),
@@ -42188,7 +42188,7 @@ var AdminSidebar = ({
             href: subItem.href,
             className: cn7(
               "flex items-center gap-2 px-4 py-2 text-sm font-normal rounded-lg transition-colors",
-              subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
+              subActive ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary"
             ),
             children: [
               /* @__PURE__ */ jsx274(SubIcon, { className: "w-4 h-4" }),
@@ -42432,7 +42432,7 @@ var ClientSidebar = ({
           onMouseLeave: () => setHoveredTab(null),
           className: cn8(
             "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
-            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
+            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
             isHovered ? "scale-[1.02]" : "",
             clickedTab === item.href ? "scale-[0.98]" : ""
           ),
@@ -42440,7 +42440,7 @@ var ClientSidebar = ({
             /* @__PURE__ */ jsxs250("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx275(Icon2, { className: cn8(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-text-secondary"
+                active ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ jsx275("span", { children: item.label })
             ] }),
@@ -42464,7 +42464,7 @@ var ClientSidebar = ({
           onMouseLeave: () => setHoveredTab(null),
           className: cn8(
             "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
-            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
+            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
             isHovered ? "scale-[1.02]" : "",
             clickedTab === item.href ? "scale-[0.98]" : ""
           ),
@@ -42472,7 +42472,7 @@ var ClientSidebar = ({
             /* @__PURE__ */ jsxs250("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx275(Icon2, { className: cn8(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-text-secondary"
+                active ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ jsx275("span", { children: item.label })
             ] }),
@@ -42498,7 +42498,7 @@ var ClientSidebar = ({
             },
             className: cn8(
               "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg justify-start h-auto",
-              subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600"
+              subActive ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700"
             ),
             children: [
               /* @__PURE__ */ jsx275(SubIcon, { className: "w-4 h-4" }),
@@ -42517,10 +42517,10 @@ var ClientSidebar = ({
     /* @__PURE__ */ jsx275("div", { className: "hidden", children: menuItems2.map((item) => /* @__PURE__ */ jsx275(Link4, { href: item.href }, item.href)) }),
     /* @__PURE__ */ jsxs250("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
       !isCollapsed && /* @__PURE__ */ jsxs250("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx275("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx275(Building219, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ jsx275("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-500 rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx275(Building219, { className: "w-5 h-5 text-white" }) }),
         /* @__PURE__ */ jsx275("div", { children: /* @__PURE__ */ jsx275("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }) })
       ] }),
-      isCollapsed && /* @__PURE__ */ jsx275("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ jsx275(Building219, { className: "w-5 h-5 text-white" }) }),
+      isCollapsed && /* @__PURE__ */ jsx275("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-500 rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ jsx275(Building219, { className: "w-5 h-5 text-white" }) }),
       /* @__PURE__ */ jsx275(
         Button78,
         {

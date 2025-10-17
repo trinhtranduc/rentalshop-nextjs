@@ -88,7 +88,7 @@ export function OrderStats({ stats }: OrderStatsProps) {
               
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Total Deposits</span>
-                <span className="font-medium text-blue-600 dark:text-blue-400">
+                <span className="font-medium text-blue-700 dark:text-blue-400">
                   {formatCurrency(stats.totalDeposits)}
                 </span>
               </div>

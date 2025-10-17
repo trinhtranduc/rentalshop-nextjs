@@ -440,7 +440,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="h-5 w-5 text-blue-600" />
+            <DollarSign className="h-5 w-5 text-blue-700" />
             <h3 className="text-lg font-semibold text-gray-900">{t('merchant.currencySettings')}</h3>
           </div>
           <p className="text-sm text-gray-600 mb-4">
@@ -501,7 +501,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
           </div>
 
           {isSavingCurrency && (
-            <p className="text-sm text-blue-600 mt-3">
+            <p className="text-sm text-blue-700 mt-3">
               {t('merchant.savingCurrency')}
             </p>
           )}

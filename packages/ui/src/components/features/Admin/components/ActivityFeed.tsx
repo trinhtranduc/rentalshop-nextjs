@@ -36,7 +36,7 @@ export default function ActivityFeed({
       case 'error':
         return 'text-red-600 bg-red-100';
       case 'info':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-blue-700 bg-blue-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }

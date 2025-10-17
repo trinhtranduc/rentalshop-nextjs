@@ -196,7 +196,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="mb-4 space-y-1">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Rent Price:</span>
-              <span className="font-semibold text-lg text-blue-600">
+              <span className="font-semibold text-lg text-blue-700">
                 ${rentPrice.toFixed(2)}/day
               </span>
             </div>

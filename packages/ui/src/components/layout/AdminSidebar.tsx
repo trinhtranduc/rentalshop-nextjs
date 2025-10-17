@@ -143,14 +143,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             className={cn(
               'flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out h-auto',
               active 
-                ? 'text-blue-600 font-medium' 
-                : 'text-text-primary hover:text-blue-600 hover:bg-bg-secondary'
+                ? 'text-blue-700 font-medium' 
+                : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
             )}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
                 'w-4 h-4',
-                active ? 'text-blue-600' : 'text-text-secondary'
+                active ? 'text-blue-700' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -169,14 +169,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             className={cn(
               'flex items-center justify-between px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out',
               active 
-                ? 'text-blue-600 font-medium' 
-                : 'text-text-primary hover:text-blue-600 hover:bg-bg-secondary'
+                ? 'text-blue-700 font-medium' 
+                : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
             )}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
                 'w-4 h-4',
-                active ? 'text-blue-600' : 'text-text-secondary'
+                active ? 'text-blue-700' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -203,7 +203,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   href={subItem.href}
                   className={cn(
                     'flex items-center gap-2 px-4 py-2 text-sm font-normal rounded-lg transition-colors',
-                    subActive ? 'text-blue-600 font-medium' : 'text-text-primary hover:text-blue-600 hover:bg-bg-secondary'
+                    subActive ? 'text-blue-700 font-medium' : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
                   )}
                 >
                   <SubIcon className="w-4 h-4" />

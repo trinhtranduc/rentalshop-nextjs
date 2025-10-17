@@ -63,7 +63,7 @@ export function CustomerHeader({ totalCustomers, stats }: CustomerHeaderProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
               {stats.newCustomersThisMonth.toLocaleString()}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">

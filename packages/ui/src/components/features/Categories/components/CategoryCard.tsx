@@ -68,7 +68,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
               variant="outline"
               size="sm"
               onClick={handleEdit}
-              className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
+              className="h-8 px-3 text-blue-700 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300"
             >
               <Edit className="h-4 w-4 mr-1" />
               Edit

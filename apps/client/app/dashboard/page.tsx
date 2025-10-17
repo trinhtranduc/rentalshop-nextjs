@@ -692,7 +692,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.todayRentals')}
-                color="text-blue-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -755,7 +755,7 @@ export default function DashboardPage() {
                       {(todayOrders || []).slice(0, 6).map(order => (
                         <div key={order.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <Package className="w-4 h-4 text-blue-600" />
+                            <Package className="w-4 h-4 text-blue-700" />
                             <div>
                               <div className="font-medium text-sm">{order.orderNumber}</div>
                               <div className="text-xs text-gray-600">
@@ -766,7 +766,7 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold text-blue-600">${(order.totalAmount || 0).toLocaleString()}</div>
+                            <div className="font-semibold text-blue-700">${(order.totalAmount || 0).toLocaleString()}</div>
                             <div className="text-xs text-gray-500">{order.status}</div>
                           </div>
                         </div>
@@ -841,7 +841,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.totalOrders')}
-                color="text-blue-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -947,7 +947,7 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       {(currentTopProducts || []).map(product => (
                         <div key={product.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                          <Package className="w-5 h-5 text-blue-600" />
+                          <Package className="w-5 h-5 text-blue-700" />
                           <div className="flex-1">
                             <h4 className="font-medium text-gray-800">{product.name}</h4>
                             <p className="text-sm text-gray-600">{product.category}</p>
@@ -1029,7 +1029,7 @@ export default function DashboardPage() {
               className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
               onClick={() => router.push('/orders/create')}
             >
-              <Package className="w-6 h-6 text-blue-600" />
+              <Package className="w-6 h-6 text-blue-700" />
               <div className="text-left">
                 <p className="font-medium text-blue-900">{t('quickActions.createOrder')}</p>
                 <p className="text-sm text-blue-700">{tc('labels.create')}</p>
@@ -1038,37 +1038,37 @@ export default function DashboardPage() {
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-green-50 hover:bg-green-100 text-green-900 rounded-lg transition-colors group justify-start"
+              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
               onClick={() => router.push('/customers/add')}
             >
-              <Users className="w-6 h-6 text-green-600" />
+              <Users className="w-6 h-6 text-blue-700" />
               <div className="text-left">
-                <p className="font-medium text-green-900">{t('quickActions.addCustomer')}</p>
-                <p className="text-sm text-green-700">{tc('buttons.add')}</p>
+                <p className="font-medium text-blue-900">{t('quickActions.addCustomer')}</p>
+                <p className="text-sm text-blue-700">{tc('buttons.add')}</p>
               </div>
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-lg transition-colors group justify-start"
+              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
               onClick={() => router.push('/products/add')}
             >
-              <PackageCheck className="w-6 h-6 text-purple-600" />
+              <PackageCheck className="w-6 h-6 text-blue-700" />
               <div className="text-left">
-                <p className="font-medium text-purple-900">{t('quickActions.addProduct')}</p>
-                <p className="text-sm text-purple-700">{tc('buttons.add')}</p>
+                <p className="font-medium text-blue-900">{t('quickActions.addProduct')}</p>
+                <p className="text-sm text-blue-700">{tc('buttons.add')}</p>
               </div>
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-orange-50 hover:bg-orange-100 text-orange-900 rounded-lg transition-colors group justify-start"
+              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
               onClick={() => router.push('/orders')}
             >
-              <TrendingUp className="w-6 h-6 text-orange-600" />
+              <TrendingUp className="w-6 h-6 text-blue-700" />
               <div className="text-left">
-                <p className="font-medium text-orange-900">{t('quickActions.viewReports')}</p>
-                <p className="text-sm text-orange-700">{tc('navigation.analytics')}</p>
+                <p className="font-medium text-blue-900">{t('quickActions.viewReports')}</p>
+                <p className="text-sm text-blue-700">{tc('navigation.analytics')}</p>
               </div>
             </Button>
           </div>

@@ -132,7 +132,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
                 <Building2 className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -169,11 +169,11 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                     onMouseLeave={() => setHoveredTab(null)}
                     className={`nav-item text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-150 ease-out relative ${
                       active 
-                        ? 'text-blue-600 bg-blue-50 shadow-sm' 
+                        ? 'text-blue-700 bg-blue-50 shadow-sm' 
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                     } ${isHovered ? 'scale-105' : ''} ${clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
                   >
-                    <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+                    <Icon className={`w-4 h-4 ${active ? 'text-blue-700' : 'text-gray-500'}`} />
                     {item.label}
                     {hasSubmenu && (
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSubmenuOpen ? 'rotate-180' : ''}`} />
@@ -211,7 +211,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                                 }, 100);
                               }}
                               className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors justify-start h-auto rounded-none ${
-                                isSubActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                                isSubActive ? 'text-blue-700 bg-blue-50' : 'text-gray-700'
                               }`}
                             >
                               <SubIcon className="w-4 h-4" />
@@ -234,7 +234,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
               onClick={() => handleTabClick('/settings')}
               onMouseEnter={() => prefetchRoute('/settings')}
               className={`nav-item text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-50 transition-all duration-150 ${
-                currentPage === '/settings' ? 'text-blue-600 bg-blue-50 shadow-sm' : ''
+                currentPage === '/settings' ? 'text-blue-700 bg-blue-50 shadow-sm' : ''
               } ${clickedTab === '/settings' ? 'scale-95 bg-red-100 shadow-md' : ''}`}
             >
               <Settings className="w-4 h-4" />
@@ -269,11 +269,11 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                   onClick={() => handleTabClick(item.href)}
                   className={`nav-item block w-full text-left px-3 py-2 text-base font-medium flex items-center gap-3 transition-all duration-150 justify-start h-auto ${
                     active 
-                      ? 'text-blue-600 bg-blue-50 shadow-sm' 
+                      ? 'text-blue-700 bg-blue-50 shadow-sm' 
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                   } ${clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Icon className={`w-5 h-5 ${active ? 'text-blue-700' : 'text-gray-500'}`} />
                   {item.label}
                 </Button>
               );
@@ -282,7 +282,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
               variant="ghost"
               onClick={() => handleTabClick('/settings')}
               className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-150 justify-start h-auto ${
-                currentPage === '/settings' ? 'text-blue-600 bg-blue-50 shadow-sm' : ''
+                currentPage === '/settings' ? 'text-blue-700 bg-blue-50 shadow-sm' : ''
               } ${clickedTab === '/settings' ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
             >
               <Settings className="w-5 h-5" />

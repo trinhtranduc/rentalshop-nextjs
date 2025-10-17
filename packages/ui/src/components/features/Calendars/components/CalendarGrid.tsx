@@ -135,7 +135,7 @@ export function CalendarGrid({
                 className={`
                   text-sm font-medium
                   ${day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
-                  ${day.isToday ? 'text-blue-600 font-bold' : ''}
+                  ${day.isToday ? 'text-blue-700 font-bold' : ''}
                 `}
               >
                 {(day as any).dayOfMonth}

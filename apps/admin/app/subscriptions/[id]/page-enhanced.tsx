@@ -286,7 +286,7 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
           
           {subscription.status === 'trial' && (
             <Button
-              variant="success"
+              variant="default"
               onClick={() => setShowUpgradeModal(true)}
             >
               <TrendingUp className="w-4 h-4 mr-2" />
@@ -378,21 +378,21 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
           <div className="flex gap-4 border-b">
             <Button
               variant="ghost"
-              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'payments' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
+              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'payments' ? 'border-b-2 border-blue-500 text-blue-700' : 'text-gray-600'}`}
               onClick={() => setActiveTab('payments')}
             >
               💳 Payment History
             </Button>
             <Button
               variant="ghost"
-              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'activity' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
+              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'activity' ? 'border-b-2 border-blue-500 text-blue-700' : 'text-gray-600'}`}
               onClick={() => setActiveTab('activity')}
             >
               📊 Activity Log
             </Button>
             <Button
               variant="ghost"
-              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'details' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
+              className={`px-4 py-2 font-medium rounded-none ${activeTab === 'details' ? 'border-b-2 border-blue-500 text-blue-700' : 'text-gray-600'}`}
               onClick={() => setActiveTab('details')}
             >
               📋 Plan Details

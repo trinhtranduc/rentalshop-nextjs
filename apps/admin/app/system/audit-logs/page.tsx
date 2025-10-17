@@ -103,7 +103,7 @@ const StatsCards = ({ stats }: { stats: AuditLogStats | null }) => {
       title: 'Total Logs',
       value: stats.totalLogs.toLocaleString(),
       icon: FileText,
-      color: 'text-blue-600',
+      color: 'text-blue-700',
       bgColor: 'bg-blue-100 dark:bg-blue-900/20'
     },
     {
