@@ -64,7 +64,7 @@ export function LoadingIndicator({
             />
             {/* Progress arc - blue like in image */}
             <path
-              className="text-blue-600 animate-circular-progress"
+              className="text-blue-700 animate-circular-progress"
               stroke="currentColor"
               strokeWidth="3"
               strokeLinecap="round"

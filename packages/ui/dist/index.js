@@ -1096,7 +1096,7 @@ var alertVariants = (0, import_class_variance_authority.cva)(
         destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
         warning: "border-yellow-500/50 text-yellow-700 dark:border-yellow-500 dark:text-yellow-300 [&>svg]:text-yellow-600",
         success: "border-green-500/50 text-green-700 dark:border-green-500 dark:text-green-300 [&>svg]:text-green-600",
-        info: "border-blue-500/50 text-blue-700 dark:border-blue-500 dark:text-blue-300 [&>svg]:text-blue-600"
+        info: "border-blue-500/50 text-blue-700 dark:border-blue-500 dark:text-blue-300 [&>svg]:text-blue-700"
       }
     },
     defaultVariants: {
@@ -1298,8 +1298,8 @@ var buttonVariants = (0, import_class_variance_authority3.cva)(
   {
     variants: {
       variant: {
-        // Green Theme - Primary button with green
-        default: "bg-green-500 text-white hover:bg-green-600",
+        // Blue-700 Theme - Primary button with blue-700
+        default: "bg-blue-700 text-white hover:bg-blue-800",
         // Destructive - Red for danger actions
         destructive: "bg-red-500 text-white hover:bg-red-600",
         // Outline - Neutral gray border (for table actions, pagination)
@@ -1308,9 +1308,9 @@ var buttonVariants = (0, import_class_variance_authority3.cva)(
         secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
         // Ghost - Transparent with hover effect
         ghost: "hover:bg-slate-100 hover:text-slate-800",
-        // Link - Green text with underline
-        link: "text-green-500 underline-offset-4 hover:underline",
-        // Success - Emerald green
+        // Link - Blue-700 text with underline
+        link: "text-blue-700 underline-offset-4 hover:underline",
+        // Success - Emerald green (keep for success states)
         success: "bg-emerald-500 text-white hover:bg-emerald-600",
         // Warning - Amber yellow
         warning: "bg-amber-500 text-white hover:bg-amber-600"
@@ -1893,7 +1893,7 @@ var getTypeConfig = (type) => {
         icon: import_lucide_react4.Info,
         iconColor: "text-blue-500",
         buttonVariant: "outline",
-        buttonColor: "border-blue-300 text-blue-600 hover:bg-blue-50"
+        buttonColor: "border-blue-300 text-blue-700 hover:bg-blue-50"
       };
     case "success":
       return {
@@ -2041,7 +2041,7 @@ var getTypeConfig2 = (type) => {
         icon: import_lucide_react5.Info,
         iconColor: "text-blue-500",
         buttonVariant: "outline",
-        buttonColor: "border-blue-300 text-blue-600 hover:bg-blue-50"
+        buttonColor: "border-blue-300 text-blue-700 hover:bg-blue-50"
       };
     case "success":
       return {
@@ -2202,7 +2202,7 @@ function LoadingIndicator({
       /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         "path",
         {
-          className: "text-blue-600 animate-circular-progress",
+          className: "text-blue-700 animate-circular-progress",
           stroke: "currentColor",
           strokeWidth: "3",
           strokeLinecap: "round",
@@ -3237,7 +3237,7 @@ var DateRangePicker = ({
                   "h-8 w-8 text-sm rounded-lg transition-colors relative p-0",
                   isDisabled && "text-gray-300 cursor-not-allowed",
                   !isDisabled && "hover:bg-gray-100",
-                  isSelected && "bg-blue-600 text-white hover:bg-blue-700",
+                  isSelected && "bg-blue-700 text-white hover:bg-blue-700",
                   isInRange && !isSelected && "bg-blue-100 text-blue-900",
                   isHovered && !isSelected && "bg-blue-50"
                 ),
@@ -3732,7 +3732,7 @@ var ProductAvailabilityWarning = ({
       case "warning":
         return /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(import_lucide_react11.AlertTriangle, { className: "w-5 h-5 text-orange-600" });
       default:
-        return /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(import_lucide_react11.CheckCircle, { className: "w-5 h-5 text-blue-600" });
+        return /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(import_lucide_react11.CheckCircle, { className: "w-5 h-5 text-blue-700" });
     }
   };
   const getWarningClass = () => {
@@ -4061,7 +4061,7 @@ var SearchableSelect = ({
                   opt.description && /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("div", { className: "text-sm text-gray-600 whitespace-pre-line", children: opt.description })
                 ] })
               ) }),
-              value === parseInt(opt.value) && /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("div", { className: "flex-shrink-0 w-5 h-5 text-blue-600", children: /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
+              value === parseInt(opt.value) && /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("div", { className: "flex-shrink-0 w-5 h-5 text-blue-700", children: /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
             ]
           },
           opt.value
@@ -4205,7 +4205,7 @@ var SearchableCountrySelect = ({
             /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "font-medium text-gray-900 truncate", children: country.name }),
             /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "text-xs text-gray-500", children: country.code })
           ] }),
-          value === country.name && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "flex-shrink-0 w-5 h-5 text-blue-600", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
+          value === country.name && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "flex-shrink-0 w-5 h-5 text-blue-700", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
         ]
       },
       country.code
@@ -5464,7 +5464,7 @@ var OrderForm = ({
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { className: "flex justify-between text-lg font-semibold", children: [
           /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("span", { children: "Ti\u1EC1n c\u1ECDc:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("span", { className: "text-blue-600", children: (0, import_ui2.formatCurrency)(formData.depositAmount || 0) })
+          /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("span", { className: "text-blue-700", children: (0, import_ui2.formatCurrency)(formData.depositAmount || 0) })
         ] })
       ] })
     ] }) })
@@ -6770,7 +6770,7 @@ var OrderInfoSection = ({
                       /* @__PURE__ */ (0, import_jsx_runtime42.jsx)(import_lucide_react17.Plus, { className: "w-4 h-4" }),
                       /* @__PURE__ */ (0, import_jsx_runtime42.jsx)("span", { children: t2("messages.addNewCustomer") })
                     ] }),
-                    searchQuery.trim() && /* @__PURE__ */ (0, import_jsx_runtime42.jsxs)("div", { className: "text-xs text-blue-600 mt-1", children: [
+                    searchQuery.trim() && /* @__PURE__ */ (0, import_jsx_runtime42.jsxs)("div", { className: "text-xs text-blue-700 mt-1", children: [
                       'Create customer: "',
                       searchQuery,
                       '"'
@@ -7390,14 +7390,14 @@ var OrderPreviewForm = ({
   return /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("div", { className: `space-y-6 ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("div", { className: "text-center space-y-2", children: [
       /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("h2", { className: "text-2xl font-bold text-gray-900 flex items-center justify-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(import_lucide_react20.ShoppingCart, { className: "w-6 h-6 text-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(import_lucide_react20.ShoppingCart, { className: "w-6 h-6 text-blue-700" }),
         title
       ] }),
       subtitle && /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("p", { className: "text-gray-600", children: subtitle })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(import_ui9.Card, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(import_ui9.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(import_ui9.CardTitle, { className: "text-lg font-semibold flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(import_lucide_react20.Info, { className: "w-5 h-5 text-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(import_lucide_react20.Info, { className: "w-5 h-5 text-blue-700" }),
         "Order Summary"
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(import_ui9.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
@@ -7536,7 +7536,7 @@ var OrderPreviewForm = ({
         /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(import_ui9.Separator, {}),
         /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("div", { className: "flex justify-between items-center text-lg font-bold", children: [
           /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("span", { children: "Total Amount:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("span", { className: "font-mono text-blue-600", children: (0, import_utils14.formatCurrency)(orderData.totalAmount) })
+          /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("span", { className: "font-mono text-blue-700", children: (0, import_utils14.formatCurrency)(orderData.totalAmount) })
         ] }),
         orderData.depositAmount && orderData.depositAmount > 0 && /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(import_jsx_runtime46.Fragment, { children: [
           /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("div", { className: "flex justify-between items-center", children: [
@@ -7613,7 +7613,7 @@ var OrderPreviewForm = ({
         {
           onClick: onConfirm,
           disabled: loading || warnings.length > 0,
-          className: "flex items-center gap-2 bg-blue-600 hover:bg-blue-700",
+          className: "flex items-center gap-2 bg-blue-700 hover:bg-blue-700",
           children: loading ? /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(import_jsx_runtime46.Fragment, { children: [
             /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { className: "w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" }),
             "Processing..."
@@ -7645,7 +7645,7 @@ var OrderPreviewDialog = ({
 }) => {
   return /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(import_ui10.Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(import_ui10.DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
     /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(import_ui10.DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(import_ui10.DialogTitle, { className: "text-2xl font-bold flex items-center gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(import_lucide_react21.ShoppingCart, { className: "w-6 h-6 text-blue-600" }),
+      /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(import_lucide_react21.ShoppingCart, { className: "w-6 h-6 text-blue-700" }),
       title
     ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
@@ -13690,7 +13690,7 @@ var LoginForm = ({
     /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { className: "absolute top-4 right-4", children: /* @__PURE__ */ (0, import_jsx_runtime52.jsx)(LanguageSwitcher, { variant: "compact" }) }),
     /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)("div", { className: "w-full max-w-md", children: [
       /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)("div", { className: "text-center mb-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { className: "inline-block", children: /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { className: "h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { className: "inline-block", children: /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { className: "h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("h1", { className: "mt-4 text-2xl font-bold text-gray-800", children: isAdmin ? "Admin Login" : t2("login.title") }),
         /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("p", { className: "mt-2 text-sm text-gray-600", children: isAdmin ? "Sign in to admin panel" : t2("login.subtitle") })
       ] }),
@@ -13766,7 +13766,7 @@ var LoginForm = ({
                 {
                   type: "checkbox",
                   id: "remember",
-                  className: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
+                  className: "h-4 w-4 text-blue-700 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
                 }
               ),
               /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("label", { htmlFor: "remember", className: "ml-2 text-sm text-gray-600", children: t2("login.rememberMe") })
@@ -13796,7 +13796,7 @@ var LoginForm = ({
             {
               variant: "link",
               onClick: () => onNavigate?.("/register"),
-              className: "font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto",
+              className: "font-medium text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto",
               children: t2("login.signUp")
             }
           )
@@ -13806,7 +13806,7 @@ var LoginForm = ({
           {
             variant: "link",
             onClick: () => onNavigate?.("/forget-password"),
-            className: "font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto",
+            className: "font-medium text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto",
             children: t2("login.forgotPassword")
           }
         ) })
@@ -13958,13 +13958,13 @@ var RegisterForm = ({
         /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_ui15.CardTitle, { className: "text-2xl font-bold text-gray-900", children: t2("register.createMerchantAccount") }),
         /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_ui15.CardDescription, { className: "text-gray-600", children: currentStep === 1 ? t2("register.step1") : t2("register.step2") }),
         /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "flex items-center justify-center space-x-4 mt-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: `flex items-center ${currentStep >= 1 ? "text-blue-600" : "text-gray-400"}`, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= 1 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"}`, children: "1" }),
+          /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: `flex items-center ${currentStep >= 1 ? "text-blue-700" : "text-gray-400"}`, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= 1 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-500"}`, children: "1" }),
             /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("span", { className: "ml-2 text-sm font-medium", children: t2("register.account") })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: `w-8 h-0.5 ${currentStep >= 2 ? "bg-blue-600" : "bg-gray-200"}` }),
-          /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: `flex items-center ${currentStep >= 2 ? "text-blue-600" : "text-gray-400"}`, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= 2 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"}`, children: "2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: `w-8 h-0.5 ${currentStep >= 2 ? "bg-blue-700" : "bg-gray-200"}` }),
+          /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: `flex items-center ${currentStep >= 2 ? "text-blue-700" : "text-gray-400"}`, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= 2 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-500"}`, children: "2" }),
             /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("span", { className: "ml-2 text-sm font-medium", children: t2("register.business") })
           ] })
         ] })
@@ -14122,7 +14122,7 @@ var RegisterForm = ({
             import_ui15.Button,
             {
               type: "submit",
-              className: "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
+              className: "w-full bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
               disabled: isSubmitting,
               children: isSubmitting ? t2("register.validating") : t2("register.continueToBusinessInfo")
             }
@@ -14308,17 +14308,17 @@ var RegisterForm = ({
                   checked: formik.values.acceptTermsAndPrivacy,
                   onChange: formik.handleChange,
                   onBlur: formik.handleBlur,
-                  className: "mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className: "mt-1 h-4 w-4 text-blue-700 focus:ring-blue-500 border-gray-300 rounded"
                 }
               ),
               /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("span", { className: "text-sm text-gray-700", children: [
                 t2("register.iAgreeToThe"),
                 " ",
-                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("a", { href: "/terms", className: "text-blue-600 hover:text-blue-500 underline", children: t2("register.termsOfService") }),
+                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("a", { href: "/terms", className: "text-blue-700 hover:text-blue-500 underline", children: t2("register.termsOfService") }),
                 " ",
                 t2("register.and"),
                 " ",
-                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("a", { href: "/privacy", className: "text-blue-600 hover:text-blue-500 underline", children: t2("register.privacyPolicy") })
+                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("a", { href: "/privacy", className: "text-blue-700 hover:text-blue-500 underline", children: t2("register.privacyPolicy") })
               ] })
             ] }),
             formik.errors.acceptTermsAndPrivacy && formik.touched.acceptTermsAndPrivacy && /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.acceptTermsAndPrivacy })
@@ -14327,22 +14327,22 @@ var RegisterForm = ({
             /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("h3", { className: "text-sm font-medium text-blue-900 mb-2", children: t2("register.freeTrialIncludes") }),
             /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("ul", { className: "text-sm text-blue-800 space-y-1", children: [
               /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.CheckCircle, { className: "h-4 w-4 text-blue-600 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.CheckCircle, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.fullAccessToAllFeatures")
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.CheckCircle, { className: "h-4 w-4 text-blue-600 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.CheckCircle, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.defaultOutlet"),
                 ': "',
                 formik.values.businessName || "Your Business",
                 '"'
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.CheckCircle, { className: "h-4 w-4 text-blue-600 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.CheckCircle, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.mobileAppAccess")
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.CheckCircle, { className: "h-4 w-4 text-blue-600 mr-2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.CheckCircle, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.noCreditCardRequired")
               ] })
             ] })
@@ -14361,7 +14361,7 @@ var RegisterForm = ({
               import_ui15.Button,
               {
                 type: "submit",
-                className: "flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
+                className: "flex-1 bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
                 disabled: isSubmitting,
                 children: isSubmitting ? t2("register.creatingAccount") : t2("register.registerButton")
               }
@@ -14378,7 +14378,7 @@ var RegisterForm = ({
               variant: "link",
               type: "button",
               onClick: () => onNavigate?.("/login"),
-              className: "text-blue-600 hover:text-blue-500 font-medium p-0 h-auto",
+              className: "text-blue-700 hover:text-blue-500 font-medium p-0 h-auto",
               children: t2("register.signIn")
             }
           )
@@ -14435,7 +14435,7 @@ var ForgetPasswordForm = ({
   if (emailSent || success) {
     return /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "w-full max-w-md", children: [
       /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "text-center mb-6", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "inline-block", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "inline-block", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("h1", { className: "mt-4 text-2xl font-bold text-gray-800", children: t2("forgotPassword.checkEmail") }),
         /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "mt-2 text-sm text-gray-600", children: t2("forgotPassword.checkEmail") })
       ] }),
@@ -14483,7 +14483,7 @@ var ForgetPasswordForm = ({
   }
   return /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "w-full max-w-md", children: [
     /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "text-center mb-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "inline-block", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "inline-block", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-white font-bold text-xl", children: "R" }) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("h1", { className: "mt-4 text-2xl font-bold text-gray-800", children: t2("forgotPassword.title") }),
       /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "mt-2 text-sm text-gray-600", children: t2("forgotPassword.subtitle") })
     ] }),
@@ -15182,9 +15182,9 @@ var PieChart = ({ data, title, loading = false }) => {
 var import_jsx_runtime62 = require("react/jsx-runtime");
 var getColorScheme = (index) => {
   const colors = [
-    "from-blue-500 to-blue-600",
+    "from-blue-500 to-blue-700",
     "from-purple-500 to-purple-600",
-    "from-green-500 to-green-600",
+    "from-blue-600 to-blue-700",
     "from-orange-500 to-orange-600",
     "from-pink-500 to-pink-600",
     "from-indigo-500 to-indigo-600",
@@ -15252,7 +15252,7 @@ var ColorfulList = ({
         /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)("div", { className: "flex items-center space-x-4", children: [
           /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("div", { className: `w-12 h-12 rounded-xl bg-gradient-to-br ${getColorScheme(index)} flex items-center justify-center text-white font-bold text-lg shadow-lg`, children: index + 1 }),
           /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("p", { className: "font-bold text-gray-900 text-lg group-hover:text-blue-600 transition-colors", children: item.title }),
+            /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("p", { className: "font-bold text-gray-900 text-lg group-hover:text-blue-700 transition-colors", children: item.title }),
             item.subtitle && /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("p", { className: "text-gray-600 font-medium", children: item.subtitle })
           ] })
         ] }),
@@ -15313,7 +15313,7 @@ var SimpleList = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime63.jsxs)("div", { className: "text-right", children: [
         item.value && /* @__PURE__ */ (0, import_jsx_runtime63.jsx)("p", { className: "font-medium text-gray-900 text-sm", children: item.value }),
-        item.status && /* @__PURE__ */ (0, import_jsx_runtime63.jsx)("span", { className: `text-xs px-1.5 py-0.5 rounded ${item.status === "active" ? "bg-blue-50 text-blue-600" : item.status === "overdue" ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"}`, children: item.status })
+        item.status && /* @__PURE__ */ (0, import_jsx_runtime63.jsx)("span", { className: `text-xs px-1.5 py-0.5 rounded ${item.status === "active" ? "bg-blue-50 text-blue-700" : item.status === "overdue" ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"}`, children: item.status })
       ] })
     ] }, item.id)) }) })
   ] });
@@ -15346,7 +15346,7 @@ var TopCustomers = ({ data, loading = false }) => {
       /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("p", { className: "text-sm text-gray-600", children: "Highest spending customers in the last 30 days" })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { className: "space-y-4", children: data.slice(0, 10).map((customer, index) => /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { className: "flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { className: "flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm", children: index + 1 }),
+      /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { className: "flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-700 flex items-center justify-center text-white font-bold text-sm", children: index + 1 }),
       /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { className: "flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 flex items-center justify-center text-white font-medium", children: customer.name.split(" ").map((n2) => n2[0]).join("").toUpperCase() }),
       /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { className: "flex-1 min-w-0", children: [
         /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { className: "flex items-center space-x-2", children: [
@@ -15359,7 +15359,7 @@ var TopCustomers = ({ data, loading = false }) => {
         /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { className: "flex items-center space-x-4 mt-1 text-xs text-gray-500", children: [
           /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("span", { className: "truncate", children: customer.email }),
           /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("span", { className: "truncate", children: customer.phone }),
-          /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("span", { className: "font-medium text-blue-600", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("span", { className: "font-medium text-blue-700", children: [
             "$",
             customer.totalSpent.toLocaleString()
           ] })
@@ -15516,7 +15516,7 @@ var RecentOrders = ({ data, loading = false }) => {
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("span", { children: formatDate11(order.createdAt) })
           ] }),
-          order.pickupPlanAt && /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)("div", { className: "text-xs text-blue-600", children: [
+          order.pickupPlanAt && /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)("div", { className: "text-xs text-blue-700", children: [
             "Pickup: ",
             formatDate11(order.pickupPlanAt)
           ] })
@@ -16322,7 +16322,7 @@ var ProductCard = ({
       /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)("div", { className: "mb-4 space-y-1", children: [
         /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)("div", { className: "flex justify-between items-center", children: [
           /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { className: "text-sm text-gray-600", children: "Rent Price:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)("span", { className: "font-semibold text-lg text-blue-600", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)("span", { className: "font-semibold text-lg text-blue-700", children: [
             "$",
             rentPrice.toFixed(2),
             "/day"
@@ -17127,8 +17127,8 @@ var ProductDetailList = ({
             /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { className: "text-xs text-gray-600", children: tc("labels.total") })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { className: "text-center min-w-[60px]", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { className: "text-lg font-bold text-blue-600", children: outletStock.available }),
-            /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { className: "text-xs text-blue-600", children: t2("fields.available") })
+            /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { className: "text-lg font-bold text-blue-700", children: outletStock.available }),
+            /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { className: "text-xs text-blue-700", children: t2("fields.available") })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { className: "text-center min-w-[60px]", children: [
             /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { className: "text-lg font-bold text-green-600", children: outletStock.renting }),
@@ -17382,7 +17382,7 @@ var OrderHeader = import_react44.default.memo(function OrderHeader2({ totalOrder
     /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)(import_ui29.Card, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(import_ui29.CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(import_ui29.CardTitle, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.activeRentals") }) }),
       /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)(import_ui29.CardContent, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("div", { className: "text-2xl font-bold text-blue-600 dark:text-blue-400", children: (safeStats.activeRentals || 0).toLocaleString() }),
+        /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("div", { className: "text-2xl font-bold text-blue-700 dark:text-blue-400", children: (safeStats.activeRentals || 0).toLocaleString() }),
         /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: t2("stats.currentlyPickuped") })
       ] })
     ] }),
@@ -17929,7 +17929,7 @@ var OrderTable = import_react47.default.memo(function OrderTable2({
     return (0, import_utils24.useFormattedFullDate)(dateString);
   };
   const getOrderIcon = () => {
-    return /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { className: "w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center justify-center shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("svg", { className: "w-8 h-8 text-blue-600 dark:text-blue-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }) }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { className: "w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center justify-center shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("svg", { className: "w-8 h-8 text-blue-700 dark:text-blue-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }) }) });
   };
   const handleSort = (column) => {
     if (onSort) {
@@ -18187,7 +18187,7 @@ function OrderStats({ stats }) {
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Total Deposits" }),
-            /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { className: "font-medium text-blue-600 dark:text-blue-400", children: formatCurrency22(stats.totalDeposits) })
+            /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { className: "font-medium text-blue-700 dark:text-blue-400", children: formatCurrency22(stats.totalDeposits) })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Average Order Value" }),
@@ -18531,7 +18531,7 @@ var ProductOrdersView = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
         /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "p-2 bg-blue-100 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(import_lucide_react35.ShoppingCart, { className: "h-5 w-5 text-blue-600" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "p-2 bg-blue-100 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(import_lucide_react35.ShoppingCart, { className: "h-5 w-5 text-blue-700" }) }),
           /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-sm text-gray-600", children: t2("stats.totalOrders") }),
             /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: overview.totalOrders })
@@ -18566,7 +18566,7 @@ var ProductOrdersView = ({
         ] }) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { className: "text-center", children: [
           /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-sm text-gray-600 mb-1", children: t2("stats.completedOrders") }),
-          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-xl font-bold text-blue-600", children: overview.completedOrders })
+          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-xl font-bold text-blue-700", children: overview.completedOrders })
         ] }) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { className: "text-center", children: [
           /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-sm text-gray-600 mb-1", children: t2("productOrders.reservedOrders") }),
@@ -18584,10 +18584,10 @@ var ProductOrdersView = ({
         ] })
       ] }) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "p-2 bg-blue-100 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(import_lucide_react35.Package, { className: "h-5 w-5 text-blue-600" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "p-2 bg-blue-100 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(import_lucide_react35.Package, { className: "h-5 w-5 text-blue-700" }) }),
         /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-sm text-gray-600", children: t2("productOrders.currentlyRented") }),
-          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-2xl font-bold text-blue-600", children: inventoryData.totalRenting }),
+          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-2xl font-bold text-blue-700", children: inventoryData.totalRenting }),
           /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-xs text-gray-500", children: t2("productOrders.outOnRental") })
         ] })
       ] }) }) }),
@@ -20396,7 +20396,7 @@ function CustomerHeader({ totalCustomers, stats }) {
     /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)(import_ui62.Card, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime109.jsx)(import_ui62.CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime109.jsx)(import_ui62.CardTitle, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "New This Month" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)(import_ui62.CardContent, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { className: "text-2xl font-bold text-blue-600 dark:text-blue-400", children: stats.newCustomersThisMonth.toLocaleString() }),
+        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { className: "text-2xl font-bold text-blue-700 dark:text-blue-400", children: stats.newCustomersThisMonth.toLocaleString() }),
         /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "Recent signups" })
       ] })
     ] }),
@@ -20554,7 +20554,7 @@ function CustomerStats({ stats }) {
               /* @__PURE__ */ (0, import_jsx_runtime111.jsx)("div", { className: "w-20 bg-blue-200 dark:bg-blue-700 rounded-full h-2", children: /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(
                 "div",
                 {
-                  className: "bg-blue-600 h-2 rounded-full",
+                  className: "bg-blue-700 h-2 rounded-full",
                   style: { width: `${stats.newCustomersThisMonth / stats.totalCustomers * 100}%` }
                 }
               ) }),
@@ -21387,7 +21387,7 @@ function MerchantHeader({ merchant, stats }) {
       /* @__PURE__ */ (0, import_jsx_runtime117.jsx)("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: merchant.email })
     ] }) }) }),
     /* @__PURE__ */ (0, import_jsx_runtime117.jsx)(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime117.jsx)(CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime117.jsxs)("div", { className: "text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime117.jsx)(import_lucide_react47.Building2, { className: "w-6 h-6 text-blue-600 mx-auto mb-2" }),
+      /* @__PURE__ */ (0, import_jsx_runtime117.jsx)(import_lucide_react47.Building2, { className: "w-6 h-6 text-blue-700 mx-auto mb-2" }),
       /* @__PURE__ */ (0, import_jsx_runtime117.jsx)("p", { className: "text-xs font-medium text-gray-600 dark:text-gray-400", children: "Total Outlets" }),
       /* @__PURE__ */ (0, import_jsx_runtime117.jsx)("p", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: stats.totalOutlets }),
       /* @__PURE__ */ (0, import_jsx_runtime117.jsx)("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "Business locations" })
@@ -21988,7 +21988,7 @@ function SubscriptionExtendDialog({
   return /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui79.Dialog, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)(import_ui79.DialogContent, { className: "max-w-2xl", children: [
     /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)(import_ui79.DialogHeader, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)(import_ui79.DialogTitle, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_lucide_react50.Calendar, { className: "h-5 w-5 text-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_lucide_react50.Calendar, { className: "h-5 w-5 text-blue-700" }),
         "Extend Subscription"
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)(import_ui79.DialogDescription, { children: [
@@ -22180,7 +22180,7 @@ function SubscriptionChangePlanDialog({
   return /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui81.Dialog, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui81.DialogContent, { className: "max-w-4xl", children: [
     /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui81.DialogHeader, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui81.DialogTitle, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_lucide_react51.ArrowRight, { className: "h-5 w-5 text-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_lucide_react51.ArrowRight, { className: "h-5 w-5 text-blue-700" }),
         "Change Subscription Plan"
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui81.DialogDescription, { children: [
@@ -22229,7 +22229,7 @@ function SubscriptionChangePlanDialog({
                 /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui81.CardHeader, { children: [
                   /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "flex items-center justify-between", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui81.CardTitle, { className: "text-lg", children: plan.name }),
-                    selectedPlanId === plan.id && /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_lucide_react51.Check, { className: "h-5 w-5 text-blue-600" })
+                    selectedPlanId === plan.id && /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_lucide_react51.Check, { className: "h-5 w-5 text-blue-700" })
                   ] }),
                   /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("p", { className: "text-sm text-gray-600", children: plan.description })
                 ] }),
@@ -23020,7 +23020,7 @@ function SubscriptionList({
     /* @__PURE__ */ (0, import_jsx_runtime126.jsxs)(Card, { className: "shadow-sm border-border flex flex-col h-full", children: [
       /* @__PURE__ */ (0, import_jsx_runtime126.jsx)(CardHeader, { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime126.jsx)(CardTitle, { children: "Subscriptions" }) }),
       loading ? /* @__PURE__ */ (0, import_jsx_runtime126.jsx)("div", { className: "flex items-center justify-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime126.jsxs)("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime126.jsx)("div", { className: "animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime126.jsx)("div", { className: "animate-spin rounded-full h-6 w-6 border-b-2 border-blue-700" }),
         /* @__PURE__ */ (0, import_jsx_runtime126.jsx)("span", { children: "Loading subscriptions..." })
       ] }) }) : filteredSubscriptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime126.jsx)("div", { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime126.jsxs)("div", { className: "text-text-tertiary", children: [
         /* @__PURE__ */ (0, import_jsx_runtime126.jsx)("div", { className: "text-4xl mb-4", children: "\u{1F4B3}" }),
@@ -23802,7 +23802,7 @@ var SubscriptionPreviewPage = ({
   };
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime128.jsx)("div", { className: "min-h-screen bg-gray-50 py-12", children: /* @__PURE__ */ (0, import_jsx_runtime128.jsx)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ (0, import_jsx_runtime128.jsxs)("div", { className: "text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime128.jsx)("div", { className: "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" }),
+      /* @__PURE__ */ (0, import_jsx_runtime128.jsx)("div", { className: "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto" }),
       /* @__PURE__ */ (0, import_jsx_runtime128.jsx)("p", { className: "mt-4 text-gray-600", children: "Loading subscription plans..." })
     ] }) }) });
   }
@@ -23861,7 +23861,7 @@ var SubscriptionPreviewPage = ({
           onClick: () => setSelectedDuration(duration),
           className: (0, import_ui87.cn)(
             "px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 relative",
-            isSelected ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+            isSelected ? "bg-blue-700 text-white shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           ),
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime128.jsxs)("div", { className: "text-center", children: [
@@ -23891,7 +23891,7 @@ var SubscriptionPreviewPage = ({
             plan.isPopular ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
           ),
           children: [
-            plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime128.jsx)("div", { className: "absolute -top-3 left-1/2 transform -translate-x-1/2", children: /* @__PURE__ */ (0, import_jsx_runtime128.jsx)(import_ui87.Badge, { className: "bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium", children: "Most Popular" }) }),
+            plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime128.jsx)("div", { className: "absolute -top-3 left-1/2 transform -translate-x-1/2", children: /* @__PURE__ */ (0, import_jsx_runtime128.jsx)(import_ui87.Badge, { className: "bg-blue-700 text-white px-4 py-1 rounded-full text-sm font-medium", children: "Most Popular" }) }),
             /* @__PURE__ */ (0, import_jsx_runtime128.jsxs)(import_ui87.CardHeader, { className: "text-center pb-4 pt-8", children: [
               /* @__PURE__ */ (0, import_jsx_runtime128.jsx)(import_ui87.CardTitle, { className: "text-2xl font-bold text-gray-900 mb-2", children: plan.name }),
               /* @__PURE__ */ (0, import_jsx_runtime128.jsx)("p", { className: "text-gray-600 text-sm mb-4", children: plan.description }),
@@ -24225,7 +24225,7 @@ var PlanSelectionModal = ({
                   /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_ui88.CardTitle, { className: "text-lg", children: plan.name }),
                   plan.isPopular && /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_ui88.Badge, { className: "bg-blue-500", children: "Most Popular" })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)("div", { className: "text-2xl font-bold text-blue-600", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)("div", { className: "text-2xl font-bold text-blue-700", children: [
                   formatPrice(plan.price, plan.currency),
                   /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)("span", { className: "text-sm font-normal text-gray-500", children: [
                     "/",
@@ -24306,7 +24306,7 @@ var PlanSelectionModal = ({
         /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_ui88.Separator, {}),
         /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)("div", { className: "flex justify-between items-center text-lg font-bold", children: [
           /* @__PURE__ */ (0, import_jsx_runtime129.jsx)("span", { children: "Total:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime129.jsx)("span", { className: "text-blue-600", children: formatPrice(calculatedPrice, selectedPlan.currency) })
+          /* @__PURE__ */ (0, import_jsx_runtime129.jsx)("span", { className: "text-blue-700", children: formatPrice(calculatedPrice, selectedPlan.currency) })
         ] })
       ] }) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)("div", { className: "flex justify-end gap-3", children: [
@@ -24316,7 +24316,7 @@ var PlanSelectionModal = ({
           {
             onClick: handleConfirm,
             disabled: !selectedPlan || loading,
-            className: "bg-blue-600 hover:bg-blue-700",
+            className: "bg-blue-700 hover:bg-blue-700",
             children: loading ? "Processing..." : "Continue with Payment"
           }
         )
@@ -24577,7 +24577,7 @@ function SubscriptionPeriodCard({
         ] })
       ] }),
       period.isTrial && period.endDate && /* @__PURE__ */ (0, import_jsx_runtime131.jsx)("div", { className: "bg-blue-50 border border-blue-200 rounded-lg p-3", children: /* @__PURE__ */ (0, import_jsx_runtime131.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime131.jsx)(import_lucide_react59.Clock, { className: "w-4 h-4 text-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime131.jsx)(import_lucide_react59.Clock, { className: "w-4 h-4 text-blue-700" }),
         /* @__PURE__ */ (0, import_jsx_runtime131.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime131.jsx)("div", { className: "text-sm font-medium text-blue-900", children: "Trial Period" }),
           /* @__PURE__ */ (0, import_jsx_runtime131.jsxs)("div", { className: "text-xs text-blue-700", children: [
@@ -25163,7 +25163,7 @@ function UpgradeTrialModal({
                   " products"
                 ] })
               ] }),
-              selectedPlan?.id === plan.id && /* @__PURE__ */ (0, import_jsx_runtime135.jsxs)("div", { className: "flex items-center gap-1 text-blue-600 font-medium", children: [
+              selectedPlan?.id === plan.id && /* @__PURE__ */ (0, import_jsx_runtime135.jsxs)("div", { className: "flex items-center gap-1 text-blue-700 font-medium", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime135.jsx)(import_lucide_react63.Check, { className: "w-4 h-4" }),
                 "Selected"
               ] })
@@ -25423,7 +25423,7 @@ function SubscriptionActivityTimeline({
       case "PLAN_CHANGED":
       case "PLAN_UPGRADED":
       case "PLAN_DOWNGRADED":
-        return "text-blue-600 bg-blue-100";
+        return "text-blue-700 bg-blue-100";
       case "SUBSCRIPTION_ACTIVATED":
       case "BILLING_CYCLE_RENEWED":
       case "RENEWAL":
@@ -25447,7 +25447,7 @@ function SubscriptionActivityTimeline({
       case "PAYMENT_FAILED":
         return "text-red-600 bg-red-100";
       case "TRIAL_STARTED":
-        return "text-blue-600 bg-blue-100";
+        return "text-blue-700 bg-blue-100";
       case "TRIAL_ENDED":
         return "text-yellow-600 bg-yellow-100";
       case "DISCOUNT_APPLIED":
@@ -25457,7 +25457,7 @@ function SubscriptionActivityTimeline({
       case "INVOICE_GENERATED":
         return "text-indigo-600 bg-indigo-100";
       case "REMINDER_SENT":
-        return "text-blue-600 bg-blue-100";
+        return "text-blue-700 bg-blue-100";
       case "DUNNING_STARTED":
         return "text-red-600 bg-red-100";
       case "SUBSCRIPTION_EXPIRED":
@@ -25994,7 +25994,7 @@ function MerchantPlanManagement({
               variant: "default",
               size: "sm",
               onClick: handleOpenChangeDialog,
-              className: "flex items-center gap-2 bg-blue-600 hover:bg-blue-700",
+              className: "flex items-center gap-2 bg-blue-700 hover:bg-blue-700",
               children: [
                 /* @__PURE__ */ (0, import_jsx_runtime138.jsx)(import_lucide_react65.ArrowRight, { className: "h-4 w-4" }),
                 "Upgrade to Paid Plan"
@@ -26739,7 +26739,7 @@ function MerchantDetail({
       /* @__PURE__ */ (0, import_jsx_runtime141.jsxs)(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: [
         /* @__PURE__ */ (0, import_jsx_runtime141.jsxs)(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
           /* @__PURE__ */ (0, import_jsx_runtime141.jsx)(CardTitle, { className: "text-sm font-medium", children: "Manage Outlets" }),
-          /* @__PURE__ */ (0, import_jsx_runtime141.jsx)(import_lucide_react67.Building2, { className: "w-5 h-5 text-blue-600" })
+          /* @__PURE__ */ (0, import_jsx_runtime141.jsx)(import_lucide_react67.Building2, { className: "w-5 h-5 text-blue-700" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime141.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime141.jsx)(
           Button2,
@@ -26815,7 +26815,7 @@ function CalendarHeader({
   const t2 = (0, import_hooks38.useCalendarTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime142.jsxs)("div", { className: "flex items-center justify-between mb-6", children: [
     /* @__PURE__ */ (0, import_jsx_runtime142.jsxs)("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime142.jsx)("div", { className: "w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime142.jsx)(import_lucide_react68.Calendar, { className: "w-6 h-6 text-blue-600" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime142.jsx)("div", { className: "w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime142.jsx)(import_lucide_react68.Calendar, { className: "w-6 h-6 text-blue-700" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime142.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime142.jsx)("h1", { className: "text-2xl font-bold text-gray-900", children: title || t2("title") }),
         subtitle && /* @__PURE__ */ (0, import_jsx_runtime142.jsx)("p", { className: "text-sm text-gray-600", children: subtitle })
@@ -26855,7 +26855,7 @@ function CalendarNavigation({
   const currentYear = currentDate.getFullYear();
   return /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: `flex items-center justify-between ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime143.jsx)(import_lucide_react69.Calendar, { className: "w-5 h-5 text-blue-600" }),
+      /* @__PURE__ */ (0, import_jsx_runtime143.jsx)(import_lucide_react69.Calendar, { className: "w-5 h-5 text-blue-700" }),
       /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("h2", { className: "text-xl font-semibold text-gray-900", children: [
         currentMonth,
         " ",
@@ -26878,7 +26878,7 @@ function CalendarNavigation({
         {
           variant: "outline",
           onClick: onToday,
-          className: "px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100",
+          className: "px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100",
           children: t2("navigation.today")
         }
       ),
@@ -27042,7 +27042,7 @@ function CalendarGrid({
               className: `
                   text-sm font-medium
                   ${day.isCurrentMonth ? "text-gray-900" : "text-gray-400"}
-                  ${day.isToday ? "text-blue-600 font-bold" : ""}
+                  ${day.isToday ? "text-blue-700 font-bold" : ""}
                 `,
               children: day.dayOfMonth
             }
@@ -27252,7 +27252,7 @@ function OrdersList({
             /* @__PURE__ */ (0, import_jsx_runtime148.jsx)("span", { className: `px-2 py-1 text-xs rounded-full font-medium ${order.status === "RESERVED" ? "bg-red-100 text-red-800" : order.status === "PICKUPED" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`, children: order.status })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime148.jsxs)("div", { className: "flex items-center space-x-3 mb-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime148.jsx)("div", { className: "w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime148.jsx)(import_lucide_react71.User, { className: "w-4 h-4 text-blue-600" }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime148.jsx)("div", { className: "w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime148.jsx)(import_lucide_react71.User, { className: "w-4 h-4 text-blue-700" }) }),
             /* @__PURE__ */ (0, import_jsx_runtime148.jsxs)("div", { children: [
               /* @__PURE__ */ (0, import_jsx_runtime148.jsx)("p", { className: "font-medium text-gray-900", children: order.customerName }),
               /* @__PURE__ */ (0, import_jsx_runtime148.jsx)("p", { className: "text-sm text-gray-500", children: order.customerPhone || "No phone" })
@@ -27286,7 +27286,7 @@ function UserHeader({ viewMode, onViewModeChange, onAddUser }) {
       Button2,
       {
         onClick: onAddUser,
-        className: "bg-blue-600 hover:bg-blue-700 text-white",
+        className: "bg-blue-700 hover:bg-blue-700 text-white",
         children: [
           /* @__PURE__ */ (0, import_jsx_runtime149.jsx)(import_lucide_react72.Plus, { className: "w-4 h-4 mr-2" }),
           "Add User"
@@ -27433,7 +27433,7 @@ function UserCard({ user, onUserAction }) {
   return /* @__PURE__ */ (0, import_jsx_runtime151.jsx)(import_ui98.Card, { className: "overflow-hidden hover:shadow-lg transition-shadow", children: /* @__PURE__ */ (0, import_jsx_runtime151.jsxs)("div", { className: "p-6", children: [
     /* @__PURE__ */ (0, import_jsx_runtime151.jsxs)("div", { className: "flex items-start justify-between mb-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime151.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime151.jsx)("div", { className: "w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime151.jsx)(import_lucide_react73.User, { className: "w-6 h-6 text-blue-600" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime151.jsx)("div", { className: "w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime151.jsx)(import_lucide_react73.User, { className: "w-6 h-6 text-blue-700" }) }),
         /* @__PURE__ */ (0, import_jsx_runtime151.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime151.jsx)("h3", { className: "font-semibold text-lg text-gray-900", children: user.name }),
           /* @__PURE__ */ (0, import_jsx_runtime151.jsx)(import_ui98.Badge, { variant: getRoleBadgeVariant(user.role), children: getRoleDisplayName(user.role) })
@@ -27927,7 +27927,7 @@ var ChangePasswordDialog = ({
           {
             type: "submit",
             disabled: isLoading,
-            className: "bg-blue-600 hover:bg-blue-700",
+            className: "bg-blue-700 hover:bg-blue-700",
             children: isLoading ? "Changing..." : "Change Password"
           }
         )
@@ -30727,7 +30727,7 @@ var CategoryCard = ({
             variant: "outline",
             size: "sm",
             onClick: handleEdit,
-            className: "h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300",
+            className: "h-8 px-3 text-blue-700 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300",
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime179.jsx)(import_lucide_react89.Edit, { className: "h-4 w-4 mr-1" }),
               "Edit"
@@ -32340,7 +32340,7 @@ var PlanDetailModal = ({
           Button2,
           {
             onClick: () => handleSubscribe(plan.billingCycle),
-            className: "bg-blue-600 hover:bg-blue-700",
+            className: "bg-blue-700 hover:bg-blue-700",
             children: [
               "Subscribe to ",
               plan.name,
@@ -33252,7 +33252,7 @@ var PaymentForm = ({
       formData.amount > 0 && /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { className: "p-4 bg-blue-50 rounded-lg", children: [
         /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("span", { className: "font-medium", children: "Total Amount:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("span", { className: "text-xl font-bold text-blue-600", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("span", { className: "text-xl font-bold text-blue-700", children: [
             "$",
             formData.amount,
             " ",
@@ -34218,7 +34218,7 @@ function SystemStatus({ statusItems, className = "" }) {
       case "error":
         return "text-red-600";
       default:
-        return "text-blue-600";
+        return "text-blue-700";
     }
   };
   const getStatusBgColor = (status) => {
@@ -34594,7 +34594,7 @@ function ActivityFeed({
       case "error":
         return "text-red-600 bg-red-100";
       case "info":
-        return "text-blue-600 bg-blue-100";
+        return "text-blue-700 bg-blue-100";
       default:
         return "text-gray-600 bg-gray-100";
     }
@@ -37555,7 +37555,7 @@ var CollectionReturnModal = ({
     if (isCollectionMode) {
       return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react120.Package, { className: "w-5 h-5 text-green-600" });
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react120.RotateCcw, { className: "w-5 h-5 text-blue-600" });
+    return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(import_lucide_react120.RotateCcw, { className: "w-5 h-5 text-blue-700" });
   };
   const getActionButtonText = () => {
     if (isCollectionMode) {
@@ -37604,11 +37604,11 @@ var CollectionReturnModal = ({
         /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("h3", { className: "text-lg font-semibold text-gray-900 mb-2", children: isCollectionMode ? "Collect from Customer" : "Return to Customer" }),
         details.calculation && details.calculation.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "text-xl font-bold text-green-700 bg-green-50 rounded-lg p-4 border border-green-200", children: [
           /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { children: details.calculation.find((item) => item.isTotal)?.value !== void 0 ? (0, import_ui142.formatCurrency)(details.calculation.find((item) => item.isTotal)?.value || 0) : "0.00" }),
-          settingsForm.collateralType && settingsForm.collateralType !== "Other" && settingsForm.collateralType.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { className: "ml-2 text-lg font-normal text-blue-600", children: [
+          settingsForm.collateralType && settingsForm.collateralType !== "Other" && settingsForm.collateralType.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { className: "ml-2 text-lg font-normal text-blue-700", children: [
             "+ ",
             settingsForm.collateralType
           ] }),
-          settingsForm.collateralType === "Other" && settingsForm.collateralDetails && settingsForm.collateralDetails.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { className: "ml-2 text-lg font-normal text-blue-600", children: [
+          settingsForm.collateralType === "Other" && settingsForm.collateralDetails && settingsForm.collateralDetails.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { className: "ml-2 text-lg font-normal text-blue-700", children: [
             "+ ",
             settingsForm.collateralDetails
           ] })
@@ -38757,7 +38757,7 @@ var SettingsLayout2 = ({
         /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { children: t2("subtitle") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "flex justify-center items-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "text-center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" }),
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto mb-4" }),
         /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "text-gray-600", children: t2("loading") || "Loading settings..." })
       ] }) })
     ] });
@@ -38782,7 +38782,7 @@ var SettingsLayout2 = ({
           {
             variant: "ghost",
             onClick: () => onSectionChange(item.id),
-            className: `w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${isActive ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600" : "text-gray-700 hover:bg-gray-50"}`,
+            className: `w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${isActive ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700" : "text-gray-700 hover:bg-gray-50"}`,
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(Icon2, { className: "h-5 w-5" }),
               /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex-1 min-w-0", children: [
@@ -39186,7 +39186,7 @@ var MerchantSection = ({
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_ui152.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(import_ui152.CardContent, { className: "p-6", children: [
       /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { className: "flex items-center gap-2 mb-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react128.DollarSign, { className: "h-5 w-5 text-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(import_lucide_react128.DollarSign, { className: "h-5 w-5 text-blue-700" }),
         /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: t2("merchant.currencySettings") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "text-sm text-gray-600 mb-4", children: t2("merchant.currencyDesc") }),
@@ -39233,7 +39233,7 @@ var MerchantSection = ({
           option.value
         );
       }) }),
-      isSavingCurrency && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "text-sm text-blue-600 mt-3", children: t2("merchant.savingCurrency") })
+      isSavingCurrency && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("p", { className: "text-sm text-blue-700 mt-3", children: t2("merchant.savingCurrency") })
     ] }) })
   ] });
 };
@@ -39335,7 +39335,7 @@ var SubscriptionSection = ({
   const t2 = (0, import_hooks70.useSettingsTranslations)();
   if (subscriptionLoading) {
     return /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_ui154.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_ui154.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center justify-center py-8", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
+      /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700" }),
       /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("span", { className: "ml-2 text-gray-600", children: t2("subscription.loading") })
     ] }) }) }) });
   }
@@ -39343,7 +39343,7 @@ var SubscriptionSection = ({
     return /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_ui154.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)(import_ui154.CardContent, { className: "p-6", children: [
       /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center justify-between mb-4", children: [
         /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react129.CreditCard, { className: "h-6 w-6 text-blue-600" }),
+          /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_lucide_react129.CreditCard, { className: "h-6 w-6 text-blue-700" }),
           /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("h3", { className: "text-base font-semibold text-gray-900", children: t2("subscription.currentPlan") }),
             /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("p", { className: "text-sm text-gray-600", children: subscriptionData.subscription.plan?.name || "Professional Plan" })
@@ -40346,7 +40346,7 @@ var CurrencySection = ({
   return /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("div", { className: "space-y-6", children: [
     /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("h2", { className: "text-2xl font-bold text-gray-900 flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(import_lucide_react135.DollarSign, { className: "h-6 w-6 text-blue-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(import_lucide_react135.DollarSign, { className: "h-6 w-6 text-blue-700" }),
         "Currency Settings"
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime264.jsx)("p", { className: "text-gray-600 mt-1", children: "Choose your preferred currency for displaying prices across your rental shop." })
@@ -40408,7 +40408,7 @@ var CurrencySection = ({
                     /* @__PURE__ */ (0, import_jsx_runtime264.jsx)("div", { className: "text-sm text-gray-600", children: option.value })
                   ] })
                 ] }),
-                isSelected && /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(import_lucide_react135.CheckCircle2, { className: "h-5 w-5 text-blue-600" })
+                isSelected && /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(import_lucide_react135.CheckCircle2, { className: "h-5 w-5 text-blue-700" })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("div", { className: "mt-3 pt-3 border-t border-gray-200", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime264.jsx)("div", { className: "text-xs text-gray-500 mb-1", children: "Preview:" }),
@@ -40555,7 +40555,7 @@ function TopNavigation({
   return /* @__PURE__ */ (0, import_jsx_runtime265.jsxs)("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
     /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ (0, import_jsx_runtime265.jsxs)("div", { className: "flex items-center justify-between h-16", children: [
       /* @__PURE__ */ (0, import_jsx_runtime265.jsxs)("div", { className: "flex items-center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(import_lucide_react136.Store, { className: "w-6 h-6 text-white" }) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(import_lucide_react136.Store, { className: "w-6 h-6 text-white" }) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime265.jsxs)("div", { className: "ml-3", children: [
           /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
           /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("p", { className: "text-xs text-gray-500 capitalize", children: variant })
@@ -40573,7 +40573,7 @@ function TopNavigation({
                 href: item.href,
                 className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+                  /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
                   item.label,
                   /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(import_lucide_react136.ChevronDown, { className: "w-3 h-3" })
                 ]
@@ -40588,7 +40588,7 @@ function TopNavigation({
                   href: subItem.href,
                   className: `flex items-center gap-2 px-4 py-2 text-sm transition-colors ${isSubActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
+                    /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-700" : "text-gray-500"}` }),
                     subItem.label
                   ]
                 },
@@ -40603,7 +40603,7 @@ function TopNavigation({
             href: item.href,
             className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+              /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
               item.label
             ]
           },
@@ -40684,7 +40684,7 @@ function TopNavigation({
             className: `flex px-3 py-2 rounded-lg text-base font-medium items-center gap-3 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
             onClick: () => setIsMobileMenuOpen(false),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+              /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
               item.label
             ]
           }
@@ -40699,7 +40699,7 @@ function TopNavigation({
               className: `flex px-3 py-2 rounded-lg text-sm font-medium items-center gap-3 ${isSubActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
               onClick: () => setIsMobileMenuOpen(false),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
+                /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-700" : "text-gray-500"}` }),
                 subItem.label
               ]
             },
@@ -40745,7 +40745,7 @@ function ServerTopNavigation({
     /* @__PURE__ */ (0, import_jsx_runtime266.jsxs)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: [
       /* @__PURE__ */ (0, import_jsx_runtime266.jsxs)("div", { className: "flex items-center justify-between h-16", children: [
         /* @__PURE__ */ (0, import_jsx_runtime266.jsxs)("div", { className: "flex items-center", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime266.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime266.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ (0, import_jsx_runtime266.jsx)(import_lucide_react137.Store, { className: "w-6 h-6 text-white" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime266.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime266.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ (0, import_jsx_runtime266.jsx)(import_lucide_react137.Store, { className: "w-6 h-6 text-white" }) }) }),
           /* @__PURE__ */ (0, import_jsx_runtime266.jsxs)("div", { className: "ml-3", children: [
             /* @__PURE__ */ (0, import_jsx_runtime266.jsx)("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
             /* @__PURE__ */ (0, import_jsx_runtime266.jsx)("p", { className: "text-xs text-gray-500 capitalize", children: variant })
@@ -40760,7 +40760,7 @@ function ServerTopNavigation({
               href: item.href,
               className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime266.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+                /* @__PURE__ */ (0, import_jsx_runtime266.jsx)(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
                 item.label
               ]
             },
@@ -40864,7 +40864,7 @@ function ServerTopNavigation({
           href: item.href,
           className: `block px-3 py-2 rounded-lg text-base font-medium flex items-center gap-3 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime266.jsx)(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+            /* @__PURE__ */ (0, import_jsx_runtime266.jsx)(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-700" : "text-gray-500"}` }),
             item.label
           ]
         },
@@ -41040,7 +41040,7 @@ var QuickActionCard = ({
   /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("a", { href, className: "block", children: /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { className: "flex items-center space-x-4", children: [
     /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { className: `w-16 h-16 rounded-xl bg-gradient-to-br ${color} text-white text-3xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`, children: icon }),
     /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { className: "flex-1", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("h3", { className: "font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors", children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("h3", { className: "font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-700 transition-colors", children: title }),
       /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("p", { className: "text-gray-600 font-medium", children: description })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { className: "text-gray-400 group-hover:text-blue-500 transition-colors", children: /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
@@ -41053,14 +41053,14 @@ var ColorfulQuickActions = () => {
       description: "Create rental order",
       icon: "\u{1F4E6}",
       href: "/orders/new",
-      color: "from-blue-500 to-blue-600"
+      color: "from-blue-500 to-blue-700"
     },
     {
       title: "Return Item",
       description: "Process returns",
       icon: "\u{1F504}",
       href: "/orders/returns",
-      color: "from-green-500 to-green-600"
+      color: "from-blue-600 to-blue-700"
     },
     {
       title: "Add Product",
@@ -41092,16 +41092,16 @@ var ColorfulTodaysFocus = ({ data }) => {
       description: "Items to be picked up",
       icon: "\u{1F4E6}",
       value: data.todayPickups,
-      color: "from-blue-500 to-blue-600",
+      color: "from-blue-500 to-blue-700",
       bgColor: "bg-blue-50",
-      textColor: "text-blue-600"
+      textColor: "text-blue-700"
     },
     {
       title: "Returns Today",
       description: "Items to be returned",
       icon: "\u{1F504}",
       value: data.todayReturns,
-      color: "from-green-500 to-green-600",
+      color: "from-blue-600 to-blue-700",
       bgColor: "bg-green-50",
       textColor: "text-green-600"
     },
@@ -41129,13 +41129,13 @@ var ColorfulTodaysFocus = ({ data }) => {
       title: "Process Pickup",
       description: "Mark items as picked up",
       icon: "\u{1F4E6}",
-      color: "from-blue-500 to-blue-600"
+      color: "from-blue-500 to-blue-700"
     },
     {
       title: "Process Return",
       description: "Mark items as returned",
       icon: "\u{1F504}",
-      color: "from-green-500 to-green-600"
+      color: "from-blue-600 to-blue-700"
     },
     {
       title: "Handle Overdue",
@@ -41308,7 +41308,7 @@ var SearchInput = ({
         }
       )
     ] }),
-    isSearching && /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2", children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" }) })
+    isSearching && /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2", children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700" }) })
   ] });
 };
 
@@ -41526,13 +41526,13 @@ var AdminSidebar = ({
           onClick: () => toggleExpanded(item.href),
           className: (0, import_ui164.cn)(
             "flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out h-auto",
-            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
+            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary"
           ),
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime275.jsxs)("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime275.jsx)(Icon2, { className: (0, import_ui164.cn)(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-text-secondary"
+                active ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime275.jsx)("span", { children: item.label })
             ] }),
@@ -41548,13 +41548,13 @@ var AdminSidebar = ({
           href: item.href,
           className: (0, import_ui164.cn)(
             "flex items-center justify-between px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out",
-            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
+            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary"
           ),
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime275.jsxs)("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime275.jsx)(Icon2, { className: (0, import_ui164.cn)(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-text-secondary"
+                active ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime275.jsx)("span", { children: item.label })
             ] }),
@@ -41571,7 +41571,7 @@ var AdminSidebar = ({
             href: subItem.href,
             className: (0, import_ui164.cn)(
               "flex items-center gap-2 px-4 py-2 text-sm font-normal rounded-lg transition-colors",
-              subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
+              subActive ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary"
             ),
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime275.jsx)(SubIcon, { className: "w-4 h-4" }),
@@ -41800,7 +41800,7 @@ var ClientSidebar = ({
           onMouseLeave: () => setHoveredTab(null),
           className: (0, import_ui166.cn)(
             "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
-            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
+            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
             isHovered ? "scale-[1.02]" : "",
             clickedTab === item.href ? "scale-[0.98]" : ""
           ),
@@ -41808,7 +41808,7 @@ var ClientSidebar = ({
             /* @__PURE__ */ (0, import_jsx_runtime276.jsxs)("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(Icon2, { className: (0, import_ui166.cn)(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-text-secondary"
+                active ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("span", { children: item.label })
             ] }),
@@ -41832,7 +41832,7 @@ var ClientSidebar = ({
           onMouseLeave: () => setHoveredTab(null),
           className: (0, import_ui166.cn)(
             "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
-            active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary",
+            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
             isHovered ? "scale-[1.02]" : "",
             clickedTab === item.href ? "scale-[0.98]" : ""
           ),
@@ -41840,7 +41840,7 @@ var ClientSidebar = ({
             /* @__PURE__ */ (0, import_jsx_runtime276.jsxs)("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(Icon2, { className: (0, import_ui166.cn)(
                 "w-4 h-4",
-                active ? "text-blue-600" : "text-text-secondary"
+                active ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("span", { children: item.label })
             ] }),
@@ -41866,7 +41866,7 @@ var ClientSidebar = ({
             },
             className: (0, import_ui166.cn)(
               "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg justify-start h-auto",
-              subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600"
+              subActive ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700"
             ),
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(SubIcon, { className: "w-4 h-4" }),
@@ -41885,10 +41885,10 @@ var ClientSidebar = ({
     /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("div", { className: "hidden", children: menuItems2.map((item) => /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(import_link4.default, { href: item.href }, item.href)) }),
     /* @__PURE__ */ (0, import_jsx_runtime276.jsxs)("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
       !isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime276.jsxs)("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(import_lucide_react141.Building2, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-500 rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(import_lucide_react141.Building2, { className: "w-5 h-5 text-white" }) }),
         /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }) })
       ] }),
-      isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(import_lucide_react141.Building2, { className: "w-5 h-5 text-white" }) }),
+      isCollapsed && /* @__PURE__ */ (0, import_jsx_runtime276.jsx)("div", { className: "w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-500 rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(import_lucide_react141.Building2, { className: "w-5 h-5 text-white" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime276.jsx)(
         import_ui167.Button,
         {

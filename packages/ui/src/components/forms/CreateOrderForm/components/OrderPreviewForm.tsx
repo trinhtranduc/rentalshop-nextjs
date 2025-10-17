@@ -185,7 +185,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
-          <ShoppingCart className="w-6 h-6 text-blue-600" />
+          <ShoppingCart className="w-6 h-6 text-blue-700" />
           {title}
         </h2>
         {subtitle && (
@@ -197,7 +197,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Info className="w-5 h-5 text-blue-600" />
+            <Info className="w-5 h-5 text-blue-700" />
             Order Summary
           </CardTitle>
         </CardHeader>
@@ -396,7 +396,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
             
             <div className="flex justify-between items-center text-lg font-bold">
               <span>Total Amount:</span>
-              <span className="font-mono text-blue-600">{formatCurrency(orderData.totalAmount)}</span>
+              <span className="font-mono text-blue-700">{formatCurrency(orderData.totalAmount)}</span>
             </div>
             
             {orderData.depositAmount && orderData.depositAmount > 0 && (
@@ -513,7 +513,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
         <Button
           onClick={onConfirm}
           disabled={loading || warnings.length > 0}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+          className="flex items-center gap-2 bg-blue-700 hover:bg-blue-700"
         >
           {loading ? (
             <>

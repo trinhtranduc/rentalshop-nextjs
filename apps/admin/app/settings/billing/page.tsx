@@ -220,7 +220,7 @@ export default function BillingSettingsPage() {
             <Button 
               onClick={handleSaveConfig} 
               disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-700 hover:bg-blue-700"
             >
               <Save className="h-4 w-4 mr-2" />
               {isSubmitting ? t('billing.intervals.saving') : t('billing.intervals.saveConfiguration')}

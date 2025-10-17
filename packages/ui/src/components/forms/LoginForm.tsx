@@ -85,7 +85,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         {/* Logo */}
         <div className="text-center mb-6">
           <div className="inline-block">
-            <div className="h-12 w-12 mx-auto bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">R</span>
             </div>
           </div>
@@ -189,7 +189,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                   <input
                     type="checkbox"
                     id="remember"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
+                    className="h-4 w-4 text-blue-700 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
                   />
                   <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
                     {t('login.rememberMe')}
@@ -224,7 +224,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               <Button
                 variant="link"
                 onClick={() => onNavigate?.("/register")}
-                className="font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto"
+                className="font-medium text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto"
               >
                 {t('login.signUp')}
               </Button>
@@ -235,7 +235,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             <Button
               variant="link"
               onClick={() => onNavigate?.("/forget-password")}
-              className="font-medium text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto"
+              className="font-medium text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto"
             >
               {t('login.forgotPassword')}
             </Button>

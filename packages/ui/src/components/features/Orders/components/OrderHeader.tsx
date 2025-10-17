@@ -68,7 +68,7 @@ export const OrderHeader = React.memo(function OrderHeader({ totalOrders, stats,
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
               {(safeStats.activeRentals || 0).toLocaleString()}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">

@@ -257,7 +257,7 @@ export default function MerchantOrdersPage() {
             <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           </div>
           <Button
-            variant="success"
+            variant="default"
             size="sm"
             onClick={() => router.push(`/merchants/${merchantId}/orders/create`)}
           >

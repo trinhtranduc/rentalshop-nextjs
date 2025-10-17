@@ -182,8 +182,8 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                       </div>
                       
                       <div className="text-center min-w-[60px]">
-                        <div className="text-lg font-bold text-blue-600">{outletStock.available}</div>
-                        <div className="text-xs text-blue-600">{t('fields.available')}</div>
+                        <div className="text-lg font-bold text-blue-700">{outletStock.available}</div>
+                        <div className="text-xs text-blue-700">{t('fields.available')}</div>
                       </div>
                       
                       <div className="text-center min-w-[60px]">

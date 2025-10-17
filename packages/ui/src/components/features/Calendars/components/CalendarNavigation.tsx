@@ -33,7 +33,7 @@ export function CalendarNavigation({
     <div className={`flex items-center justify-between ${className}`}>
       {/* Month/Year Display */}
       <div className="flex items-center space-x-3">
-        <CalendarIcon className="w-5 h-5 text-blue-600" />
+        <CalendarIcon className="w-5 h-5 text-blue-700" />
         <h2 className="text-xl font-semibold text-gray-900">
           {currentMonth} {currentYear}
         </h2>
@@ -53,7 +53,7 @@ export function CalendarNavigation({
         <Button
           variant="outline"
           onClick={onToday}
-          className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100"
+          className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
         >
           {t('navigation.today')}
         </Button>

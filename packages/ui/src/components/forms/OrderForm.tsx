@@ -420,7 +420,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             <div className="flex justify-between"><span>Thuế (10%):</span><span>{formatCurrency(formData.taxAmount || 0)}</span></div>
             <div className="flex justify-between"><span>Giảm giá:</span><span>-{formatCurrency(formData.discountAmount || 0)}</span></div>
             <div className="flex justify-between text-lg font-semibold border-t pt-2"><span>Tổng cộng:</span><span className="text-green-600">{formatCurrency(formData.totalAmount || 0)}</span></div>
-            <div className="flex justify-between text-lg font-semibold"><span>Tiền cọc:</span><span className="text-blue-600">{formatCurrency(formData.depositAmount || 0)}</span></div>
+            <div className="flex justify-between text-lg font-semibold"><span>Tiền cọc:</span><span className="text-blue-700">{formatCurrency(formData.depositAmount || 0)}</span></div>
           </div>
         </div>
       </CardContent>

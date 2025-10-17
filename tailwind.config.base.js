@@ -11,18 +11,18 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Brand Colors - Green Theme
+        // Brand Colors - Blue Theme (Blue-700)
         'brand': {
-          primary: '#22C55E',    // Green 500 - primary green
-          secondary: '#4ADE80',  // Green 400 - lighter green
-          dark: '#15803D',       // Green 700 - deep green
-          light: '#86EFAC',      // Green 300 - light green
-          lightest: '#DCFCE7',   // Green 100 - very light green background
+          primary: '#1D4ED8',    // Blue 700 - primary blue
+          secondary: '#3B82F6',  // Blue 500 - lighter blue
+          dark: '#1E40AF',       // Blue 800 - deep blue
+          light: '#60A5FA',      // Blue 400 - light blue
+          lightest: '#DBEAFE',   // Blue 100 - very light blue background
         },
-        // Action Colors - Green Theme
+        // Action Colors - Blue Theme
         'action': {
-          primary: '#22C55E',    // Green 500 (same as brand primary)
-          success: '#10B981',    // Emerald green
+          primary: '#1D4ED8',    // Blue 700 (same as brand primary)
+          success: '#10B981',    // Emerald green (keep for success)
           danger: '#EF4444',     // Red
           warning: '#F59E0B',    // Amber
           info: '#3B82F6',       // Blue 500
@@ -43,37 +43,37 @@ module.exports = {
           card: '#FFFFFF',       // White - card background
           dark: '#0F172A',       // Slate 900 - dark background
         },
-        // Navigation Colors - Green Theme
+        // Navigation Colors - Blue Theme
         'nav': {
           background: '#0F172A',      // Dark slate
           backgroundHover: '#1E293B', // Slate 800
           text: '#FFFFFF',            // White
-          textActive: '#86EFAC',      // Green 300 - light green
-          textHover: '#DCFCE7',       // Green 100 - very light green
+          textActive: '#60A5FA',      // Blue 400 - light blue
+          textHover: '#DBEAFE',       // Blue 100 - very light blue
           border: '#334155',          // Slate 700
           icon: '#94A3B8',            // Slate 400
-          iconActive: '#22C55E',      // Green 500
+          iconActive: '#1D4ED8',      // Blue 700
         },
-        // Border Colors - Green Theme
+        // Border Colors - Blue Theme
         'border': {
           DEFAULT: '#E2E8F0',    // Slate 200
           light: '#F1F5F9',      // Slate 100
           dark: '#CBD5E1',       // Slate 300
-          focus: '#22C55E',      // Green 500
+          focus: '#1D4ED8',      // Blue 700
         },
-        // Status Colors - Green Theme
+        // Status Colors - Blue Theme
         'status': {
           // Order statuses
-          reserved: '#3B82F6',   // Blue 500
+          reserved: '#1D4ED8',   // Blue 700
           pickuped: '#F59E0B',   // Amber 500
           returned: '#10B981',   // Emerald 500
           completed: '#6366F1',  // Indigo 500
           cancelled: '#EF4444',  // Red 500
           // General statuses
           pending: '#F59E0B',    // Amber 500
-          active: '#22C55E',     // Green 500
+          active: '#1D4ED8',     // Blue 700
           inactive: '#64748B',   // Slate 500
-          success: '#22C55E',    // Green 500
+          success: '#10B981',    // Emerald 500 (keep green for success)
           warning: '#F59E0B',    // Amber 500
           error: '#EF4444',      // Red 500
           info: '#3B82F6',       // Blue 500

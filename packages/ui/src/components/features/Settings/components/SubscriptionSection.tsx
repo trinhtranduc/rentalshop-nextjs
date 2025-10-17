@@ -43,7 +43,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
               <span className="ml-2 text-gray-600">{t('subscription.loading')}</span>
             </div>
           </CardContent>
@@ -60,7 +60,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <CreditCard className="h-6 w-6 text-blue-600" />
+                  <CreditCard className="h-6 w-6 text-blue-700" />
                   <div>
                     <h3 className="text-base font-semibold text-gray-900">{t('subscription.currentPlan')}</h3>
                     <p className="text-sm text-gray-600">{subscriptionData.subscription.plan?.name || 'Professional Plan'}</p>

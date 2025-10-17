@@ -242,7 +242,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
       </div>
     );
   }
@@ -553,7 +553,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-blue-600" />
+              <CreditCard className="h-5 w-5 text-blue-700" />
               Extend Subscription
             </DialogTitle>
             <DialogDescription>

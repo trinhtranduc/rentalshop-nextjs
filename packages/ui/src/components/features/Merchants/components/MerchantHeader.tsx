@@ -26,7 +26,7 @@ export function MerchantHeader({ merchant, stats }: MerchantHeaderProps) {
       <Card className="shadow-sm border-gray-200 dark:border-gray-700">
         <CardContent className="p-6">
           <div className="text-center">
-            <Building2 className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+            <Building2 className="w-6 h-6 text-blue-700 mx-auto mb-2" />
             <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Outlets</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalOutlets}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Business locations</p>

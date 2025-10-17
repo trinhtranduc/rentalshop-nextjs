@@ -251,18 +251,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           
           {/* Step Progress Indicator */}
           <div className="flex items-center justify-center space-x-4 mt-4">
-            <div className={`flex items-center ${currentStep >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`flex items-center ${currentStep >= 1 ? 'text-blue-700' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                currentStep >= 1 ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
               }`}>
                 1
               </div>
               <span className="ml-2 text-sm font-medium">{t('register.account')}</span>
             </div>
-            <div className={`w-8 h-0.5 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-            <div className={`flex items-center ${currentStep >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-0.5 ${currentStep >= 2 ? 'bg-blue-700' : 'bg-gray-200'}`}></div>
+            <div className={`flex items-center ${currentStep >= 2 ? 'text-blue-700' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                currentStep >= 2 ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
               }`}>
                 2
               </div>
@@ -441,7 +441,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {/* Submit Button for Step 1 */}
                 <Button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+                  className="w-full bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? t('register.validating') : t('register.continueToBusinessInfo')}
@@ -676,15 +676,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       checked={formik.values.acceptTermsAndPrivacy}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="mt-1 h-4 w-4 text-blue-700 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <span className="text-sm text-gray-700">
                       {t('register.iAgreeToThe')}{' '}
-                      <a href="/terms" className="text-blue-600 hover:text-blue-500 underline">
+                      <a href="/terms" className="text-blue-700 hover:text-blue-500 underline">
                         {t('register.termsOfService')}
                       </a>{' '}
                       {t('register.and')}{' '}
-                      <a href="/privacy" className="text-blue-600 hover:text-blue-500 underline">
+                      <a href="/privacy" className="text-blue-700 hover:text-blue-500 underline">
                         {t('register.privacyPolicy')}
                       </a>
                     </span>
@@ -699,19 +699,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   <h3 className="text-sm font-medium text-blue-900 mb-2">{t('register.freeTrialIncludes')}</h3>
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                      <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
                       {t('register.fullAccessToAllFeatures')}
                     </li>
                     <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                      <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
                       {t('register.defaultOutlet')}: "{formik.values.businessName || 'Your Business'}"
                     </li>
                     <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                      <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
                       {t('register.mobileAppAccess')}
                     </li>
                     <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                      <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
                       {t('register.noCreditCardRequired')}
                     </li>
                   </ul>
@@ -728,7 +728,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   </Button>
                   <Button
                     type="submit"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+                    className="flex-1 bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? t('register.creatingAccount') : t('register.registerButton')}
@@ -752,7 +752,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   variant="link"
                   type="button"
                   onClick={() => onNavigate?.('/login')}
-                  className="text-blue-600 hover:text-blue-500 font-medium p-0 h-auto"
+                  className="text-blue-700 hover:text-blue-500 font-medium p-0 h-auto"
                 >
                   {t('register.signIn')}
                 </Button>

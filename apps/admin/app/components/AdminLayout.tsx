@@ -96,7 +96,7 @@ export default function AdminLayout({
             </Button>
             
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">RS</span>
               </div>
               <span className="font-semibold text-text-primary">RentalShop Admin</span>

@@ -81,7 +81,7 @@ export const CurrencySection: React.FC<CurrencySectionProps> = ({
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <DollarSign className="h-6 w-6 text-blue-600" />
+          <DollarSign className="h-6 w-6 text-blue-700" />
           Currency Settings
         </h2>
         <p className="text-gray-600 mt-1">
@@ -176,7 +176,7 @@ export const CurrencySection: React.FC<CurrencySectionProps> = ({
                       </div>
                     </div>
                     {isSelected && (
-                      <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                      <CheckCircle2 className="h-5 w-5 text-blue-700" />
                     )}
                   </div>
 

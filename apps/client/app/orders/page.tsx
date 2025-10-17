@@ -466,7 +466,7 @@ export default function OrdersPage() {
             )} */}
             <Button 
               onClick={() => router.push('/orders/create')}
-              variant="success"
+              variant="default"
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />

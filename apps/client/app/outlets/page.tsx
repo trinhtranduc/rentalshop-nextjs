@@ -394,7 +394,7 @@ export default function OutletsPage() {
             )} */}
             <Button
               onClick={() => setShowAddDialog(true)}
-              variant="success"
+              variant="default"
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />

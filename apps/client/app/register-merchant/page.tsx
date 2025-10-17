@@ -71,7 +71,7 @@ export default function RegisterMerchantPage() {
         <div className="text-center mt-8">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <a href="/login" className="text-blue-600 hover:text-blue-500 font-medium">
+            <a href="/login" className="text-blue-700 hover:text-blue-500 font-medium">
               Sign in here
             </a>
           </p>

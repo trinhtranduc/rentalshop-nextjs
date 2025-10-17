@@ -138,7 +138,7 @@ export const ErrorHandlingUsage: React.FC = () => {
             <Button 
               onClick={simulateValidationError}
               variant="outline"
-              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              className="text-blue-700 border-blue-200 hover:bg-blue-50"
             >
               Validation Error
             </Button>

@@ -24,7 +24,7 @@ export default function PageLoadingIndicator() {
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-700 rounded-full animate-spin"></div>
             <span>{t('labels.loading')} {pathname === '/' ? t('navigation.dashboard') : pathname.slice(1).charAt(0).toUpperCase() + pathname.slice(2)}...</span>
           </div>
         </div>

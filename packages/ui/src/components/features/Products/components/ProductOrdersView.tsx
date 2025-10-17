@@ -322,7 +322,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
-                    <ShoppingCart className="h-5 w-5 text-blue-600" />
+                    <ShoppingCart className="h-5 w-5 text-blue-700" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">{t('stats.totalOrders')}</p>
@@ -390,7 +390,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
               <CardContent className="p-4">
                 <div className="text-center">
                   <p className="text-sm text-gray-600 mb-1">{t('stats.completedOrders')}</p>
-                  <p className="text-xl font-bold text-blue-600">{overview.completedOrders}</p>
+                  <p className="text-xl font-bold text-blue-700">{overview.completedOrders}</p>
                 </div>
               </CardContent>
             </Card>
@@ -429,11 +429,11 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <Package className="h-5 w-5 text-blue-600" />
+                  <Package className="h-5 w-5 text-blue-700" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('productOrders.currentlyRented')}</p>
-                  <p className="text-2xl font-bold text-blue-600">{inventoryData.totalRenting}</p>
+                  <p className="text-2xl font-bold text-blue-700">{inventoryData.totalRenting}</p>
                   <p className="text-xs text-gray-500">{t('productOrders.outOnRental')}</p>
                 </div>
               </div>

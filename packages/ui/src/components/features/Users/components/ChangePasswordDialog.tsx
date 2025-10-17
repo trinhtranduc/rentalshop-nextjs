@@ -201,7 +201,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-700 hover:bg-blue-700"
             >
               {isLoading ? 'Changing...' : 'Change Password'}
             </Button>

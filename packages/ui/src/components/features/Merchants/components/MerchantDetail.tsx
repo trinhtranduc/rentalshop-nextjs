@@ -150,7 +150,7 @@ export function MerchantDetail({
         <Card className="shadow-sm border-gray-200 dark:border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Manage Outlets</CardTitle>
-            <Building2 className="w-5 h-5 text-blue-600" />
+            <Building2 className="w-5 h-5 text-blue-700" />
           </CardHeader>
           <CardContent>
             <Button 

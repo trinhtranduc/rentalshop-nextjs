@@ -127,7 +127,7 @@ export default function AuthHelperPage() {
               {loading ? 'Loading...' : 'Login'}
             </Button>
             <Button
-              variant="success"
+              variant="default"
               onClick={handleRegister}
               disabled={loading}
               className="flex-1 py-2 px-4"

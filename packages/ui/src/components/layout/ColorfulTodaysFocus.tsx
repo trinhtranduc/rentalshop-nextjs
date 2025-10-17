@@ -19,16 +19,16 @@ export const ColorfulTodaysFocus: React.FC<TodaysFocusProps> = ({ data }) => {
       description: 'Items to be picked up',
       icon: '📦',
       value: data.todayPickups,
-      color: 'from-blue-500 to-blue-600',
+      color: 'from-blue-500 to-blue-700',
       bgColor: 'bg-blue-50',
-      textColor: 'text-blue-600'
+      textColor: 'text-blue-700'
     },
     {
       title: 'Returns Today',
       description: 'Items to be returned',
       icon: '🔄',
       value: data.todayReturns,
-      color: 'from-green-500 to-green-600',
+      color: 'from-blue-600 to-blue-700',
       bgColor: 'bg-green-50',
       textColor: 'text-green-600'
     },
@@ -57,13 +57,13 @@ export const ColorfulTodaysFocus: React.FC<TodaysFocusProps> = ({ data }) => {
       title: 'Process Pickup',
       description: 'Mark items as picked up',
       icon: '📦',
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-blue-500 to-blue-700'
     },
     {
       title: 'Process Return',
       description: 'Mark items as returned',
       icon: '🔄',
-      color: 'from-green-500 to-green-600'
+      color: 'from-blue-600 to-blue-700'
     },
     {
       title: 'Handle Overdue',

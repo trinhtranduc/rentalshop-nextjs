@@ -8,8 +8,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Green Theme - Primary button with green
-        default: "bg-green-500 text-white hover:bg-green-600",
+        // Blue-700 Theme - Primary button with blue-700
+        default: "bg-blue-700 text-white hover:bg-blue-800",
         // Destructive - Red for danger actions
         destructive: "bg-red-500 text-white hover:bg-red-600",
         // Outline - Neutral gray border (for table actions, pagination)
@@ -18,9 +18,9 @@ const buttonVariants = cva(
         secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
         // Ghost - Transparent with hover effect
         ghost: "hover:bg-slate-100 hover:text-slate-800",
-        // Link - Green text with underline
-        link: "text-green-500 underline-offset-4 hover:underline",
-        // Success - Emerald green
+        // Link - Blue-700 text with underline
+        link: "text-blue-700 underline-offset-4 hover:underline",
+        // Success - Emerald green (keep for success states)
         success: "bg-emerald-500 text-white hover:bg-emerald-600",
         // Warning - Amber yellow
         warning: "bg-amber-500 text-white hover:bg-amber-600",

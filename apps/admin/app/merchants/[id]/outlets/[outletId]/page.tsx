@@ -294,10 +294,10 @@ export default function OutletDetailPage() {
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Users
                 </CardTitle>
-                <Users className="w-4 h-4 text-blue-600" />
+                <Users className="w-4 h-4 text-blue-700" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-blue-700">
                   {outlet.stats?.totalUsers || 0}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">

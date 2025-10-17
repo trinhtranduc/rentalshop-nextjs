@@ -245,8 +245,8 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             className={cn(
               'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative',
               active 
-                ? 'text-blue-600 font-medium' 
-                : 'text-text-primary hover:text-blue-600 hover:bg-bg-secondary',
+                ? 'text-blue-700 font-medium' 
+                : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
               isHovered ? 'scale-[1.02]' : '',
               clickedTab === item.href ? 'scale-[0.98]' : ''
             )}
@@ -254,7 +254,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             <div className="flex items-center gap-2">
               <Icon className={cn(
                 'w-4 h-4',
-                active ? 'text-blue-600' : 'text-text-secondary'
+                active ? 'text-blue-700' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -285,8 +285,8 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             className={cn(
               'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative',
               active 
-                ? 'text-blue-600 font-medium' 
-                : 'text-text-primary hover:text-blue-600 hover:bg-bg-secondary',
+                ? 'text-blue-700 font-medium' 
+                : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
               isHovered ? 'scale-[1.02]' : '',
               clickedTab === item.href ? 'scale-[0.98]' : ''
             )}
@@ -294,7 +294,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             <div className="flex items-center gap-2">
               <Icon className={cn(
                 'w-4 h-4',
-                active ? 'text-blue-600' : 'text-text-secondary'
+                active ? 'text-blue-700' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -335,7 +335,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
                   }}
                   className={cn(
                     'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg justify-start h-auto',
-                    subActive ? 'text-blue-600 font-medium' : 'text-text-primary hover:text-blue-600'
+                    subActive ? 'text-blue-700 font-medium' : 'text-text-primary hover:text-blue-700'
                   )}
                 >
                   <SubIcon className="w-4 h-4" />
@@ -365,7 +365,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -375,7 +375,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
         )}
         
         {isCollapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-500 rounded-lg flex items-center justify-center mx-auto shadow-sm">
             <Building2 className="w-5 h-5 text-white" />
           </div>
         )}

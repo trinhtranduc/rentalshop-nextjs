@@ -76,7 +76,7 @@ export const OrderPreviewDialog: React.FC<OrderPreviewDialogProps> = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-blue-600" />
+            <ShoppingCart className="w-6 h-6 text-blue-700" />
             {title}
           </DialogTitle>
         </DialogHeader>
