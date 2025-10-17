@@ -63,9 +63,11 @@ export async function POST(request: NextRequest) {
       }
 
       // ALL CHECKS PASSED - Start transaction for atomic creation
+      console.log('🔄 Starting transaction for merchant registration...');
+      
       const result = await db.prisma.$transaction(async (tx) => {
         // 3. Create merchant with business configuration
-        console.log('Creating merchant with data:', {
+        console.log('📝 Step 1: Creating merchant with data:', {
           name: validatedData.businessName,
           email: validatedData.email,
           phone: validatedData.phone
@@ -104,10 +106,10 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        console.log('✅ Merchant created:', { id: merchant.id, name: merchant.name });
+        console.log('✅ Step 1 Complete: Merchant created:', { id: merchant.id, name: merchant.name });
 
         // 4. Create default outlet
-        console.log('Creating outlet with merchantId:', merchant.id);
+        console.log('📝 Step 2: Creating outlet with merchantId:', merchant.id);
         
         const outlet = await tx.outlet.create({
           data: {
@@ -124,7 +126,11 @@ export async function POST(request: NextRequest) {
           }
         });
 
+        console.log('✅ Step 2 Complete: Outlet created:', { id: outlet.id, name: outlet.name });
+
         // 5. Create default category
+        console.log('📝 Step 3: Creating default category...');
+        
         const category = await tx.category.create({
           data: {
             name: 'General',
@@ -133,7 +139,11 @@ export async function POST(request: NextRequest) {
           }
         });
 
+        console.log('✅ Step 3 Complete: Category created:', { id: category.id, name: category.name });
+
         // 6. Create merchant user
+        console.log('📝 Step 4: Creating merchant user...');
+        
         const hashedPassword = await hashPassword(validatedData.password);
         const user = await tx.user.create({
           data: {
@@ -148,11 +158,14 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        console.log('✅ User created:', { id: user.id, email: user.email });
+        console.log('✅ Step 4 Complete: User created:', { id: user.id, email: user.email });
+        console.log('🎉 Transaction complete - All entities created successfully!');
 
         // Return created entities from transaction
         return { merchant, outlet, category, user };
       }); // End transaction
+
+      console.log('✅ Transaction committed successfully!');
 
       // Extract results from transaction
       const { merchant, outlet, category, user } = result;
