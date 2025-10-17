@@ -38730,7 +38730,7 @@ function OutletDetailLoading() {
 var import_react112 = require("react");
 var import_navigation8 = require("next/navigation");
 var import_lucide_react133 = require("lucide-react");
-var import_hooks74 = require("@rentalshop/hooks");
+var import_hooks75 = require("@rentalshop/hooks");
 var import_utils51 = require("@rentalshop/utils");
 var import_ui158 = require("@rentalshop/ui");
 
@@ -38738,6 +38738,7 @@ var import_ui158 = require("@rentalshop/ui");
 var import_react108 = require("react");
 var import_ui150 = require("@rentalshop/ui");
 var import_lucide_react127 = require("lucide-react");
+var import_hooks66 = require("@rentalshop/hooks");
 var import_jsx_runtime253 = require("react/jsx-runtime");
 var SettingsLayout2 = ({
   user,
@@ -38748,22 +38749,23 @@ var SettingsLayout2 = ({
   onSectionChange
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react108.useState)(false);
+  const t2 = (0, import_hooks66.useSettingsTranslations)();
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(import_ui150.PageWrapper, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(import_ui150.PageHeader, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_ui150.PageTitle, { children: "Settings" }),
-        /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { children: "Manage your account settings and preferences" })
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_ui150.PageTitle, { children: t2("title") }),
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { children: t2("subtitle") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "flex justify-center items-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "text-center", children: [
         /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "text-gray-600", children: "Loading settings..." })
+        /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { className: "text-gray-600", children: t2("loading") || "Loading settings..." })
       ] }) })
     ] });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(import_ui150.PageWrapper, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(import_ui150.PageHeader, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_ui150.PageTitle, { children: "Settings" }),
-      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { children: "Manage your account settings and preferences" })
+      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_ui150.PageTitle, { children: t2("title") }),
+      /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("p", { children: t2("subtitle") })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)("div", { className: "flex flex-col lg:flex-row gap-6", children: [
       /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_ui150.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)(import_ui150.CardContent, { className: "p-0", children: /* @__PURE__ */ (0, import_jsx_runtime253.jsx)("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
@@ -38800,7 +38802,7 @@ var SettingsLayout2 = ({
 
 // src/components/features/Settings/components/ProfileSection.tsx
 var import_ui151 = require("@rentalshop/ui");
-var import_hooks66 = require("@rentalshop/hooks");
+var import_hooks67 = require("@rentalshop/hooks");
 var import_jsx_runtime254 = require("react/jsx-runtime");
 var ProfileSection = ({
   user,
@@ -38812,7 +38814,7 @@ var ProfileSection = ({
   onCancel,
   onInputChange
 }) => {
-  const t2 = (0, import_hooks66.useSettingsTranslations)();
+  const t2 = (0, import_hooks67.useSettingsTranslations)();
   console.log("\u{1F50D} ProfileSection render - user:", user);
   console.log("\u{1F50D} ProfileSection render - user details:", {
     "user.id": user?.id,
@@ -38902,7 +38904,7 @@ var import_ui152 = require("@rentalshop/ui");
 var import_lucide_react128 = require("lucide-react");
 var import_utils50 = require("@rentalshop/utils");
 var import_constants17 = require("@rentalshop/constants");
-var import_hooks67 = require("@rentalshop/hooks");
+var import_hooks68 = require("@rentalshop/hooks");
 var import_jsx_runtime255 = require("react/jsx-runtime");
 var MerchantSection = ({
   user,
@@ -38916,7 +38918,7 @@ var MerchantSection = ({
   onInputChange,
   onCurrencyChange
 }) => {
-  const t2 = (0, import_hooks67.useSettingsTranslations)();
+  const t2 = (0, import_hooks68.useSettingsTranslations)();
   const [merchantData, setMerchantData] = (0, import_react109.useState)(null);
   const [loadingMerchant, setLoadingMerchant] = (0, import_react109.useState)(false);
   const [selectedCurrency, setSelectedCurrency] = (0, import_react109.useState)(currentCurrency);
@@ -39238,7 +39240,7 @@ var MerchantSection = ({
 
 // src/components/features/Settings/components/OutletSection.tsx
 var import_ui153 = require("@rentalshop/ui");
-var import_hooks68 = require("@rentalshop/hooks");
+var import_hooks69 = require("@rentalshop/hooks");
 var import_jsx_runtime256 = require("react/jsx-runtime");
 var OutletSection = ({
   user,
@@ -39250,7 +39252,7 @@ var OutletSection = ({
   onCancel,
   onInputChange
 }) => {
-  const t2 = (0, import_hooks68.useSettingsTranslations)();
+  const t2 = (0, import_hooks69.useSettingsTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(import_ui153.Card, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(import_ui153.CardHeader, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
       /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("h3", { className: "text-base font-semibold text-gray-900", children: t2("outlet.outletInformation") }),
@@ -39323,14 +39325,14 @@ var OutletSection = ({
 // src/components/features/Settings/components/SubscriptionSection.tsx
 var import_ui154 = require("@rentalshop/ui");
 var import_lucide_react129 = require("lucide-react");
-var import_hooks69 = require("@rentalshop/hooks");
+var import_hooks70 = require("@rentalshop/hooks");
 var import_jsx_runtime257 = require("react/jsx-runtime");
 var SubscriptionSection = ({
   subscriptionData,
   subscriptionLoading,
   currentUserRole
 }) => {
-  const t2 = (0, import_hooks69.useSettingsTranslations)();
+  const t2 = (0, import_hooks70.useSettingsTranslations)();
   if (subscriptionLoading) {
     return /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_ui154.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_ui154.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center justify-center py-8", children: [
       /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
@@ -39420,7 +39422,7 @@ var SubscriptionSection = ({
 // src/components/features/Settings/components/AccountSection.tsx
 var import_ui155 = require("@rentalshop/ui");
 var import_lucide_react130 = require("lucide-react");
-var import_hooks70 = require("@rentalshop/hooks");
+var import_hooks71 = require("@rentalshop/hooks");
 var import_jsx_runtime258 = require("react/jsx-runtime");
 var AccountSection = ({
   onSignOut,
@@ -39428,7 +39430,7 @@ var AccountSection = ({
   onChangePassword,
   isDeleting
 }) => {
-  const t2 = (0, import_hooks70.useSettingsTranslations)();
+  const t2 = (0, import_hooks71.useSettingsTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(import_ui155.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(import_ui155.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "space-y-6", children: [
     /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
       /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "flex items-center space-x-3", children: [
@@ -39492,14 +39494,14 @@ var AccountSection = ({
 var import_react110 = require("react");
 var import_lucide_react131 = require("lucide-react");
 var import_navigation7 = require("next/navigation");
-var import_hooks71 = require("@rentalshop/hooks");
+var import_hooks72 = require("@rentalshop/hooks");
 var import_jsx_runtime259 = require("react/jsx-runtime");
 var languages = [
   { value: "en", label: "English", flag: "\u{1F1FA}\u{1F1F8}" },
   { value: "vi", label: "Ti\u1EBFng Vi\u1EC7t", flag: "\u{1F1FB}\u{1F1F3}" }
 ];
 function LanguageSection() {
-  const t2 = (0, import_hooks71.useSettingsTranslations)();
+  const t2 = (0, import_hooks72.useSettingsTranslations)();
   const currentLocale = Z();
   const router = (0, import_navigation7.useRouter)();
   const [isPending, startTransition] = (0, import_react110.useTransition)();
@@ -39567,7 +39569,7 @@ function LanguageSection() {
 var import_react111 = require("react");
 var import_ui156 = require("@rentalshop/ui");
 var import_lucide_react132 = require("lucide-react");
-var import_hooks72 = require("@rentalshop/hooks");
+var import_hooks73 = require("@rentalshop/hooks");
 var import_jsx_runtime260 = require("react/jsx-runtime");
 var ChangePasswordDialog2 = ({
   isOpen,
@@ -39577,7 +39579,7 @@ var ChangePasswordDialog2 = ({
   onChange,
   onSubmit
 }) => {
-  const t2 = (0, import_hooks72.useSettingsTranslations)();
+  const t2 = (0, import_hooks73.useSettingsTranslations)();
   const [showCurrentPassword, setShowCurrentPassword] = (0, import_react111.useState)(false);
   const [showNewPassword, setShowNewPassword] = (0, import_react111.useState)(false);
   const [showConfirmPassword, setShowConfirmPassword] = (0, import_react111.useState)(false);
@@ -39701,7 +39703,7 @@ var ChangePasswordDialog2 = ({
 
 // src/components/features/Settings/components/DeleteAccountDialog.tsx
 var import_ui157 = require("@rentalshop/ui");
-var import_hooks73 = require("@rentalshop/hooks");
+var import_hooks74 = require("@rentalshop/hooks");
 var import_jsx_runtime261 = require("react/jsx-runtime");
 var DeleteAccountDialog = ({
   isOpen,
@@ -39709,7 +39711,7 @@ var DeleteAccountDialog = ({
   onClose,
   onConfirm
 }) => {
-  const t2 = (0, import_hooks73.useSettingsTranslations)();
+  const t2 = (0, import_hooks74.useSettingsTranslations)();
   if (!isOpen)
     return null;
   return /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
@@ -39795,8 +39797,8 @@ var createSettingsMenuItems = (t2) => [
   }
 ];
 var SettingsComponent = () => {
-  const t2 = (0, import_hooks74.useSettingsTranslations)();
-  const { user, logout, loading } = (0, import_hooks74.useAuth)();
+  const t2 = (0, import_hooks75.useSettingsTranslations)();
+  const { user, logout, loading } = (0, import_hooks75.useAuth)();
   const { toastSuccess, toastError } = (0, import_ui158.useToast)();
   const { currency, setCurrency } = useCurrency2();
   const router = (0, import_navigation8.useRouter)();
@@ -41245,7 +41247,7 @@ var import_react117 = require("react");
 var import_lucide_react138 = require("lucide-react");
 var import_ui161 = require("@rentalshop/ui");
 var import_ui162 = require("@rentalshop/ui");
-var import_hooks75 = require("@rentalshop/hooks");
+var import_hooks76 = require("@rentalshop/hooks");
 var import_jsx_runtime273 = require("react/jsx-runtime");
 var SearchInput = ({
   placeholder = "Search...",
@@ -41262,7 +41264,7 @@ var SearchInput = ({
     handleSearchChange,
     clearSearch,
     cleanup
-  } = (0, import_hooks75.useThrottledSearch)({
+  } = (0, import_hooks76.useThrottledSearch)({
     delay,
     minLength,
     onSearch
@@ -41640,7 +41642,7 @@ var import_link4 = __toESM(require("next/link"));
 var import_navigation10 = require("next/navigation");
 var import_ui166 = require("@rentalshop/ui");
 var import_ui167 = require("@rentalshop/ui");
-var import_hooks76 = require("@rentalshop/hooks");
+var import_hooks77 = require("@rentalshop/hooks");
 var import_lucide_react141 = require("lucide-react");
 var import_jsx_runtime276 = require("react/jsx-runtime");
 var getClientMenuItems = (t2) => [
@@ -41715,7 +41717,7 @@ var ClientSidebar = ({
   const [clickedTab, setClickedTab] = (0, import_react120.useState)(null);
   const [localCurrentPage, setLocalCurrentPage] = (0, import_react120.useState)(currentPath);
   const pathname = (0, import_navigation10.usePathname)();
-  const t2 = (0, import_hooks76.useCommonTranslations)();
+  const t2 = (0, import_hooks77.useCommonTranslations)();
   const filterMenuItemsByRole = (items, userRole) => {
     if (!userRole)
       return items;
@@ -42007,7 +42009,7 @@ function Layout({
 
 // src/components/layout/SubscriptionStatus.tsx
 var import_lucide_react143 = require("lucide-react");
-var import_hooks77 = require("@rentalshop/hooks");
+var import_hooks78 = require("@rentalshop/hooks");
 var import_jsx_runtime278 = require("react/jsx-runtime");
 function SubscriptionStatus({ showDetails = false, className = "", currentUserRole }) {
   const {
@@ -42024,7 +42026,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     error: error2,
     statusMessage
     // Use statusReason from API
-  } = (0, import_hooks77.useSubscriptionStatusInfo)();
+  } = (0, import_hooks78.useSubscriptionStatusInfo)();
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime278.jsx)("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime278.jsx)("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
   }

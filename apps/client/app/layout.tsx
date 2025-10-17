@@ -92,8 +92,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Get locale from cookie (server-side) or fallback to default
-  let locale: 'en' | 'vi' = 'en';
+  // ✅ READ COOKIE SERVER-SIDE - No flash, correct locale from start
+  // Default to Vietnamese for Vietnam market
+  let locale: 'en' | 'vi' = 'vi';
   
   try {
     const { cookies } = await import('next/headers');
@@ -104,8 +105,8 @@ export default async function RootLayout({
       locale = localeCookie.value;
     }
   } catch (error) {
-    // Fallback to default locale
-    console.log('Using default locale: en');
+    // Fallback to Vietnamese (primary market)
+    console.log('Using default locale: vi');
   }
 
   return (

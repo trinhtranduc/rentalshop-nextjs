@@ -11,6 +11,7 @@ import {
   Button
 } from '@rentalshop/ui';
 import { ChevronRight } from 'lucide-react';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -46,19 +47,20 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   onSectionChange
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const t = useSettingsTranslations();
 
   // Show loading state while user data is being fetched
   if (loading) {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Settings</PageTitle>
-          <p>Manage your account settings and preferences</p>
+          <PageTitle>{t('title')}</PageTitle>
+          <p>{t('subtitle')}</p>
         </PageHeader>
         <div className="flex justify-center items-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading settings...</p>
+            <p className="text-gray-600">{t('loading') || 'Loading settings...'}</p>
           </div>
         </div>
       </PageWrapper>
@@ -71,8 +73,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   return (
     <PageWrapper>
       <PageHeader>
-        <PageTitle>Settings</PageTitle>
-        <p>Manage your account settings and preferences</p>
+        <PageTitle>{t('title')}</PageTitle>
+        <p>{t('subtitle')}</p>
       </PageHeader>
 
       <div className="flex flex-col lg:flex-row gap-6">

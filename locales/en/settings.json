@@ -1,5 +1,7 @@
 {
   "title": "Settings",
+  "subtitle": "Manage your account settings and preferences",
+  "loading": "Loading settings...",
   "tabs": {
     "profile": "Profile",
     "account": "Account",
