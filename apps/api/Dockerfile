@@ -28,7 +28,13 @@ COPY apps/client/package.json ./apps/client/
 
 # Install ALL dependencies including devDependencies (needed for build)
 ENV NODE_ENV=development
-RUN yarn install --frozen-lockfile
+# Add retry and network timeout for Railway builds
+RUN yarn config set network-timeout 300000 && \
+    yarn config set registry https://registry.npmjs.org/ && \
+    (yarn install --frozen-lockfile --network-timeout 300000 || \
+     (echo "First attempt failed, retrying..." && \
+      yarn cache clean && \
+      yarn install --frozen-lockfile --network-timeout 300000))
 
 # ===================================
 # STAGE 2: Builder
