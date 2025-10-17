@@ -28,7 +28,7 @@ export async function GET(
       const auditLogId = parseInt(id);
       
       // Get audit log using the simplified database API
-      const auditLog = await db.auditLogs.findFirst({ where: { id: auditLogId } });
+      const auditLog = await db.auditLogs.findFirst({ id: auditLogId });
 
       if (!auditLog) {
         console.log('❌ Audit log not found in database for auditLogId:', auditLogId);

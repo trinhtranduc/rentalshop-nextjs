@@ -145,12 +145,10 @@ export async function PUT(
       // Check for duplicate product name if name is being updated
       if (validatedData.name && validatedData.name !== existingProduct.name) {
         const duplicateProduct = await db.products.findFirst({
-          where: {
-            name: validatedData.name,
-            merchantId: userMerchantId,
-            isActive: true,
-            id: { not: productId }
-          }
+          name: validatedData.name,
+          merchantId: userMerchantId,
+          isActive: true,
+          id: { not: productId }
         });
 
         if (duplicateProduct) {
