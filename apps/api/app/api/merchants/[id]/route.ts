@@ -97,27 +97,15 @@ export async function PUT(
 
       // Check for duplicate phone or email if being updated
       if (body.phone || body.email) {
-        const duplicateConditions = [];
-        
-        if (body.phone && body.phone !== existingMerchant.phone) {
-          duplicateConditions.push({ phone: body.phone });
-        }
-        
-        if (body.email && body.email !== existingMerchant.email) {
-          duplicateConditions.push({ email: body.email });
-        }
+        const emailToCheck = (body.email && body.email !== existingMerchant.email) ? body.email : undefined;
+        const phoneToCheck = (body.phone && body.phone !== existingMerchant.phone) ? body.phone : undefined;
 
-        if (duplicateConditions.length > 0) {
-          const duplicateMerchant = await db.merchants.findFirst({
-            where: {
-              OR: duplicateConditions,
-              id: { not: merchantId }
-            }
-          });
+        if (emailToCheck || phoneToCheck) {
+          const duplicateMerchant = await db.merchants.checkDuplicate(emailToCheck, phoneToCheck, merchantId);
 
           if (duplicateMerchant) {
-            const duplicateField = duplicateMerchant.phone === body.phone ? 'phone number' : 'email';
-            const duplicateValue = duplicateMerchant.phone === body.phone ? body.phone : body.email;
+            const duplicateField = duplicateMerchant.email === emailToCheck ? 'email' : 'phone number';
+            const duplicateValue = duplicateMerchant.email === emailToCheck ? emailToCheck : phoneToCheck;
             
             console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
             return NextResponse.json(

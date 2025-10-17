@@ -240,21 +240,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
     }
 
     // Check for duplicate email or phone
-    const duplicateConditions = [];
-    
-    if (email) {
-      duplicateConditions.push({ email: email });
-    }
-    
-    if (phone) {
-      duplicateConditions.push({ phone: phone });
-    }
-
-    const existingMerchant = await db.merchants.findFirst({
-      where: {
-        OR: duplicateConditions
-      }
-    });
+    const existingMerchant = await db.merchants.checkDuplicate(email, phone);
 
     if (existingMerchant) {
       const duplicateField = existingMerchant.email === email ? 'email' : 'phone number';

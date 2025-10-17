@@ -2131,6 +2131,25 @@ async function count(options) {
   const where = options?.where || {};
   return await prisma.merchant.count({ where });
 }
+async function checkDuplicate(email, phone, excludeId) {
+  if (!email && !phone) {
+    return null;
+  }
+  const conditions = [];
+  if (email) {
+    conditions.push({ email });
+  }
+  if (phone) {
+    conditions.push({ phone });
+  }
+  const where = {
+    OR: conditions
+  };
+  if (excludeId) {
+    where.id = { not: excludeId };
+  }
+  return await prisma.merchant.findFirst({ where });
+}
 var simplifiedMerchants = {
   findById: findById2,
   findByEmail,
@@ -2139,7 +2158,8 @@ var simplifiedMerchants = {
   update,
   remove,
   getStats,
-  count
+  count,
+  checkDuplicate
 };
 
 // src/order-number-generator.ts
