@@ -70,7 +70,15 @@ export async function PUT(
       }
 
       const body = await request.json();
-      const { name, address, phone, description } = body;
+      const { name, address, phone, description, isActive } = body;
+
+      // Check if trying to deactivate default outlet
+      if (isActive === false && existing.isDefault) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_DELETE_DEFAULT_OUTLET'),
+          { status: API.STATUS.CONFLICT }
+        );
+      }
 
       // Update outlet with proper data handling
       const updateData: any = {
@@ -86,6 +94,11 @@ export async function PUT(
 
       if (description && description.trim()) {
         updateData.description = description.trim();
+      }
+
+      // Only update isActive if it's not the default outlet
+      if (typeof isActive === 'boolean' && !existing.isDefault) {
+        updateData.isActive = isActive;
       }
 
       const updatedOutlet = await db.outlets.update(outletPublicId, updateData);
@@ -133,6 +146,14 @@ export async function DELETE(
       const existing = await db.outlets.findById(outletPublicId);
       if (!existing) {
         return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      }
+
+      // Check if this is the default outlet - cannot be deleted
+      if (existing.isDefault) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_DELETE_DEFAULT_OUTLET'),
+          { status: API.STATUS.CONFLICT }
+        );
       }
 
       // Soft delete by setting isActive to false

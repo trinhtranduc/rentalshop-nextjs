@@ -260,6 +260,14 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
       );
     }
 
+    // Check if trying to deactivate default outlet
+    if (parsed.data.isActive === false && existingOutlet.isDefault) {
+      return NextResponse.json(
+        ResponseBuilder.error('CANNOT_DELETE_DEFAULT_OUTLET'),
+        { status: 409 }
+      );
+    }
+
     // Check for duplicate outlet name if name is being updated
     if (parsed.data.name && parsed.data.name !== existingOutlet.name) {
       const duplicateOutlet = await db.outlets.findFirst({
@@ -284,10 +292,17 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
       }
     }
 
-    console.log('🔍 Updating outlet with data:', { id, ...parsed.data });
+    // Prepare update data - exclude isActive for default outlets
+    const updateData = { ...parsed.data };
+    if (existingOutlet.isDefault && 'isActive' in updateData) {
+      delete updateData.isActive;
+      console.log('🔍 Removed isActive from update data for default outlet');
+    }
+
+    console.log('🔍 Updating outlet with data:', { id, ...updateData });
     
     // Use simplified database API
-    const updatedOutlet = await db.outlets.update(id, parsed.data);
+    const updatedOutlet = await db.outlets.update(id, updateData);
     console.log('✅ Outlet updated successfully:', updatedOutlet);
 
     return NextResponse.json(
