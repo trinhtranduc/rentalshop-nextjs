@@ -296,6 +296,36 @@ export async function count(options?: { where?: any }) {
   return await prisma.merchant.count({ where });
 }
 
+/**
+ * Check for duplicate merchant by email or phone
+ */
+export async function checkDuplicate(email?: string, phone?: string, excludeId?: number) {
+  if (!email && !phone) {
+    return null;
+  }
+
+  const conditions = [];
+  
+  if (email) {
+    conditions.push({ email });
+  }
+  
+  if (phone) {
+    conditions.push({ phone });
+  }
+
+  const where: any = {
+    OR: conditions
+  };
+
+  // Exclude specific merchant ID (for update operations)
+  if (excludeId) {
+    where.id = { not: excludeId };
+  }
+
+  return await prisma.merchant.findFirst({ where });
+}
+
 // ============================================================================
 // EXPORT SIMPLIFIED INTERFACE
 // ============================================================================
@@ -308,5 +338,6 @@ export const simplifiedMerchants = {
   update,
   remove,
   getStats,
-  count
+  count,
+  checkDuplicate
 };

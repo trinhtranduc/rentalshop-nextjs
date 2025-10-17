@@ -32,21 +32,10 @@ export async function POST(request: NextRequest) {
       // ============================================================================
       
       // 1. Check for duplicate merchant email or phone
-      const duplicateConditions = [];
-      
-      if (validatedData.email) {
-        duplicateConditions.push({ email: validatedData.email });
-      }
-      
-      if (validatedData.phone) {
-        duplicateConditions.push({ phone: validatedData.phone });
-      }
-
-      const existingMerchant = await db.merchants.findFirst({
-        where: {
-          OR: duplicateConditions
-        }
-      });
+      const existingMerchant = await db.merchants.checkDuplicate(
+        validatedData.email,
+        validatedData.phone
+      );
 
       if (existingMerchant) {
         const duplicateField = existingMerchant.email === validatedData.email ? 'email' : 'phone number';
