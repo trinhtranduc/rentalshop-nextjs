@@ -95,6 +95,43 @@ export async function PUT(
         );
       }
 
+      // Check for duplicate phone or email if being updated
+      if (body.phone || body.email) {
+        const duplicateConditions = [];
+        
+        if (body.phone && body.phone !== existingMerchant.phone) {
+          duplicateConditions.push({ phone: body.phone });
+        }
+        
+        if (body.email && body.email !== existingMerchant.email) {
+          duplicateConditions.push({ email: body.email });
+        }
+
+        if (duplicateConditions.length > 0) {
+          const duplicateMerchant = await db.merchants.findFirst({
+            where: {
+              OR: duplicateConditions,
+              id: { not: merchantId }
+            }
+          });
+
+          if (duplicateMerchant) {
+            const duplicateField = duplicateMerchant.phone === body.phone ? 'phone number' : 'email';
+            const duplicateValue = duplicateMerchant.phone === body.phone ? body.phone : body.email;
+            
+            console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
+            return NextResponse.json(
+              {
+                success: false,
+                code: 'MERCHANT_DUPLICATE',
+                message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+              },
+              { status: 409 }
+            );
+          }
+        }
+      }
+
       // Update the merchant using the simplified database API
       const updatedMerchant = await db.merchants.update(merchantId, body);
       console.log('✅ Merchant updated successfully:', updatedMerchant);

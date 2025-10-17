@@ -31,13 +31,33 @@ export async function POST(request: NextRequest) {
       // MERCHANT REGISTRATION FLOW
       // ============================================================================
       
-      // 1. Check if merchant email already exists
-      const existingMerchant = await db.merchants.findByEmail(validatedData.email);
+      // 1. Check for duplicate merchant email or phone
+      const duplicateConditions = [];
+      
+      if (validatedData.email) {
+        duplicateConditions.push({ email: validatedData.email });
+      }
+      
+      if (validatedData.phone) {
+        duplicateConditions.push({ phone: validatedData.phone });
+      }
+
+      const existingMerchant = await db.merchants.findFirst({
+        where: {
+          OR: duplicateConditions
+        }
+      });
+
       if (existingMerchant) {
+        const duplicateField = existingMerchant.email === validatedData.email ? 'email' : 'phone number';
+        const duplicateValue = existingMerchant.email === validatedData.email ? validatedData.email : validatedData.phone;
+        
+        console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
         return NextResponse.json({
           success: false,
-          code: 'EMAIL_EXISTS', message: 'Merchant with this email already exists'
-        }, { status: 400 });
+          code: 'MERCHANT_DUPLICATE',
+          message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+        }, { status: 409 });
       }
 
       // 2. Create merchant with business configuration
@@ -69,8 +89,7 @@ export async function POST(request: NextRequest) {
                 }
               }
             : getDefaultPricingConfig(validatedData.businessType as BusinessType || 'GENERAL')
-        ),
-        subscriptionStatus: 'trial'
+        )
       });
 
       // 3. Create default outlet

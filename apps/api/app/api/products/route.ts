@@ -135,6 +135,27 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
     console.log('🔍 Calculated totalStock:', totalStock);
 
+    // Check for duplicate product name within the same merchant
+    const existingProduct = await db.products.findFirst({
+      where: {
+        name: parsed.data.name,
+        merchantId: userScope.merchantId,
+        isActive: true
+      }
+    });
+
+    if (existingProduct) {
+      console.log('❌ Product name already exists:', parsed.data.name);
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'PRODUCT_NAME_EXISTS',
+          message: `A product with the name "${parsed.data.name}" already exists. Please choose a different name.`
+        },
+        { status: 409 }
+      );
+    }
+
     // Determine merchantId for product creation
     let merchantId = userScope.merchantId;
     

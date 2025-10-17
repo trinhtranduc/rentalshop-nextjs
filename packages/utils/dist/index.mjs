@@ -10418,7 +10418,7 @@ var registerSchema = z.object({
   businessName: z.string().optional(),
   // Business configuration (required for merchants)
   businessType: z.enum(["CLOTHING", "VEHICLE", "EQUIPMENT", "GENERAL"]).optional(),
-  pricingType: z.enum(["FIXED", "HOURLY", "DAILY", "WEEKLY"]).optional(),
+  pricingType: z.enum(["FIXED", "HOURLY", "DAILY"]).optional(),
   // Address fields for merchant registration
   address: z.string().optional(),
   city: z.string().optional(),

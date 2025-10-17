@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { API, getDefaultPricingConfig, BusinessType } from '@rentalshop/constants';
 
 // Validation schema for merchant registration
 const merchantRegistrationSchema = z.object({
@@ -12,6 +12,8 @@ const merchantRegistrationSchema = z.object({
   merchantPhone: z.string().optional(),
   merchantDescription: z.string().optional(),
   currency: z.enum(['USD', 'VND']).default('USD'),
+  businessType: z.enum(['GENERAL', 'CLOTHING', 'VEHICLE', 'EQUIPMENT']).default('GENERAL'),
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY', 'WEEKLY']).default('FIXED'),
   
   // User details (merchant owner)
   userEmail: z.string().email('Invalid user email'),
@@ -33,6 +35,9 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = merchantRegistrationSchema.parse(body);
     
+    // Get default pricing config based on business type
+    const pricingConfig = getDefaultPricingConfig(validatedData.businessType as BusinessType);
+    
     // Register merchant with complete setup
     const merchant = await db.merchants.create({
       name: validatedData.merchantName,
@@ -40,7 +45,9 @@ export async function POST(request: NextRequest) {
       phone: validatedData.merchantPhone,
       description: validatedData.merchantDescription,
       currency: validatedData.currency,
-      businessType: 'RENTAL_SHOP',
+      businessType: validatedData.businessType,
+      pricingType: validatedData.pricingType,
+      pricingConfig: JSON.stringify(pricingConfig),
       address: validatedData.outletAddress || 'Address to be updated',
       city: 'City to be updated',
       state: 'State to be updated',

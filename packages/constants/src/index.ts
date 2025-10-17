@@ -137,6 +137,8 @@ export {
   BUSINESS_TYPE_LABELS,
   PRICING_TYPE_DESCRIPTIONS,
   BUSINESS_TYPE_DESCRIPTIONS,
+  BUSINESS_TYPE_OPTIONS,
+  PRICING_TYPE_OPTIONS,
   getDefaultPricingConfig,
   getPricingTypeLabel,
   getBusinessTypeLabel,
@@ -144,4 +146,15 @@ export {
   getBusinessTypeDescription,
   requiresRentalDates,
   getDurationUnit
+} from './pricing';
+
+// Export pricing types
+export type {
+  BusinessType,
+  PricingType,
+  BusinessTypeOption,
+  PricingTypeOption,
+  PricingBusinessRules,
+  PricingDurationLimits,
+  MerchantPricingConfig
 } from './pricing';

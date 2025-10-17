@@ -4,7 +4,7 @@
 
 // Local type definitions to avoid circular dependency
 export type BusinessType = 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
+export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' ;
 
 // ============================================================================
 // BUSINESS TYPE & PRICING TYPE DESCRIPTIONS
@@ -68,12 +68,6 @@ export const PRICING_TYPE_OPTIONS: PricingTypeOption[] = [
     value: 'DAILY',
     label: 'Daily Pricing',
     description: 'Price calculated per day of rental',
-    icon: ''
-  },
-  {
-    value: 'WEEKLY',
-    label: 'Weekly Pricing',
-    description: 'Price calculated per week of rental',
     icon: ''
   }
 ];
@@ -172,7 +166,6 @@ export const PRICING_TYPE_LABELS = {
   FIXED: 'Fixed Price',
   HOURLY: 'Hourly',
   DAILY: 'Daily',
-  WEEKLY: 'Weekly'
 } as const;
 
 /**
@@ -192,7 +185,6 @@ export const PRICING_TYPE_DESCRIPTIONS = {
   FIXED: 'One price per rental (e.g., equipment rental)',
   HOURLY: 'Price per hour (e.g., vehicles, tools)',
   DAILY: 'Price per day (e.g., construction equipment)',
-  WEEKLY: 'Price per week (e.g., long-term rentals)'
 } as const;
 
 /**
@@ -258,7 +250,6 @@ export function getDurationUnit(pricingType: PricingType): string {
   switch (pricingType) {
     case 'HOURLY': return 'hour';
     case 'DAILY': return 'day';
-    case 'WEEKLY': return 'week';
     case 'FIXED': return 'rental';
     default: return 'unit';
   }

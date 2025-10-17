@@ -10787,7 +10787,7 @@ var init_validation = __esm({
       businessName: zod.z.string().optional(),
       // Business configuration (required for merchants)
       businessType: zod.z.enum(["CLOTHING", "VEHICLE", "EQUIPMENT", "GENERAL"]).optional(),
-      pricingType: zod.z.enum(["FIXED", "HOURLY", "DAILY", "WEEKLY"]).optional(),
+      pricingType: zod.z.enum(["FIXED", "HOURLY", "DAILY"]).optional(),
       // Address fields for merchant registration
       address: zod.z.string().optional(),
       city: zod.z.string().optional(),

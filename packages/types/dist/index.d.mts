@@ -1,5 +1,5 @@
-import { SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
-export { BillingInterval, SubscriptionStatus } from '@rentalshop/constants';
+import { MerchantPricingConfig, SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
+export { BillingInterval, BusinessType, MerchantPricingConfig, PricingBusinessRules, PricingDurationLimits, PricingType, SubscriptionStatus } from '@rentalshop/constants';
 
 /**
  * Base entity interface with common fields
@@ -513,6 +513,8 @@ interface MerchantCreateInput extends BaseFormInput {
     phone?: string;
     description?: string;
     currency?: string;
+    businessType?: string;
+    pricingType?: string;
     planId?: number;
     isActive?: boolean;
 }
@@ -530,6 +532,7 @@ interface MerchantUpdateInput extends BaseUpdateInput {
     zipCode?: string;
     country?: string;
     businessType?: string;
+    pricingType?: string;
     taxId?: number;
     currency?: string;
     isActive?: boolean;
@@ -620,38 +623,6 @@ interface MerchantFilters {
     endDate?: Date | string;
     page?: number;
     limit?: number;
-}
-/**
- * Pricing type enumeration
- */
-type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
-/**
- * Business type enumeration
- */
-type BusinessType = 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-/**
- * Business rules for pricing
- */
-interface PricingBusinessRules {
-    requireRentalDates: boolean;
-    showPricingOptions: boolean;
-}
-/**
- * Duration limits for time-based pricing
- */
-interface PricingDurationLimits {
-    minDuration: number;
-    maxDuration: number;
-    defaultDuration: number;
-}
-/**
- * Merchant pricing configuration
- */
-interface MerchantPricingConfig {
-    businessType: BusinessType;
-    defaultPricingType: PricingType;
-    businessRules: PricingBusinessRules;
-    durationLimits: PricingDurationLimits;
 }
 
 /**
@@ -3619,21 +3590,71 @@ var register = {
 	accountCreatedSuccessfully: "Account created successfully.",
 	registrationFailed: "Registration Failed",
 	somethingWentWrong: "Something went wrong. Please try again.",
+	merchantNameRequired: "Merchant name is required",
+	merchantEmailRequired: "Merchant email is required",
+	userEmailRequired: "User email is required",
+	emailRequired: "Email is required",
+	emailInvalid: "Invalid email format",
+	passwordRequired: "Password is required",
 	passwordMinLength: "Your password must be at least 6 characters",
 	passwordMaxLength: "Your password must be at most 25 characters",
+	confirmPasswordRequired: "Confirm password is required",
 	firstNameRequired: "First name is required",
 	lastNameRequired: "Last name is required",
+	phoneRequired: "Phone number is required",
+	phoneInvalid: "Please enter a valid phone number",
 	phoneNumberInvalid: "Please enter a valid phone number",
+	phoneMinLength: "Phone number must be at least 10 digits",
 	phoneNumberMinLength: "Phone number must be at least 10 digits",
+	businessNameRequired: "Business name is required",
 	businessNameMinLength: "Business name must be at least 2 characters",
 	businessTypeRequired: "Please select your business type",
 	pricingTypeRequired: "Please select your pricing type",
+	addressRequired: "Address is required",
 	addressMinLength: "Address must be at least 5 characters",
+	cityRequired: "City is required",
 	cityMinLength: "City must be at least 2 characters",
+	stateRequired: "State is required",
 	stateMinLength: "State must be at least 2 characters",
+	zipCodeRequired: "ZIP code is required",
 	zipCodeInvalid: "Please enter a valid ZIP code",
+	countryRequired: "Country is required",
 	countryMinLength: "Country must be at least 2 characters",
-	mustAcceptTerms: "You must accept the Terms of Service and Privacy Policy"
+	mustAcceptTerms: "You must accept the Terms of Service and Privacy Policy",
+	businessTypes: {
+		general: {
+			label: "General Rental",
+			description: "Mixed rental business with various product types"
+		},
+		clothing: {
+			label: "Clothing & Fashion",
+			description: "Rent or sell clothing, accessories, and fashion items"
+		},
+		vehicle: {
+			label: "Vehicle Rental",
+			description: "Car, motorcycle, bicycle, and vehicle rental services"
+		},
+		equipment: {
+			label: "Equipment Rental",
+			description: "Tools, machinery, and equipment rental services"
+		}
+	},
+	pricingTypes: {
+		fixed: {
+			label: "Fixed Price",
+			description: "Same price regardless of rental duration"
+		},
+		hourly: {
+			label: "Hourly Pricing",
+			description: "Price calculated per hour of rental"
+		},
+		daily: {
+			label: "Daily Pricing",
+			description: "Price calculated per day of rental"
+		}
+	},
+	chooseBusinessType: "Choose the type of business you operate",
+	choosePricingType: "How do you want to price your rentals?"
 };
 var forgotPassword = {
 	title: "Forgot Password",
@@ -4130,4 +4151,4 @@ interface RequestWithPlatform extends Request {
     platformInfo?: PlatformInfo;
 }
 
-export { type Address, type ApiErrorResponse, type ApiResponse, type AuthUser, type BaseEntity, type BaseEntityWithMerchant, type BaseEntityWithOutlet, type BaseFormInput, type BaseSearchParams, type BaseSearchResult, type BaseUpdateInput, type BillingCycle, type BillingCycleOption, type BillingPeriod, type BusinessType, type CalendarData, type CalendarDay, type CalendarEvent, type CalendarEventFormData, type CalendarFilters, type CalendarFiltersProps, type CalendarGridProps, type CalendarNavigationProps, type CalendarSidebarProps, type CalendarViewMode, type CalendarViewProps, type Category, type CategoryAction, type CategoryActionItem, type CategoryActionsProps, type CategoryCardProps, type CategoryCreateInput, type CategoryData, type CategoryFilters, type CategoryFiltersProps, type CategoryFormData, type CategoryFormErrors, type CategoryFormProps, type CategoryGridProps, type CategoryPaginationProps, type CategoryPerformance, type CategoryReference, type CategorySearchParams, type CategorySearchResponse, type CategorySearchResult, type CategoryStats, type CategoryTableProps, type CategoryUpdateInput, type ChangePassword, type ClientPlatform, type ContactInfo, type Currency, type CurrencyCode, type CurrencyFormatOptions, type CurrencySettings, type CurrentSubscription, type Customer, type CustomerAction, type CustomerCreateInput, type CustomerData, type CustomerFilters, type CustomerInput, type CustomerManagement, type CustomerPerformance, type CustomerReference, type CustomerSearchFilter, type CustomerSearchParams, type CustomerSearchResponse, type CustomerSearchResult, type CustomerStats, type CustomerUpdateInput, type CustomerWithMerchant, type DashboardData, type DashboardOrderStats, type DashboardPeriod, type DashboardStats, type DeviceType, type EntityAction, type EntityStatus, type IncomeData, type IncomeDataPoint, type Locale, type LoginCredentials, type Merchant, type MerchantAction, type MerchantCreateInput, type MerchantDetailData, type MerchantDetailStats, type MerchantFilters, type MerchantInfoUpdate, type MerchantPricingConfig, type MerchantReference, type MerchantSearchParams, type MerchantSearchResult, type MerchantStats, type MerchantUpdateInput, type Order, type OrderAction, type OrderCreateInput, type OrderData, type OrderDataPoint, type OrderDetailData, type OrderExportData, type OrderFilters, type OrderHistoryInput, type OrderInput, type OrderItem, type OrderItemData, type OrderItemInput, type OrderItemWithProduct, type OrderListData, type OrderSearchFilter, type OrderSearchParams, type OrderSearchResponse, type OrderSearchResult, type OrderStats, type OrderStatsByPeriod, type OrderStatus, type OrderType, type OrderUpdateInput, type OrderWithDetails, type OrdersData, type Outlet, type OutletAction, type OutletCreateInput, type OutletData, type OutletFilters, type OutletInfoUpdate, type OutletInventorySummary, type OutletPerformance, type OutletReference, type OutletSearchFilter, type OutletSearchParams, type OutletSearchResponse, type OutletSearchResult, type OutletStats, type OutletStock, type OutletStockInput, type OutletStockLevel, type OutletUpdateInput, PRICING_CONFIG, type PaginatedResult, type PaginationMeta, type PaginationParams, type PasswordReset, type Payment, type PaymentInput, type PaymentUpdateInput, type Permission, type PermissionAction, type PermissionCheck, type PermissionResource, type PermissionResult, type PersonalProfileUpdate, type PickupOrder, type Plan, type PlanComparison, type PlanCreateInput, type PlanDetails, type PlanFeature, type PlanFilters, type PlanLimits, type PlanPricing, type PlanUpdateInput, type PlanVariant, type PlanVariantCreateInput, type PlanVariantFilters, type PlanVariantUpdateInput, type PlatformHeaders, type PlatformInfo, type PricingBusinessRules, type PricingCalculation, type PricingDurationLimits, type PricingType, type Product, type ProductAction, type ProductCreateInput, type ProductFilters, type ProductInput, type ProductInventorySummary, type ProductPerformance, type ProductReference, type ProductSearchFilter, type ProductSearchParams, type ProductSearchResponse, type ProductSearchResult, type ProductUpdateInput, type ProductWithDetails, type ProductWithStock, type ProfileUpdateInput, type RegisterData, type RequestWithPlatform, type SearchFilters, type SearchParams, type SearchResult, type SecurityUpdate, type SoftDelete, type Subscription, type SubscriptionAction, type SubscriptionCreateInput, type SubscriptionFilters, type SubscriptionPeriod, type SubscriptionUpdateInput, type SubscriptionsResponse, type Timestamp, type TodaysFocus, type TopCategory, type TopCustomer, type TopProduct, type User, type UserAction, type UserCreateInput, type UserData, type UserFilters, type UserPermissions, type UserReference, type UserRole$1 as UserRole, type UserSearchFilter, type UserSearchParams, type UserSearchResult, type UserSession, type UserStats, type UserUpdateInput, type ValidationError, type ValidationResult, calculatePricing, defaultLocale, locales };
+export { type Address, type ApiErrorResponse, type ApiResponse, type AuthUser, type BaseEntity, type BaseEntityWithMerchant, type BaseEntityWithOutlet, type BaseFormInput, type BaseSearchParams, type BaseSearchResult, type BaseUpdateInput, type BillingCycle, type BillingCycleOption, type BillingPeriod, type CalendarData, type CalendarDay, type CalendarEvent, type CalendarEventFormData, type CalendarFilters, type CalendarFiltersProps, type CalendarGridProps, type CalendarNavigationProps, type CalendarSidebarProps, type CalendarViewMode, type CalendarViewProps, type Category, type CategoryAction, type CategoryActionItem, type CategoryActionsProps, type CategoryCardProps, type CategoryCreateInput, type CategoryData, type CategoryFilters, type CategoryFiltersProps, type CategoryFormData, type CategoryFormErrors, type CategoryFormProps, type CategoryGridProps, type CategoryPaginationProps, type CategoryPerformance, type CategoryReference, type CategorySearchParams, type CategorySearchResponse, type CategorySearchResult, type CategoryStats, type CategoryTableProps, type CategoryUpdateInput, type ChangePassword, type ClientPlatform, type ContactInfo, type Currency, type CurrencyCode, type CurrencyFormatOptions, type CurrencySettings, type CurrentSubscription, type Customer, type CustomerAction, type CustomerCreateInput, type CustomerData, type CustomerFilters, type CustomerInput, type CustomerManagement, type CustomerPerformance, type CustomerReference, type CustomerSearchFilter, type CustomerSearchParams, type CustomerSearchResponse, type CustomerSearchResult, type CustomerStats, type CustomerUpdateInput, type CustomerWithMerchant, type DashboardData, type DashboardOrderStats, type DashboardPeriod, type DashboardStats, type DeviceType, type EntityAction, type EntityStatus, type IncomeData, type IncomeDataPoint, type Locale, type LoginCredentials, type Merchant, type MerchantAction, type MerchantCreateInput, type MerchantDetailData, type MerchantDetailStats, type MerchantFilters, type MerchantInfoUpdate, type MerchantReference, type MerchantSearchParams, type MerchantSearchResult, type MerchantStats, type MerchantUpdateInput, type Order, type OrderAction, type OrderCreateInput, type OrderData, type OrderDataPoint, type OrderDetailData, type OrderExportData, type OrderFilters, type OrderHistoryInput, type OrderInput, type OrderItem, type OrderItemData, type OrderItemInput, type OrderItemWithProduct, type OrderListData, type OrderSearchFilter, type OrderSearchParams, type OrderSearchResponse, type OrderSearchResult, type OrderStats, type OrderStatsByPeriod, type OrderStatus, type OrderType, type OrderUpdateInput, type OrderWithDetails, type OrdersData, type Outlet, type OutletAction, type OutletCreateInput, type OutletData, type OutletFilters, type OutletInfoUpdate, type OutletInventorySummary, type OutletPerformance, type OutletReference, type OutletSearchFilter, type OutletSearchParams, type OutletSearchResponse, type OutletSearchResult, type OutletStats, type OutletStock, type OutletStockInput, type OutletStockLevel, type OutletUpdateInput, PRICING_CONFIG, type PaginatedResult, type PaginationMeta, type PaginationParams, type PasswordReset, type Payment, type PaymentInput, type PaymentUpdateInput, type Permission, type PermissionAction, type PermissionCheck, type PermissionResource, type PermissionResult, type PersonalProfileUpdate, type PickupOrder, type Plan, type PlanComparison, type PlanCreateInput, type PlanDetails, type PlanFeature, type PlanFilters, type PlanLimits, type PlanPricing, type PlanUpdateInput, type PlanVariant, type PlanVariantCreateInput, type PlanVariantFilters, type PlanVariantUpdateInput, type PlatformHeaders, type PlatformInfo, type PricingCalculation, type Product, type ProductAction, type ProductCreateInput, type ProductFilters, type ProductInput, type ProductInventorySummary, type ProductPerformance, type ProductReference, type ProductSearchFilter, type ProductSearchParams, type ProductSearchResponse, type ProductSearchResult, type ProductUpdateInput, type ProductWithDetails, type ProductWithStock, type ProfileUpdateInput, type RegisterData, type RequestWithPlatform, type SearchFilters, type SearchParams, type SearchResult, type SecurityUpdate, type SoftDelete, type Subscription, type SubscriptionAction, type SubscriptionCreateInput, type SubscriptionFilters, type SubscriptionPeriod, type SubscriptionUpdateInput, type SubscriptionsResponse, type Timestamp, type TodaysFocus, type TopCategory, type TopCustomer, type TopProduct, type User, type UserAction, type UserCreateInput, type UserData, type UserFilters, type UserPermissions, type UserReference, type UserRole$1 as UserRole, type UserSearchFilter, type UserSearchParams, type UserSearchResult, type UserSession, type UserStats, type UserUpdateInput, type ValidationError, type ValidationResult, calculatePricing, defaultLocale, locales };

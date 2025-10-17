@@ -135,6 +135,27 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       );
     }
 
+    // Check for duplicate outlet name within the same merchant
+    const existingOutlet = await db.outlets.findFirst({
+      where: {
+        name: parsed.data.name,
+        merchantId: merchantId,
+        isActive: true
+      }
+    });
+
+    if (existingOutlet) {
+      console.log('❌ Outlet name already exists:', parsed.data.name);
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'OUTLET_NAME_EXISTS',
+          message: `An outlet with the name "${parsed.data.name}" already exists. Please choose a different name.`
+        },
+        { status: 409 }
+      );
+    }
+
     // Check plan limits before creating outlet
     try {
       await assertPlanLimit(merchantId, 'outlets');
@@ -239,6 +260,30 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
       );
     }
 
+    // Check for duplicate outlet name if name is being updated
+    if (parsed.data.name && parsed.data.name !== existingOutlet.name) {
+      const duplicateOutlet = await db.outlets.findFirst({
+        where: {
+          name: parsed.data.name,
+          merchantId: existingOutlet.merchantId,
+          isActive: true,
+          id: { not: id }
+        }
+      });
+
+      if (duplicateOutlet) {
+        console.log('❌ Outlet name already exists:', parsed.data.name);
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'OUTLET_NAME_EXISTS',
+            message: `An outlet with the name "${parsed.data.name}" already exists. Please choose a different name.`
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     console.log('🔍 Updating outlet with data:', { id, ...parsed.data });
     
     // Use simplified database API
@@ -301,6 +346,19 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { use
       return NextResponse.json(
         ResponseBuilder.error('FORBIDDEN'),
         { status: 403 }
+      );
+    }
+
+    // Prevent deleting default outlet
+    if (existingOutlet.isDefault) {
+      console.log('❌ Cannot delete default outlet:', id);
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'CANNOT_DELETE_DEFAULT_OUTLET',
+          message: 'Cannot delete the default outlet. This is the main outlet created during registration and must remain active.'
+        },
+        { status: 400 }
       );
     }
 
