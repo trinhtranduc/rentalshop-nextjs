@@ -260,30 +260,37 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
     // Setup pricing configuration based on business type
     const pricingConfig = getDefaultPricingConfig((businessType as BusinessType) || 'GENERAL');
 
-    // Create new merchant
-    const merchant = await db.merchants.create({
-        name,
-        email,
-        phone,
-        address,
-        planId,
-        // subscriptionStatus removed - use subscription.status instead (single source of truth)
-        // isActive: true, // TODO: Add isActive field to MerchantCreateData type
-        // totalRevenue: 0, // TODO: Add totalRevenue field to MerchantCreateData type
-        businessType: businessType || 'GENERAL',
-        pricingConfig: JSON.stringify(pricingConfig)
+    // Use transaction for atomic creation
+    const result = await db.prisma.$transaction(async (tx) => {
+      // Create new merchant
+      const merchant = await tx.merchant.create({
+        data: {
+          name,
+          email,
+          phone,
+          address,
+          planId,
+          businessType: businessType || 'GENERAL',
+          pricingConfig: JSON.stringify(pricingConfig)
+        }
       });
 
-    // Create default outlet for the merchant
-    const defaultOutlet = await db.outlets.create({
-      name: `${merchant.name} - Main Store`,
-      address: merchant.address || 'Address to be updated',
-      phone: merchant.phone,
-      description: 'Default outlet created during merchant setup',
-      merchantId: merchant.id,
-      // isActive: true, // TODO: Add isActive field to OutletCreateData type
-      isDefault: true
+      // Create default outlet for the merchant
+      const defaultOutlet = await tx.outlet.create({
+        data: {
+          name: `${merchant.name} - Main Store`,
+          address: merchant.address || 'Address to be updated',
+          phone: merchant.phone,
+          description: 'Default outlet created during merchant setup',
+          merchantId: merchant.id,
+          isDefault: true
+        }
+      });
+
+      return { merchant, defaultOutlet };
     });
+
+    const { merchant, defaultOutlet } = result;
 
     return NextResponse.json(
       ResponseBuilder.success('MERCHANT_CREATED_SUCCESS', {
